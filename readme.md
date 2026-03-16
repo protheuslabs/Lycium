@@ -2,16 +2,28 @@
 
 Lyceum is a lightweight learning platform designed to explore how structured JSON data can dynamically drive an interactive front-end application. My goal in building this software was to strengthen my skills as a software engineer by working with component-based UI structure, state management, and and data-driven rendering in React. I wanted to create a modular system where lessons, videos, quizzes, and code examples could be added without touching the core UI logic.
 
-This web app loads all course content—including modules, sections, text blocks, videos, quizzes, and code examples—from JSON files. React then renders the learning experience dynamically based on user input and navigation.
+This repository is now organized as a monorepo:
+
+- `apps/lyceum-web` contains the learner-facing web application.
+- `services/protheus-api` contains the FastAPI control plane skeleton.
+- `services/protheus-workers` contains the async worker skeleton for ingestion and generation jobs.
+- `packages/*` contains shared contracts, schema, and package stubs for the platform split.
+
+The current Lyceum frontend still loads all course content—including modules, sections, text blocks, videos, quizzes, and code examples—from JSON files. React then renders the learning experience dynamically based on user input and navigation.
 
 To run the application locally:
-`npm install`
-`npm run dev`
+`pnpm install`
+`pnpm dev`
 
-Then open the URL that Vite provides (typically `http://localhost:5173`) to launch the app in your browser.
+Then open the URL that Vite provides from `apps/lyceum-web` to launch the app in your browser.
 
 This project helped me practice designing reusable components, building interactive UI elements, and structuring a scalable front-end architecture that could evolve into a more advanced learning system in the future.
 
+Long-term, Lyceum is intended to move beyond hard-coded courses and become a system that can turn reliable internet knowledge into personalized, structured learning paths.
+
+[Product Vision](./VISION.md)
+[Architecture](./ARCHITECTURE.md)
+[Software Requirements Specification](./SRS.md)
 
 [Software Demo Video](https://youtu.be/FjGd8ojGa14)
 

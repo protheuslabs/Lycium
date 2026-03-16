@@ -10,7 +10,12 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.turbo
 *.local
+.venv
+__pycache__
+.pytest_cache
+.mypy_cache
 
 # Editor directories and files
 .vscode/*
