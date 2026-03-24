@@ -5,9 +5,42 @@ Lyceum is a lightweight learning platform designed to explore how structured JSO
 This repository is now organized as a monorepo:
 
 - `apps/lyceum-web` contains the learner-facing web application.
-- `services/protheus-api` contains the FastAPI control plane skeleton.
-- `services/protheus-workers` contains the async worker skeleton for ingestion and generation jobs.
+- `services/protheus-api` contains the FastAPI control plane for ingestion, retrieval, course generation, analytics, and catalogs.
+- `services/protheus-workers` contains async worker runners for queued ingestion, coverage, generation, and revalidation jobs.
 - `packages/*` contains shared contracts, schema, and package stubs for the platform split.
+
+## Current Implementation Status
+
+The backend now includes end-to-end implementations for:
+
+- source ingestion and canonicalization
+- knowledge-object decomposition and claim extraction
+- trust/freshness/pedagogy/accessibility scoring
+- coverage map generation
+- hybrid retrieval and modality-balanced learning packets
+- prompt-to-outline draft workflow with approve/edit
+- full course JSON generation with citations and generation trace
+- course section regeneration, forking, and refresh
+- learner progress persistence and analytics summaries
+- portfolio artifacts, credential records, and program path snapshots
+- queue-based job orchestration and worker execution loop
+
+## Running Backend Services
+
+From `services/protheus-api`:
+
+`pip3 install -e '.[test]'`
+`protheus-api`
+
+From `services/protheus-workers` (with API running):
+
+`pip3 install -e '.[test]'`
+`PROTHEUS_API_URL=http://127.0.0.1:8000 protheus-worker --once`
+
+Run tests:
+
+- API: `cd services/protheus-api && pytest -q`
+- Worker: `cd services/protheus-workers && PYTHONPATH=src pytest -q`
 
 The current Lyceum frontend still loads all course content—including modules, sections, text blocks, videos, quizzes, and code examples—from JSON files. React then renders the learning experience dynamically based on user input and navigation.
 
