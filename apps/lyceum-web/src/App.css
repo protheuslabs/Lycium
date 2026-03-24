@@ -1,9 +1,64 @@
 .app-root {
-  margin: 0px
+  margin: 0px;
   display: flex;
   height: 100vh;
    flex-direction: column; 
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.generator-bar {
+  background: #f5f6fa;
+  border-bottom: 1px solid #e2e4ea;
+  padding: 0.75rem 1rem;
+}
+
+.generator-form {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.generator-input {
+  flex: 1 1 320px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ccd1dd;
+  font-size: 0.95rem;
+}
+
+.generator-select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #ccd1dd;
+  background: #fff;
+}
+
+.generator-button {
+  padding: 0.55rem 0.85rem;
+  border-radius: 6px;
+  border: none;
+  background: #4a6cf7;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.generator-button:disabled {
+  background: #9aa7d8;
+  cursor: not-allowed;
+}
+
+.generator-status {
+  font-size: 0.85rem;
+}
+
+.generator-status-success {
+  color: #2f7a4f;
+}
+
+.generator-status-error {
+  color: #b53d3d;
 }
 
 .main-layout {

@@ -3,6 +3,39 @@
 import "./contentView.css";
 import QuizBlock from "../Quiz/QuizBlock";
 
+type ContentBlock = {
+  type: string;
+  value?: string;
+  url?: string;
+  question?: string;
+  options?: string[];
+  answer?: number;
+  name?: string;
+  description?: string;
+};
+
+type Section = {
+  id: string;
+  title: string;
+  content: ContentBlock[];
+  displayNumber: string;
+};
+
+type ContentViewProps = {
+  courseTitle: string;
+  section: Section | null;
+  moduleTitle: string;
+  moduleIndex: number;
+  onNext: () => void;
+  onPrev: () => void;
+  isFirstSection: boolean;
+  isLastSection: boolean;
+  progressPercentage: number;
+  markComplete: (sectionId: string) => void;
+  isComplete: boolean;
+  orderMandatory: boolean;
+};
+
 export default function ContentView({ 
   courseTitle,
   section,
@@ -16,7 +49,7 @@ export default function ContentView({
   markComplete,
   isComplete,
   orderMandatory
-}) {
+}: ContentViewProps) {
   if (!section) {
     return (
       <main className="content-view">
@@ -30,6 +63,7 @@ export default function ContentView({
   
   return (
     <main className="content-view">
+      <p className="course-name">{courseTitle}</p>
       <h1 className="course-title">{moduleTitle}</h1>
       {/* New Module Header */}
       {
@@ -89,7 +123,7 @@ export default function ContentView({
 }
 
 // AI generated function to render content blocks
-function renderContentBlock(item, key) {
+function renderContentBlock(item: ContentBlock, key: number) {
   switch (item.type) {
     case "text":
       return (

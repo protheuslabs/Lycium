@@ -1,5 +1,32 @@
 import "./Sidebar.css";
 
+import { ChangeEvent } from "react";
+
+type SidebarCourse = {
+  key: string;
+  title: string;
+  source: "local" | "remote";
+};
+
+type SidebarSection = {
+  id: string;
+  title: string;
+  moduleIndex: number;
+  moduleTitle: string;
+  displayNumber: string;
+};
+
+type SidebarProps = {
+  sections: SidebarSection[];
+  currentSectionIndex: number;
+  onSectionSelect: (index: number) => void;
+  currentCourseKey: string;
+  onCourseChange: (event: ChangeEvent<HTMLSelectElement>) => void;
+  courses: SidebarCourse[];
+  courseTitle: string;
+  progressPercentage: number;
+};
+
 export default function Sidebar({
   sections,
   currentSectionIndex, 
@@ -9,7 +36,7 @@ export default function Sidebar({
   courses,
   courseTitle,
   progressPercentage
-}) {
+}: SidebarProps) {
   
   return (
     <aside className="sidebar">
@@ -23,9 +50,9 @@ export default function Sidebar({
             onChange={onCourseChange}
             className="course-select"
           >
-            {Object.values(courses).map((course) => (
+            {courses.map((course) => (
               <option key={course.key} value={course.key}>
-                {course.title}
+                {course.title} {course.source === "remote" ? "(generated)" : ""}
               </option>
             ))}
           </select>
