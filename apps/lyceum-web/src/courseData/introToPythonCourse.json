@@ -30,9 +30,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which of the following is a common way to run Python code?",
-              "options": ["Compiling to machine code only", "Using the Python interpreter", "Editing binary files directly"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "py-q1",
+                  "type": "single_choice",
+                  "question": "Which of the following is a common way to run Python code?",
+                  "options": ["Compiling to machine code only", "Using the Python interpreter", "Editing binary files directly"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         },
@@ -56,9 +63,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which function prints a value to the console in Python?",
-              "options": ["echo()", "print()", "write()"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "py-q2",
+                  "type": "single_choice",
+                  "question": "Which function prints a value to the console in Python?",
+                  "options": ["echo()", "print()", "write()"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         }
@@ -88,9 +102,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which loop is best for iterating over each item in a list?",
-              "options": ["while loop with manual index", "for loop directly over the list", "No loops are needed"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "py-q3",
+                  "type": "single_choice",
+                  "question": "Which loop is best for iterating over each item in a list?",
+                  "options": ["while loop with manual index", "for loop directly over the list", "No loops are needed"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         },
@@ -114,9 +135,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which logical operator in Python inverts the truth value of a condition?",
-              "options": ["and", "or", "not"],
-              "answer": 2
+              "questions": [
+                {
+                  "id": "py-q4",
+                  "type": "single_choice",
+                  "question": "Which logical operator in Python inverts the truth value of a condition?",
+                  "options": ["and", "or", "not"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         }
@@ -124,4 +152,3 @@
     }
   ]
 }
-

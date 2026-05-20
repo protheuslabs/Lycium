@@ -15,12 +15,15 @@
 }
 
 .quiz-marker {
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border-radius: 0;
   border: 1px solid #c0c0c0;
   background-color: #ffffff;
   cursor: pointer;
   font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 .quiz-marker:hover:not(:disabled) {

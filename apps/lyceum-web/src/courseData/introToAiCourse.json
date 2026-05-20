@@ -30,9 +30,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which type of AI do current real-world systems like recommendation engines represent?",
-              "options": ["Strong AI", "Weak (Narrow) AI", "General Superintelligence"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "ai-q1",
+                  "type": "single_choice",
+                  "question": "Which type of AI do current real-world systems like recommendation engines represent?",
+                  "options": ["Strong AI", "Weak (Narrow) AI", "General Superintelligence"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         },
@@ -56,9 +63,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which of the following is a common limitation of AI systems?",
-              "options": ["Perfect understanding of context", "Bias inherited from training data", "Guaranteed ethical decisions"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "ai-q2",
+                  "type": "single_choice",
+                  "question": "Which of the following is a common limitation of AI systems?",
+                  "options": ["Perfect understanding of context", "Bias inherited from training data", "Guaranteed ethical decisions"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         }
@@ -92,9 +106,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which learning type uses labeled examples like (image, label) pairs?",
-              "options": ["Unsupervised learning", "Supervised learning", "Reinforcement learning"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "ai-q3",
+                  "type": "single_choice",
+                  "question": "Which learning type uses labeled examples like (image, label) pairs?",
+                  "options": ["Unsupervised learning", "Supervised learning", "Reinforcement learning"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         },
@@ -118,9 +139,16 @@
             },
             {
               "type": "quiz",
-              "question": "Spam detection trained on labeled examples is an example of what?",
-              "options": ["Supervised learning", "Unsupervised learning", "Random guessing"],
-              "answer": 0
+              "questions": [
+                {
+                  "id": "ai-q4",
+                  "type": "single_choice",
+                  "question": "Spam detection trained on labeled examples is an example of what?",
+                  "options": ["Supervised learning", "Unsupervised learning", "Random guessing"],
+                  "answers": [0],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         }

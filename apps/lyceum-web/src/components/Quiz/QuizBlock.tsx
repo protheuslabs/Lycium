@@ -299,10 +299,9 @@ export default function QuizBlock({ data, name }: { data: QuizPayload; name: str
         <button
           type="button"
           className={`quiz-marker ${isMarked ? "quiz-marker-marked" : ""}`}
+          aria-label={isMarked ? "Unmark for review" : "Mark for review"}
           onClick={toggleMarker}
-        >
-          {isMarked ? "Marked for review" : "Mark for review"}
-        </button>
+        />
 
         {isTimed && timerDuration !== null && (
           <p className="quiz-timer">Time left: {Math.max(secondsLeft ?? 0, 0)}s</p>

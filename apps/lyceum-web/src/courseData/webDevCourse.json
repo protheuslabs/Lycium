@@ -30,9 +30,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which HTML tag usually contains the content that users actually see on the page?",
-              "options": ["<head>", "<body>", "<meta>"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "wd-q1",
+                  "type": "single_choice",
+                  "question": "Which HTML tag usually contains the content that users actually see on the page?",
+                  "options": ["<head>", "<body>", "<meta>"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         },
@@ -56,9 +63,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which attribute on the <img> tag improves accessibility for screen readers?",
-              "options": ["href", "src", "alt"],
-              "answer": 2
+              "questions": [
+                {
+                  "id": "wd-q2",
+                  "type": "single_choice",
+                  "question": "Which attribute on the <img> tag improves accessibility for screen readers?",
+                  "options": ["href", "src", "alt"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         }
@@ -92,9 +106,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which CSS selector targets all elements with class 'btn-primary'?",
-              "options": ["#btn-primary", ".btn-primary", "btn-primary"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "wd-q3",
+                  "type": "single_choice",
+                  "question": "Which CSS selector targets all elements with class 'btn-primary'?",
+                  "options": ["#btn-primary", ".btn-primary", "btn-primary"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         },
@@ -118,9 +139,16 @@
             },
             {
               "type": "quiz",
-              "question": "Which CSS feature is commonly used to change styles based on device width?",
-              "options": ["@screen-size", "@media", "@device"],
-              "answer": 1
+              "questions": [
+                {
+                  "id": "wd-q4",
+                  "type": "single_choice",
+                  "question": "Which CSS feature is commonly used to change styles based on device width?",
+                  "options": ["@screen-size", "@media", "@device"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
             }
           ]
         }
@@ -128,4 +156,3 @@
     }
   ]
 }
-
