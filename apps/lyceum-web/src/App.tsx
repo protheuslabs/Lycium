@@ -20,10 +20,19 @@ type CourseBlock = {
   value?: string;
   url?: string;
   question?: string;
+  questions?: Array<{
+    question?: string;
+    options?: string[];
+    answer?: number;
+    answers?: number[];
+    timed?: "t" | "f" | boolean;
+  }>;
   options?: string[];
   answer?: number;
+  answers?: number[];
   name?: string;
   description?: string;
+  timed?: "t" | "f" | boolean;
 };
 
 type CourseSection = {
