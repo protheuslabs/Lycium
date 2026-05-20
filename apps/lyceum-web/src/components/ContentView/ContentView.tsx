@@ -64,20 +64,19 @@ export default function ContentView({
   return (
     <main className="content-view">
       <p className="course-name">{courseTitle}</p>
-      <h1 className="course-title">{moduleTitle}</h1>
-      {/* New Module Header */}
-      {
-        <h3 className="progress-percentage">
-          {Math.round(progressPercentage)}% complete
-        </h3>
-      }
-
-      {/* Section Title With Decimal */}
-      <div className="progress-bar">
-        <div
-          className="progress-bar-fill"
-          style={{ width: `${progressPercentage}%` }}
-        />
+      <div className="module-progress-block">
+        <h1 className="course-title">{moduleTitle}</h1>
+        <div className="progress-meter">
+          <div className="progress-bar">
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${progressPercentage}%` }}
+            />
+          </div>
+          <p className="progress-percentage">
+            {Math.round(progressPercentage)}% complete
+          </p>
+        </div>
       </div>
       
       {/* Section Title With Decimal */}

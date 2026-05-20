@@ -2,8 +2,21 @@
   margin: 0px;
   display: flex;
   height: 100vh;
-   flex-direction: column; 
+  flex-direction: column; 
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.top-bar {
+  padding: 0.95rem 1rem;
+  border-bottom: 1px solid #e2e4ea;
+  background: #0f172a;
+}
+
+.top-bar-title {
+  text-decoration: none;
+  color: #ecedf5;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .generator-bar {
@@ -61,10 +74,101 @@
   color: #b53d3d;
 }
 
+.home-page {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.hero {
+  background: linear-gradient(135deg, #eef2ff 0%, #f8fbff 100%);
+  border: 1px solid #d9def5;
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.hero h1 {
+  margin: 0 0 0.5rem;
+}
+
+.catalog-page {
+  padding-top: 0.5rem;
+}
+
+.catalog-page h2 {
+  margin: 0 0 0.75rem;
+}
+
+.course-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.course-card {
+  border: 1px solid #d8deea;
+  border-radius: 10px;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.course-progress {
+  width: 100%;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.course-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e6e6e6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.course-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #4a6cf7;
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+
+.course-progress-percentage {
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: center;
+  color: #555;
+}
+
+.course-source {
+  margin: 0;
+  color: #4f5d76;
+}
+
+.course-open-button {
+  width: fit-content;
+  border: none;
+  border-radius: 6px;
+  background: #4a6cf7;
+  color: white;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+}
+
+.course-slug {
+  font-size: 0.75rem;
+  color: #6b7280;
+  word-break: break-all;
+}
+
 .main-layout {
   display: flex;
-  flex: 1;          /* take remaining height under top bar */
-  min-height: 0;    /* helps with overflow behavior */
+  flex: 1;
+  min-height: 0;
 }
 
 /* Content area */
