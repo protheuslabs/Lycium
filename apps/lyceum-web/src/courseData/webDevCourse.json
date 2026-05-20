@@ -4,15 +4,15 @@
   "modules": [
     {
       "id": "m1",
-      "title": "HTML & Structure",
+      "title": "Foundations of the Web",
       "sections": [
         {
-          "id": "s1",
-          "title": "What is a Web Page?",
+          "id": "wd-fnd-1",
+          "title": "What Is a Web Application?",
           "content": [
             {
               "type": "text",
-              "value": "A web page is a document delivered over the internet and rendered by a browser. It is usually written in HTML, styled with CSS, and can be made interactive with JavaScript."
+              "value": "The web combines three core technologies: HTML for structure, CSS for presentation, and JavaScript for behavior. Every web site or app runs through a client-server workflow where a browser requests resources from a server and renders content on screen."
             },
             {
               "type": "video",
@@ -21,12 +21,12 @@
           ]
         },
         {
-          "id": "s2",
-          "title": "Basic HTML Skeleton",
+          "id": "wd-fnd-2",
+          "title": "How Browsers Interpret Pages",
           "content": [
             {
               "type": "text",
-              "value": "A basic HTML page uses <!DOCTYPE html>, followed by <html>, <head>, and <body>. The head contains metadata; the body contains visible content."
+              "value": "A browser parses HTML into the DOM (document object model), computes styles from CSS, and executes JavaScript. If syntax is invalid, the browser often still renders partial output, which is why semantic, consistent markup is crucial for predictable behavior."
             },
             {
               "type": "quiz",
@@ -34,8 +34,8 @@
                 {
                   "id": "wd-q1",
                   "type": "single_choice",
-                  "question": "Which HTML tag usually contains the content that users actually see on the page?",
-                  "options": ["<head>", "<body>", "<meta>"],
+                  "question": "Which object represents a parsed HTML document in the browser?",
+                  "options": ["BOM", "DOM", "CSSOM", "API"],
                   "answers": [1],
                   "timed": "f"
                 }
@@ -44,22 +44,22 @@
           ]
         },
         {
-          "id": "s3",
-          "title": "Common HTML Tags",
+          "id": "wd-fnd-3",
+          "title": "Web Pages and the Internet Basics",
           "content": [
             {
               "type": "text",
-              "value": "Headings are defined with <h1> through <h6>, paragraphs with <p>, links with <a>, and containers with <div> or semantic tags like <header> and <footer>."
+              "value": "At a high level, the browser sends HTTP requests to a server, receives responses, and displays HTML, CSS, and JavaScript assets. URLs identify resources, while DNS translates human-readable names to server addresses."
             }
           ]
         },
         {
-          "id": "s4",
-          "title": "Links and Images",
+          "id": "wd-fnd-4",
+          "title": "Course Navigation and Portfolio Mindset",
           "content": [
             {
               "type": "text",
-              "value": "Links are created with <a href=\"...\">, and images with <img src=\"...\" alt=\"...\" />. Always include meaningful alt text for accessibility."
+              "value": "This course is project-driven. Each module builds toward a complete portfolio-ready project: design, styling, interactivity, accessibility, and deployment. Keep notes and draft components as you go so later sections reuse earlier work."
             },
             {
               "type": "quiz",
@@ -67,9 +67,14 @@
                 {
                   "id": "wd-q2",
                   "type": "single_choice",
-                  "question": "Which attribute on the <img> tag improves accessibility for screen readers?",
-                  "options": ["href", "src", "alt"],
-                  "answers": [2],
+                  "question": "What is the browser-first process model for web pages?",
+                  "options": [
+                    "Load CSS first, then HTML, then JavaScript",
+                    "Request, receive, then parse/execute/render",
+                    "Write JavaScript then ask the browser to fetch CSS later",
+                    "Never need server interaction for any app"
+                  ],
+                  "answers": [1],
                   "timed": "f"
                 }
               ]
@@ -80,29 +85,15 @@
     },
     {
       "id": "m2",
-      "title": "CSS & Presentation",
+      "title": "HTML Essentials",
       "sections": [
         {
-          "id": "s1",
-          "title": "What is CSS?",
+          "id": "wd-html-1",
+          "title": "Document Structure and Semantics",
           "content": [
             {
               "type": "text",
-              "value": "CSS (Cascading Style Sheets) is used to control the visual presentation of HTML elements, including layout, colors, fonts, and spacing."
-            },
-            {
-              "type": "video",
-              "url": "https://www.youtube.com/embed/1Rs2ND1ryYc"
-            }
-          ]
-        },
-        {
-          "id": "s2",
-          "title": "Selectors and Properties",
-          "content": [
-            {
-              "type": "text",
-              "value": "CSS selectors target elements (like p or .className), and rules apply properties such as color, margin, and font-size to those elements."
+              "value": "An HTML document starts with a declaration, then an `<html>` root, `<head>` metadata, and `<body>` content. Semantic elements like `<header>`, `<main>`, `<section>`, and `<footer>` improve meaning for browsers and assistive technologies."
             },
             {
               "type": "quiz",
@@ -110,8 +101,63 @@
                 {
                   "id": "wd-q3",
                   "type": "single_choice",
-                  "question": "Which CSS selector targets all elements with class 'btn-primary'?",
-                  "options": ["#btn-primary", ".btn-primary", "btn-primary"],
+                  "question": "Which element should contain metadata and not visible page content?",
+                  "options": ["<main>", "<header>", "<head>"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-html-2",
+          "title": "Text, Links, Lists, and Navigation",
+          "content": [
+            {
+              "type": "text",
+              "value": "Core content elements include headings, paragraphs, lists, and hyperlinks. Use descriptive anchor text for usability and SEO rather than vague labels such as ""click here."""
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q4",
+                  "type": "single_choice",
+                  "question": "Which anchor text practice is best for accessibility and clarity?",
+                  "options": [
+                    "Download now",
+                    "Click here",
+                    "Download the Web Accessibility Checklist PDF"
+                  ],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-html-3",
+          "title": "Forms, Inputs, and Validation Basics",
+          "content": [
+            {
+              "type": "text",
+              "value": "Forms connect users to your app. Choose input types intentionally, use labels linked to controls, and provide helper text for required fields. Client-side validation gives feedback, but server-side validation is still required for trust and security."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q5",
+                  "type": "single_choice",
+                  "question": "Which is true about form validation?",
+                  "options": [
+                    "Client-side validation is enough on its own",
+                    "Server-side validation should always be part of the flow",
+                    "Validation should only happen on submit",
+                    "Validation is only for security"
+                  ],
                   "answers": [1],
                   "timed": "f"
                 }
@@ -120,32 +166,351 @@
           ]
         },
         {
-          "id": "s3",
-          "title": "The Box Model",
+          "id": "wd-html-4",
+          "title": "Multimedia and Embedding",
           "content": [
             {
               "type": "text",
-              "value": "Every HTML element can be thought of as a box with content, padding, border, and margin. Understanding the box model is key to layout."
-            }
-          ]
-        },
-        {
-          "id": "s4",
-          "title": "Responsive Design",
-          "content": [
-            {
-              "type": "text",
-              "value": "Responsive design ensures that layouts adapt to different screen sizes using flexible units, media queries, and fluid grids."
+              "value": "Use `alt` text for images and captions or transcripts for media when possible. Iframes can embed external documents and videos but should be used carefully for security and responsive behavior."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q4",
+                  "id": "wd-q6",
+                  "type": "multiple_choice",
+                  "question": "Which practices improve media accessibility? (Select all that apply)",
+                  "options": [
+                    "Add descriptive alt text to images",
+                    "Hide text alternatives when possible",
+                    "Provide captions or transcripts",
+                    "Set width and height attributes only for decorative images"
+                  ],
+                  "answers": [0, 2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "title": "CSS for Styling and Layout",
+      "sections": [
+        {
+          "id": "wd-css-1",
+          "title": "Selectors, Cascade, and Specificity",
+          "content": [
+            {
+              "type": "text",
+              "value": "Selectors target elements; the cascade decides which rule wins when there are conflicts. Inline styles are powerful, while IDs generally outrank classes, and more specific selectors override simpler ones when properties compete."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q7",
                   "type": "single_choice",
-                  "question": "Which CSS feature is commonly used to change styles based on device width?",
-                  "options": ["@screen-size", "@media", "@device"],
+                  "question": "Which selector has the highest specificity in standard CSS order?",
+                  "options": ["Class selector", "ID selector", "Element selector", "Universal selector"],
                   "answers": [1],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-css-2",
+          "title": "The Box Model and Spacing",
+          "content": [
+            {
+              "type": "text",
+              "value": "Every element has content, padding, border, and margin. Spacing mistakes in one part of the box model often create many layout bugs, so learn to inspect each layer with developer tools."
+            },
+            {
+              "type": "video",
+              "url": "https://www.youtube.com/embed/1Rs2ND1ryYc"
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q8",
+                  "type": "single_choice",
+                  "question": "Which part of the box model is outside the border?",
+                  "options": ["Padding", "Border", "Content", "Margin"],
+                  "answers": [3],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-css-3",
+          "title": "Modern Layout: Flexbox",
+          "content": [
+            {
+              "type": "text",
+              "value": "Flexbox is optimized for one-dimensional layouts. Use `justify-content` for main-axis alignment and `align-items` for cross-axis alignment. Gaps and wrapping help keep layouts flexible when content grows."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q9",
+                  "type": "single_choice",
+                  "question": "Flexbox is best for which type of layout?",
+                  "options": ["Two-dimensional grids", "One-dimensional alignment", "Table-like data", "Image optimization"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-css-4",
+          "title": "Responsive Layout and Media Queries",
+          "content": [
+            {
+              "type": "text",
+              "value": "Responsive design uses relative units, breakpoints, and progressive enhancement. Start with a mobile-first mindset and expand complexity at wider breakpoints."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q10",
+                  "type": "single_choice",
+                  "question": "What is a best practice for responsive development?",
+                  "options": [
+                    "Design desktop layout first and scale down",
+                    "Use fixed pixel widths only",
+                    "Use mobile-first breakpoints and relative units",
+                    "Avoid testing at smaller widths"
+                  ],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "title": "JavaScript Fundamentals",
+      "sections": [
+        {
+          "id": "wd-js-1",
+          "title": "JavaScript in the Browser",
+          "content": [
+            {
+              "type": "text",
+              "value": "JavaScript runs in the browser to make pages interactive. You can store and modify page state, respond to user actions, and update visible content dynamically without full page reloads."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q11",
+                  "type": "single_choice",
+                  "question": "What is the primary purpose of JavaScript in a webpage?",
+                  "options": ["Only styling", "Only page structure", "Behavior and interactivity", "Only browser configuration"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-js-2",
+          "title": "Variables, Functions, and Scope",
+          "content": [
+            {
+              "type": "text",
+              "value": "Use clear naming, prefer `const` where values do not change, and `let` when reassignment is needed. Functions package behavior, and scope controls where variables are accessible."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q12",
+                  "type": "single_choice",
+                  "question": "Which keyword should you prefer for values that do not get reassigned?",
+                  "options": ["var", "let", "const", "function"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-js-3",
+          "title": "DOM Selection and Event Handling",
+          "content": [
+            {
+              "type": "text",
+              "value": "The DOM API lets code read and update elements. Event listeners such as click, input, and submit connect user interaction to updates. Debouncing and guarding against null nodes are important in real codebases."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q13",
+                  "type": "single_choice",
+                  "question": "Which listener is appropriate for handling user typing in an input?",
+                  "options": ["click", "submit", "input", "scroll"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-js-4",
+          "title": "Arrays, Objects, and Small UI State",
+          "content": [
+            {
+              "type": "text",
+              "value": "Store UI state in JavaScript objects or arrays, then render derived values to the DOM. This mindset prepares your work for scalable frameworks later."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q14",
+                  "type": "multiple_choice",
+                  "question": "Which types are commonly used to represent structured UI data? (Select all that apply)",
+                  "options": ["Array", "String", "Object", "Function"] ,
+                  "answers": [0, 2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5",
+      "title": "Deployment, Accessibility, and Final Project",
+      "sections": [
+        {
+          "id": "wd-final-1",
+          "title": "Accessibility as Engineering Practice",
+          "content": [
+            {
+              "type": "text",
+              "value": "Accessible pages are usable by more people and more robust overall. Include semantic headings, meaningful link text, keyboard focus styles, and visible state changes for interactive controls."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q15",
+                  "type": "single_choice",
+                  "question": "Which is strongest evidence of accessible interaction design?",
+                  "options": [
+                    "Color-only error messaging",
+                    "Keyboard-focus visible outline and labels",
+                    "Animations disabled forever",
+                    "No headings and minimal landmarks"
+                  ],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-final-2",
+          "title": "Performance and Optimization Basics",
+          "content": [
+            {
+              "type": "text",
+              "value": "Performance begins with fewer requests, smaller assets, and caching. Use image compression, minimize render-blocking resources, and avoid unnecessary scripts to improve Time to First Paint."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q16",
+                  "type": "single_choice",
+                  "question": "Which strategy helps first paint performance?",
+                  "options": [
+                    "Bundle all scripts before HTML",
+                    "Use uncompressed images only",
+                    "Optimize images and defer non-critical scripts",
+                    "Disable browser caching"
+                  ],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-final-3",
+          "title": "Publishing Workflow and Hosting",
+          "content": [
+            {
+              "type": "text",
+              "value": "A polished course project includes a clear file structure, deployment from source control, a stable hosted URL, and production-tested behavior. Write a concise README, list features, and track known limitations."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q17",
+                  "type": "single_choice",
+                  "question": "Which item is most important for project handoff?",
+                  "options": [
+                    "A single large script file",
+                    "No documentation",
+                    "Clear README and deployment instructions",
+                    "Only local testing screenshots"
+                  ],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "wd-final-4",
+          "title": "Capstone: Build and Present",
+          "content": [
+            {
+              "type": "text",
+              "value": "In your final project, build a multi-section site with semantic HTML, responsive CSS, and interactive JavaScript. Include at least one form and one data-driven component, then publish a public link and a short reflection on implementation choices."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-q18",
+                  "type": "multiple_choice",
+                  "question": "Which elements should a good capstone include? (Select all that apply)",
+                  "options": [
+                    "Navigation and section structure",
+                    "A single unstyled page with no interactions",
+                    "Responsive behavior",
+                    "Interactive JavaScript feature",
+                    "No source files"
+                  ],
+                  "answers": [0, 2, 3],
                   "timed": "f"
                 }
               ]
