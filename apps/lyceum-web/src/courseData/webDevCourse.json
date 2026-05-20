@@ -116,7 +116,7 @@
           "content": [
             {
               "type": "text",
-              "value": "Core content elements include headings, paragraphs, lists, and hyperlinks. Use descriptive anchor text for usability and SEO rather than vague labels such as ""click here."""
+              "value": "Core content elements include headings, paragraphs, lists, and hyperlinks. Use descriptive anchor text for usability and SEO rather than vague labels such as \"click here\"."
             },
             {
               "type": "quiz",
