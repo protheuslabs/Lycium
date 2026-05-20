@@ -4,38 +4,286 @@
   "modules": [
     {
       "id": "m1",
-      "title": "Foundations of the Web",
+      "title": "Foundations of Web Development",
       "sections": [
         {
-          "id": "wd-fnd-1",
-          "title": "What Is a Web Application?",
+          "id": "s1",
+          "title": "How the Web Works",
           "content": [
             {
               "type": "text",
-              "value": "The web combines three core technologies: HTML for structure, CSS for presentation, and JavaScript for behavior. Every web site or app runs through a client-server workflow where a browser requests resources from a server and renders content on screen."
-            },
-            {
-              "type": "video",
-              "url": "https://www.youtube.com/embed/pQN-pnXPaVg"
-            }
-          ]
-        },
-        {
-          "id": "wd-fnd-2",
-          "title": "How Browsers Interpret Pages",
-          "content": [
-            {
-              "type": "text",
-              "value": "A browser parses HTML into the DOM (document object model), computes styles from CSS, and executes JavaScript. If syntax is invalid, the browser often still renders partial output, which is why semantic, consistent markup is crucial for predictable behavior."
+              "value": "The web is built on a request/response model. A browser sends an HTTP request to a server for a URL, the server sends back HTML, CSS, JavaScript, and assets, and the browser renders the result for the user. A web application is more than static pages; it is a coordinated system of documents, styles, scripts, APIs, and databases. In this module you will learn how each layer influences what learners see, what they can do, and how reliable that experience is."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q1",
+                  "id": "wd-m1-s1-q1",
                   "type": "single_choice",
-                  "question": "Which object represents a parsed HTML document in the browser?",
-                  "options": ["BOM", "DOM", "CSSOM", "API"],
+                  "question": "What happens first when you enter a URL in a browser address bar?",
+                  "options": ["The browser runs the server code", "The browser sends an HTTP request", "The browser creates a database", "The browser opens the editor"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q2",
+                  "type": "single_choice",
+                  "question": "Which protocol is most commonly associated with web pages and APIs on the browser-facing internet?",
+                  "options": ["FTP", "SMTP", "HTTP", "SSH"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q3",
+                  "type": "single_choice",
+                  "question": "Which component is responsible for turning your HTML into the live visible document model?",
+                  "options": ["CSS parser", "DOM engine", "Compiler", "DNS server"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q4",
+                  "type": "single_choice",
+                  "question": "What is the function of CSS in the browser pipeline?",
+                  "options": ["It fetches fonts only", "It stores data", "It defines how elements are laid out and styled", "It encrypts API traffic"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q5",
+                  "type": "single_choice",
+                  "question": "Which of these is a client-side technology?",
+                  "options": ["JavaScript", "Python on Flask", "Nginx", "PostgreSQL"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q6",
+                  "type": "single_choice",
+                  "question": "Which statement best describes the browser?",
+                  "options": ["It only runs stylesheets", "It is both parser and render engine", "It is a database", "It does not execute scripts"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q7",
+                  "type": "single_choice",
+                  "question": "What is a good mental model for a web app resource?",
+                  "options": ["An isolated binary", "A URL pointing to data and behavior", "A desktop binary", "A spreadsheet formula"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q8",
+                  "type": "single_choice",
+                  "question": "Which layer usually returns JSON for dynamic JavaScript applications?",
+                  "options": ["Frontend runtime", "API server", "Image CDN", "CSS parser"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q9",
+                  "type": "single_choice",
+                  "question": "Why is caching useful in web systems?",
+                  "options": ["To avoid user registration", "To speed up repeated requests", "To stop HTTPS", "To remove all HTML"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s1-q10",
+                  "type": "single_choice",
+                  "question": "Which practice increases web reliability the most when planning a course project?",
+                  "options": ["Build without testing", "Use only a single browser", "Separate learning goals into milestones", "Avoid version control"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "title": "URLs, DNS, and Deployment Basics",
+          "content": [
+            {
+              "type": "text",
+              "value": "A URL is a human-readable route to web resources. DNS translates domain names to addresses so users do not need raw server IPs. Deployment exposes your built files in a way that a browser can request them from the internet. In class projects, treat deployment as part of development, not the final optional step."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-m1-s2-q1",
+                  "type": "single_choice",
+                  "question": "Which part of a URL appears after # for the browser to jump within a page?",
+                  "options": ["Path", "Query", "Fragment", "Scheme"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q2",
+                  "type": "single_choice",
+                  "question": "Which DNS role is most accurate?",
+                  "options": ["Encrypting JavaScript", "Mapping domain names to IP addresses", "Rendering CSS", "Storing localStorage"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q3",
+                  "type": "single_choice",
+                  "question": "What does hosting provide?",
+                  "options": ["A file system for editing in browser", "A permanent public location to serve resources", "A testing library", "A database engine"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q4",
+                  "type": "single_choice",
+                  "question": "Why separate production and local URLs?",
+                  "options": ["To prevent students from coding", "To avoid cross-browser testing", "To keep stable public releases", "To remove all JS"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q5",
+                  "type": "single_choice",
+                  "question": "Which route is generally for static assets?",
+                  "options": ["/api", "/_next", "/assets", "/admin"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q6",
+                  "type": "single_choice",
+                  "question": "Which of these improves deployment readiness?",
+                  "options": ["Uncommitted changes only", "Clear README and repeatable steps", "No environment variables", "No versioning"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q7",
+                  "type": "single_choice",
+                  "question": "What is a staging environment used for?",
+                  "options": ["Only final release", "A test environment before production", "Only local development", "Backup for screenshots"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q8",
+                  "type": "single_choice",
+                  "question": "Which statement about subdomains is correct?",
+                  "options": ["They replace HTTPS", "They are optional but often used", "They are illegal with DNS", "They are only for FTP"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q9",
+                  "type": "single_choice",
+                  "question": "Which HTTP status code indicates success?",
+                  "options": ["404", "500", "200", "302"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s2-q10",
+                  "type": "single_choice",
+                  "question": "Before publishing a portfolio project, you should first check",
+                  "options": ["That links still work", "That analytics is disabled", "That code is hidden", "That pages have no text"],
+                  "answers": [0],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "title": "Choosing Tools and Learning Workflow",
+          "content": [
+            {
+              "type": "text",
+              "value": "Developers typically iterate in versions: sketch structure, build HTML skeleton, add styles, then behavior, then refine. Use version control for all work, keep modules small, and commit often. A workflow with short feedback loops prevents large rewrites and helps you catch errors early."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-m1-s3-q1",
+                  "type": "single_choice",
+                  "question": "What is the best sequence for a first project draft?",
+                  "options": ["Styling before structure", "Structure before styling before behavior", "Behavior before structure", "No sequence needed"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q2",
+                  "type": "single_choice",
+                  "question": "What does version control mainly protect you from?",
+                  "options": ["Missed semicolons only", "Lost progress and risky rewrites", "Browser bugs only", "Missing tags"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q3",
+                  "type": "single_choice",
+                  "question": "Which artifact helps communication with teammates?",
+                  "options": ["No comments", "No tests", "A design log and commit messages", "One giant branch only"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q4",
+                  "type": "single_choice",
+                  "question": "A good minimum project file structure includes",
+                  "options": ["Everything in one line", "A clear src and assets folder", "No separation", "Only binary files"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q5",
+                  "type": "single_choice",
+                  "question": "Why use small, focused commits?",
+                  "options": ["To increase merge complexity", "To make rollbacks easier", "To hide changes", "To block collaboration"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q6",
+                  "type": "single_choice",
+                  "question": "Which practice helps catch regressions quickly?",
+                  "options": ["Deploy only at deadline", "No browser tests", "Manual smoke checks every milestone", "Never refreshing"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q7",
+                  "type": "single_choice",
+                  "question": "Which is best for learning debugging skills?",
+                  "options": ["Ignore errors", "Read logs and use browser devtools", "Disable console", "Delete scripts"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q8",
+                  "type": "single_choice",
+                  "question": "A project plan should include",
+                  "options": ["Only deadlines", "Goals, scope, and acceptance criteria", "A single screenshot", "No milestones"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q9",
+                  "type": "single_choice",
+                  "question": "Which action improves maintainability in solo projects as well?",
+                  "options": ["Delete comments", "Keep consistent naming and structure", "Use random file names", "Avoid refactoring"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s3-q10",
+                  "type": "single_choice",
+                  "question": "To ship a reliable class project, the final step should be",
+                  "options": ["Remove documentation", "Final review and deployment check", "Add no error checks", "Hide source map files"],
                   "answers": [1],
                   "timed": "f"
                 }
@@ -44,36 +292,93 @@
           ]
         },
         {
-          "id": "wd-fnd-3",
-          "title": "Web Pages and the Internet Basics",
+          "id": "s4",
+          "title": "Thinking in Modules",
           "content": [
             {
               "type": "text",
-              "value": "At a high level, the browser sends HTTP requests to a server, receives responses, and displays HTML, CSS, and JavaScript assets. URLs identify resources, while DNS translates human-readable names to server addresses."
-            }
-          ]
-        },
-        {
-          "id": "wd-fnd-4",
-          "title": "Course Navigation and Portfolio Mindset",
-          "content": [
-            {
-              "type": "text",
-              "value": "This course is project-driven. Each module builds toward a complete portfolio-ready project: design, styling, interactivity, accessibility, and deployment. Keep notes and draft components as you go so later sections reuse earlier work."
+              "value": "Modular thinking keeps web applications maintainable. Split features into pages, components, and utility functions. Reuse patterns like header, card, form, and hero sections so your application can scale from a small exercise to a multi-page portfolio without rewriting everything."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q2",
+                  "id": "wd-m1-s4-q1",
                   "type": "single_choice",
-                  "question": "What is the browser-first process model for web pages?",
-                  "options": [
-                    "Load CSS first, then HTML, then JavaScript",
-                    "Request, receive, then parse/execute/render",
-                    "Write JavaScript then ask the browser to fetch CSS later",
-                    "Never need server interaction for any app"
-                  ],
+                  "question": "Modular code means",
+                  "options": ["Large files with no structure", "Small reusable pieces with clear roles", "One global variable", "No naming conventions"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q2",
+                  "type": "single_choice",
+                  "question": "A reusable component should",
+                  "options": ["Do many unrelated things", "Have one clear responsibility", "Only include images", "Run without HTML"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q3",
+                  "type": "single_choice",
+                  "question": "Which is a good abstraction example?",
+                  "options": ["Duplicate button styles in 10 places", "Shared button style utility", "No shared utility classes", "Inline one-time code only"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q4",
+                  "type": "single_choice",
+                  "question": "Encapsulation in modules helps",
+                  "options": ["Increase coupling", "Reduce predictable behavior", "Reduce side effects", "Remove all CSS"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q5",
+                  "type": "single_choice",
+                  "question": "Which naming strategy scales in classes of students?",
+                  "options": ["Random IDs", "Consistent and descriptive names", "Single-letter variables", "Opaque abbreviations"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q6",
+                  "type": "single_choice",
+                  "question": "A layout module should usually", 
+                  "options": ["Include backend logic", "Include accessibility and semantics", "Ignore spacing", "Avoid container elements"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q7",
+                  "type": "single_choice",
+                  "question": "Which is a low-friction way to track decisions?",
+                  "options": ["No notes", "Decision log and small commits", "Only meeting audio", "No branch names"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q8",
+                  "type": "single_choice",
+                  "question": "Reusability is improved when code is",
+                  "options": ["Deeply nested and hidden", "Documented and parameterized", "Global by default", "Hard-coded"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q9",
+                  "type": "single_choice",
+                  "question": "The best place to start testing new modules is",
+                  "options": ["Only production", "After all code is frozen", "After each small change", "Never"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m1-s4-q10",
+                  "type": "single_choice",
+                  "question": "If a module grows too large, the best response is",
+                  "options": ["Keep adding conditions", "Split into smaller modules", "Rename arbitrarily", "Remove all features"],
                   "answers": [1],
                   "timed": "f"
                 }
@@ -85,108 +390,382 @@
     },
     {
       "id": "m2",
-      "title": "HTML Essentials",
+      "title": "HTML Core",
       "sections": [
         {
-          "id": "wd-html-1",
-          "title": "Document Structure and Semantics",
+          "id": "s1",
+          "title": "Document Structure and Semantic Markup",
           "content": [
             {
               "type": "text",
-              "value": "An HTML document starts with a declaration, then an `<html>` root, `<head>` metadata, and `<body>` content. Semantic elements like `<header>`, `<main>`, `<section>`, and `<footer>` improve meaning for browsers and assistive technologies."
+              "value": "Semantic HTML gives machines and users structure. Use headings in order, sectioning elements where appropriate, and clear landmarks. Semantics can improve readability, accessibility, and SEO and makes CSS selectors more maintainable than purely structural tags."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q3",
+                  "id": "wd-m2-s1-q1",
                   "type": "single_choice",
-                  "question": "Which element should contain metadata and not visible page content?",
-                  "options": ["<main>", "<header>", "<head>"],
-                  "answers": [2],
-                  "timed": "f"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "wd-html-2",
-          "title": "Text, Links, Lists, and Navigation",
-          "content": [
-            {
-              "type": "text",
-              "value": "Core content elements include headings, paragraphs, lists, and hyperlinks. Use descriptive anchor text for usability and SEO rather than vague labels such as \"click here\"."
-            },
-            {
-              "type": "quiz",
-              "questions": [
-                {
-                  "id": "wd-q4",
-                  "type": "single_choice",
-                  "question": "Which anchor text practice is best for accessibility and clarity?",
-                  "options": [
-                    "Download now",
-                    "Click here",
-                    "Download the Web Accessibility Checklist PDF"
-                  ],
-                  "answers": [2],
-                  "timed": "f"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "wd-html-3",
-          "title": "Forms, Inputs, and Validation Basics",
-          "content": [
-            {
-              "type": "text",
-              "value": "Forms connect users to your app. Choose input types intentionally, use labels linked to controls, and provide helper text for required fields. Client-side validation gives feedback, but server-side validation is still required for trust and security."
-            },
-            {
-              "type": "quiz",
-              "questions": [
-                {
-                  "id": "wd-q5",
-                  "type": "single_choice",
-                  "question": "Which is true about form validation?",
-                  "options": [
-                    "Client-side validation is enough on its own",
-                    "Server-side validation should always be part of the flow",
-                    "Validation should only happen on submit",
-                    "Validation is only for security"
-                  ],
+                  "question": "Which tag is best for top-level heading text on a page?",
+                  "options": ["<h6>", "<h1>", "<p>", "<div>"],
                   "answers": [1],
                   "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q2",
+                  "type": "single_choice",
+                  "question": "Which container best describes page main content?",
+                  "options": ["<main>", "<script>", "<style>", "<meta>"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q3",
+                  "type": "single_choice",
+                  "question": "Semantic HTML primarily helps",
+                  "options": ["Database indexing", "Search and screen reader interpretation", "Backend query speed", "Caching headers"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q4",
+                  "type": "single_choice",
+                  "question": "Which is preferred heading hierarchy?",
+                  "options": ["h1-h1-h1", "h2 then h1", "h1 then h2 and never skip intentionally", "No headings at all"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q5",
+                  "type": "single_choice",
+                  "question": "Which element is used to provide document metadata?",
+                  "options": ["<head>", "<body>", "<section>", "<footer>"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q6",
+                  "type": "single_choice",
+                  "question": "Which statement is true for accessibility?",
+                  "options": ["Only one paragraph style", "Skip alt attributes always", "Use landmarks and labels", "Avoid labels"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q7",
+                  "type": "single_choice",
+                  "question": "A section that groups navigation links should use",
+                  "options": ["<main>", "<nav>", "<form>", "<head>"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q8",
+                  "type": "single_choice",
+                  "question": "Which HTML attribute helps uniquely identify elements for scripts and labels?",
+                  "options": ["class", "id", "style", "href"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q9",
+                  "type": "single_choice",
+                  "question": "Which is a better semantic choice for contact info?",
+                  "options": ["<div>", "<footer>", "<address>", "<aside>"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s1-q10",
+                  "type": "single_choice",
+                  "question": "Correct semantic ordering helps",
+                  "options": ["Only visual output", "Only network speed", "Readability and accessibility", "Nothing significant"],
+                  "answers": [2],
+                  "timed": "f"
                 }
               ]
             }
           ]
         },
         {
-          "id": "wd-html-4",
-          "title": "Multimedia and Embedding",
+          "id": "s2",
+          "title": "Links, Media, and Text",
           "content": [
             {
               "type": "text",
-              "value": "Use `alt` text for images and captions or transcripts for media when possible. Iframes can embed external documents and videos but should be used carefully for security and responsive behavior."
+              "value": "Text, anchors, images, and media are where most course interactions happen. Use clear language for links, set meaningful alt text, and size images appropriately for your layout. Good defaults improve usability while leaving a professional polish."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q6",
-                  "type": "multiple_choice",
-                  "question": "Which practices improve media accessibility? (Select all that apply)",
-                  "options": [
-                    "Add descriptive alt text to images",
-                    "Hide text alternatives when possible",
-                    "Provide captions or transcripts",
-                    "Set width and height attributes only for decorative images"
-                  ],
-                  "answers": [0, 2],
+                  "id": "wd-m2-s2-q1",
+                  "type": "single_choice",
+                  "question": "A user-friendly link label should be",
+                  "options": ["Click here", "Download", "Descriptive and specific", "Random"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q2",
+                  "type": "single_choice",
+                  "question": "Alternative text is required for",
+                  "options": ["Every image", "Only background colors", "No media", "Only scripts"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q3",
+                  "type": "single_choice",
+                  "question": "Which tag should include src for an image?",
+                  "options": ["<img>", "<a>", "<p>", "<video>"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q4",
+                  "type": "single_choice",
+                  "question": "The anchor target _blank opens",
+                  "options": ["In same tab", "In a new tab", "Only in developer tools", "In terminal"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q5",
+                  "type": "single_choice",
+                  "question": "Which is better heading and paragraph grouping?",
+                  "options": ["h1 for every section", "One h1 then meaningful h2/h3", "No h1", "No paragraphs"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q6",
+                  "type": "single_choice",
+                  "question": "For decorative images that convey no information, alt should be",
+                  "options": ["A long paragraph", "Empty string", "The same as file name", "Omitted always"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q7",
+                  "type": "single_choice",
+                  "question": "Relative paths are useful because they",
+                  "options": ["Break internet", "Keep links portable in local environments", "Only work for videos", "Require JavaScript"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q8",
+                  "type": "single_choice",
+                  "question": "If an image is interactive, what else should you check?",
+                  "options": ["Ignore it", "Add accessible labels", "Only compress", "Hide from keyboard"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q9",
+                  "type": "single_choice",
+                  "question": "The correct element for emphasized text by default styling is",
+                  "options": ["<strong>", "<meta>", "<script>", "<section>"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s2-q10",
+                  "type": "single_choice",
+                  "question": "When writing link text for PDFs, prefer",
+                  "options": ["Read this", "Download", "Download the syllabus", "Download now"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "title": "Lists, Tables, and Content Accessibility",
+          "content": [
+            {
+              "type": "text",
+              "value": "Structured content uses lists and tables when data is ordered or tabular. Correct tagging gives users and assistive tech predictable patterns. If a structure feels visual-only, revisit semantics first before adding complex CSS."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-m2-s3-q1",
+                  "type": "single_choice",
+                  "question": "Use an ordered list when",
+                  "options": ["The items have ranking or steps", "Items are unrelated", "Only one item exists", "No order matters"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q2",
+                  "type": "single_choice",
+                  "question": "Use a table for",
+                  "options": ["Navigation links", "Tabular comparisons", "Page headers", "CSS declarations"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q3",
+                  "type": "single_choice",
+                  "question": "A good table should include",
+                  "options": ["Only one row", "Clear headers with th", "Only divs", "No captions"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q4",
+                  "type": "single_choice",
+                  "question": "The <ul> element is best for",
+                  "options": ["Numbered sequences", "Bulleted collections", "Video sources", "Metadata"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q5",
+                  "type": "single_choice",
+                  "question": "For screen readers, table captions can",
+                  "options": ["Slow page speed", "Describe table purpose", "Replace headers", "Add scripts"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q6",
+                  "type": "single_choice",
+                  "question": "What is the primary risk of poor table semantics?",
+                  "options": ["Nothing", "Poor comprehension by assistive tools", "Higher RAM", "Cleaner CSS"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q7",
+                  "type": "single_choice",
+                  "question": "Nested lists are useful for",
+                  "options": ["Complex outlines", "No grouping", "Hidden controls", "No hierarchy"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q8",
+                  "type": "single_choice",
+                  "question": "A proper list item is represented by",
+                  "options": ["<li>", "<tr>", "<td>", "<th>"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q9",
+                  "type": "single_choice",
+                  "question": "An unordered list visually resembles",
+                  "options": ["Checklist or bullets", "Numbered steps", "Footer", "Paragraph"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s3-q10",
+                  "type": "single_choice",
+                  "question": "To improve accessibility of data, include",
+                  "options": ["Only CSS", "No labels", "Thorough labeling and logical structure", "Only div wrappers"],
+                  "answers": [2],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "title": "Forms, Inputs, and Validation",
+          "content": [
+            {
+              "type": "text",
+              "value": "Forms are the gateway between users and applications. Each control should have clear labels, expected format, and error states. Client-side validation improves UX while server-side validation protects your system from malformed or malicious input." 
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-m2-s4-q1",
+                  "type": "single_choice",
+                  "question": "Every form control should ideally have a",
+                  "options": ["Label", "Random ID", "Unique class only", "Hidden table"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q2",
+                  "type": "single_choice",
+                  "question": "Which input type enforces email format hints?",
+                  "options": ["text", "email", "hidden", "checkbox"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q3",
+                  "type": "single_choice",
+                  "question": "Server-side validation should be used to",
+                  "options": ["Replace all UI checks", "Supplement and secure data processing", "Only style forms", "Stop browser errors"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q4",
+                  "type": "single_choice",
+                  "question": "Which attribute indicates required input?",
+                  "options": ["data-required", "required", "must", "important"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q5",
+                  "type": "single_choice",
+                  "question": "A helpful form error should",
+                  "options": ["Only appear on final submit", "Explain what to fix", "Be hidden forever", "Be random"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q6",
+                  "type": "single_choice",
+                  "question": "Good placeholder text should",
+                  "options": ["Give data format clues", "Replace labels", "Be intentionally vague", "Contain only emojis"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q7",
+                  "type": "single_choice",
+                  "question": "A select input is best when",
+                  "options": ["Free text is needed", "There is a fixed set of options", "Password required", "No value accepted"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q8",
+                  "type": "single_choice",
+                  "question": "For numeric fields, use",
+                  "options": ["text", "number", "datetime-local", "checkbox"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q9",
+                  "type": "single_choice",
+                  "question": "Client-side validation message should be",
+                  "options": ["Ambiguous", "Accessible and specific", "Hidden", "Only in console"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m2-s4-q10",
+                  "type": "single_choice",
+                  "question": "Which principle best reduces invalid data submissions?",
+                  "options": ["Single check on server only", "Validation + constraint + clear feedback", "No constraints", "Disable submit always"],
+                  "answers": [1],
                   "timed": "f"
                 }
               ]
@@ -197,24 +776,96 @@
     },
     {
       "id": "m3",
-      "title": "CSS for Styling and Layout",
+      "title": "CSS Layout and Visual Systems",
       "sections": [
         {
-          "id": "wd-css-1",
+          "id": "s1",
           "title": "Selectors, Cascade, and Specificity",
           "content": [
             {
               "type": "text",
-              "value": "Selectors target elements; the cascade decides which rule wins when there are conflicts. Inline styles are powerful, while IDs generally outrank classes, and more specific selectors override simpler ones when properties compete."
+              "value": "CSS selectors connect structure to design. Specificity determines which rule wins when multiple declarations apply. The cascade follows source order and selector weights, so naming systems and utility patterns become essential as projects scale."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q7",
+                  "id": "wd-m3-s1-q1",
                   "type": "single_choice",
-                  "question": "Which selector has the highest specificity in standard CSS order?",
-                  "options": ["Class selector", "ID selector", "Element selector", "Universal selector"],
+                  "question": "Which selector is more specific than a class selector?",
+                  "options": ["Element selector", "ID selector", "Universal selector", "All of the above"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q2",
+                  "type": "single_choice",
+                  "question": "If two rules have equal specificity, CSS uses",
+                  "options": ["Random order", "Alphabetical order", "Source order", "DOM order only"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q3",
+                  "type": "single_choice",
+                  "question": "The universal selector is",
+                  "options": ["Very specific", "Least specific", "Inline only", "Only for media queries"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q4",
+                  "type": "single_choice",
+                  "question": "Inline styles in HTML",
+                  "options": ["Have low priority", "Have high priority", "Do not override classes", "Only target external links"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q5",
+                  "type": "single_choice",
+                  "question": "Best practice for maintainable CSS includes",
+                  "options": ["No comments and no structure", "Clear naming and organization", "One mega selector", "No separation"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q6",
+                  "type": "single_choice",
+                  "question": "A reusable class naming pattern helps",
+                  "options": ["Confuse selectors", "Scale components faster", "Remove all styles", "Avoid semantic HTML"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q7",
+                  "type": "single_choice",
+                  "question": "The cascade is influenced by",
+                  "options": ["Only color", "Specificity and source order", "Browser tab order", "File size only"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q8",
+                  "type": "single_choice",
+                  "question": "For consistent spacing, prefer",
+                  "options": ["One-off manual values", "Design tokens or variables", "Random margins", "No margins"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q9",
+                  "type": "single_choice",
+                  "question": "Which style can unintentionally override many rules?",
+                  "options": ["A long chain of descendant selectors", "Simple class", "Reset styles", "No selectors"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s1-q10",
+                  "type": "single_choice",
+                  "question": "A strong CSS workflow generally starts by",
+                  "options": ["Writing all media queries first", "Planning architecture before adding dozens of rules", "Changing HTML every class", "Skipping test pages"],
                   "answers": [1],
                   "timed": "f"
                 }
@@ -223,48 +874,93 @@
           ]
         },
         {
-          "id": "wd-css-2",
-          "title": "The Box Model and Spacing",
+          "id": "s2",
+          "title": "Box Model and Spacing Fundamentals",
           "content": [
             {
               "type": "text",
-              "value": "Every element has content, padding, border, and margin. Spacing mistakes in one part of the box model often create many layout bugs, so learn to inspect each layer with developer tools."
-            },
-            {
-              "type": "video",
-              "url": "https://www.youtube.com/embed/1Rs2ND1ryYc"
+              "value": "Every element renders as a box with content, padding, border, and margin. A common beginner mistake is mixing width calculations. Use consistent spacing rules and inspect each box layer in devtools when layouts shift unexpectedly."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q8",
+                  "id": "wd-m3-s2-q1",
                   "type": "single_choice",
-                  "question": "Which part of the box model is outside the border?",
-                  "options": ["Padding", "Border", "Content", "Margin"],
+                  "question": "Margin is outside the",
+                  "options": ["Content", "Padding", "Border", "Everything"],
                   "answers": [3],
                   "timed": "f"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "id": "wd-css-3",
-          "title": "Modern Layout: Flexbox",
-          "content": [
-            {
-              "type": "text",
-              "value": "Flexbox is optimized for one-dimensional layouts. Use `justify-content` for main-axis alignment and `align-items` for cross-axis alignment. Gaps and wrapping help keep layouts flexible when content grows."
-            },
-            {
-              "type": "quiz",
-              "questions": [
+                },
                 {
-                  "id": "wd-q9",
+                  "id": "wd-m3-s2-q2",
                   "type": "single_choice",
-                  "question": "Flexbox is best for which type of layout?",
-                  "options": ["Two-dimensional grids", "One-dimensional alignment", "Table-like data", "Image optimization"],
+                  "question": "The default CSS box model in modern browsers is",
+                  "options": ["Border-box", "Content-box", "Margin-box", "Padding-box"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s2-q3",
+                  "type": "single_choice",
+                  "question": "Set box-sizing to border-box when",
+                  "options": ["You want width calculations to include padding and border", "You want no borders", "You want only content width", "You disable CSS"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s2-q4",
+                  "type": "single_choice",
+                  "question": "To remove vertical rhythm issues between inline elements, inspect",
+                  "options": ["Line-height and margin", "Font color only", "Alt attributes", "DNS entries"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s2-q5",
+                  "type": "single_choice",
+                  "question": "When two margins touch vertically, some browsers may", 
+                  "options": ["Add twice the margin", "Collapse margins", "Ignore all paddings", "Convert color"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s2-q6",
+                  "type": "single_choice",
+                  "question": "Which property sets inner spacing between content and border?",
+                  "options": ["margin", "padding", "gap", "outline"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s2-q7",
+                  "type": "single_choice",
+                  "question": "Which property controls space between flex items?",
+                  "options": ["padding", "gap", "display", "overflow"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s2-q8",
+                  "type": "single_choice",
+                  "question": "A border can influence",
+                  "options": ["Nothing", "Box visual boundary and size with border-box", "Network speed only", "Only color"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s2-q9",
+                  "type": "single_choice",
+                  "question": "The best way to debug uneven cards is",
+                  "options": ["Delete all CSS", "Use browser devtools box model view", "Guessing", "Disable margins only"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s2-q10",
+                  "type": "single_choice",
+                  "question": "To create predictable card layout widths, use",
+                  "options": ["Inconsistent width properties", "Box model consistency + sizing constraints", "No heights", "Fixed only margins"],
                   "answers": [1],
                   "timed": "f"
                 }
@@ -273,26 +969,188 @@
           ]
         },
         {
-          "id": "wd-css-4",
-          "title": "Responsive Layout and Media Queries",
+          "id": "s3",
+          "title": "Flexbox Deep Dive",
           "content": [
             {
               "type": "text",
-              "value": "Responsive design uses relative units, breakpoints, and progressive enhancement. Start with a mobile-first mindset and expand complexity at wider breakpoints."
+              "value": "Flexbox is optimized for one-dimensional layout: distributing space along one axis while controlling alignment and wrapping. It is ideal for nav bars, card rows, and component alignment before more complex two-dimensional systems like grid."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q10",
+                  "id": "wd-m3-s3-q1",
                   "type": "single_choice",
-                  "question": "What is a best practice for responsive development?",
-                  "options": [
-                    "Design desktop layout first and scale down",
-                    "Use fixed pixel widths only",
-                    "Use mobile-first breakpoints and relative units",
-                    "Avoid testing at smaller widths"
-                  ],
+                  "question": "Which property controls item distribution along the main axis?",
+                  "options": ["justify-content", "align-items", "flex-wrap", "gap"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q2",
+                  "type": "single_choice",
+                  "question": "Which property controls alignment on the cross axis?",
+                  "options": ["justify-content", "align-items", "order", "flex-grow"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q3",
+                  "type": "single_choice",
+                  "question": "If you want items to wrap to next row, use",
+                  "options": ["flex-wrap: nowrap", "flex-wrap: wrap", "display: grid", "align-content"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q4",
+                  "type": "single_choice",
+                  "question": "To make one item grow, use",
+                  "options": ["flex-shrink", "flex-grow", "order", "align-self"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q5",
+                  "type": "single_choice",
+                  "question": "Flex item order can be changed with",
+                  "options": ["order", "display", "z-index", "position"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q6",
+                  "type": "single_choice",
+                  "question": "For center align both axes in flex, use",
+                  "options": ["justify-content: center and align-items: center", "align-self only", "margin-left only", "float: none"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q7",
+                  "type": "single_choice",
+                  "question": "Which is a common anti-pattern with flex?",
+                  "options": ["Using it for tabular data", "Using it for navigation", "Using gap", "Centering cards"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q8",
+                  "type": "single_choice",
+                  "question": "A flex container becomes one-line by default because",
+                  "options": ["flex-wrap defaults to wrap", "flex-wrap defaults to nowrap", "it is grid by default", "it is inline"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q9",
+                  "type": "single_choice",
+                  "question": "The align-self property applies to",
+                  "options": ["Entire container", "A single flex item", "Font size", "HTML root"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s3-q10",
+                  "type": "single_choice",
+                  "question": "You should check flex layouts in",
+                  "options": ["Only one viewport size", "Multiple breakpoints", "Only desktop", "No viewport checks"],
+                  "answers": [1],
+                  "timed": "f"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "s4",
+          "title": "CSS Grid and Responsive Design",
+          "content": [
+            {
+              "type": "text",
+              "value": "Grid is a two-dimensional layout system. Use it for dashboard-like interfaces and structured sections with rows and columns. Pair Grid for page-level layout and Flexbox for fine-grained item alignment."
+            },
+            {
+              "type": "quiz",
+              "questions": [
+                {
+                  "id": "wd-m3-s4-q1",
+                  "type": "single_choice",
+                  "question": "Grid is strongest for",
+                  "options": ["One-dimensional flow", "Two-dimensional placement", "Text selection", "Animations only"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q2",
+                  "type": "single_choice",
+                  "question": "What controls the number of columns in grid container?",
+                  "options": ["grid-template-columns", "grid-template-rows", "display: flex", "line-height"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q3",
+                  "type": "single_choice",
+                  "question": "A responsive pattern for cards uses",
+                  "options": ["fixed pixel widths only", "repeat(auto-fit, minmax(...))", "display: block everywhere", "No media query"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q4",
+                  "type": "single_choice",
+                  "question": "Which unit is best for fluid grids?",
+                  "options": ["px", "%", "fr", "in"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q5",
+                  "type": "single_choice",
+                  "question": "To place an item across two columns, set",
+                  "options": ["grid-column: span 2", "display: inline", "float: left", "position: fixed"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q6",
+                  "type": "single_choice",
+                  "question": "Mobile-first strategy usually starts with",
+                  "options": ["Large screens first", "Smallest layout first", "No breakpoints", "Only landscape"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q7",
+                  "type": "single_choice",
+                  "question": "@media queries should target",
+                  "options": ["Only IE", "Common breakpoints based on design", "No widths", "Only print"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q8",
+                  "type": "single_choice",
+                  "question": "Which is best for flexible spacing in responsive layouts?",
+                  "options": ["Hard coded pixel values", "Relative units such as rem and %", "Negative margins only", "No spacing"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q9",
+                  "type": "single_choice",
+                  "question": "A poor responsive site usually",
+                  "options": ["Is tested on multiple devices", "Scales unpredictably and overflows", "Uses modern units", "Uses progressive disclosure"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m3-s4-q10",
+                  "type": "single_choice",
+                  "question": "To improve readability on small screens, you should",
+                  "options": ["Keep huge fixed images", "Increase line length", "Use larger touch targets", "Hide headings"],
                   "answers": [2],
                   "timed": "f"
                 }
@@ -304,25 +1162,97 @@
     },
     {
       "id": "m4",
-      "title": "JavaScript Fundamentals",
+      "title": "JavaScript Essentials",
       "sections": [
         {
-          "id": "wd-js-1",
-          "title": "JavaScript in the Browser",
+          "id": "s1",
+          "title": "Variables, Types, and Expressions",
           "content": [
             {
               "type": "text",
-              "value": "JavaScript runs in the browser to make pages interactive. You can store and modify page state, respond to user actions, and update visible content dynamically without full page reloads."
+              "value": "JavaScript handles user input, state updates, and interactions. Start with primitives, objects, arrays, and expressions. Build logic carefully with strict checks and clear naming so your UI behavior stays predictable as features grow."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q11",
+                  "id": "wd-m4-s1-q1",
                   "type": "single_choice",
-                  "question": "What is the primary purpose of JavaScript in a webpage?",
-                  "options": ["Only styling", "Only page structure", "Behavior and interactivity", "Only browser configuration"],
+                  "question": "Use const for values that",
+                  "options": ["Change every render", "Never change", "Need hoisting only", "Are DOM nodes"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q2",
+                  "type": "single_choice",
+                  "question": "Arrays in JavaScript are",
+                  "options": ["Never mutable", "Only for strings", "Ordered collections", "Function-only types"],
                   "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q3",
+                  "type": "single_choice",
+                  "question": "A boolean stores",
+                  "options": ["Two states true/false", "Only text", "A date object", "CSS classes"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q4",
+                  "type": "single_choice",
+                  "question": "Object literals are useful for",
+                  "options": ["Representing structured data", "Only event handling", "Only styles", "No semantics"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q5",
+                  "type": "single_choice",
+                  "question": "String concatenation can be done with",
+                  "options": ["template literals", "only concat()", "only JSON", "HTML tags"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q6",
+                  "type": "single_choice",
+                  "question": "Loose equality (==) in strict courses should generally be",
+                  "options": ["Preferred", "Avoided", "Required", "The same as ==="],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q7",
+                  "type": "single_choice",
+                  "question": "The value of null is",
+                  "options": ["A number", "An object reference with no value", "A boolean always true", "An array"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q8",
+                  "type": "single_choice",
+                  "question": "`typeof []` returns",
+                  "options": ["array", "object", "function", "null"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q9",
+                  "type": "single_choice",
+                  "question": "The cleanest numeric default is",
+                  "options": ["0", "'0'", "NaN", "undefined"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s1-q10",
+                  "type": "single_choice",
+                  "question": "To avoid confusion, prefer named constants for",
+                  "options": ["magic numbers", "every variable", "No values", "Only styles"],
+                  "answers": [0],
                   "timed": "f"
                 }
               ]
@@ -330,22 +1260,94 @@
           ]
         },
         {
-          "id": "wd-js-2",
-          "title": "Variables, Functions, and Scope",
+          "id": "s2",
+          "title": "Conditionals and Loops",
           "content": [
             {
               "type": "text",
-              "value": "Use clear naming, prefer `const` where values do not change, and `let` when reassignment is needed. Functions package behavior, and scope controls where variables are accessible."
+              "value": "Decision logic is core to web interactivity. Conditional branches control what appears or runs, and loops process repeated datasets. Mastering these primitives lets you build dynamic UI behavior and avoid duplicated code."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q12",
+                  "id": "wd-m4-s2-q1",
                   "type": "single_choice",
-                  "question": "Which keyword should you prefer for values that do not get reassigned?",
-                  "options": ["var", "let", "const", "function"],
-                  "answers": [2],
+                  "question": "Use if/else for",
+                  "options": ["Condition checks", "Styling defaults", "Tag parsing", "DOM queries only"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q2",
+                  "type": "single_choice",
+                  "question": "A for loop is best for",
+                  "options": ["Single value only", "Repeating through index values", "Asynchronous calls only", "No arrays"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q3",
+                  "type": "single_choice",
+                  "question": "A switch statement is useful when",
+                  "options": ["Comparing many discrete values", "Only booleans", "No branching", "Only dates"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q4",
+                  "type": "single_choice",
+                  "question": "forEach is most often used to",
+                  "options": ["Iterate an array and run a function", "Loop without data", "Break loops", "Fetch APIs"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q5",
+                  "type": "single_choice",
+                  "question": "Use map when you want",
+                  "options": ["A new transformed array", "Just iterate and log", "No return values", "To sort in place"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q6",
+                  "type": "single_choice",
+                  "question": "The break statement in loop does",
+                  "options": ["Ends loop early", "Doubles values", "Filters array", "Starts over"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q7",
+                  "type": "single_choice",
+                  "question": "The continue statement",
+                  "options": ["Skips to next iteration", "Stops execution entirely", "Repeats previous", "Throws an error"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q8",
+                  "type": "single_choice",
+                  "question": "Ternary operator is a shorthand for",
+                  "options": ["if/else", "for loop", "array spread", "async/await"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q9",
+                  "type": "single_choice",
+                  "question": "When multiple outcomes are mutually exclusive, prefer",
+                  "options": ["Nested ifs with clear structure", "A chain without braces", "No branches", "Only global flags"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s2-q10",
+                  "type": "single_choice",
+                  "question": "To prevent complexity, reduce deeply nested conditionals by",
+                  "options": ["Extracting helper functions", "Increasing nesting", "Copy-pasting branches", "Removing all conditions"],
+                  "answers": [0],
                   "timed": "f"
                 }
               ]
@@ -353,22 +1355,94 @@
           ]
         },
         {
-          "id": "wd-js-3",
-          "title": "DOM Selection and Event Handling",
+          "id": "s3",
+          "title": "DOM Access and Event Handling",
           "content": [
             {
               "type": "text",
-              "value": "The DOM API lets code read and update elements. Event listeners such as click, input, and submit connect user interaction to updates. Debouncing and guarding against null nodes are important in real codebases."
+              "value": "The DOM lets JavaScript read and update the document. Event listeners connect user actions to behavior. Use event delegation for dynamic lists and always guard your handlers when elements might be null."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q13",
+                  "id": "wd-m4-s3-q1",
                   "type": "single_choice",
-                  "question": "Which listener is appropriate for handling user typing in an input?",
-                  "options": ["click", "submit", "input", "scroll"],
-                  "answers": [2],
+                  "question": "To read a button element by id, use",
+                  "options": ["querySelector", "getElementById", "getByClass", "findNode"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q2",
+                  "type": "single_choice",
+                  "question": "A click listener uses",
+                  "options": ["addEventListener('click', ...)" , "addEvent('click')", "onClick CSS", "window.clicker"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q3",
+                  "type": "single_choice",
+                  "question": "To update text content safely use",
+                  "options": ["innerText", "innerHTML with trusted input only", "document.write", "eval"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q4",
+                  "type": "single_choice",
+                  "question": "Event delegation is useful for",
+                  "options": ["Static single elements", "Dynamic lists where new items are added", "No events", "Only form reset"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q5",
+                  "type": "single_choice",
+                  "question": "For input events, prefer",
+                  "options": ["input", "scroll", "focusout", "resize"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q6",
+                  "type": "single_choice",
+                  "question": "Preventing default form submit is done with",
+                  "options": ["event.stopPropagation", "event.preventDefault", "event.remove", "event.abort"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q7",
+                  "type": "single_choice",
+                  "question": "The event object allows you to access",
+                  "options": ["Target element and metadata", "Only CSS", "File system" , "No details"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q8",
+                  "type": "single_choice",
+                  "question": "Which pattern avoids repeated listener attach per item?",
+                  "options": ["Global delegation on parent", "Duplicate listeners", "No listeners", "Inline script in each tag"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q9",
+                  "type": "single_choice",
+                  "question": "To read a checkbox checked state, use",
+                  "options": ["value", "checked", "data-state", "name"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s3-q10",
+                  "type": "single_choice",
+                  "question": "Defensive coding in DOM code means",
+                  "options": ["Assuming all elements exist", "Checking for null references", "Ignoring exceptions", "Removing checks"],
+                  "answers": [1],
                   "timed": "f"
                 }
               ]
@@ -376,22 +1450,94 @@
           ]
         },
         {
-          "id": "wd-js-4",
-          "title": "Arrays, Objects, and Small UI State",
+          "id": "s4",
+          "title": "Asynchronous JavaScript and APIs",
           "content": [
             {
               "type": "text",
-              "value": "Store UI state in JavaScript objects or arrays, then render derived values to the DOM. This mindset prepares your work for scalable frameworks later."
+              "value": "Asynchronous JavaScript supports network requests, delays, and event-driven data. Use async/await to keep code readable and handle errors with try/catch. Never trust an unhandled promise in a production page."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q14",
-                  "type": "multiple_choice",
-                  "question": "Which types are commonly used to represent structured UI data? (Select all that apply)",
-                  "options": ["Array", "String", "Object", "Function"] ,
-                  "answers": [0, 2],
+                  "id": "wd-m4-s4-q1",
+                  "type": "single_choice",
+                  "question": "The fetch API is used to",
+                  "options": ["Read files from disk only", "Make HTTP requests", "Resize images", "Style elements"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q2",
+                  "type": "single_choice",
+                  "question": "A Promise represents",
+                  "options": ["Immediate value", "A future asynchronous result", "A CSS rule", "An event listener"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q3",
+                  "type": "single_choice",
+                  "question": "Use async/await with",
+                  "options": ["Synchronous loops only", "Promise-returning functions", "Only variables", "DOM parsing only"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q4",
+                  "type": "single_choice",
+                  "question": "To handle failures in async functions, use",
+                  "options": ["Only console", "try/catch", "ignore", "setTimeout"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q5",
+                  "type": "single_choice",
+                  "question": "HTTP status code 401 means",
+                  "options": ["Success", "Bad request", "Unauthorized", "Server error"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q6",
+                  "type": "single_choice",
+                  "question": "For API errors, avoid",
+                  "options": ["User-friendly messages", "Silent failure", "Retry logic", "Error boundaries"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q7",
+                  "type": "single_choice",
+                  "question": "JSON is best converted in JS with",
+                  "options": ["JSON.parse", "JSON.render", "JSON.string", "JSON.load"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q8",
+                  "type": "single_choice",
+                  "question": "Use loading states to",
+                  "options": ["Hide async work from users", "Communicate progress", "Remove all buttons", "Disable everything"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q9",
+                  "type": "single_choice",
+                  "question": "Caching API responses can improve",
+                  "options": ["Page speed", "Only layout", "Only fonts", "No user experience"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m4-s4-q10",
+                  "type": "single_choice",
+                  "question": "A clean async architecture starts with",
+                  "options": ["Separation of fetch and rendering logic", "Inline script for everything", "No validation", "No error handling"],
+                  "answers": [0],
                   "timed": "f"
                 }
               ]
@@ -402,29 +1548,95 @@
     },
     {
       "id": "m5",
-      "title": "Deployment, Accessibility, and Final Project",
+      "title": "Polish, Accessibility, and Deployment",
       "sections": [
         {
-          "id": "wd-final-1",
-          "title": "Accessibility as Engineering Practice",
+          "id": "s1",
+          "title": "Accessibility and Inclusive UX",
           "content": [
             {
               "type": "text",
-              "value": "Accessible pages are usable by more people and more robust overall. Include semantic headings, meaningful link text, keyboard focus styles, and visible state changes for interactive controls."
+              "value": "Inclusive interfaces are stronger for everyone. Prioritize semantic HTML, keyboard focus, clear focus states, proper labels, and sufficient color contrast. Accessibility is part of quality, not an optional add-on at the end."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q15",
+                  "id": "wd-m5-s1-q1",
                   "type": "single_choice",
-                  "question": "Which is strongest evidence of accessible interaction design?",
-                  "options": [
-                    "Color-only error messaging",
-                    "Keyboard-focus visible outline and labels",
-                    "Animations disabled forever",
-                    "No headings and minimal landmarks"
-                  ],
+                  "question": "Keyboard users need which requirement?",
+                  "options": ["Visible focus states", "Hidden actions", "No buttons", "Hover only"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s1-q2",
+                  "type": "single_choice",
+                  "question": "Good color contrast primarily helps",
+                  "options": ["File size", "Readability for low-vision users", "Animation speed", "Nothing"],
+                  "answers": [1],
+                  "timed": "f"
+                }, {
+                  "id": "wd-m5-s1-q3",
+                  "type": "single_choice",
+                  "question": "Which ARIA practice is most important?",
+                  "options": ["Use only on everything", "Use roles when semantics are absent", "Never use labels", "Avoid accessible names"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s1-q4",
+                  "type": "single_choice",
+                  "question": "For forms, labels should be",
+                  "options": ["Visually hidden only", "Explicit and descriptive", "Random text", "Never used"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s1-q5",
+                  "type": "single_choice",
+                  "question": "Accessible navigation should",
+                  "options": ["Skip clear landmarks", "Provide meaningful order", "Hide links", "Avoid semantic elements"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s1-q6",
+                  "type": "single_choice",
+                  "question": "An important media accessibility check is",
+                  "options": ["Removing subtitles", "Add captions/transcripts", "No alt text", "Only color-only changes"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s1-q7",
+                  "type": "single_choice",
+                  "question": "Which is a good focus style pattern?",
+                  "options": ["outline: none everywhere", "No visible indicator", "Clear outline or border change", "Hidden tab index"],
+                  "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s1-q8",
+                  "type": "single_choice",
+                  "question": "The purpose of skip links is",
+                  "options": ["Add extra ad links", "Improve keyboard navigation", "Disable scrolling", "Replace headings"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s1-q9",
+                  "type": "single_choice",
+                  "question": "Accessible error messages should be",
+                  "options": ["Color only", "Announced and descriptive", "Hidden by default", "Too long always"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s1-q10",
+                  "type": "single_choice",
+                  "question": "Accessibility checks are strongest when done",
+                  "options": ["Only once", "At every release and after major UI changes", "Only before final review", "By removing text"],
                   "answers": [1],
                   "timed": "f"
                 }
@@ -433,27 +1645,94 @@
           ]
         },
         {
-          "id": "wd-final-2",
-          "title": "Performance and Optimization Basics",
+          "id": "s2",
+          "title": "Performance and Browser Optimization",
           "content": [
             {
               "type": "text",
-              "value": "Performance begins with fewer requests, smaller assets, and caching. Use image compression, minimize render-blocking resources, and avoid unnecessary scripts to improve Time to First Paint."
+              "value": "Fast pages improve learning retention. Measure before optimizing, then optimize critical resources first: image size, script timing, render blocking CSS, and network requests. Keep initial bundle small and delay non-critical work."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q16",
+                  "id": "wd-m5-s2-q1",
                   "type": "single_choice",
-                  "question": "Which strategy helps first paint performance?",
-                  "options": [
-                    "Bundle all scripts before HTML",
-                    "Use uncompressed images only",
-                    "Optimize images and defer non-critical scripts",
-                    "Disable browser caching"
-                  ],
+                  "question": "Time to first byte and time to first paint are parts of",
+                  "options": ["Performance metrics", "Accessibility metrics", "Color contrast metrics", "Network security"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q2",
+                  "type": "single_choice",
+                  "question": "To reduce render blocking, you can",
+                  "options": ["Load everything synchronously", "Defer non-critical scripts", "Increase file size", "Disable compression"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q3",
+                  "type": "single_choice",
+                  "question": "Which image format is generally best for photos?",
+                  "options": ["BMP", "PNG always", "JPEG/JPG", "GIF only"],
                   "answers": [2],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q4",
+                  "type": "single_choice",
+                  "question": "Large JavaScript bundles affect",
+                  "options": ["Initial load time", "Only battery", "Grammar", "No performance"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q5",
+                  "type": "single_choice",
+                  "question": "Using content compression helps",
+                  "options": ["Network transfer and speed", "Security only", "No speed", "Font size"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q6",
+                  "type": "single_choice",
+                  "question": "To minimize reflows, prefer",
+                  "options": ["Frequent inline style mutations", "Stable layout and avoid forced synchronous changes", "No layout strategy", "Absolute positioning only"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q7",
+                  "type": "single_choice",
+                  "question": "Responsive image loading can be improved with",
+                  "options": ["One giant image", "Appropriate sizing and compression", "No dimensions", "Always autoplay"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q8",
+                  "type": "single_choice",
+                  "question": "You should test performance on",
+                  "options": ["A single machine", "Multiple devices and network speeds", "No devices", "Console only"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q9",
+                  "type": "single_choice",
+                  "question": "A lightweight page with fast interaction feels",
+                  "options": ["Less trustworthy", "Immediate and polished", "Broken", "Overly simple"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s2-q10",
+                  "type": "single_choice",
+                  "question": "Performance budgets are used to",
+                  "options": ["Avoid overbuilding and stay within limits", "Remove all JS", "Disable caching", "Disable all tests"],
+                  "answers": [0],
                   "timed": "f"
                 }
               ]
@@ -461,27 +1740,94 @@
           ]
         },
         {
-          "id": "wd-final-3",
-          "title": "Publishing Workflow and Hosting",
+          "id": "s3",
+          "title": "SEO, Metadata, and Publishing",
           "content": [
             {
               "type": "text",
-              "value": "A polished course project includes a clear file structure, deployment from source control, a stable hosted URL, and production-tested behavior. Write a concise README, list features, and track known limitations."
+              "value": "Good SEO starts with meaningful metadata, crawlable structure, and clean URLs. Publishing includes choosing a domain, HTTPS, and stable redirect behavior so users and learners can reliably access your project long-term."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q17",
+                  "id": "wd-m5-s3-q1",
                   "type": "single_choice",
-                  "question": "Which item is most important for project handoff?",
-                  "options": [
-                    "A single large script file",
-                    "No documentation",
-                    "Clear README and deployment instructions",
-                    "Only local testing screenshots"
-                  ],
-                  "answers": [2],
+                  "question": "The <title> element is used for",
+                  "options": ["Only comments", "Browser tab and search snippets", "Animations", "Scripts"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q2",
+                  "type": "single_choice",
+                  "question": "A useful meta description should be",
+                  "options": ["Brief and relevant", "Long and keyword-stuffed without meaning", "Empty", "Only symbols"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q3",
+                  "type": "single_choice",
+                  "question": "HTTPS is important because it",
+                  "options": ["Encrypts communication", "Slows DNS", "Disables scripts", "Only for videos"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q4",
+                  "type": "single_choice",
+                  "question": "Canonical URLs prevent",
+                  "options": ["Consistent content variants indexing", "Accessibility", "Image loading", "Font fallback"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q5",
+                  "type": "single_choice",
+                  "question": "A clean sitemap helps",
+                  "options": ["Nothing", "Search indexing structure", "Font loading only", "Server errors"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q6",
+                  "type": "single_choice",
+                  "question": "For stable deployment, create",
+                  "options": ["No version control", "Clear README and changelog", "Only local builds", "One-time URLs"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q7",
+                  "type": "single_choice",
+                  "question": "When debugging publish failures, first check",
+                  "options": ["Terminal font", "Build logs and environment vars", "Video resolution", "Font colors"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q8",
+                  "type": "single_choice",
+                  "question": "Redirects matter because they",
+                  "options": ["Preserve user paths", "Hide pages", "Slow indexing", "Remove URLs"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q9",
+                  "type": "single_choice",
+                  "question": "If a page disappears after deployment, first verify",
+                  "options": ["Router and base path settings", "Only spacing", "No CSS", "No quiz count"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s3-q10",
+                  "type": "single_choice",
+                  "question": "A professional project handoff includes",
+                  "options": ["Deployment links and known limitations", "No documentation", "Only screenshots", "No repository"],
+                  "answers": [0],
                   "timed": "f"
                 }
               ]
@@ -489,28 +1835,94 @@
           ]
         },
         {
-          "id": "wd-final-4",
-          "title": "Capstone: Build and Present",
+          "id": "s4",
+          "title": "Capstone Integration Project",
           "content": [
             {
               "type": "text",
-              "value": "In your final project, build a multi-section site with semantic HTML, responsive CSS, and interactive JavaScript. Include at least one form and one data-driven component, then publish a public link and a short reflection on implementation choices."
+              "value": "Now combine everything: build a complete multi-section web experience with semantic structure, responsive layout, dynamic interactions, and accessible controls. Include a form, a data-driven component, and a polished final deployment package with evidence of testing and review notes."
             },
             {
               "type": "quiz",
               "questions": [
                 {
-                  "id": "wd-q18",
-                  "type": "multiple_choice",
-                  "question": "Which elements should a good capstone include? (Select all that apply)",
-                  "options": [
-                    "Navigation and section structure",
-                    "A single unstyled page with no interactions",
-                    "Responsive behavior",
-                    "Interactive JavaScript feature",
-                    "No source files"
-                  ],
-                  "answers": [0, 2, 3],
+                  "id": "wd-m5-s4-q1",
+                  "type": "single_choice",
+                  "question": "A capstone project should demonstrate",
+                  "options": ["Only a single technique", "A coherent integration of multiple modules", "No usability", "Only backend code"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q2",
+                  "type": "single_choice",
+                  "question": "Include at least one",
+                  "options": ["Interactive component", "Only static text", "No navigation", "No styles"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q3",
+                  "type": "single_choice",
+                  "question": "Good capstones include",
+                  "options": ["Testing notes", "Only color swatches", "No feedback", "Only placeholder links"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q4",
+                  "type": "single_choice",
+                  "question": "A complete final deliverable should include",
+                  "options": ["No source", "Source link and deployment link", "No screenshots", "No instructions"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q5",
+                  "type": "single_choice",
+                  "question": "For grading clarity, list",
+                  "options": ["No deliverables", "A feature rubric checklist", "Only errors", "No timeline"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q6",
+                  "type": "single_choice",
+                  "question": "When submitting capstone, include",
+                  "options": ["Broken link only", "A brief reflection and next improvements", "No explanation", "No code"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q7",
+                  "type": "single_choice",
+                  "question": "To demonstrate iteration, include",
+                  "options": ["Version history", "Single unedited screenshot", "No commits", "No tests"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q8",
+                  "type": "single_choice",
+                  "question": "A strong project report should",
+                  "options": ["Only praise", "Describe tradeoffs and unresolved issues", "Hide constraints", "Ignore limitations"],
+                  "answers": [1],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q9",
+                  "type": "single_choice",
+                  "question": "Which would impress instructors the most?",
+                  "options": ["Clean architecture and meaningful UX", "Only many lines", "Only complexity", "No testing artifacts"],
+                  "answers": [0],
+                  "timed": "f"
+                },
+                {
+                  "id": "wd-m5-s4-q10",
+                  "type": "single_choice",
+                  "question": "After submission, next step is",
+                  "options": ["Stop learning", "Refactor using feedback", "Delete project", "Ignore findings"],
+                  "answers": [1],
                   "timed": "f"
                 }
               ]
