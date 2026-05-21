@@ -1,17 +1,20 @@
 import {
-  FormEvent,
-  MouseEvent,
   useCallback,
   useEffect,
   useMemo,
   useState,
+  useLayoutEffect,
+  useRef,
 } from "react";
+import type { FormEvent, MouseEvent } from "react";
 import "./App.css";
 import Sidebar from "./components/Sidebar/Sidebar";
 import ContentView from "./components/ContentView/ContentView";
 import aiCourse from "./courseData/introToAiCourse.json";
 import webDevCourse from "./courseData/webDevCourse.json";
 import pythonCourse from "./courseData/introToPythonCourse.json";
+import mlsysCourse from "./courseData/machineLearningSystemsCourse.json";
+import sourceRecordsData from "./courseData/sourceRecords.json";
 
 const API_BASE = import.meta.env.VITE_PROTHEUS_API_URL ?? "http://127.0.0.1:8000";
 
@@ -19,6 +22,7 @@ type CourseBlock = {
   type: string;
   value?: string;
   url?: string;
+  sourceIds?: string[];
   question?: string;
   questions?: Array<{
     question?: string;
@@ -27,29 +31,54 @@ type CourseBlock = {
     answers?: number[];
     timed?: "t" | "f" | boolean;
   }>;
+  questionBank?: unknown;
+  question_bank?: unknown;
+  questionsPerAttempt?: number | string;
+  questions_per_attempt?: number | string;
+  questionCount?: number | string;
+  question_count?: number | string;
   options?: string[];
   answer?: number;
   answers?: number[];
   name?: string;
   description?: string;
   timed?: "t" | "f" | boolean;
+  maxAttempts?: number | string;
+  max_attempts?: number | string;
+  attemptLimit?: number | string;
+  attempt_limit?: number | string;
+  timeLimit?: number | string;
+  time_limit?: number | string;
+  timeLimitSeconds?: number | string;
+  time_limit_seconds?: number | string;
+  passPercentage?: number | string;
+  pass_percentage?: number | string;
+  passPercent?: number | string;
+  pass_percent?: number | string;
+  showAnswers?: boolean | string;
+  show_answers?: boolean | string;
+  showCorrectAnswers?: boolean | string;
+  show_correct_answers?: boolean | string;
 };
 
 type CourseSection = {
   id: string;
   title: string;
   content: CourseBlock[];
+  sourceIds?: string[];
 };
 
 type CourseModule = {
   id: string;
   title: string;
   sections: CourseSection[];
+  sourceIds?: string[];
 };
 
 type CourseData = {
   title: string;
   orderMandatory?: boolean;
+  sourceIds?: string[];
   modules: CourseModule[];
 };
 
@@ -63,7 +92,8 @@ type CourseEntry = {
 
 type RouteInfo = {
   kind: "home" | "course";
-  slug: string | null;
+  courseSlug: string | null;
+  unitSlug: string | null;
 };
 
 function slugifyCourseTitle(value: string): string {
@@ -80,6 +110,29 @@ function slugifyCourseTitle(value: string): string {
 function getCoursePathSlug(course: CourseEntry): string {
   const base = slugifyCourseTitle(course.title || "course");
   return `${base}-${course.key}`;
+}
+
+function getSectionPathSlug(section: CourseSection): string {
+  const base = slugifyCourseTitle(section.title || "unit");
+  const suffix = slugifyCourseTitle(section.id || "section");
+
+  if (!base) {
+    return suffix || "unit";
+  }
+
+  if (!suffix || base.endsWith(suffix)) {
+    return base;
+  }
+
+  return `${base}-${suffix}`;
+}
+
+function getCourseSectionPath(course: CourseEntry, section: CourseSection): string {
+  return `/courses/${getCoursePathSlug(course)}/units/${getSectionPathSlug(section)}`;
+}
+
+function getFirstCourseSection(course: CourseEntry): CourseSection | null {
+  return course.data.modules[0]?.sections[0] ?? null;
 }
 
 function getCourseSectionIds(course: CourseEntry): string[] {
@@ -122,18 +175,25 @@ function parseCourseRoute(pathname: string): RouteInfo {
   const pathWithoutQuery = pathname.split("?")[0].replace(/\/+$/, "") || "/";
 
   if (pathWithoutQuery === "/" || pathWithoutQuery === "/courses") {
-    return { kind: "home", slug: null };
+    return { kind: "home", courseSlug: null, unitSlug: null };
   }
 
   if (pathWithoutQuery.startsWith("/courses/")) {
-    const slug = decodeURIComponent(pathWithoutQuery.slice("/courses/".length)).toLowerCase();
-    if (!slug) {
-      return { kind: "home", slug: null };
+    const segments = pathWithoutQuery.split("/").filter(Boolean);
+    const courseSlug = decodeURIComponent(segments[1] ?? "").toLowerCase();
+    const unitSlug =
+      segments[2] === "units" && segments[3]
+        ? decodeURIComponent(segments[3]).toLowerCase()
+        : null;
+
+    if (!courseSlug) {
+      return { kind: "home", courseSlug: null, unitSlug: null };
     }
-    return { kind: "course", slug };
+
+    return { kind: "course", courseSlug, unitSlug };
   }
 
-  return { kind: "home", slug: null };
+  return { kind: "home", courseSlug: null, unitSlug: null };
 }
 
 function App() {
@@ -142,19 +202,25 @@ function App() {
       {
         key: "local-ai",
         title: aiCourse.title,
-        data: aiCourse,
+        data: aiCourse as CourseData,
         source: "local",
       },
       {
         key: "local-web",
         title: webDevCourse.title,
-        data: webDevCourse,
+        data: webDevCourse as CourseData,
         source: "local",
       },
       {
         key: "local-python",
         title: pythonCourse.title,
-        data: pythonCourse,
+        data: pythonCourse as CourseData,
+        source: "local",
+      },
+      {
+        key: "local-mlsys",
+        title: mlsysCourse.title,
+        data: mlsysCourse as CourseData,
         source: "local",
       },
     ],
@@ -170,6 +236,8 @@ function App() {
   const [generateMessage, setGenerateMessage] = useState("");
   const [learnerId, setLearnerId] = useState<number | null>(null);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const courseContentRef = useRef<HTMLDivElement | null>(null);
+  const [courseContentHeight, setCourseContentHeight] = useState<number | null>(null);
 
   const route = useMemo(() => parseCourseRoute(currentPath), [currentPath]);
 
@@ -182,11 +250,11 @@ function App() {
   }, [courses]);
 
   const resolveCourseKeyFromPath = useCallback(
-    (slug: string | null): string | null => {
-      if (!slug) {
+    (courseSlug: string | null): string | null => {
+      if (!courseSlug) {
         return null;
       }
-      return coursesByPathSlug.get(slug) ?? null;
+      return coursesByPathSlug.get(courseSlug) ?? null;
     },
     [coursesByPathSlug]
   );
@@ -195,25 +263,29 @@ function App() {
     if (route.kind !== "course") {
       return null;
     }
-    const key = resolveCourseKeyFromPath(route.slug);
+    const key = resolveCourseKeyFromPath(route.courseSlug);
     if (!key) {
       return null;
     }
     return courses.find((course) => course.key === key) ?? null;
-  }, [route.kind, route.slug, resolveCourseKeyFromPath, courses]);
+  }, [route.kind, route.courseSlug, resolveCourseKeyFromPath, courses]);
 
   const selectedCourse = useMemo(() => {
     const match = selectedCourseFromPath ?? courses.find((course) => course.key === currentCourseKey);
     return match ?? courses[0];
   }, [courses, currentCourseKey, selectedCourseFromPath]);
 
-  const sections = (selectedCourse?.data?.modules ?? []).flatMap((module, moduleIndex) =>
-    module.sections.map((section, sectionIndex) => ({
-      ...section,
-      moduleIndex,
-      moduleTitle: module.title,
-      displayNumber: `${moduleIndex + 1}.${sectionIndex + 1}`,
-    }))
+  const sections = useMemo(
+    () =>
+      (selectedCourse?.data?.modules ?? []).flatMap((module, moduleIndex) =>
+        module.sections.map((section, sectionIndex) => ({
+          ...section,
+          moduleIndex,
+          moduleTitle: module.title,
+          displayNumber: `${moduleIndex + 1}.${sectionIndex + 1}`,
+        }))
+      ),
+    [selectedCourse]
   );
 
   const currentSection = sections[currentSectionIndex] ?? null;
@@ -221,15 +293,16 @@ function App() {
   const moduleTitle = currentSection?.moduleTitle ?? "";
   const isFirstSection = currentSectionIndex === 0;
   const isLastSection = currentSectionIndex === sections.length - 1;
-  const courseProgressPercentage = sections.length > 1 ? (currentSectionIndex / (sections.length - 1)) * 100 : 0;
-  const currentModuleIndex = currentSection?.moduleIndex ?? 0;
-  const moduleSections = sections.filter((section) => section.moduleIndex === currentModuleIndex);
-  const moduleSectionIndex = currentSection ? moduleSections.findIndex((section) => section.id === currentSection.id) : 0;
-  const moduleProgressPercentage = moduleSections.length > 1 ? (moduleSectionIndex / (moduleSections.length - 1)) * 100 : 0;
-
   const progressStorageKey = `lyceum-progress-${selectedCourse?.key}`;
   const [progress, setProgress] = useState<{ completedSectionIds: string[] }>({ completedSectionIds: [] });
-  const isCompleted = currentSection ? progress.completedSectionIds.includes(currentSection.id) : false;
+  const completedSectionIds = new Set(progress.completedSectionIds);
+  const completedSectionCount = sections.filter((section) => completedSectionIds.has(section.id)).length;
+  const courseProgressPercentage = sections.length > 0 ? (completedSectionCount / sections.length) * 100 : 0;
+  const currentModuleIndex = currentSection?.moduleIndex ?? 0;
+  const moduleSections = sections.filter((section) => section.moduleIndex === currentModuleIndex);
+  const completedModuleSectionCount = moduleSections.filter((section) => completedSectionIds.has(section.id)).length;
+  const moduleProgressPercentage = moduleSections.length > 0 ? (completedModuleSectionCount / moduleSections.length) * 100 : 0;
+  const isCompleted = currentSection ? completedSectionIds.has(currentSection.id) : false;
   const orderMandatory = selectedCourse?.data?.orderMandatory ?? false;
 
   const routeToHome = useCallback(() => {
@@ -241,29 +314,63 @@ function App() {
     setCurrentPath("/");
   }, []);
 
+  const pushSectionPath = useCallback((course: CourseEntry, section: CourseSection, replace = false) => {
+    const nextPath = getCourseSectionPath(course, section);
+
+    if (window.location.pathname !== nextPath) {
+      const nextState = { courseKey: course.key, sectionId: section.id };
+      if (replace) {
+        window.history.replaceState(nextState, "", nextPath);
+      } else {
+        window.history.pushState(nextState, "", nextPath);
+      }
+    }
+
+    setCurrentPath(nextPath);
+  }, []);
+
   const openCourseByEntry = useCallback(
     (course: CourseEntry) => {
       setCurrentCourseKey(course.key);
       setCurrentSectionIndex(0);
-      const nextPath = `/courses/${getCoursePathSlug(course)}`;
-      if (window.location.pathname !== nextPath) {
-        window.history.pushState({ courseKey: course.key }, "", nextPath);
+      const firstSection = getFirstCourseSection(course);
+
+      if (firstSection) {
+        pushSectionPath(course, firstSection);
+        return;
       }
+
+      const nextPath = `/courses/${getCoursePathSlug(course)}`;
+      window.history.pushState({ courseKey: course.key }, "", nextPath);
       setCurrentPath(nextPath);
     },
-    []
+    [pushSectionPath]
   );
 
   const handleSectionSelect = (index: number) => {
     setCurrentSectionIndex(index);
+    const section = sections[index];
+    if (selectedCourse && section) {
+      pushSectionPath(selectedCourse, section);
+    }
   };
 
   const handleNextSection = () => {
-    setCurrentSectionIndex((prev) => Math.min(prev + 1, sections.length - 1));
+    const nextIndex = Math.min(currentSectionIndex + 1, sections.length - 1);
+    setCurrentSectionIndex(nextIndex);
+    const section = sections[nextIndex];
+    if (selectedCourse && section) {
+      pushSectionPath(selectedCourse, section);
+    }
   };
 
   const handlePrevSection = () => {
-    setCurrentSectionIndex((prev) => Math.max(prev - 1, 0));
+    const nextIndex = Math.max(currentSectionIndex - 1, 0);
+    setCurrentSectionIndex(nextIndex);
+    const section = sections[nextIndex];
+    if (selectedCourse && section) {
+      pushSectionPath(selectedCourse, section);
+    }
   };
 
   const openHomeFromHero = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -354,24 +461,57 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (route.kind === "course" && selectedCourseFromPath) {
-      if (selectedCourseFromPath.key !== currentCourseKey) {
-        setCurrentCourseKey(selectedCourseFromPath.key);
-        setCurrentSectionIndex(0);
-      }
+    if (route.kind !== "course" || !route.courseSlug) {
       return;
     }
 
-    if (route.kind === "course" && route.slug) {
-      const resolvedKey = resolveCourseKeyFromPath(route.slug);
-      if (resolvedKey) {
-        setCurrentCourseKey(resolvedKey);
-        setCurrentSectionIndex(0);
-        return;
-      }
+    const resolvedKey = resolveCourseKeyFromPath(route.courseSlug);
+    const routeCourse = resolvedKey
+      ? courses.find((course) => course.key === resolvedKey) ?? null
+      : null;
+
+    if (!routeCourse) {
       return;
     }
-  }, [route.kind, route.slug, resolveCourseKeyFromPath, selectedCourseFromPath, currentCourseKey, currentPath]);
+
+    if (routeCourse.key !== currentCourseKey) {
+      setCurrentCourseKey(routeCourse.key);
+    }
+
+    const routeSections = routeCourse.data.modules.flatMap((module) => module.sections);
+    const firstSection = routeSections[0];
+
+    if (!firstSection) {
+      setCurrentSectionIndex(0);
+      return;
+    }
+
+    if (!route.unitSlug) {
+      setCurrentSectionIndex(0);
+      pushSectionPath(routeCourse, firstSection, true);
+      return;
+    }
+
+    const sectionIndex = routeSections.findIndex(
+      (section) => getSectionPathSlug(section) === route.unitSlug
+    );
+
+    if (sectionIndex >= 0) {
+      setCurrentSectionIndex(sectionIndex);
+      return;
+    }
+
+    setCurrentSectionIndex(0);
+    pushSectionPath(routeCourse, firstSection, true);
+  }, [
+    route.kind,
+    route.courseSlug,
+    route.unitSlug,
+    resolveCourseKeyFromPath,
+    courses,
+    currentCourseKey,
+    pushSectionPath,
+  ]);
 
   useEffect(() => {
     const fetchRemoteCourses = async () => {
@@ -434,6 +574,26 @@ function App() {
     ensureLearner();
   }, []);
 
+  useLayoutEffect(() => {
+    const measured = courseContentRef.current;
+    if (!measured) {
+      return;
+    }
+
+    const measureHeight = () => {
+      setCourseContentHeight(Math.ceil(measured.clientHeight));
+    };
+
+    measureHeight();
+
+    const observer = new ResizeObserver(measureHeight);
+    observer.observe(measured);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [selectedCourse?.key, currentSectionIndex, currentPath]);
+
   useEffect(() => {
     const loadedProgress = localStorage.getItem(progressStorageKey);
     const initialProgress: { completedSectionIds: string[] } = loadedProgress
@@ -453,7 +613,6 @@ function App() {
       {route.kind === "home" ? (
         <main className="home-page">
           <section className="hero">
-            <h1>Lycium</h1>
             <p>Generate a new course or open one below to begin learning.</p>
           </section>
 
@@ -484,8 +643,24 @@ function App() {
               {courses.map((course) => {
                 const slug = getCoursePathSlug(course);
                 const courseProgress = getCourseProgress(course);
+                const firstSection = getFirstCourseSection(course);
+                const cardPath = firstSection
+                  ? getCourseSectionPath(course, firstSection)
+                  : `/courses/${slug}`;
                 return (
-                  <article key={course.key} className="course-card">
+                  <article
+                    key={course.key}
+                    className="course-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openCourseByEntry(course)}
+                    onKeyDown={(evt) => {
+                      if (evt.key === "Enter" || evt.key === " ") {
+                        evt.preventDefault();
+                        openCourseByEntry(course);
+                      }
+                    }}
+                  >
                     <h3>{course.title}</h3>
                     <div className="course-progress">
                       <div className="course-progress-bar">
@@ -499,14 +674,7 @@ function App() {
                       </p>
                     </div>
                     <p className="course-source">{course.source === "remote" ? "Generated" : "Local"} course</p>
-                    <button
-                      className="course-open-button"
-                      type="button"
-                      onClick={() => openCourseByEntry(course)}
-                    >
-                      Open course
-                    </button>
-                    <small className="course-slug">/{`courses/${slug}`}</small>
+                    <small className="course-slug">{cardPath}</small>
                   </article>
                 );
               })}
@@ -521,21 +689,27 @@ function App() {
             onSectionSelect={handleSectionSelect}
             courseTitle={selectedCourse?.data?.title ?? "Course"}
             progressPercentage={courseProgressPercentage}
+            contentHeight={courseContentHeight}
+            completedSectionIds={progress.completedSectionIds}
+            orderMandatory={Boolean(orderMandatory)}
           />
-          <ContentView
-            courseTitle={selectedCourse?.data?.title ?? "Course"}
-            section={currentSection}
-            moduleTitle={moduleTitle}
-            moduleIndex={moduleIndex}
-            onNext={handleNextSection}
-            onPrev={handlePrevSection}
-            isFirstSection={isFirstSection}
-            isLastSection={isLastSection}
-            progressPercentage={moduleProgressPercentage}
-            markComplete={handleCompleteSection}
-            isComplete={isCompleted}
-            orderMandatory={orderMandatory}
-          />
+          <div className="course-content-host" ref={courseContentRef}>
+            <ContentView
+              courseTitle={selectedCourse?.data?.title ?? "Course"}
+              section={currentSection}
+              moduleTitle={moduleTitle}
+              moduleIndex={moduleIndex}
+              onNext={handleNextSection}
+              onPrev={handlePrevSection}
+              isFirstSection={isFirstSection}
+              isLastSection={isLastSection}
+              progressPercentage={moduleProgressPercentage}
+              markComplete={handleCompleteSection}
+              isComplete={isCompleted}
+              orderMandatory={orderMandatory}
+              sources={sourceRecordsData.sources}
+            />
+          </div>
         </div>
       )}
     </div>

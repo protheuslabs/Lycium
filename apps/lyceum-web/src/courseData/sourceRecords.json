@@ -1,0 +1,346 @@
+{
+  "sources": [
+    {
+      "id": "mlsys-book",
+      "type": "book",
+      "title": "Machine Learning Systems",
+      "author": "Vijay Janapa Reddi",
+      "publisher": "Harvard University",
+      "url": "https://mlsysbook.ai/",
+      "localPath": "/Users/jay/Document (Lcl)/Books/Machine Learning Systems.pdf",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-mlsys-seminar",
+      "type": "seminar-series",
+      "title": "Stanford MLSys Seminar Series",
+      "publisher": "Stanford MLSys",
+      "url": "https://mlsys.stanford.edu/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-chip-good-ml-systems-design",
+      "type": "video",
+      "title": "Principles of Good Machine Learning Systems Design",
+      "author": "Chip Huyen",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=c_AUuTuPA5k",
+      "embedUrl": "https://www.youtube.com/embed/c_AUuTuPA5k",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-machine-learning-everywhere",
+      "type": "video",
+      "title": "Machine Learning Everywhere",
+      "author": "Pete Warden",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=FXbhJG470ng",
+      "embedUrl": "https://www.youtube.com/embed/FXbhJG470ng",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "mit-6s191-intro-deep-learning",
+      "type": "video",
+      "title": "MIT Introduction to Deep Learning",
+      "author": "Alexander Amini",
+      "publisher": "MIT 6.S191",
+      "url": "https://www.youtube.com/watch?v=alfdI7S6wCY",
+      "embedUrl": "https://www.youtube.com/embed/alfdI7S6wCY",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-flashattention",
+      "type": "video",
+      "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+      "author": "Tri Dao",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=gMOAud7hZg4",
+      "embedUrl": "https://www.youtube.com/embed/gMOAud7hZg4",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-snorkel-training-data",
+      "type": "video",
+      "title": "Programmatically Building & Managing Training Data with Snorkel",
+      "author": "Alex Ratner",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=pDVV4zKNqIE",
+      "embedUrl": "https://www.youtube.com/embed/pDVV4zKNqIE",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-mlc-foundation-models",
+      "type": "video",
+      "title": "Bringing Foundation Models to Consumer Devices via ML Compilation",
+      "author": "Tianqi Chen",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=InoNMvjs_vo",
+      "embedUrl": "https://www.youtube.com/embed/InoNMvjs_vo",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-horovod-scale-training",
+      "type": "video",
+      "title": "Horovod and the Evolution of Deep Learning at Scale",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=i6zVvfvIFpc",
+      "embedUrl": "https://www.youtube.com/embed/i6zVvfvIFpc",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-tinyml-carbon-footprint",
+      "type": "video",
+      "title": "TinyML: Reducing the Carbon Footprint of Artificial Intelligence in the Internet of Things",
+      "author": "Song Han",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=nMiCcZffup8",
+      "embedUrl": "https://www.youtube.com/embed/nMiCcZffup8",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-h2o-systems-approach",
+      "type": "video",
+      "title": "Scalable Machine Learning with H2O & Systems Approach to Algorithm Development",
+      "author": "Erin LeDell",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=UELpqMxDB1E",
+      "embedUrl": "https://www.youtube.com/embed/UELpqMxDB1E",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-mlflow-industrial-scale",
+      "type": "video",
+      "title": "Machine Learning at Industrial Scale: Lessons from the MLflow Project",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=nCQ9WqXPIS4",
+      "embedUrl": "https://www.youtube.com/embed/nCQ9WqXPIS4",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-distributed-ml-fedml",
+      "type": "video",
+      "title": "Distributed ML System for Large-scale Models: Dynamic Distributed Training and Scalable Federated Learning",
+      "author": "Chaoyang He",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=AY7pCYTC8pQ",
+      "embedUrl": "https://www.youtube.com/embed/AY7pCYTC8pQ",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-malleable-ml-systems",
+      "type": "video",
+      "title": "Building Malleable ML Systems through Measurement, Monitoring & Maintenance",
+      "author": "Karan Goel",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=mNkqAZ54wGo",
+      "embedUrl": "https://www.youtube.com/embed/mNkqAZ54wGo",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "stanford-sustainable-datacenters-ai",
+      "type": "video",
+      "title": "Designing Sustainable Datacenters with and for AI",
+      "author": "Bilge Acun",
+      "publisher": "Stanford MLSys Seminar",
+      "url": "https://www.youtube.com/watch?v=LPrFL2gWmTY",
+      "embedUrl": "https://www.youtube.com/embed/LPrFL2gWmTY",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "google-rules-of-ml",
+      "type": "article",
+      "title": "Rules of Machine Learning",
+      "author": "Martin Zinkevich",
+      "publisher": "Google for Developers",
+      "url": "https://developers.google.com/machine-learning/guides/rules-of-ml/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "tensorflow-lite",
+      "type": "documentation",
+      "title": "TensorFlow Lite",
+      "publisher": "TensorFlow",
+      "url": "https://www.tensorflow.org/lite",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "mlcommons-benchmarks",
+      "type": "documentation",
+      "title": "MLCommons Benchmarks",
+      "publisher": "MLCommons",
+      "url": "https://mlcommons.org/benchmarks/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "pytorch-tutorials",
+      "type": "documentation",
+      "title": "PyTorch Tutorials",
+      "publisher": "PyTorch",
+      "url": "https://pytorch.org/tutorials/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "tensorflow-guide",
+      "type": "documentation",
+      "title": "TensorFlow Guide",
+      "publisher": "TensorFlow",
+      "url": "https://www.tensorflow.org/guide",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "flashattention-paper",
+      "type": "paper",
+      "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+      "publisher": "arXiv",
+      "url": "https://arxiv.org/abs/2205.14135",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "snorkel",
+      "type": "project",
+      "title": "Snorkel",
+      "publisher": "Snorkel AI",
+      "url": "https://www.snorkel.org/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "jax-docs",
+      "type": "documentation",
+      "title": "JAX Documentation",
+      "publisher": "JAX",
+      "url": "https://jax.readthedocs.io/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "pytorch-ddp",
+      "type": "documentation",
+      "title": "What is Distributed Data Parallel?",
+      "publisher": "PyTorch",
+      "url": "https://docs.pytorch.org/tutorials/beginner/ddp_series_theory.html",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "horovod",
+      "type": "project",
+      "title": "Horovod",
+      "publisher": "Horovod",
+      "url": "https://horovod.ai/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "tensorflow-model-optimization",
+      "type": "documentation",
+      "title": "TensorFlow Model Optimization",
+      "publisher": "TensorFlow",
+      "url": "https://www.tensorflow.org/model_optimization",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "apache-tvm",
+      "type": "project",
+      "title": "Apache TVM",
+      "publisher": "Apache TVM",
+      "url": "https://tvm.apache.org/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "mlc-ai",
+      "type": "project",
+      "title": "MLC AI",
+      "publisher": "MLC AI",
+      "url": "https://mlc.ai/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "mlcommons-inference-docs",
+      "type": "documentation",
+      "title": "MLPerf Inference Benchmark Suite",
+      "publisher": "MLCommons",
+      "url": "https://docs.mlcommons.org/inference/index_gh/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "mlcommons-inference-datacenter",
+      "type": "documentation",
+      "title": "MLPerf Inference: Datacenter",
+      "publisher": "MLCommons",
+      "url": "https://mlcommons.org/benchmarks/inference-datacenter/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "google-cloud-mlops",
+      "type": "article",
+      "title": "MLOps: Continuous delivery and automation pipelines in machine learning",
+      "publisher": "Google Cloud Architecture Center",
+      "url": "https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "hidden-technical-debt",
+      "type": "paper",
+      "title": "Hidden Technical Debt in Machine Learning Systems",
+      "publisher": "NeurIPS",
+      "url": "https://papers.nips.cc/paper/5656-hidden-technical-debt-",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "mlflow",
+      "type": "project",
+      "title": "MLflow",
+      "publisher": "MLflow",
+      "url": "https://mlflow.org/",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "tensorflow-federated",
+      "type": "documentation",
+      "title": "TensorFlow Federated",
+      "publisher": "TensorFlow",
+      "url": "https://www.tensorflow.org/federated",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    },
+    {
+      "id": "nist-ai-rmf",
+      "type": "framework",
+      "title": "AI Risk Management Framework",
+      "publisher": "National Institute of Standards and Technology",
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "usedByCourseIds": ["local-mlsys"],
+      "usedByCourseTitles": ["Machine Learning Systems"]
+    }
+  ]
+}

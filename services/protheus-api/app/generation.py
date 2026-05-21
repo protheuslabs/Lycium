@@ -14,6 +14,19 @@ from app.models import CourseDraft, CourseSnapshot, KnowledgeObject, Learner, Pr
 from app.retrieval import assemble_learning_packet, search_knowledge_objects, tokenize
 
 
+COURSE_GENERATION_RULES = (
+    "Quizzes are assessment-only sections. Do not mix instructional content and quiz content "
+    "inside the same generated section. Use pageType='learn' for instructional pages and "
+    "pageType='apply' for assessment or practice pages. End every learn page with a conceptCards "
+    "block that identifies concepts introduced on the page. Each concept object must include "
+    "a raw name and a concise description. Module summaries must be learn pages with a conceptCards "
+    "block titled 'Module concepts' that aggregates concept objects from the module's learn pages. "
+    "Do not use interpretive prose categories as concept cards. Quiz blocks may include maxAttempts "
+    "and timeLimitSeconds; omitted or blank values mean unlimited. showAnswers defaults to false, "
+    "but answers are shown after submission on the final allowed attempt."
+)
+
+
 def _stable_id(prefix: str, *parts: str) -> str:
     seed = "::".join(parts)
     digest = hashlib.sha1(seed.encode("utf-8")).hexdigest()[:10]
@@ -59,6 +72,79 @@ def _build_quiz_for_section(section_title: str, concept_tokens: list[str]) -> di
         "question": f"Which concept is most central to: {section_title}?",
         "options": options,
         "answer": 0,
+        "questionsPerAttempt": "",
+        "maxAttempts": "",
+        "timeLimitSeconds": "",
+        "passPercentage": "",
+        "showAnswers": False,
+    }
+
+
+def _build_module_summary_section(
+    *,
+    module_id: str,
+    module_title: str,
+    section_rows: list[dict[str, Any]],
+) -> dict[str, Any]:
+    lesson_titles = [
+        section["title"]
+        for section in section_rows
+        if section.get("sectionType") != "assessment"
+    ]
+    summary_concepts: list[dict[str, str]] = []
+
+    for section in section_rows:
+        if section.get("sectionType") == "assessment":
+            continue
+        for block in section.get("content", []):
+            if block.get("type") != "conceptCards":
+                continue
+            for concept in block.get("concepts", []):
+                name = concept.get("name") if isinstance(concept, dict) else concept
+                if name:
+                    summary_concepts.append(
+                        {
+                            "name": str(name),
+                            "description": concept.get("description", "") if isinstance(concept, dict) else "",
+                            "sourceSectionId": section["id"],
+                        }
+                    )
+
+    if not summary_concepts:
+        summary_concepts = [
+            {
+                "name": title,
+                "description": f"A core concept introduced in the lesson page titled {title}.",
+            }
+            for title in lesson_titles[:5]
+        ] or [{"name": module_title, "description": f"The main concept focus of {module_title}."}]
+    citations: list[dict[str, Any]] = []
+    seen_source_ids: set[int] = set()
+
+    for section in section_rows:
+        for citation in section.get("citations", []):
+            source_id = citation.get("source_id")
+            if source_id in seen_source_ids:
+                continue
+            citations.append(citation)
+            if isinstance(source_id, int):
+                seen_source_ids.add(source_id)
+
+    return {
+        "id": _stable_id("sum", module_id, module_title),
+        "title": f"Module Summary: {module_title}",
+        "sectionType": "summary",
+        "pageType": "learn",
+        "learningObjectives": [],
+        "estimatedMinutes": 10,
+        "content": [
+            {
+                "type": "conceptCards",
+                "title": "Module concepts",
+                "concepts": summary_concepts,
+            }
+        ],
+        "citations": citations[:5],
     }
 
 
@@ -327,8 +413,6 @@ def _build_section_content(
             }
         )
 
-    concept_tokens = [token for token in tokenize(section_title) if len(token) > 3][:3]
-    blocks.append(_build_quiz_for_section(section_title, concept_tokens))
     return blocks, citations[:5], selected_ids
 
 
@@ -358,18 +442,56 @@ def generate_course_from_draft(
                 level=draft.difficulty,
             )
             section_id = section["id"]
+            concept_card_block = {
+                "type": "conceptCards",
+                "title": "Concepts introduced",
+                "concepts": [
+                    {
+                        "name": section["title"],
+                        "description": f"A core concept introduced in the lesson page titled {section['title']}.",
+                    }
+                ],
+            }
             section_rows.append(
                 {
                     "id": section_id,
                     "title": section["title"],
+                    "sectionType": "lesson",
+                    "pageType": "learn",
                     "learningObjectives": section.get("learning_objectives", []),
                     "estimatedMinutes": section.get("estimated_minutes", 20),
-                    "content": blocks,
+                    "content": [*blocks, concept_card_block],
                     "citations": citations,
                 }
             )
             section_source_map[section_id] = selected_ids
             citation_map[section_id] = citations
+
+            concept_tokens = [token for token in tokenize(section["title"]) if len(token) > 3][:3]
+            quiz_section_id = _stable_id("q", section_id, section["title"])
+            section_rows.append(
+                {
+                    "id": quiz_section_id,
+                    "title": f"Quiz: {section['title']}",
+                    "learningObjectives": [],
+                    "estimatedMinutes": 10,
+                    "content": [_build_quiz_for_section(section["title"], concept_tokens)],
+                    "citations": citations,
+                    "sectionType": "assessment",
+                    "pageType": "apply",
+                }
+            )
+            section_source_map[quiz_section_id] = selected_ids
+            citation_map[quiz_section_id] = citations
+
+        summary_section = _build_module_summary_section(
+            module_id=module["id"],
+            module_title=module["title"],
+            section_rows=section_rows,
+        )
+        section_rows.append(summary_section)
+        section_source_map[summary_section["id"]] = []
+        citation_map[summary_section["id"]] = summary_section["citations"]
 
         modules.append(
             {
@@ -392,6 +514,7 @@ def generate_course_from_draft(
             "status": "generated",
             "version": 1,
             "learningGoals": draft.learning_goals,
+            "courseGenerationRules": [COURSE_GENERATION_RULES],
         },
         "agentRoster": [
             {

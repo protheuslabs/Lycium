@@ -145,7 +145,10 @@ def test_outline_generation_course_delivery_and_analytics(client, monkeypatch) -
     course_id = course["id"]
     first_module = course["structure"]["modules"][0]
     first_section = first_module["sections"][0]
-    assert any(block["type"] == "quiz" for block in first_section["content"])
+    quiz_section = first_module["sections"][1]
+    assert all(block["type"] != "quiz" for block in first_section["content"])
+    assert quiz_section["sectionType"] == "assessment"
+    assert all(block["type"] == "quiz" for block in quiz_section["content"])
 
     ask = client.post(
         f"/v1/courses/{course_id}/ask",
