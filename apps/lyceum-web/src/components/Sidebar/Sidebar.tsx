@@ -142,6 +142,7 @@ export default function Sidebar({
     });
   };
 
+  // Course pages default to the compact navigation rail whenever learners change pages.
   useEffect(() => {
     setIsCollapsed(true);
   }, [courseTitle, currentSectionIndex]);

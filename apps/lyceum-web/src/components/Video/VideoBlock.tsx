@@ -1,13 +1,12 @@
-// AI-assisted: Video block with loading state and simple spinner.
-
 import { useState } from "react";
 import "./VideoBlock.css";
 
 type VideoBlockProps = {
   url: string;
+  title?: string;
 };
 
-export default function VideoBlock({ url }: VideoBlockProps) {
+export default function VideoBlock({ url, title = "Video content" }: VideoBlockProps) {
   const [loaded, setLoaded] = useState(false);
 
   function handleLoad() {
@@ -28,7 +27,7 @@ export default function VideoBlock({ url }: VideoBlockProps) {
         width="560"
         height="315"
         src={url}
-        title="Video content"
+        title={title}
         frameBorder={0}
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen

@@ -20,6 +20,19 @@ type CourseCatalogProps = {
   onOpenCourse: (course: CourseEntry) => void;
 };
 
+function getGeneratingCourseTitle(prompt: string): string {
+  const title = prompt
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!title) {
+    return "New course";
+  }
+
+  return title.length > 72 ? `${title.slice(0, 69)}...` : title;
+}
+
 export default function CourseCatalog({
   courses,
   prompt,
@@ -36,6 +49,8 @@ export default function CourseCatalog({
   const [infoCourse, setInfoCourse] = useState<CourseEntry | null>(null);
   const infoTagLabels = infoCourse ? getCourseTagLabels(infoCourse.data.tags) : [];
   const infoLearningTypes = infoCourse?.data.learningTypes ?? [];
+  const isGeneratingCourse = generateStatus === "loading";
+  const generatingCourseTitle = getGeneratingCourseTitle(prompt);
 
   const handleCourseKeyDown = (event: KeyboardEvent<HTMLElement>, course: CourseEntry) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -71,6 +86,7 @@ export default function CourseCatalog({
 
   const handleCreateSubmit = (event: FormEvent<HTMLFormElement>) => {
     onGenerateCourse(event);
+    setIsCreateModalOpen(false);
   };
 
   return (
@@ -93,6 +109,13 @@ export default function CourseCatalog({
               </div>
               <h3>Create Course</h3>
             </article>
+            {isGeneratingCourse && (
+              <article className="course-card course-card--generating" aria-live="polite" aria-busy="true">
+                <h3>{generatingCourseTitle}</h3>
+                <div className="generating-course-spinner" aria-hidden="true" />
+                <p className="course-generating-status">Course Generating</p>
+              </article>
+            )}
             {courses.map((course) => {
               const courseProgress = getCourseProgress(course);
               const bookmarkedSection = getBookmarkedModuleSection(course);

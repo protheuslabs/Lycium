@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./contentView.css";
 import QuizBlock from "../Quiz/QuizBlock";
+import VideoBlock from "../Video/VideoBlock";
 
 type ConceptCard = {
   name?: string;
@@ -321,7 +322,7 @@ export default function ContentView({
   
 }
 
-// AI generated function to render content blocks
+// Render a normalized course content block.
 function getSourcesByIds(sourceIds: string[] | undefined, sources: SourceRecord[]) {
   if (!Array.isArray(sourceIds) || sourceIds.length === 0) {
     return [];
@@ -396,16 +397,7 @@ function renderContentBlock(
       }
 
       return (
-        <div key={key} className="video-wrapper">
-          <iframe
-            width="560"
-            height="315"
-            src={videoUrl}
-            title={videoSource?.title ?? "Video content"}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
-        </div>
+        <VideoBlock key={key} url={videoUrl} title={videoSource?.title ?? "Video content"} />
       );
     }
       

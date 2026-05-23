@@ -1,15 +1,10 @@
-import type { CourseBookmarkRecord, CourseEntry, CourseSection, RouteInfo, SectionStatus } from "../courseTypes";
-
-type CourseProgressSummary = {
-  completed: number;
-  total: number;
-  percentage: number;
-  viewed: number;
-  viewedPercentage: number;
-};
-
-const VALID_SECTION_STATUSES: SectionStatus[] = ["completed", "locked", "seen", "timed"];
-const VIEWED_SECTION_STATUSES: SectionStatus[] = ["completed", "seen", "timed"];
+import type { CourseBookmarkRecord, CourseEntry, CourseSection, RouteInfo } from "../courseTypes";
+import {
+  DEFAULT_PROGRESS,
+  normalizeProgressRecord,
+  summarizeCourseProgress,
+  type CourseProgressSummary,
+} from "./courseProgress";
 
 export function slugifyCourseTitle(value: string): string {
   return value
@@ -119,69 +114,16 @@ export function getCourseSectionIds(course: CourseEntry): string[] {
   return getFlatCourseSections(course).map((section) => section.id);
 }
 
-function normalizeProgressSectionIds(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return Array.from(
-    new Set(value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0))
-  );
-}
-
-function normalizeStoredSectionStatuses(value: unknown): Record<string, SectionStatus> {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-
-  const statuses: Record<string, SectionStatus> = {};
-
-  for (const [sectionId, status] of Object.entries(value as Record<string, unknown>)) {
-    if (
-      typeof sectionId === "string" &&
-      sectionId.trim().length > 0 &&
-      typeof status === "string" &&
-      VALID_SECTION_STATUSES.includes(status as SectionStatus)
-    ) {
-      statuses[sectionId] = status as SectionStatus;
-    }
-  }
-
-  return statuses;
-}
-
-function isViewedSectionStatus(status: SectionStatus | undefined): boolean {
-  return Boolean(status && VIEWED_SECTION_STATUSES.includes(status));
-}
-
 export function getCourseProgress(course: CourseEntry): CourseProgressSummary {
   const courseStorageKey = `lyceum-progress-${course.key}`;
   const sections = getCourseSectionIds(course);
-  const sectionCount = sections.length;
-
-  if (sectionCount === 0) {
-    return { completed: 0, total: 0, percentage: 0, viewed: 0, viewedPercentage: 0 };
-  }
 
   try {
     const saved = localStorage.getItem(courseStorageKey);
-    const parsed = saved ? JSON.parse(saved) : {};
-    const completedSectionIds = normalizeProgressSectionIds(parsed?.completedSectionIds ?? parsed?.completed_section_ids);
-    const sectionStatuses = normalizeStoredSectionStatuses(parsed?.sectionStatuses ?? parsed?.section_statuses);
-
-    const completedSet = new Set(completedSectionIds);
-    const completed = sections.filter(
-      (sectionId) => completedSet.has(sectionId) || sectionStatuses[sectionId] === "completed"
-    ).length;
-    const viewed = sections.filter(
-      (sectionId) => completedSet.has(sectionId) || isViewedSectionStatus(sectionStatuses[sectionId])
-    ).length;
-    const percentage = (completed / sectionCount) * 100;
-    const viewedPercentage = (viewed / sectionCount) * 100;
-
-    return { completed, total: sectionCount, percentage, viewed, viewedPercentage };
+    const progress = saved ? normalizeProgressRecord(JSON.parse(saved)) : DEFAULT_PROGRESS;
+    return summarizeCourseProgress(sections, progress);
   } catch {
-    return { completed: 0, total: sectionCount, percentage: 0, viewed: 0, viewedPercentage: 0 };
+    return summarizeCourseProgress(sections, DEFAULT_PROGRESS);
   }
 }
 

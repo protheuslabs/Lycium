@@ -5,10 +5,20 @@ import ContentView from "./components/ContentView/ContentView";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
 import SettingsModal from "./components/SettingsModal/SettingsModal";
 import Sidebar from "./components/Sidebar/Sidebar";
+import TopBar from "./components/TopBar/TopBar";
 import { localCourses } from "./courseData/localCourses";
 import sourceRecordsData from "./courseData/sourceRecords";
 import type { CourseEntry, CourseProgressRecord, CourseSection, SectionStatus } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
+import {
+  areProgressRecordsEqual,
+  DEFAULT_PROGRESS,
+  normalizeCompletedSectionIds,
+  normalizeProgressRecord,
+  normalizeSectionStatuses,
+  resolveSectionStatuses,
+  summarizeCourseProgress,
+} from "./utils/courseProgress";
 import {
   findBookmarkedSection,
   getCoursePathSlug,
@@ -33,131 +43,6 @@ function scrollCoursePageToTop() {
   window.requestAnimationFrame(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   });
-}
-
-const VALID_SECTION_STATUSES: SectionStatus[] = ["completed", "locked", "seen", "timed"];
-const VIEWED_SECTION_STATUSES: SectionStatus[] = ["completed", "seen", "timed"];
-
-const DEFAULT_PROGRESS: CourseProgressRecord = {
-  completedSectionIds: [],
-  sectionStatuses: {},
-};
-
-function isViewedSectionStatus(status: SectionStatus | undefined): boolean {
-  return Boolean(status && VIEWED_SECTION_STATUSES.includes(status));
-}
-
-function normalizeCompletedSectionIds(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return Array.from(
-    new Set(value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0))
-  );
-}
-
-function normalizeSectionStatuses(value: unknown): Record<string, SectionStatus> {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-
-  const entries = Object.entries(value as Record<string, unknown>);
-  const next: Record<string, SectionStatus> = {};
-
-  for (const [sectionId, statusValue] of entries) {
-    if (typeof sectionId !== "string" || sectionId.trim().length === 0 || typeof statusValue !== "string") {
-      continue;
-    }
-    if (VALID_SECTION_STATUSES.includes(statusValue as SectionStatus)) {
-      next[sectionId] = statusValue as SectionStatus;
-    }
-  }
-
-  return next;
-}
-
-function normalizeProgressRecord(value: unknown): CourseProgressRecord {
-  if (!value || typeof value !== "object") {
-    return DEFAULT_PROGRESS;
-  }
-
-  const payload = value as Record<string, unknown>;
-  const completedSectionIds = normalizeCompletedSectionIds(payload.completedSectionIds ?? payload.completed_section_ids);
-  const sectionStatuses = normalizeSectionStatuses(payload.sectionStatuses ?? payload.section_statuses);
-
-  for (const sectionId of completedSectionIds) {
-    sectionStatuses[sectionId] = "completed";
-  }
-
-  return {
-    completedSectionIds,
-    sectionStatuses,
-  };
-}
-
-function areSectionStatusMapsEqual(a: Record<string, SectionStatus>, b: Record<string, SectionStatus>): boolean {
-  const aEntries = Object.entries(a);
-  const bEntries = Object.entries(b);
-
-  if (aEntries.length !== bEntries.length) {
-    return false;
-  }
-
-  for (const [sectionId, status] of aEntries) {
-    if (b[sectionId] !== status) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function areProgressRecordsEqual(a: CourseProgressRecord, b: CourseProgressRecord): boolean {
-  if (a.completedSectionIds.length !== b.completedSectionIds.length) {
-    return false;
-  }
-
-  const aCompleted = new Set(a.completedSectionIds);
-  for (const sectionId of b.completedSectionIds) {
-    if (!aCompleted.has(sectionId)) {
-      return false;
-    }
-  }
-
-  return areSectionStatusMapsEqual(a.sectionStatuses, b.sectionStatuses);
-}
-
-function resolveSectionStatuses(
-  sections: Array<{ id: string }>,
-  completedSectionIds: string[],
-  sectionStatuses: Record<string, SectionStatus>,
-  orderMandatory: boolean
-): Record<string, SectionStatus> {
-  const completedSet = new Set(completedSectionIds);
-  const resolvedStatuses: Record<string, SectionStatus> = {};
-  let hasIncompletePriorSection = false;
-
-  for (const section of sections) {
-    const sectionId = section.id;
-
-    if (completedSet.has(sectionId)) {
-      resolvedStatuses[sectionId] = "completed";
-    } else if (orderMandatory && hasIncompletePriorSection) {
-      resolvedStatuses[sectionId] = "locked";
-    } else {
-      const storedStatus = sectionStatuses[sectionId];
-      if (storedStatus === "timed" || storedStatus === "seen") {
-        resolvedStatuses[sectionId] = storedStatus;
-      }
-    }
-
-    if (!completedSet.has(sectionId)) {
-      hasIncompletePriorSection = true;
-    }
-  }
-
-  return resolvedStatuses;
 }
 
 function App() {
@@ -232,16 +117,20 @@ function App() {
     [sections, progress.completedSectionIds, progress.sectionStatuses, orderMandatory]
   );
   const completedSectionIds = new Set(progress.completedSectionIds);
-  const completedSectionCount = sections.filter((section) => completedSectionIds.has(section.id)).length;
-  const viewedSectionCount = sections.filter((section) => isViewedSectionStatus(resolvedSectionStatuses[section.id])).length;
-  const courseProgressPercentage = sections.length > 0 ? (completedSectionCount / sections.length) * 100 : 0;
-  const courseViewedPercentage = sections.length > 0 ? (viewedSectionCount / sections.length) * 100 : 0;
+  const courseProgress = summarizeCourseProgress(sections, {
+    completedSectionIds: progress.completedSectionIds,
+    sectionStatuses: resolvedSectionStatuses,
+  });
+  const courseProgressPercentage = courseProgress.percentage;
+  const courseViewedPercentage = courseProgress.viewedPercentage;
   const currentModuleIndex = currentSection?.moduleIndex ?? 0;
   const moduleSections = sections.filter((section) => section.moduleIndex === currentModuleIndex);
-  const completedModuleSectionCount = moduleSections.filter((section) => completedSectionIds.has(section.id)).length;
-  const viewedModuleSectionCount = moduleSections.filter((section) => isViewedSectionStatus(resolvedSectionStatuses[section.id])).length;
-  const moduleProgressPercentage = moduleSections.length > 0 ? (completedModuleSectionCount / moduleSections.length) * 100 : 0;
-  const moduleViewedPercentage = moduleSections.length > 0 ? (viewedModuleSectionCount / moduleSections.length) * 100 : 0;
+  const moduleProgress = summarizeCourseProgress(moduleSections, {
+    completedSectionIds: progress.completedSectionIds,
+    sectionStatuses: resolvedSectionStatuses,
+  });
+  const moduleProgressPercentage = moduleProgress.percentage;
+  const moduleViewedPercentage = moduleProgress.viewedPercentage;
 
   const normalizeProgressForCourse = useCallback(
     (candidate: CourseProgressRecord): CourseProgressRecord => {
@@ -669,26 +558,7 @@ function App() {
 
   return (
     <div className="app-root">
-      <header className="top-bar">
-        <a href="/settings" className="settings-link top-bar-icon-button" aria-label="Settings" onClick={routeToSettings}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.02-.66-.07-.98l2.06-1.6a.5.5 0 0 0 .12-.64l-1.95-3.37a.5.5 0 0 0-.6-.22l-2.43.98a7.3 7.3 0 0 0-1.69-.98l-.37-2.58A.5.5 0 0 0 14.08 2h-3.9a.5.5 0 0 0-.5.42L9.32 5a7.43 7.43 0 0 0-1.69.98L5.2 5a.5.5 0 0 0-.6.22L2.65 8.59a.5.5 0 0 0 .12.64l2.06 1.6c-.04.32-.08.65-.08.98s.03.66.08.98l-2.06 1.6a.5.5 0 0 0-.12.64l1.95 3.37c.13.22.39.31.6.22l2.43-.98c.52.4 1.08.73 1.69.98l.37 2.58c.04.24.25.42.5.42h3.9c.25 0 .46-.18.5-.42l.37-2.58a7.43 7.43 0 0 0 1.69-.98l2.43.98c.22.08.48 0 .6-.22l1.95-3.37a.5.5 0 0 0-.12-.64l-2.07-1.6ZM12.13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
-          </svg>
-        </a>
-        <span className="top-bar-title">
-          Lycium
-        </span>
-        <a
-          href="/"
-          className="catalog-link top-bar-icon-button"
-          aria-label="Course catalog"
-          onClick={(event: MouseEvent<HTMLAnchorElement>) => { event.preventDefault(); routeToHome(); }}
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M4.5 4h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm10 0h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm-10 10h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm10 0h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Z" />
-          </svg>
-        </a>
-      </header>
+      <TopBar onOpenSettings={routeToSettings} onOpenCatalog={routeToHome} />
 
       {viewRoute.kind === "home" ? (
         <CourseCatalog
