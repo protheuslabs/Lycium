@@ -16,6 +16,8 @@ dist-ssr
 __pycache__
 .pytest_cache
 .mypy_cache
+.data/
+.lyceum-local/
 
 # Editor directories and files
 .vscode/*

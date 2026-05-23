@@ -122,6 +122,61 @@ class LearningPacket(BaseModel):
     trust_floor_applied: float
 
 
+class LocalAgentKeyRead(BaseModel):
+    id: str
+    nickname: str
+    key_preview: str
+    is_active: bool = False
+
+
+class LocalSettingsRead(BaseModel):
+    local_data_dir: str
+    has_agent_api_key: bool
+    agent_api_key_preview: str | None = None
+    active_agent_key_id: str | None = None
+    agent_keys: list[LocalAgentKeyRead] = Field(default_factory=list)
+
+
+class LocalSettingsUpdate(BaseModel):
+    nickname: str = Field(min_length=1, max_length=120)
+    agent_api_key: str = Field(min_length=1, max_length=4096)
+
+
+class LocalActiveAgentKeyUpdate(BaseModel):
+    key_id: str = Field(min_length=1, max_length=160)
+
+
+class LocalCompletionUpdate(BaseModel):
+    course_key: str = Field(min_length=1)
+    course_title: str | None = None
+    section_id: str | None = None
+    completed_section_ids: list[str] = Field(default_factory=list)
+
+
+class LocalCompletionRead(BaseModel):
+    course_key: str
+    course_title: str | None = None
+    completed_section_ids: list[str] = Field(default_factory=list)
+    updated_at: str | None = None
+
+
+class LocalCourseBookmarkUpdate(BaseModel):
+    course_key: str = Field(min_length=1)
+    course_title: str | None = None
+    section_id: str = Field(min_length=1)
+    section_title: str | None = None
+    path: str = Field(min_length=1)
+
+
+class LocalCourseBookmarkRead(BaseModel):
+    course_key: str
+    course_title: str | None = None
+    section_id: str | None = None
+    section_title: str | None = None
+    path: str | None = None
+    updated_at: str | None = None
+
+
 class OutlineSection(BaseModel):
     id: str
     title: str

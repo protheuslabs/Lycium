@@ -1,0 +1,40 @@
+.catalog-footer {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: auto;
+  padding: 1.15rem 1.25rem;
+  border-top: 1px solid rgba(216, 222, 234, 0.18);
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(31, 45, 82, 0.94)),
+    #0f172a;
+  color: #eef3ff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.catalog-footer-brand {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: 0.035em;
+}
+
+.catalog-footer p {
+  margin: 0;
+  color: rgba(238, 243, 255, 0.78);
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .catalog-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .catalog-footer p {
+    text-align: left;
+  }
+}

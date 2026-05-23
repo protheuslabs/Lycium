@@ -24,6 +24,18 @@ from app.generation import (
 )
 from app.ingestion import ingest_source
 from app.jobs import enqueue_job, list_jobs, run_job, run_pending_jobs
+from app.local_store import (
+    activate_agent_api_key,
+    ensure_local_data_dirs,
+    local_settings_summary,
+    read_course_bookmark,
+    read_completion,
+    save_agent_api_key,
+    save_course_bookmark,
+    save_completion,
+    save_course_snapshot,
+    save_learner_record,
+)
 from app.models import (
     CourseDraft,
     CourseSnapshot,
@@ -62,6 +74,13 @@ from app.schemas import (
     LearnerUpdate,
     LearningPacket,
     LearningPacketRequest,
+    LocalActiveAgentKeyUpdate,
+    LocalCourseBookmarkRead,
+    LocalCourseBookmarkUpdate,
+    LocalCompletionRead,
+    LocalCompletionUpdate,
+    LocalSettingsRead,
+    LocalSettingsUpdate,
     PortfolioArtifactCreate,
     PortfolioArtifactRead,
     ProgramGenerateRequest,
@@ -77,6 +96,7 @@ from app.schemas import (
 def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
+        ensure_local_data_dirs()
         init_db()
         yield
 
@@ -98,6 +118,51 @@ def create_app() -> FastAPI:
             "protheus": "knowledge platform services",
         }
 
+    @app.get("/v1/local/settings", response_model=LocalSettingsRead)
+    def get_local_settings() -> dict[str, Any]:
+        return local_settings_summary()
+
+    @app.put("/v1/local/settings", response_model=LocalSettingsRead)
+    def update_local_settings(payload: LocalSettingsUpdate) -> dict[str, Any]:
+        try:
+            return save_agent_api_key(payload.nickname, payload.agent_api_key)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.put("/v1/local/settings/active-key", response_model=LocalSettingsRead)
+    def update_active_local_agent_key(payload: LocalActiveAgentKeyUpdate) -> dict[str, Any]:
+        try:
+            return activate_agent_api_key(payload.key_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.get("/v1/local/completion/{course_key}", response_model=LocalCompletionRead)
+    def get_local_completion(course_key: str) -> dict[str, Any]:
+        return read_completion(course_key)
+
+    @app.post("/v1/local/completion", response_model=LocalCompletionRead)
+    def update_local_completion(payload: LocalCompletionUpdate) -> dict[str, Any]:
+        return save_completion(
+            course_key=payload.course_key,
+            course_title=payload.course_title,
+            section_id=payload.section_id,
+            completed_section_ids=payload.completed_section_ids,
+        )
+
+    @app.get("/v1/local/bookmarks/{course_key}", response_model=LocalCourseBookmarkRead)
+    def get_local_course_bookmark(course_key: str) -> dict[str, Any]:
+        return read_course_bookmark(course_key)
+
+    @app.post("/v1/local/bookmarks", response_model=LocalCourseBookmarkRead)
+    def update_local_course_bookmark(payload: LocalCourseBookmarkUpdate) -> dict[str, Any]:
+        return save_course_bookmark(
+            course_key=payload.course_key,
+            course_title=payload.course_title,
+            section_id=payload.section_id,
+            section_title=payload.section_title,
+            path=payload.path,
+        )
+
     @app.post("/v1/learners", response_model=LearnerRead, status_code=status.HTTP_201_CREATED)
     def create_learner(payload: LearnerCreate, session: Session = Depends(get_session)) -> Learner:
         learner = Learner(
@@ -109,6 +174,7 @@ def create_app() -> FastAPI:
         session.add(learner)
         session.commit()
         session.refresh(learner)
+        save_learner_record(learner)
         return learner
 
     @app.get("/v1/learners", response_model=list[LearnerRead])
@@ -144,6 +210,7 @@ def create_app() -> FastAPI:
             learner.preferences = payload.preferences
         session.commit()
         session.refresh(learner)
+        save_learner_record(learner)
         return learner
 
     @app.post("/v1/sources/ingest", response_model=IngestSourceResponse, status_code=status.HTTP_201_CREATED)
@@ -336,6 +403,7 @@ def create_app() -> FastAPI:
             )
             session.commit()
             session.refresh(snapshot)
+            save_course_snapshot(snapshot)
             return snapshot
         except ValueError as exc:
             session.rollback()
@@ -359,6 +427,7 @@ def create_app() -> FastAPI:
             )
             session.commit()
             session.refresh(snapshot)
+            save_course_snapshot(snapshot)
             return snapshot
         except ValueError as exc:
             session.rollback()
@@ -420,6 +489,7 @@ def create_app() -> FastAPI:
             clone = fork_course(session, course=row, learner_id=learner_id)
             session.commit()
             session.refresh(clone)
+            save_course_snapshot(clone)
             return clone
         except ValueError as exc:
             session.rollback()
@@ -447,6 +517,7 @@ def create_app() -> FastAPI:
             )
             session.commit()
             session.refresh(refreshed)
+            save_course_snapshot(refreshed)
             return refreshed
         except ValueError as exc:
             session.rollback()
@@ -473,6 +544,7 @@ def create_app() -> FastAPI:
             )
             session.commit()
             session.refresh(updated)
+            save_course_snapshot(updated)
             return updated
         except ValueError as exc:
             session.rollback()
@@ -549,6 +621,13 @@ def create_app() -> FastAPI:
             )
         session.commit()
         session.refresh(progress)
+        if payload.completion_state in {"completed", "mastered"}:
+            save_completion(
+                course_key=f"remote-{course_snapshot_id}",
+                course_title=row.title,
+                section_id=payload.section_id,
+                completed_section_ids=[payload.section_id],
+            )
         return progress
 
     @app.get("/v1/courses/{course_snapshot_id}/progress", response_model=list[ProgressRead])
