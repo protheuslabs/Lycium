@@ -29,6 +29,12 @@ type RemoteCourseRow = {
   structure: CourseEntry["data"];
 };
 
+function scrollCoursePageToTop() {
+  window.requestAnimationFrame(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  });
+}
+
 function App() {
   const [courses, setCourses] = useState<CourseEntry[]>(localCourses);
   const [currentCourseKey, setCurrentCourseKey] = useState(localCourses[0]?.key ?? "");
@@ -163,6 +169,7 @@ function App() {
       }
       setCurrentPath(nextPath);
       rememberCourseSection(course, section, nextPath);
+      scrollCoursePageToTop();
     },
     [rememberCourseSection]
   );
@@ -197,6 +204,7 @@ function App() {
         window.history.pushState({ courseKey: course.key }, "", nextPath);
       }
       setCurrentPath(nextPath);
+      scrollCoursePageToTop();
     },
     [pushSectionPath]
   );

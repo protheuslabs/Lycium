@@ -1,6 +1,8 @@
+import { useState } from "react";
 import type { Dispatch, FormEvent, MouseEvent, SetStateAction } from "react";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
 import "./SettingsModal.css";
+import "./SettingsModal.theme.css";
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -43,15 +45,24 @@ export default function SettingsModal({
   onSettingsSubmit,
   onThemeModeChange,
 }: SettingsModalProps) {
+  const [isProviderMenuOpen, setIsProviderMenuOpen] = useState(false);
+
   if (!isOpen) {
     return null;
   }
 
   const isSavingAgentKey = apiKeySaveStatus === "loading";
+  const selectedProvider =
+    agentProviders.find((provider) => provider.id === agentProviderId) ?? agentProviders[0];
+
+  const handleClose = () => {
+    setIsProviderMenuOpen(false);
+    onClose();
+  };
 
   const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -60,6 +71,11 @@ export default function SettingsModal({
     if (apiKeySaveStatus === "invalid") {
       onApiKeySaveStatusChange("idle");
     }
+  };
+
+  const handleProviderSelection = (providerId: string) => {
+    onAgentProviderChange(providerId);
+    setIsProviderMenuOpen(false);
   };
 
   return (
@@ -71,7 +87,7 @@ export default function SettingsModal({
         aria-modal="true"
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <button className="settings-close-button" type="button" aria-label="Close settings" onClick={onClose}>
+        <button className="settings-close-button" type="button" aria-label="Close settings" onClick={handleClose}>
           <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
             <path d="M6.3 5.3a1 1 0 0 1 1.4 0l4.3 4.3 4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 11l4.3 4.3a1 1 0 0 1-1.4 1.4L12 12.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z" />
           </svg>
@@ -123,19 +139,43 @@ export default function SettingsModal({
             )}
             <form className="settings-form" onSubmit={onSettingsSubmit}>
               <div className="settings-entry-row">
-                <label className="settings-entry-field" htmlFor="agent-provider">
-                  <select
-                    id="agent-provider"
-                    className="settings-select"
-                    value={agentProviderId}
-                    onChange={(event) => onAgentProviderChange(event.target.value)}
+                <div className="settings-entry-field settings-provider-picker">
+                  <button
+                    className="settings-provider-trigger"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={isProviderMenuOpen}
                     disabled={isSavingAgentKey}
+                    onClick={() => setIsProviderMenuOpen((isOpen) => !isOpen)}
                   >
-                    {agentProviders.map((provider) => (
-                      <option key={provider.id} value={provider.id}>{provider.label}</option>
-                    ))}
-                  </select>
-                </label>
+                    <span>{selectedProvider?.label ?? "Provider"}</span>
+                    <svg className="settings-provider-chevron" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                      <path d="M6.7 9.3a1 1 0 0 1 1.4 0l3.9 3.9 3.9-3.9a1 1 0 1 1 1.4 1.4l-4.6 4.6a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4Z" />
+                    </svg>
+                  </button>
+                  {isProviderMenuOpen && (
+                    <div className="settings-provider-menu" role="listbox" aria-label="AI provider">
+                      {agentProviders.length > 0 ? (
+                        agentProviders.map((provider) => (
+                          <button
+                            key={provider.id}
+                            className={`settings-provider-option${
+                              provider.id === agentProviderId ? " settings-provider-option-active" : ""
+                            }`}
+                            type="button"
+                            role="option"
+                            aria-selected={provider.id === agentProviderId}
+                            onClick={() => handleProviderSelection(provider.id)}
+                          >
+                            {provider.label}
+                          </button>
+                        ))
+                      ) : (
+                        <span className="settings-provider-empty">No providers available</span>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <label className="settings-entry-field settings-entry-field-key" htmlFor="agent-api-key">
                   <input
                     id="agent-api-key"

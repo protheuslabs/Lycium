@@ -2,8 +2,39 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../courseTypes";
 
+const DEFAULT_AGENT_PROVIDERS: AgentProviderRecord[] = [
+  {
+    id: "openai",
+    label: "OpenAI",
+    default_model: "gpt-4.1-mini",
+    model_fetch_supported: true,
+    generation_adapter: "openai-chat-completions",
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    default_model: "openai/gpt-4.1-mini",
+    model_fetch_supported: true,
+    generation_adapter: "openai-chat-completions",
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    default_model: "claude-3-5-sonnet-latest",
+    model_fetch_supported: true,
+    generation_adapter: "anthropic-messages",
+  },
+  {
+    id: "google-gemini",
+    label: "Google Gemini",
+    default_model: "models/gemini-2.5-flash",
+    model_fetch_supported: true,
+    generation_adapter: "gemini-generate-content",
+  },
+];
+
 export function useAgentSettings(routeKind: string, apiBase: string) {
-  const [agentProviders, setAgentProviders] = useState<AgentProviderRecord[]>([]);
+  const [agentProviders, setAgentProviders] = useState<AgentProviderRecord[]>(DEFAULT_AGENT_PROVIDERS);
   const [agentProviderId, setAgentProviderId] = useState("openai");
   const [agentApiKey, setAgentApiKey] = useState("");
   const [agentKeys, setAgentKeys] = useState<AgentKeyRecord[]>([]);
@@ -120,14 +151,26 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (themeMode === "auto") {
-      root.removeAttribute("data-theme");
-      root.style.colorScheme = "light dark";
+
+    const applyResolvedTheme = (resolvedTheme: "light" | "dark") => {
+      root.setAttribute("data-theme", resolvedTheme);
+      root.style.colorScheme = resolvedTheme;
+    };
+
+    if (themeMode !== "auto") {
+      applyResolvedTheme(themeMode);
       return;
     }
 
-    root.setAttribute("data-theme", themeMode);
-    root.style.colorScheme = themeMode;
+    const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+    const applySystemTheme = () => applyResolvedTheme(systemTheme.matches ? "dark" : "light");
+
+    applySystemTheme();
+    systemTheme.addEventListener("change", applySystemTheme);
+
+    return () => {
+      systemTheme.removeEventListener("change", applySystemTheme);
+    };
   }, [themeMode]);
 
   useEffect(() => {
@@ -151,10 +194,16 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     ])
       .then(([providers, settings]) => {
         if (ignored) return;
+        const loadedProviders =
+          Array.isArray(providers) && providers.length > 0 ? providers : DEFAULT_AGENT_PROVIDERS;
         const activeKey = (settings.agent_keys ?? []).find((key: AgentKeyRecord) => key.is_active);
         setSettingsStatus("idle");
-        setAgentProviders(providers ?? []);
-        setAgentProviderId((currentProviderId) => currentProviderId || providers?.[0]?.id || "openai");
+        setAgentProviders(loadedProviders);
+        setAgentProviderId((currentProviderId) =>
+          loadedProviders.some((provider) => provider.id === currentProviderId)
+            ? currentProviderId
+            : loadedProviders[0]?.id || "openai"
+        );
         setAgentKeys(settings.agent_keys ?? []);
         setSettingsMessage(
           activeKey ? `${activeKey.provider_label} is active with ${activeKey.model ?? "no model selected"}.` : "No agent API key saved yet."
@@ -163,6 +212,12 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
       .catch((err) => {
         if (ignored) return;
         console.warn("Unable to load settings:", err);
+        setAgentProviders(DEFAULT_AGENT_PROVIDERS);
+        setAgentProviderId((currentProviderId) =>
+          DEFAULT_AGENT_PROVIDERS.some((provider) => provider.id === currentProviderId)
+            ? currentProviderId
+            : DEFAULT_AGENT_PROVIDERS[0]?.id || "openai"
+        );
         setSettingsStatus("error");
         setSettingsMessage("");
       });
