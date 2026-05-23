@@ -26,16 +26,13 @@ export default function Sidebar({
   onSectionSelect,
   courseTitle,
   progressPercentage,
-  contentHeight,
   completedSectionIds,
   orderMandatory
 }: SidebarProps) {
-  const sidebarStyle = contentHeight
-    ? { height: `${contentHeight}px`, maxHeight: `${contentHeight}px` }
-    : undefined;
   const completedSections = new Set(completedSectionIds);
   const activeModuleIndex = sections[currentSectionIndex]?.moduleIndex ?? 0;
   const [expandedModules, setExpandedModules] = useState<Set<number>>(() => new Set());
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const moduleGroups = useMemo(() => {
     const groups: Array<{
       moduleIndex: number;
@@ -80,8 +77,18 @@ export default function Sidebar({
   };
   
   return (
-    <aside className="sidebar" style={sidebarStyle}>
-      <div className="progress-wrapper">
+    <aside className={`sidebar ${isCollapsed ? "sidebar--collapsed" : ""}`}>
+      <button
+        className="sidebar-pulltab"
+        type="button"
+        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        aria-expanded={!isCollapsed}
+        onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+      >
+        <span aria-hidden="true">{isCollapsed ? "›" : "‹"}</span>
+      </button>
+
+      <div className="progress-wrapper" aria-hidden={isCollapsed}>
         <h3 className="sidebar-title">{courseTitle}</h3>
         <div className="progress-meter">
           <div className="progress-bar">
@@ -100,6 +107,17 @@ export default function Sidebar({
         {moduleGroups.map((moduleGroup) => {
           const isActiveModule = moduleGroup.moduleIndex === activeModuleIndex;
           const isExpanded = isActiveModule || expandedModules.has(moduleGroup.moduleIndex);
+          const isModuleCompleted = moduleGroup.sections.every(({ section }) => completedSections.has(section.id));
+          const isModuleLocked =
+            orderMandatory &&
+            !isModuleCompleted &&
+            moduleGroup.sections.every(({ index: idx, section }) => {
+              const sectionLocked =
+                !completedSections.has(section.id) &&
+                sections.slice(0, idx).some((previousSection) => !completedSections.has(previousSection.id));
+              return sectionLocked;
+            });
+          const moduleStatusLabel = isModuleCompleted ? "Completed" : isModuleLocked ? "Locked" : "Available";
           
           return (
             <section className="sidebar-module" key={moduleGroup.moduleIndex}>
@@ -112,9 +130,25 @@ export default function Sidebar({
                 aria-expanded={isExpanded}
                 aria-disabled={isActiveModule}
               >
-                <span>
-                  Module {moduleGroup.moduleIndex + 1}: {moduleGroup.moduleTitle}
+                <span className="module-header-label">
+                  {isCollapsed ? `M${moduleGroup.moduleIndex + 1}` : `Module ${moduleGroup.moduleIndex + 1}: ${moduleGroup.moduleTitle}`}
                 </span>
+                {isCollapsed && (
+                  <span
+                    className={`sidebar-status module-header-status ${
+                      isModuleCompleted
+                        ? "sidebar-status--complete"
+                        : isModuleLocked
+                          ? "sidebar-status--locked"
+                          : ""
+                    }`}
+                    aria-label={moduleStatusLabel}
+                    title={moduleStatusLabel}
+                  >
+                    {isModuleCompleted && <span className="sidebar-status-check">✓</span>}
+                    {isModuleLocked && <span className="sidebar-lock-icon" aria-hidden="true" />}
+                  </span>
+                )}
                 <span className="module-header-caret" aria-hidden="true">
                   ▾
                 </span>
@@ -148,7 +182,7 @@ export default function Sidebar({
                         aria-disabled={isLocked}
                       >
                         <span className="sidebar-item-label">
-                          {section.displayNumber} {section.title}
+                          {isCollapsed ? section.displayNumber : `${section.displayNumber} ${section.title}`}
                         </span>
                         <span
                           className={`sidebar-status ${

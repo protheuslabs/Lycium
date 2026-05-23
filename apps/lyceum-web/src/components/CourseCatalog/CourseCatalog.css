@@ -104,16 +104,21 @@
   transition: opacity 180ms ease, transform 220ms ease;
 }
 
-.course-card:hover,
-.course-card:focus-visible {
+.course-card:hover {
   border-color: transparent;
   box-shadow: 0 18px 34px rgba(74, 108, 247, 0.14);
   transform: translateY(-2px);
   outline: none;
 }
 
-.course-card:hover::after,
-.course-card:focus-visible::after {
+.course-card:focus,
+.course-card:focus-visible,
+.course-card:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.course-card:hover::after {
   opacity: 1;
   transform: scale(1);
 }
