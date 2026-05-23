@@ -20,6 +20,7 @@ import {
   summarizeCourseProgress,
 } from "./utils/courseProgress";
 import {
+  COURSE_CATALOG_PATH,
   findBookmarkedSection,
   getCoursePathSlug,
   getCourseSectionIndex,
@@ -170,10 +171,10 @@ function App() {
   );
 
   const routeToHome = useCallback(() => {
-    if (window.location.pathname !== "/") {
-      window.history.pushState({}, "", "/");
+    if (window.location.pathname !== COURSE_CATALOG_PATH) {
+      window.history.pushState({}, "", COURSE_CATALOG_PATH);
     }
-    setCurrentPath("/");
+    setCurrentPath(COURSE_CATALOG_PATH);
   }, []);
 
   const routeToSettings = useCallback(
@@ -391,6 +392,15 @@ function App() {
     window.addEventListener("popstate", syncPath);
     return () => window.removeEventListener("popstate", syncPath);
   }, []);
+
+  useEffect(() => {
+    if (currentPath !== "/") {
+      return;
+    }
+
+    window.history.replaceState({}, "", COURSE_CATALOG_PATH);
+    setCurrentPath(COURSE_CATALOG_PATH);
+  }, [currentPath]);
 
   useEffect(() => {
     if (route.kind !== "course" || !route.courseSlug) return;

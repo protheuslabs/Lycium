@@ -1,5 +1,6 @@
 
 import type { MouseEvent } from "react";
+import { COURSE_CATALOG_PATH } from "../../utils/courseRouting";
 import "./topBar.css";
 
 type TopBarProps = {
@@ -12,7 +13,7 @@ export default function TopBar({ onOpenCatalog, onOpenSettings }: TopBarProps) {
     <header className="top-bar">
       <span className="top-bar-title">Lycium</span>
       <a
-        href="/"
+        href={COURSE_CATALOG_PATH}
         className="catalog-link top-bar-icon-button"
         aria-label="Course catalog"
         onClick={(event) => {

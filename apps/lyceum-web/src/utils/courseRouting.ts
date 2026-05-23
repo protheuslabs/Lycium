@@ -6,6 +6,8 @@ import {
   type CourseProgressSummary,
 } from "./courseProgress";
 
+export const COURSE_CATALOG_PATH = "/catalog";
+
 export function slugifyCourseTitle(value: string): string {
   return value
     .toLowerCase()
@@ -130,7 +132,7 @@ export function getCourseProgress(course: CourseEntry): CourseProgressSummary {
 export function parseCourseRoute(pathname: string): RouteInfo {
   const pathWithoutQuery = pathname.split("?")[0].replace(/\/+$/, "") || "/";
 
-  if (pathWithoutQuery === "/" || pathWithoutQuery === "/courses") {
+  if (pathWithoutQuery === "/" || pathWithoutQuery === COURSE_CATALOG_PATH || pathWithoutQuery === "/courses") {
     return { kind: "home", courseSlug: null, unitSlug: null };
   }
 
