@@ -1,0 +1,88 @@
+name: Commit Prefix Guard
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  enforce-prefixes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit message prefixes
+        env:
+          ALLOWED_PREFIX_PATTERN: "feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert"
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import subprocess
+          import sys
+
+          event_name = os.environ["GITHUB_EVENT_NAME"]
+          event_path = os.environ["GITHUB_EVENT_PATH"]
+          allowed = os.environ["ALLOWED_PREFIX_PATTERN"]
+          prefix_re = re.compile(rf"^({allowed})(\([a-zA-Z0-9._/-]+\))?!?: .+")
+
+          def allowed_message(subject: str) -> bool:
+              if not subject:
+                  return False
+              if subject.startswith("Merge "):
+                  return True
+              if subject.startswith("Revert \""):
+                  return True
+              return bool(prefix_re.match(subject))
+
+          with open(event_path, "r", encoding="utf-8") as f:
+              event = json.load(f)
+
+          commits: list[tuple[str, str]] = []
+
+          if event_name == "push":
+              for commit in event.get("commits", []):
+                  sha = commit.get("id", "")[:7]
+                  subject = (commit.get("message", "") or "").splitlines()[0].strip()
+                  commits.append((sha, subject))
+          elif event_name == "pull_request":
+              base_sha = event["pull_request"]["base"]["sha"]
+              head_sha = event["pull_request"]["head"]["sha"]
+              output = subprocess.check_output(
+                  ["git", "log", "--format=%H%x09%s", f"{base_sha}..{head_sha}"],
+                  text=True,
+              )
+              for line in output.splitlines():
+                  sha, subject = line.split("\t", 1)
+                  commits.append((sha[:7], subject.strip()))
+          else:
+              print(f"Unsupported event: {event_name}")
+              sys.exit(0)
+
+          if not commits:
+              print("No commits to validate.")
+              sys.exit(0)
+
+          invalid: list[tuple[str, str]] = []
+          for sha, subject in commits:
+              if not allowed_message(subject):
+                  invalid.append((sha, subject))
+
+          if invalid:
+              print("Commit message prefix check failed.")
+              print("Expected one of these prefixes:")
+              print("  feat:, fix:, chore:, docs:, style:, refactor:, perf:, test:, build:, ci:, revert:")
+              print("")
+              print("Invalid commits:")
+              for sha, subject in invalid:
+                  print(f"  - {sha} {subject}")
+              sys.exit(1)
+
+          print(f"All {len(commits)} commit message(s) passed prefix validation.")
+          PY
