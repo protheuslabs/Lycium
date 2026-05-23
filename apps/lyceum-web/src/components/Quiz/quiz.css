@@ -224,16 +224,16 @@
 }
 
 .quiz-option--correct-answer > span:last-child {
-  color: #111827;
+  color: #171717;
   font-weight: 400;
 }
 
 .quiz-option--wrong-selection > span:last-child {
-  color: #111827;
+  color: #171717;
   font-weight: 400;
   text-decoration: line-through;
   text-decoration-thickness: 0.12em;
-  text-decoration-color: #111827;
+  text-decoration-color: #171717;
 }
 
 .quiz-actions {
@@ -293,4 +293,165 @@
 .quiz-summary {
   margin: 0;
   text-align: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .quiz-block {
+    border-color: #303033;
+    background: #171717;
+    color: #e5e7eb;
+  }
+
+  .quiz-meta-row {
+    border-color: #3a3a3d;
+    background: #111112;
+    color: #cbd5e1;
+  }
+
+  .quiz-meta-row--submitted,
+  .quiz-meta-row--current {
+    background: #111112;
+  }
+
+  .quiz-meta-row--current:hover,
+  .quiz-meta-row--submitted:hover {
+    border-color: #4a6cf7;
+    background: #1f1f20;
+  }
+
+  .quiz-meta-row--active {
+    border-color: #d4d4d8;
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.22);
+  }
+
+  .quiz-score--neutral,
+  .quiz-question,
+  .quiz-option,
+  .quiz-result,
+  .quiz-summary {
+    color: #e5e7eb;
+  }
+
+  .quiz-score--pass,
+  .quiz-correct {
+    color: #48d86d;
+  }
+
+  .quiz-score--fail,
+  .quiz-incorrect {
+    color: #f87171;
+  }
+
+  .quiz-marker,
+  .quiz-question-marker {
+    border-color: #4b4b50;
+    background: #111112;
+    color: #e5e7eb;
+  }
+
+  .quiz-marker:hover:not(:disabled),
+  .quiz-question-marker:hover:not(:disabled) {
+    background: #262626;
+  }
+
+  .quiz-marker-marked,
+  .quiz-question-marker.quiz-marker-marked {
+    border-color: #f3c565;
+    background: rgba(243, 197, 101, 0.2);
+    color: #fde68a;
+  }
+
+  .quiz-timer {
+    color: #cbd5e1;
+  }
+
+  .quiz-question-block + .quiz-question-block {
+    border-top-color: #303033;
+  }
+
+  .quiz-option-control input {
+    accent-color: #d4d4d8;
+  }
+
+  .quiz-option--correct-answer > span:last-child,
+  .quiz-option--wrong-selection > span:last-child {
+    color: #e5e7eb;
+  }
+
+  .quiz-option--wrong-selection > span:last-child {
+    text-decoration-color: #e5e7eb;
+  }
+
+  .quiz-button:disabled {
+    background: #3a3a3d;
+    border-color: #3a3a3d;
+    color: rgba(255, 255, 255, 0.62);
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-block {
+  border-color: #303033;
+  background: #171717;
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-meta-row {
+  border-color: #3a3a3d;
+  background: #111112;
+  color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-question,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-option,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-result,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-summary,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-score--neutral {
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-marker,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-question-marker {
+  border-color: #4b4b50;
+  background: #111112;
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .quiz-question-block + .quiz-question-block {
+  border-top-color: #303033;
+}
+
+html[data-theme="light"] .quiz-block {
+  border-color: #ddd;
+  background: #f7f7f7;
+  color: #213547;
+}
+
+html[data-theme="light"] .quiz-meta-row {
+  border-color: #e1e5f4;
+  background: #ffffff;
+  color: #4f5d76;
+}
+
+html[data-theme="light"] .quiz-meta-row--submitted,
+html[data-theme="light"] .quiz-meta-row--current {
+  background: #ffffff;
+}
+
+html[data-theme="light"] .quiz-question,
+html[data-theme="light"] .quiz-option,
+html[data-theme="light"] .quiz-result,
+html[data-theme="light"] .quiz-summary,
+html[data-theme="light"] .quiz-score--neutral {
+  color: #1f2937;
+}
+
+html[data-theme="light"] .quiz-marker,
+html[data-theme="light"] .quiz-question-marker {
+  border-color: #c0c0c0;
+  background: #ffffff;
+  color: #213547;
+}
+
+html[data-theme="light"] .quiz-question-block + .quiz-question-block {
+  border-top-color: #e4e4e4;
 }

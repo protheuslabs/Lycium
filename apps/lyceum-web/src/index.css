@@ -78,3 +78,28 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #e5e7eb;
+    background-color: #0b0b0c;
+  }
+
+  body {
+    background: #0b0b0c;
+  }
+}
+
+html[data-theme="dark"],
+body[data-theme="dark"],
+body.dark,
+body.dark-mode {
+  color: #e5e7eb;
+  background: #0b0b0c;
+}
+
+html[data-theme="light"],
+html[data-theme="light"] body {
+  color: #213547;
+  background: #ffffff;
+}

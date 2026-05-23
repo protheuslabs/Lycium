@@ -20,7 +20,10 @@ COURSE_GENERATION_RULES = (
     "pageType='apply' for assessment or practice pages. End every learn page with a conceptCards "
     "block that identifies concepts introduced on the page. Each concept object must include "
     "a raw name and a concise description. Module summaries must be learn pages with a conceptCards "
-    "block titled 'Module concepts' that aggregates concept objects from the module's learn pages. "
+    "block titled according to the course pacing label, such as 'Module concepts' or 'Week concepts', "
+    "that aggregates concept objects from the module or week learn pages. Choose exactly one learner-facing "
+    "pacing label, 'Module' or 'Week', record it in metadata.pacingLabel, and do not mix the two labels "
+    "in module titles, summary titles, or summary concept-card titles. "
     "Do not use interpretive prose categories as concept cards. Quiz blocks may include maxAttempts "
     "and timeLimitSeconds; omitted or blank values mean unlimited. showAnswers defaults to false, "
     "but answers are shown after submission on the final allowed attempt."
@@ -86,6 +89,9 @@ def _build_module_summary_section(
     module_title: str,
     section_rows: list[dict[str, Any]],
 ) -> dict[str, Any]:
+    pacing_label = "Week" if module_title.startswith("Week ") else "Module"
+    summary_subject = re.sub(r"^Week\s+\d+:\s*", "", module_title)
+    summary_subject = re.sub(r"^Module\s+\d+:\s*", "", summary_subject)
     lesson_titles = [
         section["title"]
         for section in section_rows
@@ -132,7 +138,7 @@ def _build_module_summary_section(
 
     return {
         "id": _stable_id("sum", module_id, module_title),
-        "title": f"Module Summary: {module_title}",
+        "title": f"{pacing_label} Summary: {summary_subject}",
         "sectionType": "summary",
         "pageType": "learn",
         "learningObjectives": [],
@@ -140,7 +146,7 @@ def _build_module_summary_section(
         "content": [
             {
                 "type": "conceptCards",
-                "title": "Module concepts",
+                "title": f"{pacing_label} concepts",
                 "concepts": summary_concepts,
             }
         ],
@@ -507,6 +513,7 @@ def generate_course_from_draft(
         "orderMandatory": bool(draft.constraints.get("order_mandatory", False)),
         "metadata": {
             "prompt": draft.prompt,
+            "pacingLabel": "Module",
             "targetAudience": draft.target_audience,
             "durationMinutes": draft.expected_duration_minutes,
             "difficulty": draft.difficulty,

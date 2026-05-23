@@ -434,13 +434,13 @@
         },
         {
           "id": "mlsys-m01-summary",
-          "title": "Module Summary: Week 1: ML Systems as an Engineering Discipline",
+          "title": "Week Summary: ML Systems as an Engineering Discipline",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "ML system lifecycle",
@@ -925,13 +925,13 @@
         },
         {
           "id": "mlsys-m02-summary",
-          "title": "Module Summary: Week 2: Deployment Paradigms and System Requirements",
+          "title": "Week Summary: Deployment Paradigms and System Requirements",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Batch inference",
@@ -1416,13 +1416,13 @@
         },
         {
           "id": "mlsys-m03-summary",
-          "title": "Module Summary: Week 3: Deep Learning Primer for Systems Engineers",
+          "title": "Week Summary: Deep Learning Primer for Systems Engineers",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Neural network",
@@ -1901,13 +1901,13 @@
         },
         {
           "id": "mlsys-m04-summary",
-          "title": "Module Summary: Week 4: DNN Architectures and Computational Patterns",
+          "title": "Week Summary: DNN Architectures and Computational Patterns",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Convolutional neural network",
@@ -2391,13 +2391,13 @@
         },
         {
           "id": "mlsys-m05-summary",
-          "title": "Module Summary: Week 5: AI Workflow and Data Engineering",
+          "title": "Week Summary: AI Workflow and Data Engineering",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Data collection",
@@ -2888,13 +2888,13 @@
         },
         {
           "id": "mlsys-m06-summary",
-          "title": "Module Summary: Week 6: AI Frameworks, Graphs, Autodiff, and Runtime Systems",
+          "title": "Week Summary: AI Frameworks, Graphs, Autodiff, and Runtime Systems",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "TensorFlow",
@@ -3380,13 +3380,13 @@
         },
         {
           "id": "mlsys-m07-summary",
-          "title": "Module Summary: Week 7: Training Systems and Distributed Training",
+          "title": "Week Summary: Training Systems and Distributed Training",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Distributed training",
@@ -3871,13 +3871,13 @@
         },
         {
           "id": "mlsys-m08-summary",
-          "title": "Module Summary: Week 8: Efficient AI and Model Optimization",
+          "title": "Week Summary: Efficient AI and Model Optimization",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Quantization",
@@ -4368,13 +4368,13 @@
         },
         {
           "id": "mlsys-m09-summary",
-          "title": "Module Summary: Week 9: AI Acceleration and Hardware/Software Co-Design",
+          "title": "Week Summary: AI Acceleration and Hardware/Software Co-Design",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "GPU",
@@ -4860,13 +4860,13 @@
         },
         {
           "id": "mlsys-m10-summary",
-          "title": "Module Summary: Week 10: Benchmarking, Evaluation, and Experiment Discipline",
+          "title": "Week Summary: Benchmarking, Evaluation, and Experiment Discipline",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Benchmark",
@@ -5357,13 +5357,13 @@
         },
         {
           "id": "mlsys-m11-summary",
-          "title": "Module Summary: Week 11: MLOps, Serving, Observability, and Technical Debt",
+          "title": "Week Summary: MLOps, Serving, Observability, and Technical Debt",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "MLOps",
@@ -5849,13 +5849,13 @@
         },
         {
           "id": "mlsys-m12-summary",
-          "title": "Module Summary: Week 12: On-Device Learning, Federated Systems, and Privacy",
+          "title": "Week Summary: On-Device Learning, Federated Systems, and Privacy",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "On-device inference",
@@ -6340,13 +6340,13 @@
         },
         {
           "id": "mlsys-m13-summary",
-          "title": "Module Summary: Week 13: Security, Robustness, and Responsible AI",
+          "title": "Week Summary: Security, Robustness, and Responsible AI",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Adversarial example",
@@ -6837,13 +6837,13 @@
         },
         {
           "id": "mlsys-m14-summary",
-          "title": "Module Summary: Week 14: Sustainable AI, AI for Good, Frontiers, and Final Design Review",
+          "title": "Week Summary: Sustainable AI, AI for Good, Frontiers, and Final Design Review",
           "sectionType": "summary",
           "pageType": "learn",
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Sustainable AI",
@@ -6935,5 +6935,8 @@
     "stanford-malleable-ml-systems",
     "nist-ai-rmf",
     "stanford-sustainable-datacenters-ai"
-  ]
+  ],
+  "metadata": {
+    "pacingLabel": "Week"
+  }
 }

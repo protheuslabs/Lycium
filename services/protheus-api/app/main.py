@@ -10,6 +10,13 @@ from sqlalchemy.orm import Session
 
 from app.analytics import analytics_summary, record_event, upsert_progress
 from app.coverage import recompute_coverage
+from app.course_agent_harness import (
+    CourseAgentError,
+    generate_course_with_agent,
+    get_agent_provider,
+    list_agent_provider_summaries,
+    validate_agent_api_key,
+)
 from app.db import get_session, init_db
 from app.generation import (
     ask_instructor,
@@ -27,6 +34,7 @@ from app.jobs import enqueue_job, list_jobs, run_job, run_pending_jobs
 from app.local_store import (
     activate_agent_api_key,
     ensure_local_data_dirs,
+    get_active_agent_profile,
     local_settings_summary,
     read_course_bookmark,
     read_completion,
@@ -35,6 +43,7 @@ from app.local_store import (
     save_completion,
     save_course_snapshot,
     save_learner_record,
+    update_agent_key_model,
 )
 from app.models import (
     CourseDraft,
@@ -75,6 +84,8 @@ from app.schemas import (
     LearningPacket,
     LearningPacketRequest,
     LocalActiveAgentKeyUpdate,
+    LocalAgentKeyModelUpdate,
+    LocalAiProviderRead,
     LocalCourseBookmarkRead,
     LocalCourseBookmarkUpdate,
     LocalCompletionRead,
@@ -122,10 +133,28 @@ def create_app() -> FastAPI:
     def get_local_settings() -> dict[str, Any]:
         return local_settings_summary()
 
+    @app.get("/v1/local/ai/providers", response_model=list[LocalAiProviderRead])
+    def get_local_ai_providers() -> list[dict[str, Any]]:
+        return list_agent_provider_summaries()
+
     @app.put("/v1/local/settings", response_model=LocalSettingsRead)
     def update_local_settings(payload: LocalSettingsUpdate) -> dict[str, Any]:
         try:
-            return save_agent_api_key(payload.nickname, payload.agent_api_key)
+            provider = get_agent_provider(payload.provider_id)
+            models = validate_agent_api_key(payload.agent_api_key, provider_id=payload.provider_id)
+            default_model = str(provider.get("defaultModel") or "")
+            selected_model = (
+                default_model
+                if default_model and any(model.get("id") == default_model for model in models)
+                else (models[0]["id"] if models else default_model or None)
+            )
+            return save_agent_api_key(
+                provider_id=payload.provider_id,
+                provider_label=str(provider.get("label") or payload.provider_id),
+                api_key=payload.agent_api_key,
+                models=models,
+                model=selected_model,
+            )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -135,6 +164,13 @@ def create_app() -> FastAPI:
             return activate_agent_api_key(payload.key_id)
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.put("/v1/local/settings/key-model", response_model=LocalSettingsRead)
+    def update_local_agent_key_model(payload: LocalAgentKeyModelUpdate) -> dict[str, Any]:
+        try:
+            return update_agent_key_model(payload.key_id, payload.model)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/v1/local/completion/{course_key}", response_model=LocalCompletionRead)
     def get_local_completion(course_key: str) -> dict[str, Any]:
@@ -429,6 +465,53 @@ def create_app() -> FastAPI:
             session.refresh(snapshot)
             save_course_snapshot(snapshot)
             return snapshot
+        except ValueError as exc:
+            session.rollback()
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/v1/agent/courses/generate", response_model=CourseSnapshotRead, status_code=status.HTTP_201_CREATED)
+    def generate_course_with_llm_agent(
+        payload: GenerateCourseRequest,
+        session: Session = Depends(get_session),
+    ) -> CourseSnapshot:
+        try:
+            validate_learner_exists(session, payload.learner_id)
+            agent_profile = get_active_agent_profile()
+            if not agent_profile or not agent_profile.get("agent_api_key"):
+                raise ValueError("No active agent API key is saved. Add one in Settings first.")
+
+            generated = generate_course_with_agent(
+                prompt=payload.prompt,
+                api_key=str(agent_profile["agent_api_key"]),
+                provider_id=str(agent_profile.get("provider_id") or "openai"),
+                level=payload.level,
+                language=payload.language,
+                source_policy=payload.source_policy,
+                desired_module_count=payload.desired_module_count,
+                expected_duration_minutes=payload.expected_duration_minutes,
+                model=payload.model or agent_profile.get("model"),
+            )
+            snapshot = CourseSnapshot(
+                learner_id=payload.learner_id,
+                draft_id=None,
+                title=generated.course["title"],
+                prompt=payload.prompt,
+                language=payload.language,
+                level=payload.level,
+                source_policy=payload.source_policy,
+                status="generated",
+                version=1,
+                structure=generated.course,
+                generation_trace=generated.trace,
+            )
+            session.add(snapshot)
+            session.commit()
+            session.refresh(snapshot)
+            save_course_snapshot(snapshot)
+            return snapshot
+        except CourseAgentError as exc:
+            session.rollback()
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         except ValueError as exc:
             session.rollback()
             raise HTTPException(status_code=400, detail=str(exc)) from exc

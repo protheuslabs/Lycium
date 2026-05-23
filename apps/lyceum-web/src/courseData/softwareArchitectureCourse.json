@@ -559,7 +559,8 @@
           "sei-atam"
         ]
       }
-    }
+    },
+    "pacingLabel": "Week"
   },
   "modules": [
     {
@@ -964,7 +965,7 @@
         },
         {
           "id": "sa-m01-summary",
-          "title": "Module Summary: Architecture as Stakeholder-Centered Design",
+          "title": "Week Summary: Architecture as Stakeholder-Centered Design",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -974,7 +975,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Software architecture",
@@ -1445,7 +1446,7 @@
         },
         {
           "id": "sa-m02-summary",
-          "title": "Module Summary: Scope, Context, and System Boundaries",
+          "title": "Week Summary: Scope, Context, and System Boundaries",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -1456,7 +1457,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "System boundary",
@@ -1928,7 +1929,7 @@
         },
         {
           "id": "sa-m03-summary",
-          "title": "Module Summary: Stakeholders, Concerns, and Scenarios",
+          "title": "Week Summary: Stakeholders, Concerns, and Scenarios",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -1939,7 +1940,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Stakeholder",
@@ -2402,7 +2403,7 @@
         },
         {
           "id": "sa-m04-summary",
-          "title": "Module Summary: Styles, Patterns, and Architectural Models",
+          "title": "Week Summary: Styles, Patterns, and Architectural Models",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -2412,7 +2413,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Architectural style",
@@ -2889,7 +2890,7 @@
         },
         {
           "id": "sa-m05-summary",
-          "title": "Module Summary: Viewpoints and Views",
+          "title": "Week Summary: Viewpoints and Views",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -2900,7 +2901,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Architecture viewpoint",
@@ -3363,7 +3364,7 @@
         },
         {
           "id": "sa-m06-summary",
-          "title": "Module Summary: Context and Functional Viewpoints",
+          "title": "Week Summary: Context and Functional Viewpoints",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -3373,7 +3374,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Context viewpoint",
@@ -3820,7 +3821,7 @@
         },
         {
           "id": "sa-m07-summary",
-          "title": "Module Summary: Information and Concurrency Viewpoints",
+          "title": "Week Summary: Information and Concurrency Viewpoints",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -3829,7 +3830,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Information viewpoint",
@@ -4290,7 +4291,7 @@
         },
         {
           "id": "sa-m08-summary",
-          "title": "Module Summary: Development, Deployment, and Operational Viewpoints",
+          "title": "Week Summary: Development, Deployment, and Operational Viewpoints",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -4300,7 +4301,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Development viewpoint",
@@ -4777,7 +4778,7 @@
         },
         {
           "id": "sa-m09-summary",
-          "title": "Module Summary: Consistency Across Views",
+          "title": "Week Summary: Consistency Across Views",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -4788,7 +4789,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Cross-view consistency",
@@ -5245,7 +5246,7 @@
         },
         {
           "id": "sa-m10-summary",
-          "title": "Module Summary: Security Perspective",
+          "title": "Week Summary: Security Perspective",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -5255,7 +5256,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Architecture perspective",
@@ -5717,7 +5718,7 @@
         },
         {
           "id": "sa-m11-summary",
-          "title": "Module Summary: Performance and Scalability Perspective",
+          "title": "Week Summary: Performance and Scalability Perspective",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -5727,7 +5728,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Performance scenario",
@@ -6183,7 +6184,7 @@
         },
         {
           "id": "sa-m12-summary",
-          "title": "Module Summary: Availability and Resilience Perspective",
+          "title": "Week Summary: Availability and Resilience Perspective",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -6193,7 +6194,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Availability",
@@ -6652,7 +6653,7 @@
         },
         {
           "id": "sa-m13-summary",
-          "title": "Module Summary: Evolution, Governance, and Architecture Debt",
+          "title": "Week Summary: Evolution, Governance, and Architecture Debt",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -6663,7 +6664,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Evolution perspective",
@@ -7147,7 +7148,7 @@
         },
         {
           "id": "sa-m14-summary",
-          "title": "Module Summary: Evaluation, Communication, and Professional Practice",
+          "title": "Week Summary: Evaluation, Communication, and Professional Practice",
           "pageType": "learn",
           "sectionType": "summary",
           "sourceIds": [
@@ -7158,7 +7159,7 @@
           "content": [
             {
               "type": "conceptCards",
-              "title": "Module concepts",
+              "title": "Week concepts",
               "concepts": [
                 {
                   "name": "Architecture evaluation",

@@ -738,5 +738,8 @@
         }
       ]
     }
-  ]
+  ],
+  "metadata": {
+    "pacingLabel": "Module"
+  }
 }

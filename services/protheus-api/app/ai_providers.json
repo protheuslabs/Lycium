@@ -1,0 +1,63 @@
+{
+  "providers": [
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "generationAdapter": "openai-chat-completions",
+      "defaultModel": "gpt-4.1-mini",
+      "baseUrl": "https://api.openai.com/v1",
+      "chatCompletionsPath": "/chat/completions",
+      "modelsPath": "/models",
+      "modelsResponseKey": "data",
+      "auth": {
+        "type": "bearer"
+      }
+    },
+    {
+      "id": "openrouter",
+      "label": "OpenRouter",
+      "generationAdapter": "openai-chat-completions",
+      "defaultModel": "openai/gpt-4.1-mini",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "chatCompletionsPath": "/chat/completions",
+      "modelsPath": "/models",
+      "modelsResponseKey": "data",
+      "auth": {
+        "type": "bearer"
+      },
+      "headers": {
+        "HTTP-Referer": "http://localhost:5001",
+        "X-Title": "Lycium"
+      }
+    },
+    {
+      "id": "anthropic",
+      "label": "Anthropic",
+      "generationAdapter": "anthropic-messages",
+      "defaultModel": "claude-3-5-sonnet-latest",
+      "baseUrl": "https://api.anthropic.com/v1",
+      "messagesPath": "/messages",
+      "modelsPath": "/models",
+      "modelsResponseKey": "data",
+      "auth": {
+        "type": "x-api-key"
+      },
+      "headers": {
+        "anthropic-version": "2023-06-01"
+      }
+    },
+    {
+      "id": "google-gemini",
+      "label": "Google Gemini",
+      "generationAdapter": "gemini-generate-content",
+      "defaultModel": "models/gemini-2.5-flash",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "modelsPath": "/models",
+      "modelsResponseKey": "models",
+      "requiredGenerationMethod": "generateContent",
+      "auth": {
+        "type": "x-goog-api-key"
+      }
+    }
+  ]
+}

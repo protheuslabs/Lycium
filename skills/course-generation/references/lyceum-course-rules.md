@@ -10,25 +10,28 @@ Use the course JSON as both the output artifact and the progress tracker.
 2. Plan 10-20 modules.
    Each module should represent a major arc in the course. Use fewer only for an explicitly short course.
 
-3. Plan 4-15 units per module.
+3. Choose the learner-facing pacing label.
+   Select exactly one label for the whole course: `Module` or `Week`. Record it in `metadata.pacingLabel` and use it consistently in module titles, summary titles, progress-facing names, and summary concept-card titles. Do not mix `Module` and `Week` in learner-facing titles in the same course.
+
+4. Plan 4-15 units per module/week.
    A unit is one focused learner-facing lesson or assessment target. Units should be ordered by prerequisite relationship and conceptual difficulty.
 
-4. Break each unit into sub-units.
+5. Break each unit into sub-units.
    Each sub-unit should represent one individual idea, pattern, case, worked example, procedure, source excerpt, or practice target.
 
-5. Source each idea.
+6. Source each idea.
    Find reputable sources for the idea level, not only the course level. Prefer primary docs, textbooks, academic sources, standards bodies, established university material, and reputable technical talks.
 
-6. Draft instruction.
+7. Draft instruction.
    Turn sub-units into teachable content blocks with examples, transitions, practice prompts, and source references.
 
-7. Draft assessment.
+8. Draft assessment.
    Create quiz-only assessment sections after relevant instruction. Questions must test previously taught or sourced ideas.
 
-8. Draft module concept inventories.
-   End every module with a summary section that aggregates the raw concept names introduced on that module's Learn pages. Do not turn the summary into interpretive prose categories.
+9. Draft module/week concept inventories.
+   End every module/week with a summary section that aggregates the raw concept names introduced on that module/week's Learn pages. Do not turn the summary into interpretive prose categories.
 
-9. Validate the course.
+10. Validate the course.
    Check continuity, source coverage, missing prerequisites, repetition, pacing, assessment alignment, and JSON validity.
 
 ## Progress Metadata
@@ -62,6 +65,7 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 ## Required Course Shape
 
 - Course JSON must contain `title`, optional `orderMandatory`, optional `metadata`, optional `sourceIds`, and `modules`.
+- Substantial generated courses should set `metadata.pacingLabel` to exactly `Module` or `Week`.
 - Each module must contain `id`, `title`, optional `sourceIds`, and `sections`.
 - Each section must contain `id`, `title`, optional `sectionType`, optional `pageType`, optional `sourceIds`, and `content`.
 - Use `pageType: "learn"` for instructional pages and `pageType: "apply"` for quiz, assessment, or practice pages.
@@ -71,6 +75,7 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 
 - The course must have a clear through-line from first module to final outcome.
 - Each module must have a distinct role in that through-line.
+- Use either `Module` or `Week` consistently in learner-facing titles. If module titles use `Week 1: ...`, summary titles and summary concept-card titles should use `Week`; if module titles use `Module 1: ...`, they should use `Module`.
 - Each unit must teach one bounded objective.
 - Each sub-unit must be small enough to source, teach, and assess.
 - Advanced ideas must not appear before prerequisite ideas.
@@ -103,12 +108,12 @@ Canonical Learn-page concept-card block:
 }
 ```
 
-Canonical module-summary concept-card block:
+Canonical module/week-summary concept-card block:
 
 ```json
 {
   "type": "conceptCards",
-  "title": "Module concepts",
+  "title": "{PacingLabel} concepts",
   "concepts": [
     {
       "name": "Training-serving skew",
@@ -164,13 +169,13 @@ Canonical module-summary concept-card block:
 - Do not put explanations or instructional paragraphs inside quiz prompts.
 - Keep one submit button per quiz block; do not model submit controls in JSON.
 
-## Module Summary Rules
+## Module/Week Summary Rules
 
 - Every module should end with a summary section that aggregates the module's raw concepts.
 - Mark module summaries with `sectionType: "summary"` when authoring JSON or backend-generated sections.
 - Mark module summaries with `pageType: "learn"`.
 - Summary sections are instructional Learn pages, not assessments.
-- Use one `conceptCards` block titled `Module concepts`.
+- Use one `conceptCards` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`.
 - Pull the summary concepts from the `conceptCards` blocks in the module's preceding Learn pages.
 - Summary concept objects should remain simple raw data, usually `{ "name": "Concept name", "description": "Concise definition.", "sourceSectionId": "section-id" }`.
 - Do not include quiz blocks in module summary sections.

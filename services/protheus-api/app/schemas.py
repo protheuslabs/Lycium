@@ -111,7 +111,7 @@ class LearningPacketRequest(BaseModel):
     trust_min: float = Field(default=0.0, ge=0.0, le=1.0)
     modality: str | None = None
     topic: str | None = None
-    level: Literal["beginner", "intermediate", "advanced"] | None = None
+    level: Literal["elementary", "highschool", "undergrad", "postgrad"] | None = None
 
 
 class LearningPacket(BaseModel):
@@ -122,10 +122,27 @@ class LearningPacket(BaseModel):
     trust_floor_applied: float
 
 
+class LocalAiProviderRead(BaseModel):
+    id: str
+    label: str
+    default_model: str | None = None
+    model_fetch_supported: bool = True
+    generation_adapter: str
+
+
+class LocalAgentModelRead(BaseModel):
+    id: str
+    label: str | None = None
+
+
 class LocalAgentKeyRead(BaseModel):
     id: str
-    nickname: str
+    provider_id: str
+    provider_label: str
     key_preview: str
+    model: str | None = None
+    models: list[LocalAgentModelRead] = Field(default_factory=list)
+    models_fetched_at: str | None = None
     is_active: bool = False
 
 
@@ -138,12 +155,17 @@ class LocalSettingsRead(BaseModel):
 
 
 class LocalSettingsUpdate(BaseModel):
-    nickname: str = Field(min_length=1, max_length=120)
+    provider_id: str = Field(min_length=1, max_length=120)
     agent_api_key: str = Field(min_length=1, max_length=4096)
 
 
 class LocalActiveAgentKeyUpdate(BaseModel):
     key_id: str = Field(min_length=1, max_length=160)
+
+
+class LocalAgentKeyModelUpdate(BaseModel):
+    key_id: str = Field(min_length=1, max_length=160)
+    model: str = Field(min_length=1, max_length=255)
 
 
 class LocalCompletionUpdate(BaseModel):
@@ -197,7 +219,7 @@ class GenerateOutlineRequest(BaseModel):
     learner_id: int | None = None
     target_audience: str | None = None
     learning_goals: list[str] = Field(default_factory=list)
-    level: Literal["beginner", "intermediate", "advanced"] | None = None
+    level: Literal["elementary", "highschool", "undergrad", "postgrad"] | None = None
     expected_duration_minutes: int = Field(default=180, ge=30, le=4000)
     language: str = "en"
     teaching_style: str | None = None
@@ -240,8 +262,9 @@ class ApproveOutlineRequest(BaseModel):
 class GenerateCourseRequest(BaseModel):
     prompt: str = Field(min_length=5)
     learner_id: int | None = None
-    level: Literal["beginner", "intermediate", "advanced"] | None = None
+    level: Literal["elementary", "highschool", "undergrad", "postgrad"] | None = None
     language: str = "en"
+    model: str | None = None
     source_policy: Literal["balanced", "high-trust", "free-only"] = "balanced"
     free_only: bool = False
     trust_min: float = Field(default=0.0, ge=0.0, le=1.0)

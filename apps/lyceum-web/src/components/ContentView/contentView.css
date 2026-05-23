@@ -82,6 +82,11 @@
 .source-reference-list li {
   margin-bottom: 0.25rem;
   font-size: 0.9rem;
+  color: #374151;
+}
+
+.source-reference-list a {
+  color: #3a56d4;
 }
 
 .source-missing {
@@ -267,4 +272,153 @@
   100% {
     transform: scale(1);
   }
+}
+
+@media (prefers-color-scheme: dark) {
+  .content-view {
+    background: #0b0b0c;
+    color: #e5e7eb;
+  }
+
+  .course-name {
+    color: #94a3b8;
+  }
+
+  .course-title,
+  .section-title {
+    color: #f8fafc;
+  }
+
+  .section-content {
+    color: #d6deea;
+  }
+
+  .progress-bar {
+    background: #262626;
+  }
+
+  .progress-percentage {
+    color: #cbd5e1;
+  }
+
+  .source-reference-list {
+    border-top-color: #303033;
+  }
+
+  .source-reference-list h3,
+  .source-reference-list li {
+    color: #d6deea;
+  }
+
+  .source-reference-list a {
+    color: #d4d4d8;
+  }
+
+  .source-missing {
+    color: #fca5a5;
+  }
+
+  .concept-card-stack-title {
+    color: #f8fafc;
+  }
+
+  .concept-card {
+    border-color: #3a3a3d;
+    background:
+      linear-gradient(145deg, rgba(31, 41, 55, 0.98), rgba(15, 23, 42, 0.96)),
+      #171717;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+  }
+
+  .concept-card h4 {
+    color: #f8fafc;
+  }
+
+  .concept-card p {
+    color: #cbd5e1;
+  }
+
+  .nav-button:disabled {
+    background: #3a3a3d;
+    border-color: #3a3a3d;
+    color: rgba(255, 255, 255, 0.62);
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .content-view {
+  background: #0b0b0c;
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-title,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .section-title,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .concept-card h4,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .concept-card-stack-title {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-name,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .progress-percentage {
+  color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .section-content,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .concept-card p {
+  color: #d6deea;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .concept-card {
+  border-color: #3a3a3d;
+  background:
+    linear-gradient(145deg, rgba(31, 41, 55, 0.98), rgba(15, 23, 42, 0.96)),
+    #171717;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+}
+
+html[data-theme="light"] .content-view {
+  background: #ffffff;
+  color: #213547;
+}
+
+html[data-theme="light"] .course-name {
+  color: #6b7280;
+}
+
+html[data-theme="light"] .course-title,
+html[data-theme="light"] .section-title,
+html[data-theme="light"] .concept-card h4,
+html[data-theme="light"] .concept-card-stack-title {
+  color: #162018;
+}
+
+html[data-theme="light"] .section-content {
+  color: #213547;
+}
+
+html[data-theme="light"] .progress-bar {
+  background: #e6e6e6;
+}
+
+html[data-theme="light"] .progress-percentage {
+  color: #555;
+}
+
+html[data-theme="light"] .concept-card {
+  border-color: rgba(38, 64, 43, 0.16);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(244, 239, 220, 0.82));
+  box-shadow: 0 14px 34px rgba(31, 44, 34, 0.08);
+}
+
+html[data-theme="light"] .concept-card p {
+  color: #4e5c50;
+}
+
+html[data-theme="light"] .source-reference-list,
+html[data-theme="light"] .source-reference-list h3,
+html[data-theme="light"] .source-reference-list li {
+  color: #374151;
+}
+
+html[data-theme="light"] .source-reference-list a {
+  color: #3a56d4;
 }

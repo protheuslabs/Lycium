@@ -129,3 +129,78 @@
   font-weight: 600;
   margin-bottom: 0.25rem;
 }
+
+@media (prefers-color-scheme: dark) {
+  .code-block-container,
+  .code-block-container--light {
+    border-color: #3a3a3d;
+    background: #111112;
+    color: #e5e7eb;
+  }
+
+  .code-block-container--light .code-block-header,
+  .code-block-header {
+    border-bottom-color: #3a3a3d;
+    background: #171717;
+  }
+
+  .code-block-container--light .code-tab.active,
+  .code-tab.active {
+    border-color: #4b4b50;
+    background: #262626;
+  }
+
+  .code-block-container--light .code-action-btn,
+  .code-action-btn {
+    border-color: #4b4b50;
+    background: #262626;
+    color: #e5e7eb;
+  }
+
+  .code-block-container--light .code-line-numbers,
+  .code-line-numbers {
+    border-right-color: #3a3a3d;
+  }
+
+  .code-block-container--light .code-output,
+  .code-output {
+    border-top-color: #3a3a3d;
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .code-block-container,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .code-block-container--light {
+  border-color: #3a3a3d;
+  background: #111112;
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .code-block-header,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .code-block-container--light .code-block-header {
+  border-bottom-color: #3a3a3d;
+  background: #171717;
+}
+
+html[data-theme="light"] .code-block-container--light {
+  border-color: #ccc;
+  background: #f5f5f5;
+  color: #222;
+}
+
+html[data-theme="light"] .code-block-container--light .code-block-header {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+  background: #ececec;
+}
+
+html[data-theme="light"] .code-block-container--light .code-action-btn {
+  border-color: #bbb;
+  background: #ffffff;
+}
+
+html[data-theme="light"] .code-block-container--light .code-line-numbers {
+  border-right-color: rgba(0, 0, 0, 0.1);
+}
+
+html[data-theme="light"] .code-block-container--light .code-output {
+  border-top-color: rgba(0, 0, 0, 0.1);
+}

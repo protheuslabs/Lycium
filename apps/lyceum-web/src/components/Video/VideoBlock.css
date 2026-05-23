@@ -46,3 +46,36 @@
 .video-iframe-visible {
   opacity: 1;
 }
+
+@media (prefers-color-scheme: dark) {
+  .video-wrapper {
+    background: transparent;
+  }
+
+  .video-loading {
+    color: #cbd5e1;
+  }
+
+  .video-spinner {
+    border-color: #3a3a3d;
+    border-top-color: #d4d4d8;
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .video-loading {
+  color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .video-spinner {
+  border-color: #3a3a3d;
+  border-top-color: #d4d4d8;
+}
+
+html[data-theme="light"] .video-loading {
+  color: #555;
+}
+
+html[data-theme="light"] .video-spinner {
+  border-color: #ddd;
+  border-top-color: #4a6cf7;
+}

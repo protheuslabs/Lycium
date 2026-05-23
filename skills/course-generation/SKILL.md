@@ -23,7 +23,8 @@ Use this skill to make Lyceum courses that are teachable, source-backed, and ren
    - assessment expectations
 4. Plan the course hierarchy before drafting content:
    - 10-20 modules for a full course unless the user requests a shorter course
-   - 4-15 units per module by default
+   - choose exactly one learner-facing pacing label, `Module` or `Week`, record it in `metadata.pacingLabel`, and use it consistently in module titles, summary titles, and summary concept-card titles
+   - 4-15 units per module/week by default
    - sub-units for individual ideas inside each unit
 5. Use the JSON as a progress ledger:
    - record scope in `metadata.scope`
@@ -42,7 +43,7 @@ Use this skill to make Lyceum courses that are teachable, source-backed, and ren
 8. End every module with a summary section:
    - use `sectionType: "summary"`
    - treat the summary as a module concept inventory, not a prose recap
-   - use one `conceptCards` block titled `Module concepts`
+   - use one `conceptCards` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`
    - list concept objects in a `concepts` array
    - pull summary concepts from the concept cards on the module's prior Learn pages
    - preserve the originating `sourceSectionId` when possible

@@ -92,12 +92,31 @@ type CourseEntry = {
   source: "local" | "remote";
 };
 
+type AgentModelRecord = {
+  id: string;
+  label?: string | null;
+};
+
+type AgentProviderRecord = {
+  id: string;
+  label: string;
+  default_model?: string | null;
+  model_fetch_supported?: boolean;
+  generation_adapter?: string;
+};
+
 type AgentKeyRecord = {
   id: string;
-  nickname: string;
+  provider_id: string;
+  provider_label: string;
   key_preview: string;
+  model?: string | null;
+  models?: AgentModelRecord[];
+  models_fetched_at?: string | null;
   is_active: boolean;
 };
+
+type ThemeMode = "light" | "auto" | "dark";
 
 type CourseBookmarkRecord = {
   course_key?: string;
@@ -195,6 +214,26 @@ function findBookmarkedSection(course: CourseEntry, bookmark: CourseBookmarkReco
 
 function getCourseSectionIndex(course: CourseEntry, section: CourseSection): number {
   return getFlatCourseSections(course).findIndex((candidate) => candidate.id === section.id);
+}
+
+function getBookmarkedModuleSection(course: CourseEntry): { moduleTitle: string; sectionTitle: string } | null {
+  const bookmark = readStoredCourseBookmark(course);
+  if (!bookmark) {
+    return null;
+  }
+
+  for (const module of course.data.modules) {
+    for (const section of module.sections) {
+      if (section.id === bookmark.section_id || bookmark.path === getCourseSectionPath(course, section)) {
+        return {
+          moduleTitle: module.title,
+          sectionTitle: section.title,
+        };
+      }
+    }
+  }
+
+  return null;
 }
 
 function getCourseSectionIds(course: CourseEntry): string[] {
@@ -308,13 +347,29 @@ function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const courseContentRef = useRef<HTMLDivElement | null>(null);
   const [courseContentHeight, setCourseContentHeight] = useState<number | null>(null);
-  const [agentKeyNickname, setAgentKeyNickname] = useState("");
+  const [agentProviders, setAgentProviders] = useState<AgentProviderRecord[]>([]);
+  const [agentProviderId, setAgentProviderId] = useState("openai");
   const [agentApiKey, setAgentApiKey] = useState("");
   const [agentKeys, setAgentKeys] = useState<AgentKeyRecord[]>([]);
+  const [apiKeySaveStatus, setApiKeySaveStatus] = useState<"idle" | "loading" | "invalid">("idle");
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
+    const storedTheme = localStorage.getItem("lyceum-theme-mode");
+    return storedTheme === "light" || storedTheme === "dark" || storedTheme === "auto"
+      ? storedTheme
+      : "auto";
+  });
   const [settingsStatus, setSettingsStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [settingsMessage, setSettingsMessage] = useState("");
 
   const route = useMemo(() => parseCourseRoute(currentPath), [currentPath]);
+  const settingsReturnPath =
+    route.kind === "settings" && typeof window.history.state?.settingsReturnTo === "string"
+      ? window.history.state.settingsReturnTo
+      : "/";
+  const viewRoute = useMemo(
+    () => (route.kind === "settings" ? parseCourseRoute(settingsReturnPath) : route),
+    [route, settingsReturnPath]
+  );
 
   const coursesByPathSlug = useMemo(() => {
     const map = new Map<string, string>();
@@ -335,15 +390,15 @@ function App() {
   );
 
   const selectedCourseFromPath = useMemo(() => {
-    if (route.kind !== "course") {
+    if (viewRoute.kind !== "course") {
       return null;
     }
-    const key = resolveCourseKeyFromPath(route.courseSlug);
+    const key = resolveCourseKeyFromPath(viewRoute.courseSlug);
     if (!key) {
       return null;
     }
     return courses.find((course) => course.key === key) ?? null;
-  }, [route.kind, route.courseSlug, resolveCourseKeyFromPath, courses]);
+  }, [viewRoute.kind, viewRoute.courseSlug, resolveCourseKeyFromPath, courses]);
 
   const selectedCourse = useMemo(() => {
     const match = selectedCourseFromPath ?? courses.find((course) => course.key === currentCourseKey);
@@ -395,9 +450,29 @@ function App() {
       setCurrentPath("/settings");
       return;
     }
-    window.history.pushState({}, "", "/settings");
+    window.history.pushState(
+      { settingsReturnTo: currentPath === "/settings" ? settingsReturnPath : currentPath },
+      "",
+      "/settings"
+    );
     setCurrentPath("/settings");
+  }, [currentPath, settingsReturnPath]);
+
+  const closeSettingsModal = useCallback(() => {
+    const returnTo =
+      typeof window.history.state?.settingsReturnTo === "string"
+        ? window.history.state.settingsReturnTo
+        : "/";
+    const targetPath = returnTo && returnTo !== "/settings" ? returnTo : "/";
+    window.history.replaceState({}, "", targetPath);
+    setCurrentPath(targetPath);
   }, []);
+
+  const handleSettingsBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      closeSettingsModal();
+    }
+  };
 
   const rememberCourseSection = useCallback((course: CourseEntry, section: CourseSection, path: string) => {
     writeStoredCourseBookmark(course, section, path);
@@ -537,11 +612,10 @@ function App() {
 
   const handleSettingsSubmit = async (evt: FormEvent<HTMLFormElement>) => {
     evt.preventDefault();
-    const trimmedNickname = agentKeyNickname.trim();
     const trimmedKey = agentApiKey.trim();
-    if (!trimmedNickname) {
+    if (!agentProviderId) {
       setSettingsStatus("error");
-      setSettingsMessage("Give this key a nickname before saving.");
+      setSettingsMessage("Choose a provider before saving.");
       return;
     }
     if (!trimmedKey) {
@@ -550,30 +624,39 @@ function App() {
       return;
     }
 
+    setApiKeySaveStatus("loading");
     setSettingsStatus("loading");
-    setSettingsMessage("Saving settings...");
+    setSettingsMessage("");
 
     try {
       const response = await fetch(`${API_BASE}/v1/local/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nickname: trimmedNickname, agent_api_key: trimmedKey }),
+        body: JSON.stringify({ provider_id: agentProviderId, agent_api_key: trimmedKey }),
       });
 
       if (!response.ok) {
-        throw new Error("Settings save failed");
+        const errorBody = await response.json().catch(() => null);
+        throw new Error(errorBody?.detail ?? "Settings save failed");
       }
 
       const settings = await response.json();
-      setAgentKeyNickname("");
       setAgentApiKey("");
+      setApiKeySaveStatus("idle");
       setAgentKeys(settings.agent_keys ?? []);
       setSettingsStatus("success");
-      setSettingsMessage(`Agent API key saved locally in ${settings.local_data_dir}.`);
+      const activeKey = (settings.agent_keys ?? []).find((key: AgentKeyRecord) => key.is_active);
+      setSettingsMessage(
+        activeKey
+          ? `${activeKey.provider_label} verified with ${activeKey.models?.length ?? 0} models.`
+          : "API key verified."
+      );
     } catch (err) {
       console.warn("Unable to save settings:", err);
+      setAgentApiKey("");
+      setApiKeySaveStatus("invalid");
       setSettingsStatus("error");
-      setSettingsMessage("Could not save settings. Is the API running?");
+      setSettingsMessage("");
     }
   };
 
@@ -596,12 +679,43 @@ function App() {
       setAgentKeys(settings.agent_keys ?? []);
       const activeKey = (settings.agent_keys ?? []).find((key: AgentKeyRecord) => key.is_active);
       setSettingsStatus("success");
-      setSettingsMessage(activeKey ? `${activeKey.nickname} is now active.` : "Active key updated.");
+      setSettingsMessage(activeKey ? `${activeKey.provider_label} is now active.` : "Active key updated.");
     } catch (err) {
       console.warn("Unable to activate key:", err);
       setSettingsStatus("error");
       setSettingsMessage("Could not switch keys. Is the API running?");
     }
+  };
+
+  const handleAgentModelChange = async (keyId: string, model: string) => {
+    setSettingsStatus("loading");
+    setSettingsMessage("Updating model...");
+
+    try {
+      const response = await fetch(`${API_BASE}/v1/local/settings/key-model`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key_id: keyId, model }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Model update failed");
+      }
+
+      const settings = await response.json();
+      setAgentKeys(settings.agent_keys ?? []);
+      setSettingsStatus("success");
+      setSettingsMessage(`Model set to ${model}.`);
+    } catch (err) {
+      console.warn("Unable to update model:", err);
+      setSettingsStatus("error");
+      setSettingsMessage("Could not update that model.");
+    }
+  };
+
+  const handleThemeModeChange = (mode: ThemeMode) => {
+    setThemeMode(mode);
+    localStorage.setItem("lyceum-theme-mode", mode);
   };
 
   const handleGenerateCourse = async (evt: FormEvent<HTMLFormElement>) => {
@@ -614,7 +728,7 @@ function App() {
     setGenerateMessage("Generating course...");
 
     try {
-      const response = await fetch(`${API_BASE}/v1/courses/generate`, {
+      const response = await fetch(`${API_BASE}/v1/agent/courses/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -628,7 +742,8 @@ function App() {
       });
 
       if (!response.ok) {
-        throw new Error("Generation failed");
+        const errorBody = await response.json().catch(() => null);
+        throw new Error(errorBody?.detail ?? "Generation failed");
       }
 
       const course = await response.json();
@@ -648,7 +763,7 @@ function App() {
     } catch (err) {
       console.warn("Course generation failed:", err);
       setGenerateStatus("error");
-      setGenerateMessage("Course generation failed. Is the API running?");
+      setGenerateMessage(err instanceof Error ? err.message : "Course generation failed. Is the API running?");
     }
   };
 
@@ -661,6 +776,18 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const root = document.documentElement;
+    if (themeMode === "auto") {
+      root.removeAttribute("data-theme");
+      root.style.colorScheme = "light dark";
+      return;
+    }
+
+    root.setAttribute("data-theme", themeMode);
+    root.style.colorScheme = themeMode;
+  }, [themeMode]);
+
+  useEffect(() => {
     if (route.kind !== "settings") {
       return;
     }
@@ -669,22 +796,32 @@ function App() {
     setSettingsStatus("loading");
     setSettingsMessage("Loading settings...");
 
-    fetch(`${API_BASE}/v1/local/settings`)
-      .then((response) => {
+    Promise.all([
+      fetch(`${API_BASE}/v1/local/ai/providers`).then((response) => {
+        if (!response.ok) {
+          throw new Error("AI providers unavailable");
+        }
+        return response.json();
+      }),
+      fetch(`${API_BASE}/v1/local/settings`).then((response) => {
         if (!response.ok) {
           throw new Error("Settings unavailable");
         }
         return response.json();
-      })
-      .then((settings) => {
+      }),
+    ])
+      .then(([providers, settings]) => {
         if (ignored) {
           return;
         }
         setSettingsStatus("idle");
+        setAgentProviders(providers ?? []);
+        setAgentProviderId((currentProviderId) => currentProviderId || providers?.[0]?.id || "openai");
         setAgentKeys(settings.agent_keys ?? []);
+        const activeKey = (settings.agent_keys ?? []).find((key: AgentKeyRecord) => key.is_active);
         setSettingsMessage(
-          settings.has_agent_api_key
-            ? `Agent API key is saved locally as ${settings.agent_api_key_preview}.`
+          activeKey
+            ? `${activeKey.provider_label} is active with ${activeKey.model ?? "no model selected"}.`
             : "No agent API key saved yet."
         );
       })
@@ -694,7 +831,7 @@ function App() {
         }
         console.warn("Unable to load settings:", err);
         setSettingsStatus("error");
-        setSettingsMessage("Settings are available once the API is running.");
+        setSettingsMessage("");
       });
 
     return () => {
@@ -876,83 +1013,25 @@ function App() {
       .catch((err) => console.warn("Local completion unavailable:", err));
   }, [progressStorageKey, selectedCourse?.key]);
 
+  const isSavingAgentKey = apiKeySaveStatus === "loading";
+  const canAddAgentKey = Boolean(agentProviderId && agentApiKey.trim()) && !isSavingAgentKey;
+
   return (
     <div className="app-root">
       <header className="top-bar">
         <a href="/settings" className="settings-link" aria-label="Settings" onClick={routeToSettings}>
-          ⚙
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.02-.66-.07-.98l2.06-1.6a.5.5 0 0 0 .12-.64l-1.95-3.37a.5.5 0 0 0-.6-.22l-2.43.98a7.3 7.3 0 0 0-1.69-.98l-.37-2.58A.5.5 0 0 0 14.08 2h-3.9a.5.5 0 0 0-.5.42L9.32 5a7.43 7.43 0 0 0-1.69.98L5.2 5a.5.5 0 0 0-.6.22L2.65 8.59a.5.5 0 0 0 .12.64l2.06 1.6c-.04.32-.08.65-.08.98s.03.66.08.98l-2.06 1.6a.5.5 0 0 0-.12.64l1.95 3.37c.13.22.39.31.6.22l2.43-.98c.52.4 1.08.73 1.69.98l.37 2.58c.04.24.25.42.5.42h3.9c.25 0 .46-.18.5-.42l.37-2.58a7.43 7.43 0 0 0 1.69-.98l2.43.98c.22.08.48 0 .6-.22l1.95-3.37a.5.5 0 0 0-.12-.64l-2.07-1.6ZM12.13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
+          </svg>
         </a>
         <a href="/" className="top-bar-title" onClick={openHomeFromHero}>
           Lycium
         </a>
       </header>
 
-      {route.kind === "settings" ? (
-        <main className="settings-page">
-          <section className="settings-card" aria-labelledby="settings-title">
-            <h1 id="settings-title">Settings</h1>
-            <form className="settings-form" onSubmit={handleSettingsSubmit}>
-              <div className="settings-entry-row">
-                <label className="settings-entry-field" htmlFor="agent-api-nickname">
-                  <input
-                    id="agent-api-nickname"
-                    className="settings-input"
-                    type="text"
-                    value={agentKeyNickname}
-                    onChange={(event) => setAgentKeyNickname(event.target.value)}
-                    placeholder="name"
-                    autoComplete="off"
-                  />
-                </label>
-                <label className="settings-entry-field settings-entry-field-key" htmlFor="agent-api-key">
-                  <input
-                    id="agent-api-key"
-                    className="settings-input"
-                    type="password"
-                    value={agentApiKey}
-                    onChange={(event) => setAgentApiKey(event.target.value)}
-                    placeholder="api key"
-                    autoComplete="off"
-                  />
-                </label>
-                <button className="settings-save-button" type="submit" disabled={settingsStatus === "loading"} aria-label="Add API key">
-                  +
-                </button>
-              </div>
-            </form>
-            {agentKeys.length > 0 && (
-              <section className="settings-key-list" aria-label="Saved API keys">
-                <h2>Saved keys</h2>
-                <div className="settings-key-stack">
-                  {agentKeys.map((key) => (
-                    <button
-                      key={key.id}
-                      className={`settings-key-row${key.is_active ? " settings-key-row-active" : ""}`}
-                      type="button"
-                      onClick={() => handleActivateAgentKey(key.id)}
-                    >
-                      <span className="settings-key-name">{key.nickname}</span>
-                      <span className="settings-key-preview">{key.key_preview}</span>
-                      <span className="settings-key-state">{key.is_active ? "Active" : "Use"}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-            )}
-            {settingsMessage && (
-              <p className={`settings-status settings-status-${settingsStatus}`}>
-                {settingsMessage}
-              </p>
-            )}
-          </section>
-        </main>
-      ) : route.kind === "home" ? (
+      {viewRoute.kind === "home" ? (
         <>
           <main className="home-page">
-            <section className="hero">
-              <p>Generate a new course or open one below to begin learning.</p>
-            </section>
-
           <section className="generator-bar">
             <form className="generator-form" onSubmit={handleGenerateCourse}>
               <input
@@ -963,9 +1042,10 @@ function App() {
               />
               <select className="generator-select" value={level} onChange={(evt) => setLevel(evt.target.value)}>
                 <option value="">Any level</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
+              <option value="elementary">Elementary</option>
+              <option value="highschool">High school</option>
+              <option value="undergrad">Undergrad</option>
+              <option value="postgrad">Post-grad</option>
               </select>
               <button className="generator-button" type="submit" disabled={!prompt.trim() || generateStatus === "loading"}>
                 {generateStatus === "loading" ? "Generating..." : "Generate"}
@@ -978,12 +1058,9 @@ function App() {
             <h2>Available Courses</h2>
             <div className="course-grid">
               {courses.map((course) => {
-                const slug = getCoursePathSlug(course);
                 const courseProgress = getCourseProgress(course);
-                const firstSection = getFirstCourseSection(course);
-                const cardPath = firstSection
-                  ? getCourseSectionPath(course, firstSection)
-                  : `/courses/${slug}`;
+                const bookmarkedSection = getBookmarkedModuleSection(course);
+                const hasActiveCoursePage = Boolean(bookmarkedSection);
                 return (
                   <article
                     key={course.key}
@@ -999,19 +1076,29 @@ function App() {
                     }}
                   >
                     <h3>{course.title}</h3>
-                    <div className="course-progress">
-                      <div className="course-progress-bar">
-                        <div
-                          className="course-progress-fill"
-                          style={{ width: `${courseProgress.percentage}%` }}
-                        />
-                      </div>
-                      <p className="course-progress-percentage">
-                        {Math.round(courseProgress.percentage)}% complete
+                    {bookmarkedSection && (
+                      <p className="course-active-subheader">
+                        <span>{bookmarkedSection.moduleTitle}</span>
+                        <span>{bookmarkedSection.sectionTitle}</span>
                       </p>
-                    </div>
-                    <p className="course-source">{course.source === "remote" ? "Generated" : "Local"} course</p>
-                    <small className="course-slug">{cardPath}</small>
+                    )}
+                    {!hasActiveCoursePage ? (
+                      <p className="course-progress-percentage course-progress-empty">
+                        Course not started
+                      </p>
+                    ) : (
+                      <div className="course-progress">
+                        <div className="course-progress-bar">
+                          <div
+                            className="course-progress-fill"
+                            style={{ width: `${courseProgress.percentage}%` }}
+                          />
+                        </div>
+                        <p className="course-progress-percentage">
+                          {Math.round(courseProgress.percentage)}% complete
+                        </p>
+                      </div>
+                    )}
                   </article>
                 );
               })}
@@ -1051,6 +1138,171 @@ function App() {
               sources={sourceRecordsData.sources}
             />
           </div>
+        </div>
+      )}
+
+      {route.kind === "settings" && (
+        <div className="settings-modal-backdrop" role="presentation" onMouseDown={handleSettingsBackdropClick}>
+          <section
+            className="settings-card settings-card-modal"
+            aria-labelledby="settings-title"
+            role="dialog"
+            aria-modal="true"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button className="settings-close-button" type="button" aria-label="Close settings" onClick={closeSettingsModal}>
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M6.3 5.3a1 1 0 0 1 1.4 0l4.3 4.3 4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 11l4.3 4.3a1 1 0 0 1-1.4 1.4L12 12.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z" />
+              </svg>
+            </button>
+            <h1 id="settings-title">Settings</h1>
+            <section className="settings-section" aria-labelledby="settings-active-ai">
+              <h2 id="settings-active-ai">Active AI</h2>
+              <div className="settings-ai-data-panel">
+                {agentKeys.length > 0 && (
+                  <section className="settings-key-list" aria-label="Saved API keys">
+                    <div className="settings-key-stack">
+                      {agentKeys.map((key) => (
+                        <div
+                          key={key.id}
+                          className={`settings-key-row${key.is_active ? " settings-key-row-active" : ""}`}
+                          role="button"
+                          tabIndex={isSavingAgentKey ? -1 : 0}
+                          onClick={() => handleActivateAgentKey(key.id)}
+                          onKeyDown={(event) => {
+                            if (isSavingAgentKey) {
+                              return;
+                            }
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              handleActivateAgentKey(key.id);
+                            }
+                          }}
+                          aria-disabled={isSavingAgentKey}
+                        >
+                          <span className="settings-key-provider">{key.provider_label}</span>
+                          <span className="settings-key-preview">{key.key_preview}</span>
+                          <label className="settings-model-field" onClick={(event) => event.stopPropagation()}>
+                            <select
+                              className="settings-model-select"
+                              value={key.model ?? ""}
+                              onChange={(event) => handleAgentModelChange(key.id, event.target.value)}
+                              onClick={(event) => event.stopPropagation()}
+                              disabled={isSavingAgentKey || !key.models?.length}
+                              aria-label={`Model for ${key.provider_label}`}
+                            >
+                              {(key.models ?? []).map((model) => (
+                                <option key={model.id} value={model.id}>
+                                  {model.label || model.id}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <span className="settings-key-state">{key.is_active ? "Active" : "Use"}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+                <form className="settings-form" onSubmit={handleSettingsSubmit}>
+                  <div className="settings-entry-row">
+                    <label className="settings-entry-field" htmlFor="agent-provider">
+                      <select
+                        id="agent-provider"
+                        className="settings-select"
+                        value={agentProviderId}
+                        onChange={(event) => setAgentProviderId(event.target.value)}
+                        disabled={isSavingAgentKey}
+                      >
+                        {agentProviders.map((provider) => (
+                          <option key={provider.id} value={provider.id}>
+                            {provider.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="settings-entry-field settings-entry-field-key" htmlFor="agent-api-key">
+                      <input
+                        id="agent-api-key"
+                        className={`settings-input${apiKeySaveStatus === "invalid" ? " settings-input--invalid" : ""}`}
+                        type="password"
+                        value={agentApiKey}
+                        onChange={(event) => {
+                          setAgentApiKey(event.target.value);
+                          if (apiKeySaveStatus === "invalid") {
+                            setApiKeySaveStatus("idle");
+                          }
+                        }}
+                        placeholder={apiKeySaveStatus === "invalid" ? "API key invalid" : "api key"}
+                        autoComplete="off"
+                        disabled={isSavingAgentKey}
+                      />
+                    </label>
+                    <button
+                      className={`settings-save-button${isSavingAgentKey ? " settings-save-button-loading" : ""}`}
+                      type="submit"
+                      disabled={!canAddAgentKey}
+                      aria-label="Add API key"
+                    >
+                      {isSavingAgentKey ? (
+                        <span className="settings-save-spinner" aria-hidden="true" />
+                      ) : (
+                        <svg className="settings-save-plus" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                          <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </section>
+            <section className="settings-section" aria-labelledby="settings-display">
+              <h2 id="settings-display">Display</h2>
+              <div className="theme-toggle" data-mode={themeMode} role="radiogroup" aria-label="Color mode">
+                <button
+                  className="theme-toggle-option"
+                  type="button"
+                  role="radio"
+                  aria-checked={themeMode === "light"}
+                  aria-label="Light mode"
+                  onClick={() => handleThemeModeChange("light")}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 4.4a.8.8 0 0 0 .8-.8V2a.8.8 0 0 0-1.6 0v1.6a.8.8 0 0 0 .8.8Zm0 15.2a.8.8 0 0 0-.8.8V22a.8.8 0 0 0 1.6 0v-1.6a.8.8 0 0 0-.8-.8ZM4.93 6.06a.8.8 0 0 0 1.13-1.13L4.93 3.8A.8.8 0 1 0 3.8 4.93l1.13 1.13Zm14.14 11.88a.8.8 0 0 0-1.13 1.13l1.13 1.13a.8.8 0 0 0 1.13-1.13l-1.13-1.13ZM3.6 11.2H2a.8.8 0 0 0 0 1.6h1.6a.8.8 0 0 0 0-1.6Zm18.4 0h-1.6a.8.8 0 0 0 0 1.6H22a.8.8 0 0 0 0-1.6ZM4.93 20.2l1.13-1.13a.8.8 0 0 0-1.13-1.13L3.8 19.07a.8.8 0 1 0 1.13 1.13ZM18.5 6.3c.2 0 .41-.08.57-.24l1.13-1.13a.8.8 0 0 0-1.13-1.13l-1.13 1.13A.8.8 0 0 0 18.5 6.3ZM12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" />
+                  </svg>
+                </button>
+                <button
+                  className="theme-toggle-option"
+                  type="button"
+                  role="radio"
+                  aria-checked={themeMode === "auto"}
+                  aria-label="Auto color mode"
+                  onClick={() => handleThemeModeChange("auto")}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                    <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2h11A2.5 2.5 0 0 1 20 4.5v8A2.5 2.5 0 0 1 17.5 15h-3.1l.45 2H17a1 1 0 1 1 0 2H7a1 1 0 1 1 0-2h2.15l.45-2H6.5A2.5 2.5 0 0 1 4 12.5v-8Zm2.5-.8a.8.8 0 0 0-.8.8v8c0 .44.36.8.8.8h11c.44 0 .8-.36.8-.8v-8a.8.8 0 0 0-.8-.8h-11Z" />
+                  </svg>
+                </button>
+                <button
+                  className="theme-toggle-option"
+                  type="button"
+                  role="radio"
+                  aria-checked={themeMode === "dark"}
+                  aria-label="Dark mode"
+                  onClick={() => handleThemeModeChange("dark")}
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                    <path d="M20.2 14.5a.8.8 0 0 0-.86-.18 7.35 7.35 0 0 1-9.65-9.65.8.8 0 0 0-1.03-1.03A8.96 8.96 0 1 0 20.36 15.67a.8.8 0 0 0-.16-1.17Z" />
+                  </svg>
+                </button>
+              </div>
+            </section>
+            {settingsMessage && (
+              <p className={`settings-status settings-status-${settingsStatus}`}>
+                {settingsMessage}
+              </p>
+            )}
+          </section>
         </div>
       )}
     </div>

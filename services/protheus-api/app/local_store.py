@@ -74,20 +74,57 @@ def _mask_key(api_key: str) -> str:
     return f"{'*' * hidden_count}{api_key[-visible_count:]}"
 
 
+def _normalize_model_records(models: Any, selected_model: str | None = None) -> list[dict[str, str]]:
+    normalized: list[dict[str, str]] = []
+    if isinstance(models, list):
+        for model in models:
+            if isinstance(model, str):
+                model_id = model.strip()
+                label = model_id
+            elif isinstance(model, dict):
+                model_id = str(model.get("id") or model.get("name") or "").strip()
+                label = str(model.get("label") or model.get("display_name") or model.get("displayName") or model_id)
+            else:
+                continue
+            if model_id:
+                normalized.append({"id": model_id, "label": label or model_id})
+
+    if selected_model and not any(model["id"] == selected_model for model in normalized):
+        normalized.insert(0, {"id": selected_model, "label": selected_model})
+
+    deduped: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for model in normalized:
+        if model["id"] in seen:
+            continue
+        seen.add(model["id"])
+        deduped.append(model)
+    return deduped
+
+
 def _normalize_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
     keys = secret.get("agent_keys")
     if isinstance(keys, list):
-        normalized_keys = [
-            {
-                "id": str(key.get("id") or _safe_key(str(key.get("nickname") or "agent-key"))),
-                "nickname": str(key.get("nickname") or "Agent key"),
-                "agent_api_key": str(key.get("agent_api_key") or ""),
-                "created_at": key.get("created_at") or _now(),
-                "updated_at": key.get("updated_at") or key.get("created_at") or _now(),
-            }
-            for key in keys
-            if isinstance(key, dict) and key.get("agent_api_key")
-        ]
+        normalized_keys = []
+        for key in keys:
+            if not isinstance(key, dict) or not key.get("agent_api_key"):
+                continue
+            provider_id = str(key.get("provider_id") or "openai")
+            provider_label = str(key.get("provider_label") or ("OpenAI" if provider_id == "openai" else provider_id))
+            selected_model = str(key.get("model") or key.get("selected_model") or SETTINGS.agent_model)
+            normalized_keys.append(
+                {
+                    "id": str(key.get("id") or _safe_key(f"{provider_id}-key")),
+                    "provider_id": provider_id,
+                    "provider_label": provider_label,
+                    "agent_api_key": str(key.get("agent_api_key") or ""),
+                    "model": selected_model,
+                    "models": _normalize_model_records(key.get("models"), selected_model),
+                    "models_fetched_at": key.get("models_fetched_at"),
+                    "created_at": key.get("created_at") or _now(),
+                    "updated_at": key.get("updated_at") or key.get("created_at") or _now(),
+                }
+            )
         active_key_id = secret.get("active_agent_key_id")
         if active_key_id is None and normalized_keys:
             active_key_id = normalized_keys[0]["id"]
@@ -99,8 +136,12 @@ def _normalize_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
             "agent_keys": [
                 {
                     "id": "default",
-                    "nickname": "Default",
+                    "provider_id": "openai",
+                    "provider_label": "OpenAI",
                     "agent_api_key": legacy_key,
+                    "model": SETTINGS.agent_model,
+                    "models": _normalize_model_records([], SETTINGS.agent_model),
+                    "models_fetched_at": secret.get("updated_at"),
                     "created_at": secret.get("updated_at") or _now(),
                     "updated_at": secret.get("updated_at") or _now(),
                 }
@@ -125,8 +166,12 @@ def local_settings_summary() -> dict[str, Any]:
         "agent_keys": [
             {
                 "id": key["id"],
-                "nickname": key["nickname"],
+                "provider_id": key["provider_id"],
+                "provider_label": key["provider_label"],
                 "key_preview": _mask_key(key["agent_api_key"]),
+                "model": key.get("model"),
+                "models": key.get("models", []),
+                "models_fetched_at": key.get("models_fetched_at"),
                 "is_active": key["id"] == (active_key["id"] if active_key else None),
             }
             for key in keys
@@ -134,16 +179,26 @@ def local_settings_summary() -> dict[str, Any]:
     }
 
 
-def save_agent_api_key(nickname: str, api_key: str) -> dict[str, Any]:
+def save_agent_api_key(
+    *,
+    provider_id: str,
+    provider_label: str,
+    api_key: str,
+    models: list[dict[str, str]],
+    model: str | None = None,
+) -> dict[str, Any]:
     cleaned = api_key.strip()
-    cleaned_nickname = nickname.strip()
-    if not cleaned_nickname:
-        raise ValueError("Nickname cannot be blank.")
+    cleaned_provider_id = provider_id.strip()
+    cleaned_provider_label = provider_label.strip() or cleaned_provider_id
+    if not cleaned_provider_id:
+        raise ValueError("Provider cannot be blank.")
     if not cleaned:
         raise ValueError("API key cannot be blank.")
 
     secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
-    key_id_base = _safe_key(cleaned_nickname.lower())
+    selected_model = model or (models[0]["id"] if models else SETTINGS.agent_model)
+    normalized_models = _normalize_model_records(models, selected_model)
+    key_id_base = _safe_key(cleaned_provider_id.lower())
     key_id = key_id_base
     existing_ids = {key["id"] for key in secret["agent_keys"]}
     suffix = 2
@@ -154,8 +209,12 @@ def save_agent_api_key(nickname: str, api_key: str) -> dict[str, Any]:
     secret["agent_keys"].append(
         {
             "id": key_id,
-            "nickname": cleaned_nickname,
+            "provider_id": cleaned_provider_id,
+            "provider_label": cleaned_provider_label,
             "agent_api_key": cleaned,
+            "model": selected_model,
+            "models": normalized_models,
+            "models_fetched_at": _now(),
             "created_at": _now(),
             "updated_at": _now(),
         }
@@ -179,6 +238,44 @@ def activate_agent_api_key(key_id: str) -> dict[str, Any]:
         secret,
     )
     return local_settings_summary()
+
+
+def update_agent_key_model(key_id: str, model: str) -> dict[str, Any]:
+    cleaned_model = model.strip()
+    if not cleaned_model:
+        raise ValueError("Model cannot be blank.")
+
+    secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
+    for key in secret["agent_keys"]:
+        if key["id"] != key_id:
+            continue
+        available_model_ids = {available_model["id"] for available_model in key.get("models", [])}
+        if available_model_ids and cleaned_model not in available_model_ids:
+            raise ValueError("Model is not available for this API key.")
+        key["model"] = cleaned_model
+        key["updated_at"] = _now()
+        secret["updated_at"] = _now()
+        _write_json(_agent_secret_path(), secret)
+        return local_settings_summary()
+
+    raise ValueError("API key not found.")
+
+
+def get_active_agent_profile() -> dict[str, Any] | None:
+    secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
+    keys = secret.get("agent_keys", [])
+    active_key_id = secret.get("active_agent_key_id")
+    active_key = next((key for key in keys if key["id"] == active_key_id), keys[0] if keys else None)
+    if not active_key:
+        return None
+    return active_key
+
+
+def get_active_agent_api_key() -> str | None:
+    active_key = get_active_agent_profile()
+    if not active_key:
+        return None
+    return str(active_key.get("agent_api_key") or "") or None
 
 
 def save_course_snapshot(course: Any) -> None:

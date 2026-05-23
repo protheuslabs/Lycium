@@ -175,7 +175,7 @@
 .sidebar-status--locked {
   border-color: #d2d6df;
   background: #f1f3f6;
-  color: #6f7684;
+  color: #111111;
 }
 
 .sidebar-status-check {
@@ -185,20 +185,21 @@
 
 .sidebar-lock-icon {
   position: relative;
-  width: 0.7rem;
-  height: 0.62rem;
-  border-radius: 0.12rem;
+  width: 0.48rem;
+  height: 0.42rem;
+  border-radius: 0.08rem;
   background: currentColor;
+  transform: translateY(0.08rem);
 }
 
 .sidebar-lock-icon::before {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 0.45rem;
-  width: 0.44rem;
-  height: 0.42rem;
-  border: 0.13rem solid currentColor;
+  bottom: 0.3rem;
+  width: 0.3rem;
+  height: 0.28rem;
+  border: 0.09rem solid currentColor;
   border-bottom: 0;
   border-radius: 999px 999px 0 0;
   transform: translateX(-50%);
@@ -241,4 +242,175 @@
   font-weight: 500;
   color: #555;
   text-align: center;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sidebar {
+    border-right-color: #2a2a2c;
+    background: #111112;
+    color: #e5e7eb;
+  }
+
+  .module-header,
+  .sidebar-item {
+    border-color: #303033;
+    background: #171717;
+    color: #f3f4f6;
+  }
+
+  .module-header:hover:not([aria-disabled="true"]),
+  .sidebar-item:hover {
+    background: #1f1f20;
+    border-color: #444448;
+  }
+
+  .module-header--active,
+  .sidebar-item.active {
+    background: #2b2b2d;
+    border-color: #4a6cf7;
+    color: #f8fafc;
+  }
+
+  .module-header--expanded {
+    border-bottom-color: #303033;
+  }
+
+  .module-header-caret {
+    color: #d4d4d8;
+  }
+
+  .sidebar-item.locked {
+    color: #8290a6;
+  }
+
+  .sidebar-item.locked:hover {
+    background: #171717;
+  }
+
+  .sidebar-status {
+    border-color: #3a3a3d;
+    background: #1f1f20;
+    color: #d4d4d8;
+  }
+
+  .sidebar-status--complete {
+    border-color: rgba(72, 216, 109, 0.56);
+    background: rgba(72, 216, 109, 0.12);
+    color: #48d86d;
+  }
+
+  .sidebar-status--locked {
+    border-color: #444448;
+    background: #1b1b1d;
+    color: #8b95a7;
+  }
+
+  .progress-bar {
+    background: #262626;
+  }
+
+  .progress-percentage {
+    color: #cbd5e1;
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar {
+  border-right-color: #2a2a2c;
+  background: #111112;
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .module-header,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-item {
+  border-color: #303033;
+  background: #171717;
+  color: #f3f4f6;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .module-header--active,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-item.active {
+  background: #2b2b2d;
+  border-color: #4a6cf7;
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .progress-bar {
+  background: #262626;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .progress-percentage {
+  color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-status {
+  border-color: #3a3a3d;
+  background: #1f1f20;
+  color: #d4d4d8;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-status--complete {
+  border-color: rgba(72, 216, 109, 0.56);
+  background: rgba(72, 216, 109, 0.12);
+  color: #48d86d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-status--locked {
+  border-color: #444448;
+  background: #1b1b1d;
+  color: #8b95a7;
+}
+
+html[data-theme="light"] .sidebar {
+  border-right-color: #ddd;
+  background: #fafafa;
+  color: #000000;
+}
+
+html[data-theme="light"] .module-header,
+html[data-theme="light"] .sidebar-item {
+  border-color: #eee;
+  background: #ffffff;
+  color: #26314d;
+}
+
+html[data-theme="light"] .module-header:hover:not([aria-disabled="true"]),
+html[data-theme="light"] .sidebar-item:hover {
+  background: #f0f4ff;
+}
+
+html[data-theme="light"] .module-header--active {
+  background: #eef3ff;
+  border-color: #c5d2ff;
+  color: #243c97;
+}
+
+html[data-theme="light"] .sidebar-item.active {
+  background: #d6e4ff;
+  border-left-color: #4a6cf7;
+}
+
+html[data-theme="light"] .progress-bar {
+  background: #e6e6e6;
+}
+
+html[data-theme="light"] .progress-percentage {
+  color: #555;
+}
+
+html[data-theme="light"] .sidebar-status {
+  border-color: #d7dcf7;
+  background: #f7f8ff;
+  color: #4a6cf7;
+}
+
+html[data-theme="light"] .sidebar-status--complete {
+  border-color: rgba(72, 216, 109, 0.5);
+  background: rgba(72, 216, 109, 0.12);
+  color: #2f8f4e;
+}
+
+html[data-theme="light"] .sidebar-status--locked {
+  border-color: #d2d6df;
+  background: #f1f3f6;
+  color: #111111;
 }

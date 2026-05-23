@@ -14,25 +14,28 @@ Use the repo-local course generation skill as the starting point:
 2. Divide the course into 10-20 modules.
    Each module should represent a major conceptual or practical arc. Modules should build progressively, like a real college or professional online course.
 
-3. Divide each module into units.
+3. Choose the learner-facing pacing label.
+   Select exactly one label for the whole course: `Module` or `Week`. Record it in `metadata.pacingLabel` and use it consistently in module titles, summary titles, progress-facing names, and summary concept-card titles. Do not mix `Module` and `Week` in learner-facing titles in the same course.
+
+4. Divide each module/week into units.
    Default to 4-15 units per module unless the user asks for a shorter course. A unit should be teachable in one focused lesson page.
 
-4. Divide each unit into sub-units for individual ideas.
+5. Divide each unit into sub-units for individual ideas.
    Each sub-unit should cover one teachable idea, technique, case study, source excerpt, example, or practice target. Avoid vague catch-all sub-units.
 
-5. Find citations and sources for each idea.
+6. Find citations and sources for each idea.
    Use reputable sources, record them centrally, and map every sourced idea to source IDs before writing final content.
 
-6. Generate instructional content for each idea.
+7. Generate instructional content for each idea.
    Teach the concept, connect it to prior units, include examples or practice where useful, and keep the pacing coherent.
 
-7. Generate assessments separately.
+8. Generate assessments separately.
    Quizzes must be their own assessment sections after the relevant lesson/unit content.
 
-8. Generate module concept inventories.
-   End every module with a summary section that aggregates the raw concept names introduced on that module's Learn pages. Do not turn the summary into interpretive prose categories.
+9. Generate module/week concept inventories.
+   End every module/week with a summary section that aggregates the raw concept names introduced on that module/week's Learn pages. Do not turn the summary into interpretive prose categories.
 
-9. Validate coherence.
+10. Validate coherence.
    Check that modules progress logically, units are not redundant, prerequisites are introduced before use, and assessments only test taught or sourced material.
 
 ## JSON Progress Tracking
@@ -40,6 +43,7 @@ Use the repo-local course generation skill as the starting point:
 Agents should use the course JSON as a progress ledger while building. Add or preserve metadata that records planning state when useful:
 
 - `metadata.scope`: audience, prerequisites, target outcome, duration, level, and exclusions.
+- `metadata.pacingLabel`: exactly `Module` or `Week`, used consistently in learner-facing titles.
 - `metadata.generationPlan.modules`: planned module names and outcomes.
 - `metadata.generationPlan.unitMap`: planned units for each module.
 - `metadata.generationPlan.ideaMap`: sub-units or individual ideas for each unit.
@@ -56,6 +60,7 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Each sub-unit or idea must be small enough to explain, source, and assess.
 - Introduce prerequisite concepts before advanced applications.
 - Keep terminology consistent across modules.
+- Use either `Module` or `Week` consistently in learner-facing titles. If module titles use `Week 1: ...`, summary titles and summary concept-card titles should use `Week`; if module titles use `Module 1: ...`, they should use `Module`.
 - Balance theory, examples, practice, and assessment.
 - Prefer deeper coverage of fewer ideas over shallow lists of loosely related topics.
 - Cite sources for claims, readings, videos, examples, and imported content.
@@ -98,11 +103,11 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 
 ## Module Summary Rules
 
-- Every module should end with a module concept inventory.
+- Every module/week should end with a concept inventory using the course's selected pacing label.
 - Mark module summaries with `sectionType: "summary"` when authoring JSON or backend-generated sections.
 - Mark module summaries with `pageType: "learn"`.
 - Summary sections are instructional Learn pages, not assessments.
-- Use one `conceptCards` block titled `Module concepts`.
+- Use one `conceptCards` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`.
 - Pull the summary concepts from concept cards on the module's preceding Learn pages.
 - Summary concept objects should preserve `name`, `description`, and `sourceSectionId` so the UI can show the definition and later link back to the originating page.
 - Do not create summary cards named "Key concepts", "How the ideas connect", "Common pitfalls", or "What you can do now".

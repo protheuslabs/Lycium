@@ -11,6 +11,9 @@ class Settings:
     database_url: str
     user_agent: str
     local_data_dir: Path
+    agent_api_url: str
+    agent_model: str
+    agent_timeout_seconds: float
 
 
 def _default_db_path() -> Path:
@@ -34,6 +37,9 @@ def load_settings() -> Settings:
         database_url=os.getenv("PROTHEUS_DATABASE_URL", f"sqlite:///{db_path}"),
         user_agent=os.getenv("PROTHEUS_USER_AGENT", "ProtheusBot/0.1 (+https://protheuslabs.com)"),
         local_data_dir=local_data_dir,
+        agent_api_url=os.getenv("LYCEUM_AGENT_API_URL", "https://api.openai.com/v1/chat/completions"),
+        agent_model=os.getenv("LYCEUM_AGENT_MODEL", "gpt-4.1-mini"),
+        agent_timeout_seconds=float(os.getenv("LYCEUM_AGENT_TIMEOUT_SECONDS", "120")),
     )
 
 
