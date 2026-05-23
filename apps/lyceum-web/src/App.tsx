@@ -7,7 +7,7 @@ import SettingsModal from "./components/SettingsModal/SettingsModal";
 import Sidebar from "./components/Sidebar/Sidebar";
 import { localCourses } from "./courseData/localCourses";
 import sourceRecordsData from "./courseData/sourceRecords";
-import type { CourseEntry, CourseSection } from "./courseTypes";
+import type { CourseEntry, CourseProgressRecord, CourseSection, SectionStatus } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
 import {
   findBookmarkedSection,
@@ -35,6 +35,131 @@ function scrollCoursePageToTop() {
   });
 }
 
+const VALID_SECTION_STATUSES: SectionStatus[] = ["completed", "locked", "seen", "timed"];
+const VIEWED_SECTION_STATUSES: SectionStatus[] = ["completed", "seen", "timed"];
+
+const DEFAULT_PROGRESS: CourseProgressRecord = {
+  completedSectionIds: [],
+  sectionStatuses: {},
+};
+
+function isViewedSectionStatus(status: SectionStatus | undefined): boolean {
+  return Boolean(status && VIEWED_SECTION_STATUSES.includes(status));
+}
+
+function normalizeCompletedSectionIds(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0))
+  );
+}
+
+function normalizeSectionStatuses(value: unknown): Record<string, SectionStatus> {
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  const entries = Object.entries(value as Record<string, unknown>);
+  const next: Record<string, SectionStatus> = {};
+
+  for (const [sectionId, statusValue] of entries) {
+    if (typeof sectionId !== "string" || sectionId.trim().length === 0 || typeof statusValue !== "string") {
+      continue;
+    }
+    if (VALID_SECTION_STATUSES.includes(statusValue as SectionStatus)) {
+      next[sectionId] = statusValue as SectionStatus;
+    }
+  }
+
+  return next;
+}
+
+function normalizeProgressRecord(value: unknown): CourseProgressRecord {
+  if (!value || typeof value !== "object") {
+    return DEFAULT_PROGRESS;
+  }
+
+  const payload = value as Record<string, unknown>;
+  const completedSectionIds = normalizeCompletedSectionIds(payload.completedSectionIds ?? payload.completed_section_ids);
+  const sectionStatuses = normalizeSectionStatuses(payload.sectionStatuses ?? payload.section_statuses);
+
+  for (const sectionId of completedSectionIds) {
+    sectionStatuses[sectionId] = "completed";
+  }
+
+  return {
+    completedSectionIds,
+    sectionStatuses,
+  };
+}
+
+function areSectionStatusMapsEqual(a: Record<string, SectionStatus>, b: Record<string, SectionStatus>): boolean {
+  const aEntries = Object.entries(a);
+  const bEntries = Object.entries(b);
+
+  if (aEntries.length !== bEntries.length) {
+    return false;
+  }
+
+  for (const [sectionId, status] of aEntries) {
+    if (b[sectionId] !== status) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function areProgressRecordsEqual(a: CourseProgressRecord, b: CourseProgressRecord): boolean {
+  if (a.completedSectionIds.length !== b.completedSectionIds.length) {
+    return false;
+  }
+
+  const aCompleted = new Set(a.completedSectionIds);
+  for (const sectionId of b.completedSectionIds) {
+    if (!aCompleted.has(sectionId)) {
+      return false;
+    }
+  }
+
+  return areSectionStatusMapsEqual(a.sectionStatuses, b.sectionStatuses);
+}
+
+function resolveSectionStatuses(
+  sections: Array<{ id: string }>,
+  completedSectionIds: string[],
+  sectionStatuses: Record<string, SectionStatus>,
+  orderMandatory: boolean
+): Record<string, SectionStatus> {
+  const completedSet = new Set(completedSectionIds);
+  const resolvedStatuses: Record<string, SectionStatus> = {};
+  let hasIncompletePriorSection = false;
+
+  for (const section of sections) {
+    const sectionId = section.id;
+
+    if (completedSet.has(sectionId)) {
+      resolvedStatuses[sectionId] = "completed";
+    } else if (orderMandatory && hasIncompletePriorSection) {
+      resolvedStatuses[sectionId] = "locked";
+    } else {
+      const storedStatus = sectionStatuses[sectionId];
+      if (storedStatus === "timed" || storedStatus === "seen") {
+        resolvedStatuses[sectionId] = storedStatus;
+      }
+    }
+
+    if (!completedSet.has(sectionId)) {
+      hasIncompletePriorSection = true;
+    }
+  }
+
+  return resolvedStatuses;
+}
+
 function App() {
   const [courses, setCourses] = useState<CourseEntry[]>(localCourses);
   const [currentCourseKey, setCurrentCourseKey] = useState(localCourses[0]?.key ?? "");
@@ -46,7 +171,7 @@ function App() {
   const [learnerId, setLearnerId] = useState<number | null>(null);
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [courseContentHeight, setCourseContentHeight] = useState<number | null>(null);
-  const [progress, setProgress] = useState<{ completedSectionIds: string[] }>({ completedSectionIds: [] });
+  const [progress, setProgress] = useState<CourseProgressRecord>(DEFAULT_PROGRESS);
   const courseContentRef = useRef<HTMLDivElement | null>(null);
 
   const route = useMemo(() => parseCourseRoute(currentPath), [currentPath]);
@@ -101,14 +226,59 @@ function App() {
 
   const currentSection = sections[currentSectionIndex] ?? null;
   const progressStorageKey = `lyceum-progress-${selectedCourse?.key}`;
+  const orderMandatory = selectedCourse?.data?.orderMandatory ?? false;
+  const resolvedSectionStatuses = useMemo(
+    () => resolveSectionStatuses(sections, progress.completedSectionIds, progress.sectionStatuses, Boolean(orderMandatory)),
+    [sections, progress.completedSectionIds, progress.sectionStatuses, orderMandatory]
+  );
   const completedSectionIds = new Set(progress.completedSectionIds);
   const completedSectionCount = sections.filter((section) => completedSectionIds.has(section.id)).length;
+  const viewedSectionCount = sections.filter((section) => isViewedSectionStatus(resolvedSectionStatuses[section.id])).length;
   const courseProgressPercentage = sections.length > 0 ? (completedSectionCount / sections.length) * 100 : 0;
+  const courseViewedPercentage = sections.length > 0 ? (viewedSectionCount / sections.length) * 100 : 0;
   const currentModuleIndex = currentSection?.moduleIndex ?? 0;
   const moduleSections = sections.filter((section) => section.moduleIndex === currentModuleIndex);
   const completedModuleSectionCount = moduleSections.filter((section) => completedSectionIds.has(section.id)).length;
+  const viewedModuleSectionCount = moduleSections.filter((section) => isViewedSectionStatus(resolvedSectionStatuses[section.id])).length;
   const moduleProgressPercentage = moduleSections.length > 0 ? (completedModuleSectionCount / moduleSections.length) * 100 : 0;
-  const orderMandatory = selectedCourse?.data?.orderMandatory ?? false;
+  const moduleViewedPercentage = moduleSections.length > 0 ? (viewedModuleSectionCount / moduleSections.length) * 100 : 0;
+
+  const normalizeProgressForCourse = useCallback(
+    (candidate: CourseProgressRecord): CourseProgressRecord => {
+      const normalizedCompletedIds = normalizeCompletedSectionIds(candidate.completedSectionIds);
+      const normalizedStatuses = normalizeSectionStatuses(candidate.sectionStatuses);
+      const resolvedStatuses = resolveSectionStatuses(
+        sections,
+        normalizedCompletedIds,
+        normalizedStatuses,
+        Boolean(orderMandatory)
+      );
+
+      return {
+        completedSectionIds: normalizedCompletedIds,
+        sectionStatuses: resolvedStatuses,
+      };
+    },
+    [sections, orderMandatory]
+  );
+
+  const persistProgress = useCallback(
+    (nextProgress: CourseProgressRecord, sectionId?: string | null) => {
+      localStorage.setItem(progressStorageKey, JSON.stringify(nextProgress));
+      fetch(`${API_BASE}/v1/local/completion`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          course_key: selectedCourse?.key ?? "unknown",
+          course_title: selectedCourse?.title ?? null,
+          section_id: sectionId ?? null,
+          completed_section_ids: nextProgress.completedSectionIds,
+          section_statuses: nextProgress.sectionStatuses,
+        }),
+      }).catch((err) => console.warn("Failed to mirror local completion:", err));
+    },
+    [progressStorageKey, selectedCourse?.key, selectedCourse?.title]
+  );
 
   const routeToHome = useCallback(() => {
     if (window.location.pathname !== "/") {
@@ -217,23 +387,54 @@ function App() {
     }
   };
 
+  const handleSectionTimedStatusChange = useCallback(
+    (sectionId: string, hasTimedQuizInProgress: boolean) => {
+      setProgress((prev) => {
+        if (prev.completedSectionIds.includes(sectionId)) {
+          return prev;
+        }
+
+        const targetStatus: SectionStatus = hasTimedQuizInProgress ? "timed" : "seen";
+        if (prev.sectionStatuses[sectionId] === targetStatus) {
+          return prev;
+        }
+
+        const nextProgress = normalizeProgressForCourse({
+          completedSectionIds: prev.completedSectionIds,
+          sectionStatuses: {
+            ...prev.sectionStatuses,
+            [sectionId]: targetStatus,
+          },
+        });
+
+        if (areProgressRecordsEqual(prev, nextProgress)) {
+          return prev;
+        }
+
+        persistProgress(nextProgress, sectionId);
+        return nextProgress;
+      });
+    },
+    [normalizeProgressForCourse, persistProgress]
+  );
+
   const handleCompleteSection = (sectionId: string) => {
     setProgress((prev) => {
-      const completed = new Set(prev.completedSectionIds);
-      completed.add(sectionId);
-      const updated = { ...prev, completedSectionIds: Array.from(completed) };
-      localStorage.setItem(progressStorageKey, JSON.stringify(updated));
-      fetch(`${API_BASE}/v1/local/completion`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          course_key: selectedCourse?.key ?? "unknown",
-          course_title: selectedCourse?.title ?? null,
-          section_id: sectionId,
-          completed_section_ids: updated.completedSectionIds,
-        }),
-      }).catch((err) => console.warn("Failed to mirror local completion:", err));
-      return updated;
+      const completedSectionIds = Array.from(new Set([...prev.completedSectionIds, sectionId]));
+      const nextProgress = normalizeProgressForCourse({
+        completedSectionIds,
+        sectionStatuses: {
+          ...prev.sectionStatuses,
+          [sectionId]: "completed",
+        },
+      });
+
+      if (areProgressRecordsEqual(prev, nextProgress)) {
+        return prev;
+      }
+
+      persistProgress(nextProgress, sectionId);
+      return nextProgress;
     });
 
     if (selectedCourse?.snapshotId && learnerId) {
@@ -394,14 +595,15 @@ function App() {
   }, [selectedCourse?.key, currentSectionIndex, currentPath]);
 
   useEffect(() => {
-    let initialProgress = { completedSectionIds: [] as string[] };
+    let initialProgress = DEFAULT_PROGRESS;
     try {
       const loadedProgress = localStorage.getItem(progressStorageKey);
-      initialProgress = loadedProgress ? JSON.parse(loadedProgress) : initialProgress;
+      initialProgress = loadedProgress ? normalizeProgressRecord(JSON.parse(loadedProgress)) : DEFAULT_PROGRESS;
     } catch {
-      initialProgress = { completedSectionIds: [] };
+      initialProgress = DEFAULT_PROGRESS;
     }
-    setProgress(initialProgress);
+    const normalizedInitialProgress = normalizeProgressForCourse(initialProgress);
+    setProgress(normalizedInitialProgress);
     if (!selectedCourse?.key) return;
 
     fetch(`${API_BASE}/v1/local/completion/${encodeURIComponent(selectedCourse.key)}`)
@@ -410,16 +612,60 @@ function App() {
         return response.json();
       })
       .then((storedProgress) => {
-        const storedSectionIds = Array.isArray(storedProgress.completed_section_ids) ? storedProgress.completed_section_ids : [];
-        if (storedSectionIds.length === 0) return;
-        const merged = {
-          completedSectionIds: Array.from(new Set([...initialProgress.completedSectionIds, ...storedSectionIds])),
-        };
+        const normalizedStoredProgress = normalizeProgressRecord(storedProgress);
+        const merged = normalizeProgressForCourse({
+          completedSectionIds: [
+            ...normalizedInitialProgress.completedSectionIds,
+            ...normalizedStoredProgress.completedSectionIds,
+          ],
+          sectionStatuses: {
+            ...normalizedInitialProgress.sectionStatuses,
+            ...normalizedStoredProgress.sectionStatuses,
+          },
+        });
+
+        if (areProgressRecordsEqual(normalizedInitialProgress, merged)) {
+          return;
+        }
+
         localStorage.setItem(progressStorageKey, JSON.stringify(merged));
         setProgress(merged);
       })
       .catch((err) => console.warn("Local completion unavailable:", err));
-  }, [progressStorageKey, selectedCourse?.key]);
+  }, [progressStorageKey, normalizeProgressForCourse, selectedCourse?.key]);
+
+  useEffect(() => {
+    if (!currentSection?.id) {
+      return;
+    }
+
+    const sectionId = currentSection.id;
+    setProgress((prev) => {
+      if (prev.completedSectionIds.includes(sectionId)) {
+        return prev;
+      }
+
+      const currentStatus = prev.sectionStatuses[sectionId];
+      if (currentStatus === "seen" || currentStatus === "timed") {
+        return prev;
+      }
+
+      const nextProgress = normalizeProgressForCourse({
+        completedSectionIds: prev.completedSectionIds,
+        sectionStatuses: {
+          ...prev.sectionStatuses,
+          [sectionId]: "seen",
+        },
+      });
+
+      if (areProgressRecordsEqual(prev, nextProgress)) {
+        return prev;
+      }
+
+      persistProgress(nextProgress, sectionId);
+      return nextProgress;
+    });
+  }, [currentSection?.id, normalizeProgressForCourse, persistProgress]);
 
   return (
     <div className="app-root">
@@ -464,9 +710,9 @@ function App() {
             onSectionSelect={goToSectionIndex}
             courseTitle={selectedCourse?.data?.title ?? "Course"}
             progressPercentage={courseProgressPercentage}
+            viewedPercentage={courseViewedPercentage}
             contentHeight={courseContentHeight}
-            completedSectionIds={progress.completedSectionIds}
-            orderMandatory={Boolean(orderMandatory)}
+            sectionStatuses={resolvedSectionStatuses}
           />
           <div className="course-content-host" ref={courseContentRef}>
             <ContentView
@@ -479,9 +725,11 @@ function App() {
               isFirstSection={currentSectionIndex === 0}
               isLastSection={currentSectionIndex === sections.length - 1}
               progressPercentage={moduleProgressPercentage}
+              viewedPercentage={moduleViewedPercentage}
               markComplete={handleCompleteSection}
               isComplete={currentSection ? completedSectionIds.has(currentSection.id) : false}
               orderMandatory={orderMandatory}
+              onSectionTimedStatusChange={handleSectionTimedStatusChange}
               sources={sourceRecordsData.sources}
             />
           </div>

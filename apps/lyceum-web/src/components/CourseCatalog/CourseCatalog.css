@@ -182,6 +182,7 @@
 }
 
 .course-progress-bar {
+  position: relative;
   width: 100%;
   height: 8px;
   background: #e6e6e6;
@@ -189,12 +190,24 @@
   overflow: hidden;
 }
 
+.course-progress-viewed-fill,
 .course-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
   height: 100%;
   width: 0%;
-  background: #4a6cf7;
   border-radius: 999px;
   transition: width 200ms ease;
+}
+
+.course-progress-viewed-fill {
+  z-index: 1;
+  background: rgba(74, 108, 247, 0.24);
+}
+
+.course-progress-fill {
+  z-index: 2;
+  background: #4a6cf7;
 }
 
 .course-progress-percentage {
@@ -262,6 +275,10 @@
 
   .course-progress-bar {
     background: #262626;
+  }
+
+  .course-progress-viewed-fill {
+    background: rgba(128, 150, 255, 0.26);
   }
 
 }
@@ -358,4 +375,8 @@ html[data-theme="light"] .course-progress-empty {
 
 html[data-theme="light"] .course-progress-bar {
   background: #e6e6e6;
+}
+
+html[data-theme="light"] .course-progress-viewed-fill {
+  background: rgba(74, 108, 247, 0.24);
 }

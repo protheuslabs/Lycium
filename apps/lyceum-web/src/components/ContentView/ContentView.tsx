@@ -95,13 +95,21 @@ type ContentViewProps = {
   isFirstSection: boolean;
   isLastSection: boolean;
   progressPercentage: number;
+  viewedPercentage: number;
   markComplete: (sectionId: string) => void;
   isComplete: boolean;
   orderMandatory: boolean;
+  onSectionTimedStatusChange?: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
   sources: SourceRecord[];
 };
 
 type QuizSubmissionStatusHandler = (quizKey: string, submitted: boolean) => void;
+type QuizProgressStatus = {
+  submitted: boolean;
+  inProgress: boolean;
+  timed: boolean;
+};
+type QuizProgressStatusHandler = (quizKey: string, status: QuizProgressStatus) => void;
 
 export default function ContentView({ 
   courseTitle,
@@ -113,9 +121,11 @@ export default function ContentView({
   isFirstSection,
   isLastSection,
   progressPercentage,
+  viewedPercentage,
   markComplete,
   isComplete,
   orderMandatory,
+  onSectionTimedStatusChange,
   sources
 }: ContentViewProps) {
   const quizBlockKeys = useMemo(() => {
@@ -129,11 +139,13 @@ export default function ContentView({
   }, [section]);
 
   const [submittedQuizKeys, setSubmittedQuizKeys] = useState<Set<string>>(() => new Set());
+  const [quizProgressByKey, setQuizProgressByKey] = useState<Record<string, QuizProgressStatus>>({});
 
   useEffect(() => {
     // Resetting quiz submission state when the learner changes sections is intentional.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSubmittedQuizKeys(new Set());
+    setQuizProgressByKey({});
   }, [section?.id]);
 
   const handleQuizSubmissionChange = useCallback<QuizSubmissionStatusHandler>((quizKey, submitted) => {
@@ -154,6 +166,47 @@ export default function ContentView({
     });
   }, []);
 
+  const handleQuizProgressChange = useCallback<QuizProgressStatusHandler>((quizKey, status) => {
+    setQuizProgressByKey((prev) => {
+      const existing = prev[quizKey];
+      if (
+        existing &&
+        existing.submitted === status.submitted &&
+        existing.inProgress === status.inProgress &&
+        existing.timed === status.timed
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [quizKey]: status,
+      };
+    });
+  }, []);
+
+  const requiresQuizSubmission = quizBlockKeys.length > 0;
+  const allRequiredQuizzesSubmitted =
+    !requiresQuizSubmission || quizBlockKeys.every((quizKey) => submittedQuizKeys.has(quizKey));
+  const hasTimedQuizInProgress = quizBlockKeys.some((quizKey) => {
+    const status = quizProgressByKey[quizKey];
+    return Boolean(status && status.timed && status.inProgress && !status.submitted);
+  });
+  const canMarkComplete = !isComplete && allRequiredQuizzesSubmitted;
+  const completeButtonTitle = isComplete
+    ? "Section complete"
+    : requiresQuizSubmission && !allRequiredQuizzesSubmitted
+      ? "Submit the quiz before marking this page complete"
+      : "Mark section complete";
+
+  useEffect(() => {
+    if (!section?.id) {
+      return;
+    }
+
+    onSectionTimedStatusChange?.(section.id, hasTimedQuizInProgress);
+  }, [hasTimedQuizInProgress, onSectionTimedStatusChange, section?.id]);
+
   if (!section) {
     return (
       <main className="content-view">
@@ -165,15 +218,6 @@ export default function ContentView({
 
   const sectionSources = getSectionSources(section, sources);
   const pageType = getPageType(section);
-  const requiresQuizSubmission = quizBlockKeys.length > 0;
-  const allRequiredQuizzesSubmitted =
-    !requiresQuizSubmission || quizBlockKeys.every((quizKey) => submittedQuizKeys.has(quizKey));
-  const canMarkComplete = !isComplete && allRequiredQuizzesSubmitted;
-  const completeButtonTitle = isComplete
-    ? "Section complete"
-    : requiresQuizSubmission && !allRequiredQuizzesSubmitted
-      ? "Submit the quiz before marking this page complete"
-      : "Mark section complete";
 
   
   return (
@@ -184,12 +228,16 @@ export default function ContentView({
         <div className="progress-meter">
           <div className="progress-bar">
             <div
+              className="progress-bar-viewed-fill"
+              style={{ width: `${viewedPercentage}%` }}
+            />
+            <div
               className="progress-bar-fill"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
           <p className="progress-percentage">
-            {Math.round(progressPercentage)}% complete
+            {Math.round(progressPercentage)}% complete · {Math.round(viewedPercentage)}% viewed
           </p>
         </div>
       </div>
@@ -201,7 +249,14 @@ export default function ContentView({
       <div className="section-content">
         {Array.isArray(section.content)
           ? section.content.map((block, idx) =>
-              renderContentBlock(block, idx, sources, section.id, handleQuizSubmissionChange)
+              renderContentBlock(
+                block,
+                idx,
+                sources,
+                section.id,
+                handleQuizSubmissionChange,
+                handleQuizProgressChange
+              )
             )
           : <p>{section.content}</p> /* fallback for old data */}
       </div>
@@ -310,7 +365,8 @@ function renderContentBlock(
   key: number,
   sources: SourceRecord[],
   sectionId: string,
-  onQuizSubmissionChange: QuizSubmissionStatusHandler
+  onQuizSubmissionChange: QuizSubmissionStatusHandler,
+  onQuizProgressChange: QuizProgressStatusHandler
 ) {
   const blockSources = getSourcesByIds(item.sourceIds, sources);
 
@@ -361,6 +417,7 @@ function renderContentBlock(
           data={item}
           name={quizKey}
           onSubmissionChange={onQuizSubmissionChange}
+          onProgressChange={onQuizProgressChange}
         />
       );
     }

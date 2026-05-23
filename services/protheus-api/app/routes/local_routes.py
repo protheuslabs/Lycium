@@ -180,6 +180,7 @@ def register(app: FastAPI) -> None:
             course_title=payload.course_title,
             section_id=payload.section_id,
             completed_section_ids=payload.completed_section_ids,
+            section_statuses=payload.section_statuses,
         )
 
 
@@ -197,4 +198,3 @@ def register(app: FastAPI) -> None:
             section_title=payload.section_title,
             path=payload.path,
         )
-

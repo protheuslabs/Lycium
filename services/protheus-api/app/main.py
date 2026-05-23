@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import init_db
 from app.local_store import ensure_local_data_dirs
@@ -21,6 +22,13 @@ def create_app() -> FastAPI:
         version="0.2.0",
         summary="Knowledge-platform control plane for Lyceum.",
         lifespan=lifespan,
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     local_routes.register(app)

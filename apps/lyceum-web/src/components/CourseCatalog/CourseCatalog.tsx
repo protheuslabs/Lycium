@@ -97,6 +97,7 @@ export default function CourseCatalog({
               const courseProgress = getCourseProgress(course);
               const bookmarkedSection = getBookmarkedModuleSection(course);
               const hasActiveCoursePage = Boolean(bookmarkedSection);
+              const hasCourseActivity = hasActiveCoursePage || courseProgress.viewed > 0 || courseProgress.completed > 0;
               return (
                 <article
                   key={course.key}
@@ -128,14 +129,17 @@ export default function CourseCatalog({
                   {course.data.shortDescription && (
                     <p className="course-short-description">{course.data.shortDescription}</p>
                   )}
-                  {!hasActiveCoursePage ? (
+                  {!hasCourseActivity ? (
                     <p className="course-progress-percentage course-progress-empty">Course not started</p>
                   ) : (
                     <div className="course-progress">
                       <div className="course-progress-bar">
+                        <div className="course-progress-viewed-fill" style={{ width: `${courseProgress.viewedPercentage}%` }} />
                         <div className="course-progress-fill" style={{ width: `${courseProgress.percentage}%` }} />
                       </div>
-                      <p className="course-progress-percentage">{Math.round(courseProgress.percentage)}% complete</p>
+                      <p className="course-progress-percentage">
+                        {Math.round(courseProgress.percentage)}% complete · {Math.round(courseProgress.viewedPercentage)}% viewed
+                      </p>
                     </div>
                   )}
                 </article>

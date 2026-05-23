@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { SectionStatus } from "../../courseTypes";
 import "./Sidebar.css";
 
 type SidebarSection = {
@@ -15,9 +16,9 @@ type SidebarProps = {
   onSectionSelect: (index: number) => void;
   courseTitle: string;
   progressPercentage: number;
+  viewedPercentage: number;
   contentHeight: number | null;
-  completedSectionIds: string[];
-  orderMandatory: boolean;
+  sectionStatuses: Record<string, SectionStatus>;
 };
 
 export default function Sidebar({
@@ -26,10 +27,9 @@ export default function Sidebar({
   onSectionSelect,
   courseTitle,
   progressPercentage,
-  completedSectionIds,
-  orderMandatory
+  viewedPercentage,
+  sectionStatuses
 }: SidebarProps) {
-  const completedSections = new Set(completedSectionIds);
   const activeModuleIndex = sections[currentSectionIndex]?.moduleIndex ?? 0;
   const [expandedModules, setExpandedModules] = useState<Set<number>>(() => new Set());
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -57,6 +57,72 @@ export default function Sidebar({
 
     return groups;
   }, [sections]);
+
+  const getSectionStatus = (sectionId: string): SectionStatus | "available" => sectionStatuses[sectionId] ?? "available";
+
+  const getModuleStatus = (
+    moduleSections: Array<{ section: SidebarSection; index: number }>
+  ): SectionStatus | "available" => {
+    const statuses = moduleSections.map(({ section }) => getSectionStatus(section.id));
+    if (statuses.length > 0 && statuses.every((status) => status === "completed")) {
+      return "completed";
+    }
+    if (statuses.length > 0 && statuses.every((status) => status === "locked")) {
+      return "locked";
+    }
+    if (statuses.some((status) => status === "timed")) {
+      return "timed";
+    }
+    if (statuses.some((status) => status === "seen")) {
+      return "seen";
+    }
+    return "available";
+  };
+
+  const statusLabel = (status: SectionStatus | "available"): string => {
+    if (status === "completed") return "Completed";
+    if (status === "locked") return "Locked";
+    if (status === "seen") return "Seen";
+    if (status === "timed") return "Quiz in progress";
+    return "Available";
+  };
+
+  const statusClassName = (status: SectionStatus | "available"): string => {
+    if (status === "available") {
+      return "sidebar-status";
+    }
+
+    if (status === "completed") {
+      return "sidebar-status sidebar-status--complete";
+    }
+
+    return `sidebar-status sidebar-status--${status}`;
+  };
+
+  const renderStatusGlyph = (status: SectionStatus | "available") => {
+    if (status === "completed") {
+      return <span className="sidebar-status-check">✓</span>;
+    }
+    if (status === "locked") {
+      return <span className="sidebar-lock-icon" aria-hidden="true" />;
+    }
+    if (status === "seen") {
+      return (
+        <svg className="sidebar-status-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" />
+          <circle cx="12" cy="12" r="2.2" />
+        </svg>
+      );
+    }
+    if (status === "timed") {
+      return (
+        <svg className="sidebar-status-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M7 2h10v2.5L14 8v1l3 3.5V16H7v-3.5L10 9V8L7 4.5V2Zm8 12.75v-1.5L12 9.75l-3 3.5v1.5h6Z" />
+        </svg>
+      );
+    }
+    return null;
+  };
 
   const toggleModule = (moduleIndex: number) => {
     if (moduleIndex === activeModuleIndex) {
@@ -93,12 +159,16 @@ export default function Sidebar({
         <div className="progress-meter">
           <div className="progress-bar">
             <div
+              className="progress-bar-viewed-fill"
+              style={{ width: `${viewedPercentage}%` }}
+            />
+            <div
               className="progress-bar-fill"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
           <p className="progress-percentage">
-            {Math.round(progressPercentage)}% complete
+            {Math.round(progressPercentage)}% complete · {Math.round(viewedPercentage)}% viewed
           </p>
         </div>
       </div>
@@ -107,17 +177,8 @@ export default function Sidebar({
         {moduleGroups.map((moduleGroup) => {
           const isActiveModule = moduleGroup.moduleIndex === activeModuleIndex;
           const isExpanded = isActiveModule || expandedModules.has(moduleGroup.moduleIndex);
-          const isModuleCompleted = moduleGroup.sections.every(({ section }) => completedSections.has(section.id));
-          const isModuleLocked =
-            orderMandatory &&
-            !isModuleCompleted &&
-            moduleGroup.sections.every(({ index: idx, section }) => {
-              const sectionLocked =
-                !completedSections.has(section.id) &&
-                sections.slice(0, idx).some((previousSection) => !completedSections.has(previousSection.id));
-              return sectionLocked;
-            });
-          const moduleStatusLabel = isModuleCompleted ? "Completed" : isModuleLocked ? "Locked" : "Available";
+          const moduleStatus = getModuleStatus(moduleGroup.sections);
+          const moduleStatusLabel = statusLabel(moduleStatus);
           
           return (
             <section className="sidebar-module" key={moduleGroup.moduleIndex}>
@@ -135,18 +196,11 @@ export default function Sidebar({
                 </span>
                 {isCollapsed && (
                   <span
-                    className={`sidebar-status module-header-status ${
-                      isModuleCompleted
-                        ? "sidebar-status--complete"
-                        : isModuleLocked
-                          ? "sidebar-status--locked"
-                          : ""
-                    }`}
+                    className={`${statusClassName(moduleStatus)} module-header-status`}
                     aria-label={moduleStatusLabel}
                     title={moduleStatusLabel}
                   >
-                    {isModuleCompleted && <span className="sidebar-status-check">✓</span>}
-                    {isModuleLocked && <span className="sidebar-lock-icon" aria-hidden="true" />}
+                    {renderStatusGlyph(moduleStatus)}
                   </span>
                 )}
                 <span className="module-header-caret" aria-hidden="true">
@@ -157,16 +211,9 @@ export default function Sidebar({
               {isExpanded && (
                 <div className="sidebar-module-sections">
                   {moduleGroup.sections.map(({ section, index: idx }) => {
-                    const isCompleted = completedSections.has(section.id);
-                    const isLocked =
-                      orderMandatory &&
-                      !isCompleted &&
-                      sections.slice(0, idx).some((previousSection) => !completedSections.has(previousSection.id));
-                    const statusLabel = isCompleted
-                      ? "Completed"
-                      : isLocked
-                        ? "Locked"
-                        : "Available";
+                    const sectionStatus = getSectionStatus(section.id);
+                    const isLocked = sectionStatus === "locked";
+                    const sectionStatusLabel = statusLabel(sectionStatus);
 
                     return (
                       <div
@@ -185,18 +232,11 @@ export default function Sidebar({
                           {isCollapsed ? section.displayNumber : `${section.displayNumber} ${section.title}`}
                         </span>
                         <span
-                          className={`sidebar-status ${
-                            isCompleted
-                              ? "sidebar-status--complete"
-                              : isLocked
-                                ? "sidebar-status--locked"
-                                : ""
-                          }`}
-                          aria-label={statusLabel}
-                          title={statusLabel}
+                          className={statusClassName(sectionStatus)}
+                          aria-label={sectionStatusLabel}
+                          title={sectionStatusLabel}
                         >
-                          {isCompleted && <span className="sidebar-status-check">✓</span>}
-                          {isLocked && <span className="sidebar-lock-icon" aria-hidden="true" />}
+                          {renderStatusGlyph(sectionStatus)}
                         </span>
                       </div>
                     );

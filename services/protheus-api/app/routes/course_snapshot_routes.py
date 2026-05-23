@@ -317,6 +317,7 @@ def register(app: FastAPI) -> None:
                 course_title=row.title,
                 section_id=payload.section_id,
                 completed_section_ids=[payload.section_id],
+                section_statuses={payload.section_id: "completed"},
             )
         return progress
 

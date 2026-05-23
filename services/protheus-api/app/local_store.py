@@ -10,6 +10,7 @@ from app.config import SETTINGS
 
 
 LOCAL_DATA_SUBDIRS = ("courses", "completion", "links", "secrets", "user")
+VALID_SECTION_STATUSES = {"completed", "locked", "seen", "timed"}
 
 
 def _now() -> str:
@@ -325,6 +326,40 @@ def _bookmarks_path() -> Path:
     return ensure_local_data_dirs() / "user" / "course-bookmarks.json"
 
 
+def _normalize_completed_section_ids(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+
+    completed_section_ids: list[str] = []
+    seen: set[str] = set()
+    for entry in value:
+        if not isinstance(entry, str):
+            continue
+        section_id = entry.strip()
+        if not section_id or section_id in seen:
+            continue
+        seen.add(section_id)
+        completed_section_ids.append(section_id)
+    return completed_section_ids
+
+
+def _normalize_section_statuses(value: Any) -> dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+
+    statuses: dict[str, str] = {}
+    for section_id, status_value in value.items():
+        if not isinstance(section_id, str):
+            continue
+        clean_section_id = section_id.strip()
+        if not clean_section_id or not isinstance(status_value, str):
+            continue
+        clean_status = status_value.strip()
+        if clean_status in VALID_SECTION_STATUSES:
+            statuses[clean_section_id] = clean_status
+    return statuses
+
+
 def read_course_bookmark(course_key: str) -> dict[str, Any]:
     payload = _read_json(_bookmarks_path(), {"courses": {}})
     bookmark = payload.get("courses", {}).get(course_key)
@@ -376,15 +411,28 @@ def save_course_bookmark(
 
 def read_completion(course_key: str) -> dict[str, Any]:
     path = ensure_local_data_dirs() / "completion" / f"{_safe_key(course_key)}.json"
-    return _read_json(
+    payload = _read_json(
         path,
         {
             "course_key": course_key,
             "course_title": None,
             "completed_section_ids": [],
+            "section_statuses": {},
             "updated_at": None,
         },
     )
+    completed_section_ids = _normalize_completed_section_ids(payload.get("completed_section_ids"))
+    section_statuses = _normalize_section_statuses(payload.get("section_statuses"))
+    for section_id in completed_section_ids:
+        section_statuses[section_id] = "completed"
+
+    return {
+        "course_key": payload.get("course_key") or course_key,
+        "course_title": payload.get("course_title"),
+        "completed_section_ids": completed_section_ids,
+        "section_statuses": section_statuses,
+        "updated_at": payload.get("updated_at"),
+    }
 
 
 def save_completion(
@@ -393,21 +441,28 @@ def save_completion(
     course_title: str | None,
     section_id: str | None,
     completed_section_ids: list[str],
+    section_statuses: dict[str, str],
 ) -> dict[str, Any]:
     current = read_completion(course_key)
-    completed = list(
-        dict.fromkeys(
-            [
-                *current.get("completed_section_ids", []),
-                *completed_section_ids,
-                *([section_id] if section_id else []),
-            ]
-        )
+    completed = _normalize_completed_section_ids(
+        [
+            *current.get("completed_section_ids", []),
+            *completed_section_ids,
+            *([section_id] if section_id else []),
+        ]
     )
+    merged_statuses = {
+        **_normalize_section_statuses(current.get("section_statuses")),
+        **_normalize_section_statuses(section_statuses),
+    }
+    for completed_section_id in completed:
+        merged_statuses[completed_section_id] = "completed"
+
     payload = {
         "course_key": course_key,
         "course_title": course_title or current.get("course_title"),
         "completed_section_ids": completed,
+        "section_statuses": merged_statuses,
         "updated_at": _now(),
     }
     _write_json(ensure_local_data_dirs() / "completion" / f"{_safe_key(course_key)}.json", payload)

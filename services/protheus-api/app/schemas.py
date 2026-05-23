@@ -173,12 +173,14 @@ class LocalCompletionUpdate(BaseModel):
     course_title: str | None = None
     section_id: str | None = None
     completed_section_ids: list[str] = Field(default_factory=list)
+    section_statuses: dict[str, Literal["completed", "locked", "seen", "timed"]] = Field(default_factory=dict)
 
 
 class LocalCompletionRead(BaseModel):
     course_key: str
     course_title: str | None = None
     completed_section_ids: list[str] = Field(default_factory=list)
+    section_statuses: dict[str, Literal["completed", "locked", "seen", "timed"]] = Field(default_factory=dict)
     updated_at: str | None = None
 
 

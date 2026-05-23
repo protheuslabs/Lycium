@@ -308,9 +308,27 @@
   color: #111111;
 }
 
+.sidebar-status--seen {
+  border-color: rgba(72, 108, 247, 0.35);
+  background: rgba(74, 108, 247, 0.1);
+  color: #3653ce;
+}
+
+.sidebar-status--timed {
+  border-color: rgba(247, 170, 74, 0.45);
+  background: rgba(247, 170, 74, 0.16);
+  color: #b26811;
+}
+
 .sidebar-status-check {
   font-size: 0.85rem;
   font-weight: 900;
+}
+
+.sidebar-status-icon {
+  width: 0.82rem;
+  height: 0.82rem;
+  fill: currentColor;
 }
 
 .sidebar-lock-icon {
@@ -335,6 +353,11 @@
   transform: translateX(-50%);
 }
 
+.sidebar--collapsed .sidebar-status-icon {
+  width: 0.72rem;
+  height: 0.72rem;
+}
+
 .course-selector {
   margin-bottom: 10px;
 }
@@ -351,6 +374,7 @@
 }
 
 .progress-bar {
+  position: relative;
   width: 100%;
   height: 8px;
   background: #e6e6e6;
@@ -359,11 +383,23 @@
   margin: 0.5rem 0 0.25rem 0;
 }
 
+.progress-bar-viewed-fill,
 .progress-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
   height: 100%;
-  background: #4a6cf7;
   border-radius: 999px;
   transition: width 200ms ease;
+}
+
+.progress-bar-viewed-fill {
+  z-index: 1;
+  background: rgba(74, 108, 247, 0.24);
+}
+
+.progress-bar-fill {
+  z-index: 2;
+  background: #4a6cf7;
 }
 
 .progress-percentage {
@@ -435,6 +471,18 @@
     color: #8b95a7;
   }
 
+  .sidebar-status--seen {
+    border-color: rgba(128, 150, 255, 0.45);
+    background: rgba(128, 150, 255, 0.14);
+    color: #b9c8ff;
+  }
+
+  .sidebar-status--timed {
+    border-color: rgba(248, 193, 112, 0.45);
+    background: rgba(248, 193, 112, 0.16);
+    color: #ffd49b;
+  }
+
   .sidebar-pulltab {
     border-color: #303033;
     color: #d4d4d8;
@@ -444,6 +492,10 @@
 
   .progress-bar {
     background: #262626;
+  }
+
+  .progress-bar-viewed-fill {
+    background: rgba(128, 150, 255, 0.26);
   }
 
   .progress-percentage {
@@ -475,6 +527,10 @@
   background: #262626;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .progress-bar-viewed-fill {
+  background: rgba(128, 150, 255, 0.26);
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .progress-percentage {
   color: #cbd5e1;
 }
@@ -495,6 +551,18 @@
   border-color: #444448;
   background: #1b1b1d;
   color: #8b95a7;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-status--seen {
+  border-color: rgba(128, 150, 255, 0.45);
+  background: rgba(128, 150, 255, 0.14);
+  color: #b9c8ff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-status--timed {
+  border-color: rgba(248, 193, 112, 0.45);
+  background: rgba(248, 193, 112, 0.16);
+  color: #ffd49b;
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-pulltab {
@@ -548,6 +616,10 @@ html[data-theme="light"] .progress-bar {
   background: #e6e6e6;
 }
 
+html[data-theme="light"] .progress-bar-viewed-fill {
+  background: rgba(74, 108, 247, 0.24);
+}
+
 html[data-theme="light"] .progress-percentage {
   color: #555;
 }
@@ -568,4 +640,16 @@ html[data-theme="light"] .sidebar-status--locked {
   border-color: #d2d6df;
   background: #f1f3f6;
   color: #111111;
+}
+
+html[data-theme="light"] .sidebar-status--seen {
+  border-color: rgba(72, 108, 247, 0.35);
+  background: rgba(74, 108, 247, 0.1);
+  color: #3653ce;
+}
+
+html[data-theme="light"] .sidebar-status--timed {
+  border-color: rgba(247, 170, 74, 0.45);
+  background: rgba(247, 170, 74, 0.16);
+  color: #b26811;
 }

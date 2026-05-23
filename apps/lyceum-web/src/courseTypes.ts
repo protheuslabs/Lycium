@@ -109,6 +109,13 @@ export type CourseBookmarkRecord = {
   path?: string | null;
 };
 
+export type SectionStatus = "completed" | "locked" | "seen" | "timed";
+
+export type CourseProgressRecord = {
+  completedSectionIds: string[];
+  sectionStatuses: Record<string, SectionStatus>;
+};
+
 export type RouteInfo = {
   kind: "home" | "course" | "settings";
   courseSlug: string | null;

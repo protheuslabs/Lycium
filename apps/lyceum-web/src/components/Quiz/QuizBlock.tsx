@@ -30,10 +30,19 @@ export default function QuizBlock({
   data,
   name,
   onSubmissionChange,
+  onProgressChange,
 }: {
   data: QuizPayload;
   name: string;
   onSubmissionChange?: (quizKey: string, submitted: boolean) => void;
+  onProgressChange?: (
+    quizKey: string,
+    status: {
+      submitted: boolean;
+      inProgress: boolean;
+      timed: boolean;
+    }
+  ) => void;
 }) {
   const questionBank = useMemo(() => normalizePayload(data), [data]);
   const questionsPerAttempt = useMemo(
@@ -291,6 +300,8 @@ export default function QuizBlock({
   const currentAttempt = submitted || attemptLimitReached ? attemptCount : attemptCount + 1;
   const attemptsLabel = `${currentAttempt}/${maxAttempts ?? "∞"}`;
   const timeLabel = `${formatDuration(elapsedSeconds)}/${timerDuration === null ? "∞" : formatDuration(timerDuration)}`;
+  const hasQuizProgress = selectedByQuestion.some((selection) => selection.length > 0) || attemptHistory.length > 0;
+  const isQuizInProgress = !submitted && hasQuizProgress;
   const reviewAttempt = attemptHistory.find((attempt) => attempt.attemptNumber === reviewAttemptNumber);
   const displayedQuestions = reviewAttempt?.attemptOrder ? buildAttemptQuestions(questionBank, reviewAttempt.attemptOrder) : questionsWithTiming;
   const displayedSelectedByQuestion = reviewAttempt?.selectedByQuestion ?? selectedByQuestion;
@@ -302,6 +313,14 @@ export default function QuizBlock({
     (showAnswers || (maxAttempts !== null && displayedAttemptNumber >= maxAttempts));
   const historicalAttempts = submitted ? attemptHistory.slice(0, -1) : attemptHistory;
   const currentAttemptResult = submitted ? attemptHistory[attemptHistory.length - 1] : null;
+
+  useEffect(() => {
+    onProgressChange?.(name, {
+      submitted,
+      inProgress: isQuizInProgress,
+      timed: timerDuration !== null || isTimed,
+    });
+  }, [isQuizInProgress, isTimed, name, onProgressChange, submitted, timerDuration]);
 
   const toggleQuestionMarker = (questionIndex: number) => {
     setQuestionMarked((prev) => {
