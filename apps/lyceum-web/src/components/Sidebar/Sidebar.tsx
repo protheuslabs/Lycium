@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SectionStatus } from "../../courseTypes";
 import "./Sidebar.css";
 
@@ -32,7 +32,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const activeModuleIndex = sections[currentSectionIndex]?.moduleIndex ?? 0;
   const [expandedModules, setExpandedModules] = useState<Set<number>>(() => new Set());
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const moduleGroups = useMemo(() => {
     const groups: Array<{
       moduleIndex: number;
@@ -141,6 +141,10 @@ export default function Sidebar({
       return next;
     });
   };
+
+  useEffect(() => {
+    setIsCollapsed(true);
+  }, [courseTitle, currentSectionIndex]);
   
   return (
     <aside className={`sidebar ${isCollapsed ? "sidebar--collapsed" : ""}`}>

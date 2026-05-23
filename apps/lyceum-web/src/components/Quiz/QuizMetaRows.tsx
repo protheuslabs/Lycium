@@ -85,7 +85,7 @@ export default function QuizMetaRows({
             Score: {formatScore(attempt)}
           </span>
           <span>
-            Time: {formatDuration(attempt.elapsedSeconds)}/{timerDuration === null ? "∞" : formatDuration(timerDuration)}
+            {formatDuration(attempt.elapsedSeconds)}/{timerDuration === null ? "∞" : formatDuration(timerDuration)}
           </span>
         </button>
       ))}
@@ -108,7 +108,7 @@ export default function QuizMetaRows({
           <span aria-hidden="true" />
         )}
         <span>
-          Time: {currentAttemptResult
+          {currentAttemptResult
             ? `${formatDuration(currentAttemptResult.elapsedSeconds)}/${timerDuration === null ? "∞" : formatDuration(timerDuration)}`
             : timeLabel}
         </span>
