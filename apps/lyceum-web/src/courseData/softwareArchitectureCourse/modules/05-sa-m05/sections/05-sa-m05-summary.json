@@ -1,0 +1,84 @@
+{
+  "id": "sa-m05-summary",
+  "title": "Week Summary: Viewpoints and Views",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "iso-iec-ieee-42010-2022",
+    "sei-views-and-beyond"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Architecture viewpoint",
+          "description": "Reusable guidance for creating views that address a set of stakeholder concerns.",
+          "sourceSectionId": "sa-m05-u01"
+        },
+        {
+          "name": "Architecture view",
+          "description": "A system-specific representation created according to a viewpoint to address stakeholder concerns.",
+          "sourceSectionId": "sa-m05-u01"
+        },
+        {
+          "name": "Viewpoint concern",
+          "description": "A concern that a viewpoint is designed to expose, analyze, or communicate.",
+          "sourceSectionId": "sa-m05-u01"
+        },
+        {
+          "name": "Model kind",
+          "description": "A category of model used in a viewpoint, such as context, component, deployment, data, or state model.",
+          "sourceSectionId": "sa-m05-u01"
+        },
+        {
+          "name": "View selection",
+          "description": "The decision about which architecture views are worth creating for a system and situation.",
+          "sourceSectionId": "sa-m05-u02"
+        },
+        {
+          "name": "Stakeholder question",
+          "description": "A question a stakeholder needs answered to design, evaluate, build, operate, or govern the system.",
+          "sourceSectionId": "sa-m05-u02"
+        },
+        {
+          "name": "View utility",
+          "description": "The practical value of a view in answering concerns, reducing risk, or coordinating work.",
+          "sourceSectionId": "sa-m05-u02"
+        },
+        {
+          "name": "Documentation economy",
+          "description": "The practice of documenting enough architectural information to be useful without creating needless maintenance burden.",
+          "sourceSectionId": "sa-m05-u02"
+        },
+        {
+          "name": "Architecture description package",
+          "description": "The combined set of views, decisions, context, principles, risks, and supporting material used to describe an architecture.",
+          "sourceSectionId": "sa-m05-u03"
+        },
+        {
+          "name": "Cross-view relationship",
+          "description": "A connection or dependency between elements represented in different architecture views.",
+          "sourceSectionId": "sa-m05-u03"
+        },
+        {
+          "name": "Architecture glossary",
+          "description": "A shared vocabulary for system concepts, domain terms, architectural elements, and abbreviations.",
+          "sourceSectionId": "sa-m05-u03"
+        },
+        {
+          "name": "Architecture template",
+          "description": "A reusable structure for organizing architecture documentation and decisions.",
+          "sourceSectionId": "sa-m05-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022",
+        "sei-views-and-beyond"
+      ]
+    }
+  ]
+}

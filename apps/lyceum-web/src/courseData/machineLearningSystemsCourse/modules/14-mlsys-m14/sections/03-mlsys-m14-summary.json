@@ -1,0 +1,54 @@
+{
+  "id": "mlsys-m14-summary",
+  "title": "Week Summary: Sustainable AI, AI for Good, Frontiers, and Final Design Review",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Sustainable AI",
+          "description": "Designing and operating AI systems with attention to energy use, environmental impact, and long-term resource costs.",
+          "sourceSectionId": "mlsys-u14"
+        },
+        {
+          "name": "Energy consumption",
+          "description": "The amount of energy required to train, serve, or operate a system.",
+          "sourceSectionId": "mlsys-u14"
+        },
+        {
+          "name": "Carbon footprint",
+          "description": "The greenhouse gas emissions associated with computation, infrastructure, or operations.",
+          "sourceSectionId": "mlsys-u14"
+        },
+        {
+          "name": "AI for good",
+          "description": "The use of AI methods to address socially beneficial goals such as health, education, safety, accessibility, or sustainability.",
+          "sourceSectionId": "mlsys-u14"
+        },
+        {
+          "name": "Final design review",
+          "description": "A structured critique of a complete system design before implementation, presentation, or deployment.",
+          "sourceSectionId": "mlsys-u14"
+        },
+        {
+          "name": "System tradeoff",
+          "description": "A choice that improves one system quality while potentially weakening another.",
+          "sourceSectionId": "mlsys-u14"
+        },
+        {
+          "name": "Operational risk",
+          "description": "The possibility that a live system will fail, degrade, become unsafe, or be misused during operation.",
+          "sourceSectionId": "mlsys-u14"
+        },
+        {
+          "name": "Lifecycle maintenance",
+          "description": "Ongoing work to update, monitor, debug, retrain, and govern a system after launch.",
+          "sourceSectionId": "mlsys-u14"
+        }
+      ]
+    }
+  ]
+}

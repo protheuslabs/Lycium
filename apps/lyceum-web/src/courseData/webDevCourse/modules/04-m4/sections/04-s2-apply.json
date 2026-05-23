@@ -1,0 +1,164 @@
+{
+  "id": "s2-apply",
+  "title": "Apply: Conditionals and Loops",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m4-s2-q1",
+          "type": "single_choice",
+          "question": "Use if/else for",
+          "options": [
+            "Condition checks",
+            "Styling defaults",
+            "Tag parsing",
+            "DOM queries only"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q2",
+          "type": "single_choice",
+          "question": "A for loop is best for",
+          "options": [
+            "Single value only",
+            "Repeating through index values",
+            "Asynchronous calls only",
+            "No arrays"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q3",
+          "type": "single_choice",
+          "question": "A switch statement is useful when",
+          "options": [
+            "Comparing many discrete values",
+            "Only booleans",
+            "No branching",
+            "Only dates"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q4",
+          "type": "single_choice",
+          "question": "forEach is most often used to",
+          "options": [
+            "Iterate an array and run a function",
+            "Loop without data",
+            "Break loops",
+            "Fetch APIs"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q5",
+          "type": "single_choice",
+          "question": "Use map when you want",
+          "options": [
+            "A new transformed array",
+            "Just iterate and log",
+            "No return values",
+            "To sort in place"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q6",
+          "type": "single_choice",
+          "question": "The break statement in loop does",
+          "options": [
+            "Ends loop early",
+            "Doubles values",
+            "Filters array",
+            "Starts over"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q7",
+          "type": "single_choice",
+          "question": "The continue statement",
+          "options": [
+            "Skips to next iteration",
+            "Stops execution entirely",
+            "Repeats previous",
+            "Throws an error"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q8",
+          "type": "single_choice",
+          "question": "Ternary operator is a shorthand for",
+          "options": [
+            "if/else",
+            "for loop",
+            "array spread",
+            "async/await"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q9",
+          "type": "single_choice",
+          "question": "When multiple outcomes are mutually exclusive, prefer",
+          "options": [
+            "Nested ifs with clear structure",
+            "A chain without braces",
+            "No branches",
+            "Only global flags"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s2-q10",
+          "type": "single_choice",
+          "question": "To prevent complexity, reduce deeply nested conditionals by",
+          "options": [
+            "Extracting helper functions",
+            "Increasing nesting",
+            "Copy-pasting branches",
+            "Removing all conditions"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

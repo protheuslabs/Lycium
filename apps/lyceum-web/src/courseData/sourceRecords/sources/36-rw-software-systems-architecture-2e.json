@@ -1,0 +1,15 @@
+{
+  "id": "rw-software-systems-architecture-2e",
+  "type": "book",
+  "title": "Software Systems Architecture: Working with Stakeholders Using Viewpoints and Perspectives, 2nd Edition",
+  "author": "Nick Rozanski; Eoin Woods",
+  "publisher": "Addison-Wesley Professional",
+  "publicationDate": "2011-10-25",
+  "url": "https://www.informit.com/store/software-systems-architecture-working-with-stakeholders-9780321718334",
+  "usedByCourseIds": [
+    "local-software-architecture"
+  ],
+  "usedByCourseTitles": [
+    "Software Systems Architecture: Viewpoints and Perspectives"
+  ]
+}

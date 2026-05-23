@@ -1,0 +1,104 @@
+{
+  "id": "mlsys-u01",
+  "title": "ML Systems as an Engineering Discipline",
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Machine Learning Systems, Introduction and Chapter 1. Supplemental: Chip Huyen, Principles of Good Machine Learning Systems Design; Google Rules of Machine Learning.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-chip-good-ml-systems-design",
+        "stanford-mlsys-seminar",
+        "google-rules-of-ml"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "This opening unit reframes machine learning as an engineering discipline rather than a model-building exercise. Students learn to describe an ML system as an interaction among data, model, infrastructure, objective, deployment context, and users. The key shift is that production ML fails differently from traditional software: behavior can degrade silently, data distributions move, labels arrive late, and success often depends on business, human, and operational constraints as much as accuracy. The unit introduces the AI Triangle, the ML lifecycle, and the five-pillar framework used throughout the course.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-chip-good-ml-systems-design",
+        "stanford-mlsys-seminar",
+        "google-rules-of-ml"
+      ]
+    },
+    {
+      "type": "video",
+      "sourceIds": [
+        "stanford-chip-good-ml-systems-design"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Supplemental sources for this unit are listed in the references below. Use them to compare the textbook framing with public talks, documentation, papers, and production guidance.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-chip-good-ml-systems-design",
+        "stanford-mlsys-seminar",
+        "google-rules-of-ml"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: map one familiar AI product into data sources, model behavior, infrastructure, feedback loops, monitoring signals, and human stakeholders. Deliverable: a one-page system sketch with three likely failure modes.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-chip-good-ml-systems-design",
+        "stanford-mlsys-seminar",
+        "google-rules-of-ml"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "ML system lifecycle",
+          "description": "The full progression of an ML system from problem framing and data collection through training, deployment, monitoring, and iteration."
+        },
+        {
+          "name": "System boundary",
+          "description": "The line defining what components, users, data flows, and dependencies are considered part of the system under design."
+        },
+        {
+          "name": "Data pipeline",
+          "description": "The process that collects, transforms, validates, and moves data for training or inference."
+        },
+        {
+          "name": "Model artifact",
+          "description": "The saved model file or package produced by training and used for evaluation or serving."
+        },
+        {
+          "name": "Inference service",
+          "description": "A production service that accepts inputs, runs a model, and returns predictions or outputs."
+        },
+        {
+          "name": "Feedback loop",
+          "description": "A cycle where system outputs influence future inputs, user behavior, labels, or model updates."
+        },
+        {
+          "name": "Production monitoring",
+          "description": "Observing a live system’s reliability, data, predictions, and user-facing behavior over time."
+        },
+        {
+          "name": "Stakeholder requirement",
+          "description": "A need or constraint from users, operators, business owners, regulators, or other affected groups."
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-chip-good-ml-systems-design",
+        "stanford-mlsys-seminar",
+        "google-rules-of-ml"
+      ]
+    }
+  ],
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-chip-good-ml-systems-design",
+    "stanford-mlsys-seminar",
+    "google-rules-of-ml"
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

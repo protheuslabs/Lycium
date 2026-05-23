@@ -1,0 +1,14 @@
+{
+  "id": "stanford-mlflow-industrial-scale",
+  "type": "video",
+  "title": "Machine Learning at Industrial Scale: Lessons from the MLflow Project",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=nCQ9WqXPIS4",
+  "embedUrl": "https://www.youtube.com/embed/nCQ9WqXPIS4",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

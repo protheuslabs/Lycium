@@ -1,0 +1,15 @@
+{
+  "id": "mit-6s191-intro-deep-learning",
+  "type": "video",
+  "title": "MIT Introduction to Deep Learning",
+  "author": "Alexander Amini",
+  "publisher": "MIT 6.S191",
+  "url": "https://www.youtube.com/watch?v=alfdI7S6wCY",
+  "embedUrl": "https://www.youtube.com/embed/alfdI7S6wCY",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

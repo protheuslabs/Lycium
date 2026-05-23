@@ -1,0 +1,64 @@
+{
+  "id": "sa-m08-u03",
+  "title": "Operational Viewpoint",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 20-22. Supplemental: arc42 architecture documentation guidance. This unit focuses on operational viewpoint.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "The operational viewpoint describes how the system is run, monitored, supported, backed up, restored, configured, deployed, and repaired. It turns architecture from a design-time artifact into a live system responsibility.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Operational concerns should influence architecture early. If a system cannot be observed, upgraded, rolled back, scaled, or recovered, its design is incomplete even if its functionality works.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: write an operational readiness checklist for a payment service before production launch.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Operational viewpoint",
+          "description": "A viewpoint focused on running, monitoring, supporting, recovering, and changing the live system."
+        },
+        {
+          "name": "Operational readiness",
+          "description": "The degree to which a system can be safely deployed, observed, supported, and recovered in production."
+        },
+        {
+          "name": "Rollback strategy",
+          "description": "A planned way to return a system to a prior safe state after a failed release or configuration change."
+        },
+        {
+          "name": "Runbook",
+          "description": "Operational instructions for routine tasks, incident response, diagnosis, and recovery."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    }
+  ]
+}

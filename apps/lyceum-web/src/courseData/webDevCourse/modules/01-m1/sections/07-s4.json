@@ -1,0 +1,42 @@
+{
+  "id": "s4",
+  "title": "Thinking in Modules",
+  "content": [
+    {
+      "type": "text",
+      "value": "Modular thinking keeps web applications maintainable. Split features into pages, components, and utility functions. Reuse patterns like header, card, form, and hero sections so your application can scale from a small exercise to a multi-page portfolio without rewriting everything."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Module",
+          "description": "A self-contained unit of code or content with a clear responsibility."
+        },
+        {
+          "name": "Separation of concerns",
+          "description": "The practice of keeping different responsibilities in separate files, components, functions, or layers."
+        },
+        {
+          "name": "File organization",
+          "description": "The structure used to group project files so their roles and relationships are understandable."
+        },
+        {
+          "name": "Component boundary",
+          "description": "The line defining what a component owns, exposes, and depends on."
+        },
+        {
+          "name": "Reusable code",
+          "description": "Code written so it can be used in more than one place without duplication."
+        },
+        {
+          "name": "Project structure",
+          "description": "The overall organization of folders, files, modules, assets, and configuration in a project."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

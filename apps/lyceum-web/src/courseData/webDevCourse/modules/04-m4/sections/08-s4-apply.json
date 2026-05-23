@@ -1,0 +1,164 @@
+{
+  "id": "s4-apply",
+  "title": "Apply: Asynchronous JavaScript and APIs",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m4-s4-q1",
+          "type": "single_choice",
+          "question": "The fetch API is used to",
+          "options": [
+            "Read files from disk only",
+            "Make HTTP requests",
+            "Resize images",
+            "Style elements"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q2",
+          "type": "single_choice",
+          "question": "A Promise represents",
+          "options": [
+            "Immediate value",
+            "A future asynchronous result",
+            "A CSS rule",
+            "An event listener"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q3",
+          "type": "single_choice",
+          "question": "Use async/await with",
+          "options": [
+            "Synchronous loops only",
+            "Promise-returning functions",
+            "Only variables",
+            "DOM parsing only"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q4",
+          "type": "single_choice",
+          "question": "To handle failures in async functions, use",
+          "options": [
+            "Only console",
+            "try/catch",
+            "ignore",
+            "setTimeout"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q5",
+          "type": "single_choice",
+          "question": "HTTP status code 401 means",
+          "options": [
+            "Success",
+            "Bad request",
+            "Unauthorized",
+            "Server error"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q6",
+          "type": "single_choice",
+          "question": "For API errors, avoid",
+          "options": [
+            "User-friendly messages",
+            "Silent failure",
+            "Retry logic",
+            "Error boundaries"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q7",
+          "type": "single_choice",
+          "question": "JSON is best converted in JS with",
+          "options": [
+            "JSON.parse",
+            "JSON.render",
+            "JSON.string",
+            "JSON.load"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q8",
+          "type": "single_choice",
+          "question": "Use loading states to",
+          "options": [
+            "Hide async work from users",
+            "Communicate progress",
+            "Remove all buttons",
+            "Disable everything"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q9",
+          "type": "single_choice",
+          "question": "Caching API responses can improve",
+          "options": [
+            "Page speed",
+            "Only layout",
+            "Only fonts",
+            "No user experience"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s4-q10",
+          "type": "single_choice",
+          "question": "A clean async architecture starts with",
+          "options": [
+            "Separation of fetch and rendering logic",
+            "Inline script for everything",
+            "No validation",
+            "No error handling"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

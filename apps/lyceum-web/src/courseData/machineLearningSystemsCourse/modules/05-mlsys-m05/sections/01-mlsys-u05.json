@@ -1,0 +1,104 @@
+{
+  "id": "mlsys-u05",
+  "title": "AI Workflow and Data Engineering",
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Machine Learning Systems, Chapters 5 and 6. Supplemental: Snorkel training data work and data-centric AI materials.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-snorkel-training-data",
+        "snorkel",
+        "google-rules-of-ml"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "This unit treats data as infrastructure. Students learn the end-to-end workflow from problem definition to data acquisition, ingestion, validation, labeling, storage, feature creation, governance, and iteration. The central lesson is that data decisions cascade: a weak task definition creates ambiguous labels, poor ingestion creates missing or stale features, and untracked transformations undermine reproducibility. The unit introduces batch versus streaming ingestion, data quality checks, labeling strategies, feature stores, lineage, and governance.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-snorkel-training-data",
+        "snorkel",
+        "google-rules-of-ml"
+      ]
+    },
+    {
+      "type": "video",
+      "sourceIds": [
+        "stanford-snorkel-training-data"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Supplemental sources for this unit are listed in the references below. Use them to compare the textbook framing with public talks, documentation, papers, and production guidance.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-snorkel-training-data",
+        "snorkel",
+        "google-rules-of-ml"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: design a data pipeline for a keyword spotting product. Deliverable: data contract, validation checks, labeling plan, lineage fields, and two governance risks.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-snorkel-training-data",
+        "snorkel",
+        "google-rules-of-ml"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Data collection",
+          "description": "Gathering raw data from users, sensors, logs, systems, or other sources for analysis or modeling."
+        },
+        {
+          "name": "Data labeling",
+          "description": "Assigning target values, categories, annotations, or judgments to examples for supervised learning or evaluation."
+        },
+        {
+          "name": "Dataset split",
+          "description": "Dividing data into training, validation, test, or other subsets for model development and evaluation."
+        },
+        {
+          "name": "Feature engineering",
+          "description": "Creating, transforming, or selecting input variables that make useful patterns easier for a model to learn."
+        },
+        {
+          "name": "Data validation",
+          "description": "Checking data for expected schema, ranges, missing values, freshness, and quality before it is used."
+        },
+        {
+          "name": "Data lineage",
+          "description": "A record of where data came from, how it changed, and how it moved through a system."
+        },
+        {
+          "name": "Training-serving skew",
+          "description": "A mismatch between data, features, or preprocessing used in training and those used during production inference."
+        },
+        {
+          "name": "Pipeline orchestration",
+          "description": "Coordinating ordered workflow steps, dependencies, retries, and schedules in a data or ML pipeline."
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-snorkel-training-data",
+        "snorkel",
+        "google-rules-of-ml"
+      ]
+    }
+  ],
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-snorkel-training-data",
+    "snorkel",
+    "google-rules-of-ml"
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

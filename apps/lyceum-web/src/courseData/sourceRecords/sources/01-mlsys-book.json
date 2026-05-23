@@ -1,0 +1,15 @@
+{
+  "id": "mlsys-book",
+  "type": "book",
+  "title": "Machine Learning Systems",
+  "author": "Vijay Janapa Reddi",
+  "publisher": "Harvard University",
+  "url": "https://mlsysbook.ai/",
+  "localPath": "/Users/jay/Document (Lcl)/Books/Machine Learning Systems.pdf",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "stanford-mlc-foundation-models",
+  "type": "video",
+  "title": "Bringing Foundation Models to Consumer Devices via ML Compilation",
+  "author": "Tianqi Chen",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=InoNMvjs_vo",
+  "embedUrl": "https://www.youtube.com/embed/InoNMvjs_vo",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

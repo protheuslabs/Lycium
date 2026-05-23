@@ -1,0 +1,13 @@
+{
+  "id": "tensorflow-guide",
+  "type": "documentation",
+  "title": "TensorFlow Guide",
+  "publisher": "TensorFlow",
+  "url": "https://www.tensorflow.org/guide",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

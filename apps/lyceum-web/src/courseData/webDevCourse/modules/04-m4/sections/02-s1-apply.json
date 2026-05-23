@@ -1,0 +1,164 @@
+{
+  "id": "s1-apply",
+  "title": "Apply: Variables, Types, and Expressions",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m4-s1-q1",
+          "type": "single_choice",
+          "question": "Use const for values that",
+          "options": [
+            "Change every render",
+            "Never change",
+            "Need hoisting only",
+            "Are DOM nodes"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q2",
+          "type": "single_choice",
+          "question": "Arrays in JavaScript are",
+          "options": [
+            "Never mutable",
+            "Only for strings",
+            "Ordered collections",
+            "Function-only types"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q3",
+          "type": "single_choice",
+          "question": "A boolean stores",
+          "options": [
+            "Two states true/false",
+            "Only text",
+            "A date object",
+            "CSS classes"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q4",
+          "type": "single_choice",
+          "question": "Object literals are useful for",
+          "options": [
+            "Representing structured data",
+            "Only event handling",
+            "Only styles",
+            "No semantics"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q5",
+          "type": "single_choice",
+          "question": "String concatenation can be done with",
+          "options": [
+            "template literals",
+            "only concat()",
+            "only JSON",
+            "HTML tags"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q6",
+          "type": "single_choice",
+          "question": "Loose equality (==) in strict courses should generally be",
+          "options": [
+            "Preferred",
+            "Avoided",
+            "Required",
+            "The same as ==="
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q7",
+          "type": "single_choice",
+          "question": "The value of null is",
+          "options": [
+            "A number",
+            "An object reference with no value",
+            "A boolean always true",
+            "An array"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q8",
+          "type": "single_choice",
+          "question": "`typeof []` returns",
+          "options": [
+            "array",
+            "object",
+            "function",
+            "null"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q9",
+          "type": "single_choice",
+          "question": "The cleanest numeric default is",
+          "options": [
+            "0",
+            "'0'",
+            "NaN",
+            "undefined"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m4-s1-q10",
+          "type": "single_choice",
+          "question": "To avoid confusion, prefer named constants for",
+          "options": [
+            "magic numbers",
+            "every variable",
+            "No values",
+            "Only styles"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

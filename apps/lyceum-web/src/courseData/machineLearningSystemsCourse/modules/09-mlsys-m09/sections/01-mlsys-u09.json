@@ -1,0 +1,110 @@
+{
+  "id": "mlsys-u09",
+  "title": "AI Acceleration and Hardware/Software Co-Design",
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Machine Learning Systems, Chapter 11. Supplemental: accelerator architecture materials and ML compilation talks.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlc-foundation-models",
+        "apache-tvm",
+        "mlc-ai",
+        "mlcommons-benchmarks"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "This unit surveys accelerators and the software stack that makes them useful. Students compare CPUs, GPUs, TPUs, NPUs, FPGAs, ASICs, and microcontrollers through parallelism, memory hierarchy, data movement, precision support, programmability, and deployment constraints. The main idea is co-design: model structure, compiler transformations, kernels, runtime scheduling, and hardware capabilities must line up. Fast hardware cannot rescue a workload whose data movement dominates useful computation.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlc-foundation-models",
+        "apache-tvm",
+        "mlc-ai",
+        "mlcommons-benchmarks"
+      ]
+    },
+    {
+      "type": "video",
+      "sourceIds": [
+        "stanford-mlc-foundation-models"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Supplemental sources for this unit are listed in the references below. Use them to compare the textbook framing with public talks, documentation, papers, and production guidance.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlc-foundation-models",
+        "apache-tvm",
+        "mlc-ai",
+        "mlcommons-benchmarks"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: choose hardware for batch inference, real-time video analytics, and always-on audio. Deliverable: hardware rationale with memory hierarchy and software stack risks.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlc-foundation-models",
+        "apache-tvm",
+        "mlc-ai",
+        "mlcommons-benchmarks"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "GPU",
+          "description": "A graphics processing unit used for highly parallel computation in model training and inference."
+        },
+        {
+          "name": "TPU",
+          "description": "A tensor processing unit designed to accelerate tensor operations used in machine learning."
+        },
+        {
+          "name": "NPU",
+          "description": "A neural processing unit designed to accelerate neural network workloads, often on edge or mobile devices."
+        },
+        {
+          "name": "Hardware accelerator",
+          "description": "Specialized hardware designed to run certain computations faster or more efficiently than a general-purpose CPU."
+        },
+        {
+          "name": "Memory bandwidth",
+          "description": "The rate at which data can be read from or written to memory, often a bottleneck for ML workloads."
+        },
+        {
+          "name": "Operator fusion",
+          "description": "Combining multiple operations into one execution step to reduce overhead and improve performance."
+        },
+        {
+          "name": "Compiler optimization",
+          "description": "Transforming code or computation graphs to run more efficiently on target hardware."
+        },
+        {
+          "name": "Hardware-software co-design",
+          "description": "Designing algorithms, software, and hardware together so they fit each other’s constraints and strengths."
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlc-foundation-models",
+        "apache-tvm",
+        "mlc-ai",
+        "mlcommons-benchmarks"
+      ]
+    }
+  ],
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-mlc-foundation-models",
+    "apache-tvm",
+    "mlc-ai",
+    "mlcommons-benchmarks"
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

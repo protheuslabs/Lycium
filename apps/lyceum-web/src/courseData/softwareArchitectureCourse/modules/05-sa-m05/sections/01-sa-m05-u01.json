@@ -1,0 +1,70 @@
+{
+  "id": "sa-m05-u01",
+  "title": "Viewpoints as Reusable Guidance",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "iso-iec-ieee-42010-2022"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 3, 13, and 15. Supplemental: ISO/IEC/IEEE 42010 and SEI Views and Beyond. This unit focuses on viewpoints as reusable guidance.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A viewpoint defines how to construct a view for a recurring class of stakeholder concerns. It describes the audience, concerns, model kinds, notation, analysis techniques, and consistency checks that guide the view.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "The important distinction is that a viewpoint is the recipe and a view is the resulting artifact for a specific system. This allows teams to reuse architectural thinking without pretending every system needs identical documentation.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: create a small viewpoint definition for an API integration view, including stakeholders, concerns, notation, and validation questions.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Architecture viewpoint",
+          "description": "Reusable guidance for creating views that address a set of stakeholder concerns."
+        },
+        {
+          "name": "Architecture view",
+          "description": "A system-specific representation created according to a viewpoint to address stakeholder concerns."
+        },
+        {
+          "name": "Viewpoint concern",
+          "description": "A concern that a viewpoint is designed to expose, analyze, or communicate."
+        },
+        {
+          "name": "Model kind",
+          "description": "A category of model used in a viewpoint, such as context, component, deployment, data, or state model."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    }
+  ]
+}

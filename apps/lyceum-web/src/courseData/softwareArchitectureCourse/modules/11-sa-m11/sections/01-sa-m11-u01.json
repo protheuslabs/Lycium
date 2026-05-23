@@ -1,0 +1,70 @@
+{
+  "id": "sa-m11-u01",
+  "title": "Performance Scenarios and Budgets",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-atam"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapter 26. Supplemental: SEI tradeoff analysis concepts. This unit focuses on performance scenarios and budgets.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Performance architecture starts with scenarios and budgets. Latency, throughput, jitter, resource use, and user-perceived responsiveness must be tied to realistic workloads and environments.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A performance budget allocates responsibility across architecture elements. Without a budget, teams may optimize locally while the end-to-end path still fails.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: create an end-to-end latency budget for a search request across client, API, service, cache, database, and network hops.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Performance scenario",
+          "description": "A quality scenario that specifies workload, environment, response, and measurable performance target."
+        },
+        {
+          "name": "Latency budget",
+          "description": "An allocation of acceptable response time across elements in an end-to-end path."
+        },
+        {
+          "name": "Throughput",
+          "description": "The amount of work a system can complete in a given period under specified conditions."
+        },
+        {
+          "name": "Workload model",
+          "description": "A description of expected requests, users, data size, arrival patterns, and operating conditions."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "id": "sa-m10-u02",
+  "title": "Assets, Threats, and Controls",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapter 25. Supplemental: ISO/IEC/IEEE 42010 viewpoint concepts. This unit focuses on assets, threats, and controls.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Security analysis starts with assets and threats. Assets are things worth protecting, such as data, credentials, services, availability, reputation, or business operations. Threats describe possible harm to those assets.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Controls are architectural and operational mechanisms that reduce risk. They include identity, authorization, encryption, validation, network segmentation, monitoring, audit, least privilege, and secure defaults.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: for a document-sharing app, identify five assets, three threats, and three architectural controls.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Security asset",
+          "description": "A data item, capability, service, credential, or business function that requires protection."
+        },
+        {
+          "name": "Threat",
+          "description": "A potential cause of harm to a security asset or security property."
+        },
+        {
+          "name": "Security control",
+          "description": "A mechanism or process that reduces the likelihood or impact of a security threat."
+        },
+        {
+          "name": "Least privilege",
+          "description": "The design principle that actors and components receive only the permissions required for their responsibilities."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    }
+  ]
+}

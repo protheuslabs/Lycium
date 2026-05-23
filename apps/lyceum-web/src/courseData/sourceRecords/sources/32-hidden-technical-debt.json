@@ -1,0 +1,13 @@
+{
+  "id": "hidden-technical-debt",
+  "type": "paper",
+  "title": "Hidden Technical Debt in Machine Learning Systems",
+  "publisher": "NeurIPS",
+  "url": "https://papers.nips.cc/paper/5656-hidden-technical-debt-",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

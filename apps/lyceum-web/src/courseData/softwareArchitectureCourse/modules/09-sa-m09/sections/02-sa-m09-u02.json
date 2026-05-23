@@ -1,0 +1,70 @@
+{
+  "id": "sa-m09-u02",
+  "title": "Traceability From Concerns to Architecture",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-views-and-beyond"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapter 23. Supplemental: ISO/IEC/IEEE 42010 architecture description concepts. This unit focuses on traceability from concerns to architecture.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Traceability connects stakeholder concerns, scenarios, principles, decisions, views, implementation work, and verification evidence. It allows teams to answer why a design exists and whether it still satisfies the original need.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Traceability should be purposeful. Too much traceability becomes bureaucracy, but too little makes architecture impossible to evaluate or change safely.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: trace one quality scenario through a decision, a view element, an implementation task, and a test or metric.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Architecture traceability",
+          "description": "The ability to follow relationships from concerns and decisions to views, implementation, and evidence."
+        },
+        {
+          "name": "Trace link",
+          "description": "An explicit connection between two architecture artifacts or between architecture and implementation evidence."
+        },
+        {
+          "name": "Verification evidence",
+          "description": "A test, review, metric, prototype, or analysis result used to support an architectural claim."
+        },
+        {
+          "name": "Traceability burden",
+          "description": "The maintenance cost created by recording and updating too many trace links."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    }
+  ]
+}

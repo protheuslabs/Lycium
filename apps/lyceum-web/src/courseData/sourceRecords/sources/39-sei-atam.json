@@ -1,0 +1,15 @@
+{
+  "id": "sei-atam",
+  "type": "technical-report",
+  "title": "The Architecture Tradeoff Analysis Method",
+  "author": "Rick Kazman; Mark H. Klein; Mario R. Barbacci; Thomas A. Longstaff; Howard F. Lipson; Jeromy Carriere",
+  "publisher": "Carnegie Mellon University Software Engineering Institute",
+  "publicationDate": "1998-07-01",
+  "url": "https://www.sei.cmu.edu/library/the-architecture-tradeoff-analysis-method/",
+  "usedByCourseIds": [
+    "local-software-architecture"
+  ],
+  "usedByCourseTitles": [
+    "Software Systems Architecture: Viewpoints and Perspectives"
+  ]
+}

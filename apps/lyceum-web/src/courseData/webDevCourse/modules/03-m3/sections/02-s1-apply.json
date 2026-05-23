@@ -1,0 +1,164 @@
+{
+  "id": "s1-apply",
+  "title": "Apply: Selectors, Cascade, and Specificity",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m3-s1-q1",
+          "type": "single_choice",
+          "question": "Which selector is more specific than a class selector?",
+          "options": [
+            "Element selector",
+            "ID selector",
+            "Universal selector",
+            "All of the above"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q2",
+          "type": "single_choice",
+          "question": "If two rules have equal specificity, CSS uses",
+          "options": [
+            "Random order",
+            "Alphabetical order",
+            "Source order",
+            "DOM order only"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q3",
+          "type": "single_choice",
+          "question": "The universal selector is",
+          "options": [
+            "Very specific",
+            "Least specific",
+            "Inline only",
+            "Only for media queries"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q4",
+          "type": "single_choice",
+          "question": "Inline styles in HTML",
+          "options": [
+            "Have low priority",
+            "Have high priority",
+            "Do not override classes",
+            "Only target external links"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q5",
+          "type": "single_choice",
+          "question": "Best practice for maintainable CSS includes",
+          "options": [
+            "No comments and no structure",
+            "Clear naming and organization",
+            "One mega selector",
+            "No separation"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q6",
+          "type": "single_choice",
+          "question": "A reusable class naming pattern helps",
+          "options": [
+            "Confuse selectors",
+            "Scale components faster",
+            "Remove all styles",
+            "Avoid semantic HTML"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q7",
+          "type": "single_choice",
+          "question": "The cascade is influenced by",
+          "options": [
+            "Only color",
+            "Specificity and source order",
+            "Browser tab order",
+            "File size only"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q8",
+          "type": "single_choice",
+          "question": "For consistent spacing, prefer",
+          "options": [
+            "One-off manual values",
+            "Design tokens or variables",
+            "Random margins",
+            "No margins"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q9",
+          "type": "single_choice",
+          "question": "Which style can unintentionally override many rules?",
+          "options": [
+            "A long chain of descendant selectors",
+            "Simple class",
+            "Reset styles",
+            "No selectors"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s1-q10",
+          "type": "single_choice",
+          "question": "A strong CSS workflow generally starts by",
+          "options": [
+            "Writing all media queries first",
+            "Planning architecture before adding dozens of rules",
+            "Changing HTML every class",
+            "Skipping test pages"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

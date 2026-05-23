@@ -1,0 +1,42 @@
+{
+  "id": "s3",
+  "title": "DOM Access and Event Handling",
+  "content": [
+    {
+      "type": "text",
+      "value": "The DOM lets JavaScript read and update the document. Event listeners connect user actions to behavior. Use event delegation for dynamic lists and always guard your handlers when elements might be null."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "DOM",
+          "description": "The browser’s object representation of an HTML document that JavaScript can read and modify."
+        },
+        {
+          "name": "querySelector",
+          "description": "A DOM method that returns the first element matching a CSS selector."
+        },
+        {
+          "name": "Event listener",
+          "description": "A function registered to run when a specific event occurs."
+        },
+        {
+          "name": "Click event",
+          "description": "A browser event fired when a user clicks or activates an element."
+        },
+        {
+          "name": "Element state",
+          "description": "The current data, attributes, classes, or properties associated with a DOM element."
+        },
+        {
+          "name": "DOM update",
+          "description": "A change to the document object model that affects page structure, content, or attributes."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

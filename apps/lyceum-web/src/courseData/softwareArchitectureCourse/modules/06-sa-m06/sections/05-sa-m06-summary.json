@@ -1,0 +1,82 @@
+{
+  "id": "sa-m06-summary",
+  "title": "Week Summary: Context and Functional Viewpoints",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "c4-model"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Context viewpoint",
+          "description": "A viewpoint focused on the system boundary, external actors, external systems, and environmental interactions.",
+          "sourceSectionId": "sa-m06-u01"
+        },
+        {
+          "name": "Actor",
+          "description": "A person, role, organization, or system that interacts with the system from outside its boundary.",
+          "sourceSectionId": "sa-m06-u01"
+        },
+        {
+          "name": "External interface",
+          "description": "A boundary where the system communicates with another system, person, device, or service.",
+          "sourceSectionId": "sa-m06-u01"
+        },
+        {
+          "name": "Context diagram",
+          "description": "A model showing the system of interest, external actors, external systems, and relationships among them.",
+          "sourceSectionId": "sa-m06-u01"
+        },
+        {
+          "name": "Functional viewpoint",
+          "description": "A viewpoint focused on functional elements, responsibilities, interfaces, and collaborations that deliver system behavior.",
+          "sourceSectionId": "sa-m06-u02"
+        },
+        {
+          "name": "Functional element",
+          "description": "A major runtime part of a system that owns a coherent functional responsibility.",
+          "sourceSectionId": "sa-m06-u02"
+        },
+        {
+          "name": "Responsibility assignment",
+          "description": "The allocation of behavior or capability to architectural elements.",
+          "sourceSectionId": "sa-m06-u02"
+        },
+        {
+          "name": "Functional collaboration",
+          "description": "The interaction among functional elements needed to complete a system behavior.",
+          "sourceSectionId": "sa-m06-u02"
+        },
+        {
+          "name": "Functional cohesion",
+          "description": "The degree to which responsibilities within an element belong together.",
+          "sourceSectionId": "sa-m06-u03"
+        },
+        {
+          "name": "Functional coupling",
+          "description": "The degree of dependency between functional elements.",
+          "sourceSectionId": "sa-m06-u03"
+        },
+        {
+          "name": "Functional boundary",
+          "description": "A division between responsibilities that affects ownership, change, interfaces, and runtime collaboration.",
+          "sourceSectionId": "sa-m06-u03"
+        },
+        {
+          "name": "Responsibility leakage",
+          "description": "A design problem where behavior crosses boundaries in ways that weaken cohesion or ownership.",
+          "sourceSectionId": "sa-m06-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    }
+  ]
+}

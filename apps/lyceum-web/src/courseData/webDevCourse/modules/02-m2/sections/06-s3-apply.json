@@ -1,0 +1,164 @@
+{
+  "id": "s3-apply",
+  "title": "Apply: Lists, Tables, and Content Accessibility",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m2-s3-q1",
+          "type": "single_choice",
+          "question": "Use an ordered list when",
+          "options": [
+            "The items have ranking or steps",
+            "Items are unrelated",
+            "Only one item exists",
+            "No order matters"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q2",
+          "type": "single_choice",
+          "question": "Use a table for",
+          "options": [
+            "Navigation links",
+            "Tabular comparisons",
+            "Page headers",
+            "CSS declarations"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q3",
+          "type": "single_choice",
+          "question": "A good table should include",
+          "options": [
+            "Only one row",
+            "Clear headers with th",
+            "Only divs",
+            "No captions"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q4",
+          "type": "single_choice",
+          "question": "The <ul> element is best for",
+          "options": [
+            "Numbered sequences",
+            "Bulleted collections",
+            "Video sources",
+            "Metadata"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q5",
+          "type": "single_choice",
+          "question": "For screen readers, table captions can",
+          "options": [
+            "Slow page speed",
+            "Describe table purpose",
+            "Replace headers",
+            "Add scripts"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q6",
+          "type": "single_choice",
+          "question": "What is the primary risk of poor table semantics?",
+          "options": [
+            "Nothing",
+            "Poor comprehension by assistive tools",
+            "Higher RAM",
+            "Cleaner CSS"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q7",
+          "type": "single_choice",
+          "question": "Nested lists are useful for",
+          "options": [
+            "Complex outlines",
+            "No grouping",
+            "Hidden controls",
+            "No hierarchy"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q8",
+          "type": "single_choice",
+          "question": "A proper list item is represented by",
+          "options": [
+            "<li>",
+            "<tr>",
+            "<td>",
+            "<th>"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q9",
+          "type": "single_choice",
+          "question": "An unordered list visually resembles",
+          "options": [
+            "Checklist or bullets",
+            "Numbered steps",
+            "Footer",
+            "Paragraph"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m2-s3-q10",
+          "type": "single_choice",
+          "question": "To improve accessibility of data, include",
+          "options": [
+            "Only CSS",
+            "No labels",
+            "Thorough labeling and logical structure",
+            "Only div wrappers"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

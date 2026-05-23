@@ -1,0 +1,176 @@
+{
+  "id": "sa-m08-quiz",
+  "title": "Quiz: Development, Deployment, and Operational Viewpoints",
+  "pageType": "apply",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "arc42-template"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "sa-m08-q01",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Development viewpoint?",
+          "options": [
+            "A viewpoint focused on code organization, modules, build structure, dependencies, and development ownership.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q02",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Module dependency?",
+          "options": [
+            "A compile-time or build-time relationship where one code module relies on another.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q03",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Build unit?",
+          "options": [
+            "A source or package unit that can be built, tested, versioned, or released as part of development.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q04",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Dependency rule?",
+          "options": [
+            "An architectural constraint that governs which modules may depend on which other modules.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q05",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Deployment viewpoint?",
+          "options": [
+            "A viewpoint focused on mapping software elements to infrastructure, runtime nodes, networks, and environments.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q06",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Runtime node?",
+          "options": [
+            "A physical, virtual, or managed environment that hosts software execution or storage.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q07",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Deployment environment?",
+          "options": [
+            "A configured setting such as development, staging, production, region, or tenant where software runs.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q08",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Infrastructure mapping?",
+          "options": [
+            "The allocation of software elements to compute, storage, network, and managed platform resources.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q09",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Operational viewpoint?",
+          "options": [
+            "A viewpoint focused on running, monitoring, supporting, recovering, and changing the live system.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m08-q10",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Operational readiness?",
+          "options": [
+            "The degree to which a system can be safely deployed, observed, supported, and recovered in production.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "maxAttempts": "",
+      "timeLimitSeconds": "",
+      "passPercentage": 70,
+      "showAnswers": false,
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template"
+      ]
+    }
+  ]
+}

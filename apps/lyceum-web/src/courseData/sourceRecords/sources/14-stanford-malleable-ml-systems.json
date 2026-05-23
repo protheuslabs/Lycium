@@ -1,0 +1,15 @@
+{
+  "id": "stanford-malleable-ml-systems",
+  "type": "video",
+  "title": "Building Malleable ML Systems through Measurement, Monitoring & Maintenance",
+  "author": "Karan Goel",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=mNkqAZ54wGo",
+  "embedUrl": "https://www.youtube.com/embed/mNkqAZ54wGo",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

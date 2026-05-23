@@ -1,0 +1,10 @@
+{
+  "id": "mlsys-m05",
+  "title": "Week 5: AI Workflow and Data Engineering",
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-snorkel-training-data",
+    "snorkel",
+    "google-rules-of-ml"
+  ]
+}

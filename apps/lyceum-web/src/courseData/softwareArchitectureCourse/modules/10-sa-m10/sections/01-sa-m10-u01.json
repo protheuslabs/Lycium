@@ -1,0 +1,64 @@
+{
+  "id": "sa-m10-u01",
+  "title": "Security as a Cross-Cutting Perspective",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapter 25. Supplemental: ISO/IEC/IEEE 42010 viewpoint concepts. This unit focuses on security as a cross-cutting perspective.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A perspective applies cross-cutting analysis across several views. The security perspective examines how architecture decisions affect confidentiality, integrity, availability, accountability, authorization, authentication, and threat exposure.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Security cannot be added only at the end. It shapes context boundaries, data ownership, deployment zones, operational controls, dependency management, and incident response.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: annotate a context diagram with trust boundaries, sensitive data flows, identities, and external attack surfaces.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Architecture perspective",
+          "description": "A cross-cutting set of activities and checks applied across views to address a quality concern."
+        },
+        {
+          "name": "Security perspective",
+          "description": "A perspective focused on protecting assets, reducing threats, and preserving security properties across the architecture."
+        },
+        {
+          "name": "Security property",
+          "description": "A desired protection quality such as confidentiality, integrity, availability, accountability, or non-repudiation."
+        },
+        {
+          "name": "Attack surface",
+          "description": "The set of entry points and exposed interactions through which an attacker might affect the system."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    }
+  ]
+}

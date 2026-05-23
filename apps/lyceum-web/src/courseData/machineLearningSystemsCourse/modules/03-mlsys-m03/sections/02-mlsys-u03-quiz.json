@@ -1,0 +1,321 @@
+{
+  "id": "mlsys-u03-quiz",
+  "title": "Quiz: Deep Learning Primer for Systems Engineers",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "mlsys-book"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "mlsys-u03-q01",
+          "type": "single_choice",
+          "question": "Which statement best captures tensor in machine learning systems?",
+          "options": [
+            "It stores multidimensional numerical data used by model computations.",
+            "It removes the need to reason about memory and data movement.",
+            "It makes inference and training computationally identical.",
+            "It guarantees generalization when training loss is low."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q02",
+          "type": "single_choice",
+          "question": "Which statement best captures forward pass in machine learning systems?",
+          "options": [
+            "It makes inference and training computationally identical.",
+            "It computes model outputs from inputs using the current parameters.",
+            "It guarantees generalization when training loss is low.",
+            "It can ignore preprocessing because neural networks learn everything automatically."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q03",
+          "type": "single_choice",
+          "question": "Which statement best captures loss function in machine learning systems?",
+          "options": [
+            "It guarantees generalization when training loss is low.",
+            "It can ignore preprocessing because neural networks learn everything automatically.",
+            "It converts prediction error into an optimization signal.",
+            "It always benefits from using the largest possible batch."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q04",
+          "type": "single_choice",
+          "question": "Which statement best captures backpropagation in machine learning systems?",
+          "options": [
+            "It can ignore preprocessing because neural networks learn everything automatically.",
+            "It always benefits from using the largest possible batch.",
+            "It requires no validation data if the architecture is modern.",
+            "It propagates gradients through the computation graph so parameters can be updated."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q05",
+          "type": "single_choice",
+          "question": "Which statement best captures optimizer in machine learning systems?",
+          "options": [
+            "It uses gradients and state to update parameters during training.",
+            "It always benefits from using the largest possible batch.",
+            "It requires no validation data if the architecture is modern.",
+            "It is independent of numerical precision choices."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q06",
+          "type": "single_choice",
+          "question": "Which statement best captures activation in machine learning systems?",
+          "options": [
+            "It requires no validation data if the architecture is modern.",
+            "It introduces nonlinear behavior between learned transformations.",
+            "It is independent of numerical precision choices.",
+            "It is only relevant for research papers and not production systems."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q07",
+          "type": "single_choice",
+          "question": "Which statement best captures batching in machine learning systems?",
+          "options": [
+            "It is independent of numerical precision choices.",
+            "It is only relevant for research papers and not production systems.",
+            "It groups examples to improve hardware utilization and stabilize training estimates.",
+            "It removes the need to reason about memory and data movement."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q08",
+          "type": "single_choice",
+          "question": "Which statement best captures inference in machine learning systems?",
+          "options": [
+            "It is only relevant for research papers and not production systems.",
+            "It removes the need to reason about memory and data movement.",
+            "It makes inference and training computationally identical.",
+            "It runs the trained model to produce predictions without training updates."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q09",
+          "type": "single_choice",
+          "question": "Which statement best captures preprocessing in machine learning systems?",
+          "options": [
+            "It transforms raw inputs into the representation expected by the model.",
+            "It removes the need to reason about memory and data movement.",
+            "It makes inference and training computationally identical.",
+            "It guarantees generalization when training loss is low."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q10",
+          "type": "single_choice",
+          "question": "Which statement best captures postprocessing in machine learning systems?",
+          "options": [
+            "It makes inference and training computationally identical.",
+            "It converts raw model outputs into product decisions or user-facing results.",
+            "It guarantees generalization when training loss is low.",
+            "It can ignore preprocessing because neural networks learn everything automatically."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q11",
+          "type": "single_choice",
+          "question": "Which statement best captures gradient in machine learning systems?",
+          "options": [
+            "It guarantees generalization when training loss is low.",
+            "It can ignore preprocessing because neural networks learn everything automatically.",
+            "It indicates how changing a parameter affects the loss locally.",
+            "It always benefits from using the largest possible batch."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q12",
+          "type": "single_choice",
+          "question": "Which statement best captures learning rate in machine learning systems?",
+          "options": [
+            "It can ignore preprocessing because neural networks learn everything automatically.",
+            "It always benefits from using the largest possible batch.",
+            "It requires no validation data if the architecture is modern.",
+            "It controls the size of parameter updates during optimization."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q13",
+          "type": "single_choice",
+          "question": "Which statement best captures overfitting in machine learning systems?",
+          "options": [
+            "It occurs when a model fits training data patterns that do not generalize.",
+            "It always benefits from using the largest possible batch.",
+            "It requires no validation data if the architecture is modern.",
+            "It is independent of numerical precision choices."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q14",
+          "type": "single_choice",
+          "question": "Which statement best captures regularization in machine learning systems?",
+          "options": [
+            "It requires no validation data if the architecture is modern.",
+            "It discourages overly complex or brittle learned behavior.",
+            "It is independent of numerical precision choices.",
+            "It is only relevant for research papers and not production systems."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q15",
+          "type": "single_choice",
+          "question": "Which statement best captures validation set in machine learning systems?",
+          "options": [
+            "It is independent of numerical precision choices.",
+            "It is only relevant for research papers and not production systems.",
+            "It estimates performance on data not used for parameter updates.",
+            "It removes the need to reason about memory and data movement."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q16",
+          "type": "single_choice",
+          "question": "Which statement best captures normalization in machine learning systems?",
+          "options": [
+            "It is only relevant for research papers and not production systems.",
+            "It removes the need to reason about memory and data movement.",
+            "It makes inference and training computationally identical.",
+            "It can improve training stability by putting inputs or activations on useful scales."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q17",
+          "type": "single_choice",
+          "question": "Which statement best captures numerical precision in machine learning systems?",
+          "options": [
+            "It affects memory footprint, speed, and potential rounding error.",
+            "It removes the need to reason about memory and data movement.",
+            "It makes inference and training computationally identical.",
+            "It guarantees generalization when training loss is low."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q18",
+          "type": "single_choice",
+          "question": "Which statement best captures compute graph in machine learning systems?",
+          "options": [
+            "It makes inference and training computationally identical.",
+            "It represents operations and dependencies used for execution and differentiation.",
+            "It guarantees generalization when training loss is low.",
+            "It can ignore preprocessing because neural networks learn everything automatically."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q19",
+          "type": "single_choice",
+          "question": "Which statement best captures model parameter in machine learning systems?",
+          "options": [
+            "It guarantees generalization when training loss is low.",
+            "It can ignore preprocessing because neural networks learn everything automatically.",
+            "It is learned from data and affects model predictions.",
+            "It always benefits from using the largest possible batch."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u03-q20",
+          "type": "single_choice",
+          "question": "Which statement best captures hyperparameter in machine learning systems?",
+          "options": [
+            "It can ignore preprocessing because neural networks learn everything automatically.",
+            "It always benefits from using the largest possible batch.",
+            "It requires no validation data if the architecture is modern.",
+            "It is chosen by the practitioner and controls training or architecture behavior."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book"
+      ],
+      "passPercentage": ""
+    }
+  ],
+  "pageType": "apply"
+}

@@ -1,0 +1,154 @@
+{
+  "id": "m1-summary-2",
+  "title": "Module Summary: Foundations of Web Development",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Module concepts",
+      "concepts": [
+        {
+          "name": "Browser",
+          "description": "Software that requests web resources, interprets HTML, CSS, and JavaScript, and renders interactive pages for users.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Server",
+          "description": "A computer or program that responds to network requests by returning data, files, or application responses.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Client-server model",
+          "description": "A network pattern where a client sends requests and a server returns responses.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "HTTP request",
+          "description": "A message from a client asking a server for a resource or action.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "HTTP response",
+          "description": "A server message that returns status information and requested content or data.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "HTML document",
+          "description": "A structured document that defines the content and semantic structure of a web page.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "CSS stylesheet",
+          "description": "A file or block of CSS rules that controls presentation, layout, and visual styling.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "JavaScript file",
+          "description": "A script file that adds behavior, state changes, and interactivity to a web page.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "URL",
+          "description": "A web address that identifies the location and access method for a resource.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Domain name",
+          "description": "A human-readable name that maps to an internet address through DNS.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "DNS lookup",
+          "description": "The process of resolving a domain name to the IP address of a server.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "IP address",
+          "description": "A numeric network address used to locate a device or server on the internet.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Hosting",
+          "description": "Providing server infrastructure where a website or application can be accessed by users.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Deployment",
+          "description": "Publishing code or files to an environment where users can access the application.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Static site",
+          "description": "A website served as prebuilt files without server-side rendering for each request.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Production environment",
+          "description": "The live environment where real users access a website or application.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Code editor",
+          "description": "A tool for writing, navigating, and editing source code.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Terminal",
+          "description": "A command-line interface for running programs and development commands.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Browser developer tools",
+          "description": "Built-in browser tools for inspecting HTML, CSS, JavaScript, network requests, storage, and performance.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Version control",
+          "description": "A system for tracking changes to files over time and coordinating work across versions or contributors.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Local development server",
+          "description": "A server run on a developer’s machine to preview and test a web project locally.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Debugging workflow",
+          "description": "A systematic process for observing, isolating, and fixing errors in code or behavior.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Module",
+          "description": "A self-contained unit of code or content with a clear responsibility.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Separation of concerns",
+          "description": "The practice of keeping different responsibilities in separate files, components, functions, or layers.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "File organization",
+          "description": "The structure used to group project files so their roles and relationships are understandable.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Component boundary",
+          "description": "The line defining what a component owns, exposes, and depends on.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Reusable code",
+          "description": "Code written so it can be used in more than one place without duplication.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Project structure",
+          "description": "The overall organization of folders, files, modules, assets, and configuration in a project.",
+          "sourceSectionId": "s4"
+        }
+      ]
+    }
+  ]
+}

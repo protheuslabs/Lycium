@@ -1,0 +1,42 @@
+{
+  "id": "s2",
+  "title": "Performance and Browser Optimization",
+  "content": [
+    {
+      "type": "text",
+      "value": "Fast pages improve learning retention. Measure before optimizing, then optimize critical resources first: image size, script timing, render blocking CSS, and network requests. Keep initial bundle small and delay non-critical work."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Critical rendering path",
+          "description": "The sequence of browser steps needed to turn HTML, CSS, and JavaScript into pixels on screen."
+        },
+        {
+          "name": "Asset size",
+          "description": "The file size of resources such as scripts, styles, images, and fonts that a page must load."
+        },
+        {
+          "name": "Image optimization",
+          "description": "Reducing image file size or choosing formats and dimensions that improve loading without unacceptable quality loss."
+        },
+        {
+          "name": "Caching",
+          "description": "Storing resources so they can be reused without fetching or recomputing them every time."
+        },
+        {
+          "name": "Lazy loading",
+          "description": "Delaying the loading of resources until they are needed or close to being visible."
+        },
+        {
+          "name": "Runtime performance",
+          "description": "How efficiently code runs after a page has loaded, including responsiveness and smoothness."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

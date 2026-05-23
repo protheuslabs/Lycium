@@ -1,0 +1,134 @@
+{
+  "id": "m1-summary-2",
+  "title": "Module Summary: Foundations of AI",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Module concepts",
+      "concepts": [
+        {
+          "name": "Artificial intelligence",
+          "description": "Computer systems designed to perform tasks that normally require human-like perception, reasoning, prediction, generation, or decision-making.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Intelligent agent",
+          "description": "A system that observes an environment, reasons over what it observes, and takes actions toward a goal.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Perception",
+          "description": "The process of turning sensory or input data into usable information about the world or task.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Reasoning",
+          "description": "The process of drawing conclusions, making inferences, or choosing actions from available information.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Prediction",
+          "description": "An estimated output about an unknown value, future event, label, or outcome.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Decision-making",
+          "description": "Choosing an action or recommendation based on goals, constraints, evidence, or predicted outcomes.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Narrow AI",
+          "description": "AI designed to perform a specific task or limited family of tasks rather than general human-level reasoning.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "General AI",
+          "description": "A hypothetical AI system with broad, flexible intelligence across many domains and tasks.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Strong AI",
+          "description": "The idea of AI that would genuinely understand, reason, and possess mind-like intelligence rather than only simulate task performance.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Weak AI",
+          "description": "AI that performs intelligent-looking tasks without requiring human-like understanding or consciousness.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Task-specific intelligence",
+          "description": "Capability that works well inside a defined task boundary but may not transfer to unrelated problems.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Capability boundary",
+          "description": "The practical limit of where an AI system is expected to work reliably and where its behavior becomes uncertain.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Recommendation system",
+          "description": "A system that ranks or suggests items, content, or actions based on user behavior, item features, or learned patterns.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Computer vision",
+          "description": "AI methods for interpreting visual inputs such as images, video, objects, scenes, and spatial patterns.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Natural language processing",
+          "description": "AI methods for analyzing, generating, transforming, or extracting meaning from human language.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Speech recognition",
+          "description": "The task of converting spoken audio into text or structured language representations.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Autonomous system",
+          "description": "A system that senses, decides, and acts with limited or no direct human control in its operating environment.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Decision support",
+          "description": "Software that helps people evaluate options, risks, recommendations, or likely outcomes before making a decision.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Brittleness",
+          "description": "A failure mode where a system performs well in expected cases but breaks under small changes, edge cases, or unfamiliar inputs.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Bias",
+          "description": "A systematic pattern in data or model behavior that produces distorted, unfair, or unrepresentative outcomes.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Data dependence",
+          "description": "The way an AI system’s behavior is constrained by the quality, coverage, and assumptions of the data used to build it.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Hallucination",
+          "description": "A generated output that sounds plausible but is unsupported, fabricated, or incorrect.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Common-sense reasoning",
+          "description": "Everyday background reasoning about the world that humans often use implicitly but AI systems may lack.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Accountability",
+          "description": "Clear responsibility for how a system is designed, deployed, monitored, and corrected when it causes problems.",
+          "sourceSectionId": "s4"
+        }
+      ]
+    }
+  ]
+}

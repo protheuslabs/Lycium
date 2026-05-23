@@ -1,0 +1,15 @@
+{
+  "id": "sei-views-and-beyond",
+  "type": "collection",
+  "title": "Views and Beyond Collection",
+  "author": "Software Engineering Institute",
+  "publisher": "Carnegie Mellon University Software Engineering Institute",
+  "publicationDate": "2009-06-01",
+  "url": "https://www.sei.cmu.edu/library/views-and-beyond-collection/",
+  "usedByCourseIds": [
+    "local-software-architecture"
+  ],
+  "usedByCourseTitles": [
+    "Software Systems Architecture: Viewpoints and Perspectives"
+  ]
+}

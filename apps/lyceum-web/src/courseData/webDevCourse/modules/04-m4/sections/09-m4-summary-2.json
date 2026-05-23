@@ -1,0 +1,134 @@
+{
+  "id": "m4-summary-2",
+  "title": "Module Summary: JavaScript Essentials",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Module concepts",
+      "concepts": [
+        {
+          "name": "JavaScript variable",
+          "description": "A named reference to a value in JavaScript code.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "let",
+          "description": "A JavaScript keyword for declaring a block-scoped variable that can be reassigned.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "const",
+          "description": "A JavaScript keyword for declaring a block-scoped variable binding that cannot be reassigned.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Primitive type",
+          "description": "A basic JavaScript value type such as string, number, boolean, null, undefined, symbol, or bigint.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Expression",
+          "description": "Code that evaluates to a value, such as a calculation, variable reference, or function call.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Operator",
+          "description": "A symbol or keyword that performs an operation on values, such as arithmetic, comparison, or logic.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "if statement",
+          "description": "A JavaScript control-flow statement that runs code when a condition is true.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "for loop",
+          "description": "A loop that repeats once for each item in a sequence or iterable.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "while loop",
+          "description": "A loop that repeats as long as its condition remains true.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Array iteration",
+          "description": "Processing each item in an array using a loop or array method.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Control flow",
+          "description": "The order and branching path through which code executes.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Loop termination",
+          "description": "The condition or event that causes a loop to stop running.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "DOM",
+          "description": "The browser’s object representation of an HTML document that JavaScript can read and modify.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "querySelector",
+          "description": "A DOM method that returns the first element matching a CSS selector.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Event listener",
+          "description": "A function registered to run when a specific event occurs.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Click event",
+          "description": "A browser event fired when a user clicks or activates an element.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Element state",
+          "description": "The current data, attributes, classes, or properties associated with a DOM element.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "DOM update",
+          "description": "A change to the document object model that affects page structure, content, or attributes.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Promise",
+          "description": "A JavaScript object representing an asynchronous operation that may complete successfully or fail later.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "async/await",
+          "description": "JavaScript syntax for writing asynchronous code in a style that reads like sequential steps.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "fetch()",
+          "description": "A browser API for making network requests and receiving responses.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "API request",
+          "description": "A request sent to an application programming interface to retrieve or change data.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "JSON",
+          "description": "A text data format commonly used to exchange structured data between web clients and servers.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Asynchronous callback",
+          "description": "A function that runs later after an asynchronous operation or event completes.",
+          "sourceSectionId": "s4"
+        }
+      ]
+    }
+  ]
+}

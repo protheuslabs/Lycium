@@ -1,0 +1,84 @@
+{
+  "id": "sa-m02-summary",
+  "title": "Week Summary: Scope, Context, and System Boundaries",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "c4-model",
+    "iso-iec-ieee-42010-2022"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "System boundary",
+          "description": "The line separating the system under design from users, external systems, and environmental dependencies.",
+          "sourceSectionId": "sa-m02-u01"
+        },
+        {
+          "name": "System context",
+          "description": "The external setting of a system, including actors, neighboring systems, interfaces, assumptions, and constraints.",
+          "sourceSectionId": "sa-m02-u01"
+        },
+        {
+          "name": "External dependency",
+          "description": "A person, organization, system, service, data source, or platform outside the system boundary that affects behavior.",
+          "sourceSectionId": "sa-m02-u01"
+        },
+        {
+          "name": "Trust boundary",
+          "description": "A boundary where data or control crosses between zones with different levels of trust or authority.",
+          "sourceSectionId": "sa-m02-u01"
+        },
+        {
+          "name": "Architecture scope",
+          "description": "The span of system, organization, lifecycle, and decision-making concerns covered by an architecture effort.",
+          "sourceSectionId": "sa-m02-u02"
+        },
+        {
+          "name": "Responsibility boundary",
+          "description": "A boundary that clarifies which element, team, or party owns a capability or decision.",
+          "sourceSectionId": "sa-m02-u02"
+        },
+        {
+          "name": "Ownership model",
+          "description": "The assignment of responsibility for architectural elements, decisions, operations, and change.",
+          "sourceSectionId": "sa-m02-u02"
+        },
+        {
+          "name": "Scope creep",
+          "description": "Expansion of expected responsibility beyond the agreed system boundary or architecture goal.",
+          "sourceSectionId": "sa-m02-u02"
+        },
+        {
+          "name": "Architecture assumption",
+          "description": "A belief about context, usage, technology, organization, or environment that influences architectural decisions.",
+          "sourceSectionId": "sa-m02-u03"
+        },
+        {
+          "name": "Environmental constraint",
+          "description": "A condition outside the system that restricts acceptable architecture choices.",
+          "sourceSectionId": "sa-m02-u03"
+        },
+        {
+          "name": "Assumption validation",
+          "description": "The process of checking whether important architecture assumptions are true enough to rely on.",
+          "sourceSectionId": "sa-m02-u03"
+        },
+        {
+          "name": "Integration risk",
+          "description": "Risk caused by uncertain behavior at interfaces with external systems, services, teams, or data sources.",
+          "sourceSectionId": "sa-m02-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model",
+        "iso-iec-ieee-42010-2022"
+      ]
+    }
+  ]
+}

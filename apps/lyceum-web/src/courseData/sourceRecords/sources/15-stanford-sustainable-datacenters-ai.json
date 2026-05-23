@@ -1,0 +1,15 @@
+{
+  "id": "stanford-sustainable-datacenters-ai",
+  "type": "video",
+  "title": "Designing Sustainable Datacenters with and for AI",
+  "author": "Bilge Acun",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=LPrFL2gWmTY",
+  "embedUrl": "https://www.youtube.com/embed/LPrFL2gWmTY",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

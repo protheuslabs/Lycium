@@ -1,0 +1,15 @@
+{
+  "id": "iso-iec-ieee-42010-2022",
+  "type": "standard",
+  "title": "ISO/IEC/IEEE 42010:2022 Software, systems and enterprise - Architecture description",
+  "author": "ISO/IEC/IEEE",
+  "publisher": "International Organization for Standardization",
+  "publicationDate": "2022-11",
+  "url": "https://www.iso.org/standard/74393.html",
+  "usedByCourseIds": [
+    "local-software-architecture"
+  ],
+  "usedByCourseTitles": [
+    "Software Systems Architecture: Viewpoints and Perspectives"
+  ]
+}

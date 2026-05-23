@@ -1,0 +1,15 @@
+{
+  "id": "stanford-snorkel-training-data",
+  "type": "video",
+  "title": "Programmatically Building & Managing Training Data with Snorkel",
+  "author": "Alex Ratner",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=pDVV4zKNqIE",
+  "embedUrl": "https://www.youtube.com/embed/pDVV4zKNqIE",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

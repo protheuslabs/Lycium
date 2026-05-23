@@ -1,0 +1,70 @@
+{
+  "id": "sa-m02-u03",
+  "title": "Assumptions and Environmental Constraints",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "iso-iec-ieee-42010-2022"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 6-7 and 16. Supplemental: C4 system context guidance. This unit focuses on assumptions and environmental constraints.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Architectures are built under assumptions: expected user volume, network reliability, legal jurisdiction, existing platforms, team capabilities, budget, release cadence, and operational support. Hidden assumptions turn into defects when the environment changes.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Good architecture work records assumptions and tests the fragile ones. The point is not to predict everything, but to identify which assumptions would force redesign if they were false.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: write six assumptions for a cloud-hosted learning platform, then mark the two most dangerous assumptions if wrong.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Architecture assumption",
+          "description": "A belief about context, usage, technology, organization, or environment that influences architectural decisions."
+        },
+        {
+          "name": "Environmental constraint",
+          "description": "A condition outside the system that restricts acceptable architecture choices."
+        },
+        {
+          "name": "Assumption validation",
+          "description": "The process of checking whether important architecture assumptions are true enough to rely on."
+        },
+        {
+          "name": "Integration risk",
+          "description": "Risk caused by uncertain behavior at interfaces with external systems, services, teams, or data sources."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    }
+  ]
+}

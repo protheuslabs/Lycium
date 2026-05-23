@@ -1,0 +1,70 @@
+{
+  "id": "sa-m05-u02",
+  "title": "Choosing the Right Views",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-views-and-beyond"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 3, 13, and 15. Supplemental: ISO/IEC/IEEE 42010 and SEI Views and Beyond. This unit focuses on choosing the right views.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Architects do not document every possible view. They choose views based on stakeholder concerns, architectural risk, lifecycle stage, team needs, and the kinds of decisions that must be made or preserved.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A lean architecture description may contain only a few high-value views if they answer the important questions. A safety-critical or regulated system may require a richer set of views and traceability.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: for a healthcare scheduling system, choose four views and explain which stakeholder question each view answers.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "View selection",
+          "description": "The decision about which architecture views are worth creating for a system and situation."
+        },
+        {
+          "name": "Stakeholder question",
+          "description": "A question a stakeholder needs answered to design, evaluate, build, operate, or govern the system."
+        },
+        {
+          "name": "View utility",
+          "description": "The practical value of a view in answering concerns, reducing risk, or coordinating work."
+        },
+        {
+          "name": "Documentation economy",
+          "description": "The practice of documenting enough architectural information to be useful without creating needless maintenance burden."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    }
+  ]
+}

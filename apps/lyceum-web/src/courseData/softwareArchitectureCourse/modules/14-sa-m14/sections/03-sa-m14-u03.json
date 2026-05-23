@@ -1,0 +1,76 @@
+{
+  "id": "sa-m14-u03",
+  "title": "Capstone Architecture Package",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "arc42-template",
+    "iso-iec-ieee-42010-2022"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 14 and 30. Supplemental: SEI ATAM and Views and Beyond. This unit focuses on capstone architecture package.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "The capstone brings the course together. Students define scope, identify stakeholders, write scenarios, choose views, document decisions, apply perspectives, evaluate tradeoffs, and present an architecture package.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A strong final package does not need to be huge. It needs to be coherent, source-backed, stakeholder-aware, explicit about tradeoffs, and honest about risks and assumptions.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Capstone: produce an architecture package for a medium-sized software system with context, functional, information, deployment, operational, two perspectives, five decision records, and an evaluation summary.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template",
+        "iso-iec-ieee-42010-2022"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Capstone architecture package",
+          "description": "A final course artifact combining architecture scope, views, decisions, perspectives, risks, and evaluation evidence."
+        },
+        {
+          "name": "Architecture coherence",
+          "description": "The degree to which views, decisions, rationale, scenarios, and constraints tell a consistent architectural story."
+        },
+        {
+          "name": "Risk register",
+          "description": "A maintained list of architectural risks, impacts, owners, mitigation actions, and status."
+        },
+        {
+          "name": "Architecture presentation",
+          "description": "A structured communication of architecture decisions, tradeoffs, and evidence to stakeholders."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template",
+        "iso-iec-ieee-42010-2022"
+      ]
+    }
+  ]
+}

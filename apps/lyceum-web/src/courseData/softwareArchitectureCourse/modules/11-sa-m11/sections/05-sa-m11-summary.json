@@ -1,0 +1,82 @@
+{
+  "id": "sa-m11-summary",
+  "title": "Week Summary: Performance and Scalability Perspective",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-atam"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Performance scenario",
+          "description": "A quality scenario that specifies workload, environment, response, and measurable performance target.",
+          "sourceSectionId": "sa-m11-u01"
+        },
+        {
+          "name": "Latency budget",
+          "description": "An allocation of acceptable response time across elements in an end-to-end path.",
+          "sourceSectionId": "sa-m11-u01"
+        },
+        {
+          "name": "Throughput",
+          "description": "The amount of work a system can complete in a given period under specified conditions.",
+          "sourceSectionId": "sa-m11-u01"
+        },
+        {
+          "name": "Workload model",
+          "description": "A description of expected requests, users, data size, arrival patterns, and operating conditions.",
+          "sourceSectionId": "sa-m11-u01"
+        },
+        {
+          "name": "Scalability",
+          "description": "The ability of a system to maintain acceptable service as workload or data volume grows.",
+          "sourceSectionId": "sa-m11-u02"
+        },
+        {
+          "name": "Horizontal scaling",
+          "description": "Adding more instances or nodes to increase capacity rather than making one node larger.",
+          "sourceSectionId": "sa-m11-u02"
+        },
+        {
+          "name": "Caching",
+          "description": "Storing reusable data closer to consumers to reduce latency, load, or repeated computation.",
+          "sourceSectionId": "sa-m11-u02"
+        },
+        {
+          "name": "Partitioning",
+          "description": "Dividing data, work, or responsibility across multiple elements to improve scale or isolation.",
+          "sourceSectionId": "sa-m11-u02"
+        },
+        {
+          "name": "Performance evidence",
+          "description": "A measurement, analysis, test, or prototype result supporting a performance claim.",
+          "sourceSectionId": "sa-m11-u03"
+        },
+        {
+          "name": "Capacity model",
+          "description": "A model estimating how resources, workload, and architecture determine system capacity.",
+          "sourceSectionId": "sa-m11-u03"
+        },
+        {
+          "name": "Load test",
+          "description": "A test that exercises the system under expected or extreme workload to observe performance behavior.",
+          "sourceSectionId": "sa-m11-u03"
+        },
+        {
+          "name": "Optimization tradeoff",
+          "description": "A design compromise introduced when improving performance affects cost, complexity, reliability, or other qualities.",
+          "sourceSectionId": "sa-m11-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "id": "s3-apply",
+  "title": "Apply: SEO, Metadata, and Publishing",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m5-s3-q1",
+          "type": "single_choice",
+          "question": "The <title> element is used for",
+          "options": [
+            "Only comments",
+            "Browser tab and search snippets",
+            "Animations",
+            "Scripts"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q2",
+          "type": "single_choice",
+          "question": "A useful meta description should be",
+          "options": [
+            "Brief and relevant",
+            "Long and keyword-stuffed without meaning",
+            "Empty",
+            "Only symbols"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q3",
+          "type": "single_choice",
+          "question": "HTTPS is important because it",
+          "options": [
+            "Encrypts communication",
+            "Slows DNS",
+            "Disables scripts",
+            "Only for videos"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q4",
+          "type": "single_choice",
+          "question": "Canonical URLs prevent",
+          "options": [
+            "Consistent content variants indexing",
+            "Accessibility",
+            "Image loading",
+            "Font fallback"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q5",
+          "type": "single_choice",
+          "question": "A clean sitemap helps",
+          "options": [
+            "Nothing",
+            "Search indexing structure",
+            "Font loading only",
+            "Server errors"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q6",
+          "type": "single_choice",
+          "question": "For stable deployment, create",
+          "options": [
+            "No version control",
+            "Clear README and changelog",
+            "Only local builds",
+            "One-time URLs"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q7",
+          "type": "single_choice",
+          "question": "When debugging publish failures, first check",
+          "options": [
+            "Terminal font",
+            "Build logs and environment vars",
+            "Video resolution",
+            "Font colors"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q8",
+          "type": "single_choice",
+          "question": "Redirects matter because they",
+          "options": [
+            "Preserve user paths",
+            "Hide pages",
+            "Slow indexing",
+            "Remove URLs"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q9",
+          "type": "single_choice",
+          "question": "If a page disappears after deployment, first verify",
+          "options": [
+            "Router and base path settings",
+            "Only spacing",
+            "No CSS",
+            "No quiz count"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s3-q10",
+          "type": "single_choice",
+          "question": "A professional project handoff includes",
+          "options": [
+            "Deployment links and known limitations",
+            "No documentation",
+            "Only screenshots",
+            "No repository"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

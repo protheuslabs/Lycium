@@ -1,0 +1,15 @@
+{
+  "id": "stanford-distributed-ml-fedml",
+  "type": "video",
+  "title": "Distributed ML System for Large-scale Models: Dynamic Distributed Training and Scalable Federated Learning",
+  "author": "Chaoyang He",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=AY7pCYTC8pQ",
+  "embedUrl": "https://www.youtube.com/embed/AY7pCYTC8pQ",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

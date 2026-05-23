@@ -1,0 +1,13 @@
+{
+  "id": "apache-tvm",
+  "type": "project",
+  "title": "Apache TVM",
+  "publisher": "Apache TVM",
+  "url": "https://tvm.apache.org/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

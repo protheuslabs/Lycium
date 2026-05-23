@@ -1,0 +1,14 @@
+{
+  "id": "c4-model",
+  "type": "reference",
+  "title": "The C4 model for visualising software architecture",
+  "author": "Simon Brown",
+  "publisher": "C4 model",
+  "url": "https://c4model.com/",
+  "usedByCourseIds": [
+    "local-software-architecture"
+  ],
+  "usedByCourseTitles": [
+    "Software Systems Architecture: Viewpoints and Perspectives"
+  ]
+}

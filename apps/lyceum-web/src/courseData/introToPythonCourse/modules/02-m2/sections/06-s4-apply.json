@@ -1,0 +1,28 @@
+{
+  "id": "s4-apply",
+  "title": "Apply: Simple Program Example",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "py-q4",
+          "type": "single_choice",
+          "question": "Which logical operator in Python inverts the truth value of a condition?",
+          "options": [
+            "and",
+            "or",
+            "not"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

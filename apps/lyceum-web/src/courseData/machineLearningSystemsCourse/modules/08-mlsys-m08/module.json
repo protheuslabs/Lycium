@@ -1,0 +1,10 @@
+{
+  "id": "mlsys-m08",
+  "title": "Week 8: Efficient AI and Model Optimization",
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-tinyml-carbon-footprint",
+    "tensorflow-model-optimization",
+    "flashattention-paper"
+  ]
+}

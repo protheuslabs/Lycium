@@ -1,0 +1,13 @@
+{
+  "id": "stanford-mlsys-seminar",
+  "type": "seminar-series",
+  "title": "Stanford MLSys Seminar Series",
+  "publisher": "Stanford MLSys",
+  "url": "https://mlsys.stanford.edu/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

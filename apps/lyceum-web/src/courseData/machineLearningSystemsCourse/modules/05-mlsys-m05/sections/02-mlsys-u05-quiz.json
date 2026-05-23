@@ -1,0 +1,321 @@
+{
+  "id": "mlsys-u05-quiz",
+  "title": "Quiz: AI Workflow and Data Engineering",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "mlsys-book"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "mlsys-u05-q01",
+          "type": "single_choice",
+          "question": "Which statement best captures problem definition in machine learning systems?",
+          "options": [
+            "It is less important than architecture selection for production systems.",
+            "It can ignore labels once enough raw data is available.",
+            "It translates a real need into measurable ML and product objectives.",
+            "It is fully solved by storing data in a larger database."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q02",
+          "type": "single_choice",
+          "question": "Which statement best captures data acquisition in machine learning systems?",
+          "options": [
+            "It can ignore labels once enough raw data is available.",
+            "It is fully solved by storing data in a larger database.",
+            "It does not require ownership or governance.",
+            "It identifies and obtains data sources appropriate for the task and constraints."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q03",
+          "type": "single_choice",
+          "question": "Which statement best captures data ingestion in machine learning systems?",
+          "options": [
+            "It moves data into the system through batch, streaming, or hybrid patterns.",
+            "It is fully solved by storing data in a larger database.",
+            "It does not require ownership or governance.",
+            "It cannot affect reliability after deployment."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q04",
+          "type": "single_choice",
+          "question": "Which statement best captures data validation in machine learning systems?",
+          "options": [
+            "It does not require ownership or governance.",
+            "It checks schema, ranges, missingness, freshness, and other quality expectations.",
+            "It cannot affect reliability after deployment.",
+            "It is independent of product definitions and user context."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q05",
+          "type": "single_choice",
+          "question": "Which statement best captures labeling in machine learning systems?",
+          "options": [
+            "It cannot affect reliability after deployment.",
+            "It is independent of product definitions and user context.",
+            "It creates target signals used for supervised learning and evaluation.",
+            "It requires no testing because data is not code."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q06",
+          "type": "single_choice",
+          "question": "Which statement best captures weak supervision in machine learning systems?",
+          "options": [
+            "It is independent of product definitions and user context.",
+            "It requires no testing because data is not code.",
+            "It is a one-time task completed before modeling starts.",
+            "It combines noisy labeling functions or heuristics to create training signals."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q07",
+          "type": "single_choice",
+          "question": "Which statement best captures feature store in machine learning systems?",
+          "options": [
+            "It manages reusable, consistent features across training and serving.",
+            "It requires no testing because data is not code.",
+            "It is a one-time task completed before modeling starts.",
+            "It is less important than architecture selection for production systems."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q08",
+          "type": "single_choice",
+          "question": "Which statement best captures training-serving skew in machine learning systems?",
+          "options": [
+            "It is a one-time task completed before modeling starts.",
+            "It happens when training features differ from serving-time features.",
+            "It is less important than architecture selection for production systems.",
+            "It can ignore labels once enough raw data is available."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q09",
+          "type": "single_choice",
+          "question": "Which statement best captures data lineage in machine learning systems?",
+          "options": [
+            "It is less important than architecture selection for production systems.",
+            "It can ignore labels once enough raw data is available.",
+            "It records where data came from and how it was transformed.",
+            "It is fully solved by storing data in a larger database."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q10",
+          "type": "single_choice",
+          "question": "Which statement best captures schema drift in machine learning systems?",
+          "options": [
+            "It can ignore labels once enough raw data is available.",
+            "It is fully solved by storing data in a larger database.",
+            "It does not require ownership or governance.",
+            "It occurs when the shape or meaning of incoming data changes over time."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q11",
+          "type": "single_choice",
+          "question": "Which statement best captures data freshness in machine learning systems?",
+          "options": [
+            "It measures how current data is relative to system needs.",
+            "It is fully solved by storing data in a larger database.",
+            "It does not require ownership or governance.",
+            "It cannot affect reliability after deployment."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q12",
+          "type": "single_choice",
+          "question": "Which statement best captures ground truth in machine learning systems?",
+          "options": [
+            "It does not require ownership or governance.",
+            "It is the best available reference label or outcome for evaluation.",
+            "It cannot affect reliability after deployment.",
+            "It is independent of product definitions and user context."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q13",
+          "type": "single_choice",
+          "question": "Which statement best captures annotation agreement in machine learning systems?",
+          "options": [
+            "It cannot affect reliability after deployment.",
+            "It is independent of product definitions and user context.",
+            "It measures consistency among labelers or labeling sources.",
+            "It requires no testing because data is not code."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q14",
+          "type": "single_choice",
+          "question": "Which statement best captures sampling bias in machine learning systems?",
+          "options": [
+            "It is independent of product definitions and user context.",
+            "It requires no testing because data is not code.",
+            "It is a one-time task completed before modeling starts.",
+            "It occurs when collected data does not represent the deployment population."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q15",
+          "type": "single_choice",
+          "question": "Which statement best captures data governance in machine learning systems?",
+          "options": [
+            "It manages access, privacy, retention, accountability, and policy compliance.",
+            "It requires no testing because data is not code.",
+            "It is a one-time task completed before modeling starts.",
+            "It is less important than architecture selection for production systems."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q16",
+          "type": "single_choice",
+          "question": "Which statement best captures audit trail in machine learning systems?",
+          "options": [
+            "It is a one-time task completed before modeling starts.",
+            "It records decisions and transformations so behavior can be investigated.",
+            "It is less important than architecture selection for production systems.",
+            "It can ignore labels once enough raw data is available."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q17",
+          "type": "single_choice",
+          "question": "Which statement best captures ETL in machine learning systems?",
+          "options": [
+            "It is less important than architecture selection for production systems.",
+            "It can ignore labels once enough raw data is available.",
+            "It extracts, transforms, and loads data for downstream use.",
+            "It is fully solved by storing data in a larger database."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q18",
+          "type": "single_choice",
+          "question": "Which statement best captures stream processing in machine learning systems?",
+          "options": [
+            "It can ignore labels once enough raw data is available.",
+            "It is fully solved by storing data in a larger database.",
+            "It does not require ownership or governance.",
+            "It processes records continuously as they arrive."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q19",
+          "type": "single_choice",
+          "question": "Which statement best captures data contract in machine learning systems?",
+          "options": [
+            "It states expected data semantics, schema, ownership, and quality commitments.",
+            "It is fully solved by storing data in a larger database.",
+            "It does not require ownership or governance.",
+            "It cannot affect reliability after deployment."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u05-q20",
+          "type": "single_choice",
+          "question": "Which statement best captures data cascade in machine learning systems?",
+          "options": [
+            "It does not require ownership or governance.",
+            "It is a downstream failure triggered by an upstream data decision or defect.",
+            "It cannot affect reliability after deployment.",
+            "It is independent of product definitions and user context."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book"
+      ],
+      "passPercentage": ""
+    }
+  ],
+  "pageType": "apply"
+}

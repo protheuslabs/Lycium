@@ -1,0 +1,42 @@
+{
+  "id": "s1",
+  "title": "Variables, Types, and Expressions",
+  "content": [
+    {
+      "type": "text",
+      "value": "JavaScript handles user input, state updates, and interactions. Start with primitives, objects, arrays, and expressions. Build logic carefully with strict checks and clear naming so your UI behavior stays predictable as features grow."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "JavaScript variable",
+          "description": "A named reference to a value in JavaScript code."
+        },
+        {
+          "name": "let",
+          "description": "A JavaScript keyword for declaring a block-scoped variable that can be reassigned."
+        },
+        {
+          "name": "const",
+          "description": "A JavaScript keyword for declaring a block-scoped variable binding that cannot be reassigned."
+        },
+        {
+          "name": "Primitive type",
+          "description": "A basic JavaScript value type such as string, number, boolean, null, undefined, symbol, or bigint."
+        },
+        {
+          "name": "Expression",
+          "description": "Code that evaluates to a value, such as a calculation, variable reference, or function call."
+        },
+        {
+          "name": "Operator",
+          "description": "A symbol or keyword that performs an operation on values, such as arithmetic, comparison, or logic."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

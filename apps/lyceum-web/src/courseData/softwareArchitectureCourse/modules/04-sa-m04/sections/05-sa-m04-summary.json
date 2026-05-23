@@ -1,0 +1,82 @@
+{
+  "id": "sa-m04-summary",
+  "title": "Week Summary: Styles, Patterns, and Architectural Models",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "c4-model"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Architectural style",
+          "description": "A named family of architectural organization with characteristic elements, relationships, and constraints.",
+          "sourceSectionId": "sa-m04-u01"
+        },
+        {
+          "name": "Architectural pattern",
+          "description": "A reusable solution form for a recurring architectural problem in a context.",
+          "sourceSectionId": "sa-m04-u01"
+        },
+        {
+          "name": "Pattern force",
+          "description": "A pressure, constraint, or quality concern that explains why a pattern fits or fails in a situation.",
+          "sourceSectionId": "sa-m04-u01"
+        },
+        {
+          "name": "Style mismatch",
+          "description": "A poor fit between an architectural style and the system qualities, context, or organization using it.",
+          "sourceSectionId": "sa-m04-u01"
+        },
+        {
+          "name": "Architecture model purpose",
+          "description": "The stakeholder question or analysis goal that determines what a model should include.",
+          "sourceSectionId": "sa-m04-u02"
+        },
+        {
+          "name": "Abstraction level",
+          "description": "The degree of detail shown in a model, from broad system context to lower-level implementation structures.",
+          "sourceSectionId": "sa-m04-u02"
+        },
+        {
+          "name": "C4 container",
+          "description": "A separately deployable or executable unit such as a web app, mobile app, database, or service.",
+          "sourceSectionId": "sa-m04-u02"
+        },
+        {
+          "name": "Model notation",
+          "description": "The visual or textual convention used to represent architectural elements and relationships.",
+          "sourceSectionId": "sa-m04-u02"
+        },
+        {
+          "name": "Architectural element",
+          "description": "A component, service, data store, subsystem, actor, or node that appears in an architecture view.",
+          "sourceSectionId": "sa-m04-u03"
+        },
+        {
+          "name": "Architectural relationship",
+          "description": "A dependency, interaction, allocation, containment, data flow, or communication link between architectural elements.",
+          "sourceSectionId": "sa-m04-u03"
+        },
+        {
+          "name": "Interface contract",
+          "description": "The expected behavior, data, errors, protocols, and responsibilities at a boundary between elements.",
+          "sourceSectionId": "sa-m04-u03"
+        },
+        {
+          "name": "Relationship semantics",
+          "description": "The meaning of a relationship, such as calls, publishes, owns, deploys to, reads from, or depends on.",
+          "sourceSectionId": "sa-m04-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    }
+  ]
+}

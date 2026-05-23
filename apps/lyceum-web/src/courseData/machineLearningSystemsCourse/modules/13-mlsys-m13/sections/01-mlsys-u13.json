@@ -1,0 +1,104 @@
+{
+  "id": "mlsys-u13",
+  "title": "Security, Robustness, and Responsible AI",
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Machine Learning Systems, Chapters 15, 16, and 17. Supplemental: NIST AI Risk Management Framework and robustness literature.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-malleable-ml-systems",
+        "nist-ai-rmf",
+        "hidden-technical-debt"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "This unit brings together adversarial risk, robustness, reliability, fairness, accountability, documentation, and governance. Students study threat models, data poisoning, evasion, model extraction, privacy leakage, robustness testing, calibration, uncertainty, fairness metrics, human oversight, auditability, and risk management. Responsible AI is presented as an engineering requirement: systems need documented assumptions, measurable risks, monitoring, mitigation plans, and decision rights.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-malleable-ml-systems",
+        "nist-ai-rmf",
+        "hidden-technical-debt"
+      ]
+    },
+    {
+      "type": "video",
+      "sourceIds": [
+        "stanford-malleable-ml-systems"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Supplemental sources for this unit are listed in the references below. Use them to compare the textbook framing with public talks, documentation, papers, and production guidance.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-malleable-ml-systems",
+        "nist-ai-rmf",
+        "hidden-technical-debt"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: create a risk register for a medical triage model. Deliverable: threats, affected groups, test strategy, monitoring signals, mitigations, and escalation owners.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-malleable-ml-systems",
+        "nist-ai-rmf",
+        "hidden-technical-debt"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Adversarial example",
+          "description": "An input intentionally crafted or modified to cause a model to make an incorrect prediction."
+        },
+        {
+          "name": "Model robustness",
+          "description": "A model’s ability to maintain acceptable behavior under noise, shifts, attacks, or unusual inputs."
+        },
+        {
+          "name": "Data poisoning",
+          "description": "An attack where malicious or corrupted data is inserted into training data to influence model behavior."
+        },
+        {
+          "name": "Model extraction",
+          "description": "An attack that attempts to copy or approximate a model by querying it and observing outputs."
+        },
+        {
+          "name": "Fairness",
+          "description": "The study and practice of reducing unjust or harmful disparities in model behavior across groups."
+        },
+        {
+          "name": "Explainability",
+          "description": "The ability to describe why a model produced an output in terms understandable to stakeholders."
+        },
+        {
+          "name": "Model card",
+          "description": "A structured document describing a model’s intended use, evaluation, limitations, and ethical considerations."
+        },
+        {
+          "name": "Risk assessment",
+          "description": "The process of identifying, estimating, and prioritizing possible harms or failures."
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-malleable-ml-systems",
+        "nist-ai-rmf",
+        "hidden-technical-debt"
+      ]
+    }
+  ],
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-malleable-ml-systems",
+    "nist-ai-rmf",
+    "hidden-technical-debt"
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

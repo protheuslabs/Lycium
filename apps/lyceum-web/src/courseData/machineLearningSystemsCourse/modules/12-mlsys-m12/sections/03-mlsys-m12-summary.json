@@ -1,0 +1,54 @@
+{
+  "id": "mlsys-m12-summary",
+  "title": "Week Summary: On-Device Learning, Federated Systems, and Privacy",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "On-device inference",
+          "description": "Running model predictions directly on a user device or local hardware.",
+          "sourceSectionId": "mlsys-u12"
+        },
+        {
+          "name": "Federated learning",
+          "description": "Training models across distributed devices or clients while keeping raw data local.",
+          "sourceSectionId": "mlsys-u12"
+        },
+        {
+          "name": "Local training",
+          "description": "Updating or fitting a model on a local device or environment rather than centralized infrastructure.",
+          "sourceSectionId": "mlsys-u12"
+        },
+        {
+          "name": "Differential privacy",
+          "description": "A privacy technique that limits how much information about any individual can be inferred from outputs.",
+          "sourceSectionId": "mlsys-u12"
+        },
+        {
+          "name": "Secure aggregation",
+          "description": "A protocol for combining client updates without exposing individual client data to the server.",
+          "sourceSectionId": "mlsys-u12"
+        },
+        {
+          "name": "Privacy budget",
+          "description": "A quantitative limit on privacy loss allowed by a differentially private system.",
+          "sourceSectionId": "mlsys-u12"
+        },
+        {
+          "name": "Connectivity constraint",
+          "description": "A limitation caused by unreliable, slow, expensive, or unavailable network access.",
+          "sourceSectionId": "mlsys-u12"
+        },
+        {
+          "name": "Device heterogeneity",
+          "description": "Variation across devices in hardware, software, sensors, memory, power, and performance.",
+          "sourceSectionId": "mlsys-u12"
+        }
+      ]
+    }
+  ]
+}

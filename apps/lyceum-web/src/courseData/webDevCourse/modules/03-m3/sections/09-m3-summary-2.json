@@ -1,0 +1,134 @@
+{
+  "id": "m3-summary-2",
+  "title": "Module Summary: CSS Layout and Visual Systems",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Module concepts",
+      "concepts": [
+        {
+          "name": "CSS selector",
+          "description": "A pattern that identifies which elements a CSS rule applies to.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Cascade",
+          "description": "The CSS system that determines which style rules win when multiple rules apply.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Specificity",
+          "description": "The ranking system CSS uses to decide which selector is more targeted when rules conflict.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Inheritance",
+          "description": "The way some CSS property values pass from parent elements to child elements.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Class selector",
+          "description": "A CSS selector that targets elements with a specific class attribute.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "ID selector",
+          "description": "A CSS selector that targets the element with a specific id attribute.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Content box",
+          "description": "The innermost area of an element box where content is displayed.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Padding",
+          "description": "Space between an element’s content and its border.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Border",
+          "description": "The line or edge surrounding an element’s padding and content.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Margin",
+          "description": "Space outside an element’s border separating it from neighboring elements.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "box-sizing",
+          "description": "A CSS property controlling whether width and height include content only or also padding and border.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Spacing scale",
+          "description": "A consistent set of spacing values used to create rhythm and alignment in a design.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Flex container",
+          "description": "An element whose children are laid out using the flexbox layout model.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Flex item",
+          "description": "A direct child of a flex container participating in flex layout.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Main axis",
+          "description": "The primary direction in which flex items are laid out.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Cross axis",
+          "description": "The axis perpendicular to the flexbox main axis.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "justify-content",
+          "description": "A flexbox property that aligns items along the main axis.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "align-items",
+          "description": "A flexbox property that aligns items along the cross axis.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Grid container",
+          "description": "An element whose children are laid out using CSS Grid.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Grid track",
+          "description": "A row or column in a CSS Grid layout.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Grid area",
+          "description": "A rectangular region of grid cells used to place content.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Media query",
+          "description": "A CSS rule that applies styles only when conditions such as viewport width are met.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Responsive layout",
+          "description": "A layout that adapts to different screen sizes, devices, and content conditions.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Breakpoint",
+          "description": "A defined condition where layout or styling changes for different viewport sizes.",
+          "sourceSectionId": "s4"
+        }
+      ]
+    }
+  ]
+}

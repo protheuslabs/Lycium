@@ -1,0 +1,13 @@
+{
+  "id": "pytorch-ddp",
+  "type": "documentation",
+  "title": "What is Distributed Data Parallel?",
+  "publisher": "PyTorch",
+  "url": "https://docs.pytorch.org/tutorials/beginner/ddp_series_theory.html",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

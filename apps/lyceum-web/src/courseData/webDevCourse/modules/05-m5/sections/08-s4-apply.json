@@ -1,0 +1,164 @@
+{
+  "id": "s4-apply",
+  "title": "Apply: Capstone Integration Project",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m5-s4-q1",
+          "type": "single_choice",
+          "question": "A capstone project should demonstrate",
+          "options": [
+            "Only a single technique",
+            "A coherent integration of multiple modules",
+            "No usability",
+            "Only backend code"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q2",
+          "type": "single_choice",
+          "question": "Include at least one",
+          "options": [
+            "Interactive component",
+            "Only static text",
+            "No navigation",
+            "No styles"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q3",
+          "type": "single_choice",
+          "question": "Good capstones include",
+          "options": [
+            "Testing notes",
+            "Only color swatches",
+            "No feedback",
+            "Only placeholder links"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q4",
+          "type": "single_choice",
+          "question": "A complete final deliverable should include",
+          "options": [
+            "No source",
+            "Source link and deployment link",
+            "No screenshots",
+            "No instructions"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q5",
+          "type": "single_choice",
+          "question": "For grading clarity, list",
+          "options": [
+            "No deliverables",
+            "A feature rubric checklist",
+            "Only errors",
+            "No timeline"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q6",
+          "type": "single_choice",
+          "question": "When submitting capstone, include",
+          "options": [
+            "Broken link only",
+            "A brief reflection and next improvements",
+            "No explanation",
+            "No code"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q7",
+          "type": "single_choice",
+          "question": "To demonstrate iteration, include",
+          "options": [
+            "Version history",
+            "Single unedited screenshot",
+            "No commits",
+            "No tests"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q8",
+          "type": "single_choice",
+          "question": "A strong project report should",
+          "options": [
+            "Only praise",
+            "Describe tradeoffs and unresolved issues",
+            "Hide constraints",
+            "Ignore limitations"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q9",
+          "type": "single_choice",
+          "question": "Which would impress instructors the most?",
+          "options": [
+            "Clean architecture and meaningful UX",
+            "Only many lines",
+            "Only complexity",
+            "No testing artifacts"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s4-q10",
+          "type": "single_choice",
+          "question": "After submission, next step is",
+          "options": [
+            "Stop learning",
+            "Refactor using feedback",
+            "Delete project",
+            "Ignore findings"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "id": "sa-m14-summary",
+  "title": "Week Summary: Evaluation, Communication, and Professional Practice",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-atam",
+    "sei-views-and-beyond"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Architecture evaluation",
+          "description": "The assessment of whether an architecture satisfies important concerns, scenarios, constraints, and quality goals.",
+          "sourceSectionId": "sa-m14-u01"
+        },
+        {
+          "name": "ATAM",
+          "description": "Architecture Tradeoff Analysis Method, a structured scenario-based method for analyzing architectural risks and tradeoffs.",
+          "sourceSectionId": "sa-m14-u01"
+        },
+        {
+          "name": "Sensitivity point",
+          "description": "An architectural decision or parameter where small changes can strongly affect a quality attribute.",
+          "sourceSectionId": "sa-m14-u01"
+        },
+        {
+          "name": "Tradeoff point",
+          "description": "An architectural decision that affects multiple quality attributes in competing ways.",
+          "sourceSectionId": "sa-m14-u01"
+        },
+        {
+          "name": "Architecture narrative",
+          "description": "A coherent explanation of the system context, major decisions, tradeoffs, risks, and consequences.",
+          "sourceSectionId": "sa-m14-u02"
+        },
+        {
+          "name": "Audience adaptation",
+          "description": "Changing architecture communication to match stakeholder knowledge, decisions, and concerns.",
+          "sourceSectionId": "sa-m14-u02"
+        },
+        {
+          "name": "Architecture briefing",
+          "description": "A concise presentation or walkthrough of architecture information for a particular audience.",
+          "sourceSectionId": "sa-m14-u02"
+        },
+        {
+          "name": "Decision framing",
+          "description": "Presenting architectural choices in terms of options, consequences, evidence, and stakeholder impact.",
+          "sourceSectionId": "sa-m14-u02"
+        },
+        {
+          "name": "Capstone architecture package",
+          "description": "A final course artifact combining architecture scope, views, decisions, perspectives, risks, and evaluation evidence.",
+          "sourceSectionId": "sa-m14-u03"
+        },
+        {
+          "name": "Architecture coherence",
+          "description": "The degree to which views, decisions, rationale, scenarios, and constraints tell a consistent architectural story.",
+          "sourceSectionId": "sa-m14-u03"
+        },
+        {
+          "name": "Risk register",
+          "description": "A maintained list of architectural risks, impacts, owners, mitigation actions, and status.",
+          "sourceSectionId": "sa-m14-u03"
+        },
+        {
+          "name": "Architecture presentation",
+          "description": "A structured communication of architecture decisions, tradeoffs, and evidence to stakeholders.",
+          "sourceSectionId": "sa-m14-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam",
+        "sei-views-and-beyond"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "google-rules-of-ml",
+  "type": "article",
+  "title": "Rules of Machine Learning",
+  "author": "Martin Zinkevich",
+  "publisher": "Google for Developers",
+  "url": "https://developers.google.com/machine-learning/guides/rules-of-ml/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

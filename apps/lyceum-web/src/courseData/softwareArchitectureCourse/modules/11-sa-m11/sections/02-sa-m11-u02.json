@@ -1,0 +1,64 @@
+{
+  "id": "sa-m11-u02",
+  "title": "Scalability Mechanisms",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapter 26. Supplemental: SEI tradeoff analysis concepts. This unit focuses on scalability mechanisms.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Scalability is the ability to handle increased load by adding resources, changing allocation, or reducing work. Common mechanisms include caching, partitioning, replication, asynchronous processing, load balancing, and horizontal scaling.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Each mechanism has tradeoffs. Caching can improve latency but create staleness. Partitioning can increase capacity but complicate queries. Replication can improve availability but create consistency challenges.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: pick two scalability mechanisms for a messaging app and describe the tradeoff each introduces.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Scalability",
+          "description": "The ability of a system to maintain acceptable service as workload or data volume grows."
+        },
+        {
+          "name": "Horizontal scaling",
+          "description": "Adding more instances or nodes to increase capacity rather than making one node larger."
+        },
+        {
+          "name": "Caching",
+          "description": "Storing reusable data closer to consumers to reduce latency, load, or repeated computation."
+        },
+        {
+          "name": "Partitioning",
+          "description": "Dividing data, work, or responsibility across multiple elements to improve scale or isolation."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    }
+  ]
+}

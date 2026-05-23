@@ -1,0 +1,13 @@
+{
+  "id": "mlc-ai",
+  "type": "project",
+  "title": "MLC AI",
+  "publisher": "MLC AI",
+  "url": "https://mlc.ai/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

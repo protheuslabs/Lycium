@@ -1,0 +1,164 @@
+{
+  "id": "s2-apply",
+  "title": "Apply: Performance and Browser Optimization",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m5-s2-q1",
+          "type": "single_choice",
+          "question": "Time to first byte and time to first paint are parts of",
+          "options": [
+            "Performance metrics",
+            "Accessibility metrics",
+            "Color contrast metrics",
+            "Network security"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q2",
+          "type": "single_choice",
+          "question": "To reduce render blocking, you can",
+          "options": [
+            "Load everything synchronously",
+            "Defer non-critical scripts",
+            "Increase file size",
+            "Disable compression"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q3",
+          "type": "single_choice",
+          "question": "Which image format is generally best for photos?",
+          "options": [
+            "BMP",
+            "PNG always",
+            "JPEG/JPG",
+            "GIF only"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q4",
+          "type": "single_choice",
+          "question": "Large JavaScript bundles affect",
+          "options": [
+            "Initial load time",
+            "Only battery",
+            "Grammar",
+            "No performance"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q5",
+          "type": "single_choice",
+          "question": "Using content compression helps",
+          "options": [
+            "Network transfer and speed",
+            "Security only",
+            "No speed",
+            "Font size"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q6",
+          "type": "single_choice",
+          "question": "To minimize reflows, prefer",
+          "options": [
+            "Frequent inline style mutations",
+            "Stable layout and avoid forced synchronous changes",
+            "No layout strategy",
+            "Absolute positioning only"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q7",
+          "type": "single_choice",
+          "question": "Responsive image loading can be improved with",
+          "options": [
+            "One giant image",
+            "Appropriate sizing and compression",
+            "No dimensions",
+            "Always autoplay"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q8",
+          "type": "single_choice",
+          "question": "You should test performance on",
+          "options": [
+            "A single machine",
+            "Multiple devices and network speeds",
+            "No devices",
+            "Console only"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q9",
+          "type": "single_choice",
+          "question": "A lightweight page with fast interaction feels",
+          "options": [
+            "Less trustworthy",
+            "Immediate and polished",
+            "Broken",
+            "Overly simple"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m5-s2-q10",
+          "type": "single_choice",
+          "question": "Performance budgets are used to",
+          "options": [
+            "Avoid overbuilding and stay within limits",
+            "Remove all JS",
+            "Disable caching",
+            "Disable all tests"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

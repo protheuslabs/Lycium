@@ -1,0 +1,13 @@
+{
+  "id": "tensorflow-lite",
+  "type": "documentation",
+  "title": "TensorFlow Lite",
+  "publisher": "TensorFlow",
+  "url": "https://www.tensorflow.org/lite",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

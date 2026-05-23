@@ -1,0 +1,13 @@
+{
+  "id": "jax-docs",
+  "type": "documentation",
+  "title": "JAX Documentation",
+  "publisher": "JAX",
+  "url": "https://jax.readthedocs.io/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

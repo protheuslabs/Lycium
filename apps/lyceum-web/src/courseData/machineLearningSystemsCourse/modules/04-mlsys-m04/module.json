@@ -1,0 +1,9 @@
+{
+  "id": "mlsys-m04",
+  "title": "Week 4: DNN Architectures and Computational Patterns",
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-flashattention",
+    "flashattention-paper"
+  ]
+}

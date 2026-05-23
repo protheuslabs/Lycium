@@ -1,0 +1,64 @@
+{
+  "id": "sa-m06-u03",
+  "title": "Cohesion, Coupling, and Functional Boundaries",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 16-17. Supplemental: C4 context and container diagrams. This unit focuses on cohesion, coupling, and functional boundaries.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Functional decomposition is architectural because it shapes how the system changes. High cohesion keeps related behavior together. Low coupling reduces the number of elements affected by a change.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Boundaries should follow domain meaning, operational ownership, data consistency needs, security requirements, and team structure. A clean-looking diagram can still hide poor boundaries if responsibilities are split unnaturally.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: critique a service decomposition by identifying one high-coupling dependency and one misplaced responsibility.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Functional cohesion",
+          "description": "The degree to which responsibilities within an element belong together."
+        },
+        {
+          "name": "Functional coupling",
+          "description": "The degree of dependency between functional elements."
+        },
+        {
+          "name": "Functional boundary",
+          "description": "A division between responsibilities that affects ownership, change, interfaces, and runtime collaboration."
+        },
+        {
+          "name": "Responsibility leakage",
+          "description": "A design problem where behavior crosses boundaries in ways that weaken cohesion or ownership."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    }
+  ]
+}

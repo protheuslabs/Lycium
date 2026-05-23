@@ -1,0 +1,70 @@
+{
+  "id": "sa-m14-u01",
+  "title": "Architecture Evaluation",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-atam"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 14 and 30. Supplemental: SEI ATAM and Views and Beyond. This unit focuses on architecture evaluation.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Architecture evaluation asks whether the architecture is fit for its intended purpose. Scenario-based methods such as ATAM use stakeholder scenarios to uncover risks, sensitivity points, tradeoffs, and non-risks.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Evaluation does not require perfect certainty. It creates enough shared evidence to improve decisions, reduce unknowns, and make risks explicit before they become expensive.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: run a mini evaluation on one design decision using three scenarios and identify one risk, one tradeoff, and one follow-up experiment.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Architecture evaluation",
+          "description": "The assessment of whether an architecture satisfies important concerns, scenarios, constraints, and quality goals."
+        },
+        {
+          "name": "ATAM",
+          "description": "Architecture Tradeoff Analysis Method, a structured scenario-based method for analyzing architectural risks and tradeoffs."
+        },
+        {
+          "name": "Sensitivity point",
+          "description": "An architectural decision or parameter where small changes can strongly affect a quality attribute."
+        },
+        {
+          "name": "Tradeoff point",
+          "description": "An architectural decision that affects multiple quality attributes in competing ways."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    }
+  ]
+}

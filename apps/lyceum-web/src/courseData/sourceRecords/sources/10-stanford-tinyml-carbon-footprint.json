@@ -1,0 +1,15 @@
+{
+  "id": "stanford-tinyml-carbon-footprint",
+  "type": "video",
+  "title": "TinyML: Reducing the Carbon Footprint of Artificial Intelligence in the Internet of Things",
+  "author": "Song Han",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=nMiCcZffup8",
+  "embedUrl": "https://www.youtube.com/embed/nMiCcZffup8",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

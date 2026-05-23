@@ -1,0 +1,176 @@
+{
+  "id": "sa-m10-quiz",
+  "title": "Quiz: Security Perspective",
+  "pageType": "apply",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "iso-iec-ieee-42010-2022"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "sa-m10-q01",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Architecture perspective?",
+          "options": [
+            "A cross-cutting set of activities and checks applied across views to address a quality concern.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q02",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Security perspective?",
+          "options": [
+            "A perspective focused on protecting assets, reducing threats, and preserving security properties across the architecture.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q03",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Security property?",
+          "options": [
+            "A desired protection quality such as confidentiality, integrity, availability, accountability, or non-repudiation.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q04",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Attack surface?",
+          "options": [
+            "The set of entry points and exposed interactions through which an attacker might affect the system.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q05",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Security asset?",
+          "options": [
+            "A data item, capability, service, credential, or business function that requires protection.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q06",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Threat?",
+          "options": [
+            "A potential cause of harm to a security asset or security property.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q07",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Security control?",
+          "options": [
+            "A mechanism or process that reduces the likelihood or impact of a security threat.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q08",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Least privilege?",
+          "options": [
+            "The design principle that actors and components receive only the permissions required for their responsibilities.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q09",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Tenant isolation?",
+          "options": [
+            "The architectural separation of data, execution, configuration, or access between customers or organizational tenants.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m10-q10",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Encryption boundary?",
+          "options": [
+            "The point at which data is protected or exposed as it moves or is stored in the system.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "maxAttempts": "",
+      "timeLimitSeconds": "",
+      "passPercentage": 70,
+      "showAnswers": false,
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    }
+  ]
+}

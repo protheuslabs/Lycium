@@ -1,0 +1,84 @@
+{
+  "id": "sa-m13-summary",
+  "title": "Week Summary: Evolution, Governance, and Architecture Debt",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "arc42-template",
+    "sei-views-and-beyond"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Evolution perspective",
+          "description": "A perspective focused on how the architecture supports planned and unplanned change over time.",
+          "sourceSectionId": "sa-m13-u01"
+        },
+        {
+          "name": "Change driver",
+          "description": "A business, technical, regulatory, operational, or user force that may require architecture change.",
+          "sourceSectionId": "sa-m13-u01"
+        },
+        {
+          "name": "Volatility point",
+          "description": "A part of the system expected to change more often than surrounding elements.",
+          "sourceSectionId": "sa-m13-u01"
+        },
+        {
+          "name": "Extension point",
+          "description": "A designed place where new behavior or variation can be added with limited disruption.",
+          "sourceSectionId": "sa-m13-u01"
+        },
+        {
+          "name": "Architecture governance",
+          "description": "Practices that guide, review, and sustain architectural decisions across delivery work.",
+          "sourceSectionId": "sa-m13-u02"
+        },
+        {
+          "name": "Architecture guardrail",
+          "description": "A rule, standard, automated check, or review boundary that helps teams make safe local decisions.",
+          "sourceSectionId": "sa-m13-u02"
+        },
+        {
+          "name": "Decision authority",
+          "description": "The person, team, or forum responsible for approving or owning an architectural decision.",
+          "sourceSectionId": "sa-m13-u02"
+        },
+        {
+          "name": "Governance feedback loop",
+          "description": "A mechanism that uses delivery experience, incidents, metrics, and reviews to adjust architectural guidance.",
+          "sourceSectionId": "sa-m13-u02"
+        },
+        {
+          "name": "Architecture debt",
+          "description": "A structural or decision-related weakness that increases future cost, risk, delay, or fragility.",
+          "sourceSectionId": "sa-m13-u03"
+        },
+        {
+          "name": "Architecture refactoring",
+          "description": "A deliberate change to improve architectural structure without primarily adding user-visible features.",
+          "sourceSectionId": "sa-m13-u03"
+        },
+        {
+          "name": "Debt evidence",
+          "description": "Observed delay, defect, incident, complexity, or cost that demonstrates architectural debt impact.",
+          "sourceSectionId": "sa-m13-u03"
+        },
+        {
+          "name": "Migration path",
+          "description": "A planned sequence of changes that moves the system from current architecture to a target architecture.",
+          "sourceSectionId": "sa-m13-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template",
+        "sei-views-and-beyond"
+      ]
+    }
+  ]
+}

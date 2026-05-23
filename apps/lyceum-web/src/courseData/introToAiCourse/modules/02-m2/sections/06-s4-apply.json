@@ -1,0 +1,28 @@
+{
+  "id": "s4-apply",
+  "title": "Apply: Real-World ML Example",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "ai-q4",
+          "type": "single_choice",
+          "question": "Spam detection trained on labeled examples is an example of what?",
+          "options": [
+            "Supervised learning",
+            "Unsupervised learning",
+            "Random guessing"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

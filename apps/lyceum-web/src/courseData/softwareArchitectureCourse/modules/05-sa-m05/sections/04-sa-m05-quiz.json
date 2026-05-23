@@ -1,0 +1,178 @@
+{
+  "id": "sa-m05-quiz",
+  "title": "Quiz: Viewpoints and Views",
+  "pageType": "apply",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "iso-iec-ieee-42010-2022",
+    "sei-views-and-beyond"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "sa-m05-q01",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Architecture viewpoint?",
+          "options": [
+            "Reusable guidance for creating views that address a set of stakeholder concerns.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q02",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Architecture view?",
+          "options": [
+            "A system-specific representation created according to a viewpoint to address stakeholder concerns.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q03",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Viewpoint concern?",
+          "options": [
+            "A concern that a viewpoint is designed to expose, analyze, or communicate.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q04",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Model kind?",
+          "options": [
+            "A category of model used in a viewpoint, such as context, component, deployment, data, or state model.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q05",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes View selection?",
+          "options": [
+            "The decision about which architecture views are worth creating for a system and situation.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q06",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Stakeholder question?",
+          "options": [
+            "A question a stakeholder needs answered to design, evaluate, build, operate, or govern the system.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q07",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes View utility?",
+          "options": [
+            "The practical value of a view in answering concerns, reducing risk, or coordinating work.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q08",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Documentation economy?",
+          "options": [
+            "The practice of documenting enough architectural information to be useful without creating needless maintenance burden.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q09",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Architecture description package?",
+          "options": [
+            "The combined set of views, decisions, context, principles, risks, and supporting material used to describe an architecture.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "sa-m05-q10",
+          "type": "single_choice",
+          "question": "In software architecture, which answer best describes Cross-view relationship?",
+          "options": [
+            "A connection or dependency between elements represented in different architecture views.",
+            "A code formatting preference that can be changed without architectural consequence.",
+            "A final implementation detail that matters only after all architecture decisions are complete.",
+            "A vendor-specific feature selected independently of stakeholders, context, or tradeoffs."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        }
+      ],
+      "maxAttempts": "",
+      "timeLimitSeconds": "",
+      "passPercentage": 70,
+      "showAnswers": false,
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022",
+        "sei-views-and-beyond"
+      ]
+    }
+  ]
+}

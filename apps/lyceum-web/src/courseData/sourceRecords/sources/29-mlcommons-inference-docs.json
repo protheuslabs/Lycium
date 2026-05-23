@@ -1,0 +1,13 @@
+{
+  "id": "mlcommons-inference-docs",
+  "type": "documentation",
+  "title": "MLPerf Inference Benchmark Suite",
+  "publisher": "MLCommons",
+  "url": "https://docs.mlcommons.org/inference/index_gh/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

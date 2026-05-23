@@ -1,0 +1,64 @@
+{
+  "id": "sa-m07-u03",
+  "title": "Consistency, Transactions, and Events",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 18-19. This unit focuses on consistency, transactions, and events.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Information and concurrency concerns meet where systems update data over time. Transactions, event streams, eventual consistency, idempotency, and compensating actions all express architectural choices about correctness and coordination.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "The architect should decide which operations require strong consistency, which can tolerate delay, and how users and operators will observe or repair inconsistent states.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: pick three operations in an ecommerce system and classify each as strong consistency, eventual consistency, or compensating workflow.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Data consistency",
+          "description": "The degree to which data remains correct and aligned across operations, stores, and system boundaries."
+        },
+        {
+          "name": "Eventual consistency",
+          "description": "A consistency model where replicas or dependent systems converge after a delay rather than immediately."
+        },
+        {
+          "name": "Idempotency",
+          "description": "The property that repeating an operation has the same effect as performing it once."
+        },
+        {
+          "name": "Compensating action",
+          "description": "A corrective operation used to undo or offset effects when a distributed workflow cannot use a single transaction."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    }
+  ]
+}

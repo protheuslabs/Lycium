@@ -1,0 +1,14 @@
+{
+  "id": "arc42-template",
+  "type": "reference",
+  "title": "arc42 template for architecture documentation",
+  "author": "Peter Hruschka; Gernot Starke",
+  "publisher": "arc42",
+  "url": "https://arc42.org/",
+  "usedByCourseIds": [
+    "local-software-architecture"
+  ],
+  "usedByCourseTitles": [
+    "Software Systems Architecture: Viewpoints and Perspectives"
+  ]
+}

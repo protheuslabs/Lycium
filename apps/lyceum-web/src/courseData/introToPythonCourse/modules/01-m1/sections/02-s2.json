@@ -1,0 +1,42 @@
+{
+  "id": "s2",
+  "title": "Running Python Code",
+  "content": [
+    {
+      "type": "text",
+      "value": "You can run Python code using the interactive interpreter, scripts executed from the command line, or environments such as Jupyter notebooks and IDEs."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Python REPL",
+          "description": "An interactive Python session where code is entered and evaluated one statement or expression at a time."
+        },
+        {
+          "name": "Script execution",
+          "description": "Running a saved program file so the interpreter executes its statements in order."
+        },
+        {
+          "name": "Terminal command",
+          "description": "A text command entered in a shell to run programs, navigate files, or perform development tasks."
+        },
+        {
+          "name": "Syntax error",
+          "description": "An error caused by code that violates the grammar rules of the programming language."
+        },
+        {
+          "name": "Runtime error",
+          "description": "An error that occurs while a program is executing, even if the code syntax is valid."
+        },
+        {
+          "name": "Program output",
+          "description": "Text, values, files, or behavior produced by a program when it runs."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

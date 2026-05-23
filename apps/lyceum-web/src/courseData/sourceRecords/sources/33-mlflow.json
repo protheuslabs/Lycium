@@ -1,0 +1,13 @@
+{
+  "id": "mlflow",
+  "type": "project",
+  "title": "MLflow",
+  "publisher": "MLflow",
+  "url": "https://mlflow.org/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

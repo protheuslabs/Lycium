@@ -1,0 +1,15 @@
+{
+  "id": "stanford-chip-good-ml-systems-design",
+  "type": "video",
+  "title": "Principles of Good Machine Learning Systems Design",
+  "author": "Chip Huyen",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=c_AUuTuPA5k",
+  "embedUrl": "https://www.youtube.com/embed/c_AUuTuPA5k",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

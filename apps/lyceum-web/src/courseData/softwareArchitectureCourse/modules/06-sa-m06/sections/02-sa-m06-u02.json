@@ -1,0 +1,70 @@
+{
+  "id": "sa-m06-u02",
+  "title": "Functional Viewpoint",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "c4-model"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 16-17. Supplemental: C4 context and container diagrams. This unit focuses on functional viewpoint.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "The functional viewpoint describes the system runtime structure in terms of responsibilities and functional elements. It helps stakeholders understand what the system does and how major parts collaborate to deliver behavior.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A functional view should show cohesive responsibilities and meaningful interactions, not every class or method. It is especially useful for dividing work, finding missing behavior, and reasoning about coupling.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: decompose a learning management system into functional elements and describe one responsibility for each element.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Functional viewpoint",
+          "description": "A viewpoint focused on functional elements, responsibilities, interfaces, and collaborations that deliver system behavior."
+        },
+        {
+          "name": "Functional element",
+          "description": "A major runtime part of a system that owns a coherent functional responsibility."
+        },
+        {
+          "name": "Responsibility assignment",
+          "description": "The allocation of behavior or capability to architectural elements."
+        },
+        {
+          "name": "Functional collaboration",
+          "description": "The interaction among functional elements needed to complete a system behavior."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    }
+  ]
+}

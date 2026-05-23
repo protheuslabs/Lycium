@@ -1,0 +1,42 @@
+{
+  "id": "s4",
+  "title": "Simple Program Example",
+  "content": [
+    {
+      "type": "text",
+      "value": "Combining variables, input, if statements, and loops allows you to build simple interactive scripts, such as guessing games or basic calculators."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Program flow",
+          "description": "The order in which a program’s statements execute."
+        },
+        {
+          "name": "Pseudocode",
+          "description": "Plain-language or code-like planning text used to design program logic before writing exact syntax."
+        },
+        {
+          "name": "Input-process-output",
+          "description": "A basic program pattern where data is received, transformed, and then displayed or returned."
+        },
+        {
+          "name": "Variable update",
+          "description": "Changing the value associated with a variable during program execution."
+        },
+        {
+          "name": "Branch tracing",
+          "description": "Following conditional logic step by step to determine which branch runs."
+        },
+        {
+          "name": "Loop tracing",
+          "description": "Following a loop step by step to track iterations, conditions, and variable changes."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

@@ -1,0 +1,321 @@
+{
+  "id": "mlsys-u13-quiz",
+  "title": "Quiz: Security, Robustness, and Responsible AI",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "mlsys-book"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "mlsys-u13-q01",
+          "type": "single_choice",
+          "question": "Which statement best captures threat model in machine learning systems?",
+          "options": [
+            "It is solved by hiding model internals from users.",
+            "It requires no measurement because it is mostly philosophical.",
+            "It identifies attackers, assets, attack surfaces, assumptions, and mitigations.",
+            "It means maximizing one fairness metric in every context."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q02",
+          "type": "single_choice",
+          "question": "Which statement best captures data poisoning in machine learning systems?",
+          "options": [
+            "It requires no measurement because it is mostly philosophical.",
+            "It means maximizing one fairness metric in every context.",
+            "It ignores security because ML models are just data files.",
+            "It manipulates training data to influence model behavior."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q03",
+          "type": "single_choice",
+          "question": "Which statement best captures evasion attack in machine learning systems?",
+          "options": [
+            "It changes inputs at inference time to cause wrong predictions.",
+            "It means maximizing one fairness metric in every context.",
+            "It ignores security because ML models are just data files.",
+            "It guarantees safety after one robustness test."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q04",
+          "type": "single_choice",
+          "question": "Which statement best captures model extraction in machine learning systems?",
+          "options": [
+            "It ignores security because ML models are just data files.",
+            "It attempts to reconstruct a model through queries or leaked artifacts.",
+            "It guarantees safety after one robustness test.",
+            "It is separate from monitoring and incident response."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q05",
+          "type": "single_choice",
+          "question": "Which statement best captures membership inference in machine learning systems?",
+          "options": [
+            "It guarantees safety after one robustness test.",
+            "It is separate from monitoring and incident response.",
+            "It attempts to determine whether a record was in training data.",
+            "It has no connection to product design decisions."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q06",
+          "type": "single_choice",
+          "question": "Which statement best captures robustness in machine learning systems?",
+          "options": [
+            "It is separate from monitoring and incident response.",
+            "It has no connection to product design decisions.",
+            "It can be added only after launch as a legal review.",
+            "It measures acceptable behavior under distribution shifts, noise, or adversarial conditions."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q07",
+          "type": "single_choice",
+          "question": "Which statement best captures calibration in machine learning systems?",
+          "options": [
+            "It checks whether predicted probabilities match observed frequencies.",
+            "It has no connection to product design decisions.",
+            "It can be added only after launch as a legal review.",
+            "It is solved by hiding model internals from users."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q08",
+          "type": "single_choice",
+          "question": "Which statement best captures uncertainty in machine learning systems?",
+          "options": [
+            "It can be added only after launch as a legal review.",
+            "It expresses limits of model confidence or knowledge.",
+            "It is solved by hiding model internals from users.",
+            "It requires no measurement because it is mostly philosophical."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q09",
+          "type": "single_choice",
+          "question": "Which statement best captures selective prediction in machine learning systems?",
+          "options": [
+            "It is solved by hiding model internals from users.",
+            "It requires no measurement because it is mostly philosophical.",
+            "It allows a system to abstain when confidence or risk is unacceptable.",
+            "It means maximizing one fairness metric in every context."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q10",
+          "type": "single_choice",
+          "question": "Which statement best captures fairness metric in machine learning systems?",
+          "options": [
+            "It requires no measurement because it is mostly philosophical.",
+            "It means maximizing one fairness metric in every context.",
+            "It ignores security because ML models are just data files.",
+            "It quantifies a chosen notion of group or individual parity."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q11",
+          "type": "single_choice",
+          "question": "Which statement best captures bias audit in machine learning systems?",
+          "options": [
+            "It investigates performance and impact across populations or contexts.",
+            "It means maximizing one fairness metric in every context.",
+            "It ignores security because ML models are just data files.",
+            "It guarantees safety after one robustness test."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q12",
+          "type": "single_choice",
+          "question": "Which statement best captures model card in machine learning systems?",
+          "options": [
+            "It ignores security because ML models are just data files.",
+            "It documents intended use, performance, limitations, and ethical considerations.",
+            "It guarantees safety after one robustness test.",
+            "It is separate from monitoring and incident response."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q13",
+          "type": "single_choice",
+          "question": "Which statement best captures risk management in machine learning systems?",
+          "options": [
+            "It guarantees safety after one robustness test.",
+            "It is separate from monitoring and incident response.",
+            "It identifies, measures, mitigates, and monitors risks throughout the lifecycle.",
+            "It has no connection to product design decisions."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q14",
+          "type": "single_choice",
+          "question": "Which statement best captures human oversight in machine learning systems?",
+          "options": [
+            "It is separate from monitoring and incident response.",
+            "It has no connection to product design decisions.",
+            "It can be added only after launch as a legal review.",
+            "It assigns human review or control for high-impact decisions."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q15",
+          "type": "single_choice",
+          "question": "Which statement best captures accountability in machine learning systems?",
+          "options": [
+            "It makes responsibility for decisions and harms traceable.",
+            "It has no connection to product design decisions.",
+            "It can be added only after launch as a legal review.",
+            "It is solved by hiding model internals from users."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q16",
+          "type": "single_choice",
+          "question": "Which statement best captures explainability in machine learning systems?",
+          "options": [
+            "It can be added only after launch as a legal review.",
+            "It provides reasons or evidence useful to stakeholders.",
+            "It is solved by hiding model internals from users.",
+            "It requires no measurement because it is mostly philosophical."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q17",
+          "type": "single_choice",
+          "question": "Which statement best captures safety case in machine learning systems?",
+          "options": [
+            "It is solved by hiding model internals from users.",
+            "It requires no measurement because it is mostly philosophical.",
+            "It argues with evidence that a system is acceptably safe for a context.",
+            "It means maximizing one fairness metric in every context."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q18",
+          "type": "single_choice",
+          "question": "Which statement best captures red teaming in machine learning systems?",
+          "options": [
+            "It requires no measurement because it is mostly philosophical.",
+            "It means maximizing one fairness metric in every context.",
+            "It ignores security because ML models are just data files.",
+            "It proactively probes systems for failure, misuse, or vulnerability."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q19",
+          "type": "single_choice",
+          "question": "Which statement best captures NIST AI RMF in machine learning systems?",
+          "options": [
+            "It is a voluntary framework for managing AI risks and promoting trustworthy AI.",
+            "It means maximizing one fairness metric in every context.",
+            "It ignores security because ML models are just data files.",
+            "It guarantees safety after one robustness test."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u13-q20",
+          "type": "single_choice",
+          "question": "Which statement best captures governance in machine learning systems?",
+          "options": [
+            "It ignores security because ML models are just data files.",
+            "It defines policies, processes, roles, and evidence for responsible operation.",
+            "It guarantees safety after one robustness test.",
+            "It is separate from monitoring and incident response."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book"
+      ],
+      "passPercentage": ""
+    }
+  ],
+  "pageType": "apply"
+}

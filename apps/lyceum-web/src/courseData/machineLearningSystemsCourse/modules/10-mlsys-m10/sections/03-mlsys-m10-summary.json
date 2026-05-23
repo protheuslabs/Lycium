@@ -1,0 +1,54 @@
+{
+  "id": "mlsys-m10-summary",
+  "title": "Week Summary: Benchmarking, Evaluation, and Experiment Discipline",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Benchmark",
+          "description": "A standardized task, dataset, or measurement process used to compare systems or models.",
+          "sourceSectionId": "mlsys-u10"
+        },
+        {
+          "name": "Evaluation metric",
+          "description": "A quantitative measure used to assess model or system performance.",
+          "sourceSectionId": "mlsys-u10"
+        },
+        {
+          "name": "Baseline model",
+          "description": "A simple or established model used as a reference point for comparison.",
+          "sourceSectionId": "mlsys-u10"
+        },
+        {
+          "name": "A/B test",
+          "description": "An experiment comparing two variants with live users or traffic to measure outcome differences.",
+          "sourceSectionId": "mlsys-u10"
+        },
+        {
+          "name": "Experiment tracking",
+          "description": "Recording configurations, code versions, data versions, metrics, and outputs from experiments.",
+          "sourceSectionId": "mlsys-u10"
+        },
+        {
+          "name": "Reproducibility",
+          "description": "The ability to rerun work and obtain the same or meaningfully equivalent results.",
+          "sourceSectionId": "mlsys-u10"
+        },
+        {
+          "name": "Slice evaluation",
+          "description": "Evaluating performance on specific subsets of data or users to reveal uneven behavior.",
+          "sourceSectionId": "mlsys-u10"
+        },
+        {
+          "name": "Error analysis",
+          "description": "Inspecting failures to understand patterns, causes, and improvement opportunities.",
+          "sourceSectionId": "mlsys-u10"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "id": "s3",
+  "title": "Flexbox Deep Dive",
+  "content": [
+    {
+      "type": "text",
+      "value": "Flexbox is optimized for one-dimensional layout: distributing space along one axis while controlling alignment and wrapping. It is ideal for nav bars, card rows, and component alignment before more complex two-dimensional systems like grid."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Flex container",
+          "description": "An element whose children are laid out using the flexbox layout model."
+        },
+        {
+          "name": "Flex item",
+          "description": "A direct child of a flex container participating in flex layout."
+        },
+        {
+          "name": "Main axis",
+          "description": "The primary direction in which flex items are laid out."
+        },
+        {
+          "name": "Cross axis",
+          "description": "The axis perpendicular to the flexbox main axis."
+        },
+        {
+          "name": "justify-content",
+          "description": "A flexbox property that aligns items along the main axis."
+        },
+        {
+          "name": "align-items",
+          "description": "A flexbox property that aligns items along the cross axis."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

@@ -1,0 +1,15 @@
+{
+  "id": "stanford-h2o-systems-approach",
+  "type": "video",
+  "title": "Scalable Machine Learning with H2O & Systems Approach to Algorithm Development",
+  "author": "Erin LeDell",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=UELpqMxDB1E",
+  "embedUrl": "https://www.youtube.com/embed/UELpqMxDB1E",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

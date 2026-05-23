@@ -1,0 +1,164 @@
+{
+  "id": "s4-apply",
+  "title": "Apply: Thinking in Modules",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m1-s4-q1",
+          "type": "single_choice",
+          "question": "Modular code means",
+          "options": [
+            "Large files with no structure",
+            "Small reusable pieces with clear roles",
+            "One global variable",
+            "No naming conventions"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q2",
+          "type": "single_choice",
+          "question": "A reusable component should",
+          "options": [
+            "Do many unrelated things",
+            "Have one clear responsibility",
+            "Only include images",
+            "Run without HTML"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q3",
+          "type": "single_choice",
+          "question": "Which is a good abstraction example?",
+          "options": [
+            "Duplicate button styles in 10 places",
+            "Shared button style utility",
+            "No shared utility classes",
+            "Inline one-time code only"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q4",
+          "type": "single_choice",
+          "question": "Encapsulation in modules helps",
+          "options": [
+            "Increase coupling",
+            "Reduce predictable behavior",
+            "Reduce side effects",
+            "Remove all CSS"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q5",
+          "type": "single_choice",
+          "question": "Which naming strategy scales in classes of students?",
+          "options": [
+            "Random IDs",
+            "Consistent and descriptive names",
+            "Single-letter variables",
+            "Opaque abbreviations"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q6",
+          "type": "single_choice",
+          "question": "A layout module should usually",
+          "options": [
+            "Include backend logic",
+            "Include accessibility and semantics",
+            "Ignore spacing",
+            "Avoid container elements"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q7",
+          "type": "single_choice",
+          "question": "Which is a low-friction way to track decisions?",
+          "options": [
+            "No notes",
+            "Decision log and small commits",
+            "Only meeting audio",
+            "No branch names"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q8",
+          "type": "single_choice",
+          "question": "Reusability is improved when code is",
+          "options": [
+            "Deeply nested and hidden",
+            "Documented and parameterized",
+            "Global by default",
+            "Hard-coded"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q9",
+          "type": "single_choice",
+          "question": "The best place to start testing new modules is",
+          "options": [
+            "Only production",
+            "After all code is frozen",
+            "After each small change",
+            "Never"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s4-q10",
+          "type": "single_choice",
+          "question": "If a module grows too large, the best response is",
+          "options": [
+            "Keep adding conditions",
+            "Split into smaller modules",
+            "Rename arbitrarily",
+            "Remove all features"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

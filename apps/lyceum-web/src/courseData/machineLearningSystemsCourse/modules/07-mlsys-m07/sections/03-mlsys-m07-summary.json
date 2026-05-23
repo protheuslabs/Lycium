@@ -1,0 +1,54 @@
+{
+  "id": "mlsys-m07-summary",
+  "title": "Week Summary: Training Systems and Distributed Training",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Distributed training",
+          "description": "Training a model across multiple machines, devices, or accelerators.",
+          "sourceSectionId": "mlsys-u07"
+        },
+        {
+          "name": "Data parallelism",
+          "description": "Distributed training where workers process different data batches while maintaining copies of the model.",
+          "sourceSectionId": "mlsys-u07"
+        },
+        {
+          "name": "Model parallelism",
+          "description": "Distributed training where different parts of a model are placed on different devices or machines.",
+          "sourceSectionId": "mlsys-u07"
+        },
+        {
+          "name": "Parameter server",
+          "description": "A distributed training architecture where centralized servers store and update model parameters.",
+          "sourceSectionId": "mlsys-u07"
+        },
+        {
+          "name": "All-reduce",
+          "description": "A collective communication operation that aggregates values across workers and shares the result with all of them.",
+          "sourceSectionId": "mlsys-u07"
+        },
+        {
+          "name": "Gradient synchronization",
+          "description": "The process of sharing and combining gradients across workers during distributed training.",
+          "sourceSectionId": "mlsys-u07"
+        },
+        {
+          "name": "Checkpointing",
+          "description": "Saving model state during training so work can resume or a previous state can be restored.",
+          "sourceSectionId": "mlsys-u07"
+        },
+        {
+          "name": "GPU cluster",
+          "description": "A group of machines or devices with GPUs used together for accelerated computation.",
+          "sourceSectionId": "mlsys-u07"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "id": "pytorch-tutorials",
+  "type": "documentation",
+  "title": "PyTorch Tutorials",
+  "publisher": "PyTorch",
+  "url": "https://pytorch.org/tutorials/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

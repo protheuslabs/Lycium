@@ -1,0 +1,13 @@
+{
+  "id": "horovod",
+  "type": "project",
+  "title": "Horovod",
+  "publisher": "Horovod",
+  "url": "https://horovod.ai/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

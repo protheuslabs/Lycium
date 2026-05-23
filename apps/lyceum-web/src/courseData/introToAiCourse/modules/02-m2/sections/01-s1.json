@@ -1,0 +1,46 @@
+{
+  "id": "s1",
+  "title": "What is Machine Learning?",
+  "content": [
+    {
+      "type": "text",
+      "value": "Machine Learning is a subset of AI where systems learn patterns from data instead of being explicitly programmed with rules."
+    },
+    {
+      "type": "video",
+      "url": "https://www.youtube.com/embed/GwIo3gDZCVQ"
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Machine learning",
+          "description": "A branch of AI where systems learn patterns from data instead of being programmed with every rule explicitly."
+        },
+        {
+          "name": "Training data",
+          "description": "Examples used to fit a model’s parameters or decision patterns during learning."
+        },
+        {
+          "name": "Model",
+          "description": "A learned mathematical or computational representation used to make predictions, classifications, generations, or decisions."
+        },
+        {
+          "name": "Feature",
+          "description": "An input variable or measurable signal used by a model to learn or make predictions."
+        },
+        {
+          "name": "Label",
+          "description": "Text associated with a form control to identify what input is expected."
+        },
+        {
+          "name": "Prediction",
+          "description": "An estimated output about an unknown value, future event, label, or outcome."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

@@ -1,0 +1,54 @@
+{
+  "id": "mlsys-m11-summary",
+  "title": "Week Summary: MLOps, Serving, Observability, and Technical Debt",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "MLOps",
+          "description": "Operational practices and tooling for reliably building, deploying, monitoring, and updating ML systems.",
+          "sourceSectionId": "mlsys-u11"
+        },
+        {
+          "name": "Model registry",
+          "description": "A system for storing model versions, metadata, approvals, and deployment status.",
+          "sourceSectionId": "mlsys-u11"
+        },
+        {
+          "name": "CI/CD pipeline",
+          "description": "Automated workflows for testing, integrating, delivering, or deploying code and artifacts.",
+          "sourceSectionId": "mlsys-u11"
+        },
+        {
+          "name": "Feature store",
+          "description": "A system for defining, storing, serving, and reusing model features across training and inference.",
+          "sourceSectionId": "mlsys-u11"
+        },
+        {
+          "name": "Model serving",
+          "description": "Running models in production so applications can request predictions or outputs.",
+          "sourceSectionId": "mlsys-u11"
+        },
+        {
+          "name": "Observability",
+          "description": "The ability to understand system behavior from logs, metrics, traces, and other signals.",
+          "sourceSectionId": "mlsys-u11"
+        },
+        {
+          "name": "Data drift",
+          "description": "A change in input data distribution over time that can affect model performance.",
+          "sourceSectionId": "mlsys-u11"
+        },
+        {
+          "name": "Technical debt",
+          "description": "Accumulated design or implementation shortcuts that make future changes harder or riskier.",
+          "sourceSectionId": "mlsys-u11"
+        }
+      ]
+    }
+  ]
+}

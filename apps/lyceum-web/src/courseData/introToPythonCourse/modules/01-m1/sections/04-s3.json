@@ -1,0 +1,46 @@
+{
+  "id": "s3",
+  "title": "Variables and Types",
+  "content": [
+    {
+      "type": "text",
+      "value": "Python variables are created when you assign a value using =. Python uses dynamic typing, so you do not need to declare types explicitly."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Variable",
+          "description": "A name that refers to a value stored or computed by a program."
+        },
+        {
+          "name": "Assignment",
+          "description": "The act of binding a value to a variable name."
+        },
+        {
+          "name": "String",
+          "description": "A sequence of text characters stored as a value."
+        },
+        {
+          "name": "Integer",
+          "description": "A whole-number value without a fractional part."
+        },
+        {
+          "name": "Float",
+          "description": "A numeric value that can represent decimal or fractional quantities."
+        },
+        {
+          "name": "Boolean",
+          "description": "A true-or-false value used in logic and control flow."
+        },
+        {
+          "name": "Type conversion",
+          "description": "Changing a value from one data type to another, such as from text to a number."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

@@ -1,0 +1,42 @@
+{
+  "id": "s1",
+  "title": "Selectors, Cascade, and Specificity",
+  "content": [
+    {
+      "type": "text",
+      "value": "CSS selectors connect structure to design. Specificity determines which rule wins when multiple declarations apply. The cascade follows source order and selector weights, so naming systems and utility patterns become essential as projects scale."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "CSS selector",
+          "description": "A pattern that identifies which elements a CSS rule applies to."
+        },
+        {
+          "name": "Cascade",
+          "description": "The CSS system that determines which style rules win when multiple rules apply."
+        },
+        {
+          "name": "Specificity",
+          "description": "The ranking system CSS uses to decide which selector is more targeted when rules conflict."
+        },
+        {
+          "name": "Inheritance",
+          "description": "The way some CSS property values pass from parent elements to child elements."
+        },
+        {
+          "name": "Class selector",
+          "description": "A CSS selector that targets elements with a specific class attribute."
+        },
+        {
+          "name": "ID selector",
+          "description": "A CSS selector that targets the element with a specific id attribute."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

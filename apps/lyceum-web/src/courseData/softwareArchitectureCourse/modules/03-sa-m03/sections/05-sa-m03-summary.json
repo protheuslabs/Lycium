@@ -1,0 +1,84 @@
+{
+  "id": "sa-m03-summary",
+  "title": "Week Summary: Stakeholders, Concerns, and Scenarios",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-atam",
+    "sei-views-and-beyond"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Stakeholder",
+          "description": "A person, group, or organization with an interest in or influence over the architecture or system outcome.",
+          "sourceSectionId": "sa-m03-u01"
+        },
+        {
+          "name": "Stakeholder map",
+          "description": "A structured list or diagram of stakeholders and their relationship to the system.",
+          "sourceSectionId": "sa-m03-u01"
+        },
+        {
+          "name": "Concern elicitation",
+          "description": "The activity of discovering stakeholder needs, risks, questions, and constraints.",
+          "sourceSectionId": "sa-m03-u01"
+        },
+        {
+          "name": "Architecture audience",
+          "description": "The group of people for whom a particular architecture description, view, or decision record is written.",
+          "sourceSectionId": "sa-m03-u01"
+        },
+        {
+          "name": "Quality attribute scenario",
+          "description": "A structured statement that makes a quality concern testable through stimulus, environment, response, and response measure.",
+          "sourceSectionId": "sa-m03-u02"
+        },
+        {
+          "name": "Stimulus",
+          "description": "The event or condition that triggers a system response in a scenario.",
+          "sourceSectionId": "sa-m03-u02"
+        },
+        {
+          "name": "Response measure",
+          "description": "The observable criterion used to judge whether a scenario response is acceptable.",
+          "sourceSectionId": "sa-m03-u02"
+        },
+        {
+          "name": "Scenario prioritization",
+          "description": "The process of ranking scenarios by stakeholder importance, risk, cost, and architectural impact.",
+          "sourceSectionId": "sa-m03-u02"
+        },
+        {
+          "name": "Architecture principle",
+          "description": "A durable design guideline used to make related architectural decisions consistent and explainable.",
+          "sourceSectionId": "sa-m03-u03"
+        },
+        {
+          "name": "Decision record",
+          "description": "A concise record of an architectural choice, its context, rationale, status, and consequences.",
+          "sourceSectionId": "sa-m03-u03"
+        },
+        {
+          "name": "Decision consequence",
+          "description": "An expected effect, tradeoff, obligation, or risk introduced by an architecture decision.",
+          "sourceSectionId": "sa-m03-u03"
+        },
+        {
+          "name": "Principle traceability",
+          "description": "The ability to connect architectural decisions back to stated principles and stakeholder concerns.",
+          "sourceSectionId": "sa-m03-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam",
+        "sei-views-and-beyond"
+      ]
+    }
+  ]
+}

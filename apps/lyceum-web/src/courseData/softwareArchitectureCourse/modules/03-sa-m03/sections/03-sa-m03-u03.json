@@ -1,0 +1,70 @@
+{
+  "id": "sa-m03-u03",
+  "title": "Principles, Constraints, and Decisions",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "arc42-template"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 8-10. Supplemental: SEI architecture evaluation material. This unit focuses on principles, constraints, and decisions.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Principles are durable design guidelines that help teams make consistent choices. They are useful only when they connect to real concerns and can be used to explain decisions.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A good decision record captures context, decision, status, consequences, and rationale. This lets future teams see why the architecture is the way it is, rather than reverse-engineering intent from code and diagrams.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: write one architecture principle and one decision record for a system that must support offline mobile use.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Architecture principle",
+          "description": "A durable design guideline used to make related architectural decisions consistent and explainable."
+        },
+        {
+          "name": "Decision record",
+          "description": "A concise record of an architectural choice, its context, rationale, status, and consequences."
+        },
+        {
+          "name": "Decision consequence",
+          "description": "An expected effect, tradeoff, obligation, or risk introduced by an architecture decision."
+        },
+        {
+          "name": "Principle traceability",
+          "description": "The ability to connect architectural decisions back to stated principles and stakeholder concerns."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template"
+      ]
+    }
+  ]
+}

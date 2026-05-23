@@ -1,0 +1,321 @@
+{
+  "id": "mlsys-u07-quiz",
+  "title": "Quiz: Training Systems and Distributed Training",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "mlsys-book"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "mlsys-u07-q01",
+          "type": "single_choice",
+          "question": "Which statement best captures data parallelism in machine learning systems?",
+          "options": [
+            "It replicates the model and splits data batches across workers.",
+            "It is only about faster matrix multiplication.",
+            "It does not need fault tolerance because training is offline.",
+            "It can ignore the data loading path."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q02",
+          "type": "single_choice",
+          "question": "Which statement best captures model parallelism in machine learning systems?",
+          "options": [
+            "It does not need fault tolerance because training is offline.",
+            "It partitions model computation or parameters across devices.",
+            "It can ignore the data loading path.",
+            "It makes communication free when workers are identical."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q03",
+          "type": "single_choice",
+          "question": "Which statement best captures pipeline parallelism in machine learning systems?",
+          "options": [
+            "It can ignore the data loading path.",
+            "It makes communication free when workers are identical.",
+            "It divides model stages across devices and overlaps microbatches.",
+            "It should always use model parallelism first."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q04",
+          "type": "single_choice",
+          "question": "Which statement best captures gradient synchronization in machine learning systems?",
+          "options": [
+            "It makes communication free when workers are identical.",
+            "It should always use model parallelism first.",
+            "It removes the need to checkpoint jobs.",
+            "It combines gradients across workers so replicas update consistently."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q05",
+          "type": "single_choice",
+          "question": "Which statement best captures all-reduce in machine learning systems?",
+          "options": [
+            "It is a collective operation often used to aggregate gradients.",
+            "It should always use model parallelism first.",
+            "It removes the need to checkpoint jobs.",
+            "It can be evaluated only by final validation accuracy."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q06",
+          "type": "single_choice",
+          "question": "Which statement best captures input pipeline in machine learning systems?",
+          "options": [
+            "It removes the need to checkpoint jobs.",
+            "It feeds training data fast enough to keep accelerators busy.",
+            "It can be evaluated only by final validation accuracy.",
+            "It scales linearly whenever more GPUs are added."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q07",
+          "type": "single_choice",
+          "question": "Which statement best captures prefetching in machine learning systems?",
+          "options": [
+            "It can be evaluated only by final validation accuracy.",
+            "It scales linearly whenever more GPUs are added.",
+            "It overlaps data preparation with computation.",
+            "It is only about faster matrix multiplication."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q08",
+          "type": "single_choice",
+          "question": "Which statement best captures checkpointing in machine learning systems?",
+          "options": [
+            "It scales linearly whenever more GPUs are added.",
+            "It is only about faster matrix multiplication.",
+            "It does not need fault tolerance because training is offline.",
+            "It saves training state for recovery, analysis, or later continuation."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q09",
+          "type": "single_choice",
+          "question": "Which statement best captures mixed precision in machine learning systems?",
+          "options": [
+            "It uses lower-precision arithmetic where safe to reduce memory and improve throughput.",
+            "It is only about faster matrix multiplication.",
+            "It does not need fault tolerance because training is offline.",
+            "It can ignore the data loading path."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q10",
+          "type": "single_choice",
+          "question": "Which statement best captures gradient accumulation in machine learning systems?",
+          "options": [
+            "It does not need fault tolerance because training is offline.",
+            "It simulates larger effective batches by accumulating gradients over steps.",
+            "It can ignore the data loading path.",
+            "It makes communication free when workers are identical."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q11",
+          "type": "single_choice",
+          "question": "Which statement best captures scaling efficiency in machine learning systems?",
+          "options": [
+            "It can ignore the data loading path.",
+            "It makes communication free when workers are identical.",
+            "It measures how effectively added hardware improves throughput.",
+            "It should always use model parallelism first."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q12",
+          "type": "single_choice",
+          "question": "Which statement best captures communication overhead in machine learning systems?",
+          "options": [
+            "It makes communication free when workers are identical.",
+            "It should always use model parallelism first.",
+            "It removes the need to checkpoint jobs.",
+            "It is time spent moving information among workers or devices."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q13",
+          "type": "single_choice",
+          "question": "Which statement best captures straggler in machine learning systems?",
+          "options": [
+            "It is a slow worker that delays synchronized distributed progress.",
+            "It should always use model parallelism first.",
+            "It removes the need to checkpoint jobs.",
+            "It can be evaluated only by final validation accuracy."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q14",
+          "type": "single_choice",
+          "question": "Which statement best captures fault tolerance in machine learning systems?",
+          "options": [
+            "It removes the need to checkpoint jobs.",
+            "It allows training to recover from worker, node, or job failures.",
+            "It can be evaluated only by final validation accuracy.",
+            "It scales linearly whenever more GPUs are added."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q15",
+          "type": "single_choice",
+          "question": "Which statement best captures utilization in machine learning systems?",
+          "options": [
+            "It can be evaluated only by final validation accuracy.",
+            "It scales linearly whenever more GPUs are added.",
+            "It measures how fully hardware resources are doing useful work.",
+            "It is only about faster matrix multiplication."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q16",
+          "type": "single_choice",
+          "question": "Which statement best captures memory bottleneck in machine learning systems?",
+          "options": [
+            "It scales linearly whenever more GPUs are added.",
+            "It is only about faster matrix multiplication.",
+            "It does not need fault tolerance because training is offline.",
+            "It occurs when capacity or bandwidth limits training progress."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q17",
+          "type": "single_choice",
+          "question": "Which statement best captures optimizer state in machine learning systems?",
+          "options": [
+            "It stores auxiliary values such as momentum and can consume significant memory.",
+            "It is only about faster matrix multiplication.",
+            "It does not need fault tolerance because training is offline.",
+            "It can ignore the data loading path."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q18",
+          "type": "single_choice",
+          "question": "Which statement best captures sharding in machine learning systems?",
+          "options": [
+            "It does not need fault tolerance because training is offline.",
+            "It partitions data, parameters, gradients, or optimizer state across workers.",
+            "It can ignore the data loading path.",
+            "It makes communication free when workers are identical."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q19",
+          "type": "single_choice",
+          "question": "Which statement best captures throughput in machine learning systems?",
+          "options": [
+            "It can ignore the data loading path.",
+            "It makes communication free when workers are identical.",
+            "It measures examples, tokens, or operations completed per unit time.",
+            "It should always use model parallelism first."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u07-q20",
+          "type": "single_choice",
+          "question": "Which statement best captures training cost in machine learning systems?",
+          "options": [
+            "It makes communication free when workers are identical.",
+            "It should always use model parallelism first.",
+            "It removes the need to checkpoint jobs.",
+            "It includes hardware time, energy, storage, engineering effort, and failed runs."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book"
+      ],
+      "passPercentage": ""
+    }
+  ],
+  "pageType": "apply"
+}

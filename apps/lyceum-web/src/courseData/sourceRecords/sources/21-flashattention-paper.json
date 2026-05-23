@@ -1,0 +1,13 @@
+{
+  "id": "flashattention-paper",
+  "type": "paper",
+  "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+  "publisher": "arXiv",
+  "url": "https://arxiv.org/abs/2205.14135",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

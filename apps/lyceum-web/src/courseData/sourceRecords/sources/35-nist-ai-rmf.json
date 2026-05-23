@@ -1,0 +1,13 @@
+{
+  "id": "nist-ai-rmf",
+  "type": "framework",
+  "title": "AI Risk Management Framework",
+  "publisher": "National Institute of Standards and Technology",
+  "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

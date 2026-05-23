@@ -1,0 +1,70 @@
+{
+  "id": "sa-m10-u03",
+  "title": "Security in Views and Decisions",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-views-and-beyond"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapter 25. Supplemental: ISO/IEC/IEEE 42010 viewpoint concepts. This unit focuses on security in views and decisions.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Security concerns appear differently in different views. The context view exposes trust boundaries. The information view exposes sensitive data. The deployment view exposes network segmentation. The operational view exposes monitoring and incident response.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Architectural security decisions should be explicit because they often constrain future design. Decisions about identity providers, encryption boundaries, secrets, tenant isolation, and audit logging are difficult to retrofit.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: write a decision record for tenant isolation in a SaaS product and list consequences for deployment, operations, and data models.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Tenant isolation",
+          "description": "The architectural separation of data, execution, configuration, or access between customers or organizational tenants."
+        },
+        {
+          "name": "Encryption boundary",
+          "description": "The point at which data is protected or exposed as it moves or is stored in the system."
+        },
+        {
+          "name": "Audit trail",
+          "description": "A record of security-relevant actions used for accountability, investigation, and compliance."
+        },
+        {
+          "name": "Secrets management",
+          "description": "The controlled storage, rotation, access, and use of credentials, keys, and sensitive configuration."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-views-and-beyond"
+      ]
+    }
+  ]
+}

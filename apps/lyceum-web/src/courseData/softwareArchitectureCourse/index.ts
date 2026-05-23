@@ -1,0 +1,21 @@
+import meta from "./metadata.json";
+import courseMetadata from "./courseMetadata.json";
+import generationPlan from "./generationPlan.json";
+import generationPlanUnitMap from "./generationPlanUnitMap.json";
+import generationPlanIdeaMap from "./generationPlanIdeaMap.json";
+import module01 from "./modules/01-sa-m01";
+import module02 from "./modules/02-sa-m02";
+import module03 from "./modules/03-sa-m03";
+import module04 from "./modules/04-sa-m04";
+import module05 from "./modules/05-sa-m05";
+import module06 from "./modules/06-sa-m06";
+import module07 from "./modules/07-sa-m07";
+import module08 from "./modules/08-sa-m08";
+import module09 from "./modules/09-sa-m09";
+import module10 from "./modules/10-sa-m10";
+import module11 from "./modules/11-sa-m11";
+import module12 from "./modules/12-sa-m12";
+import module13 from "./modules/13-sa-m13";
+import module14 from "./modules/14-sa-m14";
+
+export default { ...meta, metadata: { ...courseMetadata, generationPlan: { ...generationPlan, unitMap: generationPlanUnitMap, ideaMap: generationPlanIdeaMap } }, modules: [module01, module02, module03, module04, module05, module06, module07, module08, module09, module10, module11, module12, module13, module14] };

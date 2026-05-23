@@ -1,0 +1,82 @@
+{
+  "id": "sa-m10-summary",
+  "title": "Week Summary: Security Perspective",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "iso-iec-ieee-42010-2022"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Architecture perspective",
+          "description": "A cross-cutting set of activities and checks applied across views to address a quality concern.",
+          "sourceSectionId": "sa-m10-u01"
+        },
+        {
+          "name": "Security perspective",
+          "description": "A perspective focused on protecting assets, reducing threats, and preserving security properties across the architecture.",
+          "sourceSectionId": "sa-m10-u01"
+        },
+        {
+          "name": "Security property",
+          "description": "A desired protection quality such as confidentiality, integrity, availability, accountability, or non-repudiation.",
+          "sourceSectionId": "sa-m10-u01"
+        },
+        {
+          "name": "Attack surface",
+          "description": "The set of entry points and exposed interactions through which an attacker might affect the system.",
+          "sourceSectionId": "sa-m10-u01"
+        },
+        {
+          "name": "Security asset",
+          "description": "A data item, capability, service, credential, or business function that requires protection.",
+          "sourceSectionId": "sa-m10-u02"
+        },
+        {
+          "name": "Threat",
+          "description": "A potential cause of harm to a security asset or security property.",
+          "sourceSectionId": "sa-m10-u02"
+        },
+        {
+          "name": "Security control",
+          "description": "A mechanism or process that reduces the likelihood or impact of a security threat.",
+          "sourceSectionId": "sa-m10-u02"
+        },
+        {
+          "name": "Least privilege",
+          "description": "The design principle that actors and components receive only the permissions required for their responsibilities.",
+          "sourceSectionId": "sa-m10-u02"
+        },
+        {
+          "name": "Tenant isolation",
+          "description": "The architectural separation of data, execution, configuration, or access between customers or organizational tenants.",
+          "sourceSectionId": "sa-m10-u03"
+        },
+        {
+          "name": "Encryption boundary",
+          "description": "The point at which data is protected or exposed as it moves or is stored in the system.",
+          "sourceSectionId": "sa-m10-u03"
+        },
+        {
+          "name": "Audit trail",
+          "description": "A record of security-relevant actions used for accountability, investigation, and compliance.",
+          "sourceSectionId": "sa-m10-u03"
+        },
+        {
+          "name": "Secrets management",
+          "description": "The controlled storage, rotation, access, and use of credentials, keys, and sensitive configuration.",
+          "sourceSectionId": "sa-m10-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    }
+  ]
+}

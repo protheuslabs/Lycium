@@ -1,0 +1,50 @@
+{
+  "id": "s1",
+  "title": "How the Web Works",
+  "content": [
+    {
+      "type": "text",
+      "value": "The web is built on a request/response model. A browser sends an HTTP request to a server for a URL, the server sends back HTML, CSS, JavaScript, and assets, and the browser renders the result for the user. A web application is more than static pages; it is a coordinated system of documents, styles, scripts, APIs, and databases. In this module you will learn how each layer influences what learners see, what they can do, and how reliable that experience is."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Browser",
+          "description": "Software that requests web resources, interprets HTML, CSS, and JavaScript, and renders interactive pages for users."
+        },
+        {
+          "name": "Server",
+          "description": "A computer or program that responds to network requests by returning data, files, or application responses."
+        },
+        {
+          "name": "Client-server model",
+          "description": "A network pattern where a client sends requests and a server returns responses."
+        },
+        {
+          "name": "HTTP request",
+          "description": "A message from a client asking a server for a resource or action."
+        },
+        {
+          "name": "HTTP response",
+          "description": "A server message that returns status information and requested content or data."
+        },
+        {
+          "name": "HTML document",
+          "description": "A structured document that defines the content and semantic structure of a web page."
+        },
+        {
+          "name": "CSS stylesheet",
+          "description": "A file or block of CSS rules that controls presentation, layout, and visual styling."
+        },
+        {
+          "name": "JavaScript file",
+          "description": "A script file that adds behavior, state changes, and interactivity to a web page."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

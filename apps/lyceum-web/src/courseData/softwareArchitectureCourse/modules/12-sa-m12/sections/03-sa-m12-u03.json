@@ -1,0 +1,64 @@
+{
+  "id": "sa-m12-u03",
+  "title": "Operational Resilience and Incident Learning",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapter 27. Supplemental: SEI ATAM quality tradeoff framing. This unit focuses on operational resilience and incident learning.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Resilience depends on operations as much as structure. Observability, alerting, runbooks, drills, ownership, safe deployment, rollback, and incident review all shape the system ability to recover.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Architectural learning should continue after incidents. A post-incident review can reveal missing assumptions, hidden dependencies, poor recovery paths, or decisions that need to be revisited.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: write three post-incident architecture questions that would help improve system resilience rather than merely assign blame.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Observability",
+          "description": "The ability to understand internal system state from outputs such as logs, metrics, traces, and events."
+        },
+        {
+          "name": "Incident review",
+          "description": "A structured examination of an operational incident to learn causes, impacts, and improvement actions."
+        },
+        {
+          "name": "Resilience drill",
+          "description": "A planned exercise that tests recovery processes, failure handling, and operational readiness."
+        },
+        {
+          "name": "Safe deployment",
+          "description": "A release approach that limits blast radius and enables detection, rollback, or mitigation of problems."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e"
+      ]
+    }
+  ]
+}

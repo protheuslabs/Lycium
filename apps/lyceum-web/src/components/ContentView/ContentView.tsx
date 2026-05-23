@@ -107,7 +107,7 @@ export default function ContentView({
   courseTitle,
   section,
   moduleTitle,
-  moduleIndex: _moduleIndex,
+  moduleIndex,
   onNext,
   onPrev,
   isFirstSection,
@@ -131,8 +131,28 @@ export default function ContentView({
   const [submittedQuizKeys, setSubmittedQuizKeys] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
+    // Resetting quiz submission state when the learner changes sections is intentional.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSubmittedQuizKeys(new Set());
   }, [section?.id]);
+
+  const handleQuizSubmissionChange = useCallback<QuizSubmissionStatusHandler>((quizKey, submitted) => {
+    setSubmittedQuizKeys((prev) => {
+      if (submitted === prev.has(quizKey)) {
+        return prev;
+      }
+
+      const next = new Set(prev);
+
+      if (submitted) {
+        next.add(quizKey);
+      } else {
+        next.delete(quizKey);
+      }
+
+      return next;
+    });
+  }, []);
 
   if (!section) {
     return (
@@ -154,27 +174,10 @@ export default function ContentView({
     : requiresQuizSubmission && !allRequiredQuizzesSubmitted
       ? "Submit the quiz before marking this page complete"
       : "Mark section complete";
-  const handleQuizSubmissionChange = useCallback<QuizSubmissionStatusHandler>((quizKey, submitted) => {
-    setSubmittedQuizKeys((prev) => {
-      if (submitted === prev.has(quizKey)) {
-        return prev;
-      }
-
-      const next = new Set(prev);
-
-      if (submitted) {
-        next.add(quizKey);
-      } else {
-        next.delete(quizKey);
-      }
-
-      return next;
-    });
-  }, []);
 
   
   return (
-    <main className={`content-view content-view--${pageType}`}>
+    <main className={`content-view content-view--${pageType}`} data-module-index={moduleIndex}>
       <p className="course-name">{courseTitle}</p>
       <div className="module-progress-block">
         <h1 className="course-title">{moduleTitle}</h1>
@@ -324,7 +327,7 @@ function renderContentBlock(
     case "concept_cards":
       return renderConceptCards(item, key);
 
-    case "video":
+    case "video": {
       const videoSource = blockSources.find((source) => source.embedUrl) ?? blockSources[0];
       const videoUrl = item.url ?? videoSource?.embedUrl ?? videoSource?.url;
 
@@ -348,17 +351,19 @@ function renderContentBlock(
           ></iframe>
         </div>
       );
+    }
       
-    case "quiz":
-    const quizKey = `quiz-${sectionId}-${key}`;
-    return (
-      <QuizBlock
-        key={key}
-        data={item}
-        name={quizKey}
-        onSubmissionChange={onQuizSubmissionChange}
-      />
-    );
+    case "quiz": {
+      const quizKey = `quiz-${sectionId}-${key}`;
+      return (
+        <QuizBlock
+          key={key}
+          data={item}
+          name={quizKey}
+          onSubmissionChange={onQuizSubmissionChange}
+        />
+      );
+    }
       
       case "game":
         return (

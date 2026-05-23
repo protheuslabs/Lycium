@@ -1,0 +1,11 @@
+{
+  "id": "mlsys-m06",
+  "title": "Week 6: AI Frameworks, Graphs, Autodiff, and Runtime Systems",
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-mlc-foundation-models",
+    "pytorch-tutorials",
+    "tensorflow-guide",
+    "jax-docs"
+  ]
+}

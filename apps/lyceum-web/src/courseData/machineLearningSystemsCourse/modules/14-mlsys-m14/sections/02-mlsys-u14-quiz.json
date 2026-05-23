@@ -1,0 +1,321 @@
+{
+  "id": "mlsys-u14-quiz",
+  "title": "Quiz: Sustainable AI, AI for Good, Frontiers, and Final Design Review",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "mlsys-book"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "mlsys-u14-q01",
+          "type": "single_choice",
+          "question": "Which statement best captures sustainable AI in machine learning systems?",
+          "options": [
+            "It treats energy as irrelevant once cloud compute is rented.",
+            "It assumes bigger models are always more responsible.",
+            "It ignores maintenance after a pilot succeeds.",
+            "It evaluates energy, carbon, hardware use, efficiency, and long-term social cost."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q02",
+          "type": "single_choice",
+          "question": "Which statement best captures carbon-aware scheduling in machine learning systems?",
+          "options": [
+            "It shifts computation based on carbon intensity or energy availability.",
+            "It assumes bigger models are always more responsible.",
+            "It ignores maintenance after a pilot succeeds.",
+            "It can evaluate impact only with model accuracy."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q03",
+          "type": "single_choice",
+          "question": "Which statement best captures embodied carbon in machine learning systems?",
+          "options": [
+            "It ignores maintenance after a pilot succeeds.",
+            "It accounts for emissions from manufacturing and lifecycle of hardware.",
+            "It can evaluate impact only with model accuracy.",
+            "It separates social impact from infrastructure design."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q04",
+          "type": "single_choice",
+          "question": "Which statement best captures energy proportionality in machine learning systems?",
+          "options": [
+            "It can evaluate impact only with model accuracy.",
+            "It separates social impact from infrastructure design.",
+            "It asks systems to use energy in proportion to useful work.",
+            "It treats sustainability as only a public relations metric."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q05",
+          "type": "single_choice",
+          "question": "Which statement best captures AI for Good in machine learning systems?",
+          "options": [
+            "It separates social impact from infrastructure design.",
+            "It treats sustainability as only a public relations metric.",
+            "It makes governance unnecessary if the use case is beneficial.",
+            "It applies AI to social benefit while requiring real stakeholder and deployment discipline."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q06",
+          "type": "single_choice",
+          "question": "Which statement best captures problem fit in machine learning systems?",
+          "options": [
+            "It asks whether ML is appropriate compared with simpler or nontechnical interventions.",
+            "It treats sustainability as only a public relations metric.",
+            "It makes governance unnecessary if the use case is beneficial.",
+            "It means using AI for a good-sounding cause without deployment evidence."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q07",
+          "type": "single_choice",
+          "question": "Which statement best captures stakeholder participation in machine learning systems?",
+          "options": [
+            "It makes governance unnecessary if the use case is beneficial.",
+            "It includes affected communities in defining goals, constraints, and harms.",
+            "It means using AI for a good-sounding cause without deployment evidence.",
+            "It treats energy as irrelevant once cloud compute is rented."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q08",
+          "type": "single_choice",
+          "question": "Which statement best captures maintenance plan in machine learning systems?",
+          "options": [
+            "It means using AI for a good-sounding cause without deployment evidence.",
+            "It treats energy as irrelevant once cloud compute is rented.",
+            "It defines how a beneficial system will remain reliable after initial deployment.",
+            "It assumes bigger models are always more responsible."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q09",
+          "type": "single_choice",
+          "question": "Which statement best captures foundation model in machine learning systems?",
+          "options": [
+            "It treats energy as irrelevant once cloud compute is rented.",
+            "It assumes bigger models are always more responsible.",
+            "It ignores maintenance after a pilot succeeds.",
+            "It is a broadly trained model adapted to many downstream tasks."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q10",
+          "type": "single_choice",
+          "question": "Which statement best captures agentic system in machine learning systems?",
+          "options": [
+            "It can plan or act across steps using tools, memory, or external systems.",
+            "It assumes bigger models are always more responsible.",
+            "It ignores maintenance after a pilot succeeds.",
+            "It can evaluate impact only with model accuracy."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q11",
+          "type": "single_choice",
+          "question": "Which statement best captures evaluation gap in machine learning systems?",
+          "options": [
+            "It ignores maintenance after a pilot succeeds.",
+            "It appears when benchmarks do not capture real-world usefulness or harms.",
+            "It can evaluate impact only with model accuracy.",
+            "It separates social impact from infrastructure design."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q12",
+          "type": "single_choice",
+          "question": "Which statement best captures governance at scale in machine learning systems?",
+          "options": [
+            "It can evaluate impact only with model accuracy.",
+            "It separates social impact from infrastructure design.",
+            "It coordinates risk controls across many models, teams, users, and contexts.",
+            "It treats sustainability as only a public relations metric."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q13",
+          "type": "single_choice",
+          "question": "Which statement best captures systems synthesis in machine learning systems?",
+          "options": [
+            "It separates social impact from infrastructure design.",
+            "It treats sustainability as only a public relations metric.",
+            "It makes governance unnecessary if the use case is beneficial.",
+            "It combines data, model, infrastructure, operations, risk, and sustainability reasoning."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q14",
+          "type": "single_choice",
+          "question": "Which statement best captures design review in machine learning systems?",
+          "options": [
+            "It tests whether the proposed system meets requirements under realistic constraints.",
+            "It treats sustainability as only a public relations metric.",
+            "It makes governance unnecessary if the use case is beneficial.",
+            "It means using AI for a good-sounding cause without deployment evidence."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q15",
+          "type": "single_choice",
+          "question": "Which statement best captures trade-off narrative in machine learning systems?",
+          "options": [
+            "It makes governance unnecessary if the use case is beneficial.",
+            "It explains why one design is preferable despite known costs or risks.",
+            "It means using AI for a good-sounding cause without deployment evidence.",
+            "It treats energy as irrelevant once cloud compute is rented."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q16",
+          "type": "single_choice",
+          "question": "Which statement best captures capstone evidence in machine learning systems?",
+          "options": [
+            "It means using AI for a good-sounding cause without deployment evidence.",
+            "It treats energy as irrelevant once cloud compute is rented.",
+            "It supports design decisions with measurements, references, and explicit assumptions.",
+            "It assumes bigger models are always more responsible."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q17",
+          "type": "single_choice",
+          "question": "Which statement best captures responsible scaling in machine learning systems?",
+          "options": [
+            "It treats energy as irrelevant once cloud compute is rented.",
+            "It assumes bigger models are always more responsible.",
+            "It ignores maintenance after a pilot succeeds.",
+            "It considers whether larger models or infrastructure improve outcomes enough to justify costs."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q18",
+          "type": "single_choice",
+          "question": "Which statement best captures access in machine learning systems?",
+          "options": [
+            "It concerns who can use, audit, benefit from, or be excluded by the system.",
+            "It assumes bigger models are always more responsible.",
+            "It ignores maintenance after a pilot succeeds.",
+            "It can evaluate impact only with model accuracy."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q19",
+          "type": "single_choice",
+          "question": "Which statement best captures long-term monitoring in machine learning systems?",
+          "options": [
+            "It ignores maintenance after a pilot succeeds.",
+            "It tracks changes in performance, cost, risk, and impact over time.",
+            "It can evaluate impact only with model accuracy.",
+            "It separates social impact from infrastructure design."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u14-q20",
+          "type": "single_choice",
+          "question": "Which statement best captures course integration in machine learning systems?",
+          "options": [
+            "It can evaluate impact only with model accuracy.",
+            "It separates social impact from infrastructure design.",
+            "It uses the full ML systems lifecycle to reason about final project design.",
+            "It treats sustainability as only a public relations metric."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book"
+      ],
+      "passPercentage": ""
+    }
+  ],
+  "pageType": "apply"
+}

@@ -1,0 +1,42 @@
+{
+  "id": "s1",
+  "title": "Accessibility and Inclusive UX",
+  "content": [
+    {
+      "type": "text",
+      "value": "Inclusive interfaces are stronger for everyone. Prioritize semantic HTML, keyboard focus, clear focus states, proper labels, and sufficient color contrast. Accessibility is part of quality, not an optional add-on at the end."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Semantic HTML",
+          "description": "HTML that uses elements according to their meaning and role rather than only for visual layout."
+        },
+        {
+          "name": "Keyboard navigation",
+          "description": "The ability to use an interface through keyboard controls instead of a mouse or touch input."
+        },
+        {
+          "name": "Focus state",
+          "description": "The visual or programmatic indication of which interactive element is currently selected for keyboard input."
+        },
+        {
+          "name": "Color contrast",
+          "description": "The difference in brightness and color between text and background that affects readability."
+        },
+        {
+          "name": "ARIA",
+          "description": "Attributes that provide accessibility semantics when native HTML cannot express the needed role or state."
+        },
+        {
+          "name": "Accessible name",
+          "description": "The text label assistive technologies use to identify an interactive element."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

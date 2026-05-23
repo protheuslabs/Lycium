@@ -2,9 +2,7 @@
 
 import "./topBar.css";
 
-export default function TopBar({ 
-  
-}) {
+export default function TopBar() {
 
   return (
     <main className="top-bar">

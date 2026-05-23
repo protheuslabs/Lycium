@@ -1,0 +1,70 @@
+{
+  "id": "sa-m11-u03",
+  "title": "Performance Evidence and Tradeoffs",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "sei-atam"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapter 26. Supplemental: SEI tradeoff analysis concepts. This unit focuses on performance evidence and tradeoffs.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Performance claims require evidence. Architects may use prototypes, benchmarks, load tests, simulations, queueing analysis, capacity models, or production metrics to validate assumptions.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Performance work is full of architectural tradeoffs because resource use, complexity, cost, consistency, security, and reliability can all shift when the design is optimized for speed or capacity.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: choose a performance risk and design the smallest experiment that could reduce uncertainty before implementation goes too far.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Performance evidence",
+          "description": "A measurement, analysis, test, or prototype result supporting a performance claim."
+        },
+        {
+          "name": "Capacity model",
+          "description": "A model estimating how resources, workload, and architecture determine system capacity."
+        },
+        {
+          "name": "Load test",
+          "description": "A test that exercises the system under expected or extreme workload to observe performance behavior."
+        },
+        {
+          "name": "Optimization tradeoff",
+          "description": "A design compromise introduced when improving performance affects cost, complexity, reliability, or other qualities."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "sei-atam"
+      ]
+    }
+  ]
+}

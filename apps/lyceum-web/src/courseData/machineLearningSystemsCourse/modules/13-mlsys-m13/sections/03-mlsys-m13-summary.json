@@ -1,0 +1,54 @@
+{
+  "id": "mlsys-m13-summary",
+  "title": "Week Summary: Security, Robustness, and Responsible AI",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Adversarial example",
+          "description": "An input intentionally crafted or modified to cause a model to make an incorrect prediction.",
+          "sourceSectionId": "mlsys-u13"
+        },
+        {
+          "name": "Model robustness",
+          "description": "A model’s ability to maintain acceptable behavior under noise, shifts, attacks, or unusual inputs.",
+          "sourceSectionId": "mlsys-u13"
+        },
+        {
+          "name": "Data poisoning",
+          "description": "An attack where malicious or corrupted data is inserted into training data to influence model behavior.",
+          "sourceSectionId": "mlsys-u13"
+        },
+        {
+          "name": "Model extraction",
+          "description": "An attack that attempts to copy or approximate a model by querying it and observing outputs.",
+          "sourceSectionId": "mlsys-u13"
+        },
+        {
+          "name": "Fairness",
+          "description": "The study and practice of reducing unjust or harmful disparities in model behavior across groups.",
+          "sourceSectionId": "mlsys-u13"
+        },
+        {
+          "name": "Explainability",
+          "description": "The ability to describe why a model produced an output in terms understandable to stakeholders.",
+          "sourceSectionId": "mlsys-u13"
+        },
+        {
+          "name": "Model card",
+          "description": "A structured document describing a model’s intended use, evaluation, limitations, and ethical considerations.",
+          "sourceSectionId": "mlsys-u13"
+        },
+        {
+          "name": "Risk assessment",
+          "description": "The process of identifying, estimating, and prioritizing possible harms or failures.",
+          "sourceSectionId": "mlsys-u13"
+        }
+      ]
+    }
+  ]
+}

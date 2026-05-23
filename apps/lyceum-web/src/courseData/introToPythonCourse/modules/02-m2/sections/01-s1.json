@@ -1,0 +1,42 @@
+{
+  "id": "s1",
+  "title": "If Statements",
+  "content": [
+    {
+      "type": "text",
+      "value": "If statements allow you to execute code only when a condition is true. You can also use elif and else for multiple branches."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Conditional statement",
+          "description": "A control-flow structure that chooses which code runs based on a condition."
+        },
+        {
+          "name": "if",
+          "description": "The keyword that starts a conditional branch when a condition is true."
+        },
+        {
+          "name": "elif",
+          "description": "A Python keyword for checking an additional condition after a previous if condition was false."
+        },
+        {
+          "name": "else",
+          "description": "The branch that runs when earlier conditions in a conditional statement are false."
+        },
+        {
+          "name": "Boolean expression",
+          "description": "An expression that evaluates to true or false."
+        },
+        {
+          "name": "Code block",
+          "description": "A grouped set of statements that belong to a control structure such as a conditional or loop."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

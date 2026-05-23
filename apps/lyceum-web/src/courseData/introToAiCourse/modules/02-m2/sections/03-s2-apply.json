@@ -1,0 +1,28 @@
+{
+  "id": "s2-apply",
+  "title": "Apply: Supervised vs Unsupervised Learning",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "ai-q3",
+          "type": "single_choice",
+          "question": "Which learning type uses labeled examples like (image, label) pairs?",
+          "options": [
+            "Unsupervised learning",
+            "Supervised learning",
+            "Reinforcement learning"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

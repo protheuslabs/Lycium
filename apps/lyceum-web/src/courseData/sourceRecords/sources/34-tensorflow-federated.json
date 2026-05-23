@@ -1,0 +1,13 @@
+{
+  "id": "tensorflow-federated",
+  "type": "documentation",
+  "title": "TensorFlow Federated",
+  "publisher": "TensorFlow",
+  "url": "https://www.tensorflow.org/federated",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

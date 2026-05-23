@@ -1,0 +1,110 @@
+{
+  "id": "mlsys-u11",
+  "title": "MLOps, Serving, Observability, and Technical Debt",
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Machine Learning Systems, Chapter 13. Supplemental: Google Cloud MLOps guidance, Hidden Technical Debt in ML Systems, and MLflow materials.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlflow-industrial-scale",
+        "google-cloud-mlops",
+        "hidden-technical-debt",
+        "mlflow"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "This unit studies how models become maintained services. Students learn model packaging, deployment strategies, feature consistency, CI/CD, model registries, experiment tracking, rollbacks, canaries, shadow deployments, monitoring, alerting, incident response, and ownership. Technical debt is treated as a system property: hidden dependencies, configuration sprawl, undeclared consumers, feedback loops, and glue code make ML systems harder to change. The goal is a service that can evolve safely under changing data and product requirements.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlflow-industrial-scale",
+        "google-cloud-mlops",
+        "hidden-technical-debt",
+        "mlflow"
+      ]
+    },
+    {
+      "type": "video",
+      "sourceIds": [
+        "stanford-mlflow-industrial-scale"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Supplemental sources for this unit are listed in the references below. Use them to compare the textbook framing with public talks, documentation, papers, and production guidance.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlflow-industrial-scale",
+        "google-cloud-mlops",
+        "hidden-technical-debt",
+        "mlflow"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: write an MLOps runbook for a model serving service. Deliverable: deployment path, monitoring dashboard fields, alert thresholds, rollback trigger, and incident checklist.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlflow-industrial-scale",
+        "google-cloud-mlops",
+        "hidden-technical-debt",
+        "mlflow"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "MLOps",
+          "description": "Operational practices and tooling for reliably building, deploying, monitoring, and updating ML systems."
+        },
+        {
+          "name": "Model registry",
+          "description": "A system for storing model versions, metadata, approvals, and deployment status."
+        },
+        {
+          "name": "CI/CD pipeline",
+          "description": "Automated workflows for testing, integrating, delivering, or deploying code and artifacts."
+        },
+        {
+          "name": "Feature store",
+          "description": "A system for defining, storing, serving, and reusing model features across training and inference."
+        },
+        {
+          "name": "Model serving",
+          "description": "Running models in production so applications can request predictions or outputs."
+        },
+        {
+          "name": "Observability",
+          "description": "The ability to understand system behavior from logs, metrics, traces, and other signals."
+        },
+        {
+          "name": "Data drift",
+          "description": "A change in input data distribution over time that can affect model performance."
+        },
+        {
+          "name": "Technical debt",
+          "description": "Accumulated design or implementation shortcuts that make future changes harder or riskier."
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-mlflow-industrial-scale",
+        "google-cloud-mlops",
+        "hidden-technical-debt",
+        "mlflow"
+      ]
+    }
+  ],
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-mlflow-industrial-scale",
+    "google-cloud-mlops",
+    "hidden-technical-debt",
+    "mlflow"
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

@@ -1,0 +1,42 @@
+{
+  "id": "s4",
+  "title": "Limitations of AI",
+  "content": [
+    {
+      "type": "text",
+      "value": "AI systems can be brittle, biased, and dependent on the data they are trained on. They do not possess human judgment, common sense, or real understanding."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Brittleness",
+          "description": "A failure mode where a system performs well in expected cases but breaks under small changes, edge cases, or unfamiliar inputs."
+        },
+        {
+          "name": "Bias",
+          "description": "A systematic pattern in data or model behavior that produces distorted, unfair, or unrepresentative outcomes."
+        },
+        {
+          "name": "Data dependence",
+          "description": "The way an AI system’s behavior is constrained by the quality, coverage, and assumptions of the data used to build it."
+        },
+        {
+          "name": "Hallucination",
+          "description": "A generated output that sounds plausible but is unsupported, fabricated, or incorrect."
+        },
+        {
+          "name": "Common-sense reasoning",
+          "description": "Everyday background reasoning about the world that humans often use implicitly but AI systems may lack."
+        },
+        {
+          "name": "Accountability",
+          "description": "Clear responsibility for how a system is designed, deployed, monitored, and corrected when it causes problems."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

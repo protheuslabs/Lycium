@@ -1,0 +1,82 @@
+{
+  "id": "sa-m08-summary",
+  "title": "Week Summary: Development, Deployment, and Operational Viewpoints",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "arc42-template"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Development viewpoint",
+          "description": "A viewpoint focused on code organization, modules, build structure, dependencies, and development ownership.",
+          "sourceSectionId": "sa-m08-u01"
+        },
+        {
+          "name": "Module dependency",
+          "description": "A compile-time or build-time relationship where one code module relies on another.",
+          "sourceSectionId": "sa-m08-u01"
+        },
+        {
+          "name": "Build unit",
+          "description": "A source or package unit that can be built, tested, versioned, or released as part of development.",
+          "sourceSectionId": "sa-m08-u01"
+        },
+        {
+          "name": "Dependency rule",
+          "description": "An architectural constraint that governs which modules may depend on which other modules.",
+          "sourceSectionId": "sa-m08-u01"
+        },
+        {
+          "name": "Deployment viewpoint",
+          "description": "A viewpoint focused on mapping software elements to infrastructure, runtime nodes, networks, and environments.",
+          "sourceSectionId": "sa-m08-u02"
+        },
+        {
+          "name": "Runtime node",
+          "description": "A physical, virtual, or managed environment that hosts software execution or storage.",
+          "sourceSectionId": "sa-m08-u02"
+        },
+        {
+          "name": "Deployment environment",
+          "description": "A configured setting such as development, staging, production, region, or tenant where software runs.",
+          "sourceSectionId": "sa-m08-u02"
+        },
+        {
+          "name": "Infrastructure mapping",
+          "description": "The allocation of software elements to compute, storage, network, and managed platform resources.",
+          "sourceSectionId": "sa-m08-u02"
+        },
+        {
+          "name": "Operational viewpoint",
+          "description": "A viewpoint focused on running, monitoring, supporting, recovering, and changing the live system.",
+          "sourceSectionId": "sa-m08-u03"
+        },
+        {
+          "name": "Operational readiness",
+          "description": "The degree to which a system can be safely deployed, observed, supported, and recovered in production.",
+          "sourceSectionId": "sa-m08-u03"
+        },
+        {
+          "name": "Rollback strategy",
+          "description": "A planned way to return a system to a prior safe state after a failed release or configuration change.",
+          "sourceSectionId": "sa-m08-u03"
+        },
+        {
+          "name": "Runbook",
+          "description": "Operational instructions for routine tasks, incident response, diagnosis, and recovery.",
+          "sourceSectionId": "sa-m08-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "arc42-template"
+      ]
+    }
+  ]
+}

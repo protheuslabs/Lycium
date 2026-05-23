@@ -1,0 +1,15 @@
+{
+  "id": "stanford-machine-learning-everywhere",
+  "type": "video",
+  "title": "Machine Learning Everywhere",
+  "author": "Pete Warden",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=FXbhJG470ng",
+  "embedUrl": "https://www.youtube.com/embed/FXbhJG470ng",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

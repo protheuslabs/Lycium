@@ -1,0 +1,70 @@
+{
+  "id": "sa-m02-u01",
+  "title": "System Context and Environment",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "c4-model"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 6-7 and 16. Supplemental: C4 system context guidance. This unit focuses on system context and environment.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Before designing internals, architects define the system boundary. A context view explains what the system is responsible for, which external people and systems it interacts with, and what assumptions exist at the boundary.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A clear context helps prevent scope drift and hidden integration risk. It also creates a shared language for business sponsors, users, developers, operators, security reviewers, and partner teams.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: draw a system context diagram for an appointment scheduling platform. Include users, external systems, inbound flows, outbound flows, and trust boundaries.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "System boundary",
+          "description": "The line separating the system under design from users, external systems, and environmental dependencies."
+        },
+        {
+          "name": "System context",
+          "description": "The external setting of a system, including actors, neighboring systems, interfaces, assumptions, and constraints."
+        },
+        {
+          "name": "External dependency",
+          "description": "A person, organization, system, service, data source, or platform outside the system boundary that affects behavior."
+        },
+        {
+          "name": "Trust boundary",
+          "description": "A boundary where data or control crosses between zones with different levels of trust or authority."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    }
+  ]
+}

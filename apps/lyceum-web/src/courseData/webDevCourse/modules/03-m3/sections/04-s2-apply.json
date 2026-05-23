@@ -1,0 +1,164 @@
+{
+  "id": "s2-apply",
+  "title": "Apply: Box Model and Spacing Fundamentals",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m3-s2-q1",
+          "type": "single_choice",
+          "question": "Margin is outside the",
+          "options": [
+            "Content",
+            "Padding",
+            "Border",
+            "Everything"
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q2",
+          "type": "single_choice",
+          "question": "The default CSS box model in modern browsers is",
+          "options": [
+            "Border-box",
+            "Content-box",
+            "Margin-box",
+            "Padding-box"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q3",
+          "type": "single_choice",
+          "question": "Set box-sizing to border-box when",
+          "options": [
+            "You want width calculations to include padding and border",
+            "You want no borders",
+            "You want only content width",
+            "You disable CSS"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q4",
+          "type": "single_choice",
+          "question": "To remove vertical rhythm issues between inline elements, inspect",
+          "options": [
+            "Line-height and margin",
+            "Font color only",
+            "Alt attributes",
+            "DNS entries"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q5",
+          "type": "single_choice",
+          "question": "When two margins touch vertically, some browsers may",
+          "options": [
+            "Add twice the margin",
+            "Collapse margins",
+            "Ignore all paddings",
+            "Convert color"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q6",
+          "type": "single_choice",
+          "question": "Which property sets inner spacing between content and border?",
+          "options": [
+            "margin",
+            "padding",
+            "gap",
+            "outline"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q7",
+          "type": "single_choice",
+          "question": "Which property controls space between flex items?",
+          "options": [
+            "padding",
+            "gap",
+            "display",
+            "overflow"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q8",
+          "type": "single_choice",
+          "question": "A border can influence",
+          "options": [
+            "Nothing",
+            "Box visual boundary and size with border-box",
+            "Network speed only",
+            "Only color"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q9",
+          "type": "single_choice",
+          "question": "The best way to debug uneven cards is",
+          "options": [
+            "Delete all CSS",
+            "Use browser devtools box model view",
+            "Guessing",
+            "Disable margins only"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m3-s2-q10",
+          "type": "single_choice",
+          "question": "To create predictable card layout widths, use",
+          "options": [
+            "Inconsistent width properties",
+            "Box model consistency + sizing constraints",
+            "No heights",
+            "Fixed only margins"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

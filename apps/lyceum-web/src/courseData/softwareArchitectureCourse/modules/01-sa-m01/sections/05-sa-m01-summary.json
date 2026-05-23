@@ -1,0 +1,82 @@
+{
+  "id": "sa-m01-summary",
+  "title": "Week Summary: Architecture as Stakeholder-Centered Design",
+  "pageType": "learn",
+  "sectionType": "summary",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "iso-iec-ieee-42010-2022"
+  ],
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Week concepts",
+      "concepts": [
+        {
+          "name": "Software architecture",
+          "description": "The significant structures, decisions, principles, and rationale that shape a software-intensive system.",
+          "sourceSectionId": "sa-m01-u01"
+        },
+        {
+          "name": "Architecturally significant decision",
+          "description": "A design choice that has broad impact on qualities, cost, risk, interfaces, deployment, or future change.",
+          "sourceSectionId": "sa-m01-u01"
+        },
+        {
+          "name": "Stakeholder concern",
+          "description": "A need, risk, expectation, or constraint held by someone affected by the system or its architecture.",
+          "sourceSectionId": "sa-m01-u01"
+        },
+        {
+          "name": "Architecture rationale",
+          "description": "The reasoning that explains why an architectural decision was made and what alternatives were rejected.",
+          "sourceSectionId": "sa-m01-u01"
+        },
+        {
+          "name": "Architecture description",
+          "description": "A set of artifacts that records an architecture so stakeholders can understand, analyze, and use it.",
+          "sourceSectionId": "sa-m01-u02"
+        },
+        {
+          "name": "Architecture view",
+          "description": "A representation of a system from the perspective of one set of concerns.",
+          "sourceSectionId": "sa-m01-u02"
+        },
+        {
+          "name": "Architecture model",
+          "description": "A structured representation of architectural elements and relationships used for reasoning or communication.",
+          "sourceSectionId": "sa-m01-u02"
+        },
+        {
+          "name": "Documentation fitness",
+          "description": "The degree to which architecture documentation is useful, current, concise, and aligned with stakeholder needs.",
+          "sourceSectionId": "sa-m01-u02"
+        },
+        {
+          "name": "Quality attribute",
+          "description": "A measurable or discussable property of a system such as performance, security, usability, or modifiability.",
+          "sourceSectionId": "sa-m01-u03"
+        },
+        {
+          "name": "Design constraint",
+          "description": "A limitation or requirement that restricts the acceptable architecture choices.",
+          "sourceSectionId": "sa-m01-u03"
+        },
+        {
+          "name": "Architecture tradeoff",
+          "description": "A situation where improving one architectural concern can weaken or complicate another concern.",
+          "sourceSectionId": "sa-m01-u03"
+        },
+        {
+          "name": "Architecture risk",
+          "description": "An uncertainty or weakness in the architecture that may threaten a stakeholder concern.",
+          "sourceSectionId": "sa-m01-u03"
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "iso-iec-ieee-42010-2022"
+      ]
+    }
+  ]
+}

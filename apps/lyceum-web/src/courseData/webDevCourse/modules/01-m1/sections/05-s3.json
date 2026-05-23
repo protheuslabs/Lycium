@@ -1,0 +1,42 @@
+{
+  "id": "s3",
+  "title": "Choosing Tools and Learning Workflow",
+  "content": [
+    {
+      "type": "text",
+      "value": "Developers typically iterate in versions: sketch structure, build HTML skeleton, add styles, then behavior, then refine. Use version control for all work, keep modules small, and commit often. A workflow with short feedback loops prevents large rewrites and helps you catch errors early."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Code editor",
+          "description": "A tool for writing, navigating, and editing source code."
+        },
+        {
+          "name": "Terminal",
+          "description": "A command-line interface for running programs and development commands."
+        },
+        {
+          "name": "Browser developer tools",
+          "description": "Built-in browser tools for inspecting HTML, CSS, JavaScript, network requests, storage, and performance."
+        },
+        {
+          "name": "Version control",
+          "description": "A system for tracking changes to files over time and coordinating work across versions or contributors."
+        },
+        {
+          "name": "Local development server",
+          "description": "A server run on a developer’s machine to preview and test a web project locally."
+        },
+        {
+          "name": "Debugging workflow",
+          "description": "A systematic process for observing, isolating, and fixing errors in code or behavior."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

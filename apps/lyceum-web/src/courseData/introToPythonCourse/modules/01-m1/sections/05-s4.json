@@ -1,0 +1,42 @@
+{
+  "id": "s4",
+  "title": "Basic Input and Output",
+  "content": [
+    {
+      "type": "text",
+      "value": "The print() function outputs text, and input() reads a line of user input as a string."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "print()",
+          "description": "A Python function that writes text or values to the console output."
+        },
+        {
+          "name": "input()",
+          "description": "A Python function that reads text entered by the user from the console."
+        },
+        {
+          "name": "Prompt",
+          "description": "Text shown to a user to ask for input or guide an action."
+        },
+        {
+          "name": "String interpolation",
+          "description": "Inserting variable values or expressions into a string to produce formatted text."
+        },
+        {
+          "name": "User input",
+          "description": "Data provided by a person while a program is running."
+        },
+        {
+          "name": "Console output",
+          "description": "Text or values displayed in the terminal or command-line interface."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

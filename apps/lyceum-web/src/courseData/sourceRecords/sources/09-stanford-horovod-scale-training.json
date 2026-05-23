@@ -1,0 +1,14 @@
+{
+  "id": "stanford-horovod-scale-training",
+  "type": "video",
+  "title": "Horovod and the Evolution of Deep Learning at Scale",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=i6zVvfvIFpc",
+  "embedUrl": "https://www.youtube.com/embed/i6zVvfvIFpc",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

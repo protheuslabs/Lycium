@@ -1,0 +1,13 @@
+{
+  "id": "snorkel",
+  "type": "project",
+  "title": "Snorkel",
+  "publisher": "Snorkel AI",
+  "url": "https://www.snorkel.org/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

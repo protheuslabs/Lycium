@@ -1,0 +1,13 @@
+{
+  "id": "mlcommons-inference-datacenter",
+  "type": "documentation",
+  "title": "MLPerf Inference: Datacenter",
+  "publisher": "MLCommons",
+  "url": "https://mlcommons.org/benchmarks/inference-datacenter/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

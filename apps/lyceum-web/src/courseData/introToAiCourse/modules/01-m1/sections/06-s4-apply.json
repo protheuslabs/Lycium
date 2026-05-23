@@ -1,0 +1,28 @@
+{
+  "id": "s4-apply",
+  "title": "Apply: Limitations of AI",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "ai-q2",
+          "type": "single_choice",
+          "question": "Which of the following is a common limitation of AI systems?",
+          "options": [
+            "Perfect understanding of context",
+            "Bias inherited from training data",
+            "Guaranteed ethical decisions"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

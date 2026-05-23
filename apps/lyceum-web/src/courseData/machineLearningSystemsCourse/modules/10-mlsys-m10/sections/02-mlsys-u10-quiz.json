@@ -1,0 +1,321 @@
+{
+  "id": "mlsys-u10-quiz",
+  "title": "Quiz: Benchmarking, Evaluation, and Experiment Discipline",
+  "sectionType": "assessment",
+  "sourceIds": [
+    "mlsys-book"
+  ],
+  "content": [
+    {
+      "type": "quiz",
+      "timed": "f",
+      "questions": [
+        {
+          "id": "mlsys-u10-q01",
+          "type": "single_choice",
+          "question": "Which statement best captures benchmark in machine learning systems?",
+          "options": [
+            "It needs no workload description if the model is named.",
+            "It is valid even when environments differ silently.",
+            "It should hide failed or noisy runs.",
+            "It is a controlled measurement protocol for comparing systems or versions."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q02",
+          "type": "single_choice",
+          "question": "Which statement best captures workload in machine learning systems?",
+          "options": [
+            "It specifies the inputs, request patterns, and operating conditions being measured.",
+            "It is valid even when environments differ silently.",
+            "It should hide failed or noisy runs.",
+            "It can ignore tail behavior if average latency is good."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q03",
+          "type": "single_choice",
+          "question": "Which statement best captures metric in machine learning systems?",
+          "options": [
+            "It should hide failed or noisy runs.",
+            "It is a defined measurement used to evaluate behavior or trade-offs.",
+            "It can ignore tail behavior if average latency is good.",
+            "It proves universal superiority for every deployment."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q04",
+          "type": "single_choice",
+          "question": "Which statement best captures tail latency in machine learning systems?",
+          "options": [
+            "It can ignore tail behavior if average latency is good.",
+            "It proves universal superiority for every deployment.",
+            "It measures slower percentile response times that affect user experience.",
+            "It does not require a baseline."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q05",
+          "type": "single_choice",
+          "question": "Which statement best captures throughput in machine learning systems?",
+          "options": [
+            "It proves universal superiority for every deployment.",
+            "It does not require a baseline.",
+            "It should optimize benchmark numbers regardless of user impact.",
+            "It measures completed requests or examples per unit time."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q06",
+          "type": "single_choice",
+          "question": "Which statement best captures warm-up in machine learning systems?",
+          "options": [
+            "It allows caches, compilers, and services to reach representative operating behavior.",
+            "It does not require a baseline.",
+            "It should optimize benchmark numbers regardless of user impact.",
+            "It is the same as reporting one accuracy score."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q07",
+          "type": "single_choice",
+          "question": "Which statement best captures variance in machine learning systems?",
+          "options": [
+            "It should optimize benchmark numbers regardless of user impact.",
+            "It captures run-to-run differences that affect confidence in results.",
+            "It is the same as reporting one accuracy score.",
+            "It needs no workload description if the model is named."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q08",
+          "type": "single_choice",
+          "question": "Which statement best captures reproducibility in machine learning systems?",
+          "options": [
+            "It is the same as reporting one accuracy score.",
+            "It needs no workload description if the model is named.",
+            "It means others can rerun the experiment and obtain consistent conclusions.",
+            "It is valid even when environments differ silently."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q09",
+          "type": "single_choice",
+          "question": "Which statement best captures MLPerf in machine learning systems?",
+          "options": [
+            "It needs no workload description if the model is named.",
+            "It is valid even when environments differ silently.",
+            "It should hide failed or noisy runs.",
+            "It provides standardized benchmarks for ML training and inference systems."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q10",
+          "type": "single_choice",
+          "question": "Which statement best captures baseline in machine learning systems?",
+          "options": [
+            "It is the reference system or measurement used for comparison.",
+            "It is valid even when environments differ silently.",
+            "It should hide failed or noisy runs.",
+            "It can ignore tail behavior if average latency is good."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q11",
+          "type": "single_choice",
+          "question": "Which statement best captures ablation in machine learning systems?",
+          "options": [
+            "It should hide failed or noisy runs.",
+            "It isolates the effect of one component or decision.",
+            "It can ignore tail behavior if average latency is good.",
+            "It proves universal superiority for every deployment."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q12",
+          "type": "single_choice",
+          "question": "Which statement best captures statistical significance in machine learning systems?",
+          "options": [
+            "It can ignore tail behavior if average latency is good.",
+            "It proves universal superiority for every deployment.",
+            "It helps determine whether observed differences likely reflect real effects.",
+            "It does not require a baseline."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q13",
+          "type": "single_choice",
+          "question": "Which statement best captures load testing in machine learning systems?",
+          "options": [
+            "It proves universal superiority for every deployment.",
+            "It does not require a baseline.",
+            "It should optimize benchmark numbers regardless of user impact.",
+            "It measures system behavior under expected and stressed traffic."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q14",
+          "type": "single_choice",
+          "question": "Which statement best captures power measurement in machine learning systems?",
+          "options": [
+            "It quantifies energy implications of system performance.",
+            "It does not require a baseline.",
+            "It should optimize benchmark numbers regardless of user impact.",
+            "It is the same as reporting one accuracy score."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q15",
+          "type": "single_choice",
+          "question": "Which statement best captures cost metric in machine learning systems?",
+          "options": [
+            "It should optimize benchmark numbers regardless of user impact.",
+            "It connects technical performance to operational spending.",
+            "It is the same as reporting one accuracy score.",
+            "It needs no workload description if the model is named."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q16",
+          "type": "single_choice",
+          "question": "Which statement best captures environment control in machine learning systems?",
+          "options": [
+            "It is the same as reporting one accuracy score.",
+            "It needs no workload description if the model is named.",
+            "It reduces confounding factors such as hardware, software, and traffic variation.",
+            "It is valid even when environments differ silently."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q17",
+          "type": "single_choice",
+          "question": "Which statement best captures benchmark artifact in machine learning systems?",
+          "options": [
+            "It needs no workload description if the model is named.",
+            "It is valid even when environments differ silently.",
+            "It should hide failed or noisy runs.",
+            "It is behavior that improves benchmark numbers without improving real use."
+          ],
+          "answers": [
+            3
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q18",
+          "type": "single_choice",
+          "question": "Which statement best captures offline metric in machine learning systems?",
+          "options": [
+            "It evaluates model behavior on static datasets.",
+            "It is valid even when environments differ silently.",
+            "It should hide failed or noisy runs.",
+            "It can ignore tail behavior if average latency is good."
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q19",
+          "type": "single_choice",
+          "question": "Which statement best captures online metric in machine learning systems?",
+          "options": [
+            "It should hide failed or noisy runs.",
+            "It evaluates behavior in live or simulated deployment conditions.",
+            "It can ignore tail behavior if average latency is good.",
+            "It proves universal superiority for every deployment."
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "mlsys-u10-q20",
+          "type": "single_choice",
+          "question": "Which statement best captures reporting discipline in machine learning systems?",
+          "options": [
+            "It can ignore tail behavior if average latency is good.",
+            "It proves universal superiority for every deployment.",
+            "It states assumptions, methods, measurements, and limitations clearly.",
+            "It does not require a baseline."
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book"
+      ],
+      "passPercentage": ""
+    }
+  ],
+  "pageType": "apply"
+}

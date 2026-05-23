@@ -1,0 +1,42 @@
+{
+  "id": "s4",
+  "title": "Forms, Inputs, and Validation",
+  "content": [
+    {
+      "type": "text",
+      "value": "Forms are the gateway between users and applications. Each control should have clear labels, expected format, and error states. Client-side validation improves UX while server-side validation protects your system from malformed or malicious input."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Form element",
+          "description": "The HTML element that groups controls for collecting and submitting user input."
+        },
+        {
+          "name": "Input element",
+          "description": "A form control that accepts user-entered data such as text, numbers, dates, or selections."
+        },
+        {
+          "name": "Label",
+          "description": "Text associated with a form control to identify what input is expected."
+        },
+        {
+          "name": "Form submission",
+          "description": "The process of sending collected form data for handling or processing."
+        },
+        {
+          "name": "Client-side validation",
+          "description": "Input checking performed in the browser before data is submitted to a server."
+        },
+        {
+          "name": "Required field",
+          "description": "A form control that must be filled in before submission can proceed."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

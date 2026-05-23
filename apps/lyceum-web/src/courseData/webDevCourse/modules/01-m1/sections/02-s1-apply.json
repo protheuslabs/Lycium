@@ -1,0 +1,164 @@
+{
+  "id": "s1-apply",
+  "title": "Apply: How the Web Works",
+  "sectionType": "assessment",
+  "pageType": "apply",
+  "content": [
+    {
+      "type": "quiz",
+      "questions": [
+        {
+          "id": "wd-m1-s1-q1",
+          "type": "single_choice",
+          "question": "What happens first when you enter a URL in a browser address bar?",
+          "options": [
+            "The browser runs the server code",
+            "The browser sends an HTTP request",
+            "The browser creates a database",
+            "The browser opens the editor"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q2",
+          "type": "single_choice",
+          "question": "Which protocol is most commonly associated with web pages and APIs on the browser-facing internet?",
+          "options": [
+            "FTP",
+            "SMTP",
+            "HTTP",
+            "SSH"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q3",
+          "type": "single_choice",
+          "question": "Which component is responsible for turning your HTML into the live visible document model?",
+          "options": [
+            "CSS parser",
+            "DOM engine",
+            "Compiler",
+            "DNS server"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q4",
+          "type": "single_choice",
+          "question": "What is the function of CSS in the browser pipeline?",
+          "options": [
+            "It fetches fonts only",
+            "It stores data",
+            "It defines how elements are laid out and styled",
+            "It encrypts API traffic"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q5",
+          "type": "single_choice",
+          "question": "Which of these is a client-side technology?",
+          "options": [
+            "JavaScript",
+            "Python on Flask",
+            "Nginx",
+            "PostgreSQL"
+          ],
+          "answers": [
+            0
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q6",
+          "type": "single_choice",
+          "question": "Which statement best describes the browser?",
+          "options": [
+            "It only runs stylesheets",
+            "It is both parser and render engine",
+            "It is a database",
+            "It does not execute scripts"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q7",
+          "type": "single_choice",
+          "question": "What is a good mental model for a web app resource?",
+          "options": [
+            "An isolated binary",
+            "A URL pointing to data and behavior",
+            "A desktop binary",
+            "A spreadsheet formula"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q8",
+          "type": "single_choice",
+          "question": "Which layer usually returns JSON for dynamic JavaScript applications?",
+          "options": [
+            "Frontend runtime",
+            "API server",
+            "Image CDN",
+            "CSS parser"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q9",
+          "type": "single_choice",
+          "question": "Why is caching useful in web systems?",
+          "options": [
+            "To avoid user registration",
+            "To speed up repeated requests",
+            "To stop HTTPS",
+            "To remove all HTML"
+          ],
+          "answers": [
+            1
+          ],
+          "timed": "f"
+        },
+        {
+          "id": "wd-m1-s1-q10",
+          "type": "single_choice",
+          "question": "Which practice increases web reliability the most when planning a course project?",
+          "options": [
+            "Build without testing",
+            "Use only a single browser",
+            "Separate learning goals into milestones",
+            "Avoid version control"
+          ],
+          "answers": [
+            2
+          ],
+          "timed": "f"
+        }
+      ],
+      "passPercentage": ""
+    }
+  ]
+}

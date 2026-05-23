@@ -1,0 +1,46 @@
+{
+  "id": "s1",
+  "title": "What is AI?",
+  "content": [
+    {
+      "type": "text",
+      "value": "Artificial Intelligence is the field focused on building systems that can perform tasks which typically require human intelligence, such as reasoning, pattern recognition, and decision making."
+    },
+    {
+      "type": "video",
+      "url": "https://www.youtube.com/embed/2ePf9rue1Ao"
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Artificial intelligence",
+          "description": "Computer systems designed to perform tasks that normally require human-like perception, reasoning, prediction, generation, or decision-making."
+        },
+        {
+          "name": "Intelligent agent",
+          "description": "A system that observes an environment, reasons over what it observes, and takes actions toward a goal."
+        },
+        {
+          "name": "Perception",
+          "description": "The process of turning sensory or input data into usable information about the world or task."
+        },
+        {
+          "name": "Reasoning",
+          "description": "The process of drawing conclusions, making inferences, or choosing actions from available information."
+        },
+        {
+          "name": "Prediction",
+          "description": "An estimated output about an unknown value, future event, label, or outcome."
+        },
+        {
+          "name": "Decision-making",
+          "description": "Choosing an action or recommendation based on goals, constraints, evidence, or predicted outcomes."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

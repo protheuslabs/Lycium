@@ -1,0 +1,10 @@
+{
+  "id": "mlsys-m10",
+  "title": "Week 10: Benchmarking, Evaluation, and Experiment Discipline",
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-h2o-systems-approach",
+    "mlcommons-inference-docs",
+    "mlcommons-inference-datacenter"
+  ]
+}

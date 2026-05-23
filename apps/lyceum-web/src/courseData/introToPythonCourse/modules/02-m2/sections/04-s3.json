@@ -1,0 +1,42 @@
+{
+  "id": "s3",
+  "title": "Logical Operators",
+  "content": [
+    {
+      "type": "text",
+      "value": "Python uses logical operators such as and, or, and not to combine or invert boolean expressions."
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "and",
+          "description": "A logical operator that is true only when both connected conditions are true."
+        },
+        {
+          "name": "or",
+          "description": "A logical operator that is true when at least one connected condition is true."
+        },
+        {
+          "name": "not",
+          "description": "A logical operator that reverses the truth value of a condition."
+        },
+        {
+          "name": "Comparison operator",
+          "description": "An operator such as ==, !=, <, or > that compares values and returns a Boolean result."
+        },
+        {
+          "name": "Truth value",
+          "description": "Whether a value or expression is treated as true or false in a Boolean context."
+        },
+        {
+          "name": "Compound condition",
+          "description": "A condition made by combining multiple Boolean expressions with logical operators."
+        }
+      ]
+    }
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

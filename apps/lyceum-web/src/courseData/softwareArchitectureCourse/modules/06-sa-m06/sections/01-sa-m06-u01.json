@@ -1,0 +1,70 @@
+{
+  "id": "sa-m06-u01",
+  "title": "Context Viewpoint",
+  "pageType": "learn",
+  "sectionType": "lesson",
+  "sourceIds": [
+    "rw-software-systems-architecture-2e",
+    "c4-model"
+  ],
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Rozanski and Woods, Chapters 16-17. Supplemental: C4 context and container diagrams. This unit focuses on context viewpoint.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "The context viewpoint documents the system in its environment. It clarifies users, external systems, interfaces, data flows, responsibilities, constraints, and assumptions that define the system boundary.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "A context view is often the most useful first architecture artifact because it aligns people before implementation details distract the conversation.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: revise a context diagram by adding missing actors, external data owners, and operational dependencies.",
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Context viewpoint",
+          "description": "A viewpoint focused on the system boundary, external actors, external systems, and environmental interactions."
+        },
+        {
+          "name": "Actor",
+          "description": "A person, role, organization, or system that interacts with the system from outside its boundary."
+        },
+        {
+          "name": "External interface",
+          "description": "A boundary where the system communicates with another system, person, device, or service."
+        },
+        {
+          "name": "Context diagram",
+          "description": "A model showing the system of interest, external actors, external systems, and relationships among them."
+        }
+      ],
+      "sourceIds": [
+        "rw-software-systems-architecture-2e",
+        "c4-model"
+      ]
+    }
+  ]
+}

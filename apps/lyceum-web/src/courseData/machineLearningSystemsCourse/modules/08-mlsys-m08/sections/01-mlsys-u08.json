@@ -1,0 +1,104 @@
+{
+  "id": "mlsys-u08",
+  "title": "Efficient AI and Model Optimization",
+  "content": [
+    {
+      "type": "text",
+      "value": "Primary reading: Machine Learning Systems, Chapters 9 and 10. Supplemental: FlashAttention and model compression resources.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-tinyml-carbon-footprint",
+        "tensorflow-model-optimization",
+        "flashattention-paper"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "This unit focuses on reducing cost while preserving useful behavior. Students learn efficiency as a multidimensional goal: latency, throughput, memory, energy, accuracy, maintainability, and fairness of access. Techniques include pruning, quantization, distillation, operator fusion, caching, dynamic batching, early exits, architectural redesign, and precision management. The unit emphasizes measurement: optimization is a trade-off, and every improvement should name the constrained resource and the risk introduced.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-tinyml-carbon-footprint",
+        "tensorflow-model-optimization",
+        "flashattention-paper"
+      ]
+    },
+    {
+      "type": "video",
+      "sourceIds": [
+        "stanford-tinyml-carbon-footprint"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Supplemental sources for this unit are listed in the references below. Use them to compare the textbook framing with public talks, documentation, papers, and production guidance.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-tinyml-carbon-footprint",
+        "tensorflow-model-optimization",
+        "flashattention-paper"
+      ]
+    },
+    {
+      "type": "text",
+      "value": "Studio: create an optimization plan for a model that is too slow for mobile inference. Deliverable: baseline metrics, three candidate optimizations, and acceptance criteria.",
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-tinyml-carbon-footprint",
+        "tensorflow-model-optimization",
+        "flashattention-paper"
+      ]
+    },
+    {
+      "type": "conceptCards",
+      "title": "Concepts introduced",
+      "concepts": [
+        {
+          "name": "Quantization",
+          "description": "Reducing numeric precision of model weights or activations to improve speed, memory use, or deployment efficiency."
+        },
+        {
+          "name": "Pruning",
+          "description": "Removing less important model weights, units, or structures to reduce model size or computation."
+        },
+        {
+          "name": "Knowledge distillation",
+          "description": "Training a smaller model to imitate a larger or more expensive model."
+        },
+        {
+          "name": "Model compression",
+          "description": "Techniques that reduce model size or computation while trying to preserve acceptable performance."
+        },
+        {
+          "name": "Batching",
+          "description": "Processing multiple inputs together to improve hardware utilization or throughput."
+        },
+        {
+          "name": "Caching",
+          "description": "Storing resources so they can be reused without fetching or recomputing them every time."
+        },
+        {
+          "name": "Latency optimization",
+          "description": "Reducing the time required for a system to return a prediction or response."
+        },
+        {
+          "name": "Memory footprint",
+          "description": "The amount of memory required to store and run a model or system component."
+        }
+      ],
+      "sourceIds": [
+        "mlsys-book",
+        "stanford-tinyml-carbon-footprint",
+        "tensorflow-model-optimization",
+        "flashattention-paper"
+      ]
+    }
+  ],
+  "sourceIds": [
+    "mlsys-book",
+    "stanford-tinyml-carbon-footprint",
+    "tensorflow-model-optimization",
+    "flashattention-paper"
+  ],
+  "pageType": "learn",
+  "sectionType": "lesson"
+}

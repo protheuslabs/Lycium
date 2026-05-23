@@ -1,0 +1,15 @@
+{
+  "id": "stanford-flashattention",
+  "type": "video",
+  "title": "FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness",
+  "author": "Tri Dao",
+  "publisher": "Stanford MLSys Seminar",
+  "url": "https://www.youtube.com/watch?v=gMOAud7hZg4",
+  "embedUrl": "https://www.youtube.com/embed/gMOAud7hZg4",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

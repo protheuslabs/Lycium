@@ -1,0 +1,13 @@
+{
+  "id": "mlcommons-benchmarks",
+  "type": "documentation",
+  "title": "MLCommons Benchmarks",
+  "publisher": "MLCommons",
+  "url": "https://mlcommons.org/benchmarks/",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}

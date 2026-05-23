@@ -1,0 +1,139 @@
+{
+  "id": "m1-summary-2",
+  "title": "Module Summary: Getting Started with Python",
+  "sectionType": "summary",
+  "pageType": "learn",
+  "content": [
+    {
+      "type": "conceptCards",
+      "title": "Module concepts",
+      "concepts": [
+        {
+          "name": "Python",
+          "description": "A high-level programming language known for readable syntax and broad use in scripting, automation, data work, and applications.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Interpreter",
+          "description": "A program that executes code directly by reading and running instructions rather than producing a separate compiled binary first.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Script",
+          "description": "A file of code intended to be run as a program or automation task.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Expression",
+          "description": "Code that evaluates to a value, such as a calculation, variable reference, or function call.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Statement",
+          "description": "A complete instruction in a program, such as an assignment, conditional, loop, or function call.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Standard library",
+          "description": "The collection of modules included with Python that provide common functionality without extra installation.",
+          "sourceSectionId": "s1"
+        },
+        {
+          "name": "Python REPL",
+          "description": "An interactive Python session where code is entered and evaluated one statement or expression at a time.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Script execution",
+          "description": "Running a saved program file so the interpreter executes its statements in order.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Terminal command",
+          "description": "A text command entered in a shell to run programs, navigate files, or perform development tasks.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Syntax error",
+          "description": "An error caused by code that violates the grammar rules of the programming language.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Runtime error",
+          "description": "An error that occurs while a program is executing, even if the code syntax is valid.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Program output",
+          "description": "Text, values, files, or behavior produced by a program when it runs.",
+          "sourceSectionId": "s2"
+        },
+        {
+          "name": "Variable",
+          "description": "A name that refers to a value stored or computed by a program.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Assignment",
+          "description": "The act of binding a value to a variable name.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "String",
+          "description": "A sequence of text characters stored as a value.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Integer",
+          "description": "A whole-number value without a fractional part.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Float",
+          "description": "A numeric value that can represent decimal or fractional quantities.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Boolean",
+          "description": "A true-or-false value used in logic and control flow.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "Type conversion",
+          "description": "Changing a value from one data type to another, such as from text to a number.",
+          "sourceSectionId": "s3"
+        },
+        {
+          "name": "print()",
+          "description": "A Python function that writes text or values to the console output.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "input()",
+          "description": "A Python function that reads text entered by the user from the console.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Prompt",
+          "description": "Text shown to a user to ask for input or guide an action.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "String interpolation",
+          "description": "Inserting variable values or expressions into a string to produce formatted text.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "User input",
+          "description": "Data provided by a person while a program is running.",
+          "sourceSectionId": "s4"
+        },
+        {
+          "name": "Console output",
+          "description": "Text or values displayed in the terminal or command-line interface.",
+          "sourceSectionId": "s4"
+        }
+      ]
+    }
+  ]
+}

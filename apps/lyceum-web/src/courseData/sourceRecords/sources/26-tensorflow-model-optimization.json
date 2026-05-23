@@ -1,0 +1,13 @@
+{
+  "id": "tensorflow-model-optimization",
+  "type": "documentation",
+  "title": "TensorFlow Model Optimization",
+  "publisher": "TensorFlow",
+  "url": "https://www.tensorflow.org/model_optimization",
+  "usedByCourseIds": [
+    "local-mlsys"
+  ],
+  "usedByCourseTitles": [
+    "Machine Learning Systems"
+  ]
+}
