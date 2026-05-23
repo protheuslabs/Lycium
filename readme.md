@@ -1,121 +1,182 @@
-# Overview
+# Lycium
 
-Lyceum is a lightweight learning platform designed to explore how structured JSON data can dynamically drive an interactive front-end application. My goal in building this software was to strengthen my skills as a software engineer by working with component-based UI structure, state management, and and data-driven rendering in React. I wanted to create a modular system where lessons, videos, quizzes, and code examples could be added without touching the core UI logic.
+Lycium is a local-first learning platform for building, organizing, and studying structured online courses. Courses are represented as JSON, rendered dynamically in a React learner experience, and backed by a FastAPI control plane for course generation, source records, local progress, and user-owned settings.
 
-This repository is now organized as a monorepo:
+The project is designed around one core idea: high-quality courses should be portable, inspectable, and generated from explicit structure rather than hidden application state.
 
-- `apps/lyceum-web` contains the learner-facing web application.
-- `services/protheus-api` contains the FastAPI control plane for ingestion, retrieval, course generation, analytics, and catalogs.
-- `services/protheus-workers` contains async worker runners for queued ingestion, coverage, generation, and revalidation jobs.
-- `packages/*` contains shared contracts, schema, and package stubs for the platform split.
+[Product Vision](./VISION.md) | [Architecture](./ARCHITECTURE.md) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
 
-## Current Implementation Status
+## Current capabilities
 
-The backend now includes end-to-end implementations for:
+- Course catalog with canonical route support at `/catalog`
+- Generated course and unit URLs with stable slugs
+- JSON-driven course rendering for modules, units, text, videos, concept cards, quizzes, and source references
+- Collapsible course sidebar with independent scrolling and section status indicators
+- Persistent progress tracking for completion and viewed/interacted percentages
+- Course cards with progress layers, active module/unit context, metadata modals, categories, and tags
+- Quiz attempts with shuffled question/answer order, timers, pass percentages, max attempts, review flags, and attempt history
+- Settings modal for local AI provider keys, model selection, and light/dark/auto display preferences
+- Local user-data storage for completion, bookmarks, secrets, source links, and other machine-specific data
+- Course-generation rules for agents, including source records, assessment-only quiz pages, Learn/Apply page types, concept cards, and module summaries
 
-- source ingestion and canonicalization
-- knowledge-object decomposition and claim extraction
-- trust/freshness/pedagogy/accessibility scoring
-- coverage map generation
-- hybrid retrieval and modality-balanced learning packets
-- prompt-to-outline draft workflow with approve/edit
-- full course JSON generation with citations and generation trace
-- course section regeneration, forking, and refresh
-- learner progress persistence and analytics summaries
-- portfolio artifacts, credential records, and program path snapshots
-- queue-based job orchestration and worker execution loop
+## Repository structure
 
-## Running Backend Services
+```text
+.
+├── apps/
+│   └── lyceum-web/          # React + Vite learner-facing web app
+├── packages/
+│   ├── config/              # Shared configuration package stub
+│   ├── content-schema/      # Shared content schema package stub
+│   ├── contracts/           # Shared platform contract package stub
+│   ├── retrieval-sdk/       # Shared retrieval SDK package stub
+│   └── ui/                  # Shared UI package stub
+├── services/
+│   ├── protheus-api/        # FastAPI API for local data, generation, analytics, and course snapshots
+│   └── protheus-workers/    # Async worker entrypoints for ingestion and generation jobs
+└── skills/
+    └── course-generation/   # Canonical agent instructions for authoring Lycium courses
+```
 
-From `services/protheus-api`:
+## Tech stack
 
-`pip3 install -e '.[test]'`
-`protheus-api`
+| Area | Tools |
+| --- | --- |
+| Web app | React 19, TypeScript, Vite, Vitest, ESLint |
+| Monorepo | pnpm 10, Turborepo |
+| API | Python 3.13, FastAPI, Pydantic, SQLAlchemy, Uvicorn |
+| Workers | Python 3.13, HTTPX, Pydantic |
+| Course content | JSON course records with centralized source records |
 
-From `services/protheus-workers` (with API running):
+## Quick start
 
-`pip3 install -e '.[test]'`
-`PROTHEUS_API_URL=http://127.0.0.1:8000 protheus-worker --once`
+### Prerequisites
 
-Run tests:
+- Node.js with Corepack enabled
+- pnpm 10
+- Python 3.13 for API and worker development
 
-- API: `cd services/protheus-api && pytest -q`
-- Worker: `cd services/protheus-workers && PYTHONPATH=src pytest -q`
+### Web app
 
-The current Lyceum frontend still loads all course content—including modules, sections, text blocks, videos, quizzes, and code examples—from JSON files. React then renders the learning experience dynamically based on user input and navigation.
+```bash
+corepack enable
+pnpm install
+pnpm dev
+```
 
-To run the application locally:
-`pnpm install`
-`pnpm dev`
+Vite will print the local URL. The catalog route is:
 
-Then open the URL that Vite provides from `apps/lyceum-web` to launch the app in your browser.
+```text
+http://localhost:<vite-port>/catalog
+```
 
-This project helped me practice designing reusable components, building interactive UI elements, and structuring a scalable front-end architecture that could evolve into a more advanced learning system in the future.
+For the local port commonly used during development:
 
-Long-term, Lyceum is intended to move beyond hard-coded courses and become a system that can turn reliable internet knowledge into personalized, structured learning paths.
+```bash
+pnpm --filter @lyceum/web dev -- --host 127.0.0.1 --port 5001
+```
 
-[Product Vision](./VISION.md)
-[Architecture](./ARCHITECTURE.md)
-[Software Requirements Specification](./SRS.md)
+Then open:
 
-[Software Demo Video](https://youtu.be/FjGd8ojGa14)
+```text
+http://localhost:5001/catalog
+```
 
-# Web Pages
+### API service
 
-Although the project uses a single-page React architecture, it functions like a multi-page application through dynamic rendering. I also included 3 sample courses.
+```bash
+cd services/protheus-api
+python3.13 -m venv .venv
+source .venv/bin/activate
+pip install -e '.[test]'
+protheus-api
+```
 
-## Main Interface
+The API defaults to:
 
-This interface contains several dynamically generated sections:
+```text
+http://127.0.0.1:8000
+```
 
-### Sidebar Navigation
-- Displays module headers and automatically numbered sections  
-- Highlights the currently active section  
-- Updates when the user selects a different course  
-- Clicking any section updates the content view dynamically  
+### Worker service
 
-### Content View
-Displays learning material for the selected section. The content is fully JSON-driven and may include:
+Run this in a separate shell while the API is available:
 
-- Text content  
-- Embedded videos (with a loading indicator)  
-- Interactive quizzes (single or multiple choice, includes submit/try again logic)  
-- Code examples rendered in formatted `<pre><code>` blocks  
+```bash
+cd services/protheus-workers
+python3.13 -m venv .venv
+source .venv/bin/activate
+pip install -e '.[test]'
+PROTHEUS_API_URL=http://127.0.0.1:8000 protheus-worker --once
+```
 
-Users can navigate between sections using the sidebar or the built-in “Next” and “Previous” buttons. Course switching also triggers dynamic page updates.
+## Useful commands
 
----
+| Command | Description |
+| --- | --- |
+| `pnpm dev` | Start the web app through the monorepo script |
+| `pnpm build` | Build the web app |
+| `pnpm --filter @lyceum/web test` | Run web tests |
+| `pnpm --filter @lyceum/web lint` | Run web linting |
+| `pnpm --filter @lyceum/web typecheck` | Run TypeScript checks |
+| `cd services/protheus-api && pytest -q` | Run API tests |
+| `cd services/protheus-workers && PYTHONPATH=src pytest -q` | Run worker tests |
 
-# Development Environment
+## Course content model
 
-For development, I used:
+Lycium courses are structured data. A course is composed of modules, sections, content blocks, source references, progress metadata, and assessment metadata.
 
-- Visual Studio Code
-- Replit (only for the IDE when I wasn't on my main machine)
-- React with functional components and hooks  
-- Vite as the build tool and development server  
-- JavaScript / JSX for front-end logic  
-- CSS for custom component styling  
-- JSON files to store course/module/section structures  
+Important conventions:
 
-React was selected because of its component-driven architecture and ease of rendering dynamic UI based on structured data.
+- Course-generation behavior is defined in [skills/course-generation/SKILL.md](./skills/course-generation/SKILL.md).
+- Courses should choose either `Module` or `Week` pacing language, not both.
+- Learn pages contain instructional content.
+- Apply pages contain quizzes, exercises, or assessments.
+- Quiz blocks should not include instructional teaching content.
+- Concept cards should list real, raw concepts introduced on the page, with concise descriptions.
+- Module summary pages should gather concept cards introduced by the module rather than invent broad interpretive summaries.
+- Sources should be recorded centrally and referenced by course/module/section/content IDs.
 
----
+Local course data currently lives under:
 
-# Useful Websites
+```text
+apps/lyceum-web/src/courseData/
+```
 
-- [React Documentation](https://react.dev/)
-- [Vite Documentation](https://vitejs.dev/)
-- [MDN Web Docs – JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-- [W3Schools HTML & CSS Reference](https://www.w3schools.com/)
+## Local data and secrets
 
----
+Lycium keeps user-specific data out of source control. The repo ignores local data directories such as:
 
-# Future Work
+```text
+.data/
+.lyceum-local/
+```
 
-- Add progress tracking using localStorage or a backend  
-- Expand code blocks with real syntax highlighting  
-- Create a dedicated “Course List” page for improved navigation  
-- Improve mobile responsiveness and make the sidebar collapsible  
-- Add more content types (interactive diagrams, drag-and-drop activities, etc.)  
-- Build a course-creation interface to generate JSON programmatically  
+These are intended for data such as:
+
+- API keys and provider settings
+- local progress records
+- course bookmarks
+- generated course snapshots
+- source links and local source metadata
+
+Do not commit secrets or machine-local learner data.
+
+## Development notes
+
+- Use conventional commit prefixes such as `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, and `chore:`.
+- Keep reusable UI behavior in components rather than duplicating markup in page shells.
+- Keep course progress logic centralized in `apps/lyceum-web/src/utils/courseProgress.ts`.
+- Keep course route and slug behavior centralized in `apps/lyceum-web/src/utils/courseRouting.ts`.
+- Prefer explicit source records over free-floating URLs in course JSON.
+- Preserve ignored local-data directories so the app can be cloned and run without personal state.
+
+## Roadmap
+
+- Complete the self-contained course generation workflow from catalog modal to persisted generated course
+- Add file upload support for source-assisted course generation
+- Expand source ingestion and citation review tools
+- Add stronger validation for generated course JSON before courses enter the catalog
+- Improve visual authoring and review workflows for course creators
+- Add richer learning activity blocks beyond videos, quizzes, and concept cards
+
