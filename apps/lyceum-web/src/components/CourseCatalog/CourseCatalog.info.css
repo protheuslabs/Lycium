@@ -1,0 +1,302 @@
+.course-card:not(.create-course-card) h3 {
+  padding-right: 2.35rem;
+}
+
+.course-info-button {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 2;
+  width: 1.85rem;
+  height: 1.85rem;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #253049;
+  background: #eef2f7;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.course-info-button:hover,
+.course-info-button:focus-visible {
+  color: #ffffff;
+  background: #4a6cf7;
+  outline: none;
+  transform: translateY(-1px) scale(1.05);
+}
+
+.course-info-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 36;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 5rem 1rem 2rem;
+  overflow-y: auto;
+  background: rgba(8, 10, 14, 0.54);
+  backdrop-filter: blur(10px);
+}
+
+.course-info-modal {
+  position: relative;
+  width: min(100%, 38rem);
+  box-sizing: border-box;
+  border: 1px solid #d9def5;
+  border-radius: 24px;
+  padding: 1.45rem;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+}
+
+.course-info-close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #253049;
+  background: rgba(239, 242, 247, 0.92);
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
+}
+
+.course-info-close:hover,
+.course-info-close:focus-visible {
+  color: #171717;
+  background: #e1e6ef;
+  outline: none;
+  transform: scale(1.06);
+}
+
+.course-info-close svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.course-info-header {
+  display: grid;
+  gap: 0.3rem;
+  padding-right: 2.5rem;
+}
+
+.course-info-header p,
+.course-info-header h2 {
+  margin: 0;
+}
+
+.course-info-header > p:first-child {
+  color: #4a6cf7;
+  font-size: 0.8rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.course-info-header h2 {
+  color: #171717;
+  font-size: 1.65rem;
+  line-height: 1.15;
+}
+
+.course-info-description {
+  color: #4f5d76;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.course-info-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.2rem;
+}
+
+.course-info-facts article {
+  border-radius: 18px;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.95rem;
+  background: #f8fafc;
+}
+
+.course-info-facts span {
+  color: #667085;
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.course-info-facts strong {
+  color: #253049;
+  font-size: 0.95rem;
+}
+
+.course-info-section {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+}
+
+.course-info-section h3 {
+  margin: 0;
+  color: #253049;
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.course-info-chip-row,
+.course-info-learning-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-height: 2.1rem;
+}
+
+.course-info-chip {
+  border-radius: 999px;
+  padding: 0.4rem 0.65rem;
+  color: #253049;
+  background: #eef2f7;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.course-info-muted {
+  margin: 0;
+  color: #667085;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 620px) {
+  .course-info-facts {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .course-info-button,
+  .course-info-close,
+  .course-info-chip,
+  .course-info-facts article {
+    background: #262626;
+  }
+
+  .course-info-button,
+  .course-info-close,
+  .course-info-chip,
+  .course-info-facts strong,
+  .course-info-section h3,
+  .course-info-header h2 {
+    color: #f8fafc;
+  }
+
+  .course-info-modal {
+    border-color: #303033;
+    background: linear-gradient(145deg, #171717, #111112);
+    color: #e5e7eb;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+  }
+
+  .course-info-description,
+  .course-info-muted {
+    color: #cbd5e1;
+  }
+
+  .course-info-facts span {
+    color: #a1a1aa;
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-close,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts article {
+  background: #262626;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-close,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-section h3,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-header h2 {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-modal {
+  border-color: #303033;
+  background: linear-gradient(145deg, #171717, #111112);
+  color: #e5e7eb;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-description,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-muted {
+  color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts span {
+  color: #a1a1aa;
+}
+
+html[data-theme="light"] .course-info-button,
+html[data-theme="light"] .course-info-close,
+html[data-theme="light"] .course-info-chip,
+html[data-theme="light"] .course-info-facts article {
+  background: #eef2f7;
+}
+
+html[data-theme="light"] .course-info-button,
+html[data-theme="light"] .course-info-close,
+html[data-theme="light"] .course-info-chip,
+html[data-theme="light"] .course-info-facts strong,
+html[data-theme="light"] .course-info-section h3,
+html[data-theme="light"] .course-info-header h2 {
+  color: #253049;
+}
+
+html[data-theme="light"] .course-info-modal {
+  border-color: #d9def5;
+  background: rgba(255, 255, 255, 0.96);
+  color: #171717;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="light"] .course-info-description {
+  color: #4f5d76;
+}
+
+html[data-theme="light"] .course-info-muted,
+html[data-theme="light"] .course-info-facts span {
+  color: #667085;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button:focus-visible,
+html[data-theme="light"] .course-info-button:hover,
+html[data-theme="light"] .course-info-button:focus-visible {
+  color: #ffffff;
+  background: #4a6cf7;
+}

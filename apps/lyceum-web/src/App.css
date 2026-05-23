@@ -11,19 +11,46 @@
 .top-bar {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.95rem 1rem;
+  padding: 0.55rem 0.85rem;
   border-bottom: 0;
   display: flex;
   align-items: center;
   gap: 0.8rem;
   background:
-    radial-gradient(circle at 1rem 0.4rem, rgba(119, 172, 255, 0.22), transparent 12rem),
+    linear-gradient(90deg, rgba(42, 126, 255, 0.22) 0%, rgba(139, 92, 246, 0.18) 100%),
     #111112;
 }
 
-.settings-link {
-  order: 2;
-  margin-left: auto;
+html[data-theme="light"] .top-bar {
+  background:
+    linear-gradient(90deg, rgba(42, 126, 255, 0.34) 0%, rgba(139, 92, 246, 0.24) 100%),
+    #242833;
+}
+
+html[data-theme="light"] .top-bar-title {
+  color: #f8fbff;
+  text-shadow: 0 1px 12px rgba(139, 185, 255, 0.22);
+}
+
+html[data-theme="light"] .top-bar-title::after {
+  background: linear-gradient(90deg, #b7f6c8, #79a8ff 52%, transparent);
+}
+
+html[data-theme="light"] .top-bar-icon-button {
+  border-color: rgba(248, 251, 255, 0.2);
+  color: #f8fbff;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+html[data-theme="light"] .top-bar-icon-button:hover,
+html[data-theme="light"] .top-bar-icon-button:focus-visible {
+  border-color: rgba(183, 246, 200, 0.7);
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.top-bar-icon-button {
   width: 2.4rem;
   height: 2.4rem;
   box-sizing: border-box;
@@ -39,19 +66,34 @@
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
-.settings-link svg {
+.catalog-link {
+  order: 2;
+  margin-left: 0.15rem;
+}
+
+.settings-link {
+  order: 3;
+  margin-left: auto;
+}
+
+.top-bar-icon-button svg {
   width: 1.45rem;
   height: 1.45rem;
   display: block;
   fill: currentColor;
 }
 
-.settings-link:hover,
-.settings-link:focus-visible {
+.top-bar-icon-button:hover,
+.top-bar-icon-button:focus-visible {
   border-color: rgba(183, 246, 200, 0.76);
   background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
   outline: none;
+  transform: translateY(-1px);
+}
+
+.settings-link:hover,
+.settings-link:focus-visible {
   transform: rotate(22deg);
 }
 
@@ -69,6 +111,7 @@
   letter-spacing: 0.035em;
   line-height: 1;
   text-shadow: 0 1px 12px rgba(139, 185, 255, 0.28);
+  cursor: default;
 }
 
 .top-bar-title::after {
@@ -83,10 +126,6 @@
   opacity: 0.95;
   transform: skewX(-18deg);
   z-index: -1;
-}
-
-.top-bar-title:hover {
-  color: #ffffff;
 }
 
 .main-layout {

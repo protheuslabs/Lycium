@@ -37,6 +37,7 @@ def _llm_messages(
         "desired_module_count": desired_module_count,
         "expected_duration_minutes": expected_duration_minutes,
         "source_policy": source_policy,
+        "course_short_description": "Return a top-level shortDescription: one concise sentence for catalog cards.",
         "course_shape": "Lyceum course JSON with learn/apply pages, conceptCards, sourceRecords, and quiz-only assessment pages.",
     }
 

@@ -1,5 +1,10 @@
 {
   "title": "Machine Learning Systems",
+  "shortDescription": "A 14-week systems course on building, scaling, evaluating, and operating production machine learning systems.",
+  "difficultyLevel": "Advanced undergraduate",
+  "category": "computing-information-sciences",
+  "tags": ["machine-learning", "artificial-intelligence", "systems", "mlops", "data-science"],
+  "learningTypes": [],
   "orderMandatory": true,
   "sourceIds": [
     "mlsys-book",

@@ -1,5 +1,10 @@
 {
   "title": "Software Systems Architecture: Viewpoints and Perspectives",
+  "shortDescription": "A 14-week architecture course on viewpoints, quality attributes, design decisions, evaluation, and documentation.",
+  "difficultyLevel": "Upper-division undergraduate",
+  "category": "computing-information-sciences",
+  "tags": ["software-architecture", "software-engineering", "systems", "design", "documentation"],
+  "learningTypes": [],
   "orderMandatory": false,
   "sourceIds": [
     "rw-software-systems-architecture-2e",

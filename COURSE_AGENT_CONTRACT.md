@@ -20,6 +20,11 @@ The agent is a curriculum architect for Lyceum. It produces source-aware, render
 The agent must return one JSON object with:
 
 - `title`
+- `shortDescription`
+- `difficultyLevel`
+- `category`
+- `tags`
+- `learningTypes`
 - `orderMandatory`
 - `sourceIds`
 - `sourceRecords`

@@ -5,7 +5,7 @@
 Use the course JSON as both the output artifact and the progress tracker.
 
 1. Scope the course.
-   Define audience, level, prerequisites, desired outcome, duration, expected workload, source standards, assessment style, and exclusions.
+   Define audience, level, prerequisites, desired outcome, duration, expected workload, source standards, assessment style, exclusions, and a short catalog description.
 
 2. Plan 10-20 modules.
    Each module should represent a major arc in the course. Use fewer only for an explicitly short course.
@@ -64,7 +64,10 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 
 ## Required Course Shape
 
-- Course JSON must contain `title`, optional `orderMandatory`, optional `metadata`, optional `sourceIds`, and `modules`.
+- Course JSON must contain `title`, optional `shortDescription`, optional `difficultyLevel`, optional `category`, optional `tags`, optional `learningTypes`, optional `orderMandatory`, optional `metadata`, optional `sourceIds`, and `modules`.
+- Generated courses should include `shortDescription`: a concise one-sentence course summary for catalog cards, ideally 80-160 characters.
+- Use `category` for one broad university-style college or school category, and `tags` for more specific subject labels.
+- Keep `learningTypes` as an array. Leave it empty until learning-type support is implemented.
 - Substantial generated courses should set `metadata.pacingLabel` to exactly `Module` or `Week`.
 - Each module must contain `id`, `title`, optional `sourceIds`, and `sections`.
 - Each section must contain `id`, `title`, optional `sectionType`, optional `pageType`, optional `sourceIds`, and `content`.

@@ -84,7 +84,7 @@
   border-radius: 10px;
   padding: 0.9rem;
   display: grid;
-  grid-template-rows: minmax(3.15rem, auto) auto 1fr auto;
+  grid-template-rows: minmax(3.15rem, auto) auto minmax(0, 1fr) auto;
   gap: 0.5rem;
   min-height: 14.5rem;
   cursor: pointer;
@@ -119,6 +119,7 @@
 }
 
 .course-card h3 {
+  grid-row: 1;
   margin: 0;
   line-height: 1.25;
   min-height: 3.15rem;
@@ -129,14 +130,26 @@
 }
 
 .course-active-subheader {
+  grid-row: 2;
   margin: 0;
-  min-height: 2.55rem;
   display: grid;
   align-content: start;
   gap: 0.12rem;
   color: #4f5d76;
   font-size: 0.82rem;
   line-height: 1.25;
+}
+
+.course-short-description {
+  grid-row: 3;
+  align-self: stretch;
+  margin: 0;
+  min-height: 0;
+  display: block;
+  color: #4f5d76;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  overflow: hidden;
 }
 
 .course-active-subheader span {
@@ -156,6 +169,7 @@
 }
 
 .course-progress {
+  grid-row: 4;
   align-self: end;
   width: 100%;
   display: grid;
@@ -231,6 +245,7 @@
   }
 
   .course-active-subheader,
+  .course-short-description,
   .course-progress-percentage,
   .course-progress-empty {
     color: #cbd5e1;
@@ -243,6 +258,7 @@
   .course-progress-bar {
     background: #262626;
   }
+
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generator-bar,
@@ -268,6 +284,10 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-page h2,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card h3 {
   color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-short-description {
+  color: #cbd5e1;
 }
 
 html[data-theme="light"] .home-page,
@@ -311,6 +331,10 @@ html[data-theme="light"] .course-card h3 {
 }
 
 html[data-theme="light"] .course-active-subheader {
+  color: #4f5d76;
+}
+
+html[data-theme="light"] .course-short-description {
   color: #4f5d76;
 }
 

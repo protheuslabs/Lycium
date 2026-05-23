@@ -1,5 +1,10 @@
 {
   "title": "Intro to Artificial Intelligence",
+  "shortDescription": "A beginner-friendly introduction to AI ideas, model behavior, ethical tradeoffs, and how intelligent systems are used.",
+  "difficultyLevel": "Introductory undergraduate",
+  "category": "computing-information-sciences",
+  "tags": ["artificial-intelligence", "machine-learning", "ethics", "data-science"],
+  "learningTypes": [],
   "orderMandatory": false,
   "metadata": {
     "pacingLabel": "Module"

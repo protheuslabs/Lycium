@@ -173,6 +173,11 @@ def generate_course_from_draft(
 
     structure = {
         "title": draft.title,
+        "shortDescription": outline.get("shortDescription") or outline.get("summary") or f"A generated Lycium course for {draft.title}.",
+        "difficultyLevel": draft.difficulty,
+        "category": "interdisciplinary-studies",
+        "tags": [],
+        "learningTypes": [],
         "orderMandatory": bool(draft.constraints.get("order_mandatory", False)),
         "metadata": {
             "prompt": draft.prompt,

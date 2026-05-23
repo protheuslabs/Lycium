@@ -9,7 +9,7 @@ Use the repo-local course generation skill as the starting point:
 ## Generation Workflow
 
 1. Determine course scope.
-   Define the learner level, prerequisites, course outcome, expected duration, depth, assessment style, source expectations, and what the course should explicitly not cover.
+   Define the learner level, prerequisites, course outcome, expected duration, depth, assessment style, source expectations, what the course should explicitly not cover, and a short catalog description.
 
 2. Divide the course into 10-20 modules.
    Each module should represent a major conceptual or practical arc. Modules should build progressively, like a real college or professional online course.
@@ -43,6 +43,11 @@ Use the repo-local course generation skill as the starting point:
 Agents should use the course JSON as a progress ledger while building. Add or preserve metadata that records planning state when useful:
 
 - `metadata.scope`: audience, prerequisites, target outcome, duration, level, and exclusions.
+- `shortDescription`: a concise one-sentence course summary used on catalog cards, ideally 80-160 characters.
+- `difficultyLevel`: a learner-facing difficulty label used in course info modals.
+- `category`: one broad university-style college or school category.
+- `tags`: specific subject labels that are narrower than the category.
+- `learningTypes`: an array reserved for future course modality metadata; leave empty for now.
 - `metadata.pacingLabel`: exactly `Module` or `Week`, used consistently in learner-facing titles.
 - `metadata.generationPlan.modules`: planned module names and outcomes.
 - `metadata.generationPlan.unitMap`: planned units for each module.

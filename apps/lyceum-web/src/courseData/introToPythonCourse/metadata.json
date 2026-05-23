@@ -1,5 +1,10 @@
 {
   "title": "Python Basics",
+  "shortDescription": "A practical first course in Python syntax, data structures, functions, control flow, and problem-solving habits.",
+  "difficultyLevel": "Introductory",
+  "category": "computing-information-sciences",
+  "tags": ["python", "programming", "computer-science", "software-engineering"],
+  "learningTypes": [],
   "orderMandatory": false,
   "metadata": {
     "pacingLabel": "Module"

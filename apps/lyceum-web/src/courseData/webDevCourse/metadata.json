@@ -1,5 +1,10 @@
 {
   "title": "Intro to Web Development",
+  "shortDescription": "A college-style web development course covering HTML, CSS, JavaScript, accessibility, APIs, and full-stack project practice.",
+  "difficultyLevel": "Introductory undergraduate",
+  "category": "computing-information-sciences",
+  "tags": ["web-development", "programming", "accessibility", "apis", "software-engineering"],
+  "learningTypes": [],
   "orderMandatory": true,
   "metadata": {
     "pacingLabel": "Module"

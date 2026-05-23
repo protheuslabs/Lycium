@@ -21,6 +21,7 @@ Use this skill to make Lyceum courses that are teachable, source-backed, and ren
    - expected duration and depth
    - exclusions
    - assessment expectations
+   - course short description for catalog cards
 4. Plan the course hierarchy before drafting content:
    - 10-20 modules for a full course unless the user requests a shorter course
    - choose exactly one learner-facing pacing label, `Module` or `Week`, record it in `metadata.pacingLabel`, and use it consistently in module titles, summary titles, and summary concept-card titles
@@ -28,6 +29,7 @@ Use this skill to make Lyceum courses that are teachable, source-backed, and ren
    - sub-units for individual ideas inside each unit
 5. Use the JSON as a progress ledger:
    - record scope in `metadata.scope`
+   - record a concise renderer-facing course summary in top-level `shortDescription`
    - record module, unit, idea, and source planning in `metadata.generationPlan`
    - update progress markers as the plan becomes content
 6. Build or revise the course around modules and sections, not a single long page.

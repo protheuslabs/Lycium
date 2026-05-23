@@ -57,6 +57,11 @@ export type CourseModule = {
 
 export type CourseData = {
   title: string;
+  shortDescription?: string;
+  difficultyLevel?: string;
+  category?: string;
+  tags?: string[];
+  learningTypes?: string[];
   orderMandatory?: boolean;
   sourceIds?: string[];
   modules: CourseModule[];

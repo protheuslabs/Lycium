@@ -65,6 +65,7 @@ def _fallback_outline(prompt: str, module_count: int, goals: list[str]) -> dict[
 
     return {
         "title": title,
+        "shortDescription": f"A structured Lycium course generated from: {prompt[:120].strip()}",
         "summary": f"Generated from prompt: {prompt}",
         "modules": modules,
         "provenance": {"mode": "fallback", "object_ids": []},
@@ -153,6 +154,7 @@ def build_outline(
 
     return {
         "title": title,
+        "shortDescription": f"A personalized Lycium course generated from: {prompt[:120].strip()}",
         "summary": f"Personalized draft outline for: {prompt}",
         "modules": modules,
         "provenance": {"mode": "knowledge-base", "object_ids": [obj.id for obj in objects]},

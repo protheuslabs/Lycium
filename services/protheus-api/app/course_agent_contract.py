@@ -10,10 +10,19 @@ def _slug(value: str, fallback: str) -> str:
 
 
 def normalize_course(course: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(course.get("shortDescription"), str) or not course["shortDescription"].strip():
+        title = str(course.get("title") or "Generated course").strip()
+        course["shortDescription"] = f"A structured Lyceum course covering {title}."
     course.setdefault("orderMandatory", False)
     course.setdefault("sourceIds", [])
     course.setdefault("sourceRecords", [])
     course.setdefault("metadata", {})
+    course.setdefault("difficultyLevel", str(course["metadata"].get("difficulty") or "Not set"))
+    course.setdefault("category", "interdisciplinary-studies")
+    if not isinstance(course.get("tags"), list):
+        course["tags"] = []
+    if not isinstance(course.get("learningTypes"), list):
+        course["learningTypes"] = []
     course["metadata"].setdefault("scope", {})
     course["metadata"].setdefault("generationPlan", {})
     if not course["metadata"].get("pacingLabel"):
@@ -75,6 +84,8 @@ def validate_course_contract(course: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if not isinstance(course.get("title"), str) or not course["title"].strip():
         errors.append("Course is missing title.")
+    if not isinstance(course.get("shortDescription"), str) or not course["shortDescription"].strip():
+        errors.append("Course is missing shortDescription.")
 
     modules = course.get("modules")
     if not isinstance(modules, list) or not modules:
