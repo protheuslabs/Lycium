@@ -345,7 +345,7 @@ function App() {
         key: `remote-${course.id}`,
         title: course.title,
         data: course.structure,
-        snapshotId: course.id,
+        snapshotId: Number(course.id),
         source: "remote",
       };
       const validation = validateCourseEntry(entry, {

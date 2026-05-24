@@ -113,7 +113,7 @@ export default function QuizBlock({
       }
 
       if (Number.isFinite(Number(parsed?.attemptCount))) {
-        nextAttemptCount = Math.max(0, Math.floor(Number(parsed.attemptCount)));
+        nextAttemptCount = Math.max(0, Math.floor(Number(parsed?.attemptCount)));
       }
 
       nextAttemptHistory = parseAttemptHistory(parsed?.attemptHistory, questionBank);
@@ -149,7 +149,7 @@ export default function QuizBlock({
               scorePercentage,
               correctCount,
               totalQuestions,
-              submittedAt: parsed.submittedAt,
+              submittedAt: typeof parsed?.submittedAt === "string" ? parsed.submittedAt : new Date().toISOString(),
               attemptOrder: nextAttemptOrder,
               selectedByQuestion: nextSelectedByQuestion,
               questionCorrectness: nextQuestionCorrectness,

@@ -6,29 +6,19 @@ const nextConfig = {
   basePath,
   reactStrictMode: true,
   poweredByHeader: false,
+  outputFileTracingRoot: new URL("../..", import.meta.url).pathname,
   images: {
     unoptimized: true,
   },
   async redirects() {
-    const redirects = [
+    return [
       {
         source: "/",
-        destination: `${basePath || ""}/catalog`,
+        destination: "/catalog",
         permanent: false,
         basePath: false,
       },
     ];
-
-    if (basePath) {
-      redirects.push({
-        source: "/",
-        destination: "/catalog",
-        permanent: false,
-        basePath: true,
-      });
-    }
-
-    return redirects;
   },
 };
 
