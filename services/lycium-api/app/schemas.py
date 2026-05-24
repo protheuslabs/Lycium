@@ -90,6 +90,14 @@ class KnowledgeSearchResponse(BaseModel):
     objects: list[KnowledgeObjectRead]
 
 
+class RetrievalQualityReportRead(BaseModel):
+    query: str
+    returned: int
+    score: float = Field(ge=0.0, le=1.0)
+    warnings: list[str] = Field(default_factory=list)
+    metrics: dict[str, float] = Field(default_factory=dict)
+
+
 class CoverageRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -120,6 +128,7 @@ class LearningPacket(BaseModel):
     rationale: str
     modality_mix: dict[str, int]
     trust_floor_applied: float
+    quality_report: RetrievalQualityReportRead | None = None
 
 
 class LocalAiProviderRead(BaseModel):
@@ -272,6 +281,7 @@ class GenerateCourseRequest(BaseModel):
     trust_min: float = Field(default=0.0, ge=0.0, le=1.0)
     desired_module_count: int = Field(default=3, ge=1, le=20)
     expected_duration_minutes: int = Field(default=180, ge=30, le=4000)
+    source_urls: list[HttpUrl] = Field(default_factory=list)
 
 
 class GenerateCourseFromOutlineRequest(BaseModel):
@@ -298,6 +308,29 @@ class CourseSnapshotRead(BaseModel):
     generation_trace: dict[str, Any]
     created_at: datetime
     updated_at: datetime
+
+
+class CourseQualityReportRead(BaseModel):
+    gate: Literal["generation", "review", "publish"]
+    passed: bool
+    score: float = Field(ge=0.0, le=1.0)
+    errors: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    metrics: dict[str, float | int] = Field(default_factory=dict)
+    checkedAt: str
+    contractVersion: str | None = None
+
+
+class CoursePublishRequest(BaseModel):
+    reviewer_id: str | None = None
+    notes: str | None = None
+    force: bool = False
+
+
+class CourseSectionLockRequest(BaseModel):
+    module_id: str | None = None
+    section_id: str = Field(min_length=1)
+    locked: bool = True
 
 
 class RegenerateSectionRequest(BaseModel):

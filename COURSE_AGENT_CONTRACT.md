@@ -14,6 +14,7 @@ The agent is a curriculum architect for Lycium. It produces source-aware, render
 - Desired module count.
 - Expected duration.
 - Source policy.
+- Submitted source URLs, when provided by the course creation UI.
 
 ## Output
 
@@ -101,4 +102,5 @@ Each section must contain:
 - The harness parses the returned JSON.
 - The harness normalizes minor omissions only when safe.
 - The harness rejects output that violates required shape or core course rules.
-- The harness persists only validated course structures.
+- The harness attaches a quality report to the generation trace.
+- The harness persists only validated course structures and publishes only after the publish gate passes.

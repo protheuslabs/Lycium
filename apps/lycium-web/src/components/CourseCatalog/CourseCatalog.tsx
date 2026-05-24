@@ -14,7 +14,7 @@ type CourseCatalogProps = {
   generateMessage: string;
   onPromptChange: (value: string) => void;
   onLevelChange: (value: string) => void;
-  onGenerateCourse: (event: FormEvent<HTMLFormElement>) => void;
+  onGenerateCourse: (event: FormEvent<HTMLFormElement>, sourceLinks: string[]) => void;
   onOpenCourse: (course: CourseEntry) => void;
 };
 
@@ -252,7 +252,10 @@ export default function CourseCatalog({
   };
 
   const handleCreateSubmit = (event: FormEvent<HTMLFormElement>) => {
-    onGenerateCourse(event);
+    onGenerateCourse(
+      event,
+      sourceLinks.map((link) => link.trim()).filter(Boolean)
+    );
     setIsCreateModalOpen(false);
   };
 

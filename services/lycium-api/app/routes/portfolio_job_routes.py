@@ -247,7 +247,14 @@ def register(app: FastAPI) -> None:
                 }
                 objects = [obj for obj in objects if obj.source_id in allowed_sources]
 
-        courses = list(session.scalars(select(CourseSnapshot).order_by(CourseSnapshot.created_at.desc()).limit(12)))
+        courses = list(
+            session.scalars(
+                select(CourseSnapshot)
+                .where(CourseSnapshot.status == "published")
+                .order_by(CourseSnapshot.created_at.desc())
+                .limit(12)
+            )
+        )
         programs = list(session.scalars(select(ProgramSnapshot).order_by(ProgramSnapshot.created_at.desc()).limit(12)))
         return {
             "query": query,

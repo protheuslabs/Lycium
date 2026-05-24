@@ -4,7 +4,7 @@ Lycium is a local-first learning platform for building, organizing, and studying
 
 The project is designed around one core idea: high-quality courses should be portable, inspectable, and generated from explicit structure rather than hidden application state.
 
-[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
 
 ## Current capabilities
 
@@ -18,6 +18,9 @@ The project is designed around one core idea: high-quality courses should be por
 - Settings modal for local AI provider keys, model selection, and light/dark/auto display preferences
 - Local user-data storage for completion, bookmarks, secrets, source links, and other machine-specific data
 - Course-generation rules for agents, including source records, assessment-only quiz pages, Learn/Apply page types, concept cards, and module summaries
+- Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
+- Retrieval quality reports for source-backed search and learning-packet assembly
+- Playwright E2E smoke coverage for the catalog and course-opening flow
 
 ## Repository structure
 
@@ -89,7 +92,10 @@ NEXT_PUBLIC_LYCIUM_RUNTIME=local|static|cloud|infring
 NEXT_PUBLIC_LYCIUM_API_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL=https://example.com/catalog.json
 NEXT_PUBLIC_LYCIUM_COURSE_BASE_URL=https://example.com/courses
+LYCIUM_API_TOKEN=optional-bearer-token-for-non-public-API-runtimes
 ```
+
+If `LYCIUM_API_TOKEN` is set, callers must send `Authorization: Bearer <token>` for protected API paths.
 
 ### API service
 
@@ -130,6 +136,7 @@ LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 | `pnpm test:contracts` | Run shared contract fixture tests |
 | `pnpm validate` | Run contract tests, web typecheck, and web build |
 | `pnpm --filter @lycium/web test` | Run web tests |
+| `pnpm --filter @lycium/web e2e` | Run Playwright catalog/course smoke tests |
 | `pnpm --filter @lycium/web lint` | Run web linting |
 | `pnpm --filter @lycium/web typecheck` | Run TypeScript checks |
 | `cd services/lycium-api && pytest -q` | Run API tests |
@@ -142,6 +149,7 @@ Lycium courses are structured data. A course is composed of modules, sections, c
 Important conventions:
 
 - Course-generation behavior is defined in [skills/course-generation/SKILL.md](./skills/course-generation/SKILL.md).
+- Generated course snapshots should move through quality-report, review, and publish gates before being listed as catalog-ready.
 - Courses should choose either `Module` or `Week` pacing language, not both.
 - Learn pages contain instructional content.
 - Apply pages contain quizzes, exercises, or assessments.
@@ -180,6 +188,7 @@ Do not commit secrets or machine-local learner data.
 - Use conventional commit prefixes such as `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, and `chore:`.
 - Keep reusable UI behavior in components rather than duplicating markup in page shells.
 - Keep course and source-record contracts centralized in `packages/contracts`.
+- Treat `packages/contracts` lifecycle and quality-report schemas as the canonical gate between generated drafts and catalog-published courses.
 - Keep browser storage, local API access, progress, quiz attempts, settings, bookmarks, and generation calls behind `packages/data-access`.
 - Use `@lycium/data-access` repository factories for static JSON, local API, cloud API, and future Infring-backed runtimes instead of branching learner UI logic.
 - Keep course progress logic centralized in `apps/lycium-web/src/utils/courseProgress.ts`.
@@ -196,4 +205,5 @@ The next phase is intentionally constrained by the [MVP vertical slice](./MVP_VE
 - Reject invalid generated course JSON before catalog insertion
 - Add review, edit, and lock workflows for generated sections
 - Add focused validation and generation-rejection tests
+- Expand E2E coverage beyond the catalog smoke flow
 - Improve retrieval quality after the source-backed loop is reliable

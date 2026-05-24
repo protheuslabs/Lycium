@@ -1,0 +1,25 @@
+{
+  "courseId": "course-1",
+  "status": "published",
+  "reviewedBy": "local-reviewer",
+  "reviewNotes": "Approved after contract validation.",
+  "qualityReport": {
+    "gate": "publish",
+    "passed": true,
+    "score": 1,
+    "errors": [],
+    "warnings": [],
+    "metrics": {
+      "moduleCount": 1,
+      "sectionCount": 3,
+      "learnSectionCount": 2,
+      "applySectionCount": 1,
+      "quizSectionCount": 1,
+      "conceptCount": 4,
+      "sourceRecordCount": 1
+    },
+    "checkedAt": "2026-05-24T00:00:00.000Z",
+    "contractVersion": "0.1.0"
+  },
+  "updatedAt": "2026-05-24T00:00:00.000Z"
+}

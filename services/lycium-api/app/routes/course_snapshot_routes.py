@@ -113,11 +113,14 @@ def register(app: FastAPI) -> None:
     def list_courses(
         learner_id: int | None = None,
         limit: int = Query(default=200, ge=1, le=1000),
+        status_filter: str | None = Query(default="published", alias="status"),
         session: Session = Depends(get_session),
     ) -> list[CourseSnapshot]:
         stmt = select(CourseSnapshot).order_by(CourseSnapshot.created_at.desc()).limit(limit)
         if learner_id is not None:
             stmt = stmt.where(CourseSnapshot.learner_id == learner_id)
+        if status_filter and status_filter != "all":
+            stmt = stmt.where(CourseSnapshot.status == status_filter)
         return list(session.scalars(stmt))
 
 

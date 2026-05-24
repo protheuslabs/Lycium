@@ -4,6 +4,7 @@ import type {
   LyciumCourseData,
   LyciumCourseEntry,
   LyciumCourseGenerationRequest,
+  LyciumCourseQualityReport,
   LyciumGeneratedCourseRecord,
   LyciumLocalSettings,
   LyciumProgressRecord,
@@ -38,6 +39,8 @@ export type ProgressRepository = {
 
 export type GenerationRepository = {
   createCourseGenerationJob(request: LyciumCourseGenerationRequest): Promise<LyciumGeneratedCourseRecord>;
+  getCourseQualityReport(courseId: string | number): Promise<LyciumCourseQualityReport>;
+  publishCourse(courseId: string | number): Promise<LyciumGeneratedCourseRecord>;
 };
 
 export type LyciumRepositorySet = {
@@ -139,6 +142,8 @@ export type LocalKeyModelPayload = {
 export type LyciumLocalApi = {
   listRemoteCourses(limit?: number): Promise<LyciumGeneratedCourseRecord[]>;
   generateCourse(request: LyciumCourseGenerationRequest): Promise<LyciumGeneratedCourseRecord>;
+  getCourseQualityReport(courseId: string | number): Promise<LyciumCourseQualityReport>;
+  publishCourse(courseId: string | number): Promise<LyciumGeneratedCourseRecord>;
   createLearner(payload: CreateLearnerPayload): Promise<LyciumLearnerRecord>;
   mirrorCompletion(payload: LocalCompletionMirrorPayload): Promise<void>;
   loadCompletion(courseKey: string): Promise<unknown>;
@@ -231,6 +236,20 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
         body: JSON.stringify(request),
       });
       return readJsonResponse<LyciumGeneratedCourseRecord>(response, "Generation failed");
+    },
+
+    async getCourseQualityReport(courseId) {
+      const response = await fetch(`${base}/v1/courses/${encodeURIComponent(String(courseId))}/quality-report`);
+      return readJsonResponse<LyciumCourseQualityReport>(response, "Course quality report unavailable");
+    },
+
+    async publishCourse(courseId) {
+      const response = await fetch(`${base}/v1/courses/${encodeURIComponent(String(courseId))}/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviewer_id: "lycium-local-web", notes: "Published after local validation." }),
+      });
+      return readJsonResponse<LyciumGeneratedCourseRecord>(response, "Course publish failed");
     },
 
     async createLearner(payload) {
@@ -472,6 +491,22 @@ export function createHttpGenerationRepository(options: HttpRepositoryOptions): 
         body: JSON.stringify(request),
       });
       return readJsonResponse<LyciumGeneratedCourseRecord>(response, "Course generation failed");
+    },
+
+    async getCourseQualityReport(courseId) {
+      const response = await fetch(joinUrl(base, `/v1/courses/${encodeURIComponent(String(courseId))}/quality-report`), {
+        headers: resolveHeaders(options.headers),
+      });
+      return readJsonResponse<LyciumCourseQualityReport>(response, "Course quality report unavailable");
+    },
+
+    async publishCourse(courseId) {
+      const response = await fetch(joinUrl(base, `/v1/courses/${encodeURIComponent(String(courseId))}/publish`), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...resolveHeaders(options.headers) },
+        body: JSON.stringify({ reviewer_id: "lycium-adapter", notes: "Published through repository adapter." }),
+      });
+      return readJsonResponse<LyciumGeneratedCourseRecord>(response, "Course publish failed");
     },
   };
 }

@@ -41,6 +41,9 @@ Use the repo-local course generation skill as the starting point:
 11. Gate catalog intake.
    A generated course must pass structural and source-reference validation before it can be added to the catalog. Invalid generated JSON should produce a visible generation error and remain outside learner-facing course lists.
 
+12. Publish only after a quality report.
+   The generation pipeline should produce a `quality_report` in the snapshot trace. A course can move to `published` only when the quality report passes the publish gate or an explicit force-publish review action records why the gate was overridden.
+
 ## JSON Progress Tracking
 
 Agents should use the course JSON as a progress ledger while building. Add or preserve metadata that records planning state when useful:
@@ -57,6 +60,7 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `metadata.generationPlan.ideaMap`: sub-units or individual ideas for each unit.
 - `metadata.generationPlan.sourceMap`: source IDs mapped to units or ideas.
 - `metadata.generationPlan.status`: progress markers such as `scoped`, `modules_planned`, `units_planned`, `sources_mapped`, `content_drafted`, and `validated`.
+- `generation_trace.quality_report`: backend-generated validation, warning, metric, and score data used by review and publish gates.
 
 Renderer-facing content still belongs in `modules[].sections[].content`; planning metadata should support agents without replacing the actual course structure.
 
@@ -135,5 +139,6 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 
 - Backend agent generation must normalize and validate generated JSON before persistence.
 - Frontend catalog intake must validate generated and remote courses before adding them to the learner catalog.
+- Backend publication must compute a quality report and set the snapshot to `published` only after the gate passes.
 - Validation should reject missing modules, missing sections, missing `pageType`, mixed quiz/instruction sections, missing concept cards on Learn pages, missing summary sections, and unresolved source IDs.
 - Validation errors should be surfaced as generation failures rather than silently accepting broken course data.

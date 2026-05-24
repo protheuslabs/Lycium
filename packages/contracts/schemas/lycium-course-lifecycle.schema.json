@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-course-lifecycle.schema.json",
+  "title": "Lycium Course Lifecycle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["courseId", "status", "updatedAt"],
+  "properties": {
+    "courseId": { "type": ["string", "number"] },
+    "status": {
+      "enum": ["draft", "generated", "validating", "needs_revision", "ready_for_review", "published", "archived", "failed"]
+    },
+    "reviewedBy": { "type": ["string", "null"] },
+    "reviewNotes": { "type": ["string", "null"] },
+    "qualityReport": { "$ref": "lycium-course-quality-report.schema.json" },
+    "updatedAt": { "type": "string" }
+  }
+}

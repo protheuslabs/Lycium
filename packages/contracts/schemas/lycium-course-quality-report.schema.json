@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-course-quality-report.schema.json",
+  "title": "Lycium Course Quality Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["gate", "passed", "score", "errors", "warnings", "metrics", "checkedAt"],
+  "properties": {
+    "gate": { "enum": ["generation", "review", "publish"] },
+    "passed": { "type": "boolean" },
+    "score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "errors": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "checkedAt": { "type": "string" },
+    "contractVersion": { "type": "string" }
+  }
+}

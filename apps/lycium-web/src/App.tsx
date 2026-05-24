@@ -338,7 +338,7 @@ function App() {
     }
   };
 
-  const handleGenerateCourse = async (evt: FormEvent<HTMLFormElement>) => {
+  const handleGenerateCourse = async (evt: FormEvent<HTMLFormElement>, sourceLinks: string[] = []) => {
     evt.preventDefault();
     if (!prompt.trim()) return;
     setGenerateStatus("loading");
@@ -352,25 +352,34 @@ function App() {
           source_policy: "balanced",
           desired_module_count: 3,
           expected_duration_minutes: 180,
+          source_urls: sourceLinks,
         });
-      const entry: CourseEntry = {
+      const draftEntry: CourseEntry = {
         key: `remote-${course.id}`,
         title: course.title,
         data: course.structure,
         snapshotId: Number(course.id),
         source: "remote",
       };
-      const validation = validateCourseEntry(entry, {
+      const validation = validateCourseEntry(draftEntry, {
         centralSourceRecords: sourceRecordsData.sources,
         requireSources: true,
       });
       if (!validation.valid) {
         throw new Error(`Generated course failed validation: ${formatCourseValidationErrors(validation.errors)}`);
       }
+      const publishedCourse = await lyciumApi.publishCourse(course.id);
+      const entry: CourseEntry = {
+        key: `remote-${publishedCourse.id}`,
+        title: publishedCourse.title,
+        data: publishedCourse.structure,
+        snapshotId: Number(publishedCourse.id),
+        source: "remote",
+      };
       setCourses((prev) => [entry, ...prev]);
       setPrompt("");
       setGenerateStatus("success");
-      setGenerateMessage("Course generated.");
+      setGenerateMessage("Course generated and published.");
       openCourseByEntry(entry);
     } catch (err) {
       console.warn("Course generation failed:", err);

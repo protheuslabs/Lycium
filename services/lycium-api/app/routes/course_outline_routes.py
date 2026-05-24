@@ -17,6 +17,7 @@ from app.course_agent_harness import (
     list_agent_provider_summaries,
     validate_agent_api_key,
 )
+from app.course_quality import assess_course_quality
 from app.db import get_session, init_db
 from app.generation import (
     ask_instructor,
@@ -227,6 +228,7 @@ def register(app: FastAPI) -> None:
                 trust_min=payload.trust_min,
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
+                source_urls=[str(url) for url in payload.source_urls],
             )
             session.commit()
             session.refresh(snapshot)
@@ -259,7 +261,14 @@ def register(app: FastAPI) -> None:
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
                 model=payload.model or agent_profile.get("model"),
+                source_urls=[str(url) for url in payload.source_urls],
             )
+            quality_report = assess_course_quality(generated.course, gate="review")
+            if not quality_report["passed"]:
+                raise ValueError(
+                    "Generated course failed quality gate: "
+                    + "; ".join([*quality_report["errors"], *quality_report["warnings"]][:12])
+                )
             snapshot = CourseSnapshot(
                 learner_id=payload.learner_id,
                 draft_id=None,
@@ -268,10 +277,10 @@ def register(app: FastAPI) -> None:
                 language=payload.language,
                 level=payload.level,
                 source_policy=payload.source_policy,
-                status="generated",
+                status="ready_for_review",
                 version=1,
                 structure=generated.course,
-                generation_trace=generated.trace,
+                generation_trace={**generated.trace, "quality_report": quality_report},
             )
             session.add(snapshot)
             session.commit()
@@ -284,5 +293,3 @@ def register(app: FastAPI) -> None:
         except ValueError as exc:
             session.rollback()
             raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-

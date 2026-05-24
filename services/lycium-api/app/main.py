@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db import init_db
 from app.local_store import ensure_local_data_dirs
+from app.observability import request_context_middleware
 from app.routes import course_routes, learning_routes, local_routes, portfolio_job_routes
 
 
@@ -30,6 +31,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.middleware("http")(request_context_middleware)
 
     local_routes.register(app)
     learning_routes.register(app)

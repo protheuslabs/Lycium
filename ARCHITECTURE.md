@@ -32,8 +32,8 @@ That means:
 Reason:
 
 - The current Next.js app is sufficient while Lycium is proving the local-first course-generation and learning loop.
-- Do not migrate to Next.js until public SEO course pages, authenticated server-rendered app flows, or server-first routing become immediate product requirements.
-- Next.js remains a reasonable later target once the core source-backed generation loop is dependable.
+- Keep the current Next.js shell focused on the learner runtime until public SEO course pages, authenticated server-rendered app flows, or server-first routing become immediate product requirements.
+- Avoid using Next.js server features as a shortcut around the data-access adapters; the source-backed generation loop should stay portable across local, hosted, and future Infring-backed runtimes.
 
 ### Backend APIs and Workers
 
@@ -88,6 +88,14 @@ Reason:
 - `OpenTelemetry`
 - structured logs
 - metrics and traces for ingestion, retrieval, and generation pipelines
+
+Current local API guardrails:
+
+- request IDs are returned on API responses through `x-request-id`
+- request logs are emitted as structured JSON
+- `LYCIUM_API_TOKEN` can enable bearer-token protection for non-public API paths
+- course publication is guarded by deterministic quality reports before snapshots become catalog-ready
+- retrieval endpoints can emit retrieval quality reports with trust, lexical match, source diversity, and modality diversity metrics
 
 ### Shared Contracts
 
@@ -207,7 +215,7 @@ Use separate logical storage layers:
 If you want one opinionated answer:
 
 - Keep one monorepo.
-- Keep Lycium on `Next.js` for the MVP; consider `Next.js` later for public/SEO-heavy surfaces.
+- Keep Lycium on `Next.js` for the MVP, while delaying SEO-heavy public course surfaces until the generation loop is reliable.
 - Make Lycium backend a `FastAPI` plus worker platform in Python.
 - Use `Postgres + pgvector + full-text search + object storage + Redis`.
 - Model the repository around knowledge objects, snapshots, claims, and graph edges.
@@ -240,6 +248,8 @@ Lycium now targets Next.js as the learner-facing shell so the same product can r
 Current browser runtime calls for local API access, progress persistence, quiz attempt history, bookmarks, settings, and theme state should stay centralized in `@lycium/data-access`. Feature components should consume repository/client helpers instead of binding directly to `fetch()` or `localStorage`.
 
 `services/lycium-api/app/contract_validation.py` loads the shared JSON Schemas from `packages/contracts/schemas` so backend course generation and frontend rendering are anchored to the same structural contract. Pydantic models may still describe API payloads, but generated course snapshots should be checked against the shared schema before being treated as valid Lycium course artifacts.
+
+`services/lycium-api/app/course_quality.py` is the backend quality gate for generated course snapshots. It uses the shared structural and semantic contracts, records report data into `generation_trace.quality_report`, and is the publication boundary for `published` catalog snapshots.
 
 The initial adapter implementations live in `@lycium/data-access`: static JSON course repositories for cloud-hosted course snapshots, generic HTTP repositories for cloud APIs, and an Infring repository set that can be pointed at the eventual Infring course/progress/generation API. Next.js handles route/layout ownership while the learner runtime stays adapter-driven.
 

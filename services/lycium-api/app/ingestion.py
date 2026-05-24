@@ -234,6 +234,11 @@ def ingest_source(
             "title": title,
             "word_count": len(text.split()),
             "publish_year": publish_year,
+            "canonical_url": canonical_url,
+            "normalized_domain": normalized_domain,
+            "extractor": "html-beautifulsoup-v1",
+            "reuse_policy": "full-text" if is_free else "excerpt-limited",
+            "archive_requested": archive_requested,
         },
     )
     session.add(snapshot)

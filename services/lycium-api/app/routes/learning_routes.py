@@ -58,7 +58,7 @@ from app.models import (
     ProgramSnapshot,
     Source,
 )
-from app.retrieval import assemble_learning_packet, search_knowledge_objects
+from app.retrieval import assemble_learning_packet, evaluate_retrieval_quality, search_knowledge_objects
 from app.schemas import (
     AnalyticsSummaryRead,
     ApproveOutlineRequest,
@@ -99,6 +99,7 @@ from app.schemas import (
     ProgressRead,
     ProgressUpdateRequest,
     RegenerateSectionRequest,
+    RetrievalQualityReportRead,
     SourceRead,
     UpdateOutlineRequest,
 )
@@ -234,6 +235,30 @@ def register(app: FastAPI) -> None:
         return KnowledgeSearchResponse(query=query, returned=len(parsed), objects=parsed)
 
 
+    @app.get("/v1/knowledge/evaluate", response_model=RetrievalQualityReportRead)
+    def evaluate_knowledge_retrieval(
+        query: str = Query(min_length=2),
+        top_k: int = Query(default=20, ge=1, le=100),
+        free_only: bool = False,
+        trust_min: float = Query(default=0.0, ge=0.0, le=1.0),
+        modality: str | None = None,
+        topic: str | None = None,
+        level: str | None = None,
+        session: Session = Depends(get_session),
+    ) -> RetrievalQualityReportRead:
+        objects = search_knowledge_objects(
+            session,
+            query=query,
+            top_k=top_k,
+            free_only=free_only,
+            trust_min=trust_min,
+            modality=modality,
+            topic=topic,
+            level=level,
+        )
+        return RetrievalQualityReportRead(**evaluate_retrieval_quality(objects, query=query, trust_min=trust_min).__dict__)
+
+
     @app.post("/v1/retrieval/packet", response_model=LearningPacket)
     def retrieval_packet(payload: LearningPacketRequest, session: Session = Depends(get_session)) -> LearningPacket:
         packet = assemble_learning_packet(
@@ -270,4 +295,3 @@ def register(app: FastAPI) -> None:
         if row is None:
             raise HTTPException(status_code=404, detail="Coverage topic not found")
         return row
-

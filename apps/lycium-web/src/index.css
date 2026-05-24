@@ -1,4 +1,25 @@
 :root {
+  --lycium-brand-start: #0f5cff;
+  --lycium-brand-end: #7a35ff;
+  --lycium-dark-canvas: #0b0b0c;
+  --lycium-dark-surface: #171717;
+  --lycium-dark-surface-raised: #1f1f22;
+  --lycium-dark-text: #f8fafc;
+  --lycium-dark-muted: #a3a3a3;
+  --lycium-light-canvas: #ffffff;
+  --lycium-light-surface: #f7f8fb;
+  --lycium-light-surface-raised: #ffffff;
+  --lycium-light-text: #171717;
+  --lycium-light-muted: #566070;
+  --lycium-success: #22c55e;
+  --lycium-danger: #ef4444;
+  --lycium-viewed-progress: #9fb7ff;
+  --lycium-completed-progress: #2563eb;
+  --lycium-radius-pill: 999px;
+  --lycium-radius-card: 1.25rem;
+  --lycium-radius-modal: 1.5rem;
+  --lycium-shadow-raised: 0 1.2rem 2.4rem rgba(22, 30, 52, 0.16);
+  --lycium-shadow-dark-raised: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.36);
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

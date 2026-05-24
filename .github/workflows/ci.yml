@@ -35,6 +35,12 @@ jobs:
       - name: Build web app
         run: pnpm --filter @lycium/web build
 
+      - name: Install browser for E2E smoke tests
+        run: pnpm --filter @lycium/web exec playwright install --with-deps chromium
+
+      - name: Run web E2E smoke tests
+        run: pnpm --filter @lycium/web e2e
+
   api:
     runs-on: ubuntu-latest
     steps:
@@ -51,3 +57,20 @@ jobs:
 
       - name: Run API tests
         run: cd services/lycium-api && pytest -q
+
+  workers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install worker test dependencies
+        run: python -m pip install -e 'services/lycium-workers[test]'
+
+      - name: Run worker tests
+        run: cd services/lycium-workers && PYTHONPATH=src pytest -q

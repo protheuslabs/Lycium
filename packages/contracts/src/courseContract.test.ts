@@ -20,9 +20,13 @@ const schemas = {
   course: readSchema("lycium-course.schema.json"),
   progress: readSchema("lycium-progress.schema.json"),
   quizProgress: readSchema("lycium-quiz-progress.schema.json"),
+  qualityReport: readSchema("lycium-course-quality-report.schema.json"),
+  lifecycle: readSchema("lycium-course-lifecycle.schema.json"),
   generationJob: readSchema("lycium-generation-job.schema.json"),
   providerSettings: readSchema("lycium-provider-settings.schema.json"),
 };
+
+ajv.addSchema(schemas.qualityReport, "lycium-course-quality-report.schema.json");
 
 describe("Lycium contract fixtures", () => {
   it("accepts a valid source-backed course with separated learn/apply sections", () => {
@@ -68,6 +72,8 @@ describe("Lycium contract fixtures", () => {
   it.each([
     ["progress", "lycium-progress.schema.json", "valid-progress.json"],
     ["quiz progress", "lycium-quiz-progress.schema.json", "valid-quiz-progress.json"],
+    ["course quality report", "lycium-course-quality-report.schema.json", "valid-course-quality-report.json"],
+    ["course lifecycle", "lycium-course-lifecycle.schema.json", "valid-course-lifecycle.json"],
     ["generation job", "lycium-generation-job.schema.json", "valid-generation-job.json"],
     ["provider settings", "lycium-provider-settings.schema.json", "valid-provider-settings.json"],
   ])("accepts valid %s fixtures", (_, schemaName, fixtureName) => {

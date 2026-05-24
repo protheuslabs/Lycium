@@ -4,6 +4,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.course_quality import assess_course_quality
 from app.generation_helpers import (
     COURSE_GENERATION_RULES,
     _build_module_summary_section,
@@ -14,6 +15,91 @@ from app.generation_helpers import (
 from app.generation_outline import create_draft
 from app.models import CourseDraft, CourseSnapshot, Source
 from app.retrieval import search_knowledge_objects, tokenize
+
+
+def _source_record_id(source_id: int | str) -> str:
+    return f"source-{source_id}"
+
+
+def _source_ids_from_citations(citations: list[dict[str, Any]]) -> list[str]:
+    source_ids: list[str] = []
+    seen: set[str] = set()
+    for citation in citations:
+        source_id = citation.get("source_id")
+        if source_id is None:
+            continue
+        record_id = _source_record_id(source_id)
+        if record_id in seen:
+            continue
+        seen.add(record_id)
+        source_ids.append(record_id)
+    return source_ids
+
+
+def _source_records_from_citations(citation_map: dict[str, list[dict[str, Any]]], course_title: str) -> list[dict[str, Any]]:
+    records: dict[str, dict[str, Any]] = {}
+    for citations in citation_map.values():
+        for citation in citations:
+            source_id = citation.get("source_id")
+            if source_id is None:
+                continue
+            record_id = _source_record_id(source_id)
+            records.setdefault(
+                record_id,
+                {
+                    "id": record_id,
+                    "type": "web",
+                    "title": citation.get("title") or f"Source {source_id}",
+                    "url": citation.get("url"),
+                    "license": citation.get("license", "unknown"),
+                    "isFree": citation.get("is_free", True),
+                    "usedByCourseTitles": [course_title],
+                },
+            )
+    return list(records.values())
+
+
+def _source_records_from_input_urls(source_urls: list[str] | None, course_title: str) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": f"input-source-{index}",
+            "type": "web",
+            "title": f"Submitted source {index}",
+            "url": source_url,
+            "usedByCourseTitles": [course_title],
+        }
+        for index, source_url in enumerate(source_urls or [], start=1)
+    ]
+
+
+def _with_source_ids(blocks: list[dict[str, Any]], source_ids: list[str]) -> list[dict[str, Any]]:
+    if not source_ids:
+        return blocks
+    next_blocks: list[dict[str, Any]] = []
+    for block in blocks:
+        if block.get("type") in {"text", "video", "game"}:
+            next_blocks.append({**block, "sourceIds": block.get("sourceIds") or source_ids})
+        else:
+            next_blocks.append(block)
+    return next_blocks
+
+
+def _normalize_quiz_block(block: dict[str, Any]) -> dict[str, Any]:
+    questions = block.get("questions") or block.get("questionBank") or []
+    if isinstance(questions, list):
+        normalized_questions = []
+        for question in questions:
+            if not isinstance(question, dict):
+                normalized_questions.append(question)
+                continue
+            if "answers" not in question and "answer" in question:
+                question = {**question, "answers": [question["answer"]]}
+            normalized_questions.append(question)
+        if "questions" in block:
+            block = {**block, "questions": normalized_questions}
+        elif "questionBank" in block:
+            block = {**block, "questionBank": normalized_questions}
+    return block
 
 
 def _build_section_content(
@@ -114,6 +200,7 @@ def generate_course_from_draft(
                 level=draft.difficulty,
             )
             section_id = section["id"]
+            source_ids = _source_ids_from_citations(citations)
             concept_card_block = {
                 "type": "conceptCards",
                 "title": "Concepts introduced",
@@ -130,9 +217,10 @@ def generate_course_from_draft(
                     "title": section["title"],
                     "sectionType": "lesson",
                     "pageType": "learn",
+                    "sourceIds": source_ids,
                     "learningObjectives": section.get("learning_objectives", []),
                     "estimatedMinutes": section.get("estimated_minutes", 20),
-                    "content": [*blocks, concept_card_block],
+                    "content": [*_with_source_ids(blocks, source_ids), concept_card_block],
                     "citations": citations,
                 }
             )
@@ -141,13 +229,17 @@ def generate_course_from_draft(
 
             concept_tokens = [token for token in tokenize(section["title"]) if len(token) > 3][:3]
             quiz_section_id = _stable_id("q", section_id, section["title"])
+            quiz_block = _normalize_quiz_block(_build_quiz_for_section(section["title"], concept_tokens))
+            if source_ids:
+                quiz_block["sourceIds"] = source_ids
             section_rows.append(
                 {
                     "id": quiz_section_id,
                     "title": f"Quiz: {section['title']}",
+                    "sourceIds": source_ids,
                     "learningObjectives": [],
                     "estimatedMinutes": 10,
-                    "content": [_build_quiz_for_section(section["title"], concept_tokens)],
+                    "content": [quiz_block],
                     "citations": citations,
                     "sectionType": "assessment",
                     "pageType": "apply",
@@ -162,15 +254,34 @@ def generate_course_from_draft(
         section_rows.append(summary_section)
         section_source_map[summary_section["id"]] = []
         citation_map[summary_section["id"]] = summary_section["citations"]
+        module_source_ids = sorted(
+            {
+                source_id
+                for section in section_rows
+                for source_id in section.get("sourceIds", [])
+                if isinstance(source_id, str)
+            }
+        )
         modules.append(
             {
                 "id": module["id"],
                 "title": module["title"],
+                "sourceIds": module_source_ids,
                 "learningObjectives": module.get("learning_objectives", []),
                 "sections": section_rows,
             }
         )
 
+    submitted_source_urls = draft.constraints.get("source_urls")
+    if not isinstance(submitted_source_urls, list):
+        submitted_source_urls = []
+    input_source_records = _source_records_from_input_urls([str(url) for url in submitted_source_urls], draft.title)
+    source_records_by_id = {
+        source_record["id"]: source_record
+        for source_record in [*_source_records_from_citations(citation_map, draft.title), *input_source_records]
+    }
+    source_records = list(source_records_by_id.values())
+    course_source_ids = [source["id"] for source in source_records]
     structure = {
         "title": draft.title,
         "shortDescription": outline.get("shortDescription") or outline.get("summary") or f"A generated Lycium course for {draft.title}.",
@@ -179,6 +290,8 @@ def generate_course_from_draft(
         "tags": [],
         "learningTypes": [],
         "orderMandatory": bool(draft.constraints.get("order_mandatory", False)),
+        "sourceIds": course_source_ids,
+        "sourceRecords": source_records,
         "metadata": {
             "prompt": draft.prompt,
             "pacingLabel": "Module",
@@ -213,6 +326,7 @@ def generate_course_from_draft(
         "section_source_map": section_source_map,
         "citation_map": citation_map,
     }
+    quality_report = assess_course_quality(structure, gate="review")
     snapshot = CourseSnapshot(
         learner_id=learner_id,
         draft_id=draft.id,
@@ -221,10 +335,10 @@ def generate_course_from_draft(
         language=draft.language,
         level=draft.difficulty,
         source_policy=source_policy,
-        status="generated",
+        status="ready_for_review" if quality_report["passed"] else "needs_revision",
         version=1,
         structure=structure,
-        generation_trace=trace,
+        generation_trace={**trace, "quality_report": quality_report},
     )
     session.add(snapshot)
     session.flush()
@@ -244,6 +358,7 @@ def generate_course_direct(
     trust_min: float,
     desired_module_count: int,
     expected_duration_minutes: int,
+    source_urls: list[str] | None = None,
 ) -> CourseSnapshot:
     draft = create_draft(
         session,
@@ -254,7 +369,12 @@ def generate_course_direct(
         level=level,
         expected_duration_minutes=expected_duration_minutes,
         language=language,
-        constraints={"source_policy": source_policy, "free_only": free_only, "trust_min": trust_min},
+        constraints={
+            "source_policy": source_policy,
+            "free_only": free_only,
+            "trust_min": trust_min,
+            "source_urls": source_urls or [],
+        },
         desired_module_count=desired_module_count,
         free_only=free_only,
         trust_min=trust_min,
@@ -362,4 +482,5 @@ def refresh_course(
         trust_min=trust_min,
         desired_module_count=3,
         expected_duration_minutes=180,
+        source_urls=[],
     )

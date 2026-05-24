@@ -67,6 +67,11 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - generated courses must not enter the catalog until structural validation passes
    - every referenced `sourceId` must resolve to a central or course-level source record
    - validation failures should be reported as generation errors, not silently repaired after rendering
+14. Treat publication as a separate lifecycle gate:
+   - generated snapshots should start as reviewable artifacts, not automatically trusted catalog entries
+   - create or preserve `generation_trace.quality_report` when backend generation is involved
+   - publish only after the quality report passes or a reviewer explicitly records a force-publish reason
+   - locked sections should be represented in review metadata rather than by mutating lesson content
 
 ## Validation
 

@@ -11,6 +11,7 @@ class Settings:
     database_url: str
     user_agent: str
     local_data_dir: Path
+    api_token: str | None
     agent_api_url: str
     agent_model: str
     agent_timeout_seconds: float
@@ -37,6 +38,7 @@ def load_settings() -> Settings:
         database_url=os.getenv("LYCIUM_DATABASE_URL", f"sqlite:///{db_path}"),
         user_agent=os.getenv("LYCIUM_USER_AGENT", "LyciumBot/0.1 (+https://lycium.local)"),
         local_data_dir=local_data_dir,
+        api_token=os.getenv("LYCIUM_API_TOKEN") or None,
         agent_api_url=os.getenv("LYCIUM_AGENT_API_URL", "https://api.openai.com/v1/chat/completions"),
         agent_model=os.getenv("LYCIUM_AGENT_MODEL", "gpt-4.1-mini"),
         agent_timeout_seconds=float(os.getenv("LYCIUM_AGENT_TIMEOUT_SECONDS", "120")),

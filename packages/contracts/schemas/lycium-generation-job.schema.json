@@ -20,7 +20,11 @@
         "level": { "type": "string" },
         "source_policy": { "type": "string" },
         "desired_module_count": { "type": "number" },
-        "expected_duration_minutes": { "type": "number" }
+        "expected_duration_minutes": { "type": "number" },
+        "source_urls": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
       }
     },
     "courseKey": { "type": "string" },

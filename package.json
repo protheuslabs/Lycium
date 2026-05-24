@@ -14,6 +14,8 @@
     "build:web": "corepack pnpm --filter @lycium/web build",
     "test:contracts": "corepack pnpm --filter @lycium/contracts test",
     "test:api": "cd services/lycium-api && pytest -q",
+    "test:workers": "cd services/lycium-workers && PYTHONPATH=src pytest -q",
+    "test:e2e": "corepack pnpm --filter @lycium/web e2e",
     "validate": "corepack pnpm test:contracts && corepack pnpm --filter @lycium/web typecheck && corepack pnpm --filter @lycium/web build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck"

@@ -16,6 +16,7 @@ This package owns:
 - Course validation helpers
 - JSON Schema files for cross-language validation
 - Contract version metadata
+- Lifecycle and quality-report contracts for generated course gates
 
 ## Contract Layers
 
@@ -56,6 +57,8 @@ The web app should not call `fetch()` or `localStorage` directly from feature co
 The local API validates generated course structures through `services/lycium-api/app/contract_validation.py`, which loads the JSON Schemas from `packages/contracts/schemas`. Backend validation can add stricter semantic checks, but it should not redefine the structural course contract separately.
 
 The contract schema set now covers courses, source records, learner progress, quiz attempt persistence, generation jobs, and provider settings. New local/cloud/Infring adapters should add to this shared schema layer before adding durable runtime state.
+
+The schema set also covers course lifecycle records and course quality reports. Generated snapshots should not be considered catalog-published until a quality report passes and the snapshot moves to `published`.
 
 `@lycium/data-access` includes concrete repository factories for static JSON catalogs, generic HTTP/cloud APIs, and future Infring-backed APIs. Hosted Lycium, local Lycium, and Infring Lycium should differ by adapter configuration rather than by learner UI components.
 

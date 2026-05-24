@@ -47,6 +47,15 @@ class RankedKnowledgeObject:
     reasons: list[str]
 
 
+@dataclass
+class RetrievalQualityReport:
+    query: str
+    returned: int
+    score: float
+    warnings: list[str]
+    metrics: dict[str, float]
+
+
 def search_knowledge_objects(
     session: Session,
     *,
@@ -90,6 +99,64 @@ def search_knowledge_objects(
 
     ranked.sort(key=lambda item: item[1], reverse=True)
     return [item[0] for item in ranked[:top_k]]
+
+
+def evaluate_retrieval_quality(
+    objects: list[KnowledgeObject],
+    *,
+    query: str,
+    trust_min: float,
+) -> RetrievalQualityReport:
+    if not objects:
+        return RetrievalQualityReport(
+            query=query,
+            returned=0,
+            score=0.0,
+            warnings=["No qualifying knowledge objects matched the retrieval policy."],
+            metrics={
+                "averageTrust": 0.0,
+                "averageLexicalSimilarity": 0.0,
+                "sourceDiversity": 0.0,
+                "modalityDiversity": 0.0,
+                "trustFloor": trust_min,
+            },
+        )
+
+    average_trust = sum(obj.trust_score for obj in objects) / len(objects)
+    average_similarity = sum(lexical_similarity(query, f"{obj.title} {obj.content} {obj.topic}") for obj in objects) / len(objects)
+    source_diversity = len({obj.source_id for obj in objects}) / len(objects)
+    modality_diversity = len({obj.modality for obj in objects}) / len(objects)
+    warnings: list[str] = []
+
+    if average_trust < max(trust_min, 0.55):
+        warnings.append("Average trust is below the recommended retrieval floor.")
+    if average_similarity < 0.04:
+        warnings.append("Lexical match is weak; consider adding more focused sources.")
+    if source_diversity < 0.34 and len(objects) >= 3:
+        warnings.append("Results are concentrated in too few sources.")
+    if modality_diversity < 0.25 and len(objects) >= 4:
+        warnings.append("Results have limited modality diversity.")
+
+    score = (
+        min(average_trust, 1.0) * 0.42
+        + min(average_similarity * 6, 1.0) * 0.28
+        + min(source_diversity, 1.0) * 0.18
+        + min(modality_diversity, 1.0) * 0.12
+    )
+
+    return RetrievalQualityReport(
+        query=query,
+        returned=len(objects),
+        score=round(score, 2),
+        warnings=warnings,
+        metrics={
+            "averageTrust": round(average_trust, 4),
+            "averageLexicalSimilarity": round(average_similarity, 4),
+            "sourceDiversity": round(source_diversity, 4),
+            "modalityDiversity": round(modality_diversity, 4),
+            "trustFloor": trust_min,
+        },
+    )
 
 
 def assemble_learning_packet(
@@ -140,12 +207,14 @@ def assemble_learning_packet(
         used_ids.add(obj.id)
 
     if not selected:
+        report = evaluate_retrieval_quality([], query=query, trust_min=trust_min)
         return {
             "query": query,
             "object_ids": [],
             "rationale": "No qualifying knowledge objects matched the retrieval policy.",
             "modality_mix": {},
             "trust_floor_applied": trust_min,
+            "quality_report": report.__dict__,
         }
 
     # Expand packet with prerequisite neighbors when available.
@@ -176,4 +245,5 @@ def assemble_learning_packet(
         "rationale": rationale,
         "modality_mix": dict(modality_mix),
         "trust_floor_applied": trust_min,
+        "quality_report": evaluate_retrieval_quality(selected[:top_k], query=query, trust_min=trust_min).__dict__,
     }

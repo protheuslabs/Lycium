@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.config import SETTINGS
+
 
 def _install_fetch_mock(monkeypatch, mapping: dict[str, str]) -> None:
     def fake_fetch(url: str) -> tuple[str, str]:
@@ -82,6 +84,16 @@ def test_ingestion_dedup_search_and_coverage(client, monkeypatch) -> None:
     assert search_json["returned"] >= 1
     assert search_json["objects"][0]["trust_score"] >= 0.1
 
+    retrieval_eval = client.get(
+        "/v1/knowledge/evaluate",
+        params={"query": "machine learning algorithms", "top_k": 5, "trust_min": 0.1},
+    )
+    assert retrieval_eval.status_code == 200, retrieval_eval.text
+    retrieval_eval_json = retrieval_eval.json()
+    assert retrieval_eval_json["returned"] >= 1
+    assert 0 <= retrieval_eval_json["score"] <= 1
+    assert "averageTrust" in retrieval_eval_json["metrics"]
+
     recompute = client.post("/v1/coverage/recompute")
     assert recompute.status_code == 200, recompute.text
     assert len(recompute.json()) >= 1
@@ -143,6 +155,12 @@ def test_outline_generation_course_delivery_and_analytics(client, monkeypatch) -
     assert generated.status_code == 201, generated.text
     course = generated.json()
     course_id = course["id"]
+    quality = client.get(f"/v1/courses/{course_id}/quality-report")
+    assert quality.status_code == 200, quality.text
+    assert quality.json()["passed"] is True
+    publish = client.post(f"/v1/courses/{course_id}/publish", json={"reviewer_id": "pytest", "notes": "approved"})
+    assert publish.status_code == 200, publish.text
+    assert publish.json()["status"] == "published"
     first_module = course["structure"]["modules"][0]
     first_section = first_module["sections"][0]
     quiz_section = first_module["sections"][1]
@@ -221,6 +239,8 @@ def test_program_portfolio_credentials_and_catalog(client, monkeypatch) -> None:
     )
     assert generated_course.status_code == 201, generated_course.text
     course_id = generated_course.json()["id"]
+    publish_course = client.post(f"/v1/courses/{course_id}/publish", json={"reviewer_id": "pytest"})
+    assert publish_course.status_code == 200, publish_course.text
 
     program = client.post(
         "/v1/programs/generate",
@@ -310,3 +330,19 @@ def test_job_queue_and_runner_endpoints(client, monkeypatch) -> None:
     assert run_one.status_code == 200, run_one.text
     assert run_one.json()["status"] == "completed"
     assert "course_snapshot_id" in run_one.json()["result"]
+
+
+def test_optional_api_token_guards_non_public_paths(client) -> None:
+    original_token = SETTINGS.api_token
+    object.__setattr__(SETTINGS, "api_token", "test-token")
+    try:
+        health = client.get("/healthz")
+        assert health.status_code == 200, health.text
+
+        denied = client.get("/v1/system/boundary")
+        assert denied.status_code == 401, denied.text
+
+        allowed = client.get("/v1/system/boundary", headers={"Authorization": "Bearer test-token"})
+        assert allowed.status_code == 200, allowed.text
+    finally:
+        object.__setattr__(SETTINGS, "api_token", original_token)

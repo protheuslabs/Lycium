@@ -109,6 +109,29 @@ export type LyciumCourseEntry = {
   source: "local" | "remote" | string;
 };
 
+export type LyciumCourseLifecycleStatus =
+  | "draft"
+  | "generated"
+  | "validating"
+  | "needs_revision"
+  | "ready_for_review"
+  | "published"
+  | "archived"
+  | "failed";
+
+export type LyciumCourseQualityGate = "generation" | "review" | "publish";
+
+export type LyciumCourseQualityReport = {
+  gate: LyciumCourseQualityGate;
+  passed: boolean;
+  score: number;
+  errors: string[];
+  warnings: string[];
+  metrics: Record<string, number>;
+  checkedAt: string;
+  contractVersion?: string;
+};
+
 export type LyciumSourceRecordLike = {
   id?: unknown;
 };
@@ -447,6 +470,9 @@ export type LyciumGeneratedCourseRecord = {
   id: string | number;
   title: string;
   structure: LyciumCourseData;
+  status?: LyciumCourseLifecycleStatus;
+  generation_trace?: Record<string, unknown>;
+  qualityReport?: LyciumCourseQualityReport;
 };
 
 export type LyciumCourseGenerationRequest = {
@@ -456,6 +482,7 @@ export type LyciumCourseGenerationRequest = {
   source_policy?: string;
   desired_module_count?: number;
   expected_duration_minutes?: number;
+  source_urls?: string[];
 };
 
 export type LyciumCourseGenerationJobStatus = "queued" | "running" | "validating" | "ready" | "failed";
