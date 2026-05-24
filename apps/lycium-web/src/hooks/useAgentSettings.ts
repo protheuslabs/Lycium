@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import { createBrowserStorageRepository, createLyciumLocalApi } from "@lycium/data-access";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../courseTypes";
 
 const DEFAULT_AGENT_PROVIDERS: AgentProviderRecord[] = [
@@ -33,7 +34,10 @@ const DEFAULT_AGENT_PROVIDERS: AgentProviderRecord[] = [
   },
 ];
 
+const browserStorage = createBrowserStorageRepository();
+
 export function useAgentSettings(routeKind: string, apiBase: string) {
+  const lyciumApi = useMemo(() => createLyciumLocalApi(apiBase), [apiBase]);
   const [agentProviders, setAgentProviders] = useState<AgentProviderRecord[]>(DEFAULT_AGENT_PROVIDERS);
   const [agentProviderId, setAgentProviderId] = useState("openai");
   const [agentApiKey, setAgentApiKey] = useState("");
@@ -42,8 +46,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
   const [settingsStatus, setSettingsStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [settingsMessage, setSettingsMessage] = useState("");
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const storedTheme = localStorage.getItem("lycium-theme-mode");
-    return storedTheme === "light" || storedTheme === "dark" || storedTheme === "auto" ? storedTheme : "auto";
+    return browserStorage.readThemeMode() ?? "auto";
   });
 
   const handleSettingsSubmit = async (evt: FormEvent<HTMLFormElement>) => {
@@ -65,17 +68,10 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     setSettingsMessage("");
 
     try {
-      const response = await fetch(`${apiBase}/v1/local/settings`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider_id: agentProviderId, agent_api_key: trimmedKey }),
+      const settings = await lyciumApi.saveSettings({
+        provider_id: agentProviderId,
+        agent_api_key: trimmedKey,
       });
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        throw new Error(errorBody?.detail ?? "Settings save failed");
-      }
-
-      const settings = await response.json();
       const activeKey = (settings.agent_keys ?? []).find((key: AgentKeyRecord) => key.is_active);
       setAgentApiKey("");
       setApiKeySaveStatus("idle");
@@ -98,16 +94,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     setSettingsMessage("Switching active key...");
 
     try {
-      const response = await fetch(`${apiBase}/v1/local/settings/active-key`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key_id: keyId }),
-      });
-      if (!response.ok) {
-        throw new Error("Active key update failed");
-      }
-
-      const settings = await response.json();
+      const settings = await lyciumApi.activateAgentKey({ key_id: keyId });
       const activeKey = (settings.agent_keys ?? []).find((key: AgentKeyRecord) => key.is_active);
       setAgentKeys(settings.agent_keys ?? []);
       setSettingsStatus("success");
@@ -124,16 +111,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     setSettingsMessage("Updating model...");
 
     try {
-      const response = await fetch(`${apiBase}/v1/local/settings/key-model`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key_id: keyId, model }),
-      });
-      if (!response.ok) {
-        throw new Error("Model update failed");
-      }
-
-      const settings = await response.json();
+      const settings = await lyciumApi.updateAgentKeyModel({ key_id: keyId, model });
       setAgentKeys(settings.agent_keys ?? []);
       setSettingsStatus("success");
       setSettingsMessage(`Model set to ${model}.`);
@@ -146,7 +124,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
 
   const handleThemeModeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
-    localStorage.setItem("lycium-theme-mode", mode);
+    browserStorage.writeThemeMode(mode);
   };
 
   useEffect(() => {
@@ -182,16 +160,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     setSettingsStatus("loading");
     setSettingsMessage("Loading settings...");
 
-    Promise.all([
-      fetch(`${apiBase}/v1/local/ai/providers`).then((response) => {
-        if (!response.ok) throw new Error("AI providers unavailable");
-        return response.json();
-      }),
-      fetch(`${apiBase}/v1/local/settings`).then((response) => {
-        if (!response.ok) throw new Error("Settings unavailable");
-        return response.json();
-      }),
-    ])
+    Promise.all([lyciumApi.loadAgentProviders(), lyciumApi.loadSettings()])
       .then(([providers, settings]) => {
         if (ignored) return;
         const loadedProviders =
@@ -225,7 +194,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     return () => {
       ignored = true;
     };
-  }, [routeKind, apiBase]);
+  }, [routeKind, lyciumApi]);
 
   const isSavingAgentKey = apiKeySaveStatus === "loading";
   const canAddAgentKey = Boolean(agentProviderId && agentApiKey.trim()) && !isSavingAgentKey;

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-provider-settings.schema.json",
+  "title": "Lycium Provider Settings",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "agent_keys": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "provider_id", "provider_label", "key_preview", "is_active"],
+        "properties": {
+          "id": { "type": "string" },
+          "provider_id": { "type": "string" },
+          "provider_label": { "type": "string" },
+          "key_preview": { "type": "string" },
+          "model": { "type": ["string", "null"] },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["id"],
+              "properties": {
+                "id": { "type": "string" },
+                "label": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "models_fetched_at": { "type": ["string", "null"] },
+          "is_active": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

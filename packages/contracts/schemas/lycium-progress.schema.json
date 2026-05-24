@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-progress.schema.json",
+  "title": "Lycium Learner Progress",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["completedSectionIds", "sectionStatuses"],
+  "properties": {
+    "completedSectionIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "sectionStatuses": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": ["completed", "locked", "seen", "timed"]
+      }
+    }
+  }
+}

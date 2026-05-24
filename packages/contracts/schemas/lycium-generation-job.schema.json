@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-generation-job.schema.json",
+  "title": "Lycium Course Generation Job",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "status", "request", "createdAt", "updatedAt"],
+  "properties": {
+    "id": { "type": "string" },
+    "status": {
+      "enum": ["queued", "running", "validating", "ready", "failed"]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prompt"],
+      "properties": {
+        "prompt": { "type": "string" },
+        "learner_id": { "type": "number" },
+        "level": { "type": "string" },
+        "source_policy": { "type": "string" },
+        "desired_module_count": { "type": "number" },
+        "expected_duration_minutes": { "type": "number" }
+      }
+    },
+    "courseKey": { "type": "string" },
+    "message": { "type": "string" },
+    "createdAt": { "type": "string" },
+    "updatedAt": { "type": "string" }
+  }
+}

@@ -50,3 +50,9 @@ Any breaking change to course JSON should update `LYCIUM_COURSE_CONTRACT_VERSION
 ## Repository Adapter Contract
 
 `packages/data-access` is the runtime data boundary. UI features should depend on repository interfaces for course lists, course snapshots, learner progress, and generation jobs. Local API, static JSON, cloud API, and future Infring adapters should implement those interfaces without changing course rendering components.
+
+The web app should not call `fetch()` or `localStorage` directly from feature components. Browser storage, local API calls, quiz attempt persistence, progress records, bookmarks, settings, and generation requests should flow through `@lycium/data-access` so the same runtime can later swap between local, cloud, static JSON, and Infring adapters.
+
+The local API validates generated course structures through `services/lycium-api/app/contract_validation.py`, which loads the JSON Schemas from `packages/contracts/schemas`. Backend validation can add stricter semantic checks, but it should not redefine the structural course contract separately.
+
+The contract schema set now covers courses, source records, learner progress, quiz attempt persistence, generation jobs, and provider settings. New local/cloud/Infring adapters should add to this shared schema layer before adding durable runtime state.

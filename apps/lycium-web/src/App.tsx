@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
+import { createBrowserStorageRepository, createLyciumLocalApi } from "@lycium/data-access";
 import ContentView from "./components/ContentView/ContentView";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
 import SettingsModal from "./components/SettingsModal/SettingsModal";
@@ -33,17 +34,11 @@ import {
   getFirstCourseSection,
   getSectionPathSlug,
   parseCourseRoute,
-  readStoredCourseBookmark,
-  writeStoredCourseBookmark,
 } from "./utils/courseRouting";
 
 const API_BASE = process.env.NEXT_PUBLIC_LYCIUM_API_URL ?? "http://127.0.0.1:8000";
-
-type RemoteCourseRow = {
-  id: string | number;
-  title: string;
-  structure: CourseEntry["data"];
-};
+const lyciumApi = createLyciumLocalApi(API_BASE);
+const browserStorage = createBrowserStorageRepository();
 
 function scrollCoursePageToTop() {
   window.requestAnimationFrame(() => {
@@ -116,7 +111,6 @@ function App() {
   );
 
   const currentSection = sections[currentSectionIndex] ?? null;
-  const progressStorageKey = `lycium-progress-${selectedCourse?.key}`;
   const orderMandatory = selectedCourse?.data?.orderMandatory ?? false;
   const resolvedSectionStatuses = useMemo(
     () => resolveSectionStatuses(sections, progress.completedSectionIds, progress.sectionStatuses, Boolean(orderMandatory)),
@@ -159,20 +153,17 @@ function App() {
 
   const persistProgress = useCallback(
     (nextProgress: CourseProgressRecord, sectionId?: string | null) => {
-      localStorage.setItem(progressStorageKey, JSON.stringify(nextProgress));
-      fetch(`${API_BASE}/v1/local/completion`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const courseKey = selectedCourse?.key ?? "unknown";
+      browserStorage.writeProgress(courseKey, nextProgress);
+      lyciumApi.mirrorCompletion({
           course_key: selectedCourse?.key ?? "unknown",
           course_title: selectedCourse?.title ?? null,
           section_id: sectionId ?? null,
           completed_section_ids: nextProgress.completedSectionIds,
           section_statuses: nextProgress.sectionStatuses,
-        }),
-      }).catch((err) => console.warn("Failed to mirror local completion:", err));
+        }).catch((err) => console.warn("Failed to mirror local completion:", err));
     },
-    [progressStorageKey, selectedCourse?.key, selectedCourse?.title]
+    [selectedCourse?.key, selectedCourse?.title]
   );
 
   const routeToHome = useCallback(() => {
@@ -207,18 +198,15 @@ function App() {
   }, []);
 
   const rememberCourseSection = useCallback((course: CourseEntry, section: CourseSection, path: string) => {
-    writeStoredCourseBookmark(course, section, path);
-    fetch(`${API_BASE}/v1/local/bookmarks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const bookmark = {
         course_key: course.key,
         course_title: course.title,
         section_id: section.id,
         section_title: section.title,
         path,
-      }),
-    }).catch((err) => console.warn("Failed to save course bookmark:", err));
+      };
+    browserStorage.writeBookmark(course.key, bookmark);
+    lyciumApi.saveBookmark(bookmark).catch((err) => console.warn("Failed to save course bookmark:", err));
   }, []);
 
   const pushSectionPath = useCallback(
@@ -242,13 +230,10 @@ function App() {
   const openCourseByEntry = useCallback(
     async (course: CourseEntry, replace = false) => {
       setCurrentCourseKey(course.key);
-      let targetSection = findBookmarkedSection(course, readStoredCourseBookmark(course));
+      let targetSection = findBookmarkedSection(course, browserStorage.readBookmark(course.key));
       if (!targetSection) {
         try {
-          const response = await fetch(`${API_BASE}/v1/local/bookmarks/${encodeURIComponent(course.key)}`);
-          if (response.ok) {
-            targetSection = findBookmarkedSection(course, await response.json());
-          }
+          targetSection = findBookmarkedSection(course, await lyciumApi.loadBookmark(course.key));
         } catch (err) {
           console.warn("Local bookmark unavailable:", err);
         }
@@ -333,18 +318,14 @@ function App() {
     });
 
     if (selectedCourse?.snapshotId && learnerId) {
-      fetch(`${API_BASE}/v1/courses/${selectedCourse.snapshotId}/progress`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      lyciumApi.saveSnapshotProgress(selectedCourse.snapshotId, {
           learner_id: learnerId,
           section_id: sectionId,
           completion_state: "completed",
           mastery_score: 0.8,
           event_type: "section_completed",
           event_payload: { course_key: selectedCourse?.key ?? "unknown" },
-        }),
-      }).catch((err) => console.warn("Failed to post progress:", err));
+        }).catch((err) => console.warn("Failed to post progress:", err));
     }
   };
 
@@ -355,24 +336,14 @@ function App() {
     setGenerateMessage("Generating course...");
 
     try {
-      const response = await fetch(`${API_BASE}/v1/agent/courses/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const course = await lyciumApi.generateCourse({
           prompt,
           learner_id: learnerId ?? undefined,
           level: level || undefined,
           source_policy: "balanced",
           desired_module_count: 3,
           expected_duration_minutes: 180,
-        }),
-      });
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        throw new Error(errorBody?.detail ?? "Generation failed");
-      }
-
-      const course = await response.json();
+        });
       const entry: CourseEntry = {
         key: `remote-${course.id}`,
         title: course.title,
@@ -446,9 +417,7 @@ function App() {
   useEffect(() => {
     const fetchRemoteCourses = async () => {
       try {
-        const response = await fetch(`${API_BASE}/v1/courses?limit=25`);
-        if (!response.ok) throw new Error("Failed to fetch courses");
-        const rows = (await response.json()) as RemoteCourseRow[];
+        const rows = await lyciumApi.listRemoteCourses(25);
         const remoteCourses: CourseEntry[] = [];
         for (const row of rows) {
           const snapshotId = Number(row.id);
@@ -478,25 +447,19 @@ function App() {
     };
 
     const ensureLearner = async () => {
-      const stored = localStorage.getItem("lycium-learner-id");
+      const stored = browserStorage.readLearnerId();
       if (stored) {
-        setLearnerId(Number(stored));
+        setLearnerId(stored);
         return;
       }
       try {
-        const response = await fetch(`${API_BASE}/v1/learners`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const learner = await lyciumApi.createLearner({
             name: "Lycium Learner",
             goal: "Build a personalized course catalog",
             level: "beginner",
             preferences: { modalities: ["text", "video"], time_budget: "4h/week" },
-          }),
-        });
-        if (!response.ok) throw new Error("Failed to create learner");
-        const learner = await response.json();
-        localStorage.setItem("lycium-learner-id", String(learner.id));
+          });
+        browserStorage.writeLearnerId(learner.id);
         setLearnerId(Number(learner.id));
       } catch (err) {
         console.warn("Unable to create learner:", err);
@@ -520,8 +483,9 @@ function App() {
   useEffect(() => {
     let initialProgress = DEFAULT_PROGRESS;
     try {
-      const loadedProgress = localStorage.getItem(progressStorageKey);
-      initialProgress = loadedProgress ? normalizeProgressRecord(JSON.parse(loadedProgress)) : DEFAULT_PROGRESS;
+      initialProgress = selectedCourse?.key
+        ? normalizeProgressRecord(browserStorage.readProgress(selectedCourse.key))
+        : DEFAULT_PROGRESS;
     } catch {
       initialProgress = DEFAULT_PROGRESS;
     }
@@ -529,11 +493,7 @@ function App() {
     setProgress(normalizedInitialProgress);
     if (!selectedCourse?.key) return;
 
-    fetch(`${API_BASE}/v1/local/completion/${encodeURIComponent(selectedCourse.key)}`)
-      .then((response) => {
-        if (!response.ok) throw new Error("Local completion unavailable");
-        return response.json();
-      })
+    lyciumApi.loadCompletion(selectedCourse.key)
       .then((storedProgress) => {
         const normalizedStoredProgress = normalizeProgressRecord(storedProgress);
         const merged = normalizeProgressForCourse({
@@ -551,11 +511,11 @@ function App() {
           return;
         }
 
-        localStorage.setItem(progressStorageKey, JSON.stringify(merged));
+        browserStorage.writeProgress(selectedCourse.key, merged);
         setProgress(merged);
       })
       .catch((err) => console.warn("Local completion unavailable:", err));
-  }, [progressStorageKey, normalizeProgressForCourse, selectedCourse?.key]);
+  }, [normalizeProgressForCourse, selectedCourse?.key]);
 
   useEffect(() => {
     if (!currentSection?.id) {

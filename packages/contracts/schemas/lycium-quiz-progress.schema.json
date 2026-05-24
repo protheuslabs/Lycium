@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-quiz-progress.schema.json",
+  "title": "Lycium Quiz Progress",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "startedAt": { "type": "string" },
+    "submittedAt": { "type": "string" },
+    "submitted": { "type": "boolean" },
+    "attemptCount": { "type": "number" },
+    "attemptHistory": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/attemptHistoryItem" }
+    },
+    "elapsedSeconds": { "type": "number" },
+    "selectedByQuestion": { "$ref": "#/$defs/selectedByQuestion" },
+    "questionCorrectness": {
+      "type": "array",
+      "items": { "type": "boolean" }
+    },
+    "attemptOrder": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/attemptOrderItem" }
+    },
+    "attemptSignature": { "type": "string" },
+    "previousAttemptSignature": { "type": "string" }
+  },
+  "$defs": {
+    "attemptOrderItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["questionIndex", "optionOrder"],
+      "properties": {
+        "questionIndex": { "type": "number" },
+        "optionOrder": {
+          "type": "array",
+          "items": { "type": "number" }
+        }
+      }
+    },
+    "selectedByQuestion": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": "number" }
+      }
+    },
+    "attemptHistoryItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attemptNumber", "elapsedSeconds", "scorePercentage", "submittedAt"],
+      "properties": {
+        "attemptNumber": { "type": "number" },
+        "elapsedSeconds": { "type": "number" },
+        "scorePercentage": { "type": "number" },
+        "correctCount": { "type": "number" },
+        "totalQuestions": { "type": "number" },
+        "submittedAt": { "type": "string" },
+        "attemptOrder": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/attemptOrderItem" }
+        },
+        "selectedByQuestion": { "$ref": "#/$defs/selectedByQuestion" },
+        "questionCorrectness": {
+          "type": "array",
+          "items": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

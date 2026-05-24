@@ -1,10 +1,13 @@
 import type { CourseBookmarkRecord, CourseEntry, CourseSection, RouteInfo } from "../courseTypes";
+import { createBrowserStorageRepository } from "@lycium/data-access";
 import {
   DEFAULT_PROGRESS,
   normalizeProgressRecord,
   summarizeCourseProgress,
   type CourseProgressSummary,
 } from "./courseProgress";
+
+const browserStorage = createBrowserStorageRepository();
 
 export const LYCIUM_SITE_ROOT = "https://lyciumlabs.github.io/Lycium/";
 export const LYCIUM_ROUTE_ROOT = "/Lycium";
@@ -98,12 +101,7 @@ export function getCourseBookmarkStorageKey(course: CourseEntry): string {
 }
 
 export function readStoredCourseBookmark(course: CourseEntry): CourseBookmarkRecord | null {
-  try {
-    const saved = localStorage.getItem(getCourseBookmarkStorageKey(course));
-    return saved ? JSON.parse(saved) : null;
-  } catch {
-    return null;
-  }
+  return browserStorage.readBookmark(course.key);
 }
 
 export function writeStoredCourseBookmark(course: CourseEntry, section: CourseSection, path: string): void {
@@ -114,7 +112,7 @@ export function writeStoredCourseBookmark(course: CourseEntry, section: CourseSe
     section_title: section.title,
     path,
   };
-  localStorage.setItem(getCourseBookmarkStorageKey(course), JSON.stringify(bookmark));
+  browserStorage.writeBookmark(course.key, bookmark);
 }
 
 export function findBookmarkedSection(course: CourseEntry, bookmark: CourseBookmarkRecord | null): CourseSection | null {
@@ -162,12 +160,10 @@ export function getCourseSectionIds(course: CourseEntry): string[] {
 }
 
 export function getCourseProgress(course: CourseEntry): CourseProgressSummary {
-  const courseStorageKey = `lycium-progress-${course.key}`;
   const sections = getCourseSectionIds(course);
 
   try {
-    const saved = localStorage.getItem(courseStorageKey);
-    const progress = saved ? normalizeProgressRecord(JSON.parse(saved)) : DEFAULT_PROGRESS;
+    const progress = normalizeProgressRecord(browserStorage.readProgress(course.key));
     return summarizeCourseProgress(sections, progress);
   } catch {
     return summarizeCourseProgress(sections, DEFAULT_PROGRESS);

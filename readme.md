@@ -167,6 +167,7 @@ Do not commit secrets or machine-local learner data.
 - Use conventional commit prefixes such as `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, and `chore:`.
 - Keep reusable UI behavior in components rather than duplicating markup in page shells.
 - Keep course and source-record contracts centralized in `packages/contracts`.
+- Keep browser storage, local API access, progress, quiz attempts, settings, bookmarks, and generation calls behind `packages/data-access`.
 - Keep course progress logic centralized in `apps/lycium-web/src/utils/courseProgress.ts`.
 - Keep course route and slug behavior centralized in `apps/lycium-web/src/utils/courseRouting.ts`.
 - Prefer explicit source records over free-floating URLs in course JSON.

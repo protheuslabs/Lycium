@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createBrowserStorageRepository } from "@lycium/data-access";
 import QuizMetaRows from "./QuizMetaRows";
 import QuizQuestionList from "./QuizQuestionList";
 import {
@@ -24,6 +25,8 @@ import {
   shouldShowAnswersFromPayload,
 } from "./quizNormalization";
 import type { AttemptHistoryItem, AttemptOrderItem, QuizPayload } from "./quizTypes";
+
+const browserStorage = createBrowserStorageRepository();
 
 export default function QuizBlock({
   data,
@@ -80,9 +83,6 @@ export default function QuizBlock({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startedAtMs, setStartedAtMs] = useState(() => Date.now());
 
-  const markerStorageKey = useMemo(() => `lycium-quiz-marker-${name || "quiz"}`, [name]);
-  const quizProgressStorageKey = useMemo(() => `lycium-quiz-progress-${name || "quiz"}`, [name]);
-
   useEffect(() => {
     let nextAttemptOrder: AttemptOrderItem[] = [];
     let nextSelectedByQuestion: number[][] = [];
@@ -94,8 +94,7 @@ export default function QuizBlock({
     let nextElapsedSeconds = 0;
 
     try {
-      const stored = localStorage.getItem(quizProgressStorageKey);
-      const parsed = stored ? JSON.parse(stored) : null;
+      const parsed = browserStorage.readQuizProgress(name);
       const storedStartedAtMs = timestampToMs(parsed?.startedAt);
       const hasSubmittedAttempt = parsed?.submitted === true && typeof parsed?.submittedAt === "string";
       const storedAttemptOrder = parseAttemptOrder(parsed?.attemptOrder, questionBank);
@@ -184,43 +183,38 @@ export default function QuizBlock({
     setElapsedSeconds(nextElapsedSeconds);
 
     if (!nextSubmitted) {
-      localStorage.setItem(
-        quizProgressStorageKey,
-        JSON.stringify({
+      browserStorage.writeQuizProgress(
+        name,
+        {
           startedAt: new Date(nextStartedAtMs).toISOString(),
           attemptCount: nextAttemptCount,
           attemptHistory: nextAttemptHistory,
           submitted: false,
           attemptOrder: nextAttemptOrder,
           attemptSignature: attemptSignature(nextAttemptOrder),
-        })
+        }
       );
     }
 
     onSubmissionChange?.(name, nextSubmitted);
-  }, [name, onSubmissionChange, questionBank, questionsPerAttempt, quizProgressStorageKey, timerDuration]);
+  }, [name, onSubmissionChange, questionBank, questionsPerAttempt, timerDuration]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(markerStorageKey);
+    const stored = browserStorage.readQuizMarkers(name);
     if (!stored) {
       setQuestionMarked(Array(questionsWithTiming.length).fill(false));
       return;
     }
 
-    try {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        const normalized = parsed.slice(0, questionsWithTiming.length).map((value) => value === true);
-        const padded = normalized.concat(Array(Math.max(0, questionsWithTiming.length - normalized.length)).fill(false));
-        setQuestionMarked(padded);
-        return;
-      }
-    } catch {
-      // Ignore invalid storage values and reset to false.
+    if (Array.isArray(stored)) {
+      const normalized = stored.slice(0, questionsWithTiming.length).map((value) => value === true);
+      const padded = normalized.concat(Array(Math.max(0, questionsWithTiming.length - normalized.length)).fill(false));
+      setQuestionMarked(padded);
+      return;
     }
 
     setQuestionMarked(Array(questionsWithTiming.length).fill(false));
-  }, [markerStorageKey, questionsWithTiming.length]);
+  }, [name, questionsWithTiming.length]);
 
   const handleSubmit = useCallback(() => {
     const results = questionsWithTiming.map((question, idx) => {
@@ -253,9 +247,9 @@ export default function QuizBlock({
     setElapsedSeconds(normalizedElapsedSeconds);
     setAttemptCount(nextAttemptCount);
     setAttemptHistory(nextAttemptHistory);
-    localStorage.setItem(
-      quizProgressStorageKey,
-      JSON.stringify({
+    browserStorage.writeQuizProgress(
+      name,
+      {
         startedAt: new Date(startedAtMs).toISOString(),
         submittedAt: new Date().toISOString(),
         submitted: true,
@@ -266,10 +260,10 @@ export default function QuizBlock({
         questionCorrectness: results,
         attemptOrder,
         attemptSignature: attemptSignature(attemptOrder),
-      })
+      }
     );
     onSubmissionChange?.(name, true);
-  }, [attemptCount, attemptHistory, attemptOrder, name, onSubmissionChange, questionsWithTiming, quizProgressStorageKey, selectedByQuestion, startedAtMs, timerDuration]);
+  }, [attemptCount, attemptHistory, attemptOrder, name, onSubmissionChange, questionsWithTiming, selectedByQuestion, startedAtMs, timerDuration]);
 
   useEffect(() => {
     if (submitted) {
@@ -325,7 +319,7 @@ export default function QuizBlock({
     setQuestionMarked((prev) => {
       const nextState = [...prev];
       nextState[questionIndex] = !nextState[questionIndex];
-      localStorage.setItem(markerStorageKey, JSON.stringify(nextState));
+      browserStorage.writeQuizMarkers(name, nextState);
       return nextState;
     });
   };
@@ -361,10 +355,10 @@ export default function QuizBlock({
     const nextStartedAtMs = Date.now();
     setStartedAtMs(nextStartedAtMs);
     setElapsedSeconds(0);
-    localStorage.removeItem(markerStorageKey);
-    localStorage.setItem(
-      quizProgressStorageKey,
-      JSON.stringify({
+    browserStorage.removeQuizMarkers(name);
+    browserStorage.writeQuizProgress(
+      name,
+      {
         startedAt: new Date(nextStartedAtMs).toISOString(),
         attemptCount,
         attemptHistory,
@@ -372,7 +366,7 @@ export default function QuizBlock({
         attemptOrder: nextAttemptOrder,
         attemptSignature: attemptSignature(nextAttemptOrder),
         previousAttemptSignature,
-      })
+      }
     );
     onSubmissionChange?.(name, false);
   };

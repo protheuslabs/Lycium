@@ -6,6 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./schemas/lycium-course.schema.json": "./schemas/lycium-course.schema.json",
-    "./schemas/lycium-source-record.schema.json": "./schemas/lycium-source-record.schema.json"
+    "./schemas/lycium-source-record.schema.json": "./schemas/lycium-source-record.schema.json",
+    "./schemas/lycium-progress.schema.json": "./schemas/lycium-progress.schema.json",
+    "./schemas/lycium-quiz-progress.schema.json": "./schemas/lycium-quiz-progress.schema.json",
+    "./schemas/lycium-generation-job.schema.json": "./schemas/lycium-generation-job.schema.json",
+    "./schemas/lycium-provider-settings.schema.json": "./schemas/lycium-provider-settings.schema.json"
   }
 }

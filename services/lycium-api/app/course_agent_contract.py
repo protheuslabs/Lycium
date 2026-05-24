@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from app.contract_validation import validate_course_schema
+
 
 def _slug(value: str, fallback: str) -> str:
     cleaned = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
@@ -81,7 +83,7 @@ def _declared_source_ids(course: dict[str, Any], errors: list[str]) -> set[str]:
 
 
 def validate_course_contract(course: dict[str, Any]) -> list[str]:
-    errors: list[str] = []
+    errors: list[str] = validate_course_schema(course)
     if not isinstance(course.get("title"), str) or not course["title"].strip():
         errors.append("Course is missing title.")
     if not isinstance(course.get("shortDescription"), str) or not course["shortDescription"].strip():

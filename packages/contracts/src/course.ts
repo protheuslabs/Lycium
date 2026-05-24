@@ -397,3 +397,112 @@ export type SourceReference = LyciumSourceRecord;
 export type LearningBlock = LyciumCourseBlock;
 export type CourseSection = LyciumCourseSection;
 export type CourseSnapshot = LyciumCourseData;
+
+export type LyciumSectionStatus = "completed" | "locked" | "seen" | "timed";
+
+export type LyciumProgressRecord = {
+  completedSectionIds: string[];
+  sectionStatuses: Record<string, LyciumSectionStatus>;
+};
+
+export type LyciumBookmarkRecord = {
+  course_key?: string;
+  course_title?: string | null;
+  section_id?: string | null;
+  section_title?: string | null;
+  path?: string | null;
+};
+
+export type LyciumAgentModelRecord = {
+  id: string;
+  label?: string | null;
+};
+
+export type LyciumAgentProviderRecord = {
+  id: string;
+  label: string;
+  default_model?: string | null;
+  model_fetch_supported?: boolean;
+  generation_adapter?: string;
+};
+
+export type LyciumAgentKeyRecord = {
+  id: string;
+  provider_id: string;
+  provider_label: string;
+  key_preview: string;
+  model?: string | null;
+  models?: LyciumAgentModelRecord[];
+  models_fetched_at?: string | null;
+  is_active: boolean;
+};
+
+export type LyciumThemeMode = "light" | "auto" | "dark";
+
+export type LyciumLocalSettings = {
+  agent_keys?: LyciumAgentKeyRecord[];
+};
+
+export type LyciumGeneratedCourseRecord = {
+  id: string | number;
+  title: string;
+  structure: LyciumCourseData;
+};
+
+export type LyciumCourseGenerationRequest = {
+  prompt: string;
+  learner_id?: number;
+  level?: string;
+  source_policy?: string;
+  desired_module_count?: number;
+  expected_duration_minutes?: number;
+};
+
+export type LyciumCourseGenerationJobStatus = "queued" | "running" | "validating" | "ready" | "failed";
+
+export type LyciumCourseGenerationJob = {
+  id: string;
+  status: LyciumCourseGenerationJobStatus;
+  request: LyciumCourseGenerationRequest;
+  courseKey?: string;
+  message?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LyciumValidationReport = {
+  valid: boolean;
+  errors: string[];
+  warnings?: string[];
+};
+
+export type LyciumQuizAttemptOrderItem = {
+  questionIndex: number;
+  optionOrder: number[];
+};
+
+export type LyciumQuizAttemptHistoryItem = {
+  attemptNumber: number;
+  elapsedSeconds: number;
+  scorePercentage: number;
+  correctCount?: number;
+  totalQuestions?: number;
+  submittedAt: string;
+  attemptOrder?: LyciumQuizAttemptOrderItem[];
+  selectedByQuestion?: number[][];
+  questionCorrectness?: boolean[];
+};
+
+export type LyciumQuizProgressRecord = {
+  startedAt?: string;
+  submittedAt?: string;
+  submitted?: boolean;
+  attemptCount?: number;
+  attemptHistory?: LyciumQuizAttemptHistoryItem[];
+  elapsedSeconds?: number;
+  selectedByQuestion?: number[][];
+  questionCorrectness?: boolean[];
+  attemptOrder?: LyciumQuizAttemptOrderItem[];
+  attemptSignature?: string;
+  previousAttemptSignature?: string;
+};
