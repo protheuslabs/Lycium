@@ -1,15 +1,15 @@
-# Lyceum / Protheus Architecture
+# Lycium / Protheus Architecture
 
 ## Boundary
 
-Lyceum and the Protheus platform should stay in the same repository for now, but they should not be treated as one application.
+Lycium and the Protheus platform should stay in the same repository for now, but they should not be treated as one application.
 
-- `Lyceum` is the learner-facing product.
+- `Lycium` is the learner-facing product.
 - `Protheus platform` is the knowledge and generation infrastructure.
 
 That means:
 
-- Lyceum owns the public web app, learner profile, course UX, AI classroom, progress, portfolio, and credentials.
+- Lycium owns the public web app, learner profile, course UX, AI classroom, progress, portfolio, and credentials.
 - Protheus owns ingestion, extraction, cataloging, trust scoring, graph construction, hybrid retrieval, coverage maps, and generation orchestration.
 - Shared contracts should live in internal packages and be consumed by both sides.
 
@@ -31,7 +31,7 @@ That means:
 Reason:
 
 - Next.js is a full-stack React framework with App Router support and strong server and client rendering patterns.
-- Lyceum needs SEO-friendly public pages, authenticated app flows, and a rich interactive client surface.
+- Lycium needs SEO-friendly public pages, authenticated app flows, and a rich interactive client surface.
 
 ### Platform APIs and Workers
 
@@ -58,7 +58,7 @@ Reason:
 
 - Start with Postgres as the canonical database instead of introducing a graph database and a search cluster immediately.
 - The repository needs transactional metadata, JSON payloads, graph-like edges, and hybrid search. Postgres handles all of that well enough at the early stage.
-- `pgvector` explicitly supports hybrid search with Postgres full-text search, which fits Lyceum's retrieval needs.
+- `pgvector` explicitly supports hybrid search with Postgres full-text search, which fits Lycium's retrieval needs.
 
 ### Search and Graph
 
@@ -92,7 +92,7 @@ Reason:
 ```text
 /
   apps/
-    lyceum-web/
+    lycium-web/
   services/
     protheus-api/
     protheus-workers/
@@ -114,7 +114,7 @@ For this repository specifically, the docs can remain at the root until there ar
 
 ## Recommended Application Architecture
 
-### 1. Lyceum Web App
+### 1. Lycium Web App
 
 Responsibilities:
 
@@ -173,7 +173,7 @@ Use separate logical storage layers:
 7. Coverage-map jobs identify gaps and weak areas.
 8. A learner request triggers retrieval over the graph and repository.
 9. The generation pipeline assembles a course snapshot from knowledge objects.
-10. Lyceum renders that snapshot and records learner progress.
+10. Lycium renders that snapshot and records learner progress.
 
 ## Recommended Design Principles
 
@@ -182,7 +182,7 @@ Use separate logical storage layers:
 - Canonical URLs stay primary even if archive references exist.
 - Prefer connector-based ingestion before generic scraping.
 - Prefer one strong system of record before introducing many specialized datastores.
-- Keep Lyceum and Protheus in one repo until the interfaces stabilize.
+- Keep Lycium and Protheus in one repo until the interfaces stabilize.
 
 ## What I Would Not Do Yet
 
@@ -198,7 +198,7 @@ Use separate logical storage layers:
 If you want one opinionated answer:
 
 - Keep one monorepo.
-- Make Lyceum a `Next.js` app.
+- Make Lycium a `Next.js` app.
 - Make Protheus a `FastAPI` plus worker platform in Python.
 - Use `Postgres + pgvector + full-text search + object storage + Redis`.
 - Model the repository around knowledge objects, snapshots, claims, and graph edges.

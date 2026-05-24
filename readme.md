@@ -8,7 +8,7 @@ The project is designed around one core idea: high-quality courses should be por
 
 ## Current capabilities
 
-- Course catalog with canonical route support at `/catalog`
+- Course catalog with canonical route support at `/Lycium/catalog`
 - Generated course and unit URLs with stable slugs
 - JSON-driven course rendering for modules, units, text, videos, concept cards, quizzes, and source references
 - Collapsible course sidebar with independent scrolling and section status indicators
@@ -24,7 +24,7 @@ The project is designed around one core idea: high-quality courses should be por
 ```text
 .
 ├── apps/
-│   └── lyceum-web/          # React + Vite learner-facing web app
+│   └── lycium-web/          # React + Vite learner-facing web app
 ├── packages/
 │   ├── config/              # Shared configuration package stub
 │   ├── content-schema/      # Shared content schema package stub
@@ -67,19 +67,19 @@ pnpm dev
 Vite will print the local URL. The catalog route is:
 
 ```text
-http://localhost:<vite-port>/catalog
+http://localhost:<vite-port>/Lycium/catalog
 ```
 
 For the local port commonly used during development:
 
 ```bash
-pnpm --filter @lyceum/web dev -- --host 127.0.0.1 --port 5001
+pnpm --filter @lycium/web dev -- --host 127.0.0.1 --port 5001
 ```
 
 Then open:
 
 ```text
-http://localhost:5001/catalog
+http://localhost:5001/Lycium/catalog
 ```
 
 ### API service
@@ -116,9 +116,9 @@ PROTHEUS_API_URL=http://127.0.0.1:8000 protheus-worker --once
 | --- | --- |
 | `pnpm dev` | Start the web app through the monorepo script |
 | `pnpm build` | Build the web app |
-| `pnpm --filter @lyceum/web test` | Run web tests |
-| `pnpm --filter @lyceum/web lint` | Run web linting |
-| `pnpm --filter @lyceum/web typecheck` | Run TypeScript checks |
+| `pnpm --filter @lycium/web test` | Run web tests |
+| `pnpm --filter @lycium/web lint` | Run web linting |
+| `pnpm --filter @lycium/web typecheck` | Run TypeScript checks |
 | `cd services/protheus-api && pytest -q` | Run API tests |
 | `cd services/protheus-workers && PYTHONPATH=src pytest -q` | Run worker tests |
 
@@ -140,7 +140,7 @@ Important conventions:
 Local course data currently lives under:
 
 ```text
-apps/lyceum-web/src/courseData/
+apps/lycium-web/src/courseData/
 ```
 
 ## Local data and secrets
@@ -149,7 +149,7 @@ Lycium keeps user-specific data out of source control. The repo ignores local da
 
 ```text
 .data/
-.lyceum-local/
+.lycium-local/
 ```
 
 These are intended for data such as:
@@ -166,8 +166,8 @@ Do not commit secrets or machine-local learner data.
 
 - Use conventional commit prefixes such as `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, and `chore:`.
 - Keep reusable UI behavior in components rather than duplicating markup in page shells.
-- Keep course progress logic centralized in `apps/lyceum-web/src/utils/courseProgress.ts`.
-- Keep course route and slug behavior centralized in `apps/lyceum-web/src/utils/courseRouting.ts`.
+- Keep course progress logic centralized in `apps/lycium-web/src/utils/courseProgress.ts`.
+- Keep course route and slug behavior centralized in `apps/lycium-web/src/utils/courseRouting.ts`.
 - Prefer explicit source records over free-floating URLs in course JSON.
 - Preserve ignored local-data directories so the app can be cloned and run without personal state.
 
@@ -179,4 +179,3 @@ Do not commit secrets or machine-local learner data.
 - Add stronger validation for generated course JSON before courses enter the catalog
 - Improve visual authoring and review workflows for course creators
 - Add richer learning activity blocks beyond videos, quizzes, and concept cards
-

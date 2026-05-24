@@ -12,7 +12,7 @@ importers:
         specifier: ^2.3.3
         version: 2.8.17
 
-  apps/lyceum-web:
+  apps/lycium-web:
     dependencies:
       react:
         specifier: ^19.2.0

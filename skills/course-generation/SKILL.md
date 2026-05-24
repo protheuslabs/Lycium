@@ -1,19 +1,19 @@
 ---
 name: course-generation
-description: Build, revise, or review Lyceum course JSON and course-generation behavior. Use when an agent is asked to create a course, convert source material into a course, add course-generation rules, review course structure, wire course data into the Lyceum catalog, or enforce source records and assessment-only quiz sections.
+description: Build, revise, or review Lycium course JSON and course-generation behavior. Use when an agent is asked to create a course, convert source material into a course, add course-generation rules, review course structure, wire course data into the Lycium catalog, or enforce source records and assessment-only quiz sections.
 ---
 
-# Lyceum Course Generation Agent Skill
+# Lycium Course Generation Agent Skill
 
-Use this skill to make Lyceum courses that are teachable, source-backed, and renderer-compatible.
+Use this skill to make Lycium courses that are teachable, source-backed, and renderer-compatible.
 
 ## Workflow
 
 1. Read the existing course shape before editing:
-   - `apps/lyceum-web/src/courseData/*.json`
-   - `apps/lyceum-web/src/App.tsx`
-   - `apps/lyceum-web/src/components/ContentView/ContentView.tsx`
-2. Load `references/lyceum-course-rules.md` before authoring or reviewing course JSON.
+   - `apps/lycium-web/src/courseData/*.json`
+   - `apps/lycium-web/src/App.tsx`
+   - `apps/lycium-web/src/components/ContentView/ContentView.tsx`
+2. Load `references/lycium-course-rules.md` before authoring or reviewing course JSON.
 3. Determine course scope before writing lesson content:
    - learner level
    - prerequisites
@@ -58,7 +58,7 @@ Use this skill to make Lyceum courses that are teachable, source-backed, and ren
    - concept names should read like bullet-list terms: `HTTP request`, `Training-serving skew`, `Gradient synchronization`
    - descriptions should be concise definitions of the concept, not prose summaries of the page
 10. Record all sources centrally and reference them from the course:
-   - add source records to `apps/lyceum-web/src/courseData/sourceRecords.json`
+   - add source records to `apps/lycium-web/src/courseData/sourceRecords.json`
    - use `sourceIds` in course, module, section, and block records
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
 11. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
@@ -69,7 +69,7 @@ Use this skill to make Lyceum courses that are teachable, source-backed, and ren
 Run a JSON integrity check for authored course files. For web app changes, run:
 
 ```bash
-corepack pnpm --filter @lyceum/web build
+corepack pnpm --filter @lycium/web build
 ```
 
 For backend course generator changes, run focused API tests when practical:

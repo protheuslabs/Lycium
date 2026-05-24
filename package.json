@@ -1,14 +1,14 @@
 {
-  "name": "lyceum-monorepo",
+  "name": "lycium-monorepo",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "pnpm dev:web",
-    "dev:web": "pnpm --filter @lyceum/web dev",
+    "dev:web": "pnpm --filter @lycium/web dev",
     "build": "pnpm build:web",
-    "build:web": "pnpm --filter @lyceum/web build",
+    "build:web": "pnpm --filter @lycium/web build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck"
   },

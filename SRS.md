@@ -1,16 +1,16 @@
-# Lyceum Software Requirements Specification
+# Lycium Software Requirements Specification
 
 ## 1. Purpose
 
-This Software Requirements Specification (SRS) defines the target product direction for Lyceum.
+This Software Requirements Specification (SRS) defines the target product direction for Lycium.
 
-Lyceum currently exists as a lightweight React application that renders course content from local JSON files. This SRS extends that baseline by assimilating the concept demonstrated in the linked OpenMAIC video and by benchmarking major online course platforms. The target product is a prompt-driven, reliability-aware learning system that can catalog internet knowledge, assemble structured courses and programs, and deliver agent-led, adaptive instruction instead of only static content pages.
+Lycium currently exists as a lightweight React application that renders course content from local JSON files. This SRS extends that baseline by assimilating the concept demonstrated in the linked OpenMAIC video and by benchmarking major online course platforms. The target product is a prompt-driven, reliability-aware learning system that can catalog internet knowledge, assemble structured courses and programs, and deliver agent-led, adaptive instruction instead of only static content pages.
 
-This document is intentionally written as an adaptation for Lyceum, not as a direct clone of OpenMAIC. The goal is to preserve Lyceum's strongest architectural trait, structured content rendered from JSON, while evolving the product into an AI-assisted learning platform.
+This document is intentionally written as an adaptation for Lycium, not as a direct clone of OpenMAIC. The goal is to preserve Lycium's strongest architectural trait, structured content rendered from JSON, while evolving the product into an AI-assisted learning platform.
 
 ## 2. Product Vision
 
-Lyceum shall evolve from a static, JSON-backed course viewer into a knowledge platform and prompt-to-classroom learning system with these core behaviors:
+Lycium shall evolve from a static, JSON-backed course viewer into a knowledge platform and prompt-to-classroom learning system with these core behaviors:
 
 - A learner or instructor can describe a course, learning goal, or full knowledge path in natural language.
 - The system catalogs and classifies learning resources from the internet into a structured knowledge base.
@@ -19,9 +19,9 @@ Lyceum shall evolve from a static, JSON-backed course viewer into a knowledge pl
 - An AI instructor guides the learner through the material.
 - Optional supporting agents, such as an assistant or peer personas, create a more interactive classroom dynamic.
 - The system adapts pace, explanations, and practice based on learner behavior and performance.
-- Generated output remains serializable into a structured Lyceum course schema so it can be rendered, edited, versioned, and reused.
+- Generated output remains serializable into a structured Lycium course schema so it can be rendered, edited, versioned, and reused.
 - Courses do not need to be hard-coded in the product repository; they can be generated dynamically per learner and saved as versioned course JSON in learner metadata.
-- Lyceum should be able to assemble multi-course programs, including degree-equivalent knowledge paths built primarily from free or open internet resources where feasible.
+- Lycium should be able to assemble multi-course programs, including degree-equivalent knowledge paths built primarily from free or open internet resources where feasible.
 
 ## 3. Source Concept Assimilation
 
@@ -33,7 +33,7 @@ The concept assimilated from the linked video and source material is:
 - The system should show visible generation stages, such as outline generation and page-content generation.
 - The classroom should feel interactive and adaptive rather than like passive video playback.
 
-For Lyceum, this translates into four product pillars:
+For Lycium, this translates into four product pillars:
 
 1. Structured AI course generation
 2. Agent-led lesson delivery
@@ -65,7 +65,7 @@ The major benchmark patterns absorbed into this SRS are:
 
 ## 4. Current Baseline
 
-At the time of writing, Lyceum provides:
+At the time of writing, Lycium provides:
 
 - A React and Vite single-page application
 - Three hard-coded sample courses loaded from local JSON
@@ -110,7 +110,7 @@ The administrator manages model configuration, moderation policies, storage, ana
 - Quiz generation, delivery, and feedback
 - Adaptive pacing and remediation triggers
 - Persistent storage of generated courses and learner progress
-- Export of generated courses into a Lyceum-readable schema
+- Export of generated courses into a Lycium-readable schema
 - Internet knowledge base ingestion and cataloging
 - Reliability, veracity, and provenance scoring for learning objects
 - Dynamic per-learner course generation from a shared knowledge base
@@ -143,7 +143,7 @@ The administrator manages model configuration, moderation policies, storage, ana
 ### 7.2 Course Structure Generation
 
 - FR-6: The system shall generate a hierarchical course structure composed of course, module, section, and scene or block entities.
-- FR-7: Generated content shall be stored in a structured schema compatible with Lyceum rendering.
+- FR-7: Generated content shall be stored in a structured schema compatible with Lycium rendering.
 - FR-8: Each generated section shall include explicit learning objectives.
 - FR-9: Each section shall include at least one instructional block and, where appropriate, one knowledge-check or practice block.
 - FR-10: The system shall preserve stable identifiers for generated modules and sections so learner progress can be tracked reliably.
@@ -180,7 +180,7 @@ The administrator manages model configuration, moderation policies, storage, ana
 
 ### 7.7 Assessments
 
-- FR-29: The system shall support single-answer and multiple-answer quizzes, matching current Lyceum capability.
+- FR-29: The system shall support single-answer and multiple-answer quizzes, matching current Lycium capability.
 - FR-30: The system should support short-answer and reflection prompts in a later phase.
 - FR-31: The system shall provide immediate correctness feedback for auto-gradable items.
 - FR-32: The system shall track section-level completion and mastery state separately.
@@ -191,7 +191,7 @@ The administrator manages model configuration, moderation policies, storage, ana
 - FR-34: The system shall persist generated courses beyond the current browser session.
 - FR-35: The system shall persist learner progress independently from authored course content.
 - FR-36: The system shall allow generated courses to be reopened, edited, duplicated, and exported.
-- FR-37: The primary export format shall be JSON aligned with the Lyceum data model.
+- FR-37: The primary export format shall be JSON aligned with the Lycium data model.
 - FR-38: The system should support Markdown or PDF export in a later phase.
 
 ### 7.9 Authoring and Review Controls
@@ -425,7 +425,7 @@ The administrator manages model configuration, moderation policies, storage, ana
 
 ## 9. Data and Schema Requirements
 
-Lyceum should retain JSON as its canonical content contract. The schema shall be extended to support the new concept instead of replaced.
+Lycium should retain JSON as its canonical content contract. The schema shall be extended to support the new concept instead of replaced.
 
 Minimum schema additions:
 
@@ -450,10 +450,10 @@ Minimum schema additions:
 
 ### 10.1 System Boundary
 
-- Lyceum shall be the learner-facing application layer, including public product surfaces, learner accounts, course experience, AI classroom interaction, progress, portfolio, and credential views.
+- Lycium shall be the learner-facing application layer, including public product surfaces, learner accounts, course experience, AI classroom interaction, progress, portfolio, and credential views.
 - Protheus platform services shall be the underlying knowledge-platform layer, including ingestion, extraction, cataloging, trust scoring, graph construction, retrieval, and generation orchestration.
-- Lyceum and Protheus platform services should remain in the same repository during the early product phase but shall be implemented as separate deployable applications or services with clear boundaries.
-- Shared schemas, contracts, and libraries shall be versioned and consumed by both Lyceum and Protheus platform services through internal packages rather than ad hoc duplication.
+- Lycium and Protheus platform services should remain in the same repository during the early product phase but shall be implemented as separate deployable applications or services with clear boundaries.
+- Shared schemas, contracts, and libraries shall be versioned and consumed by both Lycium and Protheus platform services through internal packages rather than ad hoc duplication.
 
 ### 10.2 Front End
 
@@ -507,7 +507,7 @@ Minimum schema additions:
 
 - Prompt intake
 - Outline generation and review
-- Full course generation into Lyceum JSON using knowledge-base sources
+- Full course generation into Lycium JSON using knowledge-base sources
 - Persistent generated-course storage
 - Existing content renderer reused for generated content
 - Source citations and generation trace saved with each course
@@ -538,12 +538,12 @@ Minimum schema additions:
 
 ## 12. Acceptance Criteria
 
-Lyceum will satisfy this SRS for the first meaningful milestone when all of the following are true:
+Lycium will satisfy this SRS for the first meaningful milestone when all of the following are true:
 
 - A user can describe a course in natural language and receive a structured outline.
 - The generated course is assembled from knowledge-base objects with stored provenance.
 - The outline can be approved or edited before full generation.
-- The approved course can be generated into a Lyceum-readable JSON structure.
+- The approved course can be generated into a Lycium-readable JSON structure.
 - The generated course can be opened in the application and navigated section by section.
 - The course includes generated assessments.
 - An AI instructor can answer questions within the context of the active lesson.
@@ -558,7 +558,7 @@ Lyceum will satisfy this SRS for the first meaningful milestone when all of the 
 - Quality variance: generated sections may vary in depth, tone, and pedagogical usefulness.
 - Cost control: multi-step generation and conversational tutoring may become expensive at scale.
 - Scope creep: multi-agent classrooms can expand into avatars, voice synthesis, and real-time orchestration too early.
-- Evaluation gap: Lyceum will need objective ways to judge whether generated lessons are actually effective.
+- Evaluation gap: Lycium will need objective ways to judge whether generated lessons are actually effective.
 - Licensing risk: internet resources may not always be reusable in full, even when they are educational.
 - Link rot risk: source URLs and free resources may disappear or change over time.
 - Trust-model bias: reliability scoring may incorrectly favor or suppress certain source categories.
@@ -568,12 +568,12 @@ Lyceum will satisfy this SRS for the first meaningful milestone when all of the 
 
 Open questions for future revision:
 
-- Should Lyceum prioritize instructor-authored source materials as grounding input?
+- Should Lycium prioritize instructor-authored source materials as grounding input?
 - Should peer agents be visible by default or optional for focus-sensitive learners?
 - What level of human review is required before a generated course is publishable?
 - Which learner analytics are necessary versus merely interesting?
 - How much third-party content should be indexed, excerpted, or mirrored versus linked out?
-- Should Lyceum maintain canonical public paths as well as fully private learner-specific paths?
+- Should Lycium maintain canonical public paths as well as fully private learner-specific paths?
 - Which source connectors should be first-class in the initial repository build-out?
 - How much claim-level extraction is worth doing in early versions versus object-level extraction only?
 

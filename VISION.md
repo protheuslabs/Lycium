@@ -1,4 +1,4 @@
-# Lyceum Product Vision
+# Lycium Product Vision
 
 ## Mission
 
@@ -10,9 +10,9 @@ The internet already contains enough material for someone to learn almost anythi
 
 ## Product Thesis
 
-Lyceum should not primarily be a repository of hard-coded courses.
+Lycium should not primarily be a repository of hard-coded courses.
 
-Lyceum should become a knowledge platform that:
+Lycium should become a knowledge platform that:
 
 - catalogs learning objects from the internet
 - classifies them by topic, difficulty, modality, prerequisites, and learning outcomes
@@ -23,15 +23,15 @@ Lyceum should become a knowledge platform that:
 
 ## Product / Platform Split
 
-Lyceum should be the learner-facing product surface.
+Lycium should be the learner-facing product surface.
 
 Protheus platform should be the underlying knowledge infrastructure.
 
 In practice:
 
-- Lyceum is the public and learner-facing application.
+- Lycium is the public and learner-facing application.
 - Protheus handles ingestion, cataloging, trust scoring, retrieval, graphing, and generation.
-- Lyceum is the main visible application, but Protheus is the deeper asset that makes it defensible.
+- Lycium is the main visible application, but Protheus is the deeper asset that makes it defensible.
 
 ## Strategic Bet
 
@@ -45,7 +45,7 @@ The differentiator is a reliability-aware curriculum engine built on top of a mu
 - a certification-prep track
 - a degree-equivalent learning journey built from free or open resources where feasible
 
-## What Lyceum Should Feel Like
+## What Lycium Should Feel Like
 
 For the learner:
 
@@ -65,7 +65,7 @@ For the curator or instructor:
 
 ### 1. Knowledge Base
 
-Lyceum needs a durable knowledge layer that stores:
+Lycium needs a durable knowledge layer that stores:
 
 - source metadata
 - topic and prerequisite graphs
@@ -75,15 +75,15 @@ Lyceum needs a durable knowledge layer that stores:
 
 ### 2. Curriculum Engine
 
-Lyceum needs to convert knowledge objects into structured courses, programs, and checkpoints rather than leaving information as raw search results.
+Lycium needs to convert knowledge objects into structured courses, programs, and checkpoints rather than leaving information as raw search results.
 
 ### 3. Adaptive Classroom
 
-Lyceum needs an instructional surface that can teach, explain, assess, remediate, and guide.
+Lycium needs an instructional surface that can teach, explain, assess, remediate, and guide.
 
 ### 4. Persistent Learning Record
 
-Lyceum needs to remember what a learner studied, what was generated for them, what they mastered, and what they should learn next.
+Lycium needs to remember what a learner studied, what was generated for them, what they mastered, and what they should learn next.
 
 ## What This Means for Content
 

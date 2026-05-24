@@ -1,4 +1,4 @@
-# Lyceum Course Generation Rules
+# Lycium Course Generation Rules
 
 ## Pseudo Workflow
 
@@ -187,7 +187,7 @@ Canonical module/week-summary concept-card block:
 
 ## Source Records
 
-- Store reusable source metadata in `apps/lyceum-web/src/courseData/sourceRecords.json`.
+- Store reusable source metadata in `apps/lycium-web/src/courseData/sourceRecords.json`.
 - Each source record should include:
   - `id`
   - `type`
@@ -203,8 +203,8 @@ Canonical module/week-summary concept-card block:
 
 ## Local Catalog Rules
 
-- Add new local courses in `apps/lyceum-web/src/courseData/`.
-- Import the course in `apps/lyceum-web/src/App.tsx`.
+- Add new local courses in `apps/lycium-web/src/courseData/`.
+- Import the course in `apps/lycium-web/src/App.tsx`.
 - Add a `CourseEntry` with a stable `local-*` key.
 - The app will generate a URL with `/courses/{slug}-{key}`.
 

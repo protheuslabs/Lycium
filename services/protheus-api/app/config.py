@@ -23,13 +23,13 @@ def _default_db_path() -> Path:
 
 def _default_local_data_path() -> Path:
     root = Path(__file__).resolve().parents[3]
-    return root / ".lyceum-local"
+    return root / ".lycium-local"
 
 
 def load_settings() -> Settings:
     db_path = Path(os.getenv("PROTHEUS_DB_PATH", _default_db_path()))
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    local_data_dir = Path(os.getenv("LYCEUM_LOCAL_DATA_DIR", _default_local_data_path()))
+    local_data_dir = Path(os.getenv("LYCIUM_LOCAL_DATA_DIR", _default_local_data_path()))
     local_data_dir.mkdir(parents=True, exist_ok=True)
 
     return Settings(
@@ -37,9 +37,9 @@ def load_settings() -> Settings:
         database_url=os.getenv("PROTHEUS_DATABASE_URL", f"sqlite:///{db_path}"),
         user_agent=os.getenv("PROTHEUS_USER_AGENT", "ProtheusBot/0.1 (+https://protheuslabs.com)"),
         local_data_dir=local_data_dir,
-        agent_api_url=os.getenv("LYCEUM_AGENT_API_URL", "https://api.openai.com/v1/chat/completions"),
-        agent_model=os.getenv("LYCEUM_AGENT_MODEL", "gpt-4.1-mini"),
-        agent_timeout_seconds=float(os.getenv("LYCEUM_AGENT_TIMEOUT_SECONDS", "120")),
+        agent_api_url=os.getenv("LYCIUM_AGENT_API_URL", "https://api.openai.com/v1/chat/completions"),
+        agent_model=os.getenv("LYCIUM_AGENT_MODEL", "gpt-4.1-mini"),
+        agent_timeout_seconds=float(os.getenv("LYCIUM_AGENT_TIMEOUT_SECONDS", "120")),
     )
 
 

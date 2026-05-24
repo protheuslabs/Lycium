@@ -16,8 +16,7 @@ function normalizeBase(rawBase: string): string {
   return normalized
 }
 
-const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1]
-const inferredPagesBase = repositoryName ? `/${repositoryName}/` : '/'
+const inferredPagesBase = '/Lycium/'
 const base = normalizeBase(
   process.env.VITE_BASE_PATH ?? (process.env.GITHUB_ACTIONS === 'true' ? inferredPagesBase : '/')
 )

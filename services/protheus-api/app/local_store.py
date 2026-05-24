@@ -34,7 +34,7 @@ def ensure_local_data_dirs() -> Path:
             manifest,
             {
                 "created_at": _now(),
-                "description": "Local Lyceum user data. This directory is intentionally gitignored.",
+                "description": "Local Lycium user data. This directory is intentionally gitignored.",
                 "directories": {
                     "courses": "Generated course snapshots and exports.",
                     "completion": "Learner completion and progress mirrors.",

@@ -3,7 +3,7 @@ export interface HealthcheckResponse {
 }
 
 export interface SystemBoundaryResponse {
-  lyceum: string;
+  lycium: string;
   protheus: string;
 }
 

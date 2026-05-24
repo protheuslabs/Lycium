@@ -12,7 +12,7 @@ def _slug(value: str, fallback: str) -> str:
 def normalize_course(course: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(course.get("shortDescription"), str) or not course["shortDescription"].strip():
         title = str(course.get("title") or "Generated course").strip()
-        course["shortDescription"] = f"A structured Lyceum course covering {title}."
+        course["shortDescription"] = f"A structured Lycium course covering {title}."
     course.setdefault("orderMandatory", False)
     course.setdefault("sourceIds", [])
     course.setdefault("sourceRecords", [])

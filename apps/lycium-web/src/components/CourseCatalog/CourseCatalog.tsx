@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { FormEvent, KeyboardEvent, MouseEvent } from "react";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
 import type { CourseEntry } from "../../courseTypes";
@@ -20,6 +20,8 @@ type CourseCatalogProps = {
   onOpenCourse: (course: CourseEntry) => void;
 };
 
+type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
+
 function getGeneratingCourseTitle(prompt: string): string {
   const title = prompt
     .split(/\r?\n/)
@@ -31,6 +33,70 @@ function getGeneratingCourseTitle(prompt: string): string {
   }
 
   return title.length > 72 ? `${title.slice(0, 69)}...` : title;
+}
+
+function normalizeSearchText(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function scoreSearchField(fieldValue: string | undefined, query: string, weight: number): number {
+  const value = fieldValue?.toLowerCase() ?? "";
+
+  if (!query || !value) {
+    return 0;
+  }
+
+  if (value === query) {
+    return weight * 4;
+  }
+
+  if (value.startsWith(query)) {
+    return weight * 3;
+  }
+
+  if (value.includes(query)) {
+    return weight * 2;
+  }
+
+  return 0;
+}
+
+function getCourseSearchScore(course: CourseEntry, query: string): number {
+  if (!query) {
+    return 0;
+  }
+
+  const tagScore = [...(course.data.tags ?? []), ...getCourseTagLabels(course.data.tags)]
+    .reduce((total, tag) => total + scoreSearchField(tag, query, 6), 0);
+  const titleScore =
+    scoreSearchField(course.title, query, 10) +
+    scoreSearchField(course.data.title, query, 10);
+  const descriptionScore = scoreSearchField(course.data.shortDescription, query, 2);
+
+  return titleScore + tagScore + descriptionScore;
+}
+
+function compareCourseTitles(a: CourseEntry, b: CourseEntry): number {
+  return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
+}
+
+function compareCatalogSort(
+  a: { course: CourseEntry; courseProgress: ReturnType<typeof getCourseProgress>; collegeLabel: string },
+  b: { course: CourseEntry; courseProgress: ReturnType<typeof getCourseProgress>; collegeLabel: string },
+  sortMode: CatalogSortMode
+): number {
+  if (sortMode === "completion-desc") {
+    return b.courseProgress.percentage - a.courseProgress.percentage || compareCourseTitles(a.course, b.course);
+  }
+
+  if (sortMode === "completion-asc") {
+    return a.courseProgress.percentage - b.courseProgress.percentage || compareCourseTitles(a.course, b.course);
+  }
+
+  return (
+    a.collegeLabel.localeCompare(b.collegeLabel, undefined, { sensitivity: "base" }) ||
+    compareCourseTitles(a.course, b.course)
+  );
 }
 
 export default function CourseCatalog({
@@ -47,10 +113,59 @@ export default function CourseCatalog({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sourceLinks, setSourceLinks] = useState([""]);
   const [infoCourse, setInfoCourse] = useState<CourseEntry | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [collegeFilter, setCollegeFilter] = useState("all");
+  const [sortMode, setSortMode] = useState<CatalogSortMode>("college");
   const infoTagLabels = infoCourse ? getCourseTagLabels(infoCourse.data.tags) : [];
   const infoLearningTypes = infoCourse?.data.learningTypes ?? [];
   const isGeneratingCourse = generateStatus === "loading";
   const generatingCourseTitle = getGeneratingCourseTitle(prompt);
+  const collegeOptions = useMemo(() => {
+    const categories = new Map<string, string>();
+
+    for (const course of courses) {
+      if (course.data.category) {
+        categories.set(course.data.category, getCourseCategoryLabel(course.data.category));
+      }
+    }
+
+    return Array.from(categories, ([value, label]) => ({ value, label })).sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
+    );
+  }, [courses]);
+  const visibleCourses = useMemo(() => {
+    const query = normalizeSearchText(searchQuery);
+
+    return courses
+      .map((course) => {
+        const courseProgress = getCourseProgress(course);
+        const bookmarkedSection = getBookmarkedModuleSection(course);
+        const hasActiveCoursePage = Boolean(bookmarkedSection);
+        const hasCourseActivity = hasActiveCoursePage || courseProgress.viewed > 0 || courseProgress.completed > 0;
+        const searchScore = getCourseSearchScore(course, query);
+
+        return {
+          course,
+          courseProgress,
+          bookmarkedSection,
+          hasCourseActivity,
+          collegeLabel: getCourseCategoryLabel(course.data.category),
+          searchScore,
+        };
+      })
+      .filter(({ course, searchScore }) => {
+        const matchesCollege = collegeFilter === "all" || course.data.category === collegeFilter;
+        const matchesSearch = !query || searchScore > 0;
+        return matchesCollege && matchesSearch;
+      })
+      .sort((a, b) => {
+        if (query) {
+          return b.searchScore - a.searchScore || compareCatalogSort(a, b, sortMode);
+        }
+
+        return compareCatalogSort(a, b, sortMode);
+      });
+  }, [collegeFilter, courses, searchQuery, sortMode]);
 
   const handleCourseKeyDown = (event: KeyboardEvent<HTMLElement>, course: CourseEntry) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -93,7 +208,39 @@ export default function CourseCatalog({
     <>
       <main className="home-page">
         <section className="catalog-page">
-          <h2>Your courses</h2>
+          <div className="catalog-toolbar">
+            <h2>Catalog</h2>
+            <label className="catalog-search-field">
+              <span className="catalog-control-label">Search courses</span>
+              <input
+                type="search"
+                placeholder="Search names and tags"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
+            </label>
+            <div className="catalog-dropdown-row">
+              <label className="catalog-dropdown-field">
+                <span className="catalog-control-label">Filter by college</span>
+                <select value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
+                  <option value="all">All colleges</option>
+                  {collegeOptions.map((college) => (
+                    <option value={college.value} key={college.value}>
+                      {college.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="catalog-dropdown-field">
+                <span className="catalog-control-label">Sort courses</span>
+                <select value={sortMode} onChange={(event) => setSortMode(event.target.value as CatalogSortMode)}>
+                  <option value="college">Type</option>
+                  <option value="completion-desc">Completion highest to lowest</option>
+                  <option value="completion-asc">Completion lowest to highest</option>
+                </select>
+              </label>
+            </div>
+          </div>
           <div className="course-grid">
             <article
               className="course-card create-course-card"
@@ -116,11 +263,15 @@ export default function CourseCatalog({
                 <p className="course-generating-status">Course Generating</p>
               </article>
             )}
-            {courses.map((course) => {
-              const courseProgress = getCourseProgress(course);
-              const bookmarkedSection = getBookmarkedModuleSection(course);
-              const hasActiveCoursePage = Boolean(bookmarkedSection);
-              const hasCourseActivity = hasActiveCoursePage || courseProgress.viewed > 0 || courseProgress.completed > 0;
+            {visibleCourses.length === 0 && (
+              <article className="course-card course-card--empty" aria-live="polite">
+                <h3>No matching courses</h3>
+                <p className="course-short-description">
+                  Try a different search term, college, or sort option.
+                </p>
+              </article>
+            )}
+            {visibleCourses.map(({ course, courseProgress, bookmarkedSection, hasCourseActivity }) => {
               return (
                 <article
                   key={course.key}

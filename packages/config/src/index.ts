@@ -1,4 +1,4 @@
 export const productNames = {
-  learnerApp: "Lyceum",
+  learnerApp: "Lycium",
   knowledgePlatform: "Protheus",
 } as const;

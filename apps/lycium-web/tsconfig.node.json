@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "tsBuildInfoFile": "../../node_modules/.tmp/lyceum-web.node.tsbuildinfo",
+    "tsBuildInfoFile": "../../node_modules/.tmp/lycium-web.node.tsbuildinfo",
     "target": "ES2023",
     "lib": ["ES2023"],
     "types": ["node"]

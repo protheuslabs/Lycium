@@ -1,6 +1,6 @@
-# Lyceum Course Generation Agent Workflow and Rules
+# Lycium Course Generation Agent Workflow and Rules
 
-These rules apply to generated Lyceum courses and agent-authored course JSON.
+These rules apply to generated Lycium courses and agent-authored course JSON.
 
 Use the repo-local course generation skill as the starting point:
 

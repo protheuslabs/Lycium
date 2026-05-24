@@ -81,8 +81,8 @@ export default function QuizBlock({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [startedAtMs, setStartedAtMs] = useState(() => Date.now());
 
-  const markerStorageKey = useMemo(() => `lyceum-quiz-marker-${name || "quiz"}`, [name]);
-  const quizProgressStorageKey = useMemo(() => `lyceum-quiz-progress-${name || "quiz"}`, [name]);
+  const markerStorageKey = useMemo(() => `lycium-quiz-marker-${name || "quiz"}`, [name]);
+  const quizProgressStorageKey = useMemo(() => `lycium-quiz-progress-${name || "quiz"}`, [name]);
 
   useEffect(() => {
     let nextAttemptOrder: AttemptOrderItem[] = [];

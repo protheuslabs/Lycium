@@ -20,7 +20,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Protheus API",
         version="0.2.0",
-        summary="Knowledge-platform control plane for Lyceum.",
+        summary="Knowledge-platform control plane for Lycium.",
         lifespan=lifespan,
     )
     app.add_middleware(

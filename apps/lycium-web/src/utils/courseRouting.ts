@@ -6,7 +6,40 @@ import {
   type CourseProgressSummary,
 } from "./courseProgress";
 
-export const COURSE_CATALOG_PATH = "/catalog";
+export const LYCIUM_SITE_ROOT = "https://protheuslabs.github.io/Lycium/";
+export const LYCIUM_ROUTE_ROOT = "/Lycium";
+export const COURSE_CATALOG_PATH = buildLyciumPath("catalog");
+export const SETTINGS_PATH = buildLyciumPath("settings");
+
+function buildLyciumPath(...segments: string[]): string {
+  const suffix = segments
+    .map((segment) => segment.replace(/^\/+|\/+$/g, ""))
+    .filter(Boolean)
+    .join("/");
+
+  return suffix ? `${LYCIUM_ROUTE_ROOT}/${suffix}` : LYCIUM_ROUTE_ROOT;
+}
+
+function normalizeRoutePath(pathname: string): string {
+  const rawPath = (() => {
+    try {
+      return new URL(pathname).pathname;
+    } catch {
+      return pathname;
+    }
+  })();
+  let path = rawPath.split("?")[0].replace(/\/+$/, "") || "/";
+
+  if (path === LYCIUM_ROUTE_ROOT) {
+    return "/";
+  }
+
+  if (path.startsWith(`${LYCIUM_ROUTE_ROOT}/`)) {
+    path = path.slice(LYCIUM_ROUTE_ROOT.length) || "/";
+  }
+
+  return path || "/";
+}
 
 export function slugifyCourseTitle(value: string): string {
   return value
@@ -40,7 +73,16 @@ export function getSectionPathSlug(section: CourseSection): string {
 }
 
 export function getCourseSectionPath(course: CourseEntry, section: CourseSection): string {
-  return `/courses/${getCoursePathSlug(course)}/units/${getSectionPathSlug(section)}`;
+  return buildLyciumPath("courses", getCoursePathSlug(course), "units", getSectionPathSlug(section));
+}
+
+export function getCoursePath(course: CourseEntry): string {
+  return buildLyciumPath("courses", getCoursePathSlug(course));
+}
+
+export function getCourseSectionUrl(course: CourseEntry, section: CourseSection): string {
+  const routePath = getCourseSectionPath(course, section).slice(LYCIUM_ROUTE_ROOT.length).replace(/^\/+/, "");
+  return new URL(routePath, LYCIUM_SITE_ROOT).toString();
 }
 
 export function getFirstCourseSection(course: CourseEntry): CourseSection | null {
@@ -52,7 +94,7 @@ export function getFlatCourseSections(course: CourseEntry): CourseSection[] {
 }
 
 export function getCourseBookmarkStorageKey(course: CourseEntry): string {
-  return `lyceum-bookmark-${course.key}`;
+  return `lycium-bookmark-${course.key}`;
 }
 
 export function readStoredCourseBookmark(course: CourseEntry): CourseBookmarkRecord | null {
@@ -83,7 +125,7 @@ export function findBookmarkedSection(course: CourseEntry, bookmark: CourseBookm
   const courseSections = getFlatCourseSections(course);
   return (
     courseSections.find((section) => section.id === bookmark.section_id) ??
-    courseSections.find((section) => bookmark.path === getCourseSectionPath(course, section)) ??
+    courseSections.find((section) => normalizeRoutePath(bookmark.path ?? "") === normalizeRoutePath(getCourseSectionPath(course, section))) ??
     null
   );
 }
@@ -100,7 +142,10 @@ export function getBookmarkedModuleSection(course: CourseEntry): { moduleTitle: 
 
   for (const module of course.data.modules) {
     for (const section of module.sections) {
-      if (section.id === bookmark.section_id || bookmark.path === getCourseSectionPath(course, section)) {
+      if (
+        section.id === bookmark.section_id ||
+        normalizeRoutePath(bookmark.path ?? "") === normalizeRoutePath(getCourseSectionPath(course, section))
+      ) {
         return {
           moduleTitle: module.title,
           sectionTitle: section.title,
@@ -117,7 +162,7 @@ export function getCourseSectionIds(course: CourseEntry): string[] {
 }
 
 export function getCourseProgress(course: CourseEntry): CourseProgressSummary {
-  const courseStorageKey = `lyceum-progress-${course.key}`;
+  const courseStorageKey = `lycium-progress-${course.key}`;
   const sections = getCourseSectionIds(course);
 
   try {
@@ -130,9 +175,9 @@ export function getCourseProgress(course: CourseEntry): CourseProgressSummary {
 }
 
 export function parseCourseRoute(pathname: string): RouteInfo {
-  const pathWithoutQuery = pathname.split("?")[0].replace(/\/+$/, "") || "/";
+  const pathWithoutQuery = normalizeRoutePath(pathname);
 
-  if (pathWithoutQuery === "/" || pathWithoutQuery === COURSE_CATALOG_PATH || pathWithoutQuery === "/courses") {
+  if (pathWithoutQuery === "/" || pathWithoutQuery === "/catalog" || pathWithoutQuery === "/courses") {
     return { kind: "home", courseSlug: null, unitSlug: null };
   }
 

@@ -42,7 +42,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
   const [settingsStatus, setSettingsStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [settingsMessage, setSettingsMessage] = useState("");
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const storedTheme = localStorage.getItem("lyceum-theme-mode");
+    const storedTheme = localStorage.getItem("lycium-theme-mode");
     return storedTheme === "light" || storedTheme === "dark" || storedTheme === "auto" ? storedTheme : "auto";
   });
 
@@ -146,7 +146,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
 
   const handleThemeModeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
-    localStorage.setItem("lyceum-theme-mode", mode);
+    localStorage.setItem("lycium-theme-mode", mode);
   };
 
   useEffect(() => {

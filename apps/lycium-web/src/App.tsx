@@ -21,6 +21,9 @@ import {
 } from "./utils/courseProgress";
 import {
   COURSE_CATALOG_PATH,
+  LYCIUM_ROUTE_ROOT,
+  SETTINGS_PATH,
+  getCoursePath,
   findBookmarkedSection,
   getCoursePathSlug,
   getCourseSectionIndex,
@@ -64,7 +67,7 @@ function App() {
   const settingsReturnPath =
     route.kind === "settings" && typeof window.history.state?.settingsReturnTo === "string"
       ? window.history.state.settingsReturnTo
-      : "/";
+      : COURSE_CATALOG_PATH;
   const viewRoute = useMemo(
     () => (route.kind === "settings" ? parseCourseRoute(settingsReturnPath) : route),
     [route, settingsReturnPath]
@@ -111,7 +114,7 @@ function App() {
   );
 
   const currentSection = sections[currentSectionIndex] ?? null;
-  const progressStorageKey = `lyceum-progress-${selectedCourse?.key}`;
+  const progressStorageKey = `lycium-progress-${selectedCourse?.key}`;
   const orderMandatory = selectedCourse?.data?.orderMandatory ?? false;
   const resolvedSectionStatuses = useMemo(
     () => resolveSectionStatuses(sections, progress.completedSectionIds, progress.sectionStatuses, Boolean(orderMandatory)),
@@ -180,23 +183,23 @@ function App() {
   const routeToSettings = useCallback(
     (event?: MouseEvent<HTMLAnchorElement>) => {
       event?.preventDefault();
-      if (window.location.pathname === "/settings") {
-        setCurrentPath("/settings");
+      if (window.location.pathname === SETTINGS_PATH) {
+        setCurrentPath(SETTINGS_PATH);
         return;
       }
       window.history.pushState(
-        { settingsReturnTo: currentPath === "/settings" ? settingsReturnPath : currentPath },
+        { settingsReturnTo: currentPath === SETTINGS_PATH ? settingsReturnPath : currentPath },
         "",
-        "/settings"
+        SETTINGS_PATH
       );
-      setCurrentPath("/settings");
+      setCurrentPath(SETTINGS_PATH);
     },
     [currentPath, settingsReturnPath]
   );
 
   const closeSettingsModal = useCallback(() => {
-    const returnTo = typeof window.history.state?.settingsReturnTo === "string" ? window.history.state.settingsReturnTo : "/";
-    const targetPath = returnTo && returnTo !== "/settings" ? returnTo : "/";
+    const returnTo = typeof window.history.state?.settingsReturnTo === "string" ? window.history.state.settingsReturnTo : COURSE_CATALOG_PATH;
+    const targetPath = returnTo && returnTo !== SETTINGS_PATH ? returnTo : COURSE_CATALOG_PATH;
     window.history.replaceState({}, "", targetPath);
     setCurrentPath(targetPath);
   }, []);
@@ -257,7 +260,7 @@ function App() {
         return;
       }
 
-      const nextPath = `/courses/${getCoursePathSlug(course)}`;
+      const nextPath = getCoursePath(course);
       if (replace) {
         window.history.replaceState({ courseKey: course.key }, "", nextPath);
       } else {
@@ -394,7 +397,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (currentPath !== "/") {
+    if (currentPath !== "/" && currentPath !== LYCIUM_ROUTE_ROOT) {
       return;
     }
 
@@ -454,7 +457,7 @@ function App() {
     };
 
     const ensureLearner = async () => {
-      const stored = localStorage.getItem("lyceum-learner-id");
+      const stored = localStorage.getItem("lycium-learner-id");
       if (stored) {
         setLearnerId(Number(stored));
         return;
@@ -472,7 +475,7 @@ function App() {
         });
         if (!response.ok) throw new Error("Failed to create learner");
         const learner = await response.json();
-        localStorage.setItem("lyceum-learner-id", String(learner.id));
+        localStorage.setItem("lycium-learner-id", String(learner.id));
         setLearnerId(Number(learner.id));
       } catch (err) {
         console.warn("Unable to create learner:", err);

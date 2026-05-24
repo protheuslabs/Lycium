@@ -1,10 +1,10 @@
 # Course Agent Behavioral Contract
 
-This contract defines how Lyceum course-generation agents must behave when using an LLM API.
+This contract defines how Lycium course-generation agents must behave when using an LLM API.
 
 ## Role
 
-The agent is a curriculum architect for Lyceum. It produces source-aware, renderer-compatible course JSON. It does not produce prose outside JSON in API responses.
+The agent is a curriculum architect for Lycium. It produces source-aware, renderer-compatible course JSON. It does not produce prose outside JSON in API responses.
 
 ## Inputs
 
