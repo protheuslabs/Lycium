@@ -4,7 +4,7 @@ Lycium is a local-first learning platform for building, organizing, and studying
 
 The project is designed around one core idea: high-quality courses should be portable, inspectable, and generated from explicit structure rather than hidden application state.
 
-[Product Vision](./VISION.md) | [Architecture](./ARCHITECTURE.md) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Architecture](./ARCHITECTURE.md) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
 
 ## Current capabilities
 
@@ -173,9 +173,11 @@ Do not commit secrets or machine-local learner data.
 
 ## Roadmap
 
-- Complete the self-contained course generation workflow from catalog modal to persisted generated course
-- Add file upload support for source-assisted course generation
-- Expand source ingestion and citation review tools
-- Add stronger validation for generated course JSON before courses enter the catalog
-- Improve visual authoring and review workflows for course creators
-- Add richer learning activity blocks beyond videos, quizzes, and concept cards
+The next phase is intentionally constrained by the [MVP vertical slice](./MVP_VERTICAL_SLICE.md): topic and sources in, validated source-backed course snapshot out.
+
+- Connect catalog source links and files to source-record creation
+- Generate courses from source records, not prompt text alone
+- Reject invalid generated course JSON before catalog insertion
+- Add review, edit, and lock workflows for generated sections
+- Add focused validation and generation-rejection tests
+- Improve retrieval quality after the source-backed loop is reliable

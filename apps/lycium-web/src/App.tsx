@@ -10,6 +10,7 @@ import { localCourses } from "./courseData/localCourses";
 import sourceRecordsData from "./courseData/sourceRecords";
 import type { CourseEntry, CourseProgressRecord, CourseSection, SectionStatus } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
+import { formatCourseValidationErrors, validateCourseEntry } from "./utils/courseValidation";
 import {
   areProgressRecordsEqual,
   DEFAULT_PROGRESS,
@@ -378,6 +379,13 @@ function App() {
         snapshotId: course.id,
         source: "remote",
       };
+      const validation = validateCourseEntry(entry, {
+        centralSourceRecords: sourceRecordsData.sources,
+        requireSources: true,
+      });
+      if (!validation.valid) {
+        throw new Error(`Generated course failed validation: ${formatCourseValidationErrors(validation.errors)}`);
+      }
       setCourses((prev) => [entry, ...prev]);
       setPrompt("");
       setGenerateStatus("success");
@@ -440,16 +448,28 @@ function App() {
         const response = await fetch(`${API_BASE}/v1/courses?limit=25`);
         if (!response.ok) throw new Error("Failed to fetch courses");
         const rows = (await response.json()) as RemoteCourseRow[];
-        const remoteCourses: CourseEntry[] = rows.map((row) => {
+        const remoteCourses: CourseEntry[] = [];
+        for (const row of rows) {
           const snapshotId = Number(row.id);
-          return {
+          const entry: CourseEntry = {
             key: `remote-${row.id}`,
             title: row.title,
             data: row.structure,
             snapshotId,
             source: "remote",
           };
-        });
+          const validation = validateCourseEntry(entry, {
+            centralSourceRecords: sourceRecordsData.sources,
+            requireSources: true,
+          });
+          if (validation.valid) {
+            remoteCourses.push(entry);
+          } else {
+            console.warn(
+              `Skipping invalid remote course ${entry.key}: ${formatCourseValidationErrors(validation.errors)}`
+            );
+          }
+        }
         setCourses((prev) => [...remoteCourses, ...prev.filter((course) => course.source === "local")]);
       } catch (err) {
         console.warn("Remote courses unavailable:", err);

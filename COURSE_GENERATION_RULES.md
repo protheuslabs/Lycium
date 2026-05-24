@@ -38,6 +38,9 @@ Use the repo-local course generation skill as the starting point:
 10. Validate coherence.
    Check that modules progress logically, units are not redundant, prerequisites are introduced before use, and assessments only test taught or sourced material.
 
+11. Gate catalog intake.
+   A generated course must pass structural and source-reference validation before it can be added to the catalog. Invalid generated JSON should produce a visible generation error and remain outside learner-facing course lists.
+
 ## JSON Progress Tracking
 
 Agents should use the course JSON as a progress ledger while building. Add or preserve metadata that records planning state when useful:
@@ -118,3 +121,19 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Do not create summary cards named "Key concepts", "How the ideas connect", "Common pitfalls", or "What you can do now".
 - Do not add new concepts on the summary page unless they were introduced on a prior Learn page in the same module.
 - Do not mix quizzes into module summary sections.
+
+## Source Record Rules
+
+- Store reusable source metadata in `apps/lycium-web/src/courseData/sourceRecords/`.
+- Course records should reference sources using `sourceIds`.
+- Use source IDs at the most helpful levels: course, module, section, and block.
+- If a block fetches or embeds material from a link, it must reference the source record for that link.
+- Generated courses must either reference existing central source records or include course-level `sourceRecords` for generated/local-only records.
+- Do not let a generated course enter the catalog with unresolved `sourceIds`.
+
+## MVP Validation Gate
+
+- Backend agent generation must normalize and validate generated JSON before persistence.
+- Frontend catalog intake must validate generated and remote courses before adding them to the learner catalog.
+- Validation should reject missing modules, missing sections, missing `pageType`, mixed quiz/instruction sections, missing concept cards on Learn pages, missing summary sections, and unresolved source IDs.
+- Validation errors should be surfaced as generation failures rather than silently accepting broken course data.

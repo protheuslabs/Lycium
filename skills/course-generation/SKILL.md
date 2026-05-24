@@ -58,11 +58,15 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - concept names should read like bullet-list terms: `HTTP request`, `Training-serving skew`, `Gradient synchronization`
    - descriptions should be concise definitions of the concept, not prose summaries of the page
 10. Record all sources centrally and reference them from the course:
-   - add source records to `apps/lycium-web/src/courseData/sourceRecords.json`
+   - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
    - use `sourceIds` in course, module, section, and block records
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
 11. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
 12. Validate structure and coherence before finishing.
+13. Treat validation as a catalog gate:
+   - generated courses must not enter the catalog until structural validation passes
+   - every referenced `sourceId` must resolve to a central or course-level source record
+   - validation failures should be reported as generation errors, not silently repaired after rendering
 
 ## Validation
 

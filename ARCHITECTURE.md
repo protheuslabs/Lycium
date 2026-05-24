@@ -23,15 +23,17 @@ That means:
 
 ### Learner-Facing App
 
-- `Next.js` App Router
+- Current MVP app: `React + Vite`
+- Possible later public app: `Next.js` App Router
 - `React 19`
 - `TypeScript`
 - `CSS Modules` or `Tailwind` for UI styling, but keep the UI package isolated either way
 
 Reason:
 
-- Next.js is a full-stack React framework with App Router support and strong server and client rendering patterns.
-- Lycium needs SEO-friendly public pages, authenticated app flows, and a rich interactive client surface.
+- The current Vite app is sufficient while Lycium is proving the local-first course-generation and learning loop.
+- Do not migrate to Next.js until public SEO course pages, authenticated server-rendered app flows, or server-first routing become immediate product requirements.
+- Next.js remains a reasonable later target once the core source-backed generation loop is dependable.
 
 ### Platform APIs and Workers
 
@@ -198,7 +200,7 @@ Use separate logical storage layers:
 If you want one opinionated answer:
 
 - Keep one monorepo.
-- Make Lycium a `Next.js` app.
+- Keep Lycium on `React + Vite` for the MVP; consider `Next.js` later for public/SEO-heavy surfaces.
 - Make Protheus a `FastAPI` plus worker platform in Python.
 - Use `Postgres + pgvector + full-text search + object storage + Redis`.
 - Model the repository around knowledge objects, snapshots, claims, and graph edges.

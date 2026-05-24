@@ -34,6 +34,9 @@ Use the course JSON as both the output artifact and the progress tracker.
 10. Validate the course.
    Check continuity, source coverage, missing prerequisites, repetition, pacing, assessment alignment, and JSON validity.
 
+11. Gate catalog intake.
+   Generated courses must pass structural validation and source-reference validation before appearing in the learner catalog.
+
 ## Progress Metadata
 
 Use metadata to keep work structured while generating.
@@ -187,7 +190,7 @@ Canonical module/week-summary concept-card block:
 
 ## Source Records
 
-- Store reusable source metadata in `apps/lycium-web/src/courseData/sourceRecords.json`.
+- Store reusable source metadata in `apps/lycium-web/src/courseData/sourceRecords/`.
 - Each source record should include:
   - `id`
   - `type`
@@ -200,6 +203,8 @@ Canonical module/week-summary concept-card block:
 - Course records should reference sources using `sourceIds`.
 - Use source IDs at the most helpful levels: course, module, section, and block.
 - If a block fetches or embeds material from a link, it must reference the source record for that link.
+- Generated courses must include course-level `sourceRecords` for generated/local-only sources or reference existing central source records.
+- Do not accept unresolved `sourceIds` in generated courses.
 
 ## Local Catalog Rules
 
@@ -221,7 +226,8 @@ Canonical module/week-summary concept-card block:
 - Every summary section uses `conceptCards` to aggregate raw concepts from the module's Learn pages.
 - Every non-assessment Learn page ends with at least one `conceptCards` block naming introduced raw concepts.
 - Summary sections contain no quiz blocks.
-- Every source ID referenced by a course exists in `sourceRecords.json`.
+- Every source ID referenced by a course exists in `sourceRecords/`.
+- Generated and remote course entries are rejected before catalog insertion if referenced source IDs do not resolve.
 - Every quiz has the intended number of questions.
 - Assessments test only previously taught or sourced material.
 - The frontend build passes after TypeScript or JSON import changes.

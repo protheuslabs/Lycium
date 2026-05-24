@@ -1,8 +1,14 @@
 export type CourseBlock = {
   type: string;
+  title?: string;
   value?: string;
   url?: string;
   sourceIds?: string[];
+  concepts?: Array<{
+    name?: string;
+    description?: string;
+    sourceSectionId?: string;
+  }>;
   question?: string;
   questions?: Array<{
     question?: string;
@@ -46,6 +52,8 @@ export type CourseSection = {
   title: string;
   content: CourseBlock[];
   sourceIds?: string[];
+  pageType?: "learn" | "apply";
+  sectionType?: "lesson" | "assessment" | "summary" | string;
 };
 
 export type CourseModule = {
@@ -64,6 +72,11 @@ export type CourseData = {
   learningTypes?: string[];
   orderMandatory?: boolean;
   sourceIds?: string[];
+  sourceRecords?: Array<Record<string, unknown>> | Record<string, unknown>;
+  metadata?: {
+    pacingLabel?: "Module" | "Week" | string;
+    [key: string]: unknown;
+  };
   modules: CourseModule[];
 };
 
