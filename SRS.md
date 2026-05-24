@@ -145,12 +145,12 @@ The administrator manages model configuration, moderation policies, storage, ana
 - FR-6: The system shall generate a hierarchical course structure composed of course, module, section, and scene or block entities.
 - FR-7: Generated content shall be stored in a structured schema compatible with Lycium rendering.
 - FR-8: Each generated section shall include explicit learning objectives.
-- FR-9: Each section shall include at least one instructional block and, where appropriate, one knowledge-check or practice block.
+- FR-9: Each instructional section shall include at least one instructional block. Knowledge checks and quizzes shall be generated as separate assessment sections.
 - FR-10: The system shall preserve stable identifiers for generated modules and sections so learner progress can be tracked reliably.
 
 ### 7.3 Lesson Scene and Content Generation
 
-- FR-11: The system shall generate lesson content that may include explanatory text, slides, quizzes, code examples, guided exercises, media embeds, or discussion prompts.
+- FR-11: The system shall generate lesson content that may include explanatory text, slides, code examples, guided exercises, media embeds, or discussion prompts. Quizzes shall be generated as separate assessment content, not mixed into instructional lesson sections.
 - FR-12: The system shall display generation progress states, including outline generation and page-content generation, so the user understands what is happening.
 - FR-13: The system shall support partial regeneration of a single module, section, or scene without recreating the entire course.
 - FR-14: The system shall support a review state where generated content is visible before publication or learner delivery.
