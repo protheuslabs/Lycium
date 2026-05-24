@@ -1,4 +1,3 @@
-import "./CatalogFooter.css";
 
 type CatalogFooterProps = {
   brand?: string;

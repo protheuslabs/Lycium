@@ -1,8 +1,6 @@
 import type { Dispatch, FormEvent, MouseEvent, SetStateAction } from "react";
 import Dropdown from "../Dropdown/Dropdown";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
-import "./SettingsModal.css";
-import "./SettingsModal.theme.css";
 
 type SettingsModalProps = {
   isOpen: boolean;

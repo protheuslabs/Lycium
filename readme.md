@@ -4,7 +4,7 @@ Lycium is a local-first learning platform for building, organizing, and studying
 
 The project is designed around one core idea: high-quality courses should be portable, inspectable, and generated from explicit structure rather than hidden application state.
 
-[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Architecture](./ARCHITECTURE.md) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
 
 ## Current capabilities
 
@@ -24,10 +24,10 @@ The project is designed around one core idea: high-quality courses should be por
 ```text
 .
 ├── apps/
-│   └── lycium-web/          # React + Vite learner-facing web app
+│   └── lycium-web/          # Next.js learner-facing web app
 ├── packages/
 │   ├── config/              # Shared configuration package stub
-│   ├── content-schema/      # Shared content schema package stub
+│   ├── contracts/           # Shared Lycium contracts, schemas, and validation helpers
 │   ├── contracts/           # Shared platform contract package stub
 │   ├── retrieval-sdk/       # Shared retrieval SDK package stub
 │   └── ui/                  # Shared UI package stub
@@ -42,7 +42,7 @@ The project is designed around one core idea: high-quality courses should be por
 
 | Area | Tools |
 | --- | --- |
-| Web app | React 19, TypeScript, Vite, Vitest, ESLint |
+| Web app | React 19, TypeScript, Next.js, Next.jsst, ESLint |
 | Monorepo | pnpm 10, Turborepo |
 | API | Python 3.13, FastAPI, Pydantic, SQLAlchemy, Uvicorn |
 | Workers | Python 3.13, HTTPX, Pydantic |
@@ -64,22 +64,22 @@ pnpm install
 pnpm dev
 ```
 
-Vite will print the local URL. The catalog route is:
+Next.js will print the local URL. The catalog route is:
 
 ```text
-http://localhost:<vite-port>/Lycium/catalog
+http://localhost:<next-port>/Lycium/catalog
 ```
 
 For the local port commonly used during development:
 
 ```bash
-pnpm --filter @lycium/web dev -- --host 127.0.0.1 --port 5001
+NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium pnpm --filter @lycium/web dev
 ```
 
 Then open:
 
 ```text
-http://localhost:5001/Lycium/catalog
+http://localhost:5000/Lycium/catalog
 ```
 
 ### API service
@@ -166,6 +166,7 @@ Do not commit secrets or machine-local learner data.
 
 - Use conventional commit prefixes such as `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, and `chore:`.
 - Keep reusable UI behavior in components rather than duplicating markup in page shells.
+- Keep course and source-record contracts centralized in `packages/contracts`.
 - Keep course progress logic centralized in `apps/lycium-web/src/utils/courseProgress.ts`.
 - Keep course route and slug behavior centralized in `apps/lycium-web/src/utils/courseRouting.ts`.
 - Prefer explicit source records over free-floating URLs in course JSON.

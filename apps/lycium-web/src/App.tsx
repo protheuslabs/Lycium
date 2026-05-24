@@ -1,6 +1,7 @@
+"use client";
+
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
-import "./App.css";
 import ContentView from "./components/ContentView/ContentView";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
 import SettingsModal from "./components/SettingsModal/SettingsModal";
@@ -36,7 +37,7 @@ import {
   writeStoredCourseBookmark,
 } from "./utils/courseRouting";
 
-const API_BASE = import.meta.env.VITE_LYCIUM_API_URL ?? "http://127.0.0.1:8000";
+const API_BASE = process.env.NEXT_PUBLIC_LYCIUM_API_URL ?? "http://127.0.0.1:8000";
 
 type RemoteCourseRow = {
   id: string | number;

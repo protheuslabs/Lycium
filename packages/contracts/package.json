@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./schemas/lycium-course.schema.json": "./schemas/lycium-course.schema.json",
+    "./schemas/lycium-source-record.schema.json": "./schemas/lycium-source-record.schema.json"
   }
 }

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-source-record.schema.json",
+  "title": "Lycium Source Record",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["id"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "type": { "type": "string" },
+    "title": { "type": "string" },
+    "url": { "type": "string" },
+    "embedUrl": { "type": "string" },
+    "localPath": { "type": "string" },
+    "usedByCourseIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "usedByCourseTitles": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

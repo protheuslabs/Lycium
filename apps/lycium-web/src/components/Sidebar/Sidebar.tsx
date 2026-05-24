@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import type { SectionStatus } from "../../courseTypes";
-import "./Sidebar.css";
 
 type SidebarSection = {
   id: string;

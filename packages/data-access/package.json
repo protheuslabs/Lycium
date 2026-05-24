@@ -1,9 +1,12 @@
 {
-  "name": "@lycium/content-schema",
+  "name": "@lycium/data-access",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@lycium/contracts": "workspace:*"
   }
 }

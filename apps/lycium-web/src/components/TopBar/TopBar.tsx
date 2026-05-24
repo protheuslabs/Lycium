@@ -1,7 +1,6 @@
 
 import type { MouseEvent } from "react";
 import { COURSE_CATALOG_PATH } from "../../utils/courseRouting";
-import "./topBar.css";
 
 type TopBarProps = {
   onOpenCatalog: () => void;

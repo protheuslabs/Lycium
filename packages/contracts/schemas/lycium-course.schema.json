@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-course.schema.json",
+  "title": "Lycium Course Snapshot",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["title", "modules"],
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "shortDescription": { "type": "string", "minLength": 1 },
+    "difficultyLevel": { "type": "string" },
+    "category": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "learningTypes": { "type": "array", "items": { "type": "string" } },
+    "orderMandatory": { "type": "boolean" },
+    "sourceIds": { "type": "array", "items": { "type": "string" } },
+    "sourceRecords": {
+      "oneOf": [
+        { "type": "array", "items": { "$ref": "lycium-source-record.schema.json" } },
+        { "type": "object", "additionalProperties": true }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "pacingLabel": { "enum": ["Module", "Week"] }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "title", "sections"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string", "minLength": 1 },
+          "sourceIds": { "type": "array", "items": { "type": "string" } },
+          "sections": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["id", "title", "pageType", "sectionType", "content"],
+              "properties": {
+                "id": { "type": "string", "minLength": 1 },
+                "title": { "type": "string", "minLength": 1 },
+                "pageType": { "enum": ["learn", "apply"] },
+                "sectionType": { "type": "string" },
+                "sourceIds": { "type": "array", "items": { "type": "string" } },
+                "content": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "required": ["type"],
+                    "properties": {
+                      "type": { "type": "string" },
+                      "title": { "type": "string" },
+                      "value": { "type": "string" },
+                      "url": { "type": "string" },
+                      "sourceIds": { "type": "array", "items": { "type": "string" } },
+                      "concepts": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": ["name", "description"],
+                          "properties": {
+                            "name": { "type": "string", "minLength": 1 },
+                            "description": { "type": "string", "minLength": 1 },
+                            "sourceSectionId": { "type": "string" }
+                          }
+                        }
+                      },
+                      "questions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": ["question", "options", "answers"],
+                          "properties": {
+                            "question": { "type": "string", "minLength": 1 },
+                            "options": {
+                              "type": "array",
+                              "minItems": 2,
+                              "items": { "type": "string" }
+                            },
+                            "answers": {
+                              "type": "array",
+                              "items": { "type": "number" }
+                            }
+                          }
+                        }
+                      },
+                      "questionBank": { "type": "array" },
+                      "timed": { "type": ["boolean", "string"] },
+                      "maxAttempts": { "type": ["number", "string", "null"] },
+                      "timeLimit": { "type": ["number", "string", "null"] },
+                      "passPercentage": { "type": ["number", "string", "null"] },
+                      "showAnswers": { "type": ["boolean", "string"] }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

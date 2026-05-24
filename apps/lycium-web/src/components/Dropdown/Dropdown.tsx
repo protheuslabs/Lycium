@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { FocusEvent } from "react";
-import "./Dropdown.css";
 
 export type DropdownOption = {
   value: string;

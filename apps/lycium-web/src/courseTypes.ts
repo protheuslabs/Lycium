@@ -1,90 +1,17 @@
-export type CourseBlock = {
-  type: string;
-  title?: string;
-  value?: string;
-  url?: string;
-  sourceIds?: string[];
-  concepts?: Array<{
-    name?: string;
-    description?: string;
-    sourceSectionId?: string;
-  }>;
-  question?: string;
-  questions?: Array<{
-    question?: string;
-    options?: string[];
-    answer?: number;
-    answers?: number[];
-    timed?: "t" | "f" | boolean;
-  }>;
-  questionBank?: unknown;
-  question_bank?: unknown;
-  questionsPerAttempt?: number | string;
-  questions_per_attempt?: number | string;
-  questionCount?: number | string;
-  question_count?: number | string;
-  options?: string[];
-  answer?: number;
-  answers?: number[];
-  name?: string;
-  description?: string;
-  timed?: "t" | "f" | boolean;
-  maxAttempts?: number | string;
-  max_attempts?: number | string;
-  attemptLimit?: number | string;
-  attempt_limit?: number | string;
-  timeLimit?: number | string;
-  time_limit?: number | string;
-  timeLimitSeconds?: number | string;
-  time_limit_seconds?: number | string;
-  passPercentage?: number | string;
-  pass_percentage?: number | string;
-  passPercent?: number | string;
-  pass_percent?: number | string;
-  showAnswers?: boolean | string;
-  show_answers?: boolean | string;
-  showCorrectAnswers?: boolean | string;
-  show_correct_answers?: boolean | string;
-};
+import type {
+  LyciumCourseBlock,
+  LyciumCourseData,
+  LyciumCourseEntry,
+  LyciumCourseModule,
+  LyciumCourseSection,
+} from "@lycium/contracts";
 
-export type CourseSection = {
-  id: string;
-  title: string;
-  content: CourseBlock[];
-  sourceIds?: string[];
-  pageType?: "learn" | "apply";
-  sectionType?: "lesson" | "assessment" | "summary" | string;
-};
+export type CourseBlock = LyciumCourseBlock;
+export type CourseSection = LyciumCourseSection;
+export type CourseModule = LyciumCourseModule;
+export type CourseData = LyciumCourseData;
 
-export type CourseModule = {
-  id: string;
-  title: string;
-  sections: CourseSection[];
-  sourceIds?: string[];
-};
-
-export type CourseData = {
-  title: string;
-  shortDescription?: string;
-  difficultyLevel?: string;
-  category?: string;
-  tags?: string[];
-  learningTypes?: string[];
-  orderMandatory?: boolean;
-  sourceIds?: string[];
-  sourceRecords?: Array<Record<string, unknown>> | Record<string, unknown>;
-  metadata?: {
-    pacingLabel?: "Module" | "Week" | string;
-    [key: string]: unknown;
-  };
-  modules: CourseModule[];
-};
-
-export type CourseEntry = {
-  key: string;
-  title: string;
-  data: CourseData;
-  snapshotId?: number;
+export type CourseEntry = Omit<LyciumCourseEntry, "source"> & {
   source: "local" | "remote";
 };
 

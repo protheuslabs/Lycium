@@ -1,5 +1,4 @@
 import { useState } from "react";
-import "./VideoBlock.css";
 
 type VideoBlockProps = {
   url: string;

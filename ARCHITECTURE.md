@@ -23,7 +23,7 @@ That means:
 
 ### Learner-Facing App
 
-- Current MVP app: `React + Vite`
+- Current MVP app: `Next.js`
 - Possible later public app: `Next.js` App Router
 - `React 19`
 - `TypeScript`
@@ -31,7 +31,7 @@ That means:
 
 Reason:
 
-- The current Vite app is sufficient while Lycium is proving the local-first course-generation and learning loop.
+- The current Next.js app is sufficient while Lycium is proving the local-first course-generation and learning loop.
 - Do not migrate to Next.js until public SEO course pages, authenticated server-rendered app flows, or server-first routing become immediate product requirements.
 - Next.js remains a reasonable later target once the core source-backed generation loop is dependable.
 
@@ -89,6 +89,13 @@ Reason:
 - structured logs
 - metrics and traces for ingestion, retrieval, and generation pipelines
 
+### Shared Contracts
+
+- `packages/contracts` is the canonical course/source contract package.
+- Frontend course types and validation should import from `@lycium/contracts`.
+- Backend Pydantic validation should stay aligned with the JSON Schema files in `packages/contracts/schemas/`.
+- LLM behavior remains governed by `COURSE_AGENT_CONTRACT.md`, but structural course validity belongs to the shared schema package.
+
 ## Recommended Repository Shape
 
 ```text
@@ -100,7 +107,7 @@ Reason:
     lycium-workers/
   packages/
     contracts/
-    content-schema/
+    contracts/
     ui/
     config/
     retrieval-sdk/
@@ -200,7 +207,7 @@ Use separate logical storage layers:
 If you want one opinionated answer:
 
 - Keep one monorepo.
-- Keep Lycium on `React + Vite` for the MVP; consider `Next.js` later for public/SEO-heavy surfaces.
+- Keep Lycium on `Next.js` for the MVP; consider `Next.js` later for public/SEO-heavy surfaces.
 - Make Lycium backend a `FastAPI` plus worker platform in Python.
 - Use `Postgres + pgvector + full-text search + object storage + Redis`.
 - Model the repository around knowledge objects, snapshots, claims, and graph edges.
@@ -221,3 +228,11 @@ If you want one opinionated answer:
 - [pgvector](https://github.com/pgvector/pgvector)
 - [Playwright docs](https://playwright.dev/docs/intro)
 - [OpenTelemetry docs](https://opentelemetry.io/docs/)
+
+## Long-Term Application Shell
+
+Lycium now targets Next.js as the learner-facing shell so the same product can run as a hosted browser app, a local-first app backed by `services/lycium-api`, and eventually an Infring-backed surface. The UI should avoid binding feature logic directly to Next server components; course traversal, validation, progress, and quiz behavior belong in shared packages so adapters can swap between local, cloud, static JSON, and Infring data sources.
+
+## Data Access Boundary
+
+`packages/data-access` defines the repository boundary for courses, progress, and generation jobs. The web app should move toward those interfaces rather than calling storage or APIs directly from view components. This keeps cloud course JSON, local generated courses, and future Infring-backed courses interchangeable at the app layer.

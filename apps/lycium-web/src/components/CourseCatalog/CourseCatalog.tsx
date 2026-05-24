@@ -5,9 +5,6 @@ import Dropdown from "../Dropdown/Dropdown";
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
-import "./CourseCatalog.css";
-import "./CourseCatalog.create.css";
-import "./CourseCatalog.info.css";
 
 type CourseCatalogProps = {
   courses: CourseEntry[];

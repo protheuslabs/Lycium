@@ -24,7 +24,6 @@ import {
   shouldShowAnswersFromPayload,
 } from "./quizNormalization";
 import type { AttemptHistoryItem, AttemptOrderItem, QuizPayload } from "./quizTypes";
-import "./quiz.css";
 
 export default function QuizBlock({
   data,
