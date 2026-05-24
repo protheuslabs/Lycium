@@ -1,7 +1,7 @@
 .home-page {
-  flex: 1;
+  box-sizing: border-box;
   padding: 1rem;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .generator-bar {
@@ -367,6 +367,64 @@
   grid-row: 4;
 }
 
+.catalog-pagination {
+  width: min(100%, 42rem);
+  margin: 1.25rem auto 0;
+  display: grid;
+  gap: 0.65rem;
+  justify-items: center;
+}
+
+.catalog-pagination-summary {
+  margin: 0;
+  color: #667085;
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-align: center;
+}
+
+.catalog-pagination-controls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.catalog-pagination-button {
+  min-width: 7.25rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  color: #ffffff;
+  background: #4a6cf7;
+  box-shadow: 0 12px 26px rgba(74, 108, 247, 0.2);
+  cursor: pointer;
+  font-weight: 850;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.catalog-pagination-button:hover:not(:disabled),
+.catalog-pagination-button:focus-visible:not(:disabled) {
+  outline: none;
+  box-shadow: 0 16px 32px rgba(74, 108, 247, 0.26);
+  transform: translateY(-1px);
+}
+
+.catalog-pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
+.catalog-pagination-page {
+  min-width: 7.5rem;
+  color: #26324a;
+  font-size: 0.88rem;
+  font-weight: 850;
+  text-align: center;
+}
+
 @media (prefers-color-scheme: dark) {
   .generator-bar,
   .home-page {
@@ -462,6 +520,14 @@
     background: rgba(128, 150, 255, 0.26);
   }
 
+  .catalog-pagination-summary {
+    color: #a1a1aa;
+  }
+
+  .catalog-pagination-page {
+    color: #f8fafc;
+  }
+
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generator-bar,
@@ -536,6 +602,14 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-generating-status {
   color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-pagination-summary {
+  color: #a1a1aa;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-pagination-page {
+  color: #f8fafc;
 }
 
 html[data-theme="light"] .home-page,
@@ -634,6 +708,14 @@ html[data-theme="light"] .course-generating-status {
   color: #555;
 }
 
+html[data-theme="light"] .catalog-pagination-summary {
+  color: #667085;
+}
+
+html[data-theme="light"] .catalog-pagination-page {
+  color: #26324a;
+}
+
 @media (max-width: 860px) {
   .home-page {
     padding: 0.85rem;
@@ -705,5 +787,16 @@ html[data-theme="light"] .course-generating-status {
 
   .course-card {
     min-height: 13rem;
+  }
+
+  .catalog-pagination-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .catalog-pagination-button,
+  .catalog-pagination-page {
+    width: 100%;
   }
 }

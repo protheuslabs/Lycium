@@ -23,6 +23,8 @@ type CourseCatalogProps = {
 
 type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
 
+const CATALOG_COURSES_PER_PAGE = 8;
+
 function getGeneratingCourseTitle(prompt: string): string {
   const title = prompt
     .split(/\r?\n/)
@@ -121,6 +123,7 @@ export default function CourseCatalog({
   const [searchQuery, setSearchQuery] = useState("");
   const [collegeFilter, setCollegeFilter] = useState("all");
   const [sortMode, setSortMode] = useState<CatalogSortMode>("college");
+  const [catalogPage, setCatalogPage] = useState(1);
   const infoTagLabels = infoCourse ? getCourseTagLabels(infoCourse.data.tags) : [];
   const infoLearningTypes = infoCourse?.data.learningTypes ?? [];
   const isGeneratingCourse = generateStatus === "loading";
@@ -193,6 +196,31 @@ export default function CourseCatalog({
         return compareCatalogSort(a, b, sortMode);
       });
   }, [collegeFilter, courses, searchQuery, sortMode]);
+  const totalCatalogPages = Math.max(1, Math.ceil(visibleCourses.length / CATALOG_COURSES_PER_PAGE));
+  const activeCatalogPage = Math.min(catalogPage, totalCatalogPages);
+  const catalogPageStartIndex = (activeCatalogPage - 1) * CATALOG_COURSES_PER_PAGE;
+  const catalogPageCourses = visibleCourses.slice(
+    catalogPageStartIndex,
+    catalogPageStartIndex + CATALOG_COURSES_PER_PAGE
+  );
+  const firstVisibleResult = visibleCourses.length === 0 ? 0 : catalogPageStartIndex + 1;
+  const lastVisibleResult = Math.min(catalogPageStartIndex + CATALOG_COURSES_PER_PAGE, visibleCourses.length);
+  const shouldShowCatalogPagination = visibleCourses.length > CATALOG_COURSES_PER_PAGE;
+
+  const handleSearchQueryChange = (value: string) => {
+    setSearchQuery(value);
+    setCatalogPage(1);
+  };
+
+  const handleCollegeFilterChange = (value: string) => {
+    setCollegeFilter(value);
+    setCatalogPage(1);
+  };
+
+  const handleSortModeChange = (value: string) => {
+    setSortMode(value as CatalogSortMode);
+    setCatalogPage(1);
+  };
 
   const handleCourseKeyDown = (event: KeyboardEvent<HTMLElement>, course: CourseEntry) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -243,7 +271,7 @@ export default function CourseCatalog({
                 type="search"
                 placeholder="Search names and tags"
                 value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                onChange={(event) => handleSearchQueryChange(event.target.value)}
               />
             </label>
             <div className="catalog-dropdown-row">
@@ -253,7 +281,7 @@ export default function CourseCatalog({
                   className="catalog-dropdown"
                   value={collegeFilter}
                   options={collegeFilterOptions}
-                  onChange={setCollegeFilter}
+                  onChange={handleCollegeFilterChange}
                   ariaLabel="Filter by college"
                 />
               </label>
@@ -263,7 +291,7 @@ export default function CourseCatalog({
                   className="catalog-dropdown catalog-sort-dropdown"
                   value={sortMode}
                   options={sortOptions}
-                  onChange={(nextSortMode) => setSortMode(nextSortMode as CatalogSortMode)}
+                  onChange={handleSortModeChange}
                   ariaLabel="Sort courses"
                 />
               </label>
@@ -299,7 +327,7 @@ export default function CourseCatalog({
                 </p>
               </article>
             )}
-            {visibleCourses.map(({ course, courseProgress, bookmarkedSection, hasCourseActivity }) => {
+            {catalogPageCourses.map(({ course, courseProgress, bookmarkedSection, hasCourseActivity }) => {
               return (
                 <article
                   key={course.key}
@@ -348,6 +376,34 @@ export default function CourseCatalog({
               );
             })}
           </div>
+          {shouldShowCatalogPagination && (
+            <nav className="catalog-pagination" aria-label="Course catalog pagination">
+              <p className="catalog-pagination-summary">
+                Showing {firstVisibleResult}-{lastVisibleResult} of {visibleCourses.length}
+              </p>
+              <div className="catalog-pagination-controls">
+                <button
+                  className="catalog-pagination-button"
+                  type="button"
+                  onClick={() => setCatalogPage(Math.max(1, activeCatalogPage - 1))}
+                  disabled={activeCatalogPage === 1}
+                >
+                  Previous
+                </button>
+                <span className="catalog-pagination-page">
+                  Page {activeCatalogPage} of {totalCatalogPages}
+                </span>
+                <button
+                  className="catalog-pagination-button"
+                  type="button"
+                  onClick={() => setCatalogPage(Math.min(totalCatalogPages, activeCatalogPage + 1))}
+                  disabled={activeCatalogPage === totalCatalogPages}
+                >
+                  Next
+                </button>
+              </div>
+            </nav>
+          )}
         </section>
       </main>
 
