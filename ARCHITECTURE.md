@@ -242,3 +242,5 @@ Current browser runtime calls for local API access, progress persistence, quiz a
 `services/lycium-api/app/contract_validation.py` loads the shared JSON Schemas from `packages/contracts/schemas` so backend course generation and frontend rendering are anchored to the same structural contract. Pydantic models may still describe API payloads, but generated course snapshots should be checked against the shared schema before being treated as valid Lycium course artifacts.
 
 The initial adapter implementations live in `@lycium/data-access`: static JSON course repositories for cloud-hosted course snapshots, generic HTTP repositories for cloud APIs, and an Infring repository set that can be pointed at the eventual Infring course/progress/generation API. Next.js handles route/layout ownership while the learner runtime stays adapter-driven.
+
+Architecture decisions that should remain stable across pivots are recorded in `docs/adr/`. New major stack, contract, storage, or deployment decisions should add or update an ADR before broad implementation work.

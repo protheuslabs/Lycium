@@ -1,0 +1,14 @@
+{
+  "agent_keys": [
+    {
+      "id": "key-1",
+      "provider_id": "openai",
+      "provider_label": "OpenAI",
+      "key_preview": "********1234",
+      "model": "gpt-4.1-mini",
+      "models": [{ "id": "gpt-4.1-mini", "label": "GPT-4.1 Mini" }],
+      "models_fetched_at": "2026-05-24T00:00:00.000Z",
+      "is_active": true
+    }
+  ]
+}

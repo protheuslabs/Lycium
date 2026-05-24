@@ -58,3 +58,5 @@ The local API validates generated course structures through `services/lycium-api
 The contract schema set now covers courses, source records, learner progress, quiz attempt persistence, generation jobs, and provider settings. New local/cloud/Infring adapters should add to this shared schema layer before adding durable runtime state.
 
 `@lycium/data-access` includes concrete repository factories for static JSON catalogs, generic HTTP/cloud APIs, and future Infring-backed APIs. Hosted Lycium, local Lycium, and Infring Lycium should differ by adapter configuration rather than by learner UI components.
+
+Contract fixtures live in `packages/contracts/fixtures`. Tests should validate those fixtures against both the JSON Schema layer and the semantic course validator so schema changes cannot quietly weaken course-generation rules.

@@ -36,12 +36,15 @@ jobs:
 
       - name: Build web app
         env:
-          VITE_BASE_PATH: /Lycium/
-          VITE_PROTHEUS_API_URL: ${{ vars.VITE_PROTHEUS_API_URL }}
+          NEXT_OUTPUT: export
+          NEXT_PUBLIC_LYCIUM_BASE_PATH: /Lycium
+          NEXT_PUBLIC_LYCIUM_RUNTIME: static
+          NEXT_PUBLIC_LYCIUM_API_URL: ${{ vars.NEXT_PUBLIC_LYCIUM_API_URL }}
+          NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL: ${{ vars.NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL }}
         run: pnpm --filter @lycium/web build
 
-      - name: Support SPA routes on GitHub Pages
-        run: cp apps/lycium-web/dist/index.html apps/lycium-web/dist/404.html
+      - name: Support direct route fallback on GitHub Pages
+        run: cp apps/lycium-web/out/index.html apps/lycium-web/out/404.html
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -49,7 +52,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/lycium-web/dist
+          path: apps/lycium-web/out
 
   deploy:
     needs: build

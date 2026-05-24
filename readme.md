@@ -1,10 +1,10 @@
 # Lycium
 
-Lycium is a local-first learning platform for building, organizing, and studying structured online courses. Courses are represented as JSON, rendered dynamically in a React learner experience, and backed by a FastAPI control plane for course generation, source records, local progress, and user-owned settings.
+Lycium is a local-first learning platform for building, organizing, and studying structured online courses. Courses are represented as JSON, rendered dynamically in a Next.js learner experience, and backed by a FastAPI control plane for course generation, source records, local progress, and user-owned settings.
 
 The project is designed around one core idea: high-quality courses should be portable, inspectable, and generated from explicit structure rather than hidden application state.
 
-[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
 
 ## Current capabilities
 
@@ -28,7 +28,7 @@ The project is designed around one core idea: high-quality courses should be por
 ├── packages/
 │   ├── config/              # Shared configuration package stub
 │   ├── contracts/           # Shared Lycium contracts, schemas, and validation helpers
-│   ├── contracts/           # Shared platform contract package stub
+│   ├── data-access/         # Runtime adapters for local, static, cloud, and Infring modes
 │   ├── retrieval-sdk/       # Shared retrieval SDK package stub
 │   └── ui/                  # Shared UI package stub
 ├── services/
@@ -42,7 +42,7 @@ The project is designed around one core idea: high-quality courses should be por
 
 | Area | Tools |
 | --- | --- |
-| Web app | React 19, TypeScript, Next.js, Next.jsst, ESLint |
+| Web app | React 19, TypeScript, Next.js, Vitest, ESLint |
 | Monorepo | pnpm 10, Turborepo |
 | API | Python 3.13, FastAPI, Pydantic, SQLAlchemy, Uvicorn |
 | Workers | Python 3.13, HTTPX, Pydantic |
@@ -79,7 +79,16 @@ NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium pnpm --filter @lycium/web dev
 Then open:
 
 ```text
-http://localhost:5000/Lycium/catalog
+http://localhost:5001/Lycium/catalog
+```
+
+Runtime mode is configured with public environment variables:
+
+```text
+NEXT_PUBLIC_LYCIUM_RUNTIME=local|static|cloud|infring
+NEXT_PUBLIC_LYCIUM_API_URL=http://127.0.0.1:8000
+NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL=https://example.com/catalog.json
+NEXT_PUBLIC_LYCIUM_COURSE_BASE_URL=https://example.com/courses
 ```
 
 ### API service
@@ -115,7 +124,11 @@ LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 | Command | Description |
 | --- | --- |
 | `pnpm dev` | Start the web app through the monorepo script |
+| `pnpm dev:all` | Start the web app and local API together |
+| `pnpm dev:api` | Start the local FastAPI service |
 | `pnpm build` | Build the web app |
+| `pnpm test:contracts` | Run shared contract fixture tests |
+| `pnpm validate` | Run contract tests, web typecheck, and web build |
 | `pnpm --filter @lycium/web test` | Run web tests |
 | `pnpm --filter @lycium/web lint` | Run web linting |
 | `pnpm --filter @lycium/web typecheck` | Run TypeScript checks |

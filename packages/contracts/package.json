@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./schemas/lycium-course.schema.json": "./schemas/lycium-course.schema.json",
@@ -11,5 +14,10 @@
     "./schemas/lycium-quiz-progress.schema.json": "./schemas/lycium-quiz-progress.schema.json",
     "./schemas/lycium-generation-job.schema.json": "./schemas/lycium-generation-job.schema.json",
     "./schemas/lycium-provider-settings.schema.json": "./schemas/lycium-provider-settings.schema.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "ajv": "^8.17.1",
+    "vitest": "^4.1.7"
   }
 }

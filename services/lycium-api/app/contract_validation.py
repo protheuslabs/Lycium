@@ -5,7 +5,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from jsonschema import Draft202012Validator, RefResolver
+from jsonschema import Draft202012Validator
+from referencing import Registry, Resource
+from referencing.jsonschema import DRAFT202012
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -23,14 +25,17 @@ def _load_json(path: Path) -> dict[str, Any]:
 def course_contract_validator() -> Draft202012Validator:
     course_schema = _load_json(COURSE_SCHEMA_PATH)
     source_record_schema = _load_json(SOURCE_RECORD_SCHEMA_PATH)
-    resolver = RefResolver.from_schema(
-        course_schema,
-        store={
-            source_record_schema.get("$id", "lycium-source-record.schema.json"): source_record_schema,
-            "lycium-source-record.schema.json": source_record_schema,
-        },
+    source_record_resource = Resource.from_contents(
+        source_record_schema,
+        default_specification=DRAFT202012,
     )
-    return Draft202012Validator(course_schema, resolver=resolver)
+    registry = Registry().with_resources(
+        [
+            (str(source_record_schema.get("$id")), source_record_resource),
+            ("lycium-source-record.schema.json", source_record_resource),
+        ],
+    )
+    return Draft202012Validator(course_schema, registry=registry)
 
 
 def validate_course_schema(course: dict[str, Any]) -> list[str]:

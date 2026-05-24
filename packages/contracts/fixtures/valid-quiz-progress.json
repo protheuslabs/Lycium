@@ -1,0 +1,23 @@
+{
+  "startedAt": "2026-05-24T00:00:00.000Z",
+  "submittedAt": "2026-05-24T00:03:00.000Z",
+  "submitted": true,
+  "attemptCount": 1,
+  "elapsedSeconds": 180,
+  "attemptOrder": [{ "questionIndex": 0, "optionOrder": [1, 0] }],
+  "selectedByQuestion": [[1]],
+  "questionCorrectness": [true],
+  "attemptHistory": [
+    {
+      "attemptNumber": 1,
+      "elapsedSeconds": 180,
+      "scorePercentage": 100,
+      "correctCount": 1,
+      "totalQuestions": 1,
+      "submittedAt": "2026-05-24T00:03:00.000Z",
+      "attemptOrder": [{ "questionIndex": 0, "optionOrder": [1, 0] }],
+      "selectedByQuestion": [[1]],
+      "questionCorrectness": [true]
+    }
+  ]
+}

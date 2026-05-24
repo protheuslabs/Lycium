@@ -1,0 +1,13 @@
+{
+  "id": "job-1",
+  "status": "validating",
+  "request": {
+    "prompt": "Create an HTTP fundamentals course",
+    "level": "undergrad",
+    "source_policy": "balanced",
+    "desired_module_count": 1,
+    "expected_duration_minutes": 60
+  },
+  "createdAt": "2026-05-24T00:00:00.000Z",
+  "updatedAt": "2026-05-24T00:01:00.000Z"
+}

@@ -1,0 +1,36 @@
+{
+  "title": "Invalid Missing Summary",
+  "shortDescription": "A course that omits the required module summary.",
+  "sourceIds": ["source-http"],
+  "sourceRecords": [{ "id": "source-http", "type": "article", "title": "HTTP overview" }],
+  "metadata": { "pacingLabel": "Module" },
+  "modules": [
+    {
+      "id": "module-http",
+      "title": "HTTP Basics",
+      "sourceIds": ["source-http"],
+      "sections": [
+        {
+          "id": "http-request-response",
+          "title": "HTTP request and response",
+          "pageType": "learn",
+          "sectionType": "lesson",
+          "sourceIds": ["source-http"],
+          "content": [
+            { "type": "text", "value": "HTTP clients send requests.", "sourceIds": ["source-http"] },
+            {
+              "type": "conceptCards",
+              "title": "Concepts introduced",
+              "concepts": [
+                {
+                  "name": "HTTP request",
+                  "description": "A message sent by a client to ask a server for an action or resource."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "title": "HTTP Fundamentals",
+  "shortDescription": "A compact course on HTTP request and response basics.",
+  "difficultyLevel": "undergrad",
+  "category": "engineering",
+  "tags": ["web", "networking"],
+  "learningTypes": [],
+  "orderMandatory": false,
+  "sourceIds": ["source-http"],
+  "sourceRecords": [
+    {
+      "id": "source-http",
+      "type": "article",
+      "title": "HTTP overview",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP"
+    }
+  ],
+  "metadata": {
+    "pacingLabel": "Module"
+  },
+  "modules": [
+    {
+      "id": "module-http",
+      "title": "HTTP Basics",
+      "sourceIds": ["source-http"],
+      "sections": [
+        {
+          "id": "http-request-response",
+          "title": "HTTP request and response",
+          "pageType": "learn",
+          "sectionType": "lesson",
+          "sourceIds": ["source-http"],
+          "content": [
+            {
+              "type": "text",
+              "value": "HTTP clients send requests and servers return responses.",
+              "sourceIds": ["source-http"]
+            },
+            {
+              "type": "conceptCards",
+              "title": "Concepts introduced",
+              "concepts": [
+                {
+                  "name": "HTTP request",
+                  "description": "A message sent by a client to ask a server for an action or resource.",
+                  "sourceSectionId": "http-request-response"
+                },
+                {
+                  "name": "HTTP response",
+                  "description": "A message sent by a server with status, metadata, and optional content.",
+                  "sourceSectionId": "http-request-response"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "quiz-http-request-response",
+          "title": "Quiz: HTTP request and response",
+          "pageType": "apply",
+          "sectionType": "assessment",
+          "sourceIds": ["source-http"],
+          "content": [
+            {
+              "type": "quiz",
+              "sourceIds": ["source-http"],
+              "questions": [
+                {
+                  "question": "Which message is sent by the client?",
+                  "options": ["HTTP request", "HTTP response", "Status line", "Server log"],
+                  "answers": [0]
+                },
+                {
+                  "question": "Which message contains the status code returned by the server?",
+                  "options": ["HTTP request", "HTTP response", "DNS record", "HTML selector"],
+                  "answers": [1]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "module-http-summary",
+          "title": "Module Summary: HTTP Basics",
+          "pageType": "learn",
+          "sectionType": "summary",
+          "content": [
+            {
+              "type": "conceptCards",
+              "title": "Module concepts",
+              "concepts": [
+                {
+                  "name": "HTTP request",
+                  "description": "A message sent by a client to ask a server for an action or resource.",
+                  "sourceSectionId": "http-request-response"
+                },
+                {
+                  "name": "HTTP response",
+                  "description": "A message sent by a server with status, metadata, and optional content.",
+                  "sourceSectionId": "http-request-response"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

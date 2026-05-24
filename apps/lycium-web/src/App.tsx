@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { createBrowserStorageRepository, createLyciumLocalApi } from "@lycium/data-access";
+import {
+  createBrowserStorageRepository,
+  createConfiguredRepositorySet,
+  createLyciumLocalApi,
+  resolveLyciumRuntimeConfig,
+} from "@lycium/data-access";
 import ContentView from "./components/ContentView/ContentView";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
 import SettingsModal from "./components/SettingsModal/SettingsModal";
@@ -38,7 +43,14 @@ import {
 } from "./utils/courseRouting";
 
 const API_BASE = process.env.NEXT_PUBLIC_LYCIUM_API_URL ?? "http://127.0.0.1:8000";
-const lyciumApi = createLyciumLocalApi(API_BASE);
+const runtimeConfig = resolveLyciumRuntimeConfig({
+  mode: process.env.NEXT_PUBLIC_LYCIUM_RUNTIME,
+  apiBaseUrl: API_BASE,
+  catalogUrl: process.env.NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL,
+  courseBaseUrl: process.env.NEXT_PUBLIC_LYCIUM_COURSE_BASE_URL,
+});
+const repositorySet = createConfiguredRepositorySet(runtimeConfig, localCourses);
+const lyciumApi = createLyciumLocalApi(runtimeConfig.apiBaseUrl);
 const browserStorage = createBrowserStorageRepository();
 
 function scrollCoursePageToTop() {
@@ -412,6 +424,25 @@ function App() {
   }, [route.kind, route.courseSlug, route.unitSlug, resolveCourseKeyFromPath, courses, currentCourseKey, openCourseByEntry, pushSectionPath, rememberCourseSection]);
 
   useEffect(() => {
+    if (repositorySet.mode !== "local") {
+      repositorySet.courses
+        .listCourses()
+        .then((courseCards) => {
+          const configuredCourses = courseCards
+            .flatMap((card) => (card.course ? [card.course] : []))
+            .map((course): CourseEntry => ({
+              ...course,
+              source: course.source === "local" ? "local" : "remote",
+            }));
+
+          if (configuredCourses.length > 0) {
+            setCourses(configuredCourses);
+          }
+        })
+        .catch((err: unknown) => console.warn("Configured course repository unavailable:", err));
+      return;
+    }
+
     const fetchRemoteCourses = async () => {
       try {
         const rows = await lyciumApi.listRemoteCourses(25);

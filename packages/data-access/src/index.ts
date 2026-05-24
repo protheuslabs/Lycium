@@ -47,6 +47,22 @@ export type LyciumRepositorySet = {
   generation?: GenerationRepository;
 };
 
+export type LyciumRuntimeConfig = {
+  mode: LyciumRuntimeMode;
+  apiBaseUrl: string;
+  catalogUrl?: string;
+  courseBaseUrl?: string;
+  headers?: HeadersInit | (() => HeadersInit);
+};
+
+export type LyciumRuntimeConfigInput = {
+  mode?: string | null;
+  apiBaseUrl?: string | null;
+  catalogUrl?: string | null;
+  courseBaseUrl?: string | null;
+  headers?: HeadersInit | (() => HeadersInit);
+};
+
 export type JsonCourseCatalogItem = {
   key: string;
   title: string;
@@ -138,6 +154,20 @@ export type LyciumLocalApi = {
 
 function normalizeApiBase(apiBase?: string): string {
   return (apiBase || DEFAULT_LYCIUM_API_BASE).replace(/\/+$/, "");
+}
+
+function normalizeRuntimeMode(mode: string | null | undefined): LyciumRuntimeMode {
+  return mode === "cloud" || mode === "static" || mode === "infring" || mode === "local" ? mode : "local";
+}
+
+export function resolveLyciumRuntimeConfig(input: LyciumRuntimeConfigInput = {}): LyciumRuntimeConfig {
+  return {
+    mode: normalizeRuntimeMode(input.mode),
+    apiBaseUrl: normalizeApiBase(input.apiBaseUrl ?? undefined),
+    catalogUrl: input.catalogUrl || undefined,
+    courseBaseUrl: input.courseBaseUrl || undefined,
+    headers: input.headers,
+  };
 }
 
 function joinUrl(baseUrl: string, path: string): string {
@@ -569,6 +599,20 @@ export function createBrowserStorageRepository() {
   };
 }
 
+export function createBrowserProgressRepository(): ProgressRepository {
+  const storage = createBrowserStorageRepository();
+
+  return {
+    async getProgress(courseKey) {
+      return storage.readProgress(courseKey);
+    },
+
+    async saveProgress(courseKey, progress) {
+      storage.writeProgress(courseKey, progress);
+    },
+  };
+}
+
 export function createStaticCourseRepository(courses: LyciumCourseEntry[]): CourseRepository {
   return {
     async listCourses() {
@@ -588,5 +632,48 @@ export function createStaticCourseRepository(courses: LyciumCourseEntry[]): Cour
     async getCourseSnapshot(courseKeyOrSlug: string) {
       return (await this.getCourse(courseKeyOrSlug))?.data ?? null;
     },
+  };
+}
+
+export function createConfiguredRepositorySet(
+  configInput: LyciumRuntimeConfigInput,
+  localCourses: LyciumCourseEntry[] = [],
+): LyciumRepositorySet {
+  const config = resolveLyciumRuntimeConfig(configInput);
+
+  if (config.mode === "cloud") {
+    return createCloudRepositorySet({
+      baseUrl: config.apiBaseUrl,
+      headers: config.headers,
+    });
+  }
+
+  if (config.mode === "infring") {
+    return createInfringRepositorySet({
+      baseUrl: config.apiBaseUrl,
+      headers: config.headers,
+    });
+  }
+
+  if (config.mode === "static" && config.catalogUrl) {
+    return {
+      mode: "static",
+      courses: createJsonCourseRepository({
+        catalogUrl: config.catalogUrl,
+        courseBaseUrl: config.courseBaseUrl,
+        mode: "static",
+      }),
+      progress: createBrowserProgressRepository(),
+    };
+  }
+
+  return {
+    mode: "local",
+    courses: createStaticCourseRepository(localCourses),
+    progress: createBrowserProgressRepository(),
+    generation: createHttpGenerationRepository({
+      baseUrl: config.apiBaseUrl,
+      mode: "local",
+    }),
   };
 }
