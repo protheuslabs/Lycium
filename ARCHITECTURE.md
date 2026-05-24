@@ -240,3 +240,5 @@ Lycium now targets Next.js as the learner-facing shell so the same product can r
 Current browser runtime calls for local API access, progress persistence, quiz attempt history, bookmarks, settings, and theme state should stay centralized in `@lycium/data-access`. Feature components should consume repository/client helpers instead of binding directly to `fetch()` or `localStorage`.
 
 `services/lycium-api/app/contract_validation.py` loads the shared JSON Schemas from `packages/contracts/schemas` so backend course generation and frontend rendering are anchored to the same structural contract. Pydantic models may still describe API payloads, but generated course snapshots should be checked against the shared schema before being treated as valid Lycium course artifacts.
+
+The initial adapter implementations live in `@lycium/data-access`: static JSON course repositories for cloud-hosted course snapshots, generic HTTP repositories for cloud APIs, and an Infring repository set that can be pointed at the eventual Infring course/progress/generation API. Next.js handles route/layout ownership while the learner runtime stays adapter-driven.

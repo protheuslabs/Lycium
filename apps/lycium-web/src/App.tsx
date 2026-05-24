@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { createBrowserStorageRepository, createLyciumLocalApi } from "@lycium/data-access";
 import ContentView from "./components/ContentView/ContentView";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
@@ -47,6 +48,9 @@ function scrollCoursePageToTop() {
 }
 
 function App() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const settingsReturnPathRef = useRef(COURSE_CATALOG_PATH);
   const [courses, setCourses] = useState<CourseEntry[]>(localCourses);
   const [currentCourseKey, setCurrentCourseKey] = useState(localCourses[0]?.key ?? "");
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
@@ -55,16 +59,13 @@ function App() {
   const [generateStatus, setGenerateStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [generateMessage, setGenerateMessage] = useState("");
   const [learnerId, setLearnerId] = useState<number | null>(null);
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [currentPath, setCurrentPath] = useState(() => pathname ?? COURSE_CATALOG_PATH);
   const [courseContentHeight, setCourseContentHeight] = useState<number | null>(null);
   const [progress, setProgress] = useState<CourseProgressRecord>(DEFAULT_PROGRESS);
   const courseContentRef = useRef<HTMLDivElement | null>(null);
 
   const route = useMemo(() => parseCourseRoute(currentPath), [currentPath]);
-  const settingsReturnPath =
-    route.kind === "settings" && typeof window.history.state?.settingsReturnTo === "string"
-      ? window.history.state.settingsReturnTo
-      : COURSE_CATALOG_PATH;
+  const settingsReturnPath = route.kind === "settings" ? settingsReturnPathRef.current : COURSE_CATALOG_PATH;
   const viewRoute = useMemo(
     () => (route.kind === "settings" ? parseCourseRoute(settingsReturnPath) : route),
     [route, settingsReturnPath]
@@ -167,35 +168,32 @@ function App() {
   );
 
   const routeToHome = useCallback(() => {
-    if (window.location.pathname !== COURSE_CATALOG_PATH) {
-      window.history.pushState({}, "", COURSE_CATALOG_PATH);
+    if (currentPath !== COURSE_CATALOG_PATH) {
+      router.push(COURSE_CATALOG_PATH);
     }
     setCurrentPath(COURSE_CATALOG_PATH);
-  }, []);
+  }, [currentPath, router]);
 
   const routeToSettings = useCallback(
     (event?: MouseEvent<HTMLAnchorElement>) => {
       event?.preventDefault();
-      if (window.location.pathname === SETTINGS_PATH) {
+      if (currentPath === SETTINGS_PATH) {
         setCurrentPath(SETTINGS_PATH);
         return;
       }
-      window.history.pushState(
-        { settingsReturnTo: currentPath === SETTINGS_PATH ? settingsReturnPath : currentPath },
-        "",
-        SETTINGS_PATH
-      );
+      settingsReturnPathRef.current = currentPath === SETTINGS_PATH ? settingsReturnPath : currentPath;
+      router.push(SETTINGS_PATH);
       setCurrentPath(SETTINGS_PATH);
     },
-    [currentPath, settingsReturnPath]
+    [currentPath, router, settingsReturnPath]
   );
 
   const closeSettingsModal = useCallback(() => {
-    const returnTo = typeof window.history.state?.settingsReturnTo === "string" ? window.history.state.settingsReturnTo : COURSE_CATALOG_PATH;
+    const returnTo = settingsReturnPathRef.current;
     const targetPath = returnTo && returnTo !== SETTINGS_PATH ? returnTo : COURSE_CATALOG_PATH;
-    window.history.replaceState({}, "", targetPath);
+    router.replace(targetPath);
     setCurrentPath(targetPath);
-  }, []);
+  }, [router]);
 
   const rememberCourseSection = useCallback((course: CourseEntry, section: CourseSection, path: string) => {
     const bookmark = {
@@ -212,19 +210,18 @@ function App() {
   const pushSectionPath = useCallback(
     (course: CourseEntry, section: CourseSection, replace = false) => {
       const nextPath = getCourseSectionPath(course, section);
-      if (window.location.pathname !== nextPath) {
-        const nextState = { courseKey: course.key, sectionId: section.id };
+      if (currentPath !== nextPath) {
         if (replace) {
-          window.history.replaceState(nextState, "", nextPath);
+          router.replace(nextPath);
         } else {
-          window.history.pushState(nextState, "", nextPath);
+          router.push(nextPath);
         }
       }
       setCurrentPath(nextPath);
       rememberCourseSection(course, section, nextPath);
       scrollCoursePageToTop();
     },
-    [rememberCourseSection]
+    [currentPath, rememberCourseSection, router]
   );
 
   const openCourseByEntry = useCallback(
@@ -249,14 +246,14 @@ function App() {
 
       const nextPath = getCoursePath(course);
       if (replace) {
-        window.history.replaceState({ courseKey: course.key }, "", nextPath);
+        router.replace(nextPath);
       } else {
-        window.history.pushState({ courseKey: course.key }, "", nextPath);
+        router.push(nextPath);
       }
       setCurrentPath(nextPath);
       scrollCoursePageToTop();
     },
-    [pushSectionPath]
+    [pushSectionPath, router]
   );
 
   const goToSectionIndex = (index: number) => {
@@ -371,19 +368,19 @@ function App() {
   };
 
   useEffect(() => {
-    const syncPath = () => setCurrentPath(window.location.pathname);
-    window.addEventListener("popstate", syncPath);
-    return () => window.removeEventListener("popstate", syncPath);
-  }, []);
+    if (pathname) {
+      setCurrentPath(pathname);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (currentPath !== "/" && currentPath !== LYCIUM_ROUTE_ROOT) {
       return;
     }
 
-    window.history.replaceState({}, "", COURSE_CATALOG_PATH);
+    router.replace(COURSE_CATALOG_PATH);
     setCurrentPath(COURSE_CATALOG_PATH);
-  }, [currentPath]);
+  }, [currentPath, router]);
 
   useEffect(() => {
     if (route.kind !== "course" || !route.courseSlug) return;

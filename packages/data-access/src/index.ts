@@ -47,6 +47,36 @@ export type LyciumRepositorySet = {
   generation?: GenerationRepository;
 };
 
+export type JsonCourseCatalogItem = {
+  key: string;
+  title: string;
+  shortDescription?: string;
+  category?: string;
+  tags?: string[];
+  courseUrl?: string;
+  course?: LyciumCourseData;
+};
+
+export type JsonCourseCatalog = {
+  courses: JsonCourseCatalogItem[];
+};
+
+export type JsonCourseRepositoryOptions = {
+  catalogUrl: string;
+  courseBaseUrl?: string;
+  mode?: LyciumRuntimeMode;
+};
+
+export type HttpRepositoryOptions = {
+  baseUrl: string;
+  mode: Exclude<LyciumRuntimeMode, "static">;
+  catalogPath?: string;
+  coursePath?: (courseKeyOrSlug: string) => string;
+  progressPath?: (courseKey: string) => string;
+  generationPath?: string;
+  headers?: HeadersInit | (() => HeadersInit);
+};
+
 export type LocalCompletionMirrorPayload = {
   course_key: string;
   course_title?: string | null;
@@ -110,6 +140,16 @@ function normalizeApiBase(apiBase?: string): string {
   return (apiBase || DEFAULT_LYCIUM_API_BASE).replace(/\/+$/, "");
 }
 
+function joinUrl(baseUrl: string, path: string): string {
+  const normalizedBase = baseUrl.replace(/\/+$/, "");
+  const normalizedPath = path.replace(/^\/+/, "");
+  return `${normalizedBase}/${normalizedPath}`;
+}
+
+function resolveHeaders(headers?: HeadersInit | (() => HeadersInit)): HeadersInit {
+  return typeof headers === "function" ? headers() : headers ?? {};
+}
+
 async function readJsonResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
   if (!response.ok) {
     const errorBody = await response.json().catch(() => null);
@@ -117,6 +157,32 @@ async function readJsonResponse<T>(response: Response, fallbackMessage: string):
   }
 
   return response.json() as Promise<T>;
+}
+
+function courseEntryFromSnapshot(
+  key: string,
+  course: LyciumCourseData,
+  source: string,
+  snapshotId?: number,
+): LyciumCourseEntry {
+  return {
+    key,
+    title: course.title,
+    data: course,
+    source,
+    snapshotId,
+  };
+}
+
+function courseEntryFromGeneratedRecord(record: LyciumGeneratedCourseRecord, source: string): LyciumCourseEntry {
+  const snapshotId = Number(record.id);
+  return {
+    key: `remote-${record.id}`,
+    title: record.title,
+    data: record.structure,
+    source,
+    snapshotId: Number.isFinite(snapshotId) ? snapshotId : undefined,
+  };
 }
 
 export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
@@ -225,6 +291,178 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       });
       return readJsonResponse<LyciumLocalSettings>(response, "Model update failed");
     },
+  };
+}
+
+export function createJsonCourseRepository({
+  catalogUrl,
+  courseBaseUrl,
+  mode = "static",
+}: JsonCourseRepositoryOptions): CourseRepository {
+  let catalogCache: JsonCourseCatalog | null = null;
+  const loadCatalog = async () => {
+    if (catalogCache) {
+      return catalogCache;
+    }
+
+    const response = await fetch(catalogUrl);
+    catalogCache = await readJsonResponse<JsonCourseCatalog>(response, "Course catalog unavailable");
+    return catalogCache;
+  };
+
+  const resolveCourseUrl = (item: JsonCourseCatalogItem) => {
+    if (item.courseUrl) {
+      return item.courseUrl;
+    }
+    if (!courseBaseUrl) {
+      return null;
+    }
+    return joinUrl(courseBaseUrl, `${encodeURIComponent(item.key)}/course.json`);
+  };
+
+  return {
+    async listCourses() {
+      const catalog = await loadCatalog();
+      return catalog.courses.map((item) => ({
+        key: item.key,
+        title: item.title,
+        shortDescription: item.shortDescription ?? item.course?.shortDescription,
+        category: item.category ?? item.course?.category,
+        tags: item.tags ?? item.course?.tags,
+        source: mode,
+        course: item.course ? courseEntryFromSnapshot(item.key, item.course, mode) : undefined,
+      }));
+    },
+
+    async getCourse(courseKeyOrSlug: string) {
+      const catalog = await loadCatalog();
+      const item = catalog.courses.find((candidate) => candidate.key === courseKeyOrSlug || candidate.title === courseKeyOrSlug);
+      if (!item) {
+        return null;
+      }
+      if (item.course) {
+        return courseEntryFromSnapshot(item.key, item.course, mode);
+      }
+
+      const courseUrl = resolveCourseUrl(item);
+      if (!courseUrl) {
+        return null;
+      }
+
+      const response = await fetch(courseUrl);
+      const course = await readJsonResponse<LyciumCourseData>(response, "Course snapshot unavailable");
+      return courseEntryFromSnapshot(item.key, course, mode);
+    },
+
+    async getCourseSnapshot(courseKeyOrSlug: string) {
+      return (await this.getCourse(courseKeyOrSlug))?.data ?? null;
+    },
+  };
+}
+
+export function createHttpCourseRepository(options: HttpRepositoryOptions): CourseRepository {
+  const base = normalizeApiBase(options.baseUrl);
+  const catalogPath = options.catalogPath ?? "/v1/courses?limit=100";
+  const coursePath = options.coursePath ?? ((courseKeyOrSlug) => `/v1/courses/${encodeURIComponent(courseKeyOrSlug)}`);
+
+  return {
+    async listCourses() {
+      const response = await fetch(joinUrl(base, catalogPath), {
+        headers: resolveHeaders(options.headers),
+      });
+      const records = await readJsonResponse<LyciumGeneratedCourseRecord[]>(response, "Course catalog unavailable");
+      return records.map((record) => {
+        const course = courseEntryFromGeneratedRecord(record, options.mode);
+        return {
+          key: course.key,
+          title: course.title,
+          shortDescription: course.data.shortDescription,
+          category: course.data.category,
+          tags: course.data.tags,
+          source: options.mode,
+          course,
+        };
+      });
+    },
+
+    async getCourse(courseKeyOrSlug: string) {
+      const response = await fetch(joinUrl(base, coursePath(courseKeyOrSlug)), {
+        headers: resolveHeaders(options.headers),
+      });
+      if (response.status === 404) {
+        return null;
+      }
+      const record = await readJsonResponse<LyciumGeneratedCourseRecord>(response, "Course snapshot unavailable");
+      return courseEntryFromGeneratedRecord(record, options.mode);
+    },
+
+    async getCourseSnapshot(courseKeyOrSlug: string) {
+      return (await this.getCourse(courseKeyOrSlug))?.data ?? null;
+    },
+  };
+}
+
+export function createHttpProgressRepository(options: HttpRepositoryOptions): ProgressRepository {
+  const base = normalizeApiBase(options.baseUrl);
+  const progressPath = options.progressPath ?? ((courseKey) => `/v1/local/completion/${encodeURIComponent(courseKey)}`);
+
+  return {
+    async getProgress(courseKey) {
+      const response = await fetch(joinUrl(base, progressPath(courseKey)), {
+        headers: resolveHeaders(options.headers),
+      });
+      if (response.status === 404) {
+        return null;
+      }
+      return readJsonResponse<LyciumProgressRecord>(response, "Progress unavailable");
+    },
+
+    async saveProgress(courseKey, progress) {
+      const response = await fetch(joinUrl(base, progressPath(courseKey)), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...resolveHeaders(options.headers) },
+        body: JSON.stringify(progress),
+      });
+      if (!response.ok) {
+        throw new Error("Progress save failed");
+      }
+    },
+  };
+}
+
+export function createHttpGenerationRepository(options: HttpRepositoryOptions): GenerationRepository {
+  const base = normalizeApiBase(options.baseUrl);
+  const generationPath = options.generationPath ?? "/v1/agent/courses/generate";
+
+  return {
+    async createCourseGenerationJob(request) {
+      const response = await fetch(joinUrl(base, generationPath), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...resolveHeaders(options.headers) },
+        body: JSON.stringify(request),
+      });
+      return readJsonResponse<LyciumGeneratedCourseRecord>(response, "Course generation failed");
+    },
+  };
+}
+
+export function createCloudRepositorySet(options: Omit<HttpRepositoryOptions, "mode">): LyciumRepositorySet {
+  const httpOptions = { ...options, mode: "cloud" as const };
+  return {
+    mode: "cloud",
+    courses: createHttpCourseRepository(httpOptions),
+    progress: createHttpProgressRepository(httpOptions),
+    generation: createHttpGenerationRepository(httpOptions),
+  };
+}
+
+export function createInfringRepositorySet(options: Omit<HttpRepositoryOptions, "mode">): LyciumRepositorySet {
+  const httpOptions = { ...options, mode: "infring" as const };
+  return {
+    mode: "infring",
+    courses: createHttpCourseRepository(httpOptions),
+    progress: createHttpProgressRepository(httpOptions),
+    generation: createHttpGenerationRepository(httpOptions),
   };
 }
 
