@@ -56,7 +56,7 @@ describe("course routing helpers", () => {
       courseSlug: "routing-urls-local-routing",
       unitSlug: "intro-to-routes",
     });
-    expect(parseCourseRoute("https://protheuslabs.github.io/Lycium/courses/routing-urls-local-routing")).toEqual({
+    expect(parseCourseRoute("https://lyciumlabs.github.io/Lycium/courses/routing-urls-local-routing")).toEqual({
       kind: "course",
       courseSlug: "routing-urls-local-routing",
       unitSlug: null,

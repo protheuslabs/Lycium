@@ -115,8 +115,8 @@ def register(app: FastAPI) -> None:
     @app.get("/v1/system/boundary")
     def system_boundary() -> dict[str, str]:
         return {
-            "lycium": "learner-facing web application",
-            "protheus": "knowledge platform services",
+            "web": "learner-facing Lycium application",
+            "backend": "Lycium knowledge platform services",
         }
 
 

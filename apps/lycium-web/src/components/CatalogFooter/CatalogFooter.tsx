@@ -7,7 +7,7 @@ type CatalogFooterProps = {
 
 export default function CatalogFooter({
   brand = "Lycium",
-  note = "Protheus Labs",
+  note = "Lycium",
 }: CatalogFooterProps) {
   return (
     <footer className="catalog-footer" aria-label="Catalog footer">
@@ -17,7 +17,7 @@ export default function CatalogFooter({
         <nav className="catalog-footer-social" aria-label="Social media">
           <a
             className="catalog-footer-social-link"
-            href="https://github.com/protheuslabs/Lycium"
+            href="https://github.com/lyciumlabs/Lycium"
             aria-label="Lycium GitHub repository"
             target="_blank"
             rel="noreferrer"

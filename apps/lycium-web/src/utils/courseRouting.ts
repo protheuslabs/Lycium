@@ -6,7 +6,7 @@ import {
   type CourseProgressSummary,
 } from "./courseProgress";
 
-export const LYCIUM_SITE_ROOT = "https://protheuslabs.github.io/Lycium/";
+export const LYCIUM_SITE_ROOT = "https://lyciumlabs.github.io/Lycium/";
 export const LYCIUM_ROUTE_ROOT = "/Lycium";
 export const COURSE_CATALOG_PATH = buildLyciumPath("catalog");
 export const SETTINGS_PATH = buildLyciumPath("settings");

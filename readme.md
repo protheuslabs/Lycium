@@ -32,8 +32,8 @@ The project is designed around one core idea: high-quality courses should be por
 │   ├── retrieval-sdk/       # Shared retrieval SDK package stub
 │   └── ui/                  # Shared UI package stub
 ├── services/
-│   ├── protheus-api/        # FastAPI API for local data, generation, analytics, and course snapshots
-│   └── protheus-workers/    # Async worker entrypoints for ingestion and generation jobs
+│   ├── lycium-api/        # FastAPI API for local data, generation, analytics, and course snapshots
+│   └── lycium-workers/    # Async worker entrypoints for ingestion and generation jobs
 └── skills/
     └── course-generation/   # Canonical agent instructions for authoring Lycium courses
 ```
@@ -85,11 +85,11 @@ http://localhost:5001/Lycium/catalog
 ### API service
 
 ```bash
-cd services/protheus-api
+cd services/lycium-api
 python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[test]'
-protheus-api
+lycium-api
 ```
 
 The API defaults to:
@@ -103,11 +103,11 @@ http://127.0.0.1:8000
 Run this in a separate shell while the API is available:
 
 ```bash
-cd services/protheus-workers
+cd services/lycium-workers
 python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -e '.[test]'
-PROTHEUS_API_URL=http://127.0.0.1:8000 protheus-worker --once
+LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 ```
 
 ## Useful commands
@@ -119,8 +119,8 @@ PROTHEUS_API_URL=http://127.0.0.1:8000 protheus-worker --once
 | `pnpm --filter @lycium/web test` | Run web tests |
 | `pnpm --filter @lycium/web lint` | Run web linting |
 | `pnpm --filter @lycium/web typecheck` | Run TypeScript checks |
-| `cd services/protheus-api && pytest -q` | Run API tests |
-| `cd services/protheus-workers && PYTHONPATH=src pytest -q` | Run worker tests |
+| `cd services/lycium-api && pytest -q` | Run API tests |
+| `cd services/lycium-workers && PYTHONPATH=src pytest -q` | Run worker tests |
 
 ## Course content model
 

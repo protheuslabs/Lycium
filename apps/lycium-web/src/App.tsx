@@ -36,7 +36,7 @@ import {
   writeStoredCourseBookmark,
 } from "./utils/courseRouting";
 
-const API_BASE = import.meta.env.VITE_PROTHEUS_API_URL ?? "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.VITE_LYCIUM_API_URL ?? "http://127.0.0.1:8000";
 
 type RemoteCourseRow = {
   id: string | number;

@@ -18,7 +18,7 @@ class Settings:
 
 def _default_db_path() -> Path:
     root = Path(__file__).resolve().parents[2]
-    return root / ".data" / "protheus.db"
+    return root / ".data" / "lycium.db"
 
 
 def _default_local_data_path() -> Path:
@@ -27,15 +27,15 @@ def _default_local_data_path() -> Path:
 
 
 def load_settings() -> Settings:
-    db_path = Path(os.getenv("PROTHEUS_DB_PATH", _default_db_path()))
+    db_path = Path(os.getenv("LYCIUM_DB_PATH", _default_db_path()))
     db_path.parent.mkdir(parents=True, exist_ok=True)
     local_data_dir = Path(os.getenv("LYCIUM_LOCAL_DATA_DIR", _default_local_data_path()))
     local_data_dir.mkdir(parents=True, exist_ok=True)
 
     return Settings(
-        app_env=os.getenv("PROTHEUS_ENV", "development"),
-        database_url=os.getenv("PROTHEUS_DATABASE_URL", f"sqlite:///{db_path}"),
-        user_agent=os.getenv("PROTHEUS_USER_AGENT", "ProtheusBot/0.1 (+https://protheuslabs.com)"),
+        app_env=os.getenv("LYCIUM_ENV", "development"),
+        database_url=os.getenv("LYCIUM_DATABASE_URL", f"sqlite:///{db_path}"),
+        user_agent=os.getenv("LYCIUM_USER_AGENT", "LyciumBot/0.1 (+https://lycium.local)"),
         local_data_dir=local_data_dir,
         agent_api_url=os.getenv("LYCIUM_AGENT_API_URL", "https://api.openai.com/v1/chat/completions"),
         agent_model=os.getenv("LYCIUM_AGENT_MODEL", "gpt-4.1-mini"),

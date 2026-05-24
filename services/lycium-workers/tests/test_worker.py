@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from protheus_workers import main as worker_main
+from lycium_workers import main as worker_main
 
 
 def test_run_cycle_processes_pending_jobs(monkeypatch) -> None:

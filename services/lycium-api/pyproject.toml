@@ -3,24 +3,31 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "protheus-workers"
+name = "lycium-api"
 version = "0.1.0"
-description = "Async workers for Protheus ingestion, extraction, and generation jobs."
+description = "Lycium platform API for ingestion, retrieval, and course generation."
 requires-python = ">=3.13"
 dependencies = [
   "fastapi>=0.115,<1",
   "httpx>=0.28,<1",
+  "beautifulsoup4>=4.12,<5",
+  "uvicorn[standard]>=0.30,<1",
   "pydantic>=2.10,<3",
   "sqlalchemy>=2.0,<3"
 ]
 
 [project.scripts]
-protheus-worker = "protheus_workers.main:main"
+lycium-api = "app.main:run"
 
 [project.optional-dependencies]
 test = [
   "pytest>=8.3,<9",
+  "pytest-cov>=6,<7",
 ]
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
 [tool.hatch.build.targets.wheel]
-packages = ["src/protheus_workers"]
+packages = ["app"]

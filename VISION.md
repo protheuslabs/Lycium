@@ -25,13 +25,13 @@ Lycium should become a knowledge platform that:
 
 Lycium should be the learner-facing product surface.
 
-Protheus platform should be the underlying knowledge infrastructure.
+Lycium backend should be the underlying knowledge infrastructure.
 
 In practice:
 
-- Lycium is the public and learner-facing application.
-- Protheus handles ingestion, cataloging, trust scoring, retrieval, graphing, and generation.
-- Lycium is the main visible application, but Protheus is the deeper asset that makes it defensible.
+- Lycium web is the public and learner-facing application.
+- Lycium backend handles ingestion, cataloging, trust scoring, retrieval, graphing, and generation.
+- Lycium is the visible application and the deeper knowledge asset that makes the product defensible.
 
 ## Strategic Bet
 

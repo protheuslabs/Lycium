@@ -1,1 +1,0 @@
-"""Protheus worker package."""

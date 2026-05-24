@@ -1,5 +1,5 @@
 {
-  "name": "@protheus/retrieval-sdk",
+  "name": "@lycium/retrieval-sdk",
   "private": true,
   "version": "0.1.0",
   "type": "module",

@@ -451,9 +451,9 @@ Minimum schema additions:
 ### 10.1 System Boundary
 
 - Lycium shall be the learner-facing application layer, including public product surfaces, learner accounts, course experience, AI classroom interaction, progress, portfolio, and credential views.
-- Protheus platform services shall be the underlying knowledge-platform layer, including ingestion, extraction, cataloging, trust scoring, graph construction, retrieval, and generation orchestration.
-- Lycium and Protheus platform services should remain in the same repository during the early product phase but shall be implemented as separate deployable applications or services with clear boundaries.
-- Shared schemas, contracts, and libraries shall be versioned and consumed by both Lycium and Protheus platform services through internal packages rather than ad hoc duplication.
+- Lycium backend services shall be the underlying knowledge-platform layer, including ingestion, extraction, cataloging, trust scoring, graph construction, retrieval, and generation orchestration.
+- Lycium web and backend services should remain in the same repository during the early product phase but shall be implemented as separate deployable applications or services with clear boundaries.
+- Shared schemas, contracts, and libraries shall be versioned and consumed by Lycium web and backend services through internal packages rather than ad hoc duplication.
 
 ### 10.2 Front End
 

@@ -79,7 +79,7 @@ corepack pnpm --filter @lycium/web build
 For backend course generator changes, run focused API tests when practical:
 
 ```bash
-cd services/protheus-api && pytest tests/test_api_end_to_end.py -q
+cd services/lycium-api && pytest tests/test_api_end_to_end.py -q
 ```
 
 ## Rule Updates
@@ -88,5 +88,5 @@ When the user adds a new course-generation rule:
 
 1. Add the rule to this skill/reference if it affects future agent behavior.
 2. Add or update the repo policy in `COURSE_GENERATION_RULES.md`.
-3. If the backend generator is affected, update `services/protheus-api/app/generation.py`.
+3. If the backend generator is affected, update `services/lycium-api/app/generation.py`.
 4. If existing local courses violate the rule, migrate them.

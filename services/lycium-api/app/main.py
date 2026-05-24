@@ -18,7 +18,7 @@ def create_app() -> FastAPI:
         yield
 
     app = FastAPI(
-        title="Protheus API",
+        title="Lycium API",
         version="0.2.0",
         summary="Knowledge-platform control plane for Lycium.",
         lifespan=lifespan,

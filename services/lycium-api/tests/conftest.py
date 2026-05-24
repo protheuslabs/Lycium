@@ -12,7 +12,7 @@ from app.main import app
 
 @pytest.fixture(autouse=True)
 def isolate_database(tmp_path: Path) -> Iterator[None]:
-    test_db_url = f"sqlite:///{tmp_path / 'protheus-test.db'}"
+    test_db_url = f"sqlite:///{tmp_path / 'lycium-test.db'}"
     configure_engine(test_db_url)
     reset_db()
     yield

@@ -1,4 +1,4 @@
 export const brand = {
   product: "Lycium",
-  platform: "Protheus",
+  platform: "Lycium",
 } as const;

@@ -10,7 +10,7 @@ import httpx
 
 
 def _api_base() -> str:
-    return os.getenv("PROTHEUS_API_URL", "http://127.0.0.1:8000").rstrip("/")
+    return os.getenv("LYCIUM_API_URL", "http://127.0.0.1:8000").rstrip("/")
 
 
 def fetch_pending_jobs(client: httpx.Client, *, limit: int) -> list[dict[str, Any]]:
@@ -28,7 +28,7 @@ def run_job(client: httpx.Client, job_id: int) -> dict[str, Any]:
 def run_cycle(*, once: bool, max_jobs: int, sleep_seconds: float) -> int:
     processed = 0
     started_at = datetime.now(UTC).isoformat()
-    print(f"[protheus-workers] started at {started_at}")
+    print(f"[lycium-workers] started at {started_at}")
 
     with httpx.Client(base_url=_api_base(), timeout=30.0) as client:
         while True:
@@ -43,7 +43,7 @@ def run_cycle(*, once: bool, max_jobs: int, sleep_seconds: float) -> int:
                 result = run_job(client, int(job["id"]))
                 processed += 1
                 print(
-                    "[protheus-workers] processed job "
+                    "[lycium-workers] processed job "
                     f"id={result['id']} type={result['job_type']} status={result['status']}"
                 )
                 if processed >= max_jobs and once:
@@ -53,12 +53,12 @@ def run_cycle(*, once: bool, max_jobs: int, sleep_seconds: float) -> int:
                 break
 
     ended_at = datetime.now(UTC).isoformat()
-    print(f"[protheus-workers] finished at {ended_at} processed={processed}")
+    print(f"[lycium-workers] finished at {ended_at} processed={processed}")
     return processed
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run Protheus async worker loop.")
+    parser = argparse.ArgumentParser(description="Run Lycium async worker loop.")
     parser.add_argument("--once", action="store_true", help="Run one poll cycle and exit.")
     parser.add_argument(
         "--max-jobs",

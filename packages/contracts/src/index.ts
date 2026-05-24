@@ -3,8 +3,8 @@ export interface HealthcheckResponse {
 }
 
 export interface SystemBoundaryResponse {
-  lycium: string;
-  protheus: string;
+  web: string;
+  backend: string;
 }
 
 export interface GenerateCourseRequest {

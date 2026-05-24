@@ -1,16 +1,16 @@
-# Lycium / Protheus Architecture
+# Lycium Architecture
 
 ## Boundary
 
-Lycium and the Protheus platform should stay in the same repository for now, but they should not be treated as one application.
+Lycium web and Lycium backend services should stay in the same repository for now, but they should not be treated as one application.
 
-- `Lycium` is the learner-facing product.
-- `Protheus platform` is the knowledge and generation infrastructure.
+- `Lycium web` is the learner-facing product surface.
+- `Lycium backend` is the knowledge and generation infrastructure.
 
 That means:
 
-- Lycium owns the public web app, learner profile, course UX, AI classroom, progress, portfolio, and credentials.
-- Protheus owns ingestion, extraction, cataloging, trust scoring, graph construction, hybrid retrieval, coverage maps, and generation orchestration.
+- Lycium web owns the public app, learner profile, course UX, AI classroom, progress, portfolio, and credentials.
+- Lycium backend owns ingestion, extraction, cataloging, trust scoring, graph construction, hybrid retrieval, coverage maps, and generation orchestration.
 - Shared contracts should live in internal packages and be consumed by both sides.
 
 ## Recommended Stack
@@ -35,7 +35,7 @@ Reason:
 - Do not migrate to Next.js until public SEO course pages, authenticated server-rendered app flows, or server-first routing become immediate product requirements.
 - Next.js remains a reasonable later target once the core source-backed generation loop is dependable.
 
-### Platform APIs and Workers
+### Backend APIs and Workers
 
 - `Python 3.13`
 - `FastAPI`
@@ -45,7 +45,7 @@ Reason:
 
 Reason:
 
-- The Protheus side is scraping, parsing, PDF handling, OCR, transcript work, extraction pipelines, ranking, and orchestration heavy. Python is the stronger language for that workload.
+- The Lycium backend is scraping, parsing, PDF handling, OCR, transcript work, extraction pipelines, ranking, and orchestration heavy. Python is the stronger language for that workload.
 - FastAPI, Pydantic, and SQLAlchemy give you a fast API layer with strong typed contracts and mature Postgres support.
 
 ### Data Layer
@@ -96,8 +96,8 @@ Reason:
   apps/
     lycium-web/
   services/
-    protheus-api/
-    protheus-workers/
+    lycium-api/
+    lycium-workers/
   packages/
     contracts/
     content-schema/
@@ -129,7 +129,7 @@ Responsibilities:
 
 This app should talk to platform APIs rather than reaching directly into ingestion or graph internals.
 
-### 2. Protheus API
+### 2. Lycium API
 
 Responsibilities:
 
@@ -141,7 +141,7 @@ Responsibilities:
 
 This is the control plane between the web app and the repository or generation system.
 
-### 3. Protheus Workers
+### 3. Lycium Workers
 
 Responsibilities:
 
@@ -184,7 +184,7 @@ Use separate logical storage layers:
 - Canonical URLs stay primary even if archive references exist.
 - Prefer connector-based ingestion before generic scraping.
 - Prefer one strong system of record before introducing many specialized datastores.
-- Keep Lycium and Protheus in one repo until the interfaces stabilize.
+- Keep Lycium web and backend services in one repo until the interfaces stabilize.
 
 ## What I Would Not Do Yet
 
@@ -201,7 +201,7 @@ If you want one opinionated answer:
 
 - Keep one monorepo.
 - Keep Lycium on `React + Vite` for the MVP; consider `Next.js` later for public/SEO-heavy surfaces.
-- Make Protheus a `FastAPI` plus worker platform in Python.
+- Make Lycium backend a `FastAPI` plus worker platform in Python.
 - Use `Postgres + pgvector + full-text search + object storage + Redis`.
 - Model the repository around knowledge objects, snapshots, claims, and graph edges.
 - Delay extra infrastructure until scale forces it.
