@@ -104,3 +104,24 @@ html[data-theme="light"] .section-title {
 html[data-theme="light"] .section-content {
   color: #555;
 }
+
+@media (max-width: 720px) {
+  .content-view {
+    padding: 1rem;
+  }
+
+  .course-title {
+    margin-bottom: 1rem;
+    font-size: 1.35rem;
+  }
+
+  .section-title {
+    font-size: 1.12rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-view {
+    padding: 0.85rem 0.75rem;
+  }
+}

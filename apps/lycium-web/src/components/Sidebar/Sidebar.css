@@ -653,3 +653,28 @@ html[data-theme="light"] .sidebar-status--timed {
   background: rgba(247, 170, 74, 0.16);
   color: #b26811;
 }
+
+@media (max-width: 720px) {
+  .sidebar {
+    --sidebar-expanded-width: min(78vw, 240px);
+    --sidebar-collapsed-width: 58px;
+    --sidebar-current-width: var(--sidebar-expanded-width);
+    width: var(--sidebar-expanded-width);
+    padding: 0.75rem 0.55rem;
+  }
+
+  .sidebar--collapsed {
+    --sidebar-current-width: var(--sidebar-collapsed-width);
+    width: var(--sidebar-collapsed-width);
+    padding: 0.55rem 0.35rem;
+  }
+
+  .sidebar-pulltab {
+    width: 1.25rem;
+    height: 3.75rem;
+  }
+
+  .sidebar-title {
+    font-size: 0.95rem;
+  }
+}

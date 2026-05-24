@@ -123,6 +123,7 @@
   grid-template-columns: minmax(8rem, 0.8fr) minmax(9rem, 1fr) minmax(12rem, 1.35fr) auto;
   padding: 0 0 0 0.95rem;
   cursor: pointer;
+  overflow: visible;
   text-align: left;
   transition: box-shadow 180ms ease, transform 180ms ease;
 }
@@ -139,118 +140,13 @@
   z-index: 2;
 }
 
-.settings-provider-trigger {
+.settings-provider-dropdown,
+.settings-model-dropdown {
   width: 100%;
-  height: 2.65rem;
-  box-sizing: border-box;
-  border: 0;
-  border-radius: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0 0.95rem;
-  color: #171717;
-  background: transparent;
-  font: inherit;
-  font-size: 0.95rem;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 160ms ease, color 160ms ease;
 }
 
-.settings-provider-trigger:hover,
-.settings-provider-trigger:focus-visible,
-.settings-provider-trigger[aria-expanded="true"] {
-  background: rgba(74, 108, 247, 0.06);
-  outline: none;
-}
-
-.settings-provider-trigger:disabled {
-  cursor: wait;
-  opacity: 1;
-}
-
-.settings-provider-chevron {
-  width: 1rem;
-  height: 1rem;
-  flex: 0 0 auto;
-  fill: currentColor;
-  opacity: 0.68;
-  transition: transform 160ms ease;
-}
-
-.settings-provider-trigger[aria-expanded="true"] .settings-provider-chevron {
-  transform: rotate(180deg);
-}
-
-.settings-provider-menu {
-  position: absolute;
-  top: calc(100% + 0.45rem);
-  left: 0.55rem;
-  right: 0.55rem;
-  z-index: 10;
-  box-sizing: border-box;
-  border-radius: 16px;
-  padding: 0.35rem;
-  background: #ffffff;
-  box-shadow:
-    0 18px 34px rgba(15, 23, 42, 0.18),
-    inset 0 0 0 1px rgba(148, 163, 184, 0.22);
-  animation: settings-provider-menu-in 140ms ease both;
-}
-
-.settings-provider-option {
-  width: 100%;
-  min-height: 2.25rem;
-  border: 0;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  padding: 0 0.75rem;
-  color: #253049;
-  background: transparent;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 750;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
-}
-
-.settings-provider-empty {
-  min-height: 2.25rem;
-  display: flex;
-  align-items: center;
-  padding: 0 0.75rem;
-  color: #667085;
-  font-size: 0.86rem;
-  font-weight: 750;
-}
-
-.settings-provider-option:hover,
-.settings-provider-option:focus-visible {
-  color: #171717;
-  background: rgba(74, 108, 247, 0.08);
-  outline: none;
-  transform: translateX(2px);
-}
-
-.settings-provider-option-active {
-  color: #171717;
-  background: rgba(74, 108, 247, 0.14);
-}
-
-@keyframes settings-provider-menu-in {
-  from {
-    opacity: 0;
-    transform: translateY(-0.25rem) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.settings-model-dropdown {
+  min-width: 12rem;
 }
 
 .settings-entry-field-key {
@@ -258,8 +154,7 @@
 }
 
 .settings-input,
-.settings-select,
-.settings-model-select {
+.settings-select {
   width: 100%;
   height: 2.65rem;
   box-sizing: border-box;
@@ -271,29 +166,20 @@
   background: transparent;
 }
 
-.settings-select,
-.settings-model-select {
+.settings-select {
   appearance: none;
   cursor: pointer;
 }
 
-.settings-model-select {
-  color: #253049;
-  font-size: 0.85rem;
-  font-weight: 750;
-}
-
 .settings-input:focus,
-.settings-select:focus,
-.settings-model-select:focus {
+.settings-select:focus {
   border-color: transparent;
   outline: none;
   background: rgba(74, 108, 247, 0.06);
 }
 
 .settings-input:disabled,
-.settings-select:disabled,
-.settings-model-select:disabled {
+.settings-select:disabled {
   cursor: wait;
   opacity: 1;
   -webkit-text-fill-color: currentColor;
@@ -535,7 +421,6 @@
 
   .settings-input,
   .settings-select,
-  .settings-model-select,
   .settings-key-preview,
   .settings-key-provider {
     color: #e5e7eb;
@@ -575,5 +460,42 @@
   .theme-toggle-option:focus-visible,
   .theme-toggle-option[aria-checked="true"] {
     color: #f8fafc;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-modal-backdrop {
+    padding: 4.25rem 0.75rem 1rem;
+  }
+
+  .settings-card {
+    border-radius: 16px;
+    padding: 1rem;
+  }
+
+  .settings-card-modal {
+    max-height: calc(100vh - 5.25rem);
+  }
+
+  .settings-entry-row,
+  .settings-key-row {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .settings-key-row {
+    gap: 0.15rem;
+    padding: 0.7rem;
+  }
+
+  .settings-entry-field-key,
+  .settings-model-dropdown {
+    min-width: 0;
+  }
+
+  .settings-key-state,
+  .settings-save-button {
+    justify-self: center;
   }
 }

@@ -124,8 +124,7 @@
 }
 
 .create-course-textarea,
-.create-course-input,
-.create-course-select {
+.create-course-input {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid #d8deea;
@@ -142,8 +141,7 @@
 }
 
 .create-course-textarea:focus,
-.create-course-input:focus,
-.create-course-select:focus {
+.create-course-input:focus {
   border-color: #4a6cf7;
   outline: none;
   box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.12);
@@ -252,8 +250,7 @@
   }
 
   .create-course-textarea,
-  .create-course-input,
-  .create-course-select {
+  .create-course-input {
     border-color: #3a3a3d;
     background: #171717;
     color: #f8fafc;
@@ -285,8 +282,7 @@
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-textarea,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-input,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-select {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-input {
   border-color: #3a3a3d;
   background: #171717;
   color: #f8fafc;
@@ -317,8 +313,7 @@ html[data-theme="light"] .create-course-files {
 }
 
 html[data-theme="light"] .create-course-textarea,
-html[data-theme="light"] .create-course-input,
-html[data-theme="light"] .create-course-select {
+html[data-theme="light"] .create-course-input {
   border-color: #d8deea;
   background: #ffffff;
   color: #171717;
@@ -333,6 +328,28 @@ html[data-theme="light"] .create-course-close {
 html[data-theme="light"] .create-course-files {
   border-color: #aeb8cc;
   background: #f8fafc;
+}
+
+@media (max-width: 620px) {
+  .create-course-modal-backdrop {
+    align-items: flex-start;
+    padding: 4.25rem 0.75rem 1rem;
+  }
+
+  .create-course-modal {
+    width: 100%;
+    max-height: calc(100vh - 5.25rem);
+    border-radius: 20px;
+    padding: 1rem;
+  }
+
+  .create-course-header h2 {
+    font-size: 1.55rem;
+  }
+
+  .create-course-files {
+    align-items: flex-start;
+  }
 }
 
 html[data-theme="light"] .create-course-files span {

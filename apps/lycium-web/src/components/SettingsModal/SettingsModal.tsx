@@ -1,5 +1,5 @@
-import { useState } from "react";
 import type { Dispatch, FormEvent, MouseEvent, SetStateAction } from "react";
+import Dropdown from "../Dropdown/Dropdown";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
 import "./SettingsModal.css";
 import "./SettingsModal.theme.css";
@@ -45,8 +45,6 @@ export default function SettingsModal({
   onSettingsSubmit,
   onThemeModeChange,
 }: SettingsModalProps) {
-  const [isProviderMenuOpen, setIsProviderMenuOpen] = useState(false);
-
   if (!isOpen) {
     return null;
   }
@@ -54,9 +52,12 @@ export default function SettingsModal({
   const isSavingAgentKey = apiKeySaveStatus === "loading";
   const selectedProvider =
     agentProviders.find((provider) => provider.id === agentProviderId) ?? agentProviders[0];
+  const providerOptions = agentProviders.map((provider) => ({
+    value: provider.id,
+    label: provider.label,
+  }));
 
   const handleClose = () => {
-    setIsProviderMenuOpen(false);
     onClose();
   };
 
@@ -71,11 +72,6 @@ export default function SettingsModal({
     if (apiKeySaveStatus === "invalid") {
       onApiKeySaveStatusChange("idle");
     }
-  };
-
-  const handleProviderSelection = (providerId: string) => {
-    onAgentProviderChange(providerId);
-    setIsProviderMenuOpen(false);
   };
 
   return (
@@ -118,18 +114,18 @@ export default function SettingsModal({
                       <span className="settings-key-provider">{key.provider_label}</span>
                       <span className="settings-key-preview">{key.key_preview}</span>
                       <label className="settings-model-field" onClick={(event) => event.stopPropagation()}>
-                        <select
-                          className="settings-model-select"
+                        <Dropdown
+                          className="settings-model-dropdown"
                           value={key.model ?? ""}
-                          onChange={(event) => onAgentModelChange(key.id, event.target.value)}
-                          onClick={(event) => event.stopPropagation()}
+                          options={(key.models ?? []).map((model) => ({
+                            value: model.id,
+                            label: model.label || model.id,
+                          }))}
+                          onChange={(nextModel) => onAgentModelChange(key.id, nextModel)}
                           disabled={isSavingAgentKey || !key.models?.length}
-                          aria-label={`Model for ${key.provider_label}`}
-                        >
-                          {(key.models ?? []).map((model) => (
-                            <option key={model.id} value={model.id}>{model.label || model.id}</option>
-                          ))}
-                        </select>
+                          ariaLabel={`Model for ${key.provider_label}`}
+                          placeholder="Model"
+                        />
                       </label>
                       <span className="settings-key-state">{key.is_active ? "Active" : "Use"}</span>
                     </div>
@@ -140,41 +136,16 @@ export default function SettingsModal({
             <form className="settings-form" onSubmit={onSettingsSubmit}>
               <div className="settings-entry-row">
                 <div className="settings-entry-field settings-provider-picker">
-                  <button
-                    className="settings-provider-trigger"
-                    type="button"
-                    aria-haspopup="listbox"
-                    aria-expanded={isProviderMenuOpen}
+                  <Dropdown
+                    className="settings-provider-dropdown"
+                    value={selectedProvider?.id ?? ""}
+                    options={providerOptions}
+                    onChange={onAgentProviderChange}
+                    ariaLabel="AI provider"
                     disabled={isSavingAgentKey}
-                    onClick={() => setIsProviderMenuOpen((isOpen) => !isOpen)}
-                  >
-                    <span>{selectedProvider?.label ?? "Provider"}</span>
-                    <svg className="settings-provider-chevron" aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                      <path d="M6.7 9.3a1 1 0 0 1 1.4 0l3.9 3.9 3.9-3.9a1 1 0 1 1 1.4 1.4l-4.6 4.6a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4Z" />
-                    </svg>
-                  </button>
-                  {isProviderMenuOpen && (
-                    <div className="settings-provider-menu" role="listbox" aria-label="AI provider">
-                      {agentProviders.length > 0 ? (
-                        agentProviders.map((provider) => (
-                          <button
-                            key={provider.id}
-                            className={`settings-provider-option${
-                              provider.id === agentProviderId ? " settings-provider-option-active" : ""
-                            }`}
-                            type="button"
-                            role="option"
-                            aria-selected={provider.id === agentProviderId}
-                            onClick={() => handleProviderSelection(provider.id)}
-                          >
-                            {provider.label}
-                          </button>
-                        ))
-                      ) : (
-                        <span className="settings-provider-empty">No providers available</span>
-                      )}
-                    </div>
-                  )}
+                    emptyLabel="No providers available"
+                    placeholder="Provider"
+                  />
                 </div>
                 <label className="settings-entry-field settings-entry-field-key" htmlFor="agent-api-key">
                   <input

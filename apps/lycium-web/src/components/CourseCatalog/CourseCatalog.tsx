@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { FormEvent, KeyboardEvent, MouseEvent } from "react";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
+import Dropdown from "../Dropdown/Dropdown";
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
@@ -80,6 +81,10 @@ function compareCourseTitles(a: CourseEntry, b: CourseEntry): number {
   return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
 }
 
+function getCollegeFilterLabel(label: string): string {
+  return label.replace(/^College of\s+/i, "");
+}
+
 function compareCatalogSort(
   a: { course: CourseEntry; courseProgress: ReturnType<typeof getCourseProgress>; collegeLabel: string },
   b: { course: CourseEntry; courseProgress: ReturnType<typeof getCourseProgress>; collegeLabel: string },
@@ -129,10 +134,32 @@ export default function CourseCatalog({
       }
     }
 
-    return Array.from(categories, ([value, label]) => ({ value, label })).sort((a, b) =>
+    return Array.from(categories, ([value, label]) => ({ value, label: getCollegeFilterLabel(label) })).sort((a, b) =>
       a.label.localeCompare(b.label, undefined, { sensitivity: "base" })
     );
   }, [courses]);
+  const collegeFilterOptions = useMemo(
+    () => [{ value: "all", label: "All colleges" }, ...collegeOptions],
+    [collegeOptions]
+  );
+  const sortOptions = useMemo(
+    () => [
+      { value: "college", label: "Type" },
+      { value: "completion-desc", label: "Completion highest to lowest" },
+      { value: "completion-asc", label: "Completion lowest to highest" },
+    ],
+    []
+  );
+  const levelOptions = useMemo(
+    () => [
+      { value: "", label: "Any level" },
+      { value: "elementary", label: "Elementary" },
+      { value: "highschool", label: "High school" },
+      { value: "undergrad", label: "Undergrad" },
+      { value: "postgrad", label: "Post-grad" },
+    ],
+    []
+  );
   const visibleCourses = useMemo(() => {
     const query = normalizeSearchText(searchQuery);
 
@@ -222,22 +249,23 @@ export default function CourseCatalog({
             <div className="catalog-dropdown-row">
               <label className="catalog-dropdown-field">
                 <span className="catalog-control-label">Filter by college</span>
-                <select value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
-                  <option value="all">All colleges</option>
-                  {collegeOptions.map((college) => (
-                    <option value={college.value} key={college.value}>
-                      {college.label}
-                    </option>
-                  ))}
-                </select>
+                <Dropdown
+                  className="catalog-dropdown"
+                  value={collegeFilter}
+                  options={collegeFilterOptions}
+                  onChange={setCollegeFilter}
+                  ariaLabel="Filter by college"
+                />
               </label>
               <label className="catalog-dropdown-field">
                 <span className="catalog-control-label">Sort courses</span>
-                <select value={sortMode} onChange={(event) => setSortMode(event.target.value as CatalogSortMode)}>
-                  <option value="college">Type</option>
-                  <option value="completion-desc">Completion highest to lowest</option>
-                  <option value="completion-asc">Completion lowest to highest</option>
-                </select>
+                <Dropdown
+                  className="catalog-dropdown catalog-sort-dropdown"
+                  value={sortMode}
+                  options={sortOptions}
+                  onChange={(nextSortMode) => setSortMode(nextSortMode as CatalogSortMode)}
+                  ariaLabel="Sort courses"
+                />
               </label>
             </div>
           </div>
@@ -384,13 +412,13 @@ export default function CourseCatalog({
               </div>
               <label className="create-course-field">
                 <span>Difficulty level</span>
-                <select className="create-course-select" value={level} onChange={(event) => onLevelChange(event.target.value)}>
-                  <option value="">Any level</option>
-                  <option value="elementary">Elementary</option>
-                  <option value="highschool">High school</option>
-                  <option value="undergrad">Undergrad</option>
-                  <option value="postgrad">Post-grad</option>
-                </select>
+                <Dropdown
+                  className="create-course-dropdown"
+                  value={level}
+                  options={levelOptions}
+                  onChange={onLevelChange}
+                  ariaLabel="Difficulty level"
+                />
               </label>
               <div className="create-course-files" aria-label="Add files placeholder">
                 <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
