@@ -1,0 +1,13 @@
+{
+  "id": "web-dev-learn",
+  "type": "documentation",
+  "title": "web.dev Learn",
+  "publisher": "Google Chrome Developers",
+  "url": "https://web.dev/learn/",
+  "usedByCourseIds": [
+    "local-web-dev"
+  ],
+  "usedByCourseTitles": [
+    "Intro to Web Development"
+  ]
+}

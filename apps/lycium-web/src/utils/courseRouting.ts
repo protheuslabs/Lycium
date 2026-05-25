@@ -9,8 +9,9 @@ import {
 
 const browserStorage = createBrowserStorageRepository();
 
-export const LYCIUM_SITE_ROOT = "https://lyciumlabs.github.io/Lycium/";
-export const LYCIUM_ROUTE_ROOT = "/Lycium";
+export const LYCIUM_SITE_ROOT = "https://protheuslabs.github.io/Lycium/";
+export const LYCIUM_DEPLOY_BASE_PATH = "/Lycium";
+export const LYCIUM_ROUTE_ROOT = "/";
 export const COURSE_CATALOG_PATH = buildLyciumPath("catalog");
 export const SETTINGS_PATH = buildLyciumPath("settings");
 
@@ -20,7 +21,7 @@ function buildLyciumPath(...segments: string[]): string {
     .filter(Boolean)
     .join("/");
 
-  return suffix ? `${LYCIUM_ROUTE_ROOT}/${suffix}` : LYCIUM_ROUTE_ROOT;
+  return suffix ? `/${suffix}` : LYCIUM_ROUTE_ROOT;
 }
 
 function normalizeRoutePath(pathname: string): string {
@@ -33,12 +34,12 @@ function normalizeRoutePath(pathname: string): string {
   })();
   let path = rawPath.split("?")[0].replace(/\/+$/, "") || "/";
 
-  if (path === LYCIUM_ROUTE_ROOT) {
+  if (path === LYCIUM_ROUTE_ROOT || path === LYCIUM_DEPLOY_BASE_PATH) {
     return "/";
   }
 
-  if (path.startsWith(`${LYCIUM_ROUTE_ROOT}/`)) {
-    path = path.slice(LYCIUM_ROUTE_ROOT.length) || "/";
+  if (path.startsWith(`${LYCIUM_DEPLOY_BASE_PATH}/`)) {
+    path = path.slice(LYCIUM_DEPLOY_BASE_PATH.length) || "/";
   }
 
   return path || "/";
@@ -84,7 +85,7 @@ export function getCoursePath(course: CourseEntry): string {
 }
 
 export function getCourseSectionUrl(course: CourseEntry, section: CourseSection): string {
-  const routePath = getCourseSectionPath(course, section).slice(LYCIUM_ROUTE_ROOT.length).replace(/^\/+/, "");
+  const routePath = getCourseSectionPath(course, section).replace(/^\/+/, "");
   return new URL(routePath, LYCIUM_SITE_ROOT).toString();
 }
 

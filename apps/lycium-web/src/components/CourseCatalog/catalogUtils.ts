@@ -13,7 +13,9 @@ export type CatalogVisibleCourse = {
   searchScore: number;
 };
 
-export const CATALOG_COURSES_PER_PAGE = 8;
+export const CATALOG_COURSE_CARD_MIN_WIDTH = 220;
+export const CATALOG_DESKTOP_ROWS_PER_PAGE = 3;
+export const CATALOG_MOBILE_ROWS_PER_PAGE = 4;
 
 export const CATALOG_LEVEL_OPTIONS = [
   { value: "", label: "Any level" },

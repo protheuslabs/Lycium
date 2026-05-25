@@ -1,0 +1,13 @@
+{
+  "id": "cs50-python",
+  "type": "course",
+  "title": "CS50's Introduction to Programming with Python",
+  "publisher": "Harvard University",
+  "url": "https://cs50.harvard.edu/python/",
+  "usedByCourseIds": [
+    "local-python"
+  ],
+  "usedByCourseTitles": [
+    "Python Basics"
+  ]
+}

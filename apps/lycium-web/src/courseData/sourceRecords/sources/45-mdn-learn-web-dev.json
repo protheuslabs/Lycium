@@ -1,0 +1,13 @@
+{
+  "id": "mdn-learn-web-dev",
+  "type": "documentation",
+  "title": "MDN Learn Web Development",
+  "publisher": "Mozilla Developer Network",
+  "url": "https://developer.mozilla.org/en-US/docs/Learn",
+  "usedByCourseIds": [
+    "local-web-dev"
+  ],
+  "usedByCourseTitles": [
+    "Intro to Web Development"
+  ]
+}

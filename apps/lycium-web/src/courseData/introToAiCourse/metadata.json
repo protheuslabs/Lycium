@@ -3,10 +3,42 @@
   "shortDescription": "A beginner-friendly introduction to AI ideas, model behavior, ethical tradeoffs, and how intelligent systems are used.",
   "difficultyLevel": "Introductory undergraduate",
   "category": "computing-information-sciences",
-  "tags": ["artificial-intelligence", "machine-learning", "ethics", "data-science"],
+  "tags": [
+    "artificial-intelligence",
+    "machine-learning",
+    "ethics",
+    "data-science"
+  ],
   "learningTypes": [],
   "orderMandatory": false,
   "metadata": {
-    "pacingLabel": "Module"
-  }
+    "pacingLabel": "Week",
+    "courseLevel": "undergraduate",
+    "estimatedWeeks": 14,
+    "creditHours": 3,
+    "sourceIds": [
+      "aima"
+    ]
+  },
+  "sourceIds": [
+    "aima"
+  ],
+  "prerequisites": [
+    {
+      "type": "competency",
+      "title": "Introductory programming, data structures, and basic probability",
+      "required": true,
+      "rationale": "Comparable to a second programming course plus introductory discrete math or statistics."
+    }
+  ],
+  "courseEquivalencies": [
+    {
+      "institution": "Common university catalog analogue",
+      "department": "CS",
+      "courseCode": "CS 470",
+      "title": "Introduction to Artificial Intelligence",
+      "url": "https://aima.cs.berkeley.edu/",
+      "notes": "Representative upper-division AI course parity reference, not an articulation agreement."
+    }
+  ]
 }

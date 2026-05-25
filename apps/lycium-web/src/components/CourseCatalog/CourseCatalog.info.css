@@ -189,6 +189,51 @@
   font-size: 0.9rem;
 }
 
+.course-equivalency-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.course-equivalency-card {
+  border-radius: 18px;
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.9rem;
+  background: #f8fafc;
+}
+
+.course-equivalency-card div {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.course-equivalency-card strong {
+  color: #253049;
+  font-size: 0.94rem;
+}
+
+.course-equivalency-card span,
+.course-equivalency-card p {
+  margin: 0;
+  color: #667085;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.course-equivalency-card a {
+  justify-self: start;
+  color: #4a6cf7;
+  font-size: 0.84rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.course-equivalency-card a:hover,
+.course-equivalency-card a:focus-visible {
+  outline: none;
+  text-decoration: underline;
+}
+
 @media (max-width: 620px) {
   .course-info-facts {
     grid-template-columns: 1fr;
@@ -199,7 +244,8 @@
   .course-info-button,
   .course-info-close,
   .course-info-chip,
-  .course-info-facts article {
+  .course-info-facts article,
+  .course-equivalency-card {
     background: #262626;
   }
 
@@ -207,6 +253,7 @@
   .course-info-close,
   .course-info-chip,
   .course-info-facts strong,
+  .course-equivalency-card strong,
   .course-info-section h3,
   .course-info-header h2 {
     color: #f8fafc;
@@ -220,7 +267,9 @@
   }
 
   .course-info-description,
-  .course-info-muted {
+  .course-info-muted,
+  .course-equivalency-card span,
+  .course-equivalency-card p {
     color: #cbd5e1;
   }
 
@@ -232,7 +281,8 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-close,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts article {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts article,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card {
   background: #262626;
 }
 
@@ -240,6 +290,7 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-close,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card strong,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-section h3,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-header h2 {
   color: #f8fafc;
@@ -253,7 +304,9 @@
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-description,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-muted {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-muted,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card span,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card p {
   color: #cbd5e1;
 }
 
@@ -264,7 +317,8 @@
 html[data-theme="light"] .course-info-button,
 html[data-theme="light"] .course-info-close,
 html[data-theme="light"] .course-info-chip,
-html[data-theme="light"] .course-info-facts article {
+html[data-theme="light"] .course-info-facts article,
+html[data-theme="light"] .course-equivalency-card {
   background: #eef2f7;
 }
 
@@ -272,6 +326,7 @@ html[data-theme="light"] .course-info-button,
 html[data-theme="light"] .course-info-close,
 html[data-theme="light"] .course-info-chip,
 html[data-theme="light"] .course-info-facts strong,
+html[data-theme="light"] .course-equivalency-card strong,
 html[data-theme="light"] .course-info-section h3,
 html[data-theme="light"] .course-info-header h2 {
   color: #253049;
@@ -289,6 +344,8 @@ html[data-theme="light"] .course-info-description {
 }
 
 html[data-theme="light"] .course-info-muted,
+html[data-theme="light"] .course-equivalency-card span,
+html[data-theme="light"] .course-equivalency-card p,
 html[data-theme="light"] .course-info-facts span {
   color: #667085;
 }

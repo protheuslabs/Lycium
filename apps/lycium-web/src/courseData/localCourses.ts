@@ -4,6 +4,7 @@ import webDevCourse from "./webDevCourse";
 import pythonCourse from "./introToPythonCourse";
 import mlsysCourse from "./machineLearningSystemsCourse";
 import softwareArchitectureCourse from "./softwareArchitectureCourse";
+import { softwareEngineeringCourseWrappers } from "./programs";
 
 export const localCourses: CourseEntry[] = [
   {
@@ -36,4 +37,5 @@ export const localCourses: CourseEntry[] = [
     data: softwareArchitectureCourse as CourseData,
     source: "local",
   },
+  ...softwareEngineeringCourseWrappers,
 ];

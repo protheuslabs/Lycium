@@ -3,7 +3,13 @@
   "shortDescription": "A 14-week architecture course on viewpoints, quality attributes, design decisions, evaluation, and documentation.",
   "difficultyLevel": "Upper-division undergraduate",
   "category": "computing-information-sciences",
-  "tags": ["software-architecture", "software-engineering", "systems", "design", "documentation"],
+  "tags": [
+    "software-architecture",
+    "software-engineering",
+    "systems",
+    "design",
+    "documentation"
+  ],
   "learningTypes": [],
   "orderMandatory": false,
   "sourceIds": [
@@ -13,5 +19,49 @@
     "sei-atam",
     "c4-model",
     "arc42-template"
-  ]
+  ],
+  "prerequisites": [
+    {
+      "type": "competency",
+      "title": "Intermediate programming, software engineering fundamentals, and basic systems design",
+      "required": true,
+      "rationale": "Comparable to prior coursework in data structures, software engineering, and web or distributed systems."
+    }
+  ],
+  "courseEquivalencies": [
+    {
+      "institution": "Common university catalog analogue",
+      "department": "SE",
+      "courseCode": "SE 420",
+      "title": "Software Architecture",
+      "url": "https://www.viewpoints-and-perspectives.info/",
+      "notes": "Representative upper-division software architecture course parity reference, not an articulation agreement."
+    }
+  ],
+  "metadata": {
+    "courseLevel": "advanced undergraduate",
+    "estimatedWeeks": 14,
+    "creditHours": 3,
+    "sourceIds": [
+      "rw-software-systems-architecture-2e",
+      "iso-iec-ieee-42010-2022",
+      "sei-views-and-beyond",
+      "sei-atam",
+      "c4-model",
+      "arc42-template"
+    ]
+  },
+  "courseMetadata": {
+    "courseLevel": "advanced undergraduate",
+    "estimatedWeeks": 14,
+    "creditHours": 3,
+    "sourceIds": [
+      "rw-software-systems-architecture-2e",
+      "iso-iec-ieee-42010-2022",
+      "sei-views-and-beyond",
+      "sei-atam",
+      "c4-model",
+      "arc42-template"
+    ]
+  }
 }

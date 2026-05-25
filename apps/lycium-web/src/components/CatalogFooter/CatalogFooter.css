@@ -1,6 +1,7 @@
 .catalog-footer {
   width: 100%;
   box-sizing: border-box;
+  flex: 0 0 auto;
   margin-top: 0;
   padding: 1rem 1.5rem;
   border-top: 0;

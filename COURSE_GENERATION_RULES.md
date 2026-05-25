@@ -17,6 +17,12 @@ Use the repo-local course generation skill as the starting point:
 - Use courses as reusable learning execution objects that can appear in multiple programs.
 - Program validation must reject missing course, project, assessment, or competency references before a program is published.
 - Completion should roll upward from learning objects into requirement groups and then into programs using explicit completion rules.
+- Course records may include an optional top-level `prerequisites` array.
+- Course records may include an optional top-level `courseEquivalencies` array for parity with real or representative college catalog courses.
+- Course equivalency records may include `institution`, `department`, `courseCode`, `title`, `url`, `catalogYear`, and `notes`.
+- Use `courseEquivalencies` for reference/parity metadata only. Do not treat it as a formal credit-transfer or articulation agreement unless the source explicitly says so.
+- Planned or wrapper courses should also record `metadata.prerequisiteCourseIds` so program/catalog tools can quickly inspect dependency shape.
+- Empty planned courses may use `modules: []` when they are intended as catalog-visible wrappers rather than teachable course builds.
 
 ## Generation Workflow
 
@@ -66,6 +72,9 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `category`: one broad university-style college or school category.
 - `tags`: specific subject labels that are narrower than the category.
 - `learningTypes`: an array reserved for future course modality metadata; leave empty for now.
+- `courseEquivalencies`: optional real or representative college catalog parity records.
+- `prerequisites`: optional course, competency, assessment, program, or external prerequisites.
+- `metadata.prerequisiteCourseIds`: optional fast-reference list for planned/wrapper courses.
 - `metadata.pacingLabel`: exactly `Module` or `Week`, used consistently in learner-facing titles.
 - `metadata.generationPlan.modules`: planned module names and outcomes.
 - `metadata.generationPlan.unitMap`: planned units for each module.

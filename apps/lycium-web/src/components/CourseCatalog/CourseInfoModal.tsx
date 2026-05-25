@@ -10,6 +10,7 @@ type CourseInfoModalProps = {
 export default function CourseInfoModal({ course, onClose }: CourseInfoModalProps) {
   const tagLabels = getCourseTagLabels(course.data.tags);
   const learningTypes = course.data.learningTypes ?? [];
+  const courseEquivalencies = course.data.courseEquivalencies ?? [];
 
   const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
@@ -70,6 +71,37 @@ export default function CourseInfoModal({ course, onClose }: CourseInfoModalProp
             ))}
           </div>
         </section>
+        {courseEquivalencies.length > 0 && (
+          <section className="course-info-section">
+            <h3>Course parity</h3>
+            <div className="course-equivalency-list">
+              {courseEquivalencies.map((equivalency, index) => {
+                const heading = [equivalency.courseCode, equivalency.title].filter(Boolean).join(": ");
+
+                return (
+                  <article className="course-equivalency-card" key={`${heading}-${index}`}>
+                    <div>
+                      <strong>{heading || equivalency.title}</strong>
+                      {equivalency.institution && <span>{equivalency.institution}</span>}
+                    </div>
+                    {(equivalency.department || equivalency.catalogYear || equivalency.notes) && (
+                      <p>
+                        {[equivalency.department, equivalency.catalogYear, equivalency.notes]
+                          .filter(Boolean)
+                          .join(" | ")}
+                      </p>
+                    )}
+                    {equivalency.url && (
+                      <a href={equivalency.url} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>
+                        View catalog reference
+                      </a>
+                    )}
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </section>
     </div>
   );

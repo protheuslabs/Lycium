@@ -1,0 +1,13 @@
+{
+  "id": "aima",
+  "type": "book",
+  "title": "Artificial Intelligence: A Modern Approach",
+  "publisher": "Stuart Russell and Peter Norvig",
+  "url": "https://aima.cs.berkeley.edu/",
+  "usedByCourseIds": [
+    "local-ai"
+  ],
+  "usedByCourseTitles": [
+    "Intro to Artificial Intelligence"
+  ]
+}

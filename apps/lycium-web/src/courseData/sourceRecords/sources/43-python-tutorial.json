@@ -1,0 +1,13 @@
+{
+  "id": "python-tutorial",
+  "type": "documentation",
+  "title": "The Python Tutorial",
+  "publisher": "Python Software Foundation",
+  "url": "https://docs.python.org/3/tutorial/",
+  "usedByCourseIds": [
+    "local-python"
+  ],
+  "usedByCourseTitles": [
+    "Python Basics"
+  ]
+}

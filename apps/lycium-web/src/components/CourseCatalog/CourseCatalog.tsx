@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
 import Dropdown from "../Dropdown/Dropdown";
@@ -10,8 +10,10 @@ import CatalogPagination from "./CatalogPagination";
 import CourseInfoModal from "./CourseInfoModal";
 import CreateCourseModal from "./CreateCourseModal";
 import {
-  CATALOG_COURSES_PER_PAGE,
+  CATALOG_COURSE_CARD_MIN_WIDTH,
+  CATALOG_DESKTOP_ROWS_PER_PAGE,
   CATALOG_LEVEL_OPTIONS,
+  CATALOG_MOBILE_ROWS_PER_PAGE,
   CATALOG_SORT_OPTIONS,
   type CatalogSortMode,
   compareCatalogSort,
@@ -51,6 +53,8 @@ export default function CourseCatalog({
   const [collegeFilter, setCollegeFilter] = useState("all");
   const [sortMode, setSortMode] = useState<CatalogSortMode>("college");
   const [catalogPage, setCatalogPage] = useState(1);
+  const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE - 1);
+  const courseGridRef = useRef<HTMLDivElement | null>(null);
   const isGeneratingCourse = generateStatus === "loading";
   const generatingCourseTitle = getGeneratingCourseTitle(prompt);
 
@@ -106,16 +110,45 @@ export default function CourseCatalog({
       });
   }, [collegeFilter, courses, searchQuery, sortMode]);
 
-  const totalCatalogPages = Math.max(1, Math.ceil(visibleCourses.length / CATALOG_COURSES_PER_PAGE));
+  const totalCatalogPages = Math.max(1, Math.ceil(visibleCourses.length / coursesPerPage));
   const activeCatalogPage = Math.min(catalogPage, totalCatalogPages);
-  const catalogPageStartIndex = (activeCatalogPage - 1) * CATALOG_COURSES_PER_PAGE;
+  const catalogPageStartIndex = (activeCatalogPage - 1) * coursesPerPage;
   const catalogPageCourses = visibleCourses.slice(
     catalogPageStartIndex,
-    catalogPageStartIndex + CATALOG_COURSES_PER_PAGE,
+    catalogPageStartIndex + coursesPerPage,
   );
   const firstVisibleResult = visibleCourses.length === 0 ? 0 : catalogPageStartIndex + 1;
-  const lastVisibleResult = Math.min(catalogPageStartIndex + CATALOG_COURSES_PER_PAGE, visibleCourses.length);
-  const shouldShowCatalogPagination = visibleCourses.length > CATALOG_COURSES_PER_PAGE;
+  const lastVisibleResult = Math.min(catalogPageStartIndex + coursesPerPage, visibleCourses.length);
+  const shouldShowCatalogPagination = visibleCourses.length > coursesPerPage;
+
+  useEffect(() => {
+    const grid = courseGridRef.current;
+    if (!grid) {
+      return;
+    }
+
+    const updateCoursesPerPage = () => {
+      const gridWidth = grid.clientWidth;
+      const gap = Number.parseFloat(getComputedStyle(grid).columnGap || "0") || 0;
+      const columns = Math.max(1, Math.floor((gridWidth + gap) / (CATALOG_COURSE_CARD_MIN_WIDTH + gap)));
+      const rowsPerPage = window.matchMedia("(max-width: 860px)").matches
+        ? CATALOG_MOBILE_ROWS_PER_PAGE
+        : CATALOG_DESKTOP_ROWS_PER_PAGE;
+      const leadingCatalogCards = isGeneratingCourse ? 2 : 1;
+      const nextCoursesPerPage = Math.max(1, columns * rowsPerPage - leadingCatalogCards);
+      setCoursesPerPage(nextCoursesPerPage);
+    };
+
+    updateCoursesPerPage();
+    const observer = new ResizeObserver(updateCoursesPerPage);
+    observer.observe(grid);
+    window.addEventListener("resize", updateCoursesPerPage);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateCoursesPerPage);
+    };
+  }, [isGeneratingCourse]);
 
   const handleSearchQueryChange = (value: string) => {
     setSearchQuery(value);
@@ -152,7 +185,7 @@ export default function CourseCatalog({
   };
 
   return (
-    <>
+    <div className="catalog-shell">
       <main className="home-page">
         <section className="catalog-page">
           <div className="catalog-toolbar">
@@ -189,7 +222,7 @@ export default function CourseCatalog({
               </label>
             </div>
           </div>
-          <div className="course-grid">
+          <div className="course-grid" ref={courseGridRef}>
             <article
               className="course-card create-course-card"
               role="button"
@@ -259,6 +292,6 @@ export default function CourseCatalog({
       {infoCourse && <CourseInfoModal course={infoCourse} onClose={() => setInfoCourse(null)} />}
 
       <CatalogFooter />
-    </>
+    </div>
   );
 }

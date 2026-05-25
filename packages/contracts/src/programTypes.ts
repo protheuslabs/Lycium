@@ -54,7 +54,13 @@ export type LyciumRequirement =
   | (LyciumRequirementBase & { type: "pass_assessment"; assessmentId: string; minScore: number })
   | (LyciumRequirementBase & { type: "submit_project"; projectId: string })
   | (LyciumRequirementBase & { type: "demonstrate_competency"; competencyId: string })
-  | (LyciumRequirementBase & { type: "earn_hours"; minimumHours: number });
+  | (LyciumRequirementBase & { type: "earn_hours"; minimumHours: number })
+  | (LyciumRequirementBase & {
+      type: "requirement_set";
+      operator: "all" | "any" | "n_of";
+      count?: number;
+      requirements: LyciumRequirement[];
+    });
 
 export type LyciumRequirementGroupKind =
   | "cluster"

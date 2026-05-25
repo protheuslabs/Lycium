@@ -158,7 +158,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
 
     let ignored = false;
     setSettingsStatus("loading");
-    setSettingsMessage("Loading settings...");
+    setSettingsMessage("");
 
     Promise.all([lyciumApi.loadAgentProviders(), lyciumApi.loadSettings()])
       .then(([providers, settings]) => {

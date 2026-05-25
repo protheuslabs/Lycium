@@ -15,6 +15,29 @@ export type LyciumSourceRecord = {
   [key: string]: unknown;
 };
 
+export type LyciumCoursePrerequisite = {
+  type: "course" | "competency" | "assessment" | "program" | "external";
+  id?: string;
+  title?: string;
+  courseId?: string;
+  competencyId?: string;
+  assessmentId?: string;
+  programId?: string;
+  required?: boolean;
+  minimumMasteryPercent?: number;
+  rationale?: string;
+};
+
+export type LyciumCourseEquivalency = {
+  institution?: string;
+  department?: string;
+  courseCode?: string;
+  title: string;
+  url?: string;
+  catalogYear?: string;
+  notes?: string;
+};
+
 export type LyciumConcept = {
   name?: string;
   description?: string;
@@ -91,7 +114,9 @@ export type LyciumCourseData = {
   category?: string;
   tags?: string[];
   learningTypes?: string[];
+  courseEquivalencies?: LyciumCourseEquivalency[];
   orderMandatory?: boolean;
+  prerequisites?: LyciumCoursePrerequisite[];
   sourceIds?: string[];
   sourceRecords?: LyciumSourceRecord[] | Record<string, LyciumSourceRecord | Record<string, unknown>>;
   metadata?: {

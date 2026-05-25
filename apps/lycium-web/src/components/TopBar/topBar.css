@@ -1,3 +1,7 @@
+:root {
+  --lycium-topbar-height: 3.5rem;
+}
+
 .top-bar {
   width: 100%;
   box-sizing: border-box;
@@ -119,6 +123,10 @@ html[data-theme="light"] .top-bar-icon-button:focus-visible {
 }
 
 @media (max-width: 560px) {
+  :root {
+    --lycium-topbar-height: 3.05rem;
+  }
+
   .top-bar {
     gap: 0.55rem;
     padding: 0.45rem 0.6rem;

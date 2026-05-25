@@ -3,10 +3,45 @@
   "shortDescription": "A college-style web development course covering HTML, CSS, JavaScript, accessibility, APIs, and full-stack project practice.",
   "difficultyLevel": "Introductory undergraduate",
   "category": "computing-information-sciences",
-  "tags": ["web-development", "programming", "accessibility", "apis", "software-engineering"],
+  "tags": [
+    "web-development",
+    "programming",
+    "accessibility",
+    "apis",
+    "software-engineering"
+  ],
   "learningTypes": [],
   "orderMandatory": true,
   "metadata": {
-    "pacingLabel": "Module"
-  }
+    "pacingLabel": "Week",
+    "courseLevel": "undergraduate",
+    "estimatedWeeks": 14,
+    "creditHours": 3,
+    "sourceIds": [
+      "mdn-learn-web-dev",
+      "web-dev-learn"
+    ]
+  },
+  "sourceIds": [
+    "mdn-learn-web-dev",
+    "web-dev-learn"
+  ],
+  "prerequisites": [
+    {
+      "type": "competency",
+      "title": "Introductory programming or concurrent enrollment in programming fundamentals",
+      "required": true,
+      "rationale": "Students should be comfortable with variables, functions, conditionals, and basic debugging."
+    }
+  ],
+  "courseEquivalencies": [
+    {
+      "institution": "Common university catalog analogue",
+      "department": "CS",
+      "courseCode": "CS 220",
+      "title": "Web Programming",
+      "url": "https://developer.mozilla.org/en-US/docs/Learn",
+      "notes": "Representative lower-division web programming course parity reference, not an articulation agreement."
+    }
+  ]
 }

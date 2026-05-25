@@ -1,5 +1,15 @@
+import { buildFullCourseModules } from "../fullCourseScaffold";
 import meta from "./metadata.json";
-import module01 from "./modules/01-m1";
-import module02 from "./modules/02-m2";
+import { introToAiModuleSpecs } from "./fullCourseSpec";
 
-export default { ...meta, modules: [module01, module02] };
+const course = {
+  ...meta,
+  modules: buildFullCourseModules({
+    coursePrefix: "ai",
+    pacingLabel: meta.metadata?.pacingLabel ?? "Week",
+    moduleSpecs: introToAiModuleSpecs,
+    defaultSourceIds: meta.sourceIds,
+  }),
+};
+
+export default course;

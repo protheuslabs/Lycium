@@ -3,7 +3,13 @@
   "shortDescription": "A 14-week systems course on building, scaling, evaluating, and operating production machine learning systems.",
   "difficultyLevel": "Advanced undergraduate",
   "category": "computing-information-sciences",
-  "tags": ["machine-learning", "artificial-intelligence", "systems", "mlops", "data-science"],
+  "tags": [
+    "machine-learning",
+    "artificial-intelligence",
+    "systems",
+    "mlops",
+    "data-science"
+  ],
   "learningTypes": [],
   "orderMandatory": true,
   "sourceIds": [
@@ -44,6 +50,27 @@
     "stanford-sustainable-datacenters-ai"
   ],
   "metadata": {
-    "pacingLabel": "Week"
-  }
+    "pacingLabel": "Week",
+    "courseLevel": "advanced undergraduate",
+    "estimatedWeeks": 14,
+    "creditHours": 3
+  },
+  "prerequisites": [
+    {
+      "type": "competency",
+      "title": "Machine learning fundamentals, intermediate Python, and basic computer systems",
+      "required": true,
+      "rationale": "Comparable to prior coursework in applied machine learning and software systems."
+    }
+  ],
+  "courseEquivalencies": [
+    {
+      "institution": "Common university catalog analogue",
+      "department": "CS",
+      "courseCode": "CS 478",
+      "title": "Machine Learning Systems",
+      "url": "https://mlsysbook.ai/",
+      "notes": "Representative advanced undergraduate or early graduate ML systems course parity reference, not an articulation agreement."
+    }
+  ]
 }

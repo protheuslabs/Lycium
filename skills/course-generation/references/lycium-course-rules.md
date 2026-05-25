@@ -9,6 +9,12 @@
 - Courses are reusable learning execution objects. Do not duplicate a course just because two programs need it.
 - Program completion rolls up from requirement satisfaction into requirement groups and then into the program.
 - Validate every course, assessment, project, and competency reference before publishing program data.
+- Course records may include an optional top-level `prerequisites` array.
+- Course records may include an optional top-level `courseEquivalencies` array for real or representative college catalog parity.
+- Course equivalency records may include `institution`, `department`, `courseCode`, `title`, `url`, `catalogYear`, and `notes`.
+- Treat course equivalency records as reference/parity metadata, not as formal transfer credit or articulation agreements unless the source explicitly supports that claim.
+- Planned catalog-visible course wrappers should also include `metadata.prerequisiteCourseIds`.
+- Empty planned course wrappers may use `modules: []` until the course is built out.
 
 ## Pseudo Workflow
 
@@ -77,10 +83,13 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 
 ## Required Course Shape
 
-- Course JSON must contain `title`, optional `shortDescription`, optional `difficultyLevel`, optional `category`, optional `tags`, optional `learningTypes`, optional `orderMandatory`, optional `metadata`, optional `sourceIds`, and `modules`.
+- Course JSON must contain `title`, optional `shortDescription`, optional `difficultyLevel`, optional `category`, optional `tags`, optional `learningTypes`, optional `courseEquivalencies`, optional `orderMandatory`, optional `prerequisites`, optional `metadata`, optional `sourceIds`, and `modules`.
 - Generated courses should include `shortDescription`: a concise one-sentence course summary for catalog cards, ideally 80-160 characters.
 - Use `category` for one broad university-style college or school category, and `tags` for more specific subject labels.
 - Keep `learningTypes` as an array. Leave it empty until learning-type support is implemented.
+- Use `courseEquivalencies` for college catalog parity references while keeping the Lycium course title independent.
+- Use `prerequisites` for course, competency, assessment, program, or external prerequisites.
+- Use `metadata.prerequisiteCourseIds` on planned/wrapper courses for fast catalog and program tooling.
 - Substantial generated courses should set `metadata.pacingLabel` to exactly `Module` or `Week`.
 - Each module must contain `id`, `title`, optional `sourceIds`, and `sections`.
 - Each section must contain `id`, `title`, optional `sectionType`, optional `pageType`, optional `sourceIds`, and `content`.

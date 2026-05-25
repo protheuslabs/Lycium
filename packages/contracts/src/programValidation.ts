@@ -78,6 +78,21 @@ function validateRequirement(
     errors.push(`${label}.minimumHours must be greater than 0.`);
   }
 
+  if (requirement.type === "requirement_set") {
+    if (!requirement.requirements?.length) {
+      errors.push(`${label}.requirements must include at least one nested requirement.`);
+    }
+    if (requirement.operator === "n_of" && (!Number.isFinite(requirement.count) || !requirement.count || requirement.count < 1)) {
+      errors.push(`${label}.count must be at least 1 when operator is n_of.`);
+    }
+    if (requirement.operator === "n_of" && requirement.count && requirement.count > requirement.requirements.length) {
+      errors.push(`${label}.count cannot exceed nested requirements length.`);
+    }
+    for (const [index, nestedRequirement] of (requirement.requirements ?? []).entries()) {
+      errors.push(...validateRequirement(nestedRequirement, `${label}.requirements[${index}]`, known));
+    }
+  }
+
   return errors;
 }
 

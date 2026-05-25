@@ -36,6 +36,9 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
 6. Use the JSON as a progress ledger:
    - record scope in `metadata.scope`
    - record a concise renderer-facing course summary in top-level `shortDescription`
+   - record college catalog parity references in top-level `courseEquivalencies` when applicable
+   - record course prerequisites in top-level `prerequisites` when applicable
+   - record planned/wrapper course prerequisite IDs in `metadata.prerequisiteCourseIds`
    - record module, unit, idea, and source planning in `metadata.generationPlan`
    - update progress markers as the plan becomes content
 7. Build or revise the course around modules and sections, not a single long page.
