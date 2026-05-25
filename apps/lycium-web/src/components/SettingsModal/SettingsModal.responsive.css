@@ -1,0 +1,99 @@
+@media (prefers-color-scheme: dark) {
+  .settings-card {
+    border-color: #303033;
+    background: linear-gradient(145deg, #171717, #111112);
+    color: #e5e7eb;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+  }
+
+  .settings-card h1,
+  .settings-section h2 {
+    color: #f8fafc;
+  }
+
+  .settings-ai-data-panel {
+    border-color: #3a3a3d;
+    background: #111112;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+  }
+
+  .settings-input,
+  .settings-select,
+  .settings-key-preview,
+  .settings-key-provider {
+    color: #e5e7eb;
+    background: transparent;
+  }
+
+  .settings-key-row {
+    color: #e5e7eb;
+  }
+
+  .settings-key-row-active {
+    background: linear-gradient(145deg, rgba(72, 216, 109, 0.16), rgba(15, 23, 42, 0.98));
+  }
+
+  .settings-close-button,
+  .theme-toggle::before {
+    color: #f8fafc;
+    background: #262626;
+  }
+
+  .settings-close-button:hover,
+  .settings-close-button:focus-visible {
+    color: #ffffff;
+    background: #343434;
+  }
+
+  .theme-toggle {
+    border-color: #3a3a3d;
+    background: #262626;
+  }
+
+  .theme-toggle-option {
+    color: #a1a1aa;
+  }
+
+  .theme-toggle-option:hover,
+  .theme-toggle-option:focus-visible,
+  .theme-toggle-option[aria-checked="true"] {
+    color: #f8fafc;
+  }
+}
+
+@media (max-width: 640px) {
+  .settings-modal-backdrop {
+    padding: 4.25rem 0.75rem 1rem;
+  }
+
+  .settings-card {
+    border-radius: 16px;
+    padding: 1rem;
+  }
+
+  .settings-card-modal {
+    max-height: calc(100vh - 5.25rem);
+  }
+
+  .settings-entry-row,
+  .settings-key-row {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .settings-key-row {
+    gap: 0.15rem;
+    padding: 0.7rem;
+  }
+
+  .settings-entry-field-key,
+  .settings-model-dropdown {
+    min-width: 0;
+  }
+
+  .settings-key-state,
+  .settings-save-button {
+    justify-self: center;
+  }
+}

@@ -3,12 +3,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  createBrowserStorageRepository,
-  createConfiguredRepositorySet,
-  createLyciumLocalApi,
-  resolveLyciumRuntimeConfig,
-} from "@lycium/data-access";
 import ContentView from "./components/ContentView/ContentView";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
 import SettingsModal from "./components/SettingsModal/SettingsModal";
@@ -16,24 +10,18 @@ import Sidebar from "./components/Sidebar/Sidebar";
 import TopBar from "./components/TopBar/TopBar";
 import { localCourses } from "./courseData/localCourses";
 import sourceRecordsData from "./courseData/sourceRecords";
-import type { CourseEntry, CourseProgressRecord, CourseSection, SectionStatus } from "./courseTypes";
+import type { CourseEntry, CourseSection } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
+import { useCourseProgressState } from "./hooks/useCourseProgressState";
+import { API_BASE, browserStorage, lyciumApi, repositorySet, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "./utils/courseValidation";
-import {
-  areProgressRecordsEqual,
-  DEFAULT_PROGRESS,
-  normalizeCompletedSectionIds,
-  normalizeProgressRecord,
-  normalizeSectionStatuses,
-  resolveSectionStatuses,
-  summarizeCourseProgress,
-} from "./utils/courseProgress";
+import { summarizeCourseProgress } from "./utils/courseProgress";
 import {
   COURSE_CATALOG_PATH,
   LYCIUM_ROUTE_ROOT,
   SETTINGS_PATH,
-  getCoursePath,
   findBookmarkedSection,
+  getCoursePath,
   getCoursePathSlug,
   getCourseSectionIndex,
   getCourseSectionPath,
@@ -41,23 +29,6 @@ import {
   getSectionPathSlug,
   parseCourseRoute,
 } from "./utils/courseRouting";
-
-const API_BASE = process.env.NEXT_PUBLIC_LYCIUM_API_URL ?? "http://127.0.0.1:8000";
-const runtimeConfig = resolveLyciumRuntimeConfig({
-  mode: process.env.NEXT_PUBLIC_LYCIUM_RUNTIME,
-  apiBaseUrl: API_BASE,
-  catalogUrl: process.env.NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL,
-  courseBaseUrl: process.env.NEXT_PUBLIC_LYCIUM_COURSE_BASE_URL,
-});
-const repositorySet = createConfiguredRepositorySet(runtimeConfig, localCourses);
-const lyciumApi = createLyciumLocalApi(runtimeConfig.apiBaseUrl);
-const browserStorage = createBrowserStorageRepository();
-
-function scrollCoursePageToTop() {
-  window.requestAnimationFrame(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  });
-}
 
 function App() {
   const router = useRouter();
@@ -73,14 +44,13 @@ function App() {
   const [learnerId, setLearnerId] = useState<number | null>(null);
   const [currentPath, setCurrentPath] = useState(() => pathname ?? COURSE_CATALOG_PATH);
   const [courseContentHeight, setCourseContentHeight] = useState<number | null>(null);
-  const [progress, setProgress] = useState<CourseProgressRecord>(DEFAULT_PROGRESS);
   const courseContentRef = useRef<HTMLDivElement | null>(null);
 
   const route = useMemo(() => parseCourseRoute(currentPath), [currentPath]);
   const settingsReturnPath = route.kind === "settings" ? settingsReturnPathRef.current : COURSE_CATALOG_PATH;
   const viewRoute = useMemo(
     () => (route.kind === "settings" ? parseCourseRoute(settingsReturnPath) : route),
-    [route, settingsReturnPath]
+    [route, settingsReturnPath],
   );
   const agentSettings = useAgentSettings(route.kind, API_BASE);
 
@@ -94,7 +64,7 @@ function App() {
 
   const resolveCourseKeyFromPath = useCallback(
     (courseSlug: string | null): string | null => (courseSlug ? coursesByPathSlug.get(courseSlug) ?? null : null),
-    [coursesByPathSlug]
+    [coursesByPathSlug],
   );
 
   const selectedCourseFromPath = useMemo(() => {
@@ -118,66 +88,37 @@ function App() {
           moduleIndex,
           moduleTitle: module.title,
           displayNumber: `${moduleIndex + 1}.${sectionIndex + 1}`,
-        }))
+        })),
       ),
-    [selectedCourse]
+    [selectedCourse],
   );
 
   const currentSection = sections[currentSectionIndex] ?? null;
   const orderMandatory = selectedCourse?.data?.orderMandatory ?? false;
-  const resolvedSectionStatuses = useMemo(
-    () => resolveSectionStatuses(sections, progress.completedSectionIds, progress.sectionStatuses, Boolean(orderMandatory)),
-    [sections, progress.completedSectionIds, progress.sectionStatuses, orderMandatory]
-  );
-  const completedSectionIds = new Set(progress.completedSectionIds);
+  const {
+    progress,
+    resolvedSectionStatuses,
+    completedSectionIds,
+    handleSectionTimedStatusChange,
+    handleCompleteSection,
+  } = useCourseProgressState({
+    selectedCourse,
+    sections,
+    orderMandatory,
+    learnerId,
+    currentSectionId: currentSection?.id ?? null,
+  });
+
   const courseProgress = summarizeCourseProgress(sections, {
     completedSectionIds: progress.completedSectionIds,
     sectionStatuses: resolvedSectionStatuses,
   });
-  const courseProgressPercentage = courseProgress.percentage;
-  const courseViewedPercentage = courseProgress.viewedPercentage;
   const currentModuleIndex = currentSection?.moduleIndex ?? 0;
   const moduleSections = sections.filter((section) => section.moduleIndex === currentModuleIndex);
   const moduleProgress = summarizeCourseProgress(moduleSections, {
     completedSectionIds: progress.completedSectionIds,
     sectionStatuses: resolvedSectionStatuses,
   });
-  const moduleProgressPercentage = moduleProgress.percentage;
-  const moduleViewedPercentage = moduleProgress.viewedPercentage;
-
-  const normalizeProgressForCourse = useCallback(
-    (candidate: CourseProgressRecord): CourseProgressRecord => {
-      const normalizedCompletedIds = normalizeCompletedSectionIds(candidate.completedSectionIds);
-      const normalizedStatuses = normalizeSectionStatuses(candidate.sectionStatuses);
-      const resolvedStatuses = resolveSectionStatuses(
-        sections,
-        normalizedCompletedIds,
-        normalizedStatuses,
-        Boolean(orderMandatory)
-      );
-
-      return {
-        completedSectionIds: normalizedCompletedIds,
-        sectionStatuses: resolvedStatuses,
-      };
-    },
-    [sections, orderMandatory]
-  );
-
-  const persistProgress = useCallback(
-    (nextProgress: CourseProgressRecord, sectionId?: string | null) => {
-      const courseKey = selectedCourse?.key ?? "unknown";
-      browserStorage.writeProgress(courseKey, nextProgress);
-      lyciumApi.mirrorCompletion({
-          course_key: selectedCourse?.key ?? "unknown",
-          course_title: selectedCourse?.title ?? null,
-          section_id: sectionId ?? null,
-          completed_section_ids: nextProgress.completedSectionIds,
-          section_statuses: nextProgress.sectionStatuses,
-        }).catch((err) => console.warn("Failed to mirror local completion:", err));
-    },
-    [selectedCourse?.key, selectedCourse?.title]
-  );
 
   const routeToHome = useCallback(() => {
     if (currentPath !== COURSE_CATALOG_PATH) {
@@ -197,7 +138,7 @@ function App() {
       router.push(SETTINGS_PATH);
       setCurrentPath(SETTINGS_PATH);
     },
-    [currentPath, router, settingsReturnPath]
+    [currentPath, router, settingsReturnPath],
   );
 
   const closeSettingsModal = useCallback(() => {
@@ -209,12 +150,12 @@ function App() {
 
   const rememberCourseSection = useCallback((course: CourseEntry, section: CourseSection, path: string) => {
     const bookmark = {
-        course_key: course.key,
-        course_title: course.title,
-        section_id: section.id,
-        section_title: section.title,
-        path,
-      };
+      course_key: course.key,
+      course_title: course.title,
+      section_id: section.id,
+      section_title: section.title,
+      path,
+    };
     browserStorage.writeBookmark(course.key, bookmark);
     lyciumApi.saveBookmark(bookmark).catch((err) => console.warn("Failed to save course bookmark:", err));
   }, []);
@@ -233,7 +174,7 @@ function App() {
       rememberCourseSection(course, section, nextPath);
       scrollCoursePageToTop();
     },
-    [currentPath, rememberCourseSection, router]
+    [currentPath, rememberCourseSection, router],
   );
 
   const openCourseByEntry = useCallback(
@@ -265,7 +206,7 @@ function App() {
       setCurrentPath(nextPath);
       scrollCoursePageToTop();
     },
-    [pushSectionPath, router]
+    [pushSectionPath, router],
   );
 
   const goToSectionIndex = (index: number) => {
@@ -273,68 +214,6 @@ function App() {
     const section = sections[index];
     if (selectedCourse && section) {
       pushSectionPath(selectedCourse, section);
-    }
-  };
-
-  const handleSectionTimedStatusChange = useCallback(
-    (sectionId: string, hasTimedQuizInProgress: boolean) => {
-      setProgress((prev) => {
-        if (prev.completedSectionIds.includes(sectionId)) {
-          return prev;
-        }
-
-        const targetStatus: SectionStatus = hasTimedQuizInProgress ? "timed" : "seen";
-        if (prev.sectionStatuses[sectionId] === targetStatus) {
-          return prev;
-        }
-
-        const nextProgress = normalizeProgressForCourse({
-          completedSectionIds: prev.completedSectionIds,
-          sectionStatuses: {
-            ...prev.sectionStatuses,
-            [sectionId]: targetStatus,
-          },
-        });
-
-        if (areProgressRecordsEqual(prev, nextProgress)) {
-          return prev;
-        }
-
-        persistProgress(nextProgress, sectionId);
-        return nextProgress;
-      });
-    },
-    [normalizeProgressForCourse, persistProgress]
-  );
-
-  const handleCompleteSection = (sectionId: string) => {
-    setProgress((prev) => {
-      const completedSectionIds = Array.from(new Set([...prev.completedSectionIds, sectionId]));
-      const nextProgress = normalizeProgressForCourse({
-        completedSectionIds,
-        sectionStatuses: {
-          ...prev.sectionStatuses,
-          [sectionId]: "completed",
-        },
-      });
-
-      if (areProgressRecordsEqual(prev, nextProgress)) {
-        return prev;
-      }
-
-      persistProgress(nextProgress, sectionId);
-      return nextProgress;
-    });
-
-    if (selectedCourse?.snapshotId && learnerId) {
-      lyciumApi.saveSnapshotProgress(selectedCourse.snapshotId, {
-          learner_id: learnerId,
-          section_id: sectionId,
-          completion_state: "completed",
-          mastery_score: 0.8,
-          event_type: "section_completed",
-          event_payload: { course_key: selectedCourse?.key ?? "unknown" },
-        }).catch((err) => console.warn("Failed to post progress:", err));
     }
   };
 
@@ -346,14 +225,14 @@ function App() {
 
     try {
       const course = await lyciumApi.generateCourse({
-          prompt,
-          learner_id: learnerId ?? undefined,
-          level: level || undefined,
-          source_policy: "balanced",
-          desired_module_count: 3,
-          expected_duration_minutes: 180,
-          source_urls: sourceLinks,
-        });
+        prompt,
+        learner_id: learnerId ?? undefined,
+        level: level || undefined,
+        source_policy: "balanced",
+        desired_module_count: 3,
+        expected_duration_minutes: 180,
+        source_urls: sourceLinks,
+      });
       const draftEntry: CourseEntry = {
         key: `remote-${course.id}`,
         title: course.title,
@@ -430,7 +309,17 @@ function App() {
     }
     setCurrentSectionIndex(0);
     pushSectionPath(routeCourse, firstSection, true);
-  }, [route.kind, route.courseSlug, route.unitSlug, resolveCourseKeyFromPath, courses, currentCourseKey, openCourseByEntry, pushSectionPath, rememberCourseSection]);
+  }, [
+    route.kind,
+    route.courseSlug,
+    route.unitSlug,
+    resolveCourseKeyFromPath,
+    courses,
+    currentCourseKey,
+    openCourseByEntry,
+    pushSectionPath,
+    rememberCourseSection,
+  ]);
 
   useEffect(() => {
     if (repositorySet.mode !== "local") {
@@ -439,10 +328,7 @@ function App() {
         .then((courseCards) => {
           const configuredCourses = courseCards
             .flatMap((card) => (card.course ? [card.course] : []))
-            .map((course): CourseEntry => ({
-              ...course,
-              source: course.source === "local" ? "local" : "remote",
-            }));
+            .map((course): CourseEntry => ({ ...course, source: course.source === "local" ? "local" : "remote" }));
 
           if (configuredCourses.length > 0) {
             setCourses(configuredCourses);
@@ -472,9 +358,7 @@ function App() {
           if (validation.valid) {
             remoteCourses.push(entry);
           } else {
-            console.warn(
-              `Skipping invalid remote course ${entry.key}: ${formatCourseValidationErrors(validation.errors)}`
-            );
+            console.warn(`Skipping invalid remote course ${entry.key}: ${formatCourseValidationErrors(validation.errors)}`);
           }
         }
         setCourses((prev) => [...remoteCourses, ...prev.filter((course) => course.source === "local")]);
@@ -491,11 +375,11 @@ function App() {
       }
       try {
         const learner = await lyciumApi.createLearner({
-            name: "Lycium Learner",
-            goal: "Build a personalized course catalog",
-            level: "beginner",
-            preferences: { modalities: ["text", "video"], time_budget: "4h/week" },
-          });
+          name: "Lycium Learner",
+          goal: "Build a personalized course catalog",
+          level: "beginner",
+          preferences: { modalities: ["text", "video"], time_budget: "4h/week" },
+        });
         browserStorage.writeLearnerId(learner.id);
         setLearnerId(Number(learner.id));
       } catch (err) {
@@ -516,76 +400,6 @@ function App() {
     observer.observe(measured);
     return () => observer.disconnect();
   }, [selectedCourse?.key, currentSectionIndex, currentPath]);
-
-  useEffect(() => {
-    let initialProgress = DEFAULT_PROGRESS;
-    try {
-      initialProgress = selectedCourse?.key
-        ? normalizeProgressRecord(browserStorage.readProgress(selectedCourse.key))
-        : DEFAULT_PROGRESS;
-    } catch {
-      initialProgress = DEFAULT_PROGRESS;
-    }
-    const normalizedInitialProgress = normalizeProgressForCourse(initialProgress);
-    setProgress(normalizedInitialProgress);
-    if (!selectedCourse?.key) return;
-
-    lyciumApi.loadCompletion(selectedCourse.key)
-      .then((storedProgress) => {
-        const normalizedStoredProgress = normalizeProgressRecord(storedProgress);
-        const merged = normalizeProgressForCourse({
-          completedSectionIds: [
-            ...normalizedInitialProgress.completedSectionIds,
-            ...normalizedStoredProgress.completedSectionIds,
-          ],
-          sectionStatuses: {
-            ...normalizedInitialProgress.sectionStatuses,
-            ...normalizedStoredProgress.sectionStatuses,
-          },
-        });
-
-        if (areProgressRecordsEqual(normalizedInitialProgress, merged)) {
-          return;
-        }
-
-        browserStorage.writeProgress(selectedCourse.key, merged);
-        setProgress(merged);
-      })
-      .catch((err) => console.warn("Local completion unavailable:", err));
-  }, [normalizeProgressForCourse, selectedCourse?.key]);
-
-  useEffect(() => {
-    if (!currentSection?.id) {
-      return;
-    }
-
-    const sectionId = currentSection.id;
-    setProgress((prev) => {
-      if (prev.completedSectionIds.includes(sectionId)) {
-        return prev;
-      }
-
-      const currentStatus = prev.sectionStatuses[sectionId];
-      if (currentStatus === "seen" || currentStatus === "timed") {
-        return prev;
-      }
-
-      const nextProgress = normalizeProgressForCourse({
-        completedSectionIds: prev.completedSectionIds,
-        sectionStatuses: {
-          ...prev.sectionStatuses,
-          [sectionId]: "seen",
-        },
-      });
-
-      if (areProgressRecordsEqual(prev, nextProgress)) {
-        return prev;
-      }
-
-      persistProgress(nextProgress, sectionId);
-      return nextProgress;
-    });
-  }, [currentSection?.id, normalizeProgressForCourse, persistProgress]);
 
   return (
     <div className="app-root">
@@ -610,8 +424,8 @@ function App() {
             currentSectionIndex={currentSectionIndex}
             onSectionSelect={goToSectionIndex}
             courseTitle={selectedCourse?.data?.title ?? "Course"}
-            progressPercentage={courseProgressPercentage}
-            viewedPercentage={courseViewedPercentage}
+            progressPercentage={courseProgress.percentage}
+            viewedPercentage={courseProgress.viewedPercentage}
             contentHeight={courseContentHeight}
             sectionStatuses={resolvedSectionStatuses}
           />
@@ -625,8 +439,8 @@ function App() {
               onPrev={() => goToSectionIndex(Math.max(currentSectionIndex - 1, 0))}
               isFirstSection={currentSectionIndex === 0}
               isLastSection={currentSectionIndex === sections.length - 1}
-              progressPercentage={moduleProgressPercentage}
-              viewedPercentage={moduleViewedPercentage}
+              progressPercentage={moduleProgress.percentage}
+              viewedPercentage={moduleProgress.viewedPercentage}
               markComplete={handleCompleteSection}
               isComplete={currentSection ? completedSectionIds.has(currentSection.id) : false}
               orderMandatory={orderMandatory}
