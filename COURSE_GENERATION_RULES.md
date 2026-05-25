@@ -6,6 +6,18 @@ Use the repo-local course generation skill as the starting point:
 
 `skills/course-generation/SKILL.md`
 
+## Program and Cluster Model
+
+- Treat `Program` as the top-level education path for career paths, certificates, degree-equivalent paths, skill paths, exam prep, and microcredentials.
+- Treat user-facing clusters as internal `RequirementGroup` records.
+- Do not model a program as a flat list of courses. A program is a structured set of requirements.
+- Requirement groups may represent foundations, clusters, tracks, concentrations, elective pools, capstones, bridge work, remedial work, labs, or seminars.
+- Requirements may be satisfied by courses, course choices, assessments, projects, demonstrated competencies, or learning-hour thresholds.
+- Keep the learner-facing structure tree-shaped, but keep prerequisite correctness in a separate dependency graph.
+- Use courses as reusable learning execution objects that can appear in multiple programs.
+- Program validation must reject missing course, project, assessment, or competency references before a program is published.
+- Completion should roll upward from learning objects into requirement groups and then into programs using explicit completion rules.
+
 ## Generation Workflow
 
 1. Determine course scope.

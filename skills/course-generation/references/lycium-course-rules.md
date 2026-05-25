@@ -1,5 +1,15 @@
 # Lycium Course Generation Rules
 
+## Program and Cluster Rules
+
+- Use `Program` for complete pathways such as career paths, certificates, degree-equivalent paths, skill paths, exam prep, or microcredentials.
+- Use internal `RequirementGroup` records for learner-facing clusters, tracks, foundations, elective pools, capstones, bridge work, remedial work, labs, and seminars.
+- A program is not a flat course list. It is a structured set of requirements that may be satisfied by courses, assessments, projects, competencies, or learning-hour thresholds.
+- Keep the display hierarchy tree-shaped for learners, but keep prerequisites in a separate dependency graph so prerequisites can cross clusters and courses.
+- Courses are reusable learning execution objects. Do not duplicate a course just because two programs need it.
+- Program completion rolls up from requirement satisfaction into requirement groups and then into the program.
+- Validate every course, assessment, project, and competency reference before publishing program data.
+
 ## Pseudo Workflow
 
 Use the course JSON as both the output artifact and the progress tracker.

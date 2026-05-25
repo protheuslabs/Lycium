@@ -14,7 +14,13 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - `apps/lycium-web/src/App.tsx`
    - `apps/lycium-web/src/components/ContentView/ContentView.tsx`
 2. Load `references/lycium-course-rules.md` before authoring or reviewing course JSON.
-3. Determine course scope before writing lesson content:
+3. When the request is larger than one course, model the curriculum as a program:
+   - use `Program` for the complete pathway or credential-like outcome
+   - use `RequirementGroup` for learner-facing clusters, tracks, foundations, electives, capstones, bridge work, or remediation
+   - use explicit requirements instead of a flat course list
+   - keep prerequisite correctness in a dependency graph, not only the display tree
+   - validate missing course, assessment, project, or competency references before publishing program data
+4. Determine course scope before writing lesson content:
    - learner level
    - prerequisites
    - target outcome
@@ -22,18 +28,18 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - exclusions
    - assessment expectations
    - course short description for catalog cards
-4. Plan the course hierarchy before drafting content:
+5. Plan the course hierarchy before drafting content:
    - 10-20 modules for a full course unless the user requests a shorter course
    - choose exactly one learner-facing pacing label, `Module` or `Week`, record it in `metadata.pacingLabel`, and use it consistently in module titles, summary titles, and summary concept-card titles
    - 4-15 units per module/week by default
    - sub-units for individual ideas inside each unit
-5. Use the JSON as a progress ledger:
+6. Use the JSON as a progress ledger:
    - record scope in `metadata.scope`
    - record a concise renderer-facing course summary in top-level `shortDescription`
    - record module, unit, idea, and source planning in `metadata.generationPlan`
    - update progress markers as the plan becomes content
-6. Build or revise the course around modules and sections, not a single long page.
-7. Keep instruction and assessment separate:
+7. Build or revise the course around modules and sections, not a single long page.
+8. Keep instruction and assessment separate:
    - Learn pages use `pageType: "learn"` and contain text, video, code, projects, labs, summaries, or other instructional blocks
    - Apply pages use `pageType: "apply"` and contain assessment or practice interactions
    - quiz sections contain quiz blocks only and should be Apply pages
@@ -42,7 +48,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - quiz blocks may use `showAnswers`; default false, but answers are always shown after the final allowed attempt
    - quiz `questions` or `questionBank` should be treated as the total bank; `questionsPerAttempt` may limit how many are displayed per attempt
    - each new quiz attempt should randomize question selection, question order, and answer order
-8. End every module with a summary section:
+9. End every module with a summary section:
    - use `sectionType: "summary"`
    - treat the summary as a module concept inventory, not a prose recap
    - use one `conceptCards` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`
@@ -51,23 +57,23 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - preserve the originating `sourceSectionId` when possible
    - do not invent interpretive categories such as "key concepts", "how the ideas connect", or "common pitfalls" as concept cards
    - do not include quiz blocks in summary sections
-9. Add concept cards to Learn pages:
+10. Add concept cards to Learn pages:
    - every Learn page should end with at least one `conceptCards` block
    - cards should name raw concepts introduced on the page, not generic study tips or LLM interpretation
    - use simple concept objects with `name` and `description`
    - concept names should read like bullet-list terms: `HTTP request`, `Training-serving skew`, `Gradient synchronization`
    - descriptions should be concise definitions of the concept, not prose summaries of the page
-10. Record all sources centrally and reference them from the course:
+11. Record all sources centrally and reference them from the course:
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
    - use `sourceIds` in course, module, section, and block records
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
-11. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
-12. Validate structure and coherence before finishing.
-13. Treat validation as a catalog gate:
+12. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
+13. Validate structure and coherence before finishing.
+14. Treat validation as a catalog gate:
    - generated courses must not enter the catalog until structural validation passes
    - every referenced `sourceId` must resolve to a central or course-level source record
    - validation failures should be reported as generation errors, not silently repaired after rendering
-14. Treat publication as a separate lifecycle gate:
+15. Treat publication as a separate lifecycle gate:
    - generated snapshots should start as reviewable artifacts, not automatically trusted catalog entries
    - create or preserve `generation_trace.quality_report` when backend generation is involved
    - publish only after the quality report passes or a reviewer explicitly records a force-publish reason
