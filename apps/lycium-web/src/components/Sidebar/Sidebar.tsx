@@ -32,6 +32,7 @@ export default function Sidebar({
   const activeModuleIndex = sections[currentSectionIndex]?.moduleIndex ?? 0;
   const [expandedModules, setExpandedModules] = useState<Set<number>>(() => new Set());
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isContentFading, setIsContentFading] = useState(false);
   const moduleGroups = useMemo(() => {
     const groups: Array<{
       moduleIndex: number;
@@ -143,17 +144,28 @@ export default function Sidebar({
 
   // Course pages default to the compact navigation rail whenever learners change pages.
   useEffect(() => {
+    setIsContentFading(true);
     setIsCollapsed(true);
+    const fadeTimer = window.setTimeout(() => setIsContentFading(false), 220);
+    return () => window.clearTimeout(fadeTimer);
   }, [courseTitle, currentSectionIndex]);
+
+  const toggleCollapsed = () => {
+    setIsContentFading(true);
+    window.setTimeout(() => {
+      setIsCollapsed((collapsed) => !collapsed);
+      window.setTimeout(() => setIsContentFading(false), 220);
+    }, 120);
+  };
   
   return (
-    <aside className={`sidebar ${isCollapsed ? "sidebar--collapsed" : ""}`}>
+    <aside className={`sidebar ${isCollapsed ? "sidebar--collapsed" : ""} ${isContentFading ? "sidebar--content-fading" : ""}`}>
       <button
         className="sidebar-pulltab"
         type="button"
         aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         aria-expanded={!isCollapsed}
-        onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+        onClick={toggleCollapsed}
       >
         <span aria-hidden="true">{isCollapsed ? "›" : "‹"}</span>
       </button>

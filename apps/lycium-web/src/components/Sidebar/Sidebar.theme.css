@@ -104,8 +104,22 @@
   color: #f3f4f6;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .module-header:hover:not([aria-disabled="true"]),
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-item:hover {
+  border-color: #303033;
+  background: #1f1f20;
+  color: #f8fafc;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .module-header--active,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-item.active {
+  background: #2b2b2d;
+  border-color: #303033;
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .module-header--active:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-item.active:hover {
   background: #2b2b2d;
   border-color: #303033;
   color: #f8fafc;

@@ -421,9 +421,13 @@ def read_completion(course_key: str) -> dict[str, Any]:
             "updated_at": None,
         },
     )
-    completed_section_ids = _normalize_completed_section_ids(payload.get("completed_section_ids"))
     section_statuses = _normalize_section_statuses(payload.get("section_statuses"))
-    for section_id in completed_section_ids:
+    completed_section_ids: list[str] = []
+    for section_id in _normalize_completed_section_ids(payload.get("completed_section_ids")):
+        stored_status = section_statuses.get(section_id)
+        if stored_status and stored_status != "completed":
+            continue
+        completed_section_ids.append(section_id)
         section_statuses[section_id] = "completed"
 
     return {
@@ -444,17 +448,17 @@ def save_completion(
     section_statuses: dict[str, str],
 ) -> dict[str, Any]:
     current = read_completion(course_key)
-    completed = _normalize_completed_section_ids(
-        [
-            *current.get("completed_section_ids", []),
-            *completed_section_ids,
-            *([section_id] if section_id else []),
-        ]
-    )
     merged_statuses = {
         **_normalize_section_statuses(current.get("section_statuses")),
         **_normalize_section_statuses(section_statuses),
     }
+    completed = _normalize_completed_section_ids(
+        [
+            *current.get("completed_section_ids", []),
+            *completed_section_ids,
+            *[status_section_id for status_section_id, status in merged_statuses.items() if status == "completed"],
+        ]
+    )
     for completed_section_id in completed:
         merged_statuses[completed_section_id] = "completed"
 

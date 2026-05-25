@@ -29,6 +29,7 @@ import {
   getSectionPathSlug,
   parseCourseRoute,
 } from "./utils/courseRouting";
+import { readSettingsBackdropPath, writeSettingsBackdropPath } from "./utils/settingsRouteState";
 
 function App() {
   const router = useRouter();
@@ -43,14 +44,17 @@ function App() {
   const [generateMessage, setGenerateMessage] = useState("");
   const [learnerId, setLearnerId] = useState<number | null>(null);
   const [currentPath, setCurrentPath] = useState(() => pathname ?? COURSE_CATALOG_PATH);
+  const [pageBehindSettingsPath, setPageBehindSettingsPath] = useState(() => {
+    const initialPath = pathname ?? COURSE_CATALOG_PATH;
+    return parseCourseRoute(initialPath).kind === "settings" ? readSettingsBackdropPath() : initialPath;
+  });
   const [courseContentHeight, setCourseContentHeight] = useState<number | null>(null);
   const courseContentRef = useRef<HTMLDivElement | null>(null);
 
   const route = useMemo(() => parseCourseRoute(currentPath), [currentPath]);
-  const settingsReturnPath = route.kind === "settings" ? settingsReturnPathRef.current : COURSE_CATALOG_PATH;
   const viewRoute = useMemo(
-    () => (route.kind === "settings" ? parseCourseRoute(settingsReturnPath) : route),
-    [route, settingsReturnPath],
+    () => (route.kind === "settings" ? parseCourseRoute(pageBehindSettingsPath) : route),
+    [pageBehindSettingsPath, route],
   );
   const agentSettings = useAgentSettings(route.kind, API_BASE);
 
@@ -134,19 +138,23 @@ function App() {
         setCurrentPath(SETTINGS_PATH);
         return;
       }
-      settingsReturnPathRef.current = currentPath === SETTINGS_PATH ? settingsReturnPath : currentPath;
+      const returnPath = currentPath === SETTINGS_PATH ? pageBehindSettingsPath : currentPath;
+      settingsReturnPathRef.current = returnPath;
+      setPageBehindSettingsPath(returnPath);
+      writeSettingsBackdropPath(returnPath);
       router.push(SETTINGS_PATH);
       setCurrentPath(SETTINGS_PATH);
     },
-    [currentPath, router, settingsReturnPath],
+    [currentPath, pageBehindSettingsPath, router],
   );
 
   const closeSettingsModal = useCallback(() => {
-    const returnTo = settingsReturnPathRef.current;
+    const returnTo = pageBehindSettingsPath || settingsReturnPathRef.current;
     const targetPath = returnTo && returnTo !== SETTINGS_PATH ? returnTo : COURSE_CATALOG_PATH;
     router.replace(targetPath);
     setCurrentPath(targetPath);
-  }, [router]);
+    setPageBehindSettingsPath(targetPath);
+  }, [pageBehindSettingsPath, router]);
 
   const rememberCourseSection = useCallback((course: CourseEntry, section: CourseSection, path: string) => {
     const bookmark = {
@@ -270,6 +278,11 @@ function App() {
   useEffect(() => {
     if (pathname) {
       setCurrentPath(pathname);
+      if (parseCourseRoute(pathname).kind !== "settings") {
+        settingsReturnPathRef.current = pathname;
+        setPageBehindSettingsPath(pathname);
+        writeSettingsBackdropPath(pathname);
+      }
     }
   }, [pathname]);
 

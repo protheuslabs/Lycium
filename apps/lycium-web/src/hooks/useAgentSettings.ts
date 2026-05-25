@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { createBrowserStorageRepository, createLyciumLocalApi } from "@lycium/data-access";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../courseTypes";
@@ -127,11 +127,12 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     browserStorage.writeThemeMode(mode);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
 
     const applyResolvedTheme = (resolvedTheme: "light" | "dark") => {
       root.setAttribute("data-theme", resolvedTheme);
+      root.setAttribute("data-theme-mode", themeMode);
       root.style.colorScheme = resolvedTheme;
     };
 
@@ -174,9 +175,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
             : loadedProviders[0]?.id || "openai"
         );
         setAgentKeys(settings.agent_keys ?? []);
-        setSettingsMessage(
-          activeKey ? `${activeKey.provider_label} is active with ${activeKey.model ?? "no model selected"}.` : "No agent API key saved yet."
-        );
+        setSettingsMessage(activeKey ? `${activeKey.provider_label} is active with ${activeKey.model ?? "no model selected"}.` : "");
       })
       .catch((err) => {
         if (ignored) return;
