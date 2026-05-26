@@ -162,6 +162,18 @@
   color: #cbd5e1;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-active-subheader {
+  color: #d1d5db;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-active-subheader span:first-child {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-active-subheader span:last-child {
+  color: #d1d5db;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-progress-bar {
   background: #262626;
 }

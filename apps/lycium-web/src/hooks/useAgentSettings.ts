@@ -153,6 +153,27 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
   }, [themeMode]);
 
   useEffect(() => {
+    let ignored = false;
+
+    lyciumApi
+      .loadSettings()
+      .then((settings) => {
+        if (!ignored) {
+          setAgentKeys(settings.agent_keys ?? []);
+        }
+      })
+      .catch((err) => {
+        if (!ignored) {
+          console.warn("Unable to preload AI settings:", err);
+        }
+      });
+
+    return () => {
+      ignored = true;
+    };
+  }, [lyciumApi]);
+
+  useEffect(() => {
     if (routeKind !== "settings") {
       return;
     }

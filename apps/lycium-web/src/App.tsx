@@ -428,12 +428,14 @@ function App() {
           courses={courses}
           prompt={prompt}
           level={level}
+          canCreateCourse={agentSettings.agentKeys.some((key) => key.is_active && Boolean(key.model))}
           generateStatus={generateStatus}
           generateMessage={generateMessage}
           onPromptChange={setPrompt}
           onLevelChange={setLevel}
           onGenerateCourse={handleGenerateCourse}
           onOpenCourse={openCourseByEntry}
+          onOpenSettings={routeToSettings}
         />
       ) : (
         <div className="main-layout">

@@ -16,7 +16,7 @@ export default function CatalogFooter({
         <nav className="catalog-footer-social" aria-label="Social media">
           <a
             className="catalog-footer-social-link"
-            href="https://github.com/lyciumlabs/Lycium"
+            href="https://github.com/protheuslabs/Lycium"
             aria-label="Lycium GitHub repository"
             target="_blank"
             rel="noreferrer"

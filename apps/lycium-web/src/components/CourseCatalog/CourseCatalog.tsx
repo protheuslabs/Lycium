@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent, KeyboardEvent } from "react";
+import type { FormEvent, KeyboardEvent, MouseEvent } from "react";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
 import Dropdown from "../Dropdown/Dropdown";
 import type { CourseEntry } from "../../courseTypes";
@@ -27,24 +27,28 @@ type CourseCatalogProps = {
   courses: CourseEntry[];
   prompt: string;
   level: string;
+  canCreateCourse: boolean;
   generateStatus: "idle" | "loading" | "error" | "success";
   generateMessage: string;
   onPromptChange: (value: string) => void;
   onLevelChange: (value: string) => void;
   onGenerateCourse: (event: FormEvent<HTMLFormElement>, sourceLinks: string[]) => void;
   onOpenCourse: (course: CourseEntry) => void;
+  onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
 export default function CourseCatalog({
   courses,
   prompt,
   level,
+  canCreateCourse,
   generateStatus,
   generateMessage,
   onPromptChange,
   onLevelChange,
   onGenerateCourse,
   onOpenCourse,
+  onOpenSettings,
 }: CourseCatalogProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sourceLinks, setSourceLinks] = useState([""]);
@@ -177,6 +181,11 @@ export default function CourseCatalog({
   };
 
   const handleCreateSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (!canCreateCourse) {
+      event.preventDefault();
+      return;
+    }
+
     onGenerateCourse(
       event,
       sourceLinks.map((link) => link.trim()).filter(Boolean),
@@ -277,6 +286,7 @@ export default function CourseCatalog({
           prompt={prompt}
           level={level}
           sourceLinks={sourceLinks}
+          canCreateCourse={canCreateCourse}
           generateStatus={generateStatus}
           generateMessage={generateMessage}
           levelOptions={CATALOG_LEVEL_OPTIONS}
@@ -285,6 +295,10 @@ export default function CourseCatalog({
           onSourceLinkChange={handleSourceLinkChange}
           onAddSourceLink={() => setSourceLinks((currentLinks) => [...currentLinks, ""])}
           onSubmit={handleCreateSubmit}
+          onOpenSettings={(event) => {
+            onOpenSettings(event);
+            setIsCreateModalOpen(false);
+          }}
           onClose={() => setIsCreateModalOpen(false)}
         />
       )}

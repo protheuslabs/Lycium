@@ -1,5 +1,6 @@
 import type { FormEvent, MouseEvent } from "react";
 import Dropdown from "../Dropdown/Dropdown";
+import { SETTINGS_PATH } from "../../utils/courseRouting";
 
 type SelectOption = {
   value: string;
@@ -10,6 +11,7 @@ type CreateCourseModalProps = {
   prompt: string;
   level: string;
   sourceLinks: string[];
+  canCreateCourse: boolean;
   generateStatus: "idle" | "loading" | "error" | "success";
   generateMessage: string;
   levelOptions: SelectOption[];
@@ -18,6 +20,7 @@ type CreateCourseModalProps = {
   onSourceLinkChange: (index: number, value: string) => void;
   onAddSourceLink: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
   onClose: () => void;
 };
 
@@ -25,6 +28,7 @@ export default function CreateCourseModal({
   prompt,
   level,
   sourceLinks,
+  canCreateCourse,
   generateStatus,
   generateMessage,
   levelOptions,
@@ -33,6 +37,7 @@ export default function CreateCourseModal({
   onSourceLinkChange,
   onAddSourceLink,
   onSubmit,
+  onOpenSettings,
   onClose,
 }: CreateCourseModalProps) {
   const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
@@ -60,60 +65,76 @@ export default function CreateCourseModal({
           <h2 id="create-course-title">Create Course</h2>
         </div>
         <form className="create-course-form" onSubmit={onSubmit}>
-          <label className="create-course-field">
-            <span>Description</span>
-            <textarea
-              className="create-course-textarea"
-              placeholder="Describe the course you want to build..."
-              value={prompt}
-              onChange={(event) => onPromptChange(event.target.value)}
-              rows={5}
-            />
-          </label>
-          <div className="create-course-field">
-            <span>Links</span>
-            <div className="create-course-link-stack">
-              {sourceLinks.map((link, index) => (
-                <input
-                  key={index}
-                  className="create-course-input"
-                  type="url"
-                  placeholder="https://example.com/source"
-                  value={link}
-                  onChange={(event) => onSourceLinkChange(index, event.target.value)}
-                />
-              ))}
+          {!canCreateCourse && (
+            <p className="create-course-unlock-message">
+              To unlock course creation, go to settings
+              <a href={SETTINGS_PATH} aria-label="Open settings" onClick={onOpenSettings}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                  <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.02-.66-.07-.98l2.06-1.6a.5.5 0 0 0 .12-.64l-1.95-3.37a.5.5 0 0 0-.6-.22l-2.43.98a7.3 7.3 0 0 0-1.69-.98l-.37-2.58A.5.5 0 0 0 14.08 2h-3.9a.5.5 0 0 0-.5.42L9.32 5a7.43 7.43 0 0 0-1.69.98L5.2 5a.5.5 0 0 0-.6.22L2.65 8.59a.5.5 0 0 0 .12.64l2.06 1.6c-.04.32-.08.65-.08.98s.03.66.08.98l-2.06 1.6a.5.5 0 0 0-.12.64l1.95 3.37c.13.22.39.31.6.22l2.43-.98c.52.4 1.08.73 1.69.98l.37 2.58c.04.24.25.42.5.42h3.9c.25 0 .46-.18.5-.42l.37-2.58a7.43 7.43 0 0 0 1.69-.98l2.43.98c.22.08.48 0 .6-.22l1.95-3.37a.5.5 0 0 0-.12-.64l-2.07-1.6ZM12.13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
+                </svg>
+              </a>
+              and connect an AI model.
+            </p>
+          )}
+          <div className={`create-course-controls ${canCreateCourse ? "" : "create-course-controls--locked"}`}>
+            <label className="create-course-field">
+              <span>Description</span>
+              <textarea
+                className="create-course-textarea"
+                placeholder="Describe the course you want to build..."
+                value={prompt}
+                onChange={(event) => onPromptChange(event.target.value)}
+                rows={5}
+                disabled={!canCreateCourse}
+              />
+            </label>
+            <div className="create-course-field">
+              <span>Links</span>
+              <div className="create-course-link-stack">
+                {sourceLinks.map((link, index) => (
+                  <input
+                    key={index}
+                    className="create-course-input"
+                    type="url"
+                    placeholder="https://example.com/source"
+                    value={link}
+                    onChange={(event) => onSourceLinkChange(index, event.target.value)}
+                    disabled={!canCreateCourse}
+                  />
+                ))}
+              </div>
+              <button className="create-course-add-link" type="button" onClick={onAddSourceLink} disabled={!canCreateCourse}>
+                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                  <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
+                </svg>
+                Add another link
+              </button>
             </div>
-            <button className="create-course-add-link" type="button" onClick={onAddSourceLink}>
+            <label className="create-course-field">
+              <span>Difficulty level</span>
+              <Dropdown
+                className="create-course-dropdown"
+                value={level}
+                options={levelOptions}
+                onChange={onLevelChange}
+                ariaLabel="Difficulty level"
+                disabled={!canCreateCourse}
+              />
+            </label>
+            <div className="create-course-files" aria-label="Add files placeholder">
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
+                <path d="M7.5 18.5a5 5 0 0 1 0-7.07l6.72-6.72a3.5 3.5 0 0 1 4.95 4.95l-7.08 7.07a2 2 0 0 1-2.83-2.83l6.37-6.36a1 1 0 1 1 1.41 1.41l-6.36 6.37 1.41 1.41 7.07-7.07a5.5 5.5 0 0 0-7.78-7.78l-6.72 6.72a7 7 0 0 0 9.9 9.9l5.31-5.3a1 1 0 0 0-1.42-1.42l-5.3 5.31a5 5 0 0 1-7.07 0Z" />
               </svg>
-              Add another link
-            </button>
-          </div>
-          <label className="create-course-field">
-            <span>Difficulty level</span>
-            <Dropdown
-              className="create-course-dropdown"
-              value={level}
-              options={levelOptions}
-              onChange={onLevelChange}
-              ariaLabel="Difficulty level"
-            />
-          </label>
-          <div className="create-course-files" aria-label="Add files placeholder">
-            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-              <path d="M7.5 18.5a5 5 0 0 1 0-7.07l6.72-6.72a3.5 3.5 0 0 1 4.95 4.95l-7.08 7.07a2 2 0 0 1-2.83-2.83l6.37-6.36a1 1 0 1 1 1.41 1.41l-6.36 6.37 1.41 1.41 7.07-7.07a5.5 5.5 0 0 0-7.78-7.78l-6.72 6.72a7 7 0 0 0 9.9 9.9l5.31-5.3a1 1 0 0 0-1.42-1.42l-5.3 5.31a5 5 0 0 1-7.07 0Z" />
-            </svg>
-            <div>
-              <strong>Add Files</strong>
-              <span>File uploads are coming soon.</span>
+              <div>
+                <strong>Add Files</strong>
+                <span>File uploads are coming soon.</span>
+              </div>
             </div>
+            <button className="create-course-submit" type="submit" disabled={!canCreateCourse || !prompt.trim() || generateStatus === "loading"}>
+              {generateStatus === "loading" ? "Generating..." : "Create course"}
+            </button>
+            {generateMessage && <p className={`generator-status generator-status-${generateStatus}`}>{generateMessage}</p>}
           </div>
-          <button className="create-course-submit" type="submit" disabled={!prompt.trim() || generateStatus === "loading"}>
-            {generateStatus === "loading" ? "Generating..." : "Create course"}
-          </button>
-          {generateMessage && <p className={`generator-status generator-status-${generateStatus}`}>{generateMessage}</p>}
         </form>
       </section>
     </div>

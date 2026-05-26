@@ -26,7 +26,7 @@
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
   font-size: 1.32rem;
   font-weight: 700;
-  letter-spacing: 0.035em;
+  letter-spacing: -0.035em;
   line-height: 1;
   text-shadow: 0 1px 12px rgba(139, 185, 255, 0.28);
   cursor: default;
@@ -134,7 +134,7 @@ html[data-theme="light"] .top-bar-icon-button:focus-visible {
 
   .top-bar-title {
     font-size: 1.1rem;
-    letter-spacing: 0.025em;
+    letter-spacing: -0.03em;
   }
 
   .top-bar-icon-button {

@@ -162,7 +162,7 @@ function course(input: WrapperInput): CourseEntry {
     title: input.title,
     shortDescription: input.shortDescription,
     difficultyLevel: input.difficultyLevel,
-    category: "engineering",
+    category: "computing-information-sciences",
     tags: ["software engineering", ...input.tags],
     learningTypes: [],
     orderMandatory: false,
