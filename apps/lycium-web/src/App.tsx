@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import ContentView from "./components/ContentView/ContentView";
@@ -48,8 +48,7 @@ function App() {
     const initialPath = pathname ?? COURSE_CATALOG_PATH;
     return parseCourseRoute(initialPath).kind === "settings" ? readSettingsBackdropPath() : initialPath;
   });
-  const [courseContentHeight, setCourseContentHeight] = useState<number | null>(null);
-  const courseContentRef = useRef<HTMLDivElement | null>(null);
+  const currentPathRef = useRef(currentPath);
 
   const route = useMemo(() => parseCourseRoute(currentPath), [currentPath]);
   const viewRoute = useMemo(
@@ -97,7 +96,15 @@ function App() {
     [selectedCourse],
   );
 
-  const currentSection = sections[currentSectionIndex] ?? null;
+  const routeSectionIndex = useMemo(() => {
+    if (viewRoute.kind !== "course" || !viewRoute.unitSlug) {
+      return -1;
+    }
+
+    return sections.findIndex((section) => getSectionPathSlug(section) === viewRoute.unitSlug);
+  }, [sections, viewRoute.kind, viewRoute.unitSlug]);
+  const visibleSectionIndex = routeSectionIndex >= 0 ? routeSectionIndex : currentSectionIndex;
+  const currentSection = sections[visibleSectionIndex] ?? null;
   const orderMandatory = selectedCourse?.data?.orderMandatory ?? false;
   const {
     progress,
@@ -128,6 +135,7 @@ function App() {
     if (currentPath !== COURSE_CATALOG_PATH) {
       router.push(COURSE_CATALOG_PATH);
     }
+    currentPathRef.current = COURSE_CATALOG_PATH;
     setCurrentPath(COURSE_CATALOG_PATH);
   }, [currentPath, router]);
 
@@ -135,6 +143,7 @@ function App() {
     (event?: MouseEvent<HTMLAnchorElement>) => {
       event?.preventDefault();
       if (currentPath === SETTINGS_PATH) {
+        currentPathRef.current = SETTINGS_PATH;
         setCurrentPath(SETTINGS_PATH);
         return;
       }
@@ -143,6 +152,7 @@ function App() {
       setPageBehindSettingsPath(returnPath);
       writeSettingsBackdropPath(returnPath);
       router.push(SETTINGS_PATH);
+      currentPathRef.current = SETTINGS_PATH;
       setCurrentPath(SETTINGS_PATH);
     },
     [currentPath, pageBehindSettingsPath, router],
@@ -152,6 +162,7 @@ function App() {
     const returnTo = pageBehindSettingsPath || settingsReturnPathRef.current;
     const targetPath = returnTo && returnTo !== SETTINGS_PATH ? returnTo : COURSE_CATALOG_PATH;
     router.replace(targetPath);
+    currentPathRef.current = targetPath;
     setCurrentPath(targetPath);
     setPageBehindSettingsPath(targetPath);
   }, [pageBehindSettingsPath, router]);
@@ -171,18 +182,19 @@ function App() {
   const pushSectionPath = useCallback(
     (course: CourseEntry, section: CourseSection, replace = false) => {
       const nextPath = getCourseSectionPath(course, section);
-      if (currentPath !== nextPath) {
+      if (currentPathRef.current !== nextPath) {
         if (replace) {
           router.replace(nextPath);
         } else {
           router.push(nextPath);
         }
       }
+      currentPathRef.current = nextPath;
       setCurrentPath(nextPath);
       rememberCourseSection(course, section, nextPath);
       scrollCoursePageToTop();
     },
-    [currentPath, rememberCourseSection, router],
+    [rememberCourseSection, router],
   );
 
   const openCourseByEntry = useCallback(
@@ -211,19 +223,20 @@ function App() {
       } else {
         router.push(nextPath);
       }
+      currentPathRef.current = nextPath;
       setCurrentPath(nextPath);
       scrollCoursePageToTop();
     },
     [pushSectionPath, router],
   );
 
-  const goToSectionIndex = (index: number) => {
+  const goToSectionIndex = useCallback((index: number) => {
     setCurrentSectionIndex(index);
     const section = sections[index];
     if (selectedCourse && section) {
       pushSectionPath(selectedCourse, section);
     }
-  };
+  }, [pushSectionPath, sections, selectedCourse]);
 
   const handleGenerateCourse = async (evt: FormEvent<HTMLFormElement>, sourceLinks: string[] = []) => {
     evt.preventDefault();
@@ -277,6 +290,7 @@ function App() {
 
   useEffect(() => {
     if (pathname) {
+      currentPathRef.current = pathname;
       setCurrentPath(pathname);
       if (parseCourseRoute(pathname).kind !== "settings") {
         settingsReturnPathRef.current = pathname;
@@ -292,6 +306,7 @@ function App() {
     }
 
     router.replace(COURSE_CATALOG_PATH);
+    currentPathRef.current = COURSE_CATALOG_PATH;
     setCurrentPath(COURSE_CATALOG_PATH);
   }, [currentPath, router]);
 
@@ -404,16 +419,6 @@ function App() {
     ensureLearner();
   }, []);
 
-  useLayoutEffect(() => {
-    const measured = courseContentRef.current;
-    if (!measured) return;
-    const measureHeight = () => setCourseContentHeight(Math.ceil(measured.clientHeight));
-    measureHeight();
-    const observer = new ResizeObserver(measureHeight);
-    observer.observe(measured);
-    return () => observer.disconnect();
-  }, [selectedCourse?.key, currentSectionIndex, currentPath]);
-
   return (
     <div className="app-root">
       <TopBar onOpenSettings={routeToSettings} onOpenCatalog={routeToHome} />
@@ -434,24 +439,23 @@ function App() {
         <div className="main-layout">
           <Sidebar
             sections={sections}
-            currentSectionIndex={currentSectionIndex}
+            currentSectionIndex={visibleSectionIndex}
             onSectionSelect={goToSectionIndex}
             courseTitle={selectedCourse?.data?.title ?? "Course"}
             progressPercentage={courseProgress.percentage}
             viewedPercentage={courseProgress.viewedPercentage}
-            contentHeight={courseContentHeight}
             sectionStatuses={resolvedSectionStatuses}
           />
-          <div className="course-content-host" ref={courseContentRef}>
+          <div className="course-content-host">
             <ContentView
               courseTitle={selectedCourse?.data?.title ?? "Course"}
               section={currentSection}
               moduleTitle={currentSection?.moduleTitle ?? ""}
               moduleIndex={currentSection?.moduleIndex ?? 0}
-              onNext={() => goToSectionIndex(Math.min(currentSectionIndex + 1, sections.length - 1))}
-              onPrev={() => goToSectionIndex(Math.max(currentSectionIndex - 1, 0))}
-              isFirstSection={currentSectionIndex === 0}
-              isLastSection={currentSectionIndex === sections.length - 1}
+              onNext={() => goToSectionIndex(Math.min(visibleSectionIndex + 1, sections.length - 1))}
+              onPrev={() => goToSectionIndex(Math.max(visibleSectionIndex - 1, 0))}
+              isFirstSection={visibleSectionIndex === 0}
+              isLastSection={visibleSectionIndex === sections.length - 1}
               progressPercentage={moduleProgress.percentage}
               viewedPercentage={moduleProgress.viewedPercentage}
               markComplete={handleCompleteSection}

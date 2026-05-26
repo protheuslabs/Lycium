@@ -7,6 +7,7 @@ import {
   normalizeCompletedSectionIds,
   normalizeProgressRecord,
   normalizeSectionStatuses,
+  resolveSectionStatusTransition,
   resolveSectionStatuses,
 } from "../utils/courseProgress";
 
@@ -18,6 +19,37 @@ type UseCourseProgressStateOptions = {
   currentSectionId?: string | null;
 };
 
+type CourseProgressState = {
+  courseKey: string | null;
+  progress: CourseProgressRecord;
+};
+
+const courseProgressCache = new Map<string, CourseProgressRecord>();
+
+function readCachedCourseProgress(courseKey: string | null): CourseProgressRecord {
+  if (!courseKey) {
+    return DEFAULT_PROGRESS;
+  }
+
+  const cachedProgress = courseProgressCache.get(courseKey);
+  if (cachedProgress) {
+    return cachedProgress;
+  }
+
+  try {
+    const storedProgress = normalizeProgressRecord(browserStorage.readProgress(courseKey));
+    courseProgressCache.set(courseKey, storedProgress);
+    return storedProgress;
+  } catch {
+    return DEFAULT_PROGRESS;
+  }
+}
+
+function cacheCourseProgress(courseKey: string, progress: CourseProgressRecord): void {
+  courseProgressCache.set(courseKey, progress);
+  browserStorage.writeProgress(courseKey, progress);
+}
+
 export function useCourseProgressState({
   selectedCourse,
   sections,
@@ -25,31 +57,58 @@ export function useCourseProgressState({
   learnerId,
   currentSectionId,
 }: UseCourseProgressStateOptions) {
-  const [progress, setProgress] = useState<CourseProgressRecord>(DEFAULT_PROGRESS);
+  const courseKey = selectedCourse?.key ?? null;
+  const [progressState, setProgressState] = useState<CourseProgressState>(() => ({
+    courseKey,
+    progress: readCachedCourseProgress(courseKey),
+  }));
 
   const normalizeProgressForCourse = useCallback(
     (candidate: CourseProgressRecord): CourseProgressRecord => {
-      const normalizedCompletedIds = normalizeCompletedSectionIds(candidate.completedSectionIds);
-      const normalizedStatuses = normalizeSectionStatuses(candidate.sectionStatuses);
-      const resolvedStatuses = resolveSectionStatuses(
-        sections,
-        normalizedCompletedIds,
-        normalizedStatuses,
-        Boolean(orderMandatory),
+      const sectionIds = new Set(sections.map((section) => section.id));
+      const normalizedCompletedIds = normalizeCompletedSectionIds(candidate.completedSectionIds).filter((sectionId) =>
+        sectionIds.has(sectionId),
       );
+      const completedSet = new Set(normalizedCompletedIds);
+      const normalizedStatuses = normalizeSectionStatuses(candidate.sectionStatuses);
+      const sectionStatuses: Record<string, SectionStatus> = {};
+
+      for (const [sectionId, status] of Object.entries(normalizedStatuses)) {
+        if (!sectionIds.has(sectionId) || status === "locked" || completedSet.has(sectionId)) {
+          continue;
+        }
+
+        if (status === "seen" || status === "timed") {
+          sectionStatuses[sectionId] = status;
+        }
+      }
+
+      for (const sectionId of normalizedCompletedIds) {
+        sectionStatuses[sectionId] = "completed";
+      }
 
       return {
         completedSectionIds: normalizedCompletedIds,
-        sectionStatuses: resolvedStatuses,
+        sectionStatuses,
       };
     },
-    [orderMandatory, sections],
+    [sections],
+  );
+
+  const sourceProgress =
+    progressState.courseKey === courseKey ? progressState.progress : readCachedCourseProgress(courseKey);
+  const visibleProgress = useMemo(
+    () => normalizeProgressForCourse(sourceProgress),
+    [normalizeProgressForCourse, sourceProgress],
   );
 
   const persistProgress = useCallback(
     (nextProgress: CourseProgressRecord, sectionId?: string | null) => {
-      const courseKey = selectedCourse?.key ?? "unknown";
-      browserStorage.writeProgress(courseKey, nextProgress);
+      if (!courseKey) {
+        return;
+      }
+
+      cacheCourseProgress(courseKey, nextProgress);
       lyciumApi
         .mirrorCompletion({
           course_key: courseKey,
@@ -60,59 +119,83 @@ export function useCourseProgressState({
         })
         .catch((err) => console.warn("Failed to mirror local completion:", err));
     },
-    [selectedCourse?.key, selectedCourse?.title],
+    [courseKey, selectedCourse?.title],
   );
 
   const resolvedSectionStatuses = useMemo(
-    () => resolveSectionStatuses(sections, progress.completedSectionIds, progress.sectionStatuses, Boolean(orderMandatory)),
-    [orderMandatory, progress.completedSectionIds, progress.sectionStatuses, sections],
+    () =>
+      resolveSectionStatuses(
+        sections,
+        visibleProgress.completedSectionIds,
+        visibleProgress.sectionStatuses,
+        Boolean(orderMandatory),
+      ),
+    [orderMandatory, sections, visibleProgress.completedSectionIds, visibleProgress.sectionStatuses],
   );
 
-  const completedSectionIds = useMemo(() => new Set(progress.completedSectionIds), [progress.completedSectionIds]);
+  const completedSectionIds = useMemo(
+    () => new Set(visibleProgress.completedSectionIds),
+    [visibleProgress.completedSectionIds],
+  );
 
   const handleSectionTimedStatusChange = useCallback(
     (sectionId: string, hasTimedQuizInProgress: boolean) => {
-      setProgress((prev) => {
-        if (prev.completedSectionIds.includes(sectionId)) {
+      if (!courseKey) {
+        return;
+      }
+
+      setProgressState((prev) => {
+        const baseProgress = normalizeProgressForCourse(
+          prev.courseKey === courseKey ? prev.progress : readCachedCourseProgress(courseKey),
+        );
+        if (baseProgress.completedSectionIds.includes(sectionId)) {
           return prev;
         }
 
         const targetStatus: SectionStatus = hasTimedQuizInProgress ? "timed" : "seen";
-        if (prev.sectionStatuses[sectionId] === targetStatus) {
+        const nextStatus = resolveSectionStatusTransition(baseProgress.sectionStatuses[sectionId], targetStatus);
+        if (baseProgress.sectionStatuses[sectionId] === nextStatus) {
           return prev;
         }
 
         const nextProgress = normalizeProgressForCourse({
-          completedSectionIds: prev.completedSectionIds,
-          sectionStatuses: { ...prev.sectionStatuses, [sectionId]: targetStatus },
+          completedSectionIds: baseProgress.completedSectionIds,
+          sectionStatuses: { ...baseProgress.sectionStatuses, [sectionId]: nextStatus },
         });
 
-        if (areProgressRecordsEqual(prev, nextProgress)) {
+        if (areProgressRecordsEqual(baseProgress, nextProgress)) {
           return prev;
         }
 
         persistProgress(nextProgress, sectionId);
-        return nextProgress;
+        return { courseKey, progress: nextProgress };
       });
     },
-    [normalizeProgressForCourse, persistProgress],
+    [courseKey, normalizeProgressForCourse, persistProgress],
   );
 
   const handleCompleteSection = useCallback(
     (sectionId: string) => {
-      setProgress((prev) => {
-        const completedSectionIds = Array.from(new Set([...prev.completedSectionIds, sectionId]));
+      if (!courseKey) {
+        return;
+      }
+
+      setProgressState((prev) => {
+        const baseProgress = normalizeProgressForCourse(
+          prev.courseKey === courseKey ? prev.progress : readCachedCourseProgress(courseKey),
+        );
+        const completedSectionIds = Array.from(new Set([...baseProgress.completedSectionIds, sectionId]));
         const nextProgress = normalizeProgressForCourse({
           completedSectionIds,
-          sectionStatuses: { ...prev.sectionStatuses, [sectionId]: "completed" },
+          sectionStatuses: { ...baseProgress.sectionStatuses, [sectionId]: "completed" },
         });
 
-        if (areProgressRecordsEqual(prev, nextProgress)) {
+        if (areProgressRecordsEqual(baseProgress, nextProgress)) {
           return prev;
         }
 
         persistProgress(nextProgress, sectionId);
-        return nextProgress;
+        return { courseKey, progress: nextProgress };
       });
 
       if (selectedCourse?.snapshotId && learnerId) {
@@ -128,81 +211,92 @@ export function useCourseProgressState({
           .catch((err) => console.warn("Failed to post progress:", err));
       }
     },
-    [learnerId, normalizeProgressForCourse, persistProgress, selectedCourse?.key, selectedCourse?.snapshotId],
+    [courseKey, learnerId, normalizeProgressForCourse, persistProgress, selectedCourse?.key, selectedCourse?.snapshotId],
   );
 
   useEffect(() => {
-    let initialProgress = DEFAULT_PROGRESS;
-    try {
-      initialProgress = selectedCourse?.key
-        ? normalizeProgressRecord(browserStorage.readProgress(selectedCourse.key))
-        : DEFAULT_PROGRESS;
-    } catch {
-      initialProgress = DEFAULT_PROGRESS;
-    }
-
-    const normalizedInitialProgress = normalizeProgressForCourse(initialProgress);
-    setProgress(normalizedInitialProgress);
-    if (!selectedCourse?.key) {
+    const normalizedInitialProgress = normalizeProgressForCourse(readCachedCourseProgress(courseKey));
+    setProgressState((prev) =>
+      prev.courseKey === courseKey && areProgressRecordsEqual(prev.progress, normalizedInitialProgress)
+        ? prev
+        : { courseKey, progress: normalizedInitialProgress },
+    );
+    if (!courseKey) {
       return;
     }
 
     lyciumApi
-      .loadCompletion(selectedCourse.key)
+      .loadCompletion(courseKey)
       .then((storedProgress) => {
         const normalizedStoredProgress = normalizeProgressRecord(storedProgress);
+        const completedSectionIds = [
+          ...normalizedInitialProgress.completedSectionIds,
+          ...normalizedStoredProgress.completedSectionIds,
+        ];
+        const sectionStatuses = { ...normalizedInitialProgress.sectionStatuses };
+
+        for (const [sectionId, status] of Object.entries(normalizedStoredProgress.sectionStatuses)) {
+          sectionStatuses[sectionId] = resolveSectionStatusTransition(sectionStatuses[sectionId], status);
+        }
+
+        for (const sectionId of completedSectionIds) {
+          sectionStatuses[sectionId] = "completed";
+        }
+
         const merged = normalizeProgressForCourse({
-          completedSectionIds: [
-            ...normalizedInitialProgress.completedSectionIds,
-            ...normalizedStoredProgress.completedSectionIds,
-          ],
-          sectionStatuses: {
-            ...normalizedInitialProgress.sectionStatuses,
-            ...normalizedStoredProgress.sectionStatuses,
-          },
+          completedSectionIds,
+          sectionStatuses,
         });
 
         if (areProgressRecordsEqual(normalizedInitialProgress, merged)) {
           return;
         }
 
-        browserStorage.writeProgress(selectedCourse.key, merged);
-        setProgress(merged);
+        cacheCourseProgress(courseKey, merged);
+        setProgressState((prev) =>
+          prev.courseKey === courseKey && areProgressRecordsEqual(prev.progress, merged)
+            ? prev
+            : { courseKey, progress: merged },
+        );
       })
       .catch((err) => console.warn("Local completion unavailable:", err));
-  }, [normalizeProgressForCourse, selectedCourse?.key]);
+  }, [courseKey, normalizeProgressForCourse]);
 
   useEffect(() => {
-    if (!currentSectionId) {
+    if (!courseKey || !currentSectionId) {
       return;
     }
 
-    setProgress((prev) => {
-      if (prev.completedSectionIds.includes(currentSectionId)) {
+    setProgressState((prev) => {
+      const baseProgress = normalizeProgressForCourse(
+        prev.courseKey === courseKey ? prev.progress : readCachedCourseProgress(courseKey),
+      );
+      if (baseProgress.completedSectionIds.includes(currentSectionId)) {
         return prev;
       }
 
-      const currentStatus = prev.sectionStatuses[currentSectionId];
-      if (currentStatus === "seen" || currentStatus === "timed") {
+      const currentStatus = baseProgress.sectionStatuses[currentSectionId];
+      const nextStatus = resolveSectionStatusTransition(currentStatus, "seen");
+      if (currentStatus === nextStatus) {
         return prev;
       }
 
       const nextProgress = normalizeProgressForCourse({
-        completedSectionIds: prev.completedSectionIds,
-        sectionStatuses: { ...prev.sectionStatuses, [currentSectionId]: "seen" },
+        completedSectionIds: baseProgress.completedSectionIds,
+        sectionStatuses: { ...baseProgress.sectionStatuses, [currentSectionId]: nextStatus },
       });
 
-      if (areProgressRecordsEqual(prev, nextProgress)) {
+      if (areProgressRecordsEqual(baseProgress, nextProgress)) {
         return prev;
       }
 
       persistProgress(nextProgress, currentSectionId);
-      return nextProgress;
+      return { courseKey, progress: nextProgress };
     });
-  }, [currentSectionId, normalizeProgressForCourse, persistProgress]);
+  }, [courseKey, currentSectionId, normalizeProgressForCourse, persistProgress]);
 
   return {
-    progress,
+    progress: visibleProgress,
     resolvedSectionStatuses,
     completedSectionIds,
     handleSectionTimedStatusChange,

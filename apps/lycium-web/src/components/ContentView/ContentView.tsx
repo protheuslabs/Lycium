@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import ProgressMeter from "../ProgressMeter/ProgressMeter";
 import QuizBlock from "../Quiz/QuizBlock";
 import VideoBlock from "../Video/VideoBlock";
 
@@ -225,21 +226,11 @@ export default function ContentView({
       <p className="course-name">{courseTitle}</p>
       <div className="module-progress-block">
         <h1 className="course-title">{moduleTitle}</h1>
-        <div className="progress-meter">
-          <div className="progress-bar">
-            <div
-              className="progress-bar-viewed-fill"
-              style={{ width: `${viewedPercentage}%` }}
-            />
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-          <p className="progress-percentage">
-            {Math.round(progressPercentage)}% complete · {Math.round(viewedPercentage)}% viewed
-          </p>
-        </div>
+        <ProgressMeter
+          cacheKey={`content:${courseTitle}:${moduleIndex}`}
+          progressPercentage={progressPercentage}
+          viewedPercentage={viewedPercentage}
+        />
       </div>
       
       {/* Section Title With Decimal */}

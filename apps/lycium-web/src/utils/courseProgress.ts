@@ -22,6 +22,29 @@ export function isViewedSectionStatus(status: SectionStatus | undefined): boolea
   return Boolean(status && VIEWED_SECTION_STATUSES.includes(status));
 }
 
+export function resolveSectionStatusTransition(
+  currentStatus: SectionStatus | undefined,
+  requestedStatus: SectionStatus,
+): SectionStatus {
+  if (currentStatus === "completed" || requestedStatus === "completed") {
+    return currentStatus === "completed" ? currentStatus : requestedStatus;
+  }
+
+  if (currentStatus === "locked") {
+    return currentStatus;
+  }
+
+  if (requestedStatus === "seen") {
+    return currentStatus ?? requestedStatus;
+  }
+
+  if (requestedStatus === "timed") {
+    return currentStatus === "seen" || currentStatus === undefined ? requestedStatus : currentStatus;
+  }
+
+  return currentStatus ?? requestedStatus;
+}
+
 export function normalizeCompletedSectionIds(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];

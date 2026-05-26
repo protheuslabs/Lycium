@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import type { SectionStatus } from "../../courseTypes";
+import ProgressMeter from "../ProgressMeter/ProgressMeter";
 
 type SidebarSection = {
   id: string;
@@ -16,9 +17,141 @@ type SidebarProps = {
   courseTitle: string;
   progressPercentage: number;
   viewedPercentage: number;
-  contentHeight: number | null;
   sectionStatuses: Record<string, SectionStatus>;
 };
+
+let persistedSidebarCollapsed = true;
+
+type DisplayStatus = SectionStatus | "available";
+
+function getStatusLabel(status: DisplayStatus): string {
+  if (status === "completed") return "Completed";
+  if (status === "locked") return "Locked";
+  if (status === "seen") return "Seen";
+  if (status === "timed") return "Quiz in progress";
+  return "Available";
+}
+
+function getStatusClassName(status: DisplayStatus): string {
+  if (status === "available") return "sidebar-status";
+  if (status === "completed") return "sidebar-status sidebar-status--complete";
+  return `sidebar-status sidebar-status--${status}`;
+}
+
+function SidebarStatusGlyph({ status }: { status: DisplayStatus }) {
+  if (status === "completed") {
+    return <span className="sidebar-status-check">✓</span>;
+  }
+  if (status === "locked") {
+    return <span className="sidebar-lock-icon" aria-hidden="true" />;
+  }
+  if (status === "seen") {
+    return (
+      <svg className="sidebar-status-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" />
+        <circle cx="12" cy="12" r="2.2" />
+      </svg>
+    );
+  }
+  if (status === "timed") {
+    return (
+      <svg className="sidebar-status-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7 2h10v2.5L14 8v1l3 3.5V16H7v-3.5L10 9V8L7 4.5V2Zm8 12.75v-1.5L12 9.75l-3 3.5v1.5h6Z" />
+      </svg>
+    );
+  }
+  return null;
+}
+
+const SidebarStatusBadge = memo(function SidebarStatusBadge({
+  status,
+  className = "",
+}: {
+  status: DisplayStatus;
+  className?: string;
+}) {
+  const label = getStatusLabel(status);
+
+  return (
+    <span className={`${getStatusClassName(status)} ${className}`.trim()} aria-label={label} title={label}>
+      <SidebarStatusGlyph status={status} />
+    </span>
+  );
+});
+
+const SidebarModuleHeader = memo(function SidebarModuleHeader({
+  moduleIndex,
+  moduleTitle,
+  moduleStatus,
+  isExpanded,
+  isActiveModule,
+  isCollapsed,
+  onToggleModule,
+}: {
+  moduleIndex: number;
+  moduleTitle: string;
+  moduleStatus: DisplayStatus;
+  isExpanded: boolean;
+  isActiveModule: boolean;
+  isCollapsed: boolean;
+  onToggleModule: (moduleIndex: number) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`module-header ${isExpanded ? "module-header--expanded" : ""} ${
+        isActiveModule ? "module-header--active" : ""
+      }`}
+      onClick={() => onToggleModule(moduleIndex)}
+      aria-expanded={isExpanded}
+      aria-disabled={isActiveModule}
+    >
+      <span className="module-header-label">
+        {isCollapsed ? `M${moduleIndex + 1}` : `Module ${moduleIndex + 1}: ${moduleTitle}`}
+      </span>
+      {isCollapsed && <SidebarStatusBadge status={moduleStatus} className="module-header-status" />}
+      <span className="module-header-caret" aria-hidden="true">
+        ▾
+      </span>
+    </button>
+  );
+});
+
+const SidebarSectionItem = memo(function SidebarSectionItem({
+  section,
+  index,
+  status,
+  isActive,
+  isCollapsed,
+  onSectionSelect,
+}: {
+  section: SidebarSection;
+  index: number;
+  status: DisplayStatus;
+  isActive: boolean;
+  isCollapsed: boolean;
+  onSectionSelect: (index: number) => void;
+}) {
+  const isLocked = status === "locked";
+  const handleClick = useCallback(() => {
+    if (!isLocked) {
+      onSectionSelect(index);
+    }
+  }, [index, isLocked, onSectionSelect]);
+
+  return (
+    <div
+      className={`sidebar-item ${isActive ? "active" : ""} ${isLocked ? "locked" : ""}`}
+      onClick={handleClick}
+      aria-disabled={isLocked}
+    >
+      <span className="sidebar-item-label">
+        {isCollapsed ? section.displayNumber : `${section.displayNumber} ${section.title}`}
+      </span>
+      <SidebarStatusBadge status={status} />
+    </div>
+  );
+});
 
 export default function Sidebar({
   sections,
@@ -30,8 +163,10 @@ export default function Sidebar({
   sectionStatuses
 }: SidebarProps) {
   const activeModuleIndex = sections[currentSectionIndex]?.moduleIndex ?? 0;
+  const activeModuleIndexRef = useRef(activeModuleIndex);
+  activeModuleIndexRef.current = activeModuleIndex;
   const [expandedModules, setExpandedModules] = useState<Set<number>>(() => new Set());
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(() => persistedSidebarCollapsed);
   const [isContentFading, setIsContentFading] = useState(false);
   const moduleGroups = useMemo(() => {
     const groups: Array<{
@@ -58,11 +193,14 @@ export default function Sidebar({
     return groups;
   }, [sections]);
 
-  const getSectionStatus = (sectionId: string): SectionStatus | "available" => sectionStatuses[sectionId] ?? "available";
+  const getSectionStatus = useCallback(
+    (sectionId: string): DisplayStatus => sectionStatuses[sectionId] ?? "available",
+    [sectionStatuses],
+  );
 
-  const getModuleStatus = (
+  const getModuleStatus = useCallback((
     moduleSections: Array<{ section: SidebarSection; index: number }>
-  ): SectionStatus | "available" => {
+  ): DisplayStatus => {
     const statuses = moduleSections.map(({ section }) => getSectionStatus(section.id));
     if (statuses.length > 0 && statuses.every((status) => status === "completed")) {
       return "completed";
@@ -77,55 +215,10 @@ export default function Sidebar({
       return "seen";
     }
     return "available";
-  };
+  }, [getSectionStatus]);
 
-  const statusLabel = (status: SectionStatus | "available"): string => {
-    if (status === "completed") return "Completed";
-    if (status === "locked") return "Locked";
-    if (status === "seen") return "Seen";
-    if (status === "timed") return "Quiz in progress";
-    return "Available";
-  };
-
-  const statusClassName = (status: SectionStatus | "available"): string => {
-    if (status === "available") {
-      return "sidebar-status";
-    }
-
-    if (status === "completed") {
-      return "sidebar-status sidebar-status--complete";
-    }
-
-    return `sidebar-status sidebar-status--${status}`;
-  };
-
-  const renderStatusGlyph = (status: SectionStatus | "available") => {
-    if (status === "completed") {
-      return <span className="sidebar-status-check">✓</span>;
-    }
-    if (status === "locked") {
-      return <span className="sidebar-lock-icon" aria-hidden="true" />;
-    }
-    if (status === "seen") {
-      return (
-        <svg className="sidebar-status-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" />
-          <circle cx="12" cy="12" r="2.2" />
-        </svg>
-      );
-    }
-    if (status === "timed") {
-      return (
-        <svg className="sidebar-status-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M7 2h10v2.5L14 8v1l3 3.5V16H7v-3.5L10 9V8L7 4.5V2Zm8 12.75v-1.5L12 9.75l-3 3.5v1.5h6Z" />
-        </svg>
-      );
-    }
-    return null;
-  };
-
-  const toggleModule = (moduleIndex: number) => {
-    if (moduleIndex === activeModuleIndex) {
+  const toggleModule = useCallback((moduleIndex: number) => {
+    if (moduleIndex === activeModuleIndexRef.current) {
       return;
     }
 
@@ -140,20 +233,16 @@ export default function Sidebar({
 
       return next;
     });
-  };
-
-  // Course pages default to the compact navigation rail whenever learners change pages.
-  useEffect(() => {
-    setIsContentFading(true);
-    setIsCollapsed(true);
-    const fadeTimer = window.setTimeout(() => setIsContentFading(false), 220);
-    return () => window.clearTimeout(fadeTimer);
-  }, [courseTitle, currentSectionIndex]);
+  }, []);
 
   const toggleCollapsed = () => {
     setIsContentFading(true);
     window.setTimeout(() => {
-      setIsCollapsed((collapsed) => !collapsed);
+      setIsCollapsed((collapsed) => {
+        const nextCollapsed = !collapsed;
+        persistedSidebarCollapsed = nextCollapsed;
+        return nextCollapsed;
+      });
       window.setTimeout(() => setIsContentFading(false), 220);
     }, 120);
   };
@@ -172,21 +261,11 @@ export default function Sidebar({
 
       <div className="progress-wrapper" aria-hidden={isCollapsed}>
         <h3 className="sidebar-title">{courseTitle}</h3>
-        <div className="progress-meter">
-          <div className="progress-bar">
-            <div
-              className="progress-bar-viewed-fill"
-              style={{ width: `${viewedPercentage}%` }}
-            />
-            <div
-              className="progress-bar-fill"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-          <p className="progress-percentage">
-            {Math.round(progressPercentage)}% complete · {Math.round(viewedPercentage)}% viewed
-          </p>
-        </div>
+        <ProgressMeter
+          cacheKey={`sidebar:${courseTitle}`}
+          progressPercentage={progressPercentage}
+          viewedPercentage={viewedPercentage}
+        />
       </div>
       
       <div className="sidebar-section-list">
@@ -194,67 +273,34 @@ export default function Sidebar({
           const isActiveModule = moduleGroup.moduleIndex === activeModuleIndex;
           const isExpanded = isActiveModule || expandedModules.has(moduleGroup.moduleIndex);
           const moduleStatus = getModuleStatus(moduleGroup.sections);
-          const moduleStatusLabel = statusLabel(moduleStatus);
           
           return (
             <section className="sidebar-module" key={moduleGroup.moduleIndex}>
-              <button
-                type="button"
-                className={`module-header ${isExpanded ? "module-header--expanded" : ""} ${
-                  isActiveModule ? "module-header--active" : ""
-                }`}
-                onClick={() => toggleModule(moduleGroup.moduleIndex)}
-                aria-expanded={isExpanded}
-                aria-disabled={isActiveModule}
-              >
-                <span className="module-header-label">
-                  {isCollapsed ? `M${moduleGroup.moduleIndex + 1}` : `Module ${moduleGroup.moduleIndex + 1}: ${moduleGroup.moduleTitle}`}
-                </span>
-                {isCollapsed && (
-                  <span
-                    className={`${statusClassName(moduleStatus)} module-header-status`}
-                    aria-label={moduleStatusLabel}
-                    title={moduleStatusLabel}
-                  >
-                    {renderStatusGlyph(moduleStatus)}
-                  </span>
-                )}
-                <span className="module-header-caret" aria-hidden="true">
-                  ▾
-                </span>
-              </button>
+              <SidebarModuleHeader
+                moduleIndex={moduleGroup.moduleIndex}
+                moduleTitle={moduleGroup.moduleTitle}
+                moduleStatus={moduleStatus}
+                isExpanded={isExpanded}
+                isActiveModule={isActiveModule}
+                isCollapsed={isCollapsed}
+                onToggleModule={toggleModule}
+              />
 
               {isExpanded && (
                 <div className="sidebar-module-sections">
                   {moduleGroup.sections.map(({ section, index: idx }) => {
                     const sectionStatus = getSectionStatus(section.id);
-                    const isLocked = sectionStatus === "locked";
-                    const sectionStatusLabel = statusLabel(sectionStatus);
 
                     return (
-                      <div
+                      <SidebarSectionItem
                         key={section.id}
-                        className={`sidebar-item ${
-                          idx === currentSectionIndex ? "active" : ""
-                        } ${isLocked ? "locked" : ""}`}
-                        onClick={() => {
-                          if (!isLocked) {
-                            onSectionSelect(idx);
-                          }
-                        }}
-                        aria-disabled={isLocked}
-                      >
-                        <span className="sidebar-item-label">
-                          {isCollapsed ? section.displayNumber : `${section.displayNumber} ${section.title}`}
-                        </span>
-                        <span
-                          className={statusClassName(sectionStatus)}
-                          aria-label={sectionStatusLabel}
-                          title={sectionStatusLabel}
-                        >
-                          {renderStatusGlyph(sectionStatus)}
-                        </span>
-                      </div>
+                        section={section}
+                        index={idx}
+                        status={sectionStatus}
+                        isActive={idx === currentSectionIndex}
+                        isCollapsed={isCollapsed}
+                        onSectionSelect={onSectionSelect}
+                      />
                     );
                   })}
                 </div>
