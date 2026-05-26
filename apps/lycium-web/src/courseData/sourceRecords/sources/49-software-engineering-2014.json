@@ -1,0 +1,13 @@
+{
+  "id": "software-engineering-2014",
+  "type": "curriculum-guideline",
+  "title": "Software Engineering 2014: Curriculum Guidelines for Undergraduate Degree Programs in Software Engineering",
+  "publisher": "ACM and IEEE Computer Society",
+  "url": "https://www.acm.org/binaries/content/assets/education/se2014.pdf",
+  "usedByCourseIds": [
+    "program-software-engineering"
+  ],
+  "usedByCourseTitles": [
+    "Software Engineering Program course wrappers"
+  ]
+}

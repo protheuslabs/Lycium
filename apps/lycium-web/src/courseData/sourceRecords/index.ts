@@ -44,5 +44,9 @@ import source43 from "./sources/43-python-tutorial.json";
 import source44 from "./sources/44-cs50-python.json";
 import source45 from "./sources/45-mdn-learn-web-dev.json";
 import source46 from "./sources/46-web-dev-learn.json";
+import source47 from "./sources/47-swebok-v4.json";
+import source48 from "./sources/48-acm-computing-curricula-2020.json";
+import source49 from "./sources/49-software-engineering-2014.json";
+import source50 from "./sources/50-owasp-wstg.json";
 
-export default { sources: [source01, source02, source03, source04, source05, source06, source07, source08, source09, source10, source11, source12, source13, source14, source15, source16, source17, source18, source19, source20, source21, source22, source23, source24, source25, source26, source27, source28, source29, source30, source31, source32, source33, source34, source35, source36, source37, source38, source39, source40, source41, source42, source43, source44, source45, source46] };
+export default { sources: [source01, source02, source03, source04, source05, source06, source07, source08, source09, source10, source11, source12, source13, source14, source15, source16, source17, source18, source19, source20, source21, source22, source23, source24, source25, source26, source27, source28, source29, source30, source31, source32, source33, source34, source35, source36, source37, source38, source39, source40, source41, source42, source43, source44, source45, source46, source47, source48, source49, source50] };

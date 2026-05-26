@@ -1,0 +1,13 @@
+{
+  "id": "acm-computing-curricula-2020",
+  "type": "curriculum-guideline",
+  "title": "Computing Curricula 2020: Paradigms for Global Computing Education",
+  "publisher": "ACM and IEEE Computer Society",
+  "url": "https://www.acm.org/binaries/content/assets/education/curricula-recommendations/cc2020.pdf",
+  "usedByCourseIds": [
+    "program-software-engineering"
+  ],
+  "usedByCourseTitles": [
+    "Software Engineering Program course wrappers"
+  ]
+}

@@ -1,4 +1,5 @@
 import type { CourseData, CourseEntry } from "../../courseTypes";
+import { buildSoftwareEngineeringCourseModules, selectSoftwareEngineeringSourceIds } from "./softwareEngineeringCourseBuilder";
 
 type WrapperInput = {
   key: string;
@@ -156,6 +157,7 @@ function prereq(courseId: string) {
 function course(input: WrapperInput): CourseEntry {
   const prerequisites = input.prerequisites?.map(prereq) ?? [];
   const courseEquivalency = COURSE_EQUIVALENCIES[input.key];
+  const sourceIds = selectSoftwareEngineeringSourceIds(input);
   const data: CourseData = {
     title: input.title,
     shortDescription: input.shortDescription,
@@ -163,6 +165,8 @@ function course(input: WrapperInput): CourseEntry {
     category: "engineering",
     tags: ["software engineering", ...input.tags],
     learningTypes: [],
+    orderMandatory: false,
+    sourceIds,
     courseEquivalencies: courseEquivalency
       ? [
           {
@@ -174,12 +178,36 @@ function course(input: WrapperInput): CourseEntry {
       : undefined,
     prerequisites,
     metadata: {
-      wrapperStatus: "planned_empty_course",
+      wrapperStatus: "built_scaffolded_course",
+      pacingLabel: "Module",
       estimatedHours: input.estimatedHours,
       prerequisiteCourseIds: input.prerequisites ?? [],
       programIds: ["program-software-engineering"],
+      scope: {
+        audience: "software engineering program learners",
+        level: input.difficultyLevel,
+        duration: `${input.estimatedHours} learning hours`,
+        outcome: input.shortDescription,
+        prerequisites: input.prerequisites ?? [],
+        exclusions: ["formal transfer-credit claims", "vendor certification guarantees"],
+      },
+      generationPlan: {
+        status: ["scoped", "modules_planned", "content_scaffolded"],
+        moduleCount: 10,
+        unitsPerModule: 4,
+        quizQuestionsPerModule: 10,
+        sourceMap: sourceIds,
+      },
     },
-    modules: [],
+    modules: buildSoftwareEngineeringCourseModules({
+      courseKey: input.key,
+      title: input.title,
+      shortDescription: input.shortDescription,
+      tags: input.tags,
+      difficultyLevel: input.difficultyLevel,
+      estimatedHours: input.estimatedHours,
+      sourceIds,
+    }),
   };
 
   return { key: input.key, title: input.title, data, source: "local" };

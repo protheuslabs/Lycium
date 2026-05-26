@@ -1,0 +1,13 @@
+{
+  "id": "owasp-wstg",
+  "type": "documentation",
+  "title": "OWASP Web Security Testing Guide",
+  "publisher": "OWASP Foundation",
+  "url": "https://owasp.org/www-project-web-security-testing-guide/",
+  "usedByCourseIds": [
+    "program-software-engineering"
+  ],
+  "usedByCourseTitles": [
+    "Software Engineering Program course wrappers"
+  ]
+}

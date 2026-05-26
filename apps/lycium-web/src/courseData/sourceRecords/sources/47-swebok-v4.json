@@ -1,0 +1,13 @@
+{
+  "id": "swebok-v4",
+  "type": "reference",
+  "title": "Guide to the Software Engineering Body of Knowledge (SWEBOK Guide), Version 4.0",
+  "publisher": "IEEE Computer Society",
+  "url": "https://www.computer.org/education/bodies-of-knowledge/software-engineering",
+  "usedByCourseIds": [
+    "program-software-engineering"
+  ],
+  "usedByCourseTitles": [
+    "Software Engineering Program course wrappers"
+  ]
+}
