@@ -77,7 +77,7 @@ describe("Lycium contract fixtures", () => {
     ["generation job", "lycium-generation-job.schema.json", "valid-generation-job.json"],
     ["provider settings", "lycium-provider-settings.schema.json", "valid-provider-settings.json"],
   ])("accepts valid %s fixtures", (_, schemaName, fixtureName) => {
-    const validateSchema = ajv.compile(readSchema(schemaName));
+    const validateSchema = ajv.getSchema(schemaName) ?? ajv.compile(readSchema(schemaName));
     const fixture = readFixture<unknown>(fixtureName);
 
     expect(validateSchema(fixture), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);

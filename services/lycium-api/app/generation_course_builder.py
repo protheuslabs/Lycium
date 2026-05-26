@@ -86,6 +86,19 @@ def _with_source_ids(blocks: list[dict[str, Any]], source_ids: list[str]) -> lis
 
 def _normalize_quiz_block(block: dict[str, Any]) -> dict[str, Any]:
     questions = block.get("questions") or block.get("questionBank") or []
+    if not questions and block.get("question"):
+        answer = block.get("answer")
+        answers = block.get("answers")
+        questions = [
+            {
+                "question": block.get("question"),
+                "options": block.get("options", []),
+                "answers": answers if isinstance(answers, list) else ([answer] if isinstance(answer, int) else []),
+                "timed": block.get("timed", False),
+            }
+        ]
+        block = {key: value for key, value in block.items() if key not in {"question", "options", "answer", "answers"}}
+        block["questions"] = questions
     if isinstance(questions, list):
         normalized_questions = []
         for question in questions:
@@ -285,7 +298,7 @@ def generate_course_from_draft(
     structure = {
         "title": draft.title,
         "shortDescription": outline.get("shortDescription") or outline.get("summary") or f"A generated Lycium course for {draft.title}.",
-        "difficultyLevel": draft.difficulty,
+        "difficultyLevel": draft.difficulty or "beginner",
         "category": "interdisciplinary-studies",
         "tags": [],
         "learningTypes": [],

@@ -53,7 +53,7 @@ function makeQuizQuestions(moduleIndex: number, concepts: ConceptSpec[], courseP
       question: `Which statement best describes ${concept.name}?`,
       options: makeQuestionOptions(concept, neighborA, neighborB),
       answers: [0],
-      timed: "f",
+      timed: "f" as const,
     };
   });
 }
