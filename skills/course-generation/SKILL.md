@@ -90,6 +90,13 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - keep only a small ring buffer of full course-generation job logs so recent runs are inspectable without creating unbounded local churn
    - publish only after the quality report passes or a reviewer explicitly records a force-publish reason
    - locked sections should be represented in review metadata rather than by mutating lesson content
+16. Feed course-health records after learner use:
+   - combine learner ratings, feedback notes, source suggestions, quality evals, validation issues, and reviewer actions into course health
+   - keep health data separate from course JSON
+   - store feedback magnitude as a numeric 1-3 signal; emoji are presentation only
+   - use `unknown`, `healthy`, `watch`, and `needs_review` as the coarse status language
+   - treat `needs_review` as a revision trigger before publishing or republishing
+   - treat suggested sources as review candidates before promoting them into central source records
 
 ## Validation
 

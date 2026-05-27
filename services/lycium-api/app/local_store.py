@@ -430,15 +430,19 @@ def read_course_feedback(course_key: str) -> dict[str, Any]:
             "course_key": course_key,
             "course_title": None,
             "rating": None,
+            "rating_events": [],
+            "feedback_notes": [],
             "source_suggestions": [],
             "updated_at": None,
         }
     suggestions = feedback.get("source_suggestions")
     notes = feedback.get("feedback_notes")
+    rating_events = feedback.get("rating_events")
     return {
         "course_key": course_key,
         "course_title": feedback.get("course_title"),
         "rating": feedback.get("rating") if feedback.get("rating") in {"up", "down"} else None,
+        "rating_events": rating_events if isinstance(rating_events, list) else [],
         "feedback_notes": notes if isinstance(notes, list) else [],
         "source_suggestions": suggestions if isinstance(suggestions, list) else [],
         "updated_at": feedback.get("updated_at"),
@@ -451,6 +455,7 @@ def save_course_feedback(
     course_title: str | None,
     rating: str | None | object = _PRESERVE_FEEDBACK_RATING,
     feedback_text: str | None = None,
+    feedback_magnitude: int | None = None,
     source_url: str | None = None,
     source_description: str | None = None,
 ) -> dict[str, Any]:
@@ -464,18 +469,30 @@ def save_course_feedback(
         "course_title": course_title or current.get("course_title"),
         "updated_at": _now(),
     }
+    clean_feedback_text = (feedback_text or "").strip()
+    clean_feedback_magnitude = feedback_magnitude if feedback_magnitude in {1, 2, 3} else None
     if rating is None:
         next_feedback["rating"] = None
     elif rating in {"up", "down"}:
         next_feedback["rating"] = rating
-    clean_feedback_text = (feedback_text or "").strip()
-    if clean_feedback_text:
+        if not clean_feedback_text and clean_feedback_magnitude is None:
+            rating_events = list(next_feedback.get("rating_events") or [])
+            rating_events.append(
+                {
+                    "id": f"rating-event-{uuid4().hex}",
+                    "rating": rating,
+                    "created_at": next_feedback["updated_at"],
+                }
+            )
+            next_feedback["rating_events"] = rating_events
+    if clean_feedback_text or clean_feedback_magnitude is not None:
         notes = list(next_feedback.get("feedback_notes") or [])
         notes.append(
             {
                 "id": f"feedback-note-{uuid4().hex}",
                 "rating": rating if rating in {"up", "down"} else next_feedback.get("rating"),
-                "text": clean_feedback_text,
+                "feedback_magnitude": clean_feedback_magnitude,
+                "text": clean_feedback_text or None,
                 "created_at": next_feedback["updated_at"],
             }
         )
@@ -496,6 +513,78 @@ def save_course_feedback(
     payload["updated_at"] = next_feedback["updated_at"]
     _write_json(feedback_path, payload)
     return next_feedback
+
+
+def read_course_health(course_key: str) -> dict[str, Any]:
+    feedback = read_course_feedback(course_key)
+    rating_events = [event for event in feedback.get("rating_events", []) if isinstance(event, dict)]
+    feedback_notes = [note for note in feedback.get("feedback_notes", []) if isinstance(note, dict)]
+    source_suggestions = [source for source in feedback.get("source_suggestions", []) if isinstance(source, dict)]
+    rating_counts = {"up": 0, "down": 0}
+    signals: list[str] = []
+
+    for event in rating_events:
+        event_rating = event.get("rating")
+        if event_rating in rating_counts:
+            rating_counts[event_rating] += 1
+
+    magnitudes = [
+        note.get("feedback_magnitude")
+        for note in feedback_notes
+        if isinstance(note.get("feedback_magnitude"), int) and note.get("feedback_magnitude") in {1, 2, 3}
+    ]
+    average_magnitude = round(sum(magnitudes) / len(magnitudes), 2) if magnitudes else None
+    latest_rating = feedback.get("rating") if feedback.get("rating") in {"up", "down"} else None
+    score: int | None
+
+    if not rating_events and not feedback_notes and not source_suggestions:
+        status = "unknown"
+        score = None
+        signals.append("No learner feedback has been recorded yet.")
+    else:
+        score = 72
+        score += min(rating_counts["up"] * 4, 16)
+        score -= min(rating_counts["down"] * 7, 28)
+        score -= min(len(source_suggestions) * 3, 12)
+        if latest_rating == "up":
+            score += 5
+        elif latest_rating == "down":
+            score -= 8
+        if average_magnitude is not None:
+            if latest_rating == "up":
+                score += int(round((average_magnitude - 2) * 4))
+            elif latest_rating == "down":
+                score -= int(round(average_magnitude * 3))
+        score = max(0, min(100, score))
+
+        if rating_counts["down"] > rating_counts["up"] or score < 55:
+            status = "needs_review"
+            signals.append("Negative feedback is outweighing positive feedback.")
+        elif source_suggestions or latest_rating == "down" or score < 72:
+            status = "watch"
+            signals.append("Learner feedback or source suggestions should be reviewed.")
+        else:
+            status = "healthy"
+            signals.append("Feedback signals are currently positive.")
+
+    if source_suggestions:
+        signals.append(f"{len(source_suggestions)} learner source suggestion(s) are waiting for review.")
+    if feedback_notes:
+        signals.append(f"{len(feedback_notes)} written feedback note(s) are available.")
+
+    return {
+        "course_key": course_key,
+        "course_title": feedback.get("course_title"),
+        "status": status,
+        "score": score,
+        "latest_rating": latest_rating,
+        "rating_counts": rating_counts,
+        "feedback_note_count": len(feedback_notes),
+        "source_suggestion_count": len(source_suggestions),
+        "average_feedback_magnitude": average_magnitude,
+        "signals": signals,
+        "updated_at": feedback.get("updated_at"),
+    }
 
 
 def read_completion(course_key: str) -> dict[str, Any]:

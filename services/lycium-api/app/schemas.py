@@ -222,6 +222,7 @@ class LocalCourseFeedbackUpdate(BaseModel):
     course_title: str | None = None
     rating: Literal["up", "down"] | None = None
     feedback_text: str | None = Field(default=None, max_length=2000)
+    feedback_magnitude: int | None = Field(default=None, ge=1, le=3)
     source_url: str | None = Field(default=None, max_length=4096)
     source_description: str | None = Field(default=None, max_length=2000)
 
@@ -230,8 +231,23 @@ class LocalCourseFeedbackRead(BaseModel):
     course_key: str
     course_title: str | None = None
     rating: Literal["up", "down"] | None = None
+    rating_events: list[dict[str, Any]] = Field(default_factory=list)
     feedback_notes: list[dict[str, Any]] = Field(default_factory=list)
     source_suggestions: list[dict[str, Any]] = Field(default_factory=list)
+    updated_at: str | None = None
+
+
+class LocalCourseHealthRead(BaseModel):
+    course_key: str
+    course_title: str | None = None
+    status: Literal["unknown", "healthy", "watch", "needs_review"]
+    score: int | None = Field(default=None, ge=0, le=100)
+    latest_rating: Literal["up", "down"] | None = None
+    rating_counts: dict[str, int] = Field(default_factory=dict)
+    feedback_note_count: int = 0
+    source_suggestion_count: int = 0
+    average_feedback_magnitude: float | None = None
+    signals: list[str] = Field(default_factory=list)
     updated_at: str | None = None
 
 

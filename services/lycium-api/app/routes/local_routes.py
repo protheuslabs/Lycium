@@ -38,6 +38,7 @@ from app.local_store import (
     local_settings_summary,
     read_course_bookmark,
     read_course_feedback,
+    read_course_health,
     read_completion,
     save_agent_api_key,
     save_course_bookmark,
@@ -92,6 +93,7 @@ from app.schemas import (
     LocalCourseBookmarkUpdate,
     LocalCourseFeedbackRead,
     LocalCourseFeedbackUpdate,
+    LocalCourseHealthRead,
     LocalCompletionRead,
     LocalCompletionUpdate,
     LocalSettingsRead,
@@ -219,9 +221,15 @@ def register(app: FastAPI) -> None:
             "course_key": payload.course_key,
             "course_title": payload.course_title,
             "feedback_text": payload.feedback_text,
+            "feedback_magnitude": payload.feedback_magnitude,
             "source_url": payload.source_url,
             "source_description": payload.source_description,
         }
         if "rating" in fields_set:
             feedback_update["rating"] = payload.rating
         return save_course_feedback(**feedback_update)
+
+
+    @app.get("/v1/local/course-health/{course_key}", response_model=LocalCourseHealthRead)
+    def get_local_course_health(course_key: str) -> dict[str, Any]:
+        return read_course_health(course_key)

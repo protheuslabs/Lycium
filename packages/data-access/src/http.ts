@@ -180,6 +180,12 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       return readJsonResponse(response, "Course feedback unavailable");
     },
 
+    async loadCourseHealth(courseKey) {
+      const response = await fetch(`${base}/v1/local/course-health/${encodeURIComponent(courseKey)}`);
+      if (response.status === 404) return null;
+      return readJsonResponse(response, "Course health unavailable");
+    },
+
     async saveSnapshotProgress(snapshotId, payload) {
       const response = await fetch(`${base}/v1/courses/${snapshotId}/progress`, {
         method: "POST",

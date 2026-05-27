@@ -5,6 +5,7 @@ import type {
   LyciumCourseEntry,
   LyciumCourseFeedbackPayload,
   LyciumCourseFeedbackRecord,
+  LyciumCourseHealthRecord,
   LyciumCourseGenerationExperiment,
   LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,
@@ -160,6 +161,7 @@ export type LyciumLocalApi = {
   loadBookmark(courseKey: string): Promise<LyciumBookmarkRecord | null>;
   saveCourseFeedback(payload: LyciumCourseFeedbackPayload): Promise<LyciumCourseFeedbackRecord>;
   loadCourseFeedback(courseKey: string): Promise<LyciumCourseFeedbackRecord | null>;
+  loadCourseHealth(courseKey: string): Promise<LyciumCourseHealthRecord | null>;
   saveSnapshotProgress(snapshotId: number, payload: SnapshotProgressPayload): Promise<void>;
   loadAgentProviders(): Promise<LyciumAgentProviderRecord[]>;
   loadSettings(): Promise<LyciumLocalSettings>;
@@ -175,6 +177,7 @@ export type {
   LyciumCourseEntry,
   LyciumCourseFeedbackPayload,
   LyciumCourseFeedbackRecord,
+  LyciumCourseHealthRecord,
   LyciumCourseGenerationExperiment,
   LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,

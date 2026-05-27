@@ -237,6 +237,17 @@ Canonical module/week-summary concept-card block:
 - Generated courses must include course-level `sourceRecords` for generated/local-only sources or reference existing central source records.
 - Do not accept unresolved `sourceIds` in generated courses.
 
+## Course Health Rules
+
+- Course health is the shared review surface for learner feedback, source suggestions, deterministic quality evals, validation findings, and reviewer decisions.
+- Do not store health state inside course JSON. Store it in separate operational records so the course artifact stays portable and stable.
+- Feedback records may include the latest rating, rating events, optional written notes, feedback magnitude, source suggestions, and timestamps.
+- Store magnitude as a numeric 1-3 value; UI emoji are only presentation.
+- Use `unknown`, `healthy`, `watch`, and `needs_review` as the coarse health statuses.
+- Treat `watch` as a reviewer queue signal and `needs_review` as a revision or publish blocker unless an explicit reviewer override is recorded.
+- Suggested sources should be reviewed before they become central source records or cited course material.
+- Future LLM evals should write into or be summarized by the same course-health mechanism rather than becoming disconnected quality artifacts.
+
 ## Local Catalog Rules
 
 - Add new local courses in `apps/lycium-web/src/courseData/`.

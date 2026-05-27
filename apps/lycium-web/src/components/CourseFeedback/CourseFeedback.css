@@ -39,8 +39,7 @@
   box-shadow: none;
 }
 
-.course-feedback-nav-button--liked svg,
-.course-feedback-nav-button--disliked svg {
+.course-feedback-nav-button--pulse svg {
   animation: course-feedback-icon-bounce 420ms ease;
 }
 
@@ -119,10 +118,92 @@
   white-space: nowrap;
 }
 
+.course-feedback-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .course-source-form {
   display: grid;
   gap: 0.9rem;
   margin-top: 1.2rem;
+}
+
+.course-feedback-magnitude-group {
+  display: grid;
+  gap: 0.55rem;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.course-feedback-magnitude-group legend {
+  padding: 0;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.course-feedback-magnitude-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.course-feedback-magnitude-option {
+  display: inline-flex;
+  width: 2.75rem;
+  height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.45rem;
+  line-height: 1;
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+
+.course-feedback-magnitude-option span {
+  display: block;
+  width: 1.55rem;
+  text-align: center;
+  transform: translateY(0.02em);
+}
+
+.course-feedback-magnitude-option:hover:not(:disabled),
+.course-feedback-magnitude-option:focus-visible {
+  background: rgba(100, 116, 139, 0.12);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.course-feedback-magnitude-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.course-feedback-magnitude-option-selected-up {
+  background: rgba(34, 197, 94, 0.16);
+}
+
+.course-feedback-magnitude-option-selected-down {
+  background: rgba(239, 68, 68, 0.16);
+}
+
+.course-feedback-magnitude-option-selected-up:hover:not(:disabled),
+.course-feedback-magnitude-option-selected-up:focus-visible {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.course-feedback-magnitude-option-selected-down:hover:not(:disabled),
+.course-feedback-magnitude-option-selected-down:focus-visible {
+  background: rgba(239, 68, 68, 0.2);
 }
 
 .course-source-form label {
@@ -209,6 +290,27 @@
     color: #cbd5e1;
   }
 
+  .course-feedback-magnitude-group legend {
+    color: #d6deea;
+  }
+
+  .course-feedback-magnitude-option:hover:not(:disabled),
+  .course-feedback-magnitude-option:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .course-feedback-magnitude-option-selected-up,
+  .course-feedback-magnitude-option-selected-up:hover:not(:disabled),
+  .course-feedback-magnitude-option-selected-up:focus-visible {
+    background: rgba(34, 197, 94, 0.2);
+  }
+
+  .course-feedback-magnitude-option-selected-down,
+  .course-feedback-magnitude-option-selected-down:hover:not(:disabled),
+  .course-feedback-magnitude-option-selected-down:focus-visible {
+    background: rgba(239, 68, 68, 0.2);
+  }
+
   .course-source-form input,
   .course-source-form textarea {
     background: #242427;
@@ -222,6 +324,27 @@
 
 html[data-theme="dark"] .course-source-form-footer p {
   color: #cbd5e1;
+}
+
+html[data-theme="dark"] .course-feedback-magnitude-group legend {
+  color: #d6deea;
+}
+
+html[data-theme="dark"] .course-feedback-magnitude-option:hover:not(:disabled),
+html[data-theme="dark"] .course-feedback-magnitude-option:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .course-feedback-magnitude-option-selected-up,
+html[data-theme="dark"] .course-feedback-magnitude-option-selected-up:hover:not(:disabled),
+html[data-theme="dark"] .course-feedback-magnitude-option-selected-up:focus-visible {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+html[data-theme="dark"] .course-feedback-magnitude-option-selected-down,
+html[data-theme="dark"] .course-feedback-magnitude-option-selected-down:hover:not(:disabled),
+html[data-theme="dark"] .course-feedback-magnitude-option-selected-down:focus-visible {
+  background: rgba(239, 68, 68, 0.2);
 }
 
 html[data-theme="dark"] .course-source-form input,

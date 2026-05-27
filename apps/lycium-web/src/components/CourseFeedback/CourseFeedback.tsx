@@ -4,20 +4,39 @@ import { lyciumApi } from "../../runtime/appRuntime";
 import "./CourseFeedback.css";
 
 type CourseFeedbackRating = "up" | "down";
+type CourseFeedbackMagnitude = 1 | 2 | 3;
 
 type CourseFeedbackProps = {
   courseKey: string;
   courseTitle: string;
 };
 
+const feedbackMagnitudeOptions: Record<
+  CourseFeedbackRating,
+  Array<{ value: CourseFeedbackMagnitude; emoji: string; label: string }>
+> = {
+  up: [
+    { value: 1, emoji: "🙂", label: "Somewhat helpful" },
+    { value: 2, emoji: "😃", label: "Helpful" },
+    { value: 3, emoji: "😁", label: "Very helpful" },
+  ],
+  down: [
+    { value: 1, emoji: "😐", label: "Could be better" },
+    { value: 2, emoji: "🙁", label: "Needs work" },
+    { value: 3, emoji: "😖", label: "Frustrating" },
+  ],
+};
+
 export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbackProps) {
   const [rating, setRating] = useState<CourseFeedbackRating | null>(null);
   const [status, setStatus] = useState("");
-  const [isSavingRating, setIsSavingRating] = useState(false);
+  const [, setIsSavingRating] = useState(false);
+  const [feedbackPulse, setFeedbackPulse] = useState<CourseFeedbackRating | null>(null);
   const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
   const [isWrittenFeedbackOpen, setIsWrittenFeedbackOpen] = useState(false);
   const [writtenFeedbackRating, setWrittenFeedbackRating] = useState<CourseFeedbackRating | null>(null);
   const [writtenFeedbackText, setWrittenFeedbackText] = useState("");
+  const [writtenFeedbackMagnitude, setWrittenFeedbackMagnitude] = useState<CourseFeedbackMagnitude | null>(null);
   const [writtenFeedbackStatus, setWrittenFeedbackStatus] = useState("");
   const [isSavingWrittenFeedback, setIsSavingWrittenFeedback] = useState(false);
   const [sourceUrl, setSourceUrl] = useState("");
@@ -53,9 +72,17 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
 
   const saveRating = useCallback(
     async (nextRating: CourseFeedbackRating) => {
-      if (!courseKey || isSavingRating) return;
+      if (!courseKey) return;
 
-      const nextValue = rating === nextRating ? null : nextRating;
+      const nextValue = nextRating;
+      setRating(nextValue);
+      setWrittenFeedbackRating(nextValue);
+      setWrittenFeedbackText("");
+      setWrittenFeedbackMagnitude(null);
+      setWrittenFeedbackStatus("");
+      setIsWrittenFeedbackOpen(true);
+      setFeedbackPulse(null);
+      window.requestAnimationFrame(() => setFeedbackPulse(nextValue));
       setIsSavingRating(true);
       setStatus("Saving feedback...");
 
@@ -65,27 +92,28 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
           course_title: courseTitle,
           rating: nextValue,
         });
-        setRating(saved.rating ?? null);
+        setRating(saved.rating ?? nextValue);
         setStatus("Feedback saved.");
-        if (nextValue) {
-          setWrittenFeedbackRating(nextValue);
-          setWrittenFeedbackText("");
-          setWrittenFeedbackStatus("");
-          setIsWrittenFeedbackOpen(true);
-        }
       } catch {
         setStatus("Feedback could not be saved yet.");
       } finally {
         setIsSavingRating(false);
       }
     },
-    [courseKey, courseTitle, isSavingRating, rating],
+    [courseKey, courseTitle],
   );
 
   const submitWrittenFeedback = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!courseKey || !writtenFeedbackRating || !writtenFeedbackText.trim() || isSavingWrittenFeedback) return;
+    if (
+      !courseKey ||
+      !writtenFeedbackRating ||
+      (!writtenFeedbackText.trim() && writtenFeedbackMagnitude === null) ||
+      isSavingWrittenFeedback
+    ) {
+      return;
+    }
 
     setIsSavingWrittenFeedback(true);
     setWrittenFeedbackStatus("Saving feedback...");
@@ -95,9 +123,11 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
         course_key: courseKey,
         course_title: courseTitle,
         rating: writtenFeedbackRating,
-        feedback_text: writtenFeedbackText.trim(),
+        feedback_text: writtenFeedbackText.trim() || null,
+        feedback_magnitude: writtenFeedbackMagnitude,
       });
       setWrittenFeedbackText("");
+      setWrittenFeedbackMagnitude(null);
       setWrittenFeedbackStatus("Feedback saved.");
       setIsWrittenFeedbackOpen(false);
     } catch {
@@ -137,9 +167,11 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
     <>
       <button
         type="button"
-        className={`nav-button course-feedback-nav-button ${rating === "up" ? "course-feedback-nav-button--liked" : ""}`}
+        className={`nav-button course-feedback-nav-button ${rating === "up" ? "course-feedback-nav-button--liked" : ""} ${
+          feedbackPulse === "up" ? "course-feedback-nav-button--pulse" : ""
+        }`}
         onClick={() => saveRating("up")}
-        disabled={!courseKey || isSavingRating}
+        disabled={!courseKey}
         aria-pressed={rating === "up"}
         aria-label="This course is useful"
       >
@@ -147,9 +179,11 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
       </button>
       <button
         type="button"
-        className={`nav-button course-feedback-nav-button ${rating === "down" ? "course-feedback-nav-button--disliked" : ""}`}
+        className={`nav-button course-feedback-nav-button ${rating === "down" ? "course-feedback-nav-button--disliked" : ""} ${
+          feedbackPulse === "down" ? "course-feedback-nav-button--pulse" : ""
+        }`}
         onClick={() => saveRating("down")}
-        disabled={!courseKey || isSavingRating}
+        disabled={!courseKey}
         aria-pressed={rating === "down"}
         aria-label="This course needs work"
       >
@@ -168,13 +202,34 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
 
       <Modal
         isOpen={isWrittenFeedbackOpen}
-        title={writtenFeedbackRating === "down" ? "What can be better?" : "What did you like?"}
-        eyebrow="Optional feedback"
+        title="Optional feedback"
         labelledById="course-written-feedback-title"
         size="md"
         onClose={() => setIsWrittenFeedbackOpen(false)}
       >
         <form className="course-source-form" onSubmit={submitWrittenFeedback}>
+          {writtenFeedbackRating && (
+            <fieldset className="course-feedback-magnitude-group">
+              <legend className="course-feedback-sr-only">Feedback strength</legend>
+              <div className="course-feedback-magnitude-row">
+                {feedbackMagnitudeOptions[writtenFeedbackRating].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`course-feedback-magnitude-option ${
+                      writtenFeedbackMagnitude === option.value ? `course-feedback-magnitude-option-selected course-feedback-magnitude-option-selected-${writtenFeedbackRating}` : ""
+                    }`}
+                    onClick={() => setWrittenFeedbackMagnitude(option.value)}
+                    disabled={isSavingWrittenFeedback}
+                    aria-pressed={writtenFeedbackMagnitude === option.value}
+                    aria-label={option.label}
+                  >
+                    <span aria-hidden="true">{option.emoji}</span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
           <label>
             <span>{writtenFeedbackRating === "down" ? "What should improve?" : "What worked well?"}</span>
             <textarea
@@ -187,8 +242,8 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
           </label>
           <div className="course-source-form-footer">
             {writtenFeedbackStatus && <p>{writtenFeedbackStatus}</p>}
-            <button type="submit" disabled={!writtenFeedbackText.trim() || isSavingWrittenFeedback}>
-              {isSavingWrittenFeedback ? "Saving" : "Save feedback"}
+            <button type="submit" disabled={(!writtenFeedbackText.trim() && writtenFeedbackMagnitude === null) || isSavingWrittenFeedback}>
+              {isSavingWrittenFeedback ? "Sending" : "Send Feedback"}
             </button>
           </div>
         </form>

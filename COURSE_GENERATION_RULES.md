@@ -214,6 +214,20 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - `media`: source-backed video coverage when reputable video material is available.
 - `specificity`: detection of placeholder prose, prompt-like instructions, repeated template titles, and generic course filler.
 
+## Course Health Loop
+
+- Treat course health as the shared review surface for learner feedback, source suggestions, deterministic quality evals, validation findings, and reviewer actions.
+- Keep course-health data separate from course JSON. Course JSON is the learning artifact; health data is operational review evidence.
+- Learner feedback records may include the latest rating, rating events, optional written feedback, feedback magnitude, source suggestions, and update timestamps.
+- Store `feedback_magnitude` as a structured 1-3 signal. Emoji are UI presentation only and should not be used as stored contract data.
+- Course health status should use `unknown`, `healthy`, `watch`, or `needs_review`.
+- `unknown` means there is not enough feedback or eval evidence yet.
+- `healthy` means current signals are positive and no obvious review trigger is present.
+- `watch` means feedback, source suggestions, or quality findings should be reviewed but do not necessarily block the course.
+- `needs_review` means negative feedback, failed gates, unresolved source problems, or poor evals should block publishing or trigger revision.
+- Source suggestions should become review tasks before being accepted into central source records.
+- Future eval work should write into the same course-health surface rather than creating disconnected dashboards.
+
 ## Generation Log Retention
 
 - Keep full generation job logs in a small ring buffer.
