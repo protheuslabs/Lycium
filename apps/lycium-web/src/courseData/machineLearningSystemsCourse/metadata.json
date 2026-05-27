@@ -3,6 +3,7 @@
   "shortDescription": "A 14-week systems course on building, scaling, evaluating, and operating production machine learning systems.",
   "difficultyLevel": "Advanced undergraduate",
   "category": "computing-information-sciences",
+  "department": "artificial-intelligence",
   "tags": [
     "machine-learning",
     "artificial-intelligence",

@@ -3,7 +3,7 @@ import type { FormEvent, KeyboardEvent, MouseEvent } from "react";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
 import Dropdown from "../Dropdown/Dropdown";
 import type { CourseEntry } from "../../courseTypes";
-import { getCourseCategoryLabel } from "../../courseData/courseTaxonomy";
+import { courseCategories, getCourseCategoryDepartments, getCourseCategoryLabel } from "../../courseData/courseTaxonomy";
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
 import CatalogCourseCard from "./CatalogCourseCard";
 import CatalogPagination from "./CatalogPagination";
@@ -32,7 +32,11 @@ type CourseCatalogProps = {
   generateMessage: string;
   onPromptChange: (value: string) => void;
   onLevelChange: (value: string) => void;
-  onGenerateCourse: (event: FormEvent<HTMLFormElement>, sourceLinks: string[]) => void;
+  onGenerateCourse: (
+    event: FormEvent<HTMLFormElement>,
+    sourceLinks: string[],
+    classification: { category: string; department: string },
+  ) => void;
   onOpenCourse: (course: CourseEntry) => void;
   onPublishCourse: (course: CourseEntry) => void;
   publishingCourseKey: string | null;
@@ -59,12 +63,22 @@ export default function CourseCatalog({
   const [infoCourse, setInfoCourse] = useState<CourseEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [collegeFilter, setCollegeFilter] = useState("all");
+  const [createCollege, setCreateCollege] = useState("");
+  const [createDepartment, setCreateDepartment] = useState("");
   const [sortMode, setSortMode] = useState<CatalogSortMode>("college");
   const [catalogPage, setCatalogPage] = useState(1);
   const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE - 1);
   const courseGridRef = useRef<HTMLDivElement | null>(null);
   const isGeneratingCourse = generateStatus === "loading";
   const generatingCourseTitle = getGeneratingCourseTitle(prompt);
+  const createCollegeOptions = useMemo(
+    () => courseCategories.map((category) => ({ value: category.id, label: category.label })),
+    [],
+  );
+  const createDepartmentOptions = useMemo(
+    () => getCourseCategoryDepartments(createCollege).map((department) => ({ value: department.id, label: department.label })),
+    [createCollege],
+  );
 
   const collegeOptions = useMemo(() => {
     const categories = new Map<string, string>();
@@ -173,6 +187,11 @@ export default function CourseCatalog({
     setCatalogPage(1);
   };
 
+  const handleCreateCollegeChange = (value: string) => {
+    setCreateCollege(value);
+    setCreateDepartment("");
+  };
+
   const handleCreateCardKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -185,7 +204,7 @@ export default function CourseCatalog({
   };
 
   const handleCreateSubmit = (event: FormEvent<HTMLFormElement>) => {
-    if (!canCreateCourse) {
+    if (!canCreateCourse || !createCollege || !createDepartment) {
       event.preventDefault();
       return;
     }
@@ -193,6 +212,7 @@ export default function CourseCatalog({
     onGenerateCourse(
       event,
       sourceLinks.map((link) => link.trim()).filter(Boolean),
+      { category: createCollege, department: createDepartment },
     );
     setIsCreateModalOpen(false);
   };
@@ -207,7 +227,7 @@ export default function CourseCatalog({
               <span className="catalog-control-label">Search courses</span>
               <input
                 type="search"
-                placeholder="Search names and tags"
+                placeholder="Search names, tags, and departments"
                 value={searchQuery}
                 onChange={(event) => handleSearchQueryChange(event.target.value)}
               />
@@ -296,8 +316,14 @@ export default function CourseCatalog({
           generateStatus={generateStatus}
           generateMessage={generateMessage}
           levelOptions={CATALOG_LEVEL_OPTIONS}
+          college={createCollege}
+          department={createDepartment}
+          collegeOptions={createCollegeOptions}
+          departmentOptions={createDepartmentOptions}
           onPromptChange={onPromptChange}
           onLevelChange={onLevelChange}
+          onCollegeChange={handleCreateCollegeChange}
+          onDepartmentChange={setCreateDepartment}
           onSourceLinkChange={handleSourceLinkChange}
           onAddSourceLink={() => setSourceLinks((currentLinks) => [...currentLinks, ""])}
           onSubmit={handleCreateSubmit}

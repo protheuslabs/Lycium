@@ -1,0 +1,62 @@
+.source-reference-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.source-reference-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.source-reference-list .source-reference-toggle.lycium-button {
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.source-add-button.lycium-button {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+}
+
+.source-add-button svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
+}
+
+.source-reference-toggle svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 160ms ease;
+}
+
+.source-reference-toggle-expanded svg {
+  transform: rotate(-90deg);
+}
+
+.source-reference-toggle:focus,
+.source-reference-toggle:focus-visible {
+  outline: none;
+}
+
+.source-reference-index {
+  display: inline-block;
+  margin-right: 0.45rem;
+  color: #4a6cf7;
+  font-weight: 850;
+}

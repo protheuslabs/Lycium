@@ -3,6 +3,7 @@
   "shortDescription": "A practical first course in Python syntax, data structures, functions, control flow, and problem-solving habits.",
   "difficultyLevel": "Introductory",
   "category": "computing-information-sciences",
+  "department": "computer-science",
   "tags": [
     "python",
     "programming",

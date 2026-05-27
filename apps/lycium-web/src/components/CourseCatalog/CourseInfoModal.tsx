@@ -1,5 +1,5 @@
 import type { CourseEntry } from "../../courseTypes";
-import { getCourseCategoryLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
+import { getCourseCategoryLabel, getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
 import Modal from "../Modal/Modal";
 
 type CourseInfoModalProps = {
@@ -28,8 +28,12 @@ export default function CourseInfoModal({ course, onClose }: CourseInfoModalProp
             <strong>{course.data.difficultyLevel ?? "Not set"}</strong>
           </article>
           <article>
-            <span>Category</span>
+            <span>College</span>
             <strong>{getCourseCategoryLabel(course.data.category)}</strong>
+          </article>
+          <article>
+            <span>Department</span>
+            <strong>{getCourseDepartmentLabel(course.data.category, course.data.department)}</strong>
           </article>
         </div>
         <section className="course-info-section">

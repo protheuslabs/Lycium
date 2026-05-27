@@ -1,5 +1,5 @@
 import type { CourseEntry } from "../../courseTypes";
-import { getCourseTagLabels } from "../../courseData/courseTaxonomy";
+import { getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
 
 export type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
@@ -83,10 +83,18 @@ export function getCourseSearchScore(course: CourseEntry, query: string): number
     (total, tag) => total + scoreSearchField(tag, query, 6),
     0,
   );
+  const departmentScore = [
+    course.data.department,
+    course.data.department ? getCourseDepartmentLabel(course.data.category, course.data.department) : undefined,
+    ...(course.data.courseEquivalencies ?? []).flatMap((equivalency) => [
+      equivalency.department,
+      equivalency.courseCode,
+    ]),
+  ].reduce((total, field) => total + scoreSearchField(field, query, 6), 0);
   const titleScore = scoreSearchField(course.title, query, 10) + scoreSearchField(course.data.title, query, 10);
   const descriptionScore = scoreSearchField(course.data.shortDescription, query, 2);
 
-  return titleScore + tagScore + descriptionScore;
+  return titleScore + tagScore + departmentScore + descriptionScore;
 }
 
 function compareCourseTitles(a: CourseEntry, b: CourseEntry): number {

@@ -3,6 +3,7 @@
   "shortDescription": "A beginner-friendly introduction to AI ideas, model behavior, ethical tradeoffs, and how intelligent systems are used.",
   "difficultyLevel": "Introductory undergraduate",
   "category": "computing-information-sciences",
+  "department": "artificial-intelligence",
   "tags": [
     "artificial-intelligence",
     "machine-learning",

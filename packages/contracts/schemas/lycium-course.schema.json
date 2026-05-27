@@ -10,6 +10,7 @@
     "shortDescription": { "type": "string", "minLength": 1 },
     "difficultyLevel": { "type": "string" },
     "category": { "type": "string" },
+    "department": { "type": "string" },
     "tags": { "type": "array", "items": { "type": "string" } },
     "learningTypes": { "type": "array", "items": { "type": "string" } },
     "orderMandatory": { "type": "boolean" },

@@ -172,6 +172,7 @@ export type LyciumCourseData = {
   shortDescription?: string;
   difficultyLevel?: string;
   category?: string;
+  department?: string;
   tags?: string[];
   learningTypes?: string[];
   courseEquivalencies?: LyciumCourseEquivalency[];
@@ -359,6 +360,8 @@ export type LyciumCourseGenerationRequest = {
   source_policy?: string;
   free_only?: boolean;
   trust_min?: number;
+  category?: string;
+  department?: string;
   desired_module_count?: number;
   expected_duration_minutes?: number;
   source_urls?: string[];

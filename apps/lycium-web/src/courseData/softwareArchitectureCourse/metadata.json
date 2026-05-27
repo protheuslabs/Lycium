@@ -3,6 +3,7 @@
   "shortDescription": "A 14-week architecture course on viewpoints, quality attributes, design decisions, evaluation, and documentation.",
   "difficultyLevel": "Upper-division undergraduate",
   "category": "computing-information-sciences",
+  "department": "software-engineering",
   "tags": [
     "software-architecture",
     "software-engineering",

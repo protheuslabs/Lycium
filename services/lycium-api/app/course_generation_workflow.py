@@ -7,6 +7,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from app.course_agent_contract import validate_course_contract
+from app.course_taxonomy import validate_course_taxonomy
 from app.course_quality_evals import run_course_quality_evals
 
 
@@ -186,12 +187,13 @@ def _gate_source_enrichment(course: dict[str, Any]) -> GateResult:
 
 def _gate_classification(course: dict[str, Any]) -> GateResult:
     issues: list[GateIssue] = []
-    if not str(course.get("category") or "").strip():
-        issues.append(_issue("warning", "Course should be assigned to a college or school category.", "category"))
+    for error in validate_course_taxonomy(course):
+        location = "department" if "department" in error else "category"
+        issues.append(_issue("error", error, location))
     tags = course.get("tags")
     if not isinstance(tags, list) or not any(isinstance(tag, str) and tag.strip() for tag in tags):
         issues.append(_issue("warning", "Course should include searchable tags.", "tags"))
-    return _gate("classification", "College/school category and searchable tags were checked.", issues)
+    return _gate("classification", "College/school category, department, and searchable tags were checked.", issues)
 
 
 def _gate_scope(course: dict[str, Any]) -> GateResult:

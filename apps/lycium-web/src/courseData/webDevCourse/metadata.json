@@ -3,6 +3,7 @@
   "shortDescription": "A college-style web development course covering HTML, CSS, JavaScript, accessibility, APIs, and full-stack project practice.",
   "difficultyLevel": "Introductory undergraduate",
   "category": "computing-information-sciences",
+  "department": "computer-science",
   "tags": [
     "web-development",
     "programming",

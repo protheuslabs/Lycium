@@ -210,6 +210,8 @@ def run_agent_course_generation_job(job_id: int) -> None:
             level=payload.get("level"),
             language=str(payload.get("language") or "en"),
             source_policy=str(payload.get("source_policy") or "balanced"),
+            category=payload.get("category"),
+            department=payload.get("department"),
             desired_module_count=int(payload.get("desired_module_count") or 3),
             expected_duration_minutes=int(payload.get("expected_duration_minutes") or 180),
             model=payload.get("model") or agent_profile.get("model"),

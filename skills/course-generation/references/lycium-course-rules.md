@@ -91,9 +91,10 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 
 ## Required Course Shape
 
-- Course JSON must contain `title`, optional `shortDescription`, optional `difficultyLevel`, optional `category`, optional `tags`, optional `learningTypes`, optional `courseEquivalencies`, optional `orderMandatory`, optional `prerequisites`, optional `metadata`, optional `sourceIds`, and `modules`.
+- Course JSON must contain `title`, optional `shortDescription`, optional `difficultyLevel`, optional `category`, optional `department`, optional `tags`, optional `learningTypes`, optional `courseEquivalencies`, optional `orderMandatory`, optional `prerequisites`, optional `metadata`, optional `sourceIds`, and `modules`.
 - Generated courses should include `shortDescription`: a concise one-sentence course summary for catalog cards, ideally 80-160 characters.
-- Use `category` for one broad university-style college or school category, and `tags` for more specific subject labels.
+- Use `category` for one broad university-style college or school category, then choose `department` only from the departments nested under that selected category. Use `tags` for more specific subject labels.
+- Classify by the course's primary learning domain, learner purpose, and program role. Do not mechanically map `courseEquivalencies[].department` into top-level `category` or `department`; parity records are reference metadata and may describe a service department, cross-listed analogue, or catalog source rather than the best Lycium catalog home.
 - Keep `learningTypes` as an array. Leave it empty until learning-type support is implemented.
 - Use `courseEquivalencies` for college catalog parity references while keeping the Lycium course title independent.
 - Use `prerequisites` for course, competency, assessment, program, or external prerequisites.

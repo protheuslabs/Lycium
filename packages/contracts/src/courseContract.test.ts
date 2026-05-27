@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import Ajv2020 from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
-import { validateCourseEntry } from "./course";
+import { validateCourseEntry, validateCourseTaxonomy } from "./course";
 import type { LyciumCourseData, LyciumCourseEntry } from "./course";
 
 function readFixture<T>(name: string): T {
@@ -67,6 +67,15 @@ describe("Lycium contract fixtures", () => {
     expect(validateCourseEntry(entry, { requireSources: true }).errors).toContain(
       "module 1 section 1 mixes quiz blocks with non-quiz content.",
     );
+  });
+
+  it("rejects departments that are not nested under the selected category", () => {
+    expect(
+      validateCourseTaxonomy({
+        category: "natural-sciences-mathematics",
+        department: "software-engineering",
+      }),
+    ).toContain('Course department "software-engineering" is not in category "natural-sciences-mathematics".');
   });
 
   it.each([

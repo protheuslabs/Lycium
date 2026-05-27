@@ -39,7 +39,8 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 - `intake`: parse the prompt, links, files, level, goals, constraints, and intended course type.
 - `source_analysis`: inspect provided sources and extract topics, claims, examples, media, exercises, prerequisites, and source metadata.
 - `source_enrichment`: add reputable supplemental sources when coverage is weak.
-- `classification`: assign college/school category, department metadata when available, tags, difficulty, parity metadata, and prerequisites.
+- `classification`: assign college/school category, selected department metadata, tags, difficulty, parity metadata, and prerequisites.
+  Select the college/category first, then select the department only from the departments nested under that college/category. Classify by the course's primary learning domain, learner purpose, and program role. Do not mechanically map `courseEquivalencies[].department` into top-level `category` or `department`; parity records are reference metadata and may describe a service department, cross-listed analogue, or catalog source rather than the best Lycium catalog home.
 - `scope`: define audience, outcomes, duration, exclusions, workload, assessment model, and `Module` vs `Week` pacing.
 - `module_structure`: create the module/week arc and make each module serve a distinct role.
 - `section_structure`: create Learn and Apply sections, keeping instruction and assessment separate.
@@ -102,7 +103,8 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `shortDescription`: a concise one-sentence course summary used on catalog cards, ideally 80-160 characters.
 - `difficultyLevel`: a learner-facing difficulty label used in course info modals.
 - `category`: one broad university-style college or school category.
-- `department`: optional future-facing department classification nested under the selected college; department taxonomy data is organizational and is not currently a catalog dropdown filter.
+- `department`: selected department classification nested under the selected college; generated courses should preserve the chosen department exactly and catalog search should include it. A department should not be used unless it belongs to the selected `category`.
+- `courseEquivalencies[].department`: parity/reference department text only; do not treat it as the authoritative catalog classification when it conflicts with the course's primary subject, audience, or program role.
 - `tags`: specific subject labels that are narrower than the category.
 - `learningTypes`: an array reserved for future course modality metadata; leave empty for now.
 - `courseEquivalencies`: optional real or representative college catalog parity records.

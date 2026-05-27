@@ -4,6 +4,7 @@ import re
 from typing import Any
 
 from app.contract_validation import validate_course_schema
+from app.course_taxonomy import validate_course_taxonomy
 
 
 def _slug(value: str, fallback: str) -> str:
@@ -106,6 +107,7 @@ def validate_course_contract(course: dict[str, Any]) -> list[str]:
         errors.append("Course is missing title.")
     if not isinstance(course.get("shortDescription"), str) or not course["shortDescription"].strip():
         errors.append("Course is missing shortDescription.")
+    errors.extend(validate_course_taxonomy(course))
 
     modules = course.get("modules")
     if not isinstance(modules, list) or not modules:

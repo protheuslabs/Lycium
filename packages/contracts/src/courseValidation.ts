@@ -8,6 +8,7 @@ import type {
   LyciumCourseValidationResult,
   LyciumSourceRecordLike,
 } from "./courseTypes";
+import { isCourseCategoryId, isCourseDepartmentInCategory } from "./courseTaxonomy";
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -227,6 +228,31 @@ function validateModule(
   );
 }
 
+export function validateCourseTaxonomy(course: Pick<LyciumCourseData, "category" | "department">): string[] {
+  const errors: string[] = [];
+
+  if (!isNonEmptyString(course.category)) {
+    errors.push("Course category is missing.");
+    return errors;
+  }
+
+  if (!isCourseCategoryId(course.category)) {
+    errors.push(`Course category "${course.category}" is not in the taxonomy.`);
+    return errors;
+  }
+
+  if (!isNonEmptyString(course.department)) {
+    errors.push("Course department is missing.");
+    return errors;
+  }
+
+  if (!isCourseDepartmentInCategory(course.category, course.department)) {
+    errors.push(`Course department "${course.department}" is not in category "${course.category}".`);
+  }
+
+  return errors;
+}
+
 export function validateLyciumCourseEntry(
   courseEntry: LyciumCourseEntry,
   options: LyciumCourseValidationOptions = {},
@@ -244,6 +270,8 @@ export function validateLyciumCourseEntry(
   if (!isNonEmptyString(course.shortDescription)) {
     errors.push("Course is missing shortDescription.");
   }
+
+  errors.push(...validateCourseTaxonomy(course));
 
   if (!Array.isArray(course.modules) || course.modules.length === 0) {
     errors.push("Course must include at least one module.");

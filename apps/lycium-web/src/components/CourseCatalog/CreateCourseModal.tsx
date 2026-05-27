@@ -16,8 +16,14 @@ type CreateCourseModalProps = {
   generateStatus: "idle" | "loading" | "error" | "success";
   generateMessage: string;
   levelOptions: SelectOption[];
+  college: string;
+  department: string;
+  collegeOptions: SelectOption[];
+  departmentOptions: SelectOption[];
   onPromptChange: (value: string) => void;
   onLevelChange: (value: string) => void;
+  onCollegeChange: (value: string) => void;
+  onDepartmentChange: (value: string) => void;
   onSourceLinkChange: (index: number, value: string) => void;
   onAddSourceLink: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -33,14 +39,23 @@ export default function CreateCourseModal({
   generateStatus,
   generateMessage,
   levelOptions,
+  college,
+  department,
+  collegeOptions,
+  departmentOptions,
   onPromptChange,
   onLevelChange,
+  onCollegeChange,
+  onDepartmentChange,
   onSourceLinkChange,
   onAddSourceLink,
   onSubmit,
   onOpenSettings,
   onClose,
 }: CreateCourseModalProps) {
+  const canSubmitCourse =
+    canCreateCourse && Boolean(prompt.trim()) && Boolean(college) && Boolean(department) && generateStatus !== "loading";
+
   return (
     <Modal
       isOpen
@@ -107,6 +122,31 @@ export default function CreateCourseModal({
                 disabled={!canCreateCourse}
               />
             </label>
+            <label className="create-course-field">
+              <span>College</span>
+              <Dropdown
+                className="create-course-dropdown"
+                value={college}
+                options={collegeOptions}
+                onChange={onCollegeChange}
+                ariaLabel="College"
+                disabled={!canCreateCourse}
+                placeholder="Select college"
+              />
+            </label>
+            <label className="create-course-field">
+              <span>Department</span>
+              <Dropdown
+                className="create-course-dropdown"
+                value={department}
+                options={departmentOptions}
+                onChange={onDepartmentChange}
+                ariaLabel="Department"
+                disabled={!canCreateCourse || !college}
+                emptyLabel="Select a college first"
+                placeholder={college ? "Select department" : "Select college first"}
+              />
+            </label>
             <div className="create-course-files" aria-label="Add files placeholder">
               <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                 <path d="M7.5 18.5a5 5 0 0 1 0-7.07l6.72-6.72a3.5 3.5 0 0 1 4.95 4.95l-7.08 7.07a2 2 0 0 1-2.83-2.83l6.37-6.36a1 1 0 1 1 1.41 1.41l-6.36 6.37 1.41 1.41 7.07-7.07a5.5 5.5 0 0 0-7.78-7.78l-6.72 6.72a7 7 0 0 0 9.9 9.9l5.31-5.3a1 1 0 0 0-1.42-1.42l-5.3 5.31a5 5 0 0 1-7.07 0Z" />
@@ -116,7 +156,7 @@ export default function CreateCourseModal({
                 <span>File uploads are coming soon.</span>
               </div>
             </div>
-            <button className="create-course-submit" type="submit" disabled={!canCreateCourse || !prompt.trim() || generateStatus === "loading"}>
+            <button className="create-course-submit" type="submit" disabled={!canSubmitCourse}>
               {generateStatus === "loading" ? "Generating..." : "Create course"}
             </button>
             {generateMessage && <p className={`generator-status generator-status-${generateStatus}`}>{generateMessage}</p>}

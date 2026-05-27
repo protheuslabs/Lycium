@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent, MouseEvent } from "react";
+import type { MouseEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import ContentView from "./components/ContentView/ContentView";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
@@ -12,6 +12,7 @@ import { localCourses } from "./courseData/localCourses";
 import sourceRecordsData from "./courseData/sourceRecords";
 import type { CourseEntry, CourseSection } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
+import { useCourseGenerationActions } from "./hooks/useCourseGenerationActions";
 import { useCourseProgressState } from "./hooks/useCourseProgressState";
 import { API_BASE, browserStorage, localApiSyncEnabled, lyciumApi, repositorySet, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "./utils/courseValidation";
@@ -40,9 +41,6 @@ function App() {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [prompt, setPrompt] = useState("");
   const [level, setLevel] = useState("");
-  const [generateStatus, setGenerateStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
-  const [generateMessage, setGenerateMessage] = useState("");
-  const [publishingCourseKey, setPublishingCourseKey] = useState<string | null>(null);
   const [learnerId, setLearnerId] = useState<number | null>(null);
   const [currentPath, setCurrentPath] = useState(() => pathname ?? COURSE_CATALOG_PATH);
   const [pageBehindSettingsPath, setPageBehindSettingsPath] = useState(() => {
@@ -241,94 +239,21 @@ function App() {
     }
   }, [pushSectionPath, sections, selectedCourse]);
 
-  const handleGenerateCourse = async (evt: FormEvent<HTMLFormElement>, sourceLinks: string[] = []) => {
-    evt.preventDefault();
-    if (!prompt.trim()) return;
-    setGenerateStatus("loading");
-    setGenerateMessage("Starting course generation...");
 
-    try {
-      let job = await lyciumApi.createCourseGenerationJob({
-        prompt,
-        learner_id: learnerId ?? undefined,
-        level: level || undefined,
-        source_policy: "balanced",
-        desired_module_count: 12,
-        expected_duration_minutes: 2700,
-        source_urls: sourceLinks,
-      });
-      while (job.status === "queued" || job.status === "running") {
-        const percent = Math.round((job.progress ?? 0) * 100);
-        setGenerateMessage(`${percent}% · ${job.message || job.current_stage || "Generating course..."}`);
-        await new Promise((resolve) => window.setTimeout(resolve, 2500));
-        job = await lyciumApi.getCourseGenerationJob(job.id);
-      }
-
-      if (job.status === "failed") {
-        throw new Error(job.error || job.message || "Course generation failed.");
-      }
-
-      const generatedSnapshot = job.course_snapshot;
-      if (!generatedSnapshot?.structure) {
-        throw new Error("Course generation finished without a ready course snapshot.");
-      }
-
-      const entry: CourseEntry = {
-        key: `remote-${generatedSnapshot.id}`,
-        title: generatedSnapshot.title,
-        data: generatedSnapshot.structure,
-        snapshotId: Number(generatedSnapshot.id),
-        source: "remote",
-        status: generatedSnapshot.status,
-      };
-      const validation = validateCourseEntry(entry, {
-        centralSourceRecords: sourceRecordsData.sources,
-        requireSources: true,
-      });
-      if (!validation.valid) {
-        throw new Error(`Generated course failed validation: ${formatCourseValidationErrors(validation.errors)}`);
-      }
-      setCourses((prev) => [entry, ...prev]);
-      setPrompt("");
-      setGenerateStatus("success");
-      setGenerateMessage("Course generated and ready for review.");
-      openCourseByEntry(entry);
-    } catch (err) {
-      console.warn("Course generation failed:", err);
-      setGenerateStatus("error");
-      setGenerateMessage(err instanceof Error ? err.message : "Course generation failed. Is the API running?");
-    }
-  };
-
-  const handlePublishCourse = useCallback(async (course: CourseEntry) => {
-    if (!course.snapshotId) return;
-    setPublishingCourseKey(course.key);
-    try {
-      const publishedCourse = await lyciumApi.publishCourse(course.snapshotId);
-      const entry: CourseEntry = {
-        key: `remote-${publishedCourse.id}`,
-        title: publishedCourse.title,
-        data: publishedCourse.structure,
-        snapshotId: Number(publishedCourse.id),
-        source: "remote",
-        status: publishedCourse.status,
-      };
-      const validation = validateCourseEntry(entry, {
-        centralSourceRecords: sourceRecordsData.sources,
-        requireSources: true,
-      });
-      if (!validation.valid) {
-        throw new Error(`Published course failed validation: ${formatCourseValidationErrors(validation.errors)}`);
-      }
-      setCourses((prev) => prev.map((current) => (current.key === course.key ? entry : current)));
-    } catch (err) {
-      console.warn("Course publish failed:", err);
-      setGenerateStatus("error");
-      setGenerateMessage(err instanceof Error ? err.message : "Course publish failed.");
-    } finally {
-      setPublishingCourseKey(null);
-    }
-  }, []);
+const {
+  generateStatus,
+  generateMessage,
+  publishingCourseKey,
+  handleGenerateCourse,
+  handlePublishCourse,
+} = useCourseGenerationActions({
+  prompt,
+  level,
+  learnerId,
+  setCourses,
+  setPrompt,
+  openCourseByEntry,
+});
 
   useEffect(() => {
     if (pathname) {
