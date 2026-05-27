@@ -434,7 +434,7 @@ html[data-theme="light"] .source-reference-list a {
   align-items: center;
   gap: 0.45rem;
   margin-bottom: 0.85rem;
-  padding-inline: 1rem;
+  padding-inline: 0.5rem;
 }
 
 .source-reference-toggle svg {

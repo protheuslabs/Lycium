@@ -8,8 +8,8 @@ export type ConceptSpec = {
 export type LessonTopicSpec = {
   title: string;
   description: string;
-  example: string;
-  practice: string;
+  example?: string;
+  practice?: string;
   concepts: ConceptSpec[];
   sourceIds?: string[];
   videoSourceIds?: string[];
@@ -73,6 +73,19 @@ function makeQuizQuestions(moduleIndex: number, concepts: ConceptSpec[], courseP
   }));
 }
 
+function makeWorkedExample(moduleSpec: FullCourseModuleSpec, topic: LessonTopicSpec) {
+  const primaryConcept = topic.concepts[0]?.name ?? topic.title;
+  const supportingConcept = topic.concepts[1]?.name ?? moduleSpec.title;
+
+  return `Worked example: apply ${primaryConcept} to the module studio task. First identify the concrete situation, then name the relevant inputs, constraints, and expected result. Use ${supportingConcept} to explain what would change if the task, user, or environment changed.`;
+}
+
+function makePractice(moduleSpec: FullCourseModuleSpec, topic: LessonTopicSpec) {
+  const conceptNames = topic.concepts.map((concept) => concept.name).join(", ") || topic.title;
+
+  return `Practice: write a short response that defines ${conceptNames}, connects the ideas to "${moduleSpec.studio}", and names one decision a learner or practitioner would make differently after understanding this topic.`;
+}
+
 export function buildFullCourseModules({ coursePrefix, pacingLabel, moduleSpecs, defaultSourceIds }: BuildFullCourseModulesOptions): CourseModule[] {
   return moduleSpecs.map((moduleSpec, moduleIndex) => {
     const moduleNumber = moduleIndex + 1;
@@ -104,12 +117,12 @@ export function buildFullCourseModules({ coursePrefix, pacingLabel, moduleSpecs,
           withSourceIds({
             type: "text",
             heading: "Worked example",
-            value: topic.example,
+            value: topic.example ?? makeWorkedExample(moduleSpec, topic),
           }, topicSourceIds),
           withSourceIds({
             type: "text",
             heading: "Practice",
-            value: topic.practice,
+            value: topic.practice ?? makePractice(moduleSpec, topic),
           }, topicSourceIds),
           withSourceIds({
             type: "conceptCards",
