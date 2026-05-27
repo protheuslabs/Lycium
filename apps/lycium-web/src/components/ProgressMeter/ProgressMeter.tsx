@@ -1,4 +1,5 @@
 import { memo } from "react";
+import ProgressBar from "../ProgressBar/ProgressBar";
 
 type ProgressMeterProps = {
   progressPercentage: number;
@@ -45,16 +46,7 @@ function ProgressMeter({ progressPercentage, viewedPercentage, cacheKey }: Progr
 
   return (
     <div className="progress-meter">
-      <div className="progress-bar">
-        <div
-          className="progress-bar-viewed-fill"
-          style={{ transition: valuesChanged ? undefined : "none", width: `${displayValues.viewed}%` }}
-        />
-        <div
-          className="progress-bar-fill"
-          style={{ transition: valuesChanged ? undefined : "none", width: `${displayValues.complete}%` }}
-        />
-      </div>
+      <ProgressBar complete={displayValues.complete} viewed={displayValues.viewed} animate={valuesChanged} />
       <p className="progress-percentage">
         {Math.round(displayValues.complete)}% complete · {Math.round(displayValues.viewed)}% viewed
       </p>

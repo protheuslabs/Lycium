@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import Button from "../Button/Button";
+import FeedbackControl from "../FeedbackControl/FeedbackControl";
 import Modal from "../Modal/Modal";
 import { lyciumApi } from "../../runtime/appRuntime";
 import "./CourseFeedback.css";
@@ -165,39 +167,14 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
 
   return (
     <>
-      <button
-        type="button"
-        className={`nav-button course-feedback-nav-button ${rating === "up" ? "course-feedback-nav-button--liked" : ""} ${
-          feedbackPulse === "up" ? "course-feedback-nav-button--pulse" : ""
-        }`}
-        onClick={() => saveRating("up")}
+      <FeedbackControl
+        rating={rating}
+        pulse={feedbackPulse}
         disabled={!courseKey}
-        aria-pressed={rating === "up"}
-        aria-label="This course is useful"
-      >
-        <ThumbsUpIcon />
-      </button>
-      <button
-        type="button"
-        className={`nav-button course-feedback-nav-button ${rating === "down" ? "course-feedback-nav-button--disliked" : ""} ${
-          feedbackPulse === "down" ? "course-feedback-nav-button--pulse" : ""
-        }`}
-        onClick={() => saveRating("down")}
-        disabled={!courseKey}
-        aria-pressed={rating === "down"}
-        aria-label="This course needs work"
-      >
-        <ThumbsDownIcon />
-      </button>
-      <button
-        type="button"
-        className="nav-button course-feedback-nav-button"
-        onClick={() => setIsSourceModalOpen(true)}
-        disabled={!courseKey}
-        aria-label="Suggest a new course source"
-      >
-        <GlobeIcon />
-      </button>
+        onLike={() => saveRating("up")}
+        onDislike={() => saveRating("down")}
+        onSuggestSource={() => setIsSourceModalOpen(true)}
+      />
       {status && <span className="course-feedback-status" aria-live="polite">{status}</span>}
 
       <Modal
@@ -242,9 +219,9 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
           </label>
           <div className="course-source-form-footer">
             {writtenFeedbackStatus && <p>{writtenFeedbackStatus}</p>}
-            <button type="submit" disabled={(!writtenFeedbackText.trim() && writtenFeedbackMagnitude === null) || isSavingWrittenFeedback}>
+            <Button type="submit" variant="standard" disabled={(!writtenFeedbackText.trim() && writtenFeedbackMagnitude === null) || isSavingWrittenFeedback}>
               {isSavingWrittenFeedback ? "Sending" : "Send Feedback"}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
@@ -281,39 +258,12 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
           </label>
           <div className="course-source-form-footer">
             {sourceStatus && <p>{sourceStatus}</p>}
-            <button type="submit" disabled={!sourceUrl.trim() || isSavingSource}>
+            <Button type="submit" variant="standard" disabled={!sourceUrl.trim() || isSavingSource}>
               {isSavingSource ? "Saving" : "Save source"}
-            </button>
+            </Button>
           </div>
         </form>
       </Modal>
     </>
-  );
-}
-
-function ThumbsUpIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M7 10v11H4.5A2.5 2.5 0 0 1 2 18.5v-6A2.5 2.5 0 0 1 4.5 10H7Z" />
-      <path d="M7 10l4.4-7.1c.8-1.2 2.7-.7 2.7.8v4.1h4.2c1.9 0 3.3 1.8 2.8 3.6l-1.8 6.9A3.6 3.6 0 0 1 15.8 21H7V10Z" />
-    </svg>
-  );
-}
-
-function ThumbsDownIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M7 3v11H4.5A2.5 2.5 0 0 1 2 11.5v-6A2.5 2.5 0 0 1 4.5 3H7Z" />
-      <path d="M7 14l4.4 7.1c.8 1.2 2.7.7 2.7-.8v-4.1h4.2c1.9 0 3.3-1.8 2.8-3.6L19.3 5.7A3.6 3.6 0 0 0 15.8 3H7v11Z" />
-    </svg>
-  );
-}
-
-function GlobeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
-      <path d="M3.6 9h16.8M3.6 15h16.8M12 3c2.3 2.4 3.4 5.4 3.4 9S14.3 18.6 12 21c-2.3-2.4-3.4-5.4-3.4-9S9.7 5.4 12 3Z" />
-    </svg>
   );
 }

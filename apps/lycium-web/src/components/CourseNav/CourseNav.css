@@ -1,0 +1,30 @@
+.course-nav {
+  position: relative;
+}
+
+.course-nav-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.course-nav-center:focus,
+.course-nav-center:focus-visible,
+.course-nav-center:focus-within {
+  outline: none;
+}
+
+@media (max-width: 720px) {
+  .course-nav-center {
+    position: static;
+    order: 2;
+    transform: none;
+  }
+}

@@ -1,0 +1,58 @@
+.lycium-button {
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0.75rem 1.1rem;
+  color: #ffffff;
+  background: #1f3b87;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+  text-decoration: none;
+  transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease, opacity 160ms ease, transform 160ms ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lycium-button:hover:not(:disabled) {
+  background: #2a4db0;
+  transform: translateY(-1px);
+}
+
+.lycium-button:focus,
+.lycium-button:focus-visible,
+.lycium-button:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.lycium-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+.lycium-button-icon,
+.lycium-button-complete,
+.lycium-button-icon-only {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+}
+
+.lycium-button-complete {
+  border-radius: 999px;
+}
+
+.lycium-button-selected.lycium-button-tone-positive {
+  color: #22c55e;
+}
+
+.lycium-button-selected.lycium-button-tone-negative {
+  color: #ef4444;
+}

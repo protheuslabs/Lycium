@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
 import CourseFeedback from "../CourseFeedback/CourseFeedback";
+import CourseNav from "../CourseNav/CourseNav";
+import Button from "../Button/Button";
 import QuizBlock from "../Quiz/QuizBlock";
 import VideoBlock from "../Video/VideoBlock";
 
@@ -257,50 +259,26 @@ export default function ContentView({
           : <p>{section.content}</p> /* fallback for old data */}
       </div>
 
-      <div className="section-nav">
-        <div className="nav-button-wrapper">
-          <button
-            className="nav-button"
-            onClick={onPrev}
-            disabled={isFirstSection}
-          >
-            Previous
-          </button>
-        </div>
-        <div className="course-feedback-nav-center">
-          <CourseFeedback courseKey={courseKey} courseTitle={courseTitle} />
-        </div>
-        <div className="nav-button-wrapper">
-          <button
-            className={`nav-button complete-button ${isComplete ? "complete-button--checked" : ""} ${
-              !isComplete && !allRequiredQuizzesSubmitted ? "complete-button--blocked" : ""
-            }`}
-            onClick={() => {
-              if (canMarkComplete) {
-                markComplete(section.id);
-              }
-            }}
-            aria-disabled={isComplete || !allRequiredQuizzesSubmitted}
-            aria-label={isComplete ? "Section complete" : "Mark section complete"}
-            title={completeButtonTitle}
-          >
-            <span className="complete-button-check" aria-hidden="true">✓</span>
-          </button>
-          <button
-            className="nav-button"
-            onClick={onNext}
-            disabled={isLastSection || (Boolean(orderMandatory) && !isComplete)}
-          >
-            Next
-          </button>
-        </div>
-      </div>
+      <CourseNav
+        centerControls={<CourseFeedback courseKey={courseKey} courseTitle={courseTitle} />}
+        isFirstSection={isFirstSection}
+        isLastSection={isLastSection}
+        nextDisabled={Boolean(orderMandatory) && !isComplete}
+        isComplete={isComplete}
+        canMarkComplete={canMarkComplete}
+        allRequiredQuizzesSubmitted={allRequiredQuizzesSubmitted}
+        completeButtonTitle={completeButtonTitle}
+        onPrev={onPrev}
+        onNext={onNext}
+        onComplete={() => markComplete(section.id)}
+      />
 
       {sectionSources.length > 0 && (
         <section className="source-reference-list" aria-label="Sources">
-          <button
+          <Button
             type="button"
-            className={`nav-button source-reference-toggle ${sourcesExpanded ? "source-reference-toggle-expanded" : ""}`}
+            variant="nav"
+            className={`source-reference-toggle ${sourcesExpanded ? "source-reference-toggle-expanded" : ""}`}
             aria-expanded={sourcesExpanded}
             onClick={() => setSourcesExpanded((expanded) => !expanded)}
           >
@@ -308,7 +286,7 @@ export default function ContentView({
             <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
               <path d="M8 5l8 7-8 7" />
             </svg>
-          </button>
+          </Button>
           {sourcesExpanded && (
             <ul>
               {sectionSources.map((source, index) => (
