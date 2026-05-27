@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
 import CourseFeedback from "../CourseFeedback/CourseFeedback";
+import SourceSuggestionButton from "../CourseFeedback/SourceSuggestionButton";
 import CourseNav from "../CourseNav/CourseNav";
 import Button from "../Button/Button";
 import QuizBlock from "../Quiz/QuizBlock";
@@ -278,18 +279,21 @@ export default function ContentView({
 
       {sectionSources.length > 0 && (
         <section className="source-reference-list" aria-label="Sources">
-          <Button
-            type="button"
-            variant="nav"
-            className={`source-reference-toggle ${sourcesExpanded ? "source-reference-toggle-expanded" : ""}`}
-            aria-expanded={sourcesExpanded}
-            onClick={() => setSourcesExpanded((expanded) => !expanded)}
-          >
-            <span>Sources{sourcesExpanded ? "" : ` (${sectionSources.length})`}</span>
-            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-              <path d="M8 5l8 7-8 7" />
-            </svg>
-          </Button>
+          <div className="source-reference-controls">
+            <Button
+              type="button"
+              variant="nav"
+              className={`source-reference-toggle ${sourcesExpanded ? "source-reference-toggle-expanded" : ""}`}
+              aria-expanded={sourcesExpanded}
+              onClick={() => setSourcesExpanded((expanded) => !expanded)}
+            >
+              <span>Sources{sourcesExpanded ? "" : ` (${sectionSources.length})`}</span>
+              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                <path d="M8 5l8 7-8 7" />
+              </svg>
+            </Button>
+            <SourceSuggestionButton courseKey={courseKey} courseTitle={courseTitle} />
+          </div>
           {sourcesExpanded && (
             <ul>
               {sectionSources.map((source, index) => (

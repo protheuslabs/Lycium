@@ -33,10 +33,17 @@ export type LyciumCourseFeedbackNote = {
   created_at?: string;
 };
 
+export type LyciumCourseFeedbackRatingEvent = {
+  id?: string;
+  rating: LyciumCourseFeedbackRating;
+  created_at?: string;
+};
+
 export type LyciumCourseFeedbackRecord = {
   course_key: string;
   course_title?: string | null;
   rating?: LyciumCourseFeedbackRating | null;
+  rating_events?: LyciumCourseFeedbackRatingEvent[];
   feedback_notes?: LyciumCourseFeedbackNote[];
   source_suggestions?: LyciumCourseSourceSuggestion[];
   updated_at?: string | null;

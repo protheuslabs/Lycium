@@ -7,6 +7,7 @@ import {
 import { localCourses } from "../courseData/localCourses";
 
 export const API_BASE = process.env.NEXT_PUBLIC_LYCIUM_API_URL ?? "http://127.0.0.1:8000";
+export const localApiSyncEnabled = process.env.NEXT_PUBLIC_LYCIUM_AUTO_SYNC_LOCAL_API === "true";
 
 export const runtimeConfig = resolveLyciumRuntimeConfig({
   mode: process.env.NEXT_PUBLIC_LYCIUM_RUNTIME,

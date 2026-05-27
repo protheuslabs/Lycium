@@ -68,6 +68,36 @@
   padding-top: 1rem;
 }
 
+.source-reference-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.source-reference-controls .source-reference-toggle {
+  margin-bottom: 0;
+}
+
+.source-reference-list .source-add-button.lycium-button,
+.source-reference-list .source-add-button {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.source-reference-list .source-add-button svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
 .source-reference-list h3 {
   margin: 0 0 0.5rem;
   font-size: 0.95rem;
@@ -75,7 +105,8 @@
 
 .source-reference-list ul {
   margin: 0;
-  padding-left: 1.2rem;
+  padding-left: 0;
+  list-style: none;
 }
 
 .source-reference-list li {
@@ -429,12 +460,40 @@ html[data-theme="light"] .source-reference-list a {
   color: #3a56d4;
 }
 
+.source-reference-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
 .source-reference-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  margin-bottom: 0.85rem;
-  padding-inline: 0.5rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.source-reference-list .source-reference-toggle.lycium-button {
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.source-add-button.lycium-button {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+}
+
+.source-add-button svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.35;
+  stroke-linecap: round;
 }
 
 .source-reference-toggle svg {

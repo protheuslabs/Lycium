@@ -2,11 +2,11 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Button from "../Button/Button";
 import FeedbackControl from "../FeedbackControl/FeedbackControl";
 import Modal from "../Modal/Modal";
-import { lyciumApi } from "../../runtime/appRuntime";
+import { browserStorage, localApiSyncEnabled, lyciumApi } from "../../runtime/appRuntime";
 import "./CourseFeedback.css";
 
-type CourseFeedbackRating = "up" | "down";
-type CourseFeedbackMagnitude = 1 | 2 | 3;
+export type CourseFeedbackRating = "up" | "down";
+export type CourseFeedbackMagnitude = 1 | 2 | 3;
 
 type CourseFeedbackProps = {
   courseKey: string;
@@ -29,26 +29,86 @@ const feedbackMagnitudeOptions: Record<
   ],
 };
 
+function makeFeedbackId(prefix: string) {
+  return `${prefix}-${typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Date.now()}`;
+}
+
+export function updateStoredFeedback(
+  courseKey: string,
+  courseTitle: string,
+  update: {
+    rating?: CourseFeedbackRating | null;
+    feedbackText?: string | null;
+    feedbackMagnitude?: CourseFeedbackMagnitude | null;
+    sourceUrl?: string | null;
+    sourceDescription?: string | null;
+  },
+) {
+  const now = new Date().toISOString();
+  const current = browserStorage.readCourseFeedback(courseKey);
+  const next = {
+    course_key: courseKey,
+    course_title: courseTitle || current?.course_title || null,
+    rating: update.rating !== undefined ? update.rating : current?.rating ?? null,
+    rating_events: [...(current?.rating_events ?? [])],
+    feedback_notes: [...(current?.feedback_notes ?? [])],
+    source_suggestions: [...(current?.source_suggestions ?? [])],
+    updated_at: now,
+  };
+
+  if (update.rating) {
+    next.rating_events.push({
+      id: makeFeedbackId("rating-event"),
+      rating: update.rating,
+      created_at: now,
+    });
+  }
+
+  const cleanFeedbackText = update.feedbackText?.trim() ?? "";
+  if (cleanFeedbackText || update.feedbackMagnitude) {
+    next.feedback_notes.push({
+      id: makeFeedbackId("feedback-note"),
+      rating: update.rating ?? next.rating,
+      feedback_magnitude: update.feedbackMagnitude ?? null,
+      text: cleanFeedbackText || null,
+      created_at: now,
+    });
+  }
+
+  const cleanSourceUrl = update.sourceUrl?.trim() ?? "";
+  if (cleanSourceUrl) {
+    next.source_suggestions.push({
+      id: makeFeedbackId("source-suggestion"),
+      url: cleanSourceUrl,
+      description: update.sourceDescription?.trim() || null,
+      created_at: now,
+    });
+  }
+
+  browserStorage.writeCourseFeedback(courseKey, next);
+  return next;
+}
+
 export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbackProps) {
   const [rating, setRating] = useState<CourseFeedbackRating | null>(null);
   const [status, setStatus] = useState("");
   const [, setIsSavingRating] = useState(false);
   const [feedbackPulse, setFeedbackPulse] = useState<CourseFeedbackRating | null>(null);
-  const [isSourceModalOpen, setIsSourceModalOpen] = useState(false);
   const [isWrittenFeedbackOpen, setIsWrittenFeedbackOpen] = useState(false);
   const [writtenFeedbackRating, setWrittenFeedbackRating] = useState<CourseFeedbackRating | null>(null);
   const [writtenFeedbackText, setWrittenFeedbackText] = useState("");
   const [writtenFeedbackMagnitude, setWrittenFeedbackMagnitude] = useState<CourseFeedbackMagnitude | null>(null);
   const [writtenFeedbackStatus, setWrittenFeedbackStatus] = useState("");
   const [isSavingWrittenFeedback, setIsSavingWrittenFeedback] = useState(false);
-  const [sourceUrl, setSourceUrl] = useState("");
-  const [sourceDescription, setSourceDescription] = useState("");
-  const [sourceStatus, setSourceStatus] = useState("");
-  const [isSavingSource, setIsSavingSource] = useState(false);
-
   useEffect(() => {
     if (!courseKey) {
       setRating(null);
+      return;
+    }
+
+    const localRecord = browserStorage.readCourseFeedback(courseKey);
+    setRating(localRecord?.rating ?? null);
+    if (!localApiSyncEnabled) {
       return;
     }
 
@@ -59,6 +119,9 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
       .then((record) => {
         if (!cancelled) {
           setRating(record?.rating ?? null);
+          if (record) {
+            browserStorage.writeCourseFeedback(courseKey, record);
+          }
         }
       })
       .catch(() => {
@@ -85,8 +148,15 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
       setIsWrittenFeedbackOpen(true);
       setFeedbackPulse(null);
       window.requestAnimationFrame(() => setFeedbackPulse(nextValue));
+      updateStoredFeedback(courseKey, courseTitle, { rating: nextValue });
       setIsSavingRating(true);
       setStatus("Saving feedback...");
+
+      if (!localApiSyncEnabled) {
+        setStatus("Feedback saved.");
+        setIsSavingRating(false);
+        return;
+      }
 
       try {
         const saved = await lyciumApi.saveCourseFeedback({
@@ -119,6 +189,19 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
 
     setIsSavingWrittenFeedback(true);
     setWrittenFeedbackStatus("Saving feedback...");
+    updateStoredFeedback(courseKey, courseTitle, {
+      feedbackText: writtenFeedbackText.trim() || null,
+      feedbackMagnitude: writtenFeedbackMagnitude,
+    });
+
+    if (!localApiSyncEnabled) {
+      setWrittenFeedbackText("");
+      setWrittenFeedbackMagnitude(null);
+      setWrittenFeedbackStatus("Feedback saved.");
+      setIsWrittenFeedbackOpen(false);
+      setIsSavingWrittenFeedback(false);
+      return;
+    }
 
     try {
       await lyciumApi.saveCourseFeedback({
@@ -139,32 +222,6 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
     }
   };
 
-  const submitSourceSuggestion = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!courseKey || !sourceUrl.trim() || isSavingSource) return;
-
-    setIsSavingSource(true);
-    setSourceStatus("Saving source suggestion...");
-
-    try {
-      await lyciumApi.saveCourseFeedback({
-        course_key: courseKey,
-        course_title: courseTitle,
-        source_url: sourceUrl.trim(),
-        source_description: sourceDescription.trim() || null,
-      });
-      setSourceUrl("");
-      setSourceDescription("");
-      setSourceStatus("Source suggestion saved.");
-      setIsSourceModalOpen(false);
-    } catch {
-      setSourceStatus("Source suggestion could not be saved yet.");
-    } finally {
-      setIsSavingSource(false);
-    }
-  };
-
   return (
     <>
       <FeedbackControl
@@ -173,7 +230,6 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
         disabled={!courseKey}
         onLike={() => saveRating("up")}
         onDislike={() => saveRating("down")}
-        onSuggestSource={() => setIsSourceModalOpen(true)}
       />
       {status && <span className="course-feedback-status" aria-live="polite">{status}</span>}
 
@@ -226,44 +282,6 @@ export default function CourseFeedback({ courseKey, courseTitle }: CourseFeedbac
         </form>
       </Modal>
 
-      <Modal
-        isOpen={isSourceModalOpen}
-        title="Add a source for this course"
-        eyebrow="Suggested source"
-        labelledById="course-source-modal-title"
-        size="md"
-        onClose={() => setIsSourceModalOpen(false)}
-      >
-        <form className="course-source-form" onSubmit={submitSourceSuggestion}>
-          <label>
-            <span>Source link</span>
-            <input
-              type="url"
-              value={sourceUrl}
-              onChange={(event) => setSourceUrl(event.target.value)}
-              placeholder="https://example.edu/course-source"
-              disabled={isSavingSource}
-              required
-            />
-          </label>
-          <label>
-            <span>How does it fit?</span>
-            <textarea
-              value={sourceDescription}
-              onChange={(event) => setSourceDescription(event.target.value)}
-              placeholder="Optional context for why this belongs in the course."
-              disabled={isSavingSource}
-              rows={4}
-            />
-          </label>
-          <div className="course-source-form-footer">
-            {sourceStatus && <p>{sourceStatus}</p>}
-            <Button type="submit" variant="standard" disabled={!sourceUrl.trim() || isSavingSource}>
-              {isSavingSource ? "Saving" : "Save source"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
     </>
   );
 }

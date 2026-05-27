@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { createBrowserStorageRepository, createLyciumLocalApi } from "@lycium/data-access";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../courseTypes";
+import { localApiSyncEnabled } from "../runtime/appRuntime";
 
 const DEFAULT_AGENT_PROVIDERS: AgentProviderRecord[] = [
   {
@@ -178,6 +179,10 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
   }, [themeMode]);
 
   useEffect(() => {
+    if (!localApiSyncEnabled) {
+      return;
+    }
+
     let ignored = false;
 
     lyciumApi
@@ -199,7 +204,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
   }, [lyciumApi]);
 
   useEffect(() => {
-    if (routeKind !== "settings") {
+    if (routeKind !== "settings" || !localApiSyncEnabled) {
       return;
     }
 

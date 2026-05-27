@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { browserStorage, lyciumApi } from "../runtime/appRuntime";
+import { browserStorage, localApiSyncEnabled, lyciumApi } from "../runtime/appRuntime";
 import type { CourseEntry, CourseProgressRecord, CourseSection, SectionStatus } from "../courseTypes";
 import {
   areProgressRecordsEqual,
@@ -109,15 +109,17 @@ export function useCourseProgressState({
       }
 
       cacheCourseProgress(courseKey, nextProgress);
-      lyciumApi
-        .mirrorCompletion({
-          course_key: courseKey,
-          course_title: selectedCourse?.title ?? null,
-          section_id: sectionId ?? null,
-          completed_section_ids: nextProgress.completedSectionIds,
-          section_statuses: nextProgress.sectionStatuses,
-        })
-        .catch((err) => console.warn("Failed to mirror local completion:", err));
+      if (localApiSyncEnabled) {
+        lyciumApi
+          .mirrorCompletion({
+            course_key: courseKey,
+            course_title: selectedCourse?.title ?? null,
+            section_id: sectionId ?? null,
+            completed_section_ids: nextProgress.completedSectionIds,
+            section_statuses: nextProgress.sectionStatuses,
+          })
+          .catch((err) => console.warn("Failed to mirror local completion:", err));
+      }
     },
     [courseKey, selectedCourse?.title],
   );
@@ -198,7 +200,7 @@ export function useCourseProgressState({
         return { courseKey, progress: nextProgress };
       });
 
-      if (selectedCourse?.snapshotId && learnerId) {
+      if (localApiSyncEnabled && selectedCourse?.snapshotId && learnerId) {
         lyciumApi
           .saveSnapshotProgress(selectedCourse.snapshotId, {
             learner_id: learnerId,
@@ -221,7 +223,7 @@ export function useCourseProgressState({
         ? prev
         : { courseKey, progress: normalizedInitialProgress },
     );
-    if (!courseKey) {
+    if (!courseKey || !localApiSyncEnabled) {
       return;
     }
 

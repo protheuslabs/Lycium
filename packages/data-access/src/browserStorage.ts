@@ -1,5 +1,6 @@
 import type {
   LyciumBookmarkRecord,
+  LyciumCourseFeedbackRecord,
   LyciumProgressRecord,
   LyciumQuizProgressRecord,
   LyciumThemeMode,
@@ -41,6 +42,10 @@ export function getCourseBookmarkStorageKey(courseKey: string): string {
   return `lycium-bookmark-${courseKey}`;
 }
 
+export function getCourseFeedbackStorageKey(courseKey: string): string {
+  return `lycium-course-feedback-${courseKey}`;
+}
+
 export function getQuizProgressStorageKey(quizKey: string): string {
   return `lycium-quiz-progress-${quizKey || "quiz"}`;
 }
@@ -65,6 +70,14 @@ export function createBrowserStorageRepository() {
 
     writeBookmark(courseKey: string, bookmark: LyciumBookmarkRecord): void {
       writeJson(getCourseBookmarkStorageKey(courseKey), bookmark);
+    },
+
+    readCourseFeedback(courseKey: string): LyciumCourseFeedbackRecord | null {
+      return readJson<LyciumCourseFeedbackRecord>(getCourseFeedbackStorageKey(courseKey));
+    },
+
+    writeCourseFeedback(courseKey: string, feedback: LyciumCourseFeedbackRecord): void {
+      writeJson(getCourseFeedbackStorageKey(courseKey), feedback);
     },
 
     readLearnerId(): number | null {

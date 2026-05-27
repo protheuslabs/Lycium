@@ -13,7 +13,7 @@ import sourceRecordsData from "./courseData/sourceRecords";
 import type { CourseEntry, CourseSection } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
 import { useCourseProgressState } from "./hooks/useCourseProgressState";
-import { API_BASE, browserStorage, lyciumApi, repositorySet, scrollCoursePageToTop } from "./runtime/appRuntime";
+import { API_BASE, browserStorage, localApiSyncEnabled, lyciumApi, repositorySet, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "./utils/courseValidation";
 import { summarizeCourseProgress } from "./utils/courseProgress";
 import {
@@ -177,7 +177,9 @@ function App() {
       path,
     };
     browserStorage.writeBookmark(course.key, bookmark);
-    lyciumApi.saveBookmark(bookmark).catch((err) => console.warn("Failed to save course bookmark:", err));
+    if (localApiSyncEnabled) {
+      lyciumApi.saveBookmark(bookmark).catch((err) => console.warn("Failed to save course bookmark:", err));
+    }
   }, []);
 
   const pushSectionPath = useCallback(
@@ -202,7 +204,7 @@ function App() {
     async (course: CourseEntry, replace = false) => {
       setCurrentCourseKey(course.key);
       let targetSection = findBookmarkedSection(course, browserStorage.readBookmark(course.key));
-      if (!targetSection) {
+      if (!targetSection && localApiSyncEnabled) {
         try {
           targetSection = findBookmarkedSection(course, await lyciumApi.loadBookmark(course.key));
         } catch (err) {
@@ -403,6 +405,14 @@ function App() {
           }
         })
         .catch((err: unknown) => console.warn("Configured course repository unavailable:", err));
+      return;
+    }
+
+    if (!localApiSyncEnabled) {
+      const stored = browserStorage.readLearnerId();
+      if (stored) {
+        setLearnerId(stored);
+      }
       return;
     }
 
