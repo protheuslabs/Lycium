@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import "../styles/tokens.css";
 import "../index.css";
 import "../App.css";
 import "../components/TopBar/topBar.css";

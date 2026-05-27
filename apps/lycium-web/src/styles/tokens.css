@@ -1,0 +1,72 @@
+:root {
+  --lycium-brand-start: #0f5cff;
+  --lycium-brand-end: #7a35ff;
+  --lycium-brand-primary: #1f3b87;
+  --lycium-brand-primary-hover: #2a4db0;
+  --lycium-danger: #ef4444;
+  --lycium-success: #22c55e;
+  --lycium-viewed-progress: #9fb7ff;
+  --lycium-completed-progress: #2563eb;
+
+  --lycium-dark-canvas: #0b0b0c;
+  --lycium-dark-surface: #171717;
+  --lycium-dark-surface-raised: #1f1f22;
+  --lycium-dark-text: #f8fafc;
+  --lycium-dark-muted: #a3a3a3;
+
+  --lycium-light-canvas: #ffffff;
+  --lycium-light-surface: #f7f8fb;
+  --lycium-light-surface-raised: #ffffff;
+  --lycium-light-text: #171717;
+  --lycium-light-muted: #566070;
+
+  --lycium-color-canvas: var(--lycium-light-canvas);
+  --lycium-color-surface: var(--lycium-light-surface);
+  --lycium-color-surface-raised: var(--lycium-light-surface-raised);
+  --lycium-color-text: var(--lycium-light-text);
+  --lycium-color-text-muted: var(--lycium-light-muted);
+  --lycium-color-border: #d8deea;
+  --lycium-color-modal-border: #d9def5;
+  --lycium-color-control-surface: rgba(255, 255, 255, 0.94);
+  --lycium-color-control-hover: rgba(74, 108, 247, 0.08);
+  --lycium-color-control-active: rgba(74, 108, 247, 0.12);
+
+  --lycium-radius-pill: 999px;
+  --lycium-radius-control: 1rem;
+  --lycium-radius-card: 1.25rem;
+  --lycium-radius-modal: 1.5rem;
+
+  --lycium-shadow-control: 0 12px 28px rgba(15, 23, 42, 0.07);
+  --lycium-shadow-raised: 0 1.2rem 2.4rem rgba(22, 30, 52, 0.16);
+  --lycium-shadow-dark-raised: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.36);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) {
+  --lycium-color-canvas: var(--lycium-dark-canvas);
+  --lycium-color-surface: var(--lycium-dark-surface);
+  --lycium-color-surface-raised: var(--lycium-dark-surface-raised);
+  --lycium-color-text: var(--lycium-dark-text);
+  --lycium-color-text-muted: var(--lycium-dark-muted);
+  --lycium-color-border: #303033;
+  --lycium-color-modal-border: #2d2d31;
+  --lycium-color-control-surface: #171717;
+  --lycium-color-control-hover: rgba(255, 255, 255, 0.08);
+  --lycium-color-control-active: rgba(255, 255, 255, 0.12);
+  --lycium-shadow-control: 0 14px 32px rgba(0, 0, 0, 0.24);
+  --lycium-shadow-raised: var(--lycium-shadow-dark-raised);
+}
+
+html[data-theme="light"] {
+  --lycium-color-canvas: var(--lycium-light-canvas);
+  --lycium-color-surface: var(--lycium-light-surface);
+  --lycium-color-surface-raised: var(--lycium-light-surface-raised);
+  --lycium-color-text: var(--lycium-light-text);
+  --lycium-color-text-muted: var(--lycium-light-muted);
+  --lycium-color-border: #d8deea;
+  --lycium-color-modal-border: #d9def5;
+  --lycium-color-control-surface: rgba(255, 255, 255, 0.94);
+  --lycium-color-control-hover: rgba(74, 108, 247, 0.08);
+  --lycium-color-control-active: rgba(74, 108, 247, 0.12);
+  --lycium-shadow-control: 0 12px 28px rgba(15, 23, 42, 0.07);
+  --lycium-shadow-raised: 0 1.2rem 2.4rem rgba(22, 30, 52, 0.16);
+}

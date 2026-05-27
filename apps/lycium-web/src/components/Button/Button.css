@@ -1,6 +1,6 @@
 .lycium-button {
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--lycium-radius-pill);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -8,7 +8,7 @@
   min-height: 2.75rem;
   padding: 0.75rem 1.1rem;
   color: #ffffff;
-  background: #1f3b87;
+  background: var(--lycium-brand-primary);
   cursor: pointer;
   font: inherit;
   font-weight: 850;
@@ -19,7 +19,7 @@
 }
 
 .lycium-button:hover:not(:disabled) {
-  background: #2a4db0;
+  background: var(--lycium-brand-primary-hover);
   transform: translateY(-1px);
 }
 
@@ -46,13 +46,13 @@
 }
 
 .lycium-button-complete {
-  border-radius: 999px;
+  border-radius: var(--lycium-radius-pill);
 }
 
 .lycium-button-selected.lycium-button-tone-positive {
-  color: #22c55e;
+  color: var(--lycium-success);
 }
 
 .lycium-button-selected.lycium-button-tone-negative {
-  color: #ef4444;
+  color: var(--lycium-danger);
 }
