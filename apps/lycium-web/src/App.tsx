@@ -500,6 +500,7 @@ function App() {
               moduleIndex={currentSection?.moduleIndex ?? 0}
               onNext={() => goToSectionIndex(Math.min(visibleSectionIndex + 1, sections.length - 1))}
               onPrev={() => goToSectionIndex(Math.max(visibleSectionIndex - 1, 0))}
+              nextSectionTitle={sections[visibleSectionIndex + 1]?.title ?? null}
               isFirstSection={visibleSectionIndex === 0}
               isLastSection={visibleSectionIndex === sections.length - 1}
               progressPercentage={moduleProgress.percentage}

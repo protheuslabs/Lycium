@@ -66,7 +66,6 @@
 .source-reference-list {
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #e4e7ef;
 }
 
 .source-reference-list h3 {
@@ -212,10 +211,6 @@
   transition: color 160ms ease, opacity 160ms ease, transform 160ms ease;
 }
 
-.complete-button:hover:not(:disabled) .complete-button-check {
-  color: rgba(255, 255, 255, 0.72);
-}
-
 .complete-button--blocked {
   cursor: not-allowed;
 }
@@ -225,29 +220,32 @@
   border-color: #4a6cf7;
 }
 
+.complete-button:hover:not(:disabled) .complete-button-check,
+.complete-button:focus-visible .complete-button-check,
 .complete-button--blocked:hover .complete-button-check {
   color: rgba(255, 255, 255, 0.42);
 }
 
 .complete-button--checked:hover {
+  background-color: #4a6cf7;
+  border-color: #4a6cf7;
   transform: none;
-}
-
-.complete-button--checked:hover .complete-button-check {
-  color: #48d86d;
 }
 
 .complete-button--checked,
 .complete-button--checked:disabled {
   cursor: default;
   opacity: 1;
+  pointer-events: none;
 }
 
 .complete-button.nav-button:disabled {
   opacity: 1;
 }
 
-.complete-button--checked .complete-button-check {
+.complete-button--checked .complete-button-check,
+.complete-button--checked:hover:not(:disabled) .complete-button-check,
+.complete-button--checked:focus-visible .complete-button-check {
   color: #48d86d;
   animation: complete-check-bounce 420ms cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }

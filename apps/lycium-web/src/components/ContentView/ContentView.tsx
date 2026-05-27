@@ -97,6 +97,7 @@ type ContentViewProps = {
   moduleIndex: number;
   onNext: () => void;
   onPrev: () => void;
+  nextSectionTitle?: string | null;
   isFirstSection: boolean;
   isLastSection: boolean;
   progressPercentage: number;
@@ -124,6 +125,7 @@ export default function ContentView({
   moduleIndex,
   onNext,
   onPrev,
+  nextSectionTitle,
   isFirstSection,
   isLastSection,
   progressPercentage,
@@ -261,6 +263,7 @@ export default function ContentView({
 
       <CourseNav
         centerControls={<CourseFeedback courseKey={courseKey} courseTitle={courseTitle} />}
+        nextSectionTitle={nextSectionTitle}
         isFirstSection={isFirstSection}
         isLastSection={isLastSection}
         nextDisabled={Boolean(orderMandatory) && !isComplete}
