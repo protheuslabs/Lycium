@@ -1,5 +1,6 @@
-import type { Dispatch, FormEvent, MouseEvent, SetStateAction } from "react";
+import type { Dispatch, FormEvent, SetStateAction } from "react";
 import Dropdown from "../Dropdown/Dropdown";
+import Modal from "../Modal/Modal";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
 
 type SettingsModalProps = {
@@ -58,16 +59,6 @@ export default function SettingsModal({
     label: provider.label,
   }));
 
-  const handleClose = () => {
-    onClose();
-  };
-
-  const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      handleClose();
-    }
-  };
-
   const handleApiKeyChange = (value: string) => {
     onAgentApiKeyChange(value);
     if (apiKeySaveStatus === "invalid") {
@@ -76,20 +67,14 @@ export default function SettingsModal({
   };
 
   return (
-    <div className="settings-modal-backdrop" role="presentation" onMouseDown={handleBackdropMouseDown}>
-      <section
-        className="settings-card settings-card-modal"
-        aria-labelledby="settings-title"
-        role="dialog"
-        aria-modal="true"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <button className="settings-close-button" type="button" aria-label="Close settings" onClick={handleClose}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M6.3 5.3a1 1 0 0 1 1.4 0l4.3 4.3 4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 11l4.3 4.3a1 1 0 0 1-1.4 1.4L12 12.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z" />
-          </svg>
-        </button>
-        <h1 id="settings-title">Settings</h1>
+    <Modal
+      isOpen={isOpen}
+      title="Settings"
+      labelledById="settings-title"
+      size="lg"
+      className="settings-modal-content"
+      onClose={onClose}
+    >
         <section className="settings-section" aria-labelledby="settings-active-ai">
           <h2 id="settings-active-ai">Active AI</h2>
           <div className="settings-ai-data-panel">
@@ -193,7 +178,6 @@ export default function SettingsModal({
           </div>
         </section>
         {settingsMessage && <p className={`settings-status settings-status-${settingsStatus}`}>{settingsMessage}</p>}
-      </section>
-    </div>
+    </Modal>
   );
 }

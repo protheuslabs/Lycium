@@ -6,10 +6,19 @@ type CatalogCourseCardProps = {
   visibleCourse: CatalogVisibleCourse;
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
+  onPublishCourse: (course: CourseEntry) => void;
+  isPublishing: boolean;
 };
 
-export default function CatalogCourseCard({ visibleCourse, onOpenCourse, onOpenInfo }: CatalogCourseCardProps) {
+export default function CatalogCourseCard({
+  visibleCourse,
+  onOpenCourse,
+  onOpenInfo,
+  onPublishCourse,
+  isPublishing,
+}: CatalogCourseCardProps) {
   const { course, courseProgress, bookmarkedSection, hasCourseActivity } = visibleCourse;
+  const isReadyForReview = course.status === "ready_for_review";
 
   const handleCourseKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -38,7 +47,10 @@ export default function CatalogCourseCard({ visibleCourse, onOpenCourse, onOpenI
       >
         i
       </button>
-      <h3>{course.title}</h3>
+      <h3>
+        {course.title}
+        {isReadyForReview && <span className="course-review-badge">Ready for review</span>}
+      </h3>
       {bookmarkedSection && (
         <p className="course-active-subheader">
           <span>{bookmarkedSection.moduleTitle}</span>
@@ -58,6 +70,20 @@ export default function CatalogCourseCard({ visibleCourse, onOpenCourse, onOpenI
             {Math.round(courseProgress.percentage)}% complete &middot; {Math.round(courseProgress.viewedPercentage)}% viewed
           </p>
         </div>
+      )}
+      {isReadyForReview && (
+        <button
+          className="course-publish-button"
+          type="button"
+          disabled={isPublishing}
+          onClick={(event) => {
+            event.stopPropagation();
+            onPublishCourse(course);
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          {isPublishing ? "Publishing..." : "Publish"}
+        </button>
       )}
     </article>
   );

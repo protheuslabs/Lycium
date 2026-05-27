@@ -37,9 +37,11 @@ from app.local_store import (
     get_active_agent_profile,
     local_settings_summary,
     read_course_bookmark,
+    read_course_feedback,
     read_completion,
     save_agent_api_key,
     save_course_bookmark,
+    save_course_feedback,
     save_completion,
     save_course_snapshot,
     save_learner_record,
@@ -88,6 +90,8 @@ from app.schemas import (
     LocalAiProviderRead,
     LocalCourseBookmarkRead,
     LocalCourseBookmarkUpdate,
+    LocalCourseFeedbackRead,
+    LocalCourseFeedbackUpdate,
     LocalCompletionRead,
     LocalCompletionUpdate,
     LocalSettingsRead,
@@ -201,3 +205,23 @@ def register(app: FastAPI) -> None:
             section_title=payload.section_title,
             path=payload.path,
         )
+
+
+    @app.get("/v1/local/course-feedback/{course_key}", response_model=LocalCourseFeedbackRead)
+    def get_local_course_feedback(course_key: str) -> dict[str, Any]:
+        return read_course_feedback(course_key)
+
+
+    @app.post("/v1/local/course-feedback", response_model=LocalCourseFeedbackRead)
+    def update_local_course_feedback(payload: LocalCourseFeedbackUpdate) -> dict[str, Any]:
+        fields_set = getattr(payload, "model_fields_set", getattr(payload, "__fields_set__", set()))
+        feedback_update = {
+            "course_key": payload.course_key,
+            "course_title": payload.course_title,
+            "feedback_text": payload.feedback_text,
+            "source_url": payload.source_url,
+            "source_description": payload.source_description,
+        }
+        if "rating" in fields_set:
+            feedback_update["rating"] = payload.rating
+        return save_course_feedback(**feedback_update)

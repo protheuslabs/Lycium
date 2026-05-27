@@ -34,6 +34,8 @@ type CourseCatalogProps = {
   onLevelChange: (value: string) => void;
   onGenerateCourse: (event: FormEvent<HTMLFormElement>, sourceLinks: string[]) => void;
   onOpenCourse: (course: CourseEntry) => void;
+  onPublishCourse: (course: CourseEntry) => void;
+  publishingCourseKey: string | null;
   onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
@@ -48,6 +50,8 @@ export default function CourseCatalog({
   onLevelChange,
   onGenerateCourse,
   onOpenCourse,
+  onPublishCourse,
+  publishingCourseKey,
   onOpenSettings,
 }: CourseCatalogProps) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -265,6 +269,8 @@ export default function CourseCatalog({
                 visibleCourse={visibleCourse}
                 onOpenCourse={onOpenCourse}
                 onOpenInfo={setInfoCourse}
+                onPublishCourse={onPublishCourse}
+                isPublishing={publishingCourseKey === visibleCourse.course.key}
               />
             ))}
           </div>

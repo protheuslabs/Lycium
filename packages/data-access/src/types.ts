@@ -3,7 +3,10 @@ import type {
   LyciumBookmarkRecord,
   LyciumCourseData,
   LyciumCourseEntry,
+  LyciumCourseFeedbackPayload,
+  LyciumCourseFeedbackRecord,
   LyciumCourseGenerationExperiment,
+  LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,
   LyciumCourseQualityReport,
   LyciumGeneratedCourseRecord,
@@ -141,7 +144,7 @@ export type LocalKeyModelPayload = {
 };
 
 export type LyciumLocalApi = {
-  listRemoteCourses(limit?: number): Promise<LyciumGeneratedCourseRecord[]>;
+  listRemoteCourses(limit?: number, status?: string): Promise<LyciumGeneratedCourseRecord[]>;
   generateCourse(request: LyciumCourseGenerationRequest): Promise<LyciumGeneratedCourseRecord>;
   experimentCourseGeneration(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationExperiment>;
   experimentStagedCourseGeneration(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationExperiment>;
@@ -155,6 +158,8 @@ export type LyciumLocalApi = {
   loadCompletion(courseKey: string): Promise<unknown>;
   saveBookmark(bookmark: LyciumBookmarkRecord): Promise<void>;
   loadBookmark(courseKey: string): Promise<LyciumBookmarkRecord | null>;
+  saveCourseFeedback(payload: LyciumCourseFeedbackPayload): Promise<LyciumCourseFeedbackRecord>;
+  loadCourseFeedback(courseKey: string): Promise<LyciumCourseFeedbackRecord | null>;
   saveSnapshotProgress(snapshotId: number, payload: SnapshotProgressPayload): Promise<void>;
   loadAgentProviders(): Promise<LyciumAgentProviderRecord[]>;
   loadSettings(): Promise<LyciumLocalSettings>;
@@ -168,6 +173,8 @@ export type {
   LyciumBookmarkRecord,
   LyciumCourseData,
   LyciumCourseEntry,
+  LyciumCourseFeedbackPayload,
+  LyciumCourseFeedbackRecord,
   LyciumCourseGenerationExperiment,
   LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,

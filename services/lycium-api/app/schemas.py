@@ -217,6 +217,24 @@ class LocalCourseBookmarkRead(BaseModel):
     updated_at: str | None = None
 
 
+class LocalCourseFeedbackUpdate(BaseModel):
+    course_key: str = Field(min_length=1)
+    course_title: str | None = None
+    rating: Literal["up", "down"] | None = None
+    feedback_text: str | None = Field(default=None, max_length=2000)
+    source_url: str | None = Field(default=None, max_length=4096)
+    source_description: str | None = Field(default=None, max_length=2000)
+
+
+class LocalCourseFeedbackRead(BaseModel):
+    course_key: str
+    course_title: str | None = None
+    rating: Literal["up", "down"] | None = None
+    feedback_notes: list[dict[str, Any]] = Field(default_factory=list)
+    source_suggestions: list[dict[str, Any]] = Field(default_factory=list)
+    updated_at: str | None = None
+
+
 class OutlineSection(BaseModel):
     id: str
     title: str

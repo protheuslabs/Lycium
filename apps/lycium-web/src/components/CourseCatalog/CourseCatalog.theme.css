@@ -98,6 +98,21 @@
     background: rgba(128, 150, 255, 0.26);
   }
 
+  .course-review-badge {
+    color: #d8f7bc;
+    background: rgba(95, 139, 42, 0.28);
+  }
+
+  .course-publish-button {
+    color: #f8fafc;
+    background: #2f3542;
+  }
+
+  .course-publish-button:hover:not(:disabled),
+  .course-publish-button:focus-visible:not(:disabled) {
+    background: #454d5c;
+  }
+
   .catalog-pagination-summary {
     color: #a1a1aa;
   }
@@ -180,6 +195,21 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-progress-viewed-fill {
   background: rgba(128, 150, 255, 0.26);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-badge {
+  color: #d8f7bc;
+  background: rgba(95, 139, 42, 0.28);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-publish-button {
+  color: #f8fafc;
+  background: #2f3542;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-publish-button:hover:not(:disabled),
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-publish-button:focus-visible:not(:disabled) {
+  background: #454d5c;
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card--generating:hover {
@@ -289,6 +319,21 @@ html[data-theme="light"] .course-progress-bar {
 
 html[data-theme="light"] .course-progress-viewed-fill {
   background: rgba(74, 108, 247, 0.24);
+}
+
+html[data-theme="light"] .course-review-badge {
+  color: #2b4a14;
+  background: #e7f5d8;
+}
+
+html[data-theme="light"] .course-publish-button {
+  color: #ffffff;
+  background: #27324a;
+}
+
+html[data-theme="light"] .course-publish-button:hover:not(:disabled),
+html[data-theme="light"] .course-publish-button:focus-visible:not(:disabled) {
+  background: #35507c;
 }
 
 html[data-theme="light"] .course-card--generating:hover {

@@ -274,6 +274,19 @@
   overflow: hidden;
 }
 
+.course-review-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0.32rem 0 0;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  color: #2b4a14;
+  background: #e7f5d8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 .course-active-subheader {
   grid-row: 2;
   margin: 0;
@@ -361,6 +374,32 @@
   align-self: end;
   color: #6b7280;
   grid-row: 4;
+}
+
+.course-publish-button {
+  grid-row: 5;
+  align-self: end;
+  justify-self: stretch;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;
+  color: #ffffff;
+  background: #27324a;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.course-publish-button:hover:not(:disabled),
+.course-publish-button:focus-visible:not(:disabled) {
+  outline: none;
+  transform: translateY(-1px);
+  background: #35507c;
+}
+
+.course-publish-button:disabled {
+  cursor: progress;
+  opacity: 0.72;
 }
 
 .catalog-pagination {

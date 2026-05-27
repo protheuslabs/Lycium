@@ -1,6 +1,6 @@
-import type { MouseEvent } from "react";
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
+import Modal from "../Modal/Modal";
 
 type CourseInfoModalProps = {
   course: CourseEntry;
@@ -12,31 +12,16 @@ export default function CourseInfoModal({ course, onClose }: CourseInfoModalProp
   const learningTypes = course.data.learningTypes ?? [];
   const courseEquivalencies = course.data.courseEquivalencies ?? [];
 
-  const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className="course-info-modal-backdrop" role="presentation" onMouseDown={handleBackdropMouseDown}>
-      <section
-        className="course-info-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="course-info-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <button className="course-info-close" type="button" aria-label="Close course information" onClick={onClose}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M6.3 5.3a1 1 0 0 1 1.4 0l4.3 4.3 4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 11l4.3 4.3a1 1 0 0 1-1.4 1.4L12 12.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z" />
-          </svg>
-        </button>
-        <div className="course-info-header">
-          <p>Course info</p>
-          <h2 id="course-info-title">{course.title}</h2>
-          {course.data.shortDescription && <p className="course-info-description">{course.data.shortDescription}</p>}
-        </div>
+    <Modal
+      isOpen
+      title={course.title}
+      eyebrow="Course info"
+      labelledById="course-info-title"
+      size="md"
+      onClose={onClose}
+    >
+        {course.data.shortDescription && <p className="course-info-description">{course.data.shortDescription}</p>}
         <div className="course-info-facts">
           <article>
             <span>Difficulty level</span>
@@ -100,9 +85,8 @@ export default function CourseInfoModal({ course, onClose }: CourseInfoModalProp
                 );
               })}
             </div>
-          </section>
+            </section>
         )}
-      </section>
-    </div>
+    </Modal>
   );
 }

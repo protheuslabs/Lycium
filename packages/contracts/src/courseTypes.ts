@@ -15,6 +15,40 @@ export type LyciumSourceRecord = {
   [key: string]: unknown;
 };
 
+export type LyciumCourseFeedbackRating = "up" | "down";
+
+export type LyciumCourseSourceSuggestion = {
+  id?: string;
+  url: string;
+  description?: string | null;
+  created_at?: string;
+};
+
+export type LyciumCourseFeedbackNote = {
+  id?: string;
+  rating?: LyciumCourseFeedbackRating | null;
+  text: string;
+  created_at?: string;
+};
+
+export type LyciumCourseFeedbackRecord = {
+  course_key: string;
+  course_title?: string | null;
+  rating?: LyciumCourseFeedbackRating | null;
+  feedback_notes?: LyciumCourseFeedbackNote[];
+  source_suggestions?: LyciumCourseSourceSuggestion[];
+  updated_at?: string | null;
+};
+
+export type LyciumCourseFeedbackPayload = {
+  course_key: string;
+  course_title?: string | null;
+  rating?: LyciumCourseFeedbackRating | null;
+  feedback_text?: string | null;
+  source_url?: string | null;
+  source_description?: string | null;
+};
+
 export type LyciumCoursePrerequisite = {
   type: "course" | "competency" | "assessment" | "program" | "external";
   id?: string;
@@ -132,6 +166,7 @@ export type LyciumCourseEntry = {
   data: LyciumCourseData;
   snapshotId?: number;
   source: "local" | "remote" | string;
+  status?: LyciumCourseLifecycleStatus;
 };
 
 export type LyciumCourseLifecycleStatus =

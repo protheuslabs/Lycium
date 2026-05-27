@@ -60,8 +60,9 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
   const base = normalizeApiBase(apiBase);
 
   return {
-    async listRemoteCourses(limit = 25) {
-      const response = await fetch(`${base}/v1/courses?limit=${encodeURIComponent(String(limit))}`);
+    async listRemoteCourses(limit = 25, status = "published") {
+      const params = new URLSearchParams({ limit: String(limit), status });
+      const response = await fetch(`${base}/v1/courses?${params.toString()}`);
       return readJsonResponse<LyciumGeneratedCourseRecord[]>(response, "Failed to fetch courses");
     },
 
@@ -162,6 +163,21 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
     async loadBookmark(courseKey) {
       const response = await fetch(`${base}/v1/local/bookmarks/${encodeURIComponent(courseKey)}`);
       return readJsonResponse(response, "Local bookmark unavailable");
+    },
+
+    async saveCourseFeedback(payload) {
+      const response = await fetch(`${base}/v1/local/course-feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      return readJsonResponse(response, "Failed to save course feedback");
+    },
+
+    async loadCourseFeedback(courseKey) {
+      const response = await fetch(`${base}/v1/local/course-feedback/${encodeURIComponent(courseKey)}`);
+      if (response.status === 404) return null;
+      return readJsonResponse(response, "Course feedback unavailable");
     },
 
     async saveSnapshotProgress(snapshotId, payload) {

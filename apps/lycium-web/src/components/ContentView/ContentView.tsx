@@ -1,6 +1,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
+import CourseFeedback from "../CourseFeedback/CourseFeedback";
 import QuizBlock from "../Quiz/QuizBlock";
 import VideoBlock from "../Video/VideoBlock";
 
@@ -87,6 +88,7 @@ type SourceRecord = {
 };
 
 type ContentViewProps = {
+  courseKey: string;
   courseTitle: string;
   section: Section | null;
   moduleTitle: string;
@@ -113,6 +115,7 @@ type QuizProgressStatus = {
 type QuizProgressStatusHandler = (quizKey: string, status: QuizProgressStatus) => void;
 
 export default function ContentView({ 
+  courseKey,
   courseTitle,
   section,
   moduleTitle,
@@ -141,12 +144,14 @@ export default function ContentView({
 
   const [submittedQuizKeys, setSubmittedQuizKeys] = useState<Set<string>>(() => new Set());
   const [quizProgressByKey, setQuizProgressByKey] = useState<Record<string, QuizProgressStatus>>({});
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
 
   useEffect(() => {
     // Resetting quiz submission state when the learner changes sections is intentional.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSubmittedQuizKeys(new Set());
     setQuizProgressByKey({});
+    setSourcesExpanded(false);
   }, [section?.id]);
 
   const handleQuizSubmissionChange = useCallback<QuizSubmissionStatusHandler>((quizKey, submitted) => {
@@ -252,26 +257,6 @@ export default function ContentView({
           : <p>{section.content}</p> /* fallback for old data */}
       </div>
 
-      {sectionSources.length > 0 && (
-        <section className="source-reference-list" aria-label="Sources">
-          <h3>Sources</h3>
-          <ul>
-            {sectionSources.map((source) => (
-              <li key={source.id}>
-                {source.url ? (
-                  <a href={source.url} target="_blank" rel="noreferrer">
-                    {source.title}
-                  </a>
-                ) : (
-                  <span>{source.title}</span>
-                )}
-                {source.publisher && <span> - {source.publisher}</span>}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
       <div className="section-nav">
         <div className="nav-button-wrapper">
           <button
@@ -281,6 +266,9 @@ export default function ContentView({
           >
             Previous
           </button>
+        </div>
+        <div className="course-feedback-nav-center">
+          <CourseFeedback courseKey={courseKey} courseTitle={courseTitle} />
         </div>
         <div className="nav-button-wrapper">
           <button
@@ -307,6 +295,39 @@ export default function ContentView({
           </button>
         </div>
       </div>
+
+      {sectionSources.length > 0 && (
+        <section className="source-reference-list" aria-label="Sources">
+          <button
+            type="button"
+            className={`nav-button source-reference-toggle ${sourcesExpanded ? "source-reference-toggle-expanded" : ""}`}
+            aria-expanded={sourcesExpanded}
+            onClick={() => setSourcesExpanded((expanded) => !expanded)}
+          >
+            <span>Sources{sourcesExpanded ? "" : ` (${sectionSources.length})`}</span>
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M8 5l8 7-8 7" />
+            </svg>
+          </button>
+          {sourcesExpanded && (
+            <ul>
+              {sectionSources.map((source, index) => (
+                <li key={source.id}>
+                  <span className="source-reference-index">[{index + 1}]</span>
+                  {source.url ? (
+                    <a href={source.url} target="_blank" rel="noreferrer">
+                      {source.title}
+                    </a>
+                  ) : (
+                    <span>{source.title}</span>
+                  )}
+                  {source.publisher && <span> - {source.publisher}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
     </main>
   );
   

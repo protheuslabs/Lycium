@@ -1,5 +1,6 @@
 import type { FormEvent, MouseEvent } from "react";
 import Dropdown from "../Dropdown/Dropdown";
+import Modal from "../Modal/Modal";
 import { SETTINGS_PATH } from "../../utils/courseRouting";
 
 type SelectOption = {
@@ -40,30 +41,15 @@ export default function CreateCourseModal({
   onOpenSettings,
   onClose,
 }: CreateCourseModalProps) {
-  const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className="create-course-modal-backdrop" role="presentation" onMouseDown={handleBackdropMouseDown}>
-      <section
-        className="create-course-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="create-course-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <button className="create-course-close" type="button" aria-label="Close create course" onClick={onClose}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M6.3 5.3a1 1 0 0 1 1.4 0l4.3 4.3 4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 11l4.3 4.3a1 1 0 0 1-1.4 1.4L12 12.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z" />
-          </svg>
-        </button>
-        <div className="create-course-header">
-          <p>Create with Lycium</p>
-          <h2 id="create-course-title">Create Course</h2>
-        </div>
+    <Modal
+      isOpen
+      title="Create Course"
+      eyebrow="Create with Lycium"
+      labelledById="create-course-title"
+      size="md"
+      onClose={onClose}
+    >
         <form className="create-course-form" onSubmit={onSubmit}>
           {!canCreateCourse && (
             <p className="create-course-unlock-message">
@@ -136,7 +122,6 @@ export default function CreateCourseModal({
             {generateMessage && <p className={`generator-status generator-status-${generateStatus}`}>{generateMessage}</p>}
           </div>
         </form>
-      </section>
-    </div>
+    </Modal>
   );
 }

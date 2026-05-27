@@ -430,3 +430,38 @@ html[data-theme="light"] .source-reference-list li {
 html[data-theme="light"] .source-reference-list a {
   color: #3a56d4;
 }
+
+.source-reference-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+  padding-inline: 1rem;
+}
+
+.source-reference-toggle svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 160ms ease;
+}
+
+.source-reference-toggle-expanded svg {
+  transform: rotate(-90deg);
+}
+
+.source-reference-toggle:focus,
+.source-reference-toggle:focus-visible {
+  outline: none;
+}
+
+.source-reference-index {
+  display: inline-block;
+  margin-right: 0.45rem;
+  color: #4a6cf7;
+  font-weight: 850;
+}

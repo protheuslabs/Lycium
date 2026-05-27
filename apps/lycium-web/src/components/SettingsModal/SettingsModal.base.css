@@ -17,6 +17,11 @@
   text-align: center;
 }
 
+.settings-modal-content {
+  display: grid;
+  gap: 1.35rem;
+}
+
 .settings-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -399,4 +404,3 @@
 
 .settings-status-success { color: #2f7a4f; }
 .settings-status-error { color: #b53d3d; }
-

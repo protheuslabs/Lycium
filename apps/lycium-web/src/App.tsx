@@ -42,6 +42,7 @@ function App() {
   const [level, setLevel] = useState("");
   const [generateStatus, setGenerateStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [generateMessage, setGenerateMessage] = useState("");
+  const [publishingCourseKey, setPublishingCourseKey] = useState<string | null>(null);
   const [learnerId, setLearnerId] = useState<number | null>(null);
   const [currentPath, setCurrentPath] = useState(() => pathname ?? COURSE_CATALOG_PATH);
   const [pageBehindSettingsPath, setPageBehindSettingsPath] = useState(() => {
@@ -276,6 +277,7 @@ function App() {
         data: generatedSnapshot.structure,
         snapshotId: Number(generatedSnapshot.id),
         source: "remote",
+        status: generatedSnapshot.status,
       };
       const validation = validateCourseEntry(entry, {
         centralSourceRecords: sourceRecordsData.sources,
@@ -295,6 +297,36 @@ function App() {
       setGenerateMessage(err instanceof Error ? err.message : "Course generation failed. Is the API running?");
     }
   };
+
+  const handlePublishCourse = useCallback(async (course: CourseEntry) => {
+    if (!course.snapshotId) return;
+    setPublishingCourseKey(course.key);
+    try {
+      const publishedCourse = await lyciumApi.publishCourse(course.snapshotId);
+      const entry: CourseEntry = {
+        key: `remote-${publishedCourse.id}`,
+        title: publishedCourse.title,
+        data: publishedCourse.structure,
+        snapshotId: Number(publishedCourse.id),
+        source: "remote",
+        status: publishedCourse.status,
+      };
+      const validation = validateCourseEntry(entry, {
+        centralSourceRecords: sourceRecordsData.sources,
+        requireSources: true,
+      });
+      if (!validation.valid) {
+        throw new Error(`Published course failed validation: ${formatCourseValidationErrors(validation.errors)}`);
+      }
+      setCourses((prev) => prev.map((current) => (current.key === course.key ? entry : current)));
+    } catch (err) {
+      console.warn("Course publish failed:", err);
+      setGenerateStatus("error");
+      setGenerateMessage(err instanceof Error ? err.message : "Course publish failed.");
+    } finally {
+      setPublishingCourseKey(null);
+    }
+  }, []);
 
   useEffect(() => {
     if (pathname) {
@@ -376,7 +408,7 @@ function App() {
 
     const fetchRemoteCourses = async () => {
       try {
-        const rows = await lyciumApi.listRemoteCourses(25);
+        const rows = await lyciumApi.listRemoteCourses(100, "all");
         const remoteCourses: CourseEntry[] = [];
         for (const row of rows) {
           const snapshotId = Number(row.id);
@@ -386,6 +418,7 @@ function App() {
             data: row.structure,
             snapshotId,
             source: "remote",
+            status: row.status,
           };
           const validation = validateCourseEntry(entry, {
             centralSourceRecords: sourceRecordsData.sources,
@@ -443,6 +476,8 @@ function App() {
           onLevelChange={setLevel}
           onGenerateCourse={handleGenerateCourse}
           onOpenCourse={openCourseByEntry}
+          onPublishCourse={handlePublishCourse}
+          publishingCourseKey={publishingCourseKey}
           onOpenSettings={routeToSettings}
         />
       ) : (
@@ -458,6 +493,7 @@ function App() {
           />
           <div className="course-content-host">
             <ContentView
+              courseKey={selectedCourse?.key ?? ""}
               courseTitle={selectedCourse?.data?.title ?? "Course"}
               section={currentSection}
               moduleTitle={currentSection?.moduleTitle ?? ""}

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from uuid import uuid4
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -11,6 +12,7 @@ from app.config import SETTINGS
 
 LOCAL_DATA_SUBDIRS = ("courses", "completion", "links", "secrets", "user")
 VALID_SECTION_STATUSES = {"completed", "locked", "seen", "timed"}
+_PRESERVE_FEEDBACK_RATING = object()
 
 
 def _now() -> str:
@@ -58,7 +60,7 @@ def _read_json(path: Path, fallback: Any) -> Any:
 
 def _write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = path.with_suffix(f"{path.suffix}.tmp")
+    tmp_path = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
     tmp_path.write_text(json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8")
     tmp_path.replace(path)
 
@@ -333,6 +335,10 @@ def _bookmarks_path() -> Path:
     return ensure_local_data_dirs() / "user" / "course-bookmarks.json"
 
 
+def _feedback_path() -> Path:
+    return ensure_local_data_dirs() / "user" / "course-feedback.json"
+
+
 def _normalize_completed_section_ids(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
@@ -414,6 +420,82 @@ def save_course_bookmark(
     payload["updated_at"] = bookmark["updated_at"]
     _write_json(bookmarks_path, payload)
     return bookmark
+
+
+def read_course_feedback(course_key: str) -> dict[str, Any]:
+    payload = _read_json(_feedback_path(), {"courses": {}})
+    feedback = payload.get("courses", {}).get(course_key)
+    if not isinstance(feedback, dict):
+        return {
+            "course_key": course_key,
+            "course_title": None,
+            "rating": None,
+            "source_suggestions": [],
+            "updated_at": None,
+        }
+    suggestions = feedback.get("source_suggestions")
+    notes = feedback.get("feedback_notes")
+    return {
+        "course_key": course_key,
+        "course_title": feedback.get("course_title"),
+        "rating": feedback.get("rating") if feedback.get("rating") in {"up", "down"} else None,
+        "feedback_notes": notes if isinstance(notes, list) else [],
+        "source_suggestions": suggestions if isinstance(suggestions, list) else [],
+        "updated_at": feedback.get("updated_at"),
+    }
+
+
+def save_course_feedback(
+    *,
+    course_key: str,
+    course_title: str | None,
+    rating: str | None | object = _PRESERVE_FEEDBACK_RATING,
+    feedback_text: str | None = None,
+    source_url: str | None = None,
+    source_description: str | None = None,
+) -> dict[str, Any]:
+    feedback_path = _feedback_path()
+    payload = _read_json(feedback_path, {"courses": {}})
+    payload.setdefault("courses", {})
+    current = read_course_feedback(course_key)
+    next_feedback = {
+        **current,
+        "course_key": course_key,
+        "course_title": course_title or current.get("course_title"),
+        "updated_at": _now(),
+    }
+    if rating is None:
+        next_feedback["rating"] = None
+    elif rating in {"up", "down"}:
+        next_feedback["rating"] = rating
+    clean_feedback_text = (feedback_text or "").strip()
+    if clean_feedback_text:
+        notes = list(next_feedback.get("feedback_notes") or [])
+        notes.append(
+            {
+                "id": f"feedback-note-{uuid4().hex}",
+                "rating": rating if rating in {"up", "down"} else next_feedback.get("rating"),
+                "text": clean_feedback_text,
+                "created_at": next_feedback["updated_at"],
+            }
+        )
+        next_feedback["feedback_notes"] = notes
+    clean_url = (source_url or "").strip()
+    if clean_url:
+        suggestions = list(next_feedback.get("source_suggestions") or [])
+        suggestions.append(
+            {
+                "id": f"source-suggestion-{uuid4().hex}",
+                "url": clean_url,
+                "description": (source_description or "").strip() or None,
+                "created_at": next_feedback["updated_at"],
+            }
+        )
+        next_feedback["source_suggestions"] = suggestions
+    payload["courses"][course_key] = next_feedback
+    payload["updated_at"] = next_feedback["updated_at"]
+    _write_json(feedback_path, payload)
+    return next_feedback
 
 
 def read_completion(course_key: str) -> dict[str, Any]:
