@@ -79,6 +79,30 @@ const SidebarStatusBadge = memo(function SidebarStatusBadge({
   );
 });
 
+function formatModuleHeaderLabel(moduleIndex: number, moduleTitle: string, isCollapsed: boolean) {
+  const moduleNumber = moduleIndex + 1;
+  const labeledTitle = moduleTitle.match(/^\s*(Module|Week)\s+(\d+)\s*:?\s*(.*)$/i);
+
+  if (labeledTitle) {
+    const label = labeledTitle[1][0].toUpperCase() + labeledTitle[1].slice(1).toLowerCase();
+    const number = labeledTitle[2];
+    const repeatedPrefix = new RegExp(`^${label}\\s+${number}\\s*:?\\s*`, "i");
+    const titleWithoutRepeatedPrefix = labeledTitle[3].replace(repeatedPrefix, "").trim();
+
+    if (isCollapsed) {
+      return `${label[0]}${number}`;
+    }
+
+    return titleWithoutRepeatedPrefix ? `${label} ${number}: ${titleWithoutRepeatedPrefix}` : `${label} ${number}`;
+  }
+
+  if (isCollapsed) {
+    return `M${moduleNumber}`;
+  }
+
+  return `Module ${moduleNumber}: ${moduleTitle}`;
+}
+
 const SidebarModuleHeader = memo(function SidebarModuleHeader({
   moduleIndex,
   moduleTitle,
@@ -96,6 +120,8 @@ const SidebarModuleHeader = memo(function SidebarModuleHeader({
   isCollapsed: boolean;
   onToggleModule: (moduleIndex: number) => void;
 }) {
+  const label = formatModuleHeaderLabel(moduleIndex, moduleTitle, isCollapsed);
+
   return (
     <button
       type="button"
@@ -106,9 +132,7 @@ const SidebarModuleHeader = memo(function SidebarModuleHeader({
       aria-expanded={isExpanded}
       aria-disabled={isActiveModule}
     >
-      <span className="module-header-label">
-        {isCollapsed ? `M${moduleIndex + 1}` : `Module ${moduleIndex + 1}: ${moduleTitle}`}
-      </span>
+      <span className="module-header-label">{label}</span>
       {isCollapsed && <SidebarStatusBadge status={moduleStatus} className="module-header-status" />}
       <span className="module-header-caret" aria-hidden="true">
         ▾

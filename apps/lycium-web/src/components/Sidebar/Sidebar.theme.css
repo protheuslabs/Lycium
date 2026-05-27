@@ -271,11 +271,6 @@ html[data-theme="light"] .sidebar-status--timed {
     padding: 0.55rem 0.35rem;
   }
 
-  .sidebar-pulltab {
-    width: 1.25rem;
-    height: 3.75rem;
-  }
-
   .sidebar-title {
     font-size: 0.95rem;
   }

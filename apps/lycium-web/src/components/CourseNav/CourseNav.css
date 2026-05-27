@@ -6,6 +6,18 @@
   position: relative;
 }
 
+.course-nav-left {
+  order: 1;
+}
+
+.course-nav-center {
+  order: 2;
+}
+
+.course-nav-right {
+  order: 3;
+}
+
 .course-nav-center {
   position: absolute;
   left: 50%;
