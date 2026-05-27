@@ -254,7 +254,13 @@ def test_program_portfolio_credentials_and_catalog(client, monkeypatch) -> None:
         },
     )
     assert program.status_code == 201, program.text
-    assert len(program.json()["structure"]["courses"]) >= 1
+    program_structure = program.json()["structure"]
+    generated_program = program_structure["program"]
+    assert program_structure["contractValidation"]["passed"] is True
+    assert program_structure["qualityReport"]["passed"] is True
+    assert len(generated_program["requirementGroups"]) >= 3
+    assert any(group["groupKind"] == "capstone" for group in generated_program["requirementGroups"])
+    assert generated_program["dependencyGraph"]["edges"]
 
     artifact = client.post(
         "/v1/portfolio",

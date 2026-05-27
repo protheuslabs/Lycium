@@ -15,6 +15,7 @@
     "./schemas/lycium-course-quality-report.schema.json": "./schemas/lycium-course-quality-report.schema.json",
     "./schemas/lycium-course-lifecycle.schema.json": "./schemas/lycium-course-lifecycle.schema.json",
     "./schemas/lycium-generation-job.schema.json": "./schemas/lycium-generation-job.schema.json",
+    "./schemas/lycium-program.schema.json": "./schemas/lycium-program.schema.json",
     "./schemas/lycium-provider-settings.schema.json": "./schemas/lycium-provider-settings.schema.json"
   },
   "devDependencies": {

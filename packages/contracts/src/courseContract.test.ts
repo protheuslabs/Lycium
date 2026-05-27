@@ -3,6 +3,8 @@ import Ajv2020 from "ajv/dist/2020.js";
 import { describe, expect, it } from "vitest";
 import { validateCourseEntry, validateCourseTaxonomy } from "./course";
 import type { LyciumCourseData, LyciumCourseEntry } from "./course";
+import { calculateProgramProgress, validateLyciumProgram } from "./program";
+import type { LyciumProgram, LyciumRequirement } from "./program";
 
 function readFixture<T>(name: string): T {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}`, import.meta.url), "utf8")) as T;
@@ -23,6 +25,7 @@ const schemas = {
   qualityReport: readSchema("lycium-course-quality-report.schema.json"),
   lifecycle: readSchema("lycium-course-lifecycle.schema.json"),
   generationJob: readSchema("lycium-generation-job.schema.json"),
+  program: readSchema("lycium-program.schema.json"),
   providerSettings: readSchema("lycium-provider-settings.schema.json"),
 };
 
@@ -90,5 +93,56 @@ describe("Lycium contract fixtures", () => {
     const fixture = readFixture<unknown>(fixtureName);
 
     expect(validateSchema(fixture), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);
+  });
+});
+
+function courseIdsFromRequirement(requirement: LyciumRequirement): string[] {
+  if (requirement.type === "complete_course") return [requirement.courseId];
+  if (requirement.type === "complete_n_of_courses") return requirement.courseIds;
+  if (requirement.type === "requirement_set") return requirement.requirements.flatMap(courseIdsFromRequirement);
+  return [];
+}
+
+describe("Lycium program contracts", () => {
+  it("accepts a full-stack engineer program fixture", () => {
+    const program = readFixture<LyciumProgram>("full-stack-engineer-program.json");
+    const validateSchema = ajv.compile(schemas.program);
+    const courseIds = program.requirementGroups.flatMap((group) => group.requirements.flatMap(courseIdsFromRequirement));
+    const assessmentIds = ["assessment-backend-integration", "assessment-portfolio-review"];
+    const projectIds = ["project-full-stack-capstone"];
+    const competencyIds = ["competency-computer-literacy"];
+
+    expect(validateSchema(program), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);
+    expect(validateLyciumProgram(program, { courseIds, assessmentIds, projectIds, competencyIds })).toEqual({ valid: true, errors: [] });
+  });
+
+  it("rejects dependency cycles", () => {
+    const program = readFixture<LyciumProgram>("full-stack-engineer-program.json");
+    const cyclicProgram: LyciumProgram = {
+      ...program,
+      dependencyGraph: {
+        edges: [
+          ...(program.dependencyGraph?.edges ?? []),
+          { fromNodeId: "group-capstone", toNodeId: "group-foundations", type: "required" },
+        ],
+      },
+    };
+
+    expect(validateLyciumProgram(cyclicProgram).errors.some((error) => error.includes("contains a cycle"))).toBe(true);
+  });
+
+  it("rolls course, assessment, and project completion into program progress", () => {
+    const program = readFixture<LyciumProgram>("full-stack-engineer-program.json");
+    const progress = calculateProgramProgress(program, {
+      viewedRequirementIds: ["req-command-line", "req-git-github", "req-capstone-project"],
+      completedCourseIds: ["course-command-line", "course-git-github"],
+      passedAssessmentIds: ["assessment-portfolio-review"],
+      submittedProjectIds: ["project-full-stack-capstone"],
+    });
+
+    expect(progress.viewedPercent).toBeGreaterThan(0);
+    expect(progress.masteryPercent).toBeGreaterThan(0);
+    expect(progress.assessmentPercent).toBeGreaterThan(0);
+    expect(progress.projectArtifacts).toBe(1);
   });
 });

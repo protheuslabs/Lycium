@@ -1,0 +1,321 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lycium.dev/schemas/lycium-program.schema.json",
+  "title": "Lycium Program",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "description",
+    "programType",
+    "field",
+    "level",
+    "targetOutcome",
+    "learningOutcomes",
+    "entryRequirements",
+    "requirementGroups",
+    "estimatedHours",
+    "masteryPolicy",
+    "version",
+    "reviewStatus"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "programType": {
+      "enum": ["career_path", "certificate", "degree_equivalent", "skill_path", "exam_prep", "microcredential"]
+    },
+    "field": { "type": "string", "minLength": 1 },
+    "level": { "enum": ["foundational", "undergraduate", "graduate", "professional"] },
+    "targetOutcome": { "type": "string", "minLength": 1 },
+    "learningOutcomes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/learningOutcome" }
+    },
+    "entryRequirements": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/requirement" }
+    },
+    "requirementGroups": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/requirementGroup" }
+    },
+    "estimatedHours": { "type": "number", "exclusiveMinimum": 0 },
+    "masteryPolicy": { "$ref": "#/$defs/masteryPolicy" },
+    "credentialPolicy": { "$ref": "#/$defs/credentialPolicy" },
+    "dependencyGraph": { "$ref": "#/$defs/dependencyGraph" },
+    "version": { "type": "string", "minLength": 1 },
+    "reviewStatus": { "enum": ["draft", "reviewed", "published", "deprecated"] }
+  },
+  "$defs": {
+    "learningOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "statement": { "type": "string", "minLength": 1 },
+        "competencyIds": { "type": "array", "items": { "type": "string" } },
+        "sourceIds": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "masteryPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minimumMasteryPercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "minimumAssessmentPercent": { "type": "number", "minimum": 0, "maximum": 100 },
+        "requiresCapstone": { "type": "boolean" },
+        "remediationPolicy": { "enum": ["optional", "recommended", "required"] }
+      }
+    },
+    "credentialPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "credentialType": { "enum": ["certificate", "badge", "portfolio_record", "transcript_record"] },
+        "title": { "type": "string" },
+        "issuer": { "type": "string" },
+        "requiresHumanReview": { "type": "boolean" }
+      }
+    },
+    "completionRule": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": { "type": { "const": "complete_all" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "count"],
+          "properties": { "type": { "const": "complete_n_of" }, "count": { "type": "number", "minimum": 1 } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "hours"],
+          "properties": { "type": { "const": "earn_minimum_hours" }, "hours": { "type": "number", "exclusiveMinimum": 0 } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "assessmentId"],
+          "properties": {
+            "type": { "const": "pass_assessment" },
+            "assessmentId": { "type": "string", "minLength": 1 },
+            "minScore": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "projectId"],
+          "properties": { "type": { "const": "submit_project" }, "projectId": { "type": "string", "minLength": 1 } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "ruleId"],
+          "properties": { "type": { "const": "custom" }, "ruleId": { "type": "string", "minLength": 1 } }
+        }
+      ]
+    },
+    "requirementBase": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "required": { "type": "boolean" },
+        "estimatedHours": { "type": "number", "minimum": 0 },
+        "learningOutcomeIds": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "requirement": {
+      "oneOf": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/requirementBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "type", "courseId"],
+              "properties": {
+                "id": true,
+                "title": true,
+                "required": true,
+                "estimatedHours": true,
+                "learningOutcomeIds": true,
+                "type": { "const": "complete_course" },
+                "courseId": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/requirementBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "type", "count", "courseIds"],
+              "properties": {
+                "id": true,
+                "title": true,
+                "required": true,
+                "estimatedHours": true,
+                "learningOutcomeIds": true,
+                "type": { "const": "complete_n_of_courses" },
+                "count": { "type": "number", "minimum": 1 },
+                "courseIds": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/requirementBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "type", "assessmentId", "minScore"],
+              "properties": {
+                "id": true,
+                "title": true,
+                "required": true,
+                "estimatedHours": true,
+                "learningOutcomeIds": true,
+                "type": { "const": "pass_assessment" },
+                "assessmentId": { "type": "string", "minLength": 1 },
+                "minScore": { "type": "number" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/requirementBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "type", "projectId"],
+              "properties": {
+                "id": true,
+                "title": true,
+                "required": true,
+                "estimatedHours": true,
+                "learningOutcomeIds": true,
+                "type": { "const": "submit_project" },
+                "projectId": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/requirementBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "type", "competencyId"],
+              "properties": {
+                "id": true,
+                "title": true,
+                "required": true,
+                "estimatedHours": true,
+                "learningOutcomeIds": true,
+                "type": { "const": "demonstrate_competency" },
+                "competencyId": { "type": "string", "minLength": 1 }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/requirementBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "type", "minimumHours"],
+              "properties": {
+                "id": true,
+                "title": true,
+                "required": true,
+                "estimatedHours": true,
+                "learningOutcomeIds": true,
+                "type": { "const": "earn_hours" },
+                "minimumHours": { "type": "number", "exclusiveMinimum": 0 }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/requirementBase" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "type", "operator", "requirements"],
+              "properties": {
+                "id": true,
+                "title": true,
+                "required": true,
+                "estimatedHours": true,
+                "learningOutcomeIds": true,
+                "type": { "const": "requirement_set" },
+                "operator": { "enum": ["all", "any", "n_of"] },
+                "count": { "type": "number", "minimum": 1 },
+                "requirements": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/requirement" } }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "requirementGroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "displayName", "groupKind", "purpose", "learningOutcomes", "requirements", "completionRule"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "groupKind": {
+          "enum": ["cluster", "track", "concentration", "elective_pool", "foundation", "capstone", "bridge", "remedial", "lab", "seminar"]
+        },
+        "purpose": { "type": "string", "minLength": 1 },
+        "learningOutcomes": { "type": "array", "items": { "$ref": "#/$defs/learningOutcome" } },
+        "requirements": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
+        "completionRule": { "$ref": "#/$defs/completionRule" },
+        "estimatedHours": { "type": "number", "minimum": 0 },
+        "masteryPolicy": { "$ref": "#/$defs/masteryPolicy" },
+        "prerequisites": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "dependencyGraph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edges"],
+      "properties": {
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["fromNodeId", "toNodeId", "type"],
+            "properties": {
+              "fromNodeId": { "type": "string", "minLength": 1 },
+              "toNodeId": { "type": "string", "minLength": 1 },
+              "type": { "enum": ["required", "recommended", "remedial"] },
+              "rationale": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

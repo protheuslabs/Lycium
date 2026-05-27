@@ -1,0 +1,452 @@
+{
+  "id": "program-full-stack-engineer",
+  "title": "Full-Stack Engineer",
+  "description": "A career-path program that organizes software engineering foundations, web systems, backend services, data, deployment, electives, and a capstone into validated requirement groups.",
+  "programType": "career_path",
+  "field": "Software Engineering",
+  "level": "professional",
+  "targetOutcome": "Learners can design, build, test, deploy, document, and explain a production-style full-stack web application.",
+  "learningOutcomes": [
+    {
+      "id": "outcome-foundations",
+      "statement": "Use command-line, Git, web, and programming fundamentals to work inside a modern software project."
+    },
+    {
+      "id": "outcome-frontend",
+      "statement": "Build accessible, stateful browser interfaces with component-based frontend tools."
+    },
+    {
+      "id": "outcome-backend",
+      "statement": "Design backend APIs with authentication, authorization, persistence, and operational boundaries."
+    },
+    {
+      "id": "outcome-delivery",
+      "statement": "Ship software with tests, documentation, CI/CD, deployment, and observability habits."
+    },
+    {
+      "id": "outcome-capstone",
+      "statement": "Produce a reviewable portfolio artifact that demonstrates end-to-end engineering judgment."
+    }
+  ],
+  "entryRequirements": [
+    {
+      "id": "entry-computer-literacy",
+      "type": "demonstrate_competency",
+      "title": "Computer literacy",
+      "competencyId": "competency-computer-literacy",
+      "required": true
+    }
+  ],
+  "requirementGroups": [
+    {
+      "id": "group-foundations",
+      "displayName": "Software Foundations",
+      "groupKind": "foundation",
+      "purpose": "Build the operating habits needed for every later software engineering cluster.",
+      "learningOutcomes": [
+        {
+          "id": "group-foundations-outcome",
+          "statement": "Work confidently with the shell, Git, editor tooling, web basics, and debugging routines."
+        }
+      ],
+      "completionRule": { "type": "complete_all" },
+      "estimatedHours": 90,
+      "requirements": [
+        {
+          "id": "req-command-line",
+          "type": "complete_course",
+          "title": "Command Line and Developer Workstations",
+          "courseId": "course-command-line",
+          "estimatedHours": 18,
+          "learningOutcomeIds": ["outcome-foundations"]
+        },
+        {
+          "id": "req-git-github",
+          "type": "complete_course",
+          "title": "Git and GitHub Collaboration",
+          "courseId": "course-git-github",
+          "estimatedHours": 18,
+          "learningOutcomeIds": ["outcome-foundations"]
+        },
+        {
+          "id": "req-web-platform",
+          "type": "complete_course",
+          "title": "Web Platform Fundamentals",
+          "courseId": "course-web-platform",
+          "estimatedHours": 24,
+          "learningOutcomeIds": ["outcome-foundations"]
+        },
+        {
+          "id": "req-debugging",
+          "type": "complete_course",
+          "title": "Debugging and Problem Solving",
+          "courseId": "course-debugging",
+          "estimatedHours": 30,
+          "learningOutcomeIds": ["outcome-foundations"]
+        }
+      ]
+    },
+    {
+      "id": "group-programming-core",
+      "displayName": "Programming Core",
+      "groupKind": "cluster",
+      "purpose": "Develop programming fluency before framework-specific frontend or backend work.",
+      "learningOutcomes": [
+        {
+          "id": "group-programming-outcome",
+          "statement": "Write, test, type, and reason about programs using reusable functions, data structures, and asynchronous control flow."
+        }
+      ],
+      "completionRule": { "type": "complete_all" },
+      "estimatedHours": 150,
+      "prerequisites": ["group-foundations"],
+      "requirements": [
+        {
+          "id": "req-javascript",
+          "type": "complete_course",
+          "title": "JavaScript Programming",
+          "courseId": "course-javascript-programming",
+          "estimatedHours": 42,
+          "learningOutcomeIds": ["outcome-foundations"]
+        },
+        {
+          "id": "req-typescript",
+          "type": "complete_course",
+          "title": "TypeScript Fundamentals",
+          "courseId": "course-typescript-fundamentals",
+          "estimatedHours": 36,
+          "learningOutcomeIds": ["outcome-foundations"]
+        },
+        {
+          "id": "req-data-structures",
+          "type": "complete_course",
+          "title": "Data Structures for Application Developers",
+          "courseId": "course-data-structures",
+          "estimatedHours": 42,
+          "learningOutcomeIds": ["outcome-foundations"]
+        },
+        {
+          "id": "req-testing-core",
+          "type": "complete_course",
+          "title": "Testing Fundamentals",
+          "courseId": "course-testing-fundamentals",
+          "estimatedHours": 30,
+          "learningOutcomeIds": ["outcome-delivery"]
+        }
+      ]
+    },
+    {
+      "id": "group-frontend",
+      "displayName": "Frontend Engineering",
+      "groupKind": "cluster",
+      "purpose": "Build maintainable browser applications with accessibility, state, routing, and frontend testing.",
+      "learningOutcomes": [
+        {
+          "id": "group-frontend-outcome",
+          "statement": "Design and implement accessible, testable, component-based frontend experiences."
+        }
+      ],
+      "completionRule": { "type": "complete_all" },
+      "estimatedHours": 150,
+      "prerequisites": ["group-programming-core"],
+      "requirements": [
+        {
+          "id": "req-html-css",
+          "type": "complete_course",
+          "title": "HTML and CSS Systems",
+          "courseId": "course-html-css-systems",
+          "estimatedHours": 30,
+          "learningOutcomeIds": ["outcome-frontend"]
+        },
+        {
+          "id": "req-react",
+          "type": "complete_course",
+          "title": "React Application Development",
+          "courseId": "course-react-application-development",
+          "estimatedHours": 45,
+          "learningOutcomeIds": ["outcome-frontend"]
+        },
+        {
+          "id": "req-nextjs",
+          "type": "complete_course",
+          "title": "Next.js Application Architecture",
+          "courseId": "course-nextjs-application-architecture",
+          "estimatedHours": 45,
+          "learningOutcomeIds": ["outcome-frontend"]
+        },
+        {
+          "id": "req-frontend-testing",
+          "type": "complete_course",
+          "title": "Frontend Testing and Accessibility",
+          "courseId": "course-frontend-testing-accessibility",
+          "estimatedHours": 30,
+          "learningOutcomeIds": ["outcome-frontend", "outcome-delivery"]
+        }
+      ]
+    },
+    {
+      "id": "group-backend-data",
+      "displayName": "Backend and Data Layer",
+      "groupKind": "cluster",
+      "purpose": "Teach server-side application design, data persistence, authorization, and API reliability.",
+      "learningOutcomes": [
+        {
+          "id": "group-backend-outcome",
+          "statement": "Design API and data-layer choices that are reliable, secure, testable, and explainable."
+        }
+      ],
+      "completionRule": { "type": "complete_all" },
+      "estimatedHours": 180,
+      "prerequisites": ["group-programming-core"],
+      "requirements": [
+        {
+          "id": "req-http-apis",
+          "type": "complete_course",
+          "title": "HTTP APIs and REST Design",
+          "courseId": "course-http-apis-rest-design",
+          "estimatedHours": 30,
+          "learningOutcomeIds": ["outcome-backend"]
+        },
+        {
+          "id": "req-sql",
+          "type": "complete_course",
+          "title": "SQL and Relational Thinking",
+          "courseId": "course-sql-relational-thinking",
+          "estimatedHours": 36,
+          "learningOutcomeIds": ["outcome-backend"]
+        },
+        {
+          "id": "req-database-design",
+          "type": "complete_course",
+          "title": "Database Design and Persistence",
+          "courseId": "course-database-design-persistence",
+          "estimatedHours": 42,
+          "learningOutcomeIds": ["outcome-backend"]
+        },
+        {
+          "id": "req-backend-runtime-choice",
+          "type": "requirement_set",
+          "title": "Backend runtime choice",
+          "operator": "n_of",
+          "count": 2,
+          "estimatedHours": 48,
+          "learningOutcomeIds": ["outcome-backend"],
+          "requirements": [
+            {
+              "id": "req-node-backend",
+              "type": "complete_course",
+              "title": "Node.js Backend Services",
+              "courseId": "course-node-backend-services",
+              "estimatedHours": 24
+            },
+            {
+              "id": "req-python-backend",
+              "type": "complete_course",
+              "title": "Python Backend Services",
+              "courseId": "course-python-backend-services",
+              "estimatedHours": 24
+            },
+            {
+              "id": "req-auth-security",
+              "type": "complete_course",
+              "title": "Authentication and API Security",
+              "courseId": "course-authentication-api-security",
+              "estimatedHours": 24
+            }
+          ]
+        },
+        {
+          "id": "req-backend-integration-assessment",
+          "type": "pass_assessment",
+          "title": "Backend integration assessment",
+          "assessmentId": "assessment-backend-integration",
+          "minScore": 80,
+          "estimatedHours": 6,
+          "learningOutcomeIds": ["outcome-backend"]
+        }
+      ]
+    },
+    {
+      "id": "group-delivery-operations",
+      "displayName": "Delivery and Operations",
+      "groupKind": "cluster",
+      "purpose": "Move applications from local development into observable, deployed, maintainable systems.",
+      "learningOutcomes": [
+        {
+          "id": "group-delivery-outcome",
+          "statement": "Use delivery, operations, and observability practices to ship with confidence."
+        }
+      ],
+      "completionRule": { "type": "complete_all" },
+      "estimatedHours": 126,
+      "prerequisites": ["group-frontend", "group-backend-data"],
+      "requirements": [
+        {
+          "id": "req-linux",
+          "type": "complete_course",
+          "title": "Linux for Application Developers",
+          "courseId": "course-linux-application-developers",
+          "estimatedHours": 24,
+          "learningOutcomeIds": ["outcome-delivery"]
+        },
+        {
+          "id": "req-docker",
+          "type": "complete_course",
+          "title": "Docker and Containers",
+          "courseId": "course-docker-containers",
+          "estimatedHours": 30,
+          "learningOutcomeIds": ["outcome-delivery"]
+        },
+        {
+          "id": "req-ci-cd",
+          "type": "complete_course",
+          "title": "CI/CD and Release Hygiene",
+          "courseId": "course-ci-cd-release-hygiene",
+          "estimatedHours": 30,
+          "learningOutcomeIds": ["outcome-delivery"]
+        },
+        {
+          "id": "req-cloud-observability",
+          "type": "complete_course",
+          "title": "Cloud Deployment and Observability",
+          "courseId": "course-cloud-deployment-observability",
+          "estimatedHours": 42,
+          "learningOutcomeIds": ["outcome-delivery"]
+        }
+      ]
+    },
+    {
+      "id": "group-specialization-electives",
+      "displayName": "Specialization Electives",
+      "groupKind": "elective_pool",
+      "purpose": "Let learners specialize while preserving a coherent full-stack core.",
+      "learningOutcomes": [
+        {
+          "id": "group-elective-outcome",
+          "statement": "Deepen one or more areas of professional interest without breaking the core pathway."
+        }
+      ],
+      "completionRule": { "type": "complete_n_of", "count": 1 },
+      "estimatedHours": 80,
+      "prerequisites": ["group-frontend", "group-backend-data"],
+      "requirements": [
+        {
+          "id": "req-specialization-choice",
+          "type": "complete_n_of_courses",
+          "title": "Choose two specialization courses",
+          "count": 2,
+          "courseIds": [
+            "course-ai-application-engineering",
+            "course-advanced-backend-architecture",
+            "course-mobile-web-applications",
+            "course-devops-foundations"
+          ],
+          "estimatedHours": 80
+        }
+      ]
+    },
+    {
+      "id": "group-capstone",
+      "displayName": "Capstone and Professional Evidence",
+      "groupKind": "capstone",
+      "purpose": "Convert the program into portfolio evidence, reviewable engineering decisions, and a credential record.",
+      "learningOutcomes": [
+        {
+          "id": "group-capstone-outcome",
+          "statement": "Demonstrate full-stack engineering judgment through a shipped, documented, reviewed capstone."
+        }
+      ],
+      "completionRule": { "type": "complete_all" },
+      "estimatedHours": 90,
+      "prerequisites": ["group-delivery-operations", "group-specialization-electives"],
+      "requirements": [
+        {
+          "id": "req-capstone-project",
+          "type": "submit_project",
+          "title": "Full-stack capstone project",
+          "projectId": "project-full-stack-capstone",
+          "estimatedHours": 60,
+          "learningOutcomeIds": ["outcome-capstone"]
+        },
+        {
+          "id": "req-portfolio-review",
+          "type": "pass_assessment",
+          "title": "Portfolio review",
+          "assessmentId": "assessment-portfolio-review",
+          "minScore": 85,
+          "estimatedHours": 10,
+          "learningOutcomeIds": ["outcome-capstone"]
+        },
+        {
+          "id": "req-professional-readiness",
+          "type": "complete_course",
+          "title": "Professional Readiness for Software Engineers",
+          "courseId": "course-professional-readiness-software-engineers",
+          "estimatedHours": 20,
+          "learningOutcomeIds": ["outcome-capstone"]
+        }
+      ]
+    }
+  ],
+  "estimatedHours": 866,
+  "masteryPolicy": {
+    "minimumMasteryPercent": 85,
+    "minimumAssessmentPercent": 80,
+    "requiresCapstone": true,
+    "remediationPolicy": "required"
+  },
+  "credentialPolicy": {
+    "credentialType": "certificate",
+    "title": "Full-Stack Engineer Certificate of Completion",
+    "issuer": "Lycium",
+    "requiresHumanReview": true
+  },
+  "dependencyGraph": {
+    "edges": [
+      {
+        "fromNodeId": "group-foundations",
+        "toNodeId": "group-programming-core",
+        "type": "required",
+        "rationale": "Programming fluency assumes development workstation and version-control basics."
+      },
+      {
+        "fromNodeId": "group-programming-core",
+        "toNodeId": "group-frontend",
+        "type": "required",
+        "rationale": "Frontend engineering depends on JavaScript, TypeScript, and testing fundamentals."
+      },
+      {
+        "fromNodeId": "group-programming-core",
+        "toNodeId": "group-backend-data",
+        "type": "required",
+        "rationale": "Backend and data work require core programming fluency."
+      },
+      {
+        "fromNodeId": "group-frontend",
+        "toNodeId": "group-delivery-operations",
+        "type": "required",
+        "rationale": "Deployment should follow at least one complete frontend application path."
+      },
+      {
+        "fromNodeId": "group-backend-data",
+        "toNodeId": "group-delivery-operations",
+        "type": "required",
+        "rationale": "Operations work should include APIs and data persistence."
+      },
+      {
+        "fromNodeId": "group-delivery-operations",
+        "toNodeId": "group-capstone",
+        "type": "required",
+        "rationale": "The capstone should demonstrate deployment and operations readiness."
+      },
+      {
+        "fromNodeId": "group-specialization-electives",
+        "toNodeId": "group-capstone",
+        "type": "recommended",
+        "rationale": "Elective depth improves capstone distinctiveness."
+      }
+    ]
+  },
+  "version": "0.1.0",
+  "reviewStatus": "reviewed"
+}

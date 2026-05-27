@@ -128,6 +128,15 @@ export type LyciumProgramProgressState = {
   status: "not_started" | "in_progress" | "blocked" | "review_needed" | "mastered";
 };
 
+export type LyciumProgramProgressInput = {
+  viewedRequirementIds?: Iterable<string>;
+  completedCourseIds?: Iterable<string>;
+  passedAssessmentIds?: Iterable<string>;
+  submittedProjectIds?: Iterable<string>;
+  masteredCompetencyIds?: Iterable<string>;
+  earnedHours?: number;
+};
+
 export type LyciumProgramValidationOptions = {
   courseIds?: Iterable<string>;
   assessmentIds?: Iterable<string>;
