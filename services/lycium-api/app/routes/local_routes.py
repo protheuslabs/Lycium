@@ -136,11 +136,14 @@ def register(app: FastAPI) -> None:
             provider = get_agent_provider(payload.provider_id)
             models = validate_agent_api_key(payload.agent_api_key, provider_id=payload.provider_id)
             default_model = str(provider.get("defaultModel") or "")
-            selected_model = (
-                default_model
-                if default_model and any(model.get("id") == default_model for model in models)
-                else (models[0]["id"] if models else default_model or None)
-            )
+            if provider.get("generationAdapter") == "ollama-chat":
+                selected_model = models[0]["id"] if models else default_model or None
+            else:
+                selected_model = (
+                    default_model
+                    if default_model and any(model.get("id") == default_model for model in models)
+                    else (models[0]["id"] if models else default_model or None)
+                )
             return save_agent_api_key(
                 provider_id=payload.provider_id,
                 provider_label=str(provider.get("label") or payload.provider_id),

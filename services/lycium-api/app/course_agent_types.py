@@ -5,7 +5,9 @@ from typing import Any
 
 
 class CourseAgentError(ValueError):
-    pass
+    def __init__(self, message: str, *, trace: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.trace = trace or {}
 
 
 @dataclass(frozen=True)

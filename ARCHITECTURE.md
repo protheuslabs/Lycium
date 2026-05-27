@@ -23,16 +23,15 @@ That means:
 
 ### Learner-Facing App
 
-- Current MVP app: `Next.js`
-- Possible later public app: `Next.js` App Router
+- Current learner shell: `Next.js` App Router
 - `React 19`
 - `TypeScript`
 - `CSS Modules` or `Tailwind` for UI styling, but keep the UI package isolated either way
 
 Reason:
 
-- The current Next.js app is sufficient while Lycium is proving the local-first course-generation and learning loop.
-- Keep the current Next.js shell focused on the learner runtime until public SEO course pages, authenticated server-rendered app flows, or server-first routing become immediate product requirements.
+- The current Next.js App Router shell is sufficient while Lycium is proving the local-first course-generation and learning loop.
+- Keep the current Next.js shell focused on the learner runtime until public SEO course pages, authenticated server-rendered app flows, or server-first rendering become immediate product requirements.
 - Avoid using Next.js server features as a shortcut around the data-access adapters; the source-backed generation loop should stay portable across local, hosted, and future Infring-backed runtimes.
 
 ### Backend APIs and Workers
@@ -115,7 +114,6 @@ Current local API guardrails:
     lycium-workers/
   packages/
     contracts/
-    contracts/
     ui/
     config/
     retrieval-sdk/
@@ -139,10 +137,15 @@ Responsibilities:
 - authentication and learner accounts
 - learner profile and preferences
 - course browsing and discovery
+- catalog search, sorting, college filters, and internal college/department taxonomy
 - course player and AI classroom UI
 - progress, portfolio, transcripts, and credentials
+- local settings for provider keys, model selection, and display mode
+- GitHub Pages static export support through the `/Lycium` base path
 
 This app should talk to platform APIs rather than reaching directly into ingestion or graph internals.
+
+Course categories currently use university-style colleges and schools. Nested department metadata lives with the catalog taxonomy for future classification, but the learner-facing catalog filter stays at the college/school level for now.
 
 ### 2. Lycium API
 
@@ -252,5 +255,7 @@ Current browser runtime calls for local API access, progress persistence, quiz a
 `services/lycium-api/app/course_quality.py` is the backend quality gate for generated course snapshots. It uses the shared structural and semantic contracts, records report data into `generation_trace.quality_report`, and is the publication boundary for `published` catalog snapshots.
 
 The initial adapter implementations live in `@lycium/data-access`: static JSON course repositories for cloud-hosted course snapshots, generic HTTP repositories for cloud APIs, and an Infring repository set that can be pointed at the eventual Infring course/progress/generation API. Next.js handles route/layout ownership while the learner runtime stays adapter-driven.
+
+The public static build is deployed to GitHub Pages with a `/Lycium` base path. The same Next.js app also runs locally against `services/lycium-api` on port `8000` and can later point at static JSON catalogs, hosted APIs, or Infring-backed APIs through the data-access adapter boundary.
 
 Architecture decisions that should remain stable across pivots are recorded in `docs/adr/`. New major stack, contract, storage, or deployment decisions should add or update an ADR before broad implementation work.

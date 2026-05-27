@@ -5,6 +5,21 @@ import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../courseTy
 
 const DEFAULT_AGENT_PROVIDERS: AgentProviderRecord[] = [
   {
+    id: "local-model",
+    label: "Ollama Local",
+    default_model: "kimi-k2.6:cloud",
+    recommended_model: "kimi-k2.6:cloud",
+    minimum_recommended_parameters_billion: 70,
+    model_recommendation_note:
+      "Course generation is a long-form synthesis task. Prefer Kimi K2.6 Cloud or another high-capability model around 70B+ parameters.",
+    model_fetch_supported: true,
+    generation_adapter: "ollama-chat",
+    local_provider: true,
+    credential_label: "local path",
+    credential_placeholder: "Local Path",
+    credential_default: "http://localhost:11434",
+  },
+  {
     id: "openai",
     label: "OpenAI",
     default_model: "gpt-4.1-mini",
@@ -58,8 +73,9 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
       return;
     }
     if (!trimmedKey) {
+      const selectedProvider = agentProviders.find((provider) => provider.id === agentProviderId);
       setSettingsStatus("error");
-      setSettingsMessage("Enter an API key before saving.");
+      setSettingsMessage(`Enter a ${selectedProvider?.credential_label ?? "api key"} before saving.`);
       return;
     }
 
@@ -125,6 +141,15 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
   const handleThemeModeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
     browserStorage.writeThemeMode(mode);
+  };
+
+  const handleAgentProviderChange = (providerId: string) => {
+    const selectedProvider = agentProviders.find((provider) => provider.id === providerId);
+    setAgentProviderId(providerId);
+    setAgentApiKey(selectedProvider?.credential_default ?? "");
+    setApiKeySaveStatus("idle");
+    setSettingsStatus("idle");
+    setSettingsMessage("");
   };
 
   useLayoutEffect(() => {
@@ -234,7 +259,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     handleSettingsSubmit,
     handleThemeModeChange,
     setAgentApiKey,
-    setAgentProviderId,
+    setAgentProviderId: handleAgentProviderChange,
     setApiKeySaveStatus,
   };
 }

@@ -75,6 +75,13 @@ def _mask_key(api_key: str) -> str:
     return f"{'*' * hidden_count}{api_key[-visible_count:]}"
 
 
+def _credential_preview(key: dict[str, Any]) -> str:
+    credential = str(key.get("agent_api_key") or "")
+    if key.get("provider_id") == "local-model":
+        return credential
+    return _mask_key(credential)
+
+
 def _normalize_model_records(models: Any, selected_model: str | None = None) -> list[dict[str, str]]:
     normalized: list[dict[str, str]] = []
     if isinstance(models, list):
@@ -162,14 +169,14 @@ def local_settings_summary() -> dict[str, Any]:
     return {
         "local_data_dir": str(ensure_local_data_dirs()),
         "has_agent_api_key": bool(keys),
-        "agent_api_key_preview": _mask_key(active_key["agent_api_key"]) if active_key else None,
+        "agent_api_key_preview": _credential_preview(active_key) if active_key else None,
         "active_agent_key_id": active_key["id"] if active_key else None,
         "agent_keys": [
             {
                 "id": key["id"],
                 "provider_id": key["provider_id"],
                 "provider_label": key["provider_label"],
-                "key_preview": _mask_key(key["agent_api_key"]),
+                "key_preview": _credential_preview(key),
                 "model": key.get("model"),
                 "models": key.get("models", []),
                 "models_fetched_at": key.get("models_fetched_at"),

@@ -41,7 +41,11 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record planned/wrapper course prerequisite IDs in `metadata.prerequisiteCourseIds`
    - record module, unit, idea, and source planning in `metadata.generationPlan`
    - update progress markers as the plan becomes content
+   - align progress markers with the backend gate names: `intake`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`
+   - inspect `quality_report.evals` after backend LLM generation experiments to tune prompts, source coverage, and course structure before review or publish
 7. Build or revise the course around modules and sections, not a single long page.
+   - write learner-facing instruction directly in the course, not prompts or directions for a future model to fill in later
+   - sections should contain explanations, examples, activities, concept cards, or assessments that a learner can use immediately
 8. Keep instruction and assessment separate:
    - Learn pages use `pageType: "learn"` and contain text, video, code, projects, labs, summaries, or other instructional blocks
    - Apply pages use `pageType: "apply"` and contain assessment or practice interactions
@@ -50,6 +54,8 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - quiz blocks may use `passPercentage`; omit or leave blank for neutral score display without pass/fail coloring
    - quiz blocks may use `showAnswers`; default false, but answers are always shown after the final allowed attempt
    - quiz `questions` or `questionBank` should be treated as the total bank; `questionsPerAttempt` may limit how many are displayed per attempt
+   - real module quizzes should include at least 10 questions; more than 10 is acceptable when it improves coverage
+   - quiz questions must use `question`, `options`, and `answers`; `answers` is an array of zero-based option indexes such as `[0]`, not answer objects or answer IDs
    - each new quiz attempt should randomize question selection, question order, and answer order
 9. End every module with a summary section:
    - use `sectionType: "summary"`
@@ -79,6 +85,9 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
 15. Treat publication as a separate lifecycle gate:
    - generated snapshots should start as reviewable artifacts, not automatically trusted catalog entries
    - create or preserve `generation_trace.quality_report` when backend generation is involved
+   - use `generation_trace.quality_report.evals` to judge structure, instructional substance, assessment quality, concepts, source grounding, media, and specificity
+   - media/video generation is best-effort: log skipped or failed media stages in generation trace, but do not fail an otherwise valid course solely because video discovery failed
+   - keep only a small ring buffer of full course-generation job logs so recent runs are inspectable without creating unbounded local churn
    - publish only after the quality report passes or a reviewer explicitly records a force-publish reason
    - locked sections should be represented in review metadata rather than by mutating lesson content
 

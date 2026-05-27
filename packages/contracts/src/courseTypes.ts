@@ -146,6 +146,30 @@ export type LyciumCourseLifecycleStatus =
 
 export type LyciumCourseQualityGate = "generation" | "review" | "publish";
 
+export type LyciumCourseGenerationGateStatus = "passed" | "needs_review" | "failed";
+
+export type LyciumCourseGenerationGateIssue = {
+  severity: "warning" | "error";
+  message: string;
+  location?: string | null;
+};
+
+export type LyciumCourseGenerationGateResult = {
+  gate: string;
+  status: LyciumCourseGenerationGateStatus;
+  summary: string;
+  artifacts: Record<string, unknown>;
+  issues: LyciumCourseGenerationGateIssue[];
+};
+
+export type LyciumCourseGenerationWorkflowReport = {
+  workflowVersion: string;
+  status: LyciumCourseGenerationGateStatus;
+  checkedAt: string;
+  gates: LyciumCourseGenerationGateResult[];
+  metrics: Record<string, number>;
+};
+
 export type LyciumCourseQualityReport = {
   gate: LyciumCourseQualityGate;
   passed: boolean;
@@ -153,8 +177,35 @@ export type LyciumCourseQualityReport = {
   errors: string[];
   warnings: string[];
   metrics: Record<string, number>;
+  evals?: LyciumCourseQualityEvalSuite;
+  workflow?: LyciumCourseGenerationWorkflowReport;
   checkedAt: string;
   contractVersion?: string;
+};
+
+export type LyciumCourseQualityEvalFinding = {
+  severity: "warning" | "error";
+  message: string;
+  location?: string | null;
+};
+
+export type LyciumCourseQualityEvalDimension = {
+  key: string;
+  label: string;
+  weight: number;
+  score: number;
+  status: LyciumCourseGenerationGateStatus;
+  findings: LyciumCourseQualityEvalFinding[];
+  metrics: Record<string, number>;
+};
+
+export type LyciumCourseQualityEvalSuite = {
+  evalVersion: string;
+  status: LyciumCourseGenerationGateStatus;
+  overallScore: number;
+  dimensions: LyciumCourseQualityEvalDimension[];
+  recommendations: string[];
+  metrics: Record<string, number>;
 };
 
 export type LyciumSourceRecordLike = {
@@ -201,8 +252,15 @@ export type LyciumAgentProviderRecord = {
   id: string;
   label: string;
   default_model?: string | null;
+  recommended_model?: string | null;
+  minimum_recommended_parameters_billion?: number | null;
+  model_recommendation_note?: string | null;
   model_fetch_supported?: boolean;
   generation_adapter?: string;
+  local_provider?: boolean;
+  credential_label?: string;
+  credential_placeholder?: string;
+  credential_default?: string;
 };
 
 export type LyciumAgentKeyRecord = {
@@ -234,11 +292,22 @@ export type LyciumGeneratedCourseRecord = {
 export type LyciumCourseGenerationRequest = {
   prompt: string;
   learner_id?: number;
+  language?: string;
   level?: string;
+  model?: string;
   source_policy?: string;
+  free_only?: boolean;
+  trust_min?: number;
   desired_module_count?: number;
   expected_duration_minutes?: number;
   source_urls?: string[];
+};
+
+export type LyciumCourseGenerationExperiment = {
+  accepted: boolean;
+  course: LyciumCourseData;
+  quality_report: LyciumCourseQualityReport;
+  trace: Record<string, unknown>;
 };
 
 export type LyciumCourseGenerationJobStatus = "queued" | "running" | "validating" | "ready" | "failed";
@@ -247,10 +316,19 @@ export type LyciumCourseGenerationJob = {
   id: string;
   status: LyciumCourseGenerationJobStatus;
   request: LyciumCourseGenerationRequest;
+  progress?: number;
+  current_stage?: string | null;
+  message?: string | null;
+  course?: LyciumCourseData | null;
+  quality_report?: LyciumCourseQualityReport | null;
+  trace?: Record<string, unknown>;
+  course_snapshot?: LyciumGeneratedCourseRecord | null;
+  error?: string | null;
   courseKey?: string;
-  message?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type LyciumValidationReport = {

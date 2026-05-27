@@ -42,6 +42,24 @@ def normalize_course(course: dict[str, Any]) -> dict[str, Any]:
             section.setdefault("id", _slug(str(section.get("title") or ""), f"{module['id']}-section-{section_index}"))
             section.setdefault("sourceIds", module.get("sourceIds", []))
             content = section.get("content", [])
+            if isinstance(content, str) and content.strip():
+                section["content"] = [{"type": "text", "value": content.strip(), "sourceIds": section.get("sourceIds", [])}]
+                content = section["content"]
+            elif isinstance(content, list) and content and all(
+                isinstance(item, dict) and not item.get("type") and item.get("name") and item.get("description")
+                for item in content
+            ):
+                pacing_label = course["metadata"].get("pacingLabel") if isinstance(course.get("metadata"), dict) else "Module"
+                is_summary = str(section.get("sectionType") or "").lower() == "summary" or "concept" in str(section.get("title") or "").lower()
+                section["content"] = [
+                    {
+                        "type": "conceptCards",
+                        "title": f"{pacing_label} concepts" if is_summary else "Concepts introduced",
+                        "concepts": content,
+                        "sourceIds": section.get("sourceIds", []),
+                    }
+                ]
+                content = section["content"]
             contains_quiz = any(isinstance(block, dict) and block.get("type") == "quiz" for block in content)
             if contains_quiz:
                 section.setdefault("pageType", "apply")

@@ -7,12 +7,12 @@ export default defineConfig({
     timeout: 8_000,
   },
   use: {
-    baseURL: "http://127.0.0.1:5001",
+    baseURL: "http://localhost:5001",
     trace: "retain-on-failure",
   },
   webServer: {
     command: "NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium corepack pnpm dev",
-    url: "http://127.0.0.1:5001/Lycium/catalog",
+    url: "http://localhost:5001/Lycium/catalog",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

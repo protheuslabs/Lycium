@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from app.course_agent_contract import validate_course_contract
+from app.course_generation_workflow import run_course_generation_workflow
+from app.course_quality_evals import run_course_quality_evals
 
 
 COURSE_CONTRACT_VERSION = "0.1.0"
@@ -44,7 +45,21 @@ def _concept_count(course: dict[str, Any]) -> int:
 
 
 def assess_course_quality(course: dict[str, Any], *, gate: str = "publish") -> dict[str, Any]:
-    errors = validate_course_contract(course)
+    workflow_report = run_course_generation_workflow(course)
+    workflow = workflow_report.model_dump(mode="json")
+    eval_report = run_course_quality_evals(course)
+    errors = [
+        f"{gate_result['gate']}: {issue['message']}"
+        for gate_result in workflow["gates"]
+        for issue in gate_result["issues"]
+        if issue["severity"] == "error"
+    ]
+    errors.extend(
+        f"{dimension['label']}: {finding['message']}"
+        for dimension in eval_report["dimensions"]
+        for finding in dimension["findings"]
+        if finding["severity"] == "error"
+    )
     warnings: list[str] = []
     sections = list(_iter_sections(course))
     modules = [module for module in course.get("modules", []) if isinstance(module, dict)]
@@ -63,6 +78,18 @@ def assess_course_quality(course: dict[str, Any], *, gate: str = "publish") -> d
         warnings.append("Course has fewer than two source records; source diversity may be weak.")
     if len(modules) < 2:
         warnings.append("Course has fewer than two modules; confirm that the scope is intentionally compact.")
+    warnings.extend(
+        f"{gate_result['gate']}: {issue['message']}"
+        for gate_result in workflow["gates"]
+        for issue in gate_result["issues"]
+        if issue["severity"] == "warning"
+    )
+    warnings.extend(
+        f"{dimension['label']}: {finding['message']}"
+        for dimension in eval_report["dimensions"]
+        for finding in dimension["findings"]
+        if finding["severity"] == "warning"
+    )
 
     metrics = {
         "moduleCount": len(modules),
@@ -72,12 +99,18 @@ def assess_course_quality(course: dict[str, Any], *, gate: str = "publish") -> d
         "quizSectionCount": len(quiz_sections),
         "conceptCount": _concept_count(course),
         "sourceRecordCount": source_record_count,
+        "workflowGateCount": workflow_report.metrics["gateCount"],
+        "workflowNeedsReviewGateCount": workflow_report.metrics["needsReviewGateCount"],
+        "workflowFailedGateCount": workflow_report.metrics["failedGateCount"],
+        "qualityEvalScore": eval_report["overallScore"],
+        "qualityEvalFailedDimensionCount": eval_report["metrics"]["failedDimensionCount"],
+        "qualityEvalNeedsReviewDimensionCount": eval_report["metrics"]["needsReviewDimensionCount"],
     }
     score = 1.0
     score -= min(0.72, len(errors) * 0.18)
-    score -= min(0.18, len(warnings) * 0.04)
-    score = round(max(0.0, min(1.0, score)), 2)
-    passed = not errors and score >= MINIMUM_PUBLISH_SCORE
+    score -= min(0.1, len(warnings) * 0.015)
+    score = round(max(0.0, min(1.0, score, eval_report["overallScore"])), 2)
+    passed = not errors and eval_report["status"] != "failed" and score >= MINIMUM_PUBLISH_SCORE
 
     return {
         "gate": gate,
@@ -86,6 +119,8 @@ def assess_course_quality(course: dict[str, Any], *, gate: str = "publish") -> d
         "errors": errors,
         "warnings": warnings,
         "metrics": metrics,
+        "evals": eval_report,
+        "workflow": workflow,
         "checkedAt": _now(),
         "contractVersion": COURSE_CONTRACT_VERSION,
     }

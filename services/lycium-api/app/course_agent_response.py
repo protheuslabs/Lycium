@@ -29,6 +29,12 @@ def json_from_model_text(text: str) -> dict[str, Any]:
 
 
 def extract_message_content(response: dict[str, Any], adapter: str) -> str:
+    if adapter == "ollama-chat":
+        message = response.get("message")
+        content = message.get("content") if isinstance(message, dict) else None
+        if isinstance(content, str) and content.strip():
+            return content
+
     if adapter == "anthropic-messages":
         content = response.get("content")
         if isinstance(content, list):

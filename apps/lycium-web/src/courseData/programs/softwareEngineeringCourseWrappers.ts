@@ -178,7 +178,7 @@ function course(input: WrapperInput): CourseEntry {
       : undefined,
     prerequisites,
     metadata: {
-      wrapperStatus: "built_scaffolded_course",
+      wrapperStatus: "built_generated_course",
       pacingLabel: "Module",
       estimatedHours: input.estimatedHours,
       prerequisiteCourseIds: input.prerequisites ?? [],
@@ -192,7 +192,7 @@ function course(input: WrapperInput): CourseEntry {
         exclusions: ["formal transfer-credit claims", "vendor certification guarantees"],
       },
       generationPlan: {
-        status: ["scoped", "modules_planned", "content_scaffolded"],
+        status: ["scoped", "modules_planned", "content_drafted", "assessment_drafted", "summary_drafted"],
         moduleCount: 10,
         unitsPerModule: 4,
         quizQuestionsPerModule: 10,

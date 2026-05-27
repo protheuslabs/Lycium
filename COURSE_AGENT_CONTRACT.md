@@ -15,6 +15,14 @@ The agent is a curriculum architect for Lycium. It produces source-aware, render
 - Expected duration.
 - Source policy.
 - Submitted source URLs, when provided by the course creation UI.
+- Active provider and model settings from the local settings store. The catalog course-creation UI remains locked until a verified active key and model are available.
+
+## Model Capability Guidance
+
+- Course generation is a long-form synthesis and curriculum-architecture task; small local models are useful for experiments but should not be treated as the quality baseline.
+- For Ollama Local, prefer `kimi-k2.6:cloud`.
+- Recommended floor for full course generation is approximately 70B+ parameters or an explicitly high-capability cloud model.
+- Models below the recommended floor may be used for experiments, but generated drafts should be expected to fail quality evals more often and should not publish without review.
 
 ## Output
 
@@ -50,6 +58,56 @@ Each section must contain:
 - `sourceIds`
 - `content`
 
+`content` must always be an array of block objects. It must never be a plain string.
+
+Canonical Learn section block pattern:
+
+```json
+[
+  { "type": "text", "heading": "Explanation", "value": "Teach the idea directly." },
+  { "type": "text", "heading": "Worked example", "value": "Show the idea in a concrete situation." },
+  { "type": "text", "heading": "Practice", "value": "Ask the learner to apply the idea." },
+  {
+    "type": "conceptCards",
+    "title": "Concepts introduced",
+    "concepts": [{ "name": "Raw concept name", "description": "Concise definition." }]
+  }
+]
+```
+
+Canonical quiz section block pattern:
+
+```json
+[
+  {
+    "type": "quiz",
+    "questions": [
+      {
+        "question": "Question text",
+        "options": ["Correct answer", "Distractor A", "Distractor B", "Distractor C"],
+        "answers": [0],
+        "timed": "f"
+      }
+    ],
+    "maxAttempts": "",
+    "timeLimitSeconds": "",
+    "passPercentage": 70
+  }
+]
+```
+
+Canonical summary section block pattern:
+
+```json
+[
+  {
+    "type": "conceptCards",
+    "title": "Module concepts",
+    "concepts": [{ "name": "Raw concept name", "description": "Concise definition.", "sourceSectionId": "module-1-section-1" }]
+  }
+]
+```
+
 ## Course Structure Rules
 
 - Choose exactly one learner-facing pacing label for the whole course: `Module` or `Week`.
@@ -62,6 +120,9 @@ Each section must contain:
 - Use `pageType: "apply"` for quizzes, assessment, and practice.
 - Do not mix quiz blocks with instructional content in the same section.
 - Quiz sections must contain quiz blocks only.
+- Each module should include at least three learner-facing Learn sections, one quiz-only Apply section, and one summary section unless the requested scope is intentionally shorter.
+- Each Learn section should contain direct explanation, a worked example or concrete case, and a practice prompt or studio task.
+- Learn sections must teach the learner directly. Do not write prompt-like text such as "students should study", "learners define", "the model should explain", or "content goes here".
 - Every non-assessment learn page must end with a `conceptCards` block titled `Concepts introduced`.
 - Concept cards must contain raw concepts with `name` and `description`.
 - Every module must end with a summary section.
@@ -72,7 +133,10 @@ Each section must contain:
 ## Quiz Rules
 
 - Quizzes use `questions` or `questionBank` as the total question bank.
+- Each module quiz should include at least 10 questions unless the course is explicitly a short prototype.
+- More than 10 questions is acceptable when it improves coverage; 10 is the minimum target for real module quizzes, not a maximum.
 - Questions use `answers` as an array of zero-based option indexes.
+- Each question should have unique options and answer indexes that point to valid options.
 - Use `timed: "f"` unless explicitly requested otherwise.
 - Leave `maxAttempts` blank for unlimited attempts.
 - Leave `timeLimitSeconds` blank for unlimited time.
@@ -83,6 +147,12 @@ Each section must contain:
 ## Source Rules
 
 - Every source referenced by `sourceIds` must be represented in `sourceRecords`.
+
+## Media Rules
+
+- Source-backed video/media is best-effort.
+- Do not invent video URLs.
+- If a media stage cannot find or create a reputable source-backed video block, log the skipped or failed media stage and continue generation.
 - `sourceRecords` must use reusable IDs and include source type, title, URL or local path when available, and course usage fields.
 - The course, modules, sections, and content blocks should use `sourceIds` at the most helpful level.
 - Do not invent fake URLs. If a source is not known, use a source record without a URL and mark it as `type: "unverified-reference"`.
@@ -102,5 +172,8 @@ Each section must contain:
 - The harness parses the returned JSON.
 - The harness normalizes minor omissions only when safe.
 - The harness rejects output that violates required shape or core course rules.
-- The harness attaches a quality report to the generation trace.
+- The harness can run non-persisting generation experiments that return rejected drafts with `quality_report.evals` for tuning.
+- The harness can run staged generation experiments that ask for a compact course plan first and then draft one module at a time before assembly.
+- The harness attaches a quality report to the generation trace, including deterministic eval dimensions for structure, instructional substance, assessment, concept integrity, source grounding, media support, and specificity.
 - The harness persists only validated course structures and publishes only after the publish gate passes.
+- The UI should surface missing-provider or missing-model state before generation rather than submitting requests that cannot reach a configured model.

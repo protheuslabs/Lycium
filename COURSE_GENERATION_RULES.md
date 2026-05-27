@@ -16,15 +16,40 @@ Use the repo-local course generation skill as the starting point:
 - Keep the learner-facing structure tree-shaped, but keep prerequisite correctness in a separate dependency graph.
 - Use courses as reusable learning execution objects that can appear in multiple programs.
 - Program validation must reject missing course, project, assessment, or competency references before a program is published.
+- Catalog course categories must use the top-level university-style college or school taxonomy. Department metadata lives under those colleges for later classification and should not be invented as extra college names.
 - Completion should roll upward from learning objects into requirement groups and then into programs using explicit completion rules.
 - Course records may include an optional top-level `prerequisites` array.
 - Course records may include an optional top-level `courseEquivalencies` array for parity with real or representative college catalog courses.
 - Course equivalency records may include `institution`, `department`, `courseCode`, `title`, `url`, `catalogYear`, and `notes`.
 - Use `courseEquivalencies` for reference/parity metadata only. Do not treat it as a formal credit-transfer or articulation agreement unless the source explicitly says so.
 - Planned or wrapper courses should also record `metadata.prerequisiteCourseIds` so program/catalog tools can quickly inspect dependency shape.
-- Empty planned courses may use `modules: []` when they are intended as catalog-visible wrappers rather than teachable course builds.
+- Empty planned courses may use `modules: []` only while they are explicitly planning placeholders. Catalog-visible teachable wrappers should be built into modules, sections, source references, concept cards, quizzes, and summaries before learner delivery.
+
+## Model Capability Guidance
+
+- Full course generation should use a high-capability model because the task requires source synthesis, curriculum structure, valid JSON, assessment design, and self-consistent summaries.
+- For Ollama Local, use `kimi-k2.6:cloud` as the recommended default.
+- Treat roughly 70B+ parameters, or an explicitly high-capability cloud model, as the recommended floor for full course generation.
+- Smaller local models may be used for smoke tests and staged experiments, but they should not be expected to produce review-ready courses without repair.
 
 ## Generation Workflow
+
+Course generation is a gated workflow. Each gate should produce inspectable artifacts and issues before the next stage is trusted:
+
+- `intake`: parse the prompt, links, files, level, goals, constraints, and intended course type.
+- `source_analysis`: inspect provided sources and extract topics, claims, examples, media, exercises, prerequisites, and source metadata.
+- `source_enrichment`: add reputable supplemental sources when coverage is weak.
+- `classification`: assign college/school category, department metadata when available, tags, difficulty, parity metadata, and prerequisites.
+- `scope`: define audience, outcomes, duration, exclusions, workload, assessment model, and `Module` vs `Week` pacing.
+- `module_structure`: create the module/week arc and make each module serve a distinct role.
+- `section_structure`: create Learn and Apply sections, keeping instruction and assessment separate.
+- `content_draft`: fill sections with actual learner-facing explanation, examples, practice, source references, and concept cards.
+- `assessment`: create assessment-only quiz sections that test previously taught or sourced concepts.
+- `media`: best-effort source-backed video/media discovery. Log skipped or failed media stages, but do not fail an otherwise valid course solely because reputable video support is unavailable.
+- `summary`: end modules/weeks with concept-card summaries pulled from prior Learn pages.
+- `validation`: run schema, source-reference, placeholder-prose, structure, assessment, and taxonomy checks.
+- `quality_eval`: score course quality across structure, instructional substance, assessment, concept-card integrity, source grounding, media support, and course specificity.
+- `review_publish`: keep generated courses in draft/review until quality gates pass or a reviewer explicitly force-publishes with a reason.
 
 1. Determine course scope.
    Define the learner level, prerequisites, course outcome, expected duration, depth, assessment style, source expectations, what the course should explicitly not cover, and a short catalog description.
@@ -46,6 +71,7 @@ Use the repo-local course generation skill as the starting point:
 
 7. Generate instructional content for each idea.
    Teach the concept, connect it to prior units, include examples or practice where useful, and keep the pacing coherent.
+   Write learner-facing content directly. Do not write prompts, outlines, or instructions for a future model to fill in later.
 
 8. Generate assessments separately.
    Quizzes must be their own assessment sections after the relevant lesson/unit content.
@@ -62,6 +88,12 @@ Use the repo-local course generation skill as the starting point:
 12. Publish only after a quality report.
    The generation pipeline should produce a `quality_report` in the snapshot trace. A course can move to `published` only when the quality report passes the publish gate or an explicit force-publish review action records why the gate was overridden.
 
+13. Experiment before publishing.
+   LLM course generation experiments should use the non-persisting experiment path first. The experiment path returns the generated course, trace data, and `quality_report.evals` so prompts, sources, and gates can be tuned without adding weak drafts to the catalog.
+
+14. Prefer staged generation for local or smaller models.
+   When a model struggles to return one complete valid course JSON object, generate a compact course plan first, then draft one module at a time, assemble the course, and run the same quality evals on the assembled result.
+
 ## JSON Progress Tracking
 
 Agents should use the course JSON as a progress ledger while building. Add or preserve metadata that records planning state when useful:
@@ -70,6 +102,7 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `shortDescription`: a concise one-sentence course summary used on catalog cards, ideally 80-160 characters.
 - `difficultyLevel`: a learner-facing difficulty label used in course info modals.
 - `category`: one broad university-style college or school category.
+- `department`: optional future-facing department classification nested under the selected college; department taxonomy data is organizational and is not currently a catalog dropdown filter.
 - `tags`: specific subject labels that are narrower than the category.
 - `learningTypes`: an array reserved for future course modality metadata; leave empty for now.
 - `courseEquivalencies`: optional real or representative college catalog parity records.
@@ -82,6 +115,7 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `metadata.generationPlan.sourceMap`: source IDs mapped to units or ideas.
 - `metadata.generationPlan.status`: progress markers such as `scoped`, `modules_planned`, `units_planned`, `sources_mapped`, `content_drafted`, and `validated`.
 - `generation_trace.quality_report`: backend-generated validation, warning, metric, and score data used by review and publish gates.
+- `generation_trace.quality_report.evals`: deterministic quality-eval dimensions and recommendations for judging course usefulness before review or publish.
 
 Renderer-facing content still belongs in `modules[].sections[].content`; planning metadata should support agents without replacing the actual course structure.
 
@@ -95,6 +129,7 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Keep terminology consistent across modules.
 - Use either `Module` or `Week` consistently in learner-facing titles. If module titles use `Week 1: ...`, summary titles and summary concept-card titles should use `Week`; if module titles use `Module 1: ...`, they should use `Module`.
 - Balance theory, examples, practice, and assessment.
+- Catalog-visible courses must contain actual learner-facing explanations, examples, activities, concept cards, summaries, and assessment sections. They must not read like placeholders or model instructions.
 - Prefer deeper coverage of fewer ideas over shallow lists of loosely related topics.
 - Cite sources for claims, readings, videos, examples, and imported content.
 - Do not let source availability alone dictate course structure; structure the course pedagogically, then find or create appropriate sourced content for each idea.
@@ -109,6 +144,9 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Use `pageType: "apply"` for quiz, assessment, practice, or other learner-action pages.
 - Quiz questions should assess concepts already taught or sourced in prior lesson sections.
 - Treat `questions` or `questionBank` as the total question bank.
+- Real module quizzes should include at least 10 questions. More than 10 is acceptable when it improves concept coverage.
+- Each quiz question must use `question`, `options`, and `answers`.
+- `answers` must be an array of zero-based option indexes, such as `[0]`, not answer objects or answer IDs.
 - Use `questionsPerAttempt` only when each attempt should display a subset of the bank. Omit it or leave it blank to display the full bank.
 - Each new attempt should randomize question selection, question order, and answer order while keeping the current open attempt stable.
 - Use `maxAttempts` only when attempts should be limited. Omit it or leave it blank for unlimited attempts.
@@ -159,7 +197,26 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 ## MVP Validation Gate
 
 - Backend agent generation must normalize and validate generated JSON before persistence.
+- Backend LLM experiments should return rejected drafts with quality evals instead of hiding them behind a single failure string.
 - Frontend catalog intake must validate generated and remote courses before adding them to the learner catalog.
 - Backend publication must compute a quality report and set the snapshot to `published` only after the gate passes.
+- Course creation UI should remain locked until an active AI provider key and selected model are available.
 - Validation should reject missing modules, missing sections, missing `pageType`, mixed quiz/instruction sections, missing concept cards on Learn pages, missing summary sections, and unresolved source IDs.
 - Validation errors should be surfaced as generation failures rather than silently accepting broken course data.
+
+## Quality Eval Dimensions
+
+- `structure`: modules, section counts, and terminal module concept reviews.
+- `instructional_substance`: direct explanation, examples, practice prompts, and learn-page depth.
+- `assessment`: quiz-only assessment sections, one quiz per module, at least 10 questions, and valid answer indexes.
+- `concepts`: concept-card presence, concept descriptions, and summary concepts linked back to source sections.
+- `source_grounding`: source records, source IDs, unresolved references, and section-level source coverage.
+- `media`: source-backed video coverage when reputable video material is available.
+- `specificity`: detection of placeholder prose, prompt-like instructions, repeated template titles, and generic course filler.
+
+## Generation Log Retention
+
+- Keep full generation job logs in a small ring buffer.
+- Default retention is the latest 5 course-generation job logs.
+- Preserve the generated course snapshot separately from the job log so trimming logs does not delete learner-visible courses.
+- Log nonfatal media failures in the generation trace under media stage records.

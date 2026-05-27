@@ -250,7 +250,7 @@ export default function CourseCatalog({
               <article className="course-card course-card--generating" aria-live="polite" aria-busy="true">
                 <h3>{generatingCourseTitle}</h3>
                 <div className="generating-course-spinner" aria-hidden="true" />
-                <p className="course-generating-status">Course Generating</p>
+                <p className="course-generating-status">{generateMessage || "Course Generating"}</p>
               </article>
             )}
             {visibleCourses.length === 0 && (

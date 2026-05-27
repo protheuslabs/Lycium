@@ -74,6 +74,45 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       return readJsonResponse<LyciumGeneratedCourseRecord>(response, "Generation failed");
     },
 
+    async experimentCourseGeneration(request) {
+      const response = await fetch(`${base}/v1/agent/courses/experiment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      });
+      return readJsonResponse(response, "Course generation experiment failed");
+    },
+
+    async experimentStagedCourseGeneration(request) {
+      const response = await fetch(`${base}/v1/agent/courses/experiment/staged`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      });
+      return readJsonResponse(response, "Staged course generation experiment failed");
+    },
+
+    async createCourseGenerationJob(request) {
+      const response = await fetch(`${base}/v1/agent/courses/jobs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+      });
+      return readJsonResponse(response, "Failed to start course generation job");
+    },
+
+    async getCourseGenerationJob(jobId) {
+      const response = await fetch(`${base}/v1/agent/courses/jobs/${encodeURIComponent(String(jobId))}`);
+      return readJsonResponse(response, "Failed to fetch course generation job");
+    },
+
+    async resumeCourseGenerationJob(jobId) {
+      const response = await fetch(`${base}/v1/agent/courses/jobs/${encodeURIComponent(String(jobId))}/resume`, {
+        method: "POST",
+      });
+      return readJsonResponse(response, "Failed to resume course generation job");
+    },
+
     async getCourseQualityReport(courseId) {
       const response = await fetch(`${base}/v1/courses/${encodeURIComponent(String(courseId))}/quality-report`);
       return readJsonResponse(response, "Course quality report unavailable");

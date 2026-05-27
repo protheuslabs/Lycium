@@ -67,21 +67,25 @@ The major benchmark patterns absorbed into this SRS are:
 
 At the time of writing, Lycium provides:
 
-- A React and Vite single-page application
-- Three hard-coded sample courses loaded from local JSON
-- Module and section navigation via sidebar
-- Text, video, quiz, and simple game content blocks
-- Local progress tracking for completed sections
-- Manual course switching
+- A Next.js learner-facing app with canonical `/Lycium/catalog`, course, and unit routes
+- A local-first catalog of structured JSON courses, including seed courses and scaffolded software engineering program courses
+- Module and section navigation via an independently scrolling sidebar
+- Text, video, quiz, concept-card, source-reference, and simple game content blocks
+- Local progress tracking for completed, viewed, quiz-attempt, and bookmark state
+- Course cards with search, pagination, sorting, college filters, active module/unit context, progress bars, and metadata modals
+- A settings modal for AI provider keys, model selection, and light/dark/auto display mode
+- A create-course modal that stays locked until an active AI model is connected
+- A FastAPI local control plane for course generation, local settings, source records, progress mirroring, quality reports, and publish/review lifecycle endpoints
 
 Current limitations relative to the target concept:
 
-- No prompt-based content generation
+- Prompt-based generation exists but still needs the complete generate -> validate -> review -> publish workflow in the learner UI
 - No AI tutor or conversational layer
 - No agent roles or classroom simulation
 - No adaptive sequencing
-- No backend or persistent generated-course storage
-- No authoring workflow beyond manual JSON edits
+- Source file upload is not connected yet
+- Retrieval is still prototype-level and not yet true hybrid vector/lexical/graph retrieval
+- Review/edit/lock workflow UI is incomplete even though backend endpoints exist
 
 ## 5. Users and Roles
 
@@ -129,4 +133,3 @@ The administrator manages model configuration, moderation policies, storage, ana
 - Fully autonomous publishing without human review
 - Formal university accreditation
 - Copyright-infringing mirroring of third-party content
-

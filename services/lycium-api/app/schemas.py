@@ -135,8 +135,15 @@ class LocalAiProviderRead(BaseModel):
     id: str
     label: str
     default_model: str | None = None
+    recommended_model: str | None = None
+    minimum_recommended_parameters_billion: float | None = None
+    model_recommendation_note: str | None = None
     model_fetch_supported: bool = True
     generation_adapter: str
+    local_provider: bool = False
+    credential_label: str = "api key"
+    credential_placeholder: str = "api key"
+    credential_default: str = ""
 
 
 class LocalAgentModelRead(BaseModel):
@@ -317,8 +324,33 @@ class CourseQualityReportRead(BaseModel):
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     metrics: dict[str, float | int] = Field(default_factory=dict)
+    evals: dict[str, Any] | None = None
+    workflow: dict[str, Any] | None = None
     checkedAt: str
     contractVersion: str | None = None
+
+
+class CourseGenerationExperimentRead(BaseModel):
+    accepted: bool
+    course: dict[str, Any]
+    quality_report: CourseQualityReportRead
+    trace: dict[str, Any]
+
+
+class CourseGenerationJobRead(BaseModel):
+    id: int
+    status: Literal["queued", "running", "ready", "failed"]
+    request: dict[str, Any] = Field(default_factory=dict)
+    progress: float = Field(default=0.0, ge=0.0, le=1.0)
+    current_stage: str | None = None
+    message: str | None = None
+    course: dict[str, Any] | None = None
+    quality_report: CourseQualityReportRead | None = None
+    trace: dict[str, Any] = Field(default_factory=dict)
+    course_snapshot: dict[str, Any] | None = None
+    error: str | None = None
+    created_at: datetime
+    updated_at: datetime
 
 
 class CoursePublishRequest(BaseModel):

@@ -13,13 +13,14 @@ Everything outside that loop is secondary until the loop is dependable.
 ## Target Loop
 
 1. A user enters a course topic, short description, difficulty level, and source links or files.
-2. Lycium creates central source records for those inputs.
-3. The generation system turns those source records into course JSON.
-4. The course JSON includes modules, Learn pages, Apply pages, concept cards, quizzes, module summaries, source references, and catalog metadata.
-5. Validation produces a machine-readable quality report and rejects malformed or unsourced course JSON before publication.
-6. The user can review, edit, and lock generated sections.
-7. The accepted course is explicitly published and then appears in the catalog as a course snapshot.
-8. Learner progress, viewed state, bookmarks, quiz attempts, and settings persist outside source control.
+2. The course-creation UI verifies that a valid active AI provider key and model are connected.
+3. Lycium creates central source records for those inputs.
+4. The generation system turns those source records into course JSON.
+5. The course JSON includes modules, Learn pages, Apply pages, concept cards, quizzes, module summaries, source references, and catalog metadata.
+6. Validation produces a machine-readable quality report and rejects malformed or unsourced course JSON before publication.
+7. The user can review, edit, and lock generated sections.
+8. The accepted course is explicitly published and then appears in the catalog as a course snapshot.
+9. Learner progress, viewed state, bookmarks, quiz attempts, and settings persist outside source control.
 
 ## Non-Goals For This Slice
 
@@ -31,6 +32,7 @@ Everything outside that loop is secondary until the loop is dependable.
 ## Definition Of Done
 
 - Course generation accepts topic, level, and source inputs from the catalog modal.
+- The catalog modal clearly blocks course creation until an active provider key and model are connected in settings.
 - Every accepted generated course has `shortDescription`, `difficultyLevel`, `category`, `tags`, and `learningTypes`.
 - Every accepted generated course has central `sourceRecords` or references existing central source records.
 - Every referenced `sourceId` resolves to a known source record.
@@ -45,11 +47,13 @@ Everything outside that loop is secondary until the loop is dependable.
 ## Current Implementation Status
 
 - Course rendering, catalog routing, progress persistence, quiz attempts, settings, and local source records exist.
+- The catalog supports search, pagination, sorting, college filters, course metadata modals, and an internal college/department taxonomy.
 - The backend LLM agent harness has a behavioral contract and rejects invalid agent output before persistence.
 - The web app now validates generated and remote catalog intake before adding courses to the catalog.
 - The API now exposes quality-report, submit-review, publish, and section-lock endpoints.
 - The create-course modal passes submitted source links into generation requests.
-- Source upload, full review UI, and richer retrieval are still incomplete.
+- Software engineering program wrappers are populated with scaffolded modules, Learn pages, quiz-only Apply pages, concept summaries, prerequisites, and college-course parity metadata.
+- File upload wiring, full review UI, and richer retrieval are still incomplete.
 
 ## Immediate Next Work
 

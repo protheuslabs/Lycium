@@ -20,6 +20,10 @@
 
 Use the course JSON as both the output artifact and the progress tracker.
 
+Course generation should move through named gates that can be checked by deterministic validators and later by LLM-assisted evals: `intake`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`.
+
+Backend LLM experiments should return `quality_report.evals` before persistence. Use those deterministic eval dimensions to judge structure, instructional substance, assessment quality, concept-card integrity, source grounding, media support, and course specificity before a generated course is accepted for review.
+
 1. Scope the course.
    Define audience, level, prerequisites, desired outcome, duration, expected workload, source standards, assessment style, exclusions, and a short catalog description.
 
@@ -40,6 +44,7 @@ Use the course JSON as both the output artifact and the progress tracker.
 
 7. Draft instruction.
    Turn sub-units into teachable content blocks with examples, transitions, practice prompts, and source references.
+   Do not write lesson pages as prompts, outlines, or instructions for a future model. The rendered course must teach the learner directly.
 
 8. Draft assessment.
    Create quiz-only assessment sections after relevant instruction. Questions must test previously taught or sourced ideas.
@@ -52,6 +57,9 @@ Use the course JSON as both the output artifact and the progress tracker.
 
 11. Gate catalog intake.
    Generated courses must pass structural validation and source-reference validation before appearing in the learner catalog.
+
+12. Use quality evals before review.
+   LLM-generated drafts should be inspected through `quality_report.evals`; rejected drafts should remain available for prompt/source/gate tuning rather than being silently discarded.
 
 ## Progress Metadata
 
@@ -107,6 +115,7 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 - Reuse terms consistently across the course.
 - Avoid modules that are only lists of topics; every module needs a learning arc.
 - Include examples, practice, and assessment often enough for a real online course experience.
+- Do not allow catalog-visible courses to contain placeholder prose such as "learners should study", "the model should explain", or section text that merely describes what content should be generated later.
 - Prefer coherent depth over broad but shallow coverage.
 
 ## Content Blocks
@@ -178,10 +187,13 @@ Canonical module/week-summary concept-card block:
 
 - Use `questions` for quizzes that contain more than one question.
 - Treat `questions` or `questionBank` as the total question bank.
+- Real module quizzes should include at least 10 questions. More than 10 is acceptable when it improves coverage.
 - Use `questionsPerAttempt` only when each attempt should display a subset of the bank. Omit it or leave it blank to display the full bank.
 - Each new attempt should randomize question selection, question order, and answer order.
 - Keep a currently open attempt stable when the learner navigates away and returns.
+- Each quiz question must use `question`, `options`, and `answers`.
 - Use `answers` as an array of zero-based option indexes, even for single-answer items.
+- Do not model answers as answer objects or answer IDs.
 - Use `timed: "f"` unless the user explicitly asks for timed assessment.
 - Use `maxAttempts` only when attempts should be limited. Omit it or leave it blank for unlimited attempts.
 - Use `timeLimitSeconds` only when time should be limited. Omit it or leave it blank for unlimited time.

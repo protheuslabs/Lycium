@@ -1,10 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
-
-const LyciumApp = dynamic(() => import("../App"), {
-  ssr: false,
-});
+import LyciumApp from "../App";
 
 export default function LyciumClientShell() {
   return <LyciumApp />;

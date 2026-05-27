@@ -14,10 +14,13 @@ The project is designed around one core idea: high-quality courses should be por
 - Collapsible course sidebar with independent scrolling and section status indicators
 - Persistent progress tracking for completion and viewed/interacted percentages
 - Course cards with progress layers, active module/unit context, metadata modals, categories, and tags
+- Catalog search, pagination, sorting, college filters, and an internal college-to-department taxonomy for future course classification
 - Quiz attempts with shuffled question/answer order, timers, pass percentages, max attempts, review flags, and attempt history
 - Settings modal for local AI provider keys, model selection, and light/dark/auto display preferences
+- Course creation modal that stays locked until a valid active AI provider key and model are connected
 - Local user-data storage for completion, bookmarks, secrets, source links, and other machine-specific data
 - Course-generation rules for agents, including source records, assessment-only quiz pages, Learn/Apply page types, concept cards, and module summaries
+- Software engineering program/catalog scaffolds with prerequisite metadata, college-course parity metadata, and generated module/quiz/summary structure
 - Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
 - Retrieval quality reports for source-backed search and learning-packet assembly
 - Playwright E2E smoke coverage for the catalog and course-opening flow
@@ -63,8 +66,8 @@ The project is designed around one core idea: high-quality courses should be por
 
 ```bash
 corepack enable
-pnpm install
-pnpm dev
+corepack pnpm install
+corepack pnpm dev:all
 ```
 
 Next.js will print the local URL. The catalog route is:
@@ -76,7 +79,7 @@ http://localhost:<next-port>/Lycium/catalog
 For the local port commonly used during development:
 
 ```bash
-NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium pnpm --filter @lycium/web dev
+NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium corepack pnpm dev:web
 ```
 
 Then open:
@@ -129,16 +132,16 @@ LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 
 | Command | Description |
 | --- | --- |
-| `pnpm dev` | Start the web app through the monorepo script |
-| `pnpm dev:all` | Start the web app and local API together |
-| `pnpm dev:api` | Start the local FastAPI service |
-| `pnpm build` | Build the web app |
-| `pnpm test:contracts` | Run shared contract fixture tests |
-| `pnpm validate` | Run contract tests, web typecheck, and web build |
-| `pnpm --filter @lycium/web test` | Run web tests |
-| `pnpm --filter @lycium/web e2e` | Run Playwright catalog/course smoke tests |
-| `pnpm --filter @lycium/web lint` | Run web linting |
-| `pnpm --filter @lycium/web typecheck` | Run TypeScript checks |
+| `corepack pnpm dev` | Start the web app through the monorepo script |
+| `corepack pnpm dev:all` | Start the web app and local API together |
+| `corepack pnpm dev:api` | Start the local FastAPI service |
+| `corepack pnpm build` | Build the web app |
+| `corepack pnpm test:contracts` | Run shared contract fixture tests |
+| `corepack pnpm validate` | Run contract tests, web typecheck, and web build |
+| `corepack pnpm --filter @lycium/web test` | Run web tests |
+| `corepack pnpm --filter @lycium/web e2e` | Run Playwright catalog/course smoke tests |
+| `corepack pnpm --filter @lycium/web lint` | Run web linting |
+| `corepack pnpm --filter @lycium/web typecheck` | Run TypeScript checks |
 | `cd services/lycium-api && pytest -q` | Run API tests |
 | `cd services/lycium-workers && PYTHONPATH=src pytest -q` | Run worker tests |
 
@@ -157,12 +160,21 @@ Important conventions:
 - Concept cards should list real, raw concepts introduced on the page, with concise descriptions.
 - Module summary pages should gather concept cards introduced by the module rather than invent broad interpretive summaries.
 - Sources should be recorded centrally and referenced by course/module/section/content IDs.
+- Catalog categories are university-style colleges/schools. Department data lives under each college in `courseTaxonomy.ts` for later course classification, but departments are not currently shown as catalog filter options.
 
 Local course data currently lives under:
 
 ```text
 apps/lycium-web/src/courseData/
 ```
+
+The hosted static app is deployed through GitHub Pages at:
+
+```text
+https://protheuslabs.github.io/Lycium/
+```
+
+The Pages workflow builds the Next.js static export with `NEXT_OUTPUT=export`, `NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium`, and `NEXT_PUBLIC_LYCIUM_RUNTIME=static`.
 
 ## Local data and secrets
 

@@ -3,6 +3,7 @@ import type {
   LyciumBookmarkRecord,
   LyciumCourseData,
   LyciumCourseEntry,
+  LyciumCourseGenerationExperiment,
   LyciumCourseGenerationRequest,
   LyciumCourseQualityReport,
   LyciumGeneratedCourseRecord,
@@ -142,6 +143,11 @@ export type LocalKeyModelPayload = {
 export type LyciumLocalApi = {
   listRemoteCourses(limit?: number): Promise<LyciumGeneratedCourseRecord[]>;
   generateCourse(request: LyciumCourseGenerationRequest): Promise<LyciumGeneratedCourseRecord>;
+  experimentCourseGeneration(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationExperiment>;
+  experimentStagedCourseGeneration(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationExperiment>;
+  createCourseGenerationJob(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationJob>;
+  getCourseGenerationJob(jobId: string | number): Promise<LyciumCourseGenerationJob>;
+  resumeCourseGenerationJob(jobId: string | number): Promise<LyciumCourseGenerationJob>;
   getCourseQualityReport(courseId: string | number): Promise<LyciumCourseQualityReport>;
   publishCourse(courseId: string | number): Promise<LyciumGeneratedCourseRecord>;
   createLearner(payload: CreateLearnerPayload): Promise<LyciumLearnerRecord>;
@@ -162,6 +168,8 @@ export type {
   LyciumBookmarkRecord,
   LyciumCourseData,
   LyciumCourseEntry,
+  LyciumCourseGenerationExperiment,
+  LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,
   LyciumCourseQualityReport,
   LyciumGeneratedCourseRecord,

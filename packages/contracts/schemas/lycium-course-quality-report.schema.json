@@ -21,6 +21,97 @@
       "type": "object",
       "additionalProperties": { "type": "number" }
     },
+    "evals": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["evalVersion", "status", "overallScore", "dimensions", "recommendations", "metrics"],
+      "properties": {
+        "evalVersion": { "type": "string" },
+        "status": { "enum": ["passed", "needs_review", "failed"] },
+        "overallScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["key", "label", "weight", "score", "status", "findings", "metrics"],
+            "properties": {
+              "key": { "type": "string" },
+              "label": { "type": "string" },
+              "weight": { "type": "number" },
+              "score": { "type": "number", "minimum": 0, "maximum": 1 },
+              "status": { "enum": ["passed", "needs_review", "failed"] },
+              "findings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["severity", "message"],
+                  "properties": {
+                    "severity": { "enum": ["warning", "error"] },
+                    "message": { "type": "string" },
+                    "location": { "type": ["string", "null"] }
+                  }
+                }
+              },
+              "metrics": {
+                "type": "object",
+                "additionalProperties": { "type": "number" }
+              }
+            }
+          }
+        },
+        "recommendations": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["workflowVersion", "status", "checkedAt", "gates", "metrics"],
+      "properties": {
+        "workflowVersion": { "type": "string" },
+        "status": { "enum": ["passed", "needs_review", "failed"] },
+        "checkedAt": { "type": "string" },
+        "gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["gate", "status", "summary", "artifacts", "issues"],
+            "properties": {
+              "gate": { "type": "string" },
+              "status": { "enum": ["passed", "needs_review", "failed"] },
+              "summary": { "type": "string" },
+              "artifacts": { "type": "object" },
+              "issues": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["severity", "message"],
+                  "properties": {
+                    "severity": { "enum": ["warning", "error"] },
+                    "message": { "type": "string" },
+                    "location": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        }
+      }
+    },
     "checkedAt": { "type": "string" },
     "contractVersion": { "type": "string" }
   }

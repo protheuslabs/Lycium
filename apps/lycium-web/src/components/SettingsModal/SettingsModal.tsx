@@ -50,6 +50,9 @@ export default function SettingsModal({
   const isSavingAgentKey = apiKeySaveStatus === "loading";
   const selectedProvider =
     agentProviders.find((provider) => provider.id === agentProviderId) ?? agentProviders[0];
+  const credentialLabel = selectedProvider?.credential_label ?? "api key";
+  const credentialPlaceholder = selectedProvider?.credential_placeholder ?? credentialLabel;
+  const isLocalProvider = Boolean(selectedProvider?.local_provider);
   const providerOptions = agentProviders.map((provider) => ({
     value: provider.id,
     label: provider.label,
@@ -149,10 +152,10 @@ export default function SettingsModal({
                   <input
                     id="agent-api-key"
                     className={`settings-input${apiKeySaveStatus === "invalid" ? " settings-input--invalid" : ""}`}
-                    type="password"
+                    type={isLocalProvider ? "text" : "password"}
                     value={agentApiKey}
                     onChange={(event) => handleApiKeyChange(event.target.value)}
-                    placeholder={apiKeySaveStatus === "invalid" ? "API key invalid" : "api key"}
+                    placeholder={apiKeySaveStatus === "invalid" ? `${credentialLabel} invalid` : credentialPlaceholder}
                     autoComplete="off"
                     disabled={isSavingAgentKey}
                   />

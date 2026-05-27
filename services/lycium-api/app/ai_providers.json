@@ -1,6 +1,26 @@
 {
   "providers": [
     {
+      "id": "local-model",
+      "label": "Ollama Local",
+      "generationAdapter": "ollama-chat",
+      "defaultModel": "kimi-k2.6:cloud",
+      "recommendedModel": "kimi-k2.6:cloud",
+      "minimumRecommendedParametersBillion": 70,
+      "modelRecommendationNote": "Course generation is a long-form synthesis task. Prefer Kimi K2.6 Cloud or another high-capability model around 70B+ parameters.",
+      "baseUrl": "http://localhost:11434",
+      "chatPath": "/api/chat",
+      "modelsPath": "/api/tags",
+      "modelsResponseKey": "models",
+      "localProvider": true,
+      "credentialLabel": "local path",
+      "credentialPlaceholder": "Local Path",
+      "credentialDefault": "http://localhost:11434",
+      "auth": {
+        "type": "none"
+      }
+    },
+    {
       "id": "openai",
       "label": "OpenAI",
       "generationAdapter": "openai-chat-completions",

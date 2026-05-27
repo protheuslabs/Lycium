@@ -1,16 +1,13 @@
 
 type CatalogFooterProps = {
-  brand?: string;
   note?: string;
 };
 
 export default function CatalogFooter({
-  brand = "Lycium",
-  note = "Lycium",
+  note = "Protheus Labs",
 }: CatalogFooterProps) {
   return (
     <footer className="catalog-footer" aria-label="Catalog footer">
-      <div className="catalog-footer-brand">{brand}</div>
       <div className="catalog-footer-meta">
         <p>{note}</p>
         <nav className="catalog-footer-social" aria-label="Social media">
