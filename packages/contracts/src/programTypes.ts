@@ -1,3 +1,5 @@
+import type { LyciumRequirementImportance, LyciumRequirementOrigin } from "./curriculumBenchmarkTypes";
+
 export const LYCIUM_PROGRAM_CONTRACT_VERSION = "0.1.0" as const;
 
 export type LyciumProgramType =
@@ -46,6 +48,9 @@ export type LyciumRequirementBase = {
   required?: boolean;
   estimatedHours?: number;
   learningOutcomeIds?: string[];
+  importance?: LyciumRequirementImportance;
+  origin?: LyciumRequirementOrigin;
+  alternateRequirementIds?: string[];
 };
 
 export type LyciumRequirement =
@@ -84,7 +89,12 @@ export type LyciumRequirementGroup = {
   completionRule: LyciumCompletionRule;
   estimatedHours?: number;
   masteryPolicy?: LyciumMasteryPolicy;
-  prerequisites?: string[];
+  prerequisites?: LyciumPrerequisiteRef[];
+};
+
+export type LyciumPrerequisiteRef = {
+  nodeId: string;
+  type?: "required" | "recommended" | "remedial";
 };
 
 export type LyciumDependencyEdgeType = "required" | "recommended" | "remedial";

@@ -126,6 +126,31 @@
         }
       ]
     },
+    "requirementImportance": {
+      "type": "string",
+      "enum": ["required", "recommended", "optional", "remedial", "alternate", "enrichment"]
+    },
+    "requirementOrigin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["originType", "evidenceRefs"],
+      "properties": {
+        "originType": {
+          "type": "string",
+          "enum": [
+            "common_academic_requirement",
+            "certification_requirement",
+            "employer_requirement",
+            "expert_review",
+            "generated_gap_fill"
+          ]
+        },
+        "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "benchmarkIds": { "type": "array", "items": { "type": "string" } },
+        "frequency": { "type": "number", "minimum": 0, "maximum": 1 },
+        "notes": { "type": "string" }
+      }
+    },
     "requirementBase": {
       "type": "object",
       "properties": {
@@ -133,7 +158,10 @@
         "title": { "type": "string" },
         "required": { "type": "boolean" },
         "estimatedHours": { "type": "number", "minimum": 0 },
-        "learningOutcomeIds": { "type": "array", "items": { "type": "string" } }
+        "learningOutcomeIds": { "type": "array", "items": { "type": "string" } },
+        "importance": { "$ref": "#/$defs/requirementImportance" },
+        "origin": { "$ref": "#/$defs/requirementOrigin" },
+        "alternateRequirementIds": { "type": "array", "items": { "type": "string" } }
       }
     },
     "requirement": {

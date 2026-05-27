@@ -1,0 +1,66 @@
+{
+  "id": "benchmark-intro-programming-academic",
+  "sourceType": "university_catalog",
+  "title": "Representative Introductory Programming Benchmark",
+  "institution": "Representative University Catalog Set",
+  "programName": "Computer Science Foundations",
+  "courseCode": "CS 1xx",
+  "department": "Computer Science",
+  "catalogYear": "2026",
+  "sourceRefs": ["source-catalog-cs101-a", "source-catalog-cs101-b", "source-syllabus-cs101-c"],
+  "topics": [
+    "variables",
+    "control flow",
+    "functions",
+    "data structures",
+    "debugging",
+    "testing",
+    "file input and output"
+  ],
+  "learningOutcomes": [
+    "Write small programs using variables, expressions, conditionals, loops, and functions.",
+    "Use basic data structures to model and transform information.",
+    "Debug and test programs using repeatable techniques.",
+    "Read and write simple files while explaining program behavior."
+  ],
+  "extractedRequirements": [
+    {
+      "id": "req-intro-programming-control-flow",
+      "title": "Control flow",
+      "description": "Learners must write conditional and iterative logic that changes program behavior.",
+      "importance": "required",
+      "topics": ["conditionals", "loops", "branching"],
+      "origin": {
+        "originType": "common_academic_requirement",
+        "evidenceRefs": ["source-catalog-cs101-a", "source-catalog-cs101-b", "source-syllabus-cs101-c"],
+        "frequency": 1
+      }
+    },
+    {
+      "id": "req-intro-programming-debugging",
+      "title": "Debugging and testing",
+      "description": "Learners should use tests and debugging workflows to explain and repair program behavior.",
+      "importance": "required",
+      "topics": ["debugging", "testing", "program traces"],
+      "origin": {
+        "originType": "common_academic_requirement",
+        "evidenceRefs": ["source-catalog-cs101-a", "source-syllabus-cs101-c"],
+        "frequency": 0.67
+      }
+    },
+    {
+      "id": "req-intro-programming-files",
+      "title": "File input and output",
+      "description": "Learners may read and write files when the course variant includes persistent data exercises.",
+      "importance": "optional",
+      "topics": ["files", "persistence"],
+      "origin": {
+        "originType": "expert_review",
+        "evidenceRefs": ["source-syllabus-cs101-c"],
+        "frequency": 0.33
+      }
+    }
+  ],
+  "confidence": 0.82,
+  "notes": "Representative fixture for contract validation; not a formal articulation agreement."
+}

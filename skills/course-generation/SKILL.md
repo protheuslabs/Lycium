@@ -19,6 +19,8 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - use `RequirementGroup` for learner-facing clusters, tracks, foundations, electives, capstones, bridge work, or remediation
    - use explicit requirements instead of a flat course list
    - keep prerequisite correctness in a dependency graph, not only the display tree
+   - prefer benchmark-derived requirements over topic-prompt outlines when catalogs, syllabi, certification outlines, or employer profiles are available
+   - record requirement origins so generated paths can explain why a requirement exists
    - validate missing course, assessment, project, or competency references before publishing program data
 4. Determine course scope before writing lesson content:
    - learner level
@@ -40,9 +42,11 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record college catalog parity references in top-level `courseEquivalencies` when applicable
    - record course prerequisites in top-level `prerequisites` when applicable
    - record planned/wrapper course prerequisite IDs in `metadata.prerequisiteCourseIds`
+   - record benchmark-derived requirements and their origins in program/course metadata when applicable
+   - record benchmark evidence in `metadata.curriculumBenchmarks`, `metadata.requirementOrigins`, `metadata.courseParityProfile`, and `metadata.sourceSlots` when applicable
    - record module, unit, idea, and source planning in `metadata.generationPlan`
    - update progress markers as the plan becomes content
-   - align progress markers with the backend gate names: `intake`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`
+   - align progress markers with the backend gate names: `intake`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`
    - inspect `quality_report.evals` after backend LLM generation experiments to tune prompts, source coverage, and course structure before review or publish
 7. Build or revise the course around modules and sections, not a single long page.
    - write learner-facing instruction directly in the course, not prompts or directions for a future model to fill in later
@@ -77,6 +81,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
    - use `sourceIds` in course, module, section, and block records
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
+   - for required concepts, prefer source slots with a primary source, fallback sources, and a replacement policy
 12. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
 13. Validate structure and coherence before finishing.
 14. Treat validation as a catalog gate:

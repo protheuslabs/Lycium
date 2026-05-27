@@ -13,6 +13,8 @@ This document is intentionally written as an adaptation for Lycium, not as a dir
 Lycium shall evolve from a static, JSON-backed course viewer into a knowledge platform and prompt-to-classroom learning system with these core behaviors:
 
 - A learner or instructor can describe a course, learning goal, or full knowledge path in natural language.
+- The system can derive course and program requirements from benchmark curricula such as university catalogs, syllabi, certification outlines, and employer skill profiles.
+- The system distinguishes required, recommended, optional, remedial, alternate-path, and enrichment material based on requirement origin and benchmark evidence.
 - The system catalogs and classifies learning resources from the internet into a structured knowledge base.
 - The system decomposes sources into reusable knowledge objects instead of treating URLs as the only unit of retrieval.
 - The system generates a course outline, lesson scenes, quizzes, projects, and supporting assets from that knowledge base and the user's profile.
@@ -119,6 +121,8 @@ The administrator manages model configuration, moderation policies, storage, ana
 - Reliability, veracity, and provenance scoring for learning objects
 - Dynamic per-learner course generation from a shared knowledge base
 - Program, certification, and degree-equivalent knowledge paths
+- Curriculum benchmarks, requirement origins, course parity profiles, and equivalent course variants
+- Source fallback and replacement queues for required concepts when links decay or better resources are discovered
 - Hands-on projects, labs, and portfolio artifacts
 - Credentials, badges, transcripts, and skill records
 - Search, filtering, and discovery across courses, programs, and source objects

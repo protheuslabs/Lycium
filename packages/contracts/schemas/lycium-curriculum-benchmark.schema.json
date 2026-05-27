@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://protheuslabs.github.io/Lycium/schemas/lycium-curriculum-benchmark.schema.json",
+  "title": "LyciumCurriculumBenchmark",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "sourceType", "title", "extractedRequirements", "topics", "learningOutcomes", "confidence"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "sourceType": {
+      "type": "string",
+      "enum": ["university_catalog", "syllabus", "certification_exam", "employer_profile", "expert_reference"]
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "institution": { "type": "string" },
+    "programName": { "type": "string" },
+    "courseCode": { "type": "string" },
+    "department": { "type": "string" },
+    "url": { "type": "string" },
+    "catalogYear": { "type": "string" },
+    "sourceRefs": { "type": "array", "items": { "type": "string" } },
+    "extractedRequirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/benchmarkRequirement" }
+    },
+    "topics": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "learningOutcomes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "extractedAt": { "type": "string" },
+    "reviewedBy": { "type": "string" },
+    "notes": { "type": "string" }
+  },
+  "$defs": {
+    "importance": {
+      "type": "string",
+      "enum": ["required", "recommended", "optional", "remedial", "alternate", "enrichment"]
+    },
+    "requirementOrigin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["originType", "evidenceRefs"],
+      "properties": {
+        "originType": {
+          "type": "string",
+          "enum": [
+            "common_academic_requirement",
+            "certification_requirement",
+            "employer_requirement",
+            "expert_review",
+            "generated_gap_fill"
+          ]
+        },
+        "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "benchmarkIds": { "type": "array", "items": { "type": "string" } },
+        "frequency": { "type": "number", "minimum": 0, "maximum": 1 },
+        "notes": { "type": "string" }
+      }
+    },
+    "benchmarkRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "importance"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "importance": { "$ref": "#/$defs/importance" },
+        "topics": { "type": "array", "items": { "type": "string" } },
+        "learningOutcomeIds": { "type": "array", "items": { "type": "string" } },
+        "origin": { "$ref": "#/$defs/requirementOrigin" }
+      }
+    }
+  }
+}

@@ -116,6 +116,11 @@
 - FR-72: The system shall recommend next courses, modules, or remediation paths based on learner progress and goals.
 - FR-73: A generated course snapshot shall be stored together with its source graph and generation recipe.
 - FR-74: Learners shall be able to fork, refresh, freeze, or re-personalize a generated course snapshot.
+- FR-74a: The system shall derive course and program requirements from curriculum benchmarks, including university catalogs, syllabi, certification outlines, employer skill profiles, and expert-reviewed references.
+- FR-74b: The system shall preserve requirement origin metadata that explains why a requirement exists and which benchmark, source, certification, employer profile, or reviewer supports it.
+- FR-74c: The system shall classify requirements as required, recommended, optional, remedial, alternate-path, or enrichment material.
+- FR-74d: The system shall support equivalent course variants that satisfy the same requirement through different modality, pacing, source set, or pedagogy profiles.
+- FR-74e: The system shall support source slots with primary and fallback sources for required concepts so broken or weak sources can be replaced without changing the requirement.
 
 ### 7.15 Multimodal Practice, Labs, and Projects
 
@@ -125,6 +130,7 @@
 - FR-78: The system shall allow instructors or curators to require hands-on evidence before course or section completion.
 - FR-79: The system shall support upload, external linking, or structured submission of project evidence.
 - FR-80: The system shall record completed projects and artifacts in a learner portfolio.
+- FR-80a: Career-path and degree-equivalent programs shall include portfolio artifact requirements unless a reviewer explicitly marks them not applicable.
 
 ### 7.16 Credentials, Progress Records, and Discovery
 

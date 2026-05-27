@@ -25,6 +25,19 @@ Use the repo-local course generation skill as the starting point:
 - Planned or wrapper courses should also record `metadata.prerequisiteCourseIds` so program/catalog tools can quickly inspect dependency shape.
 - Empty planned courses may use `modules: []` only while they are explicitly planning placeholders. Catalog-visible teachable wrappers should be built into modules, sections, source references, concept cards, quizzes, and summaries before learner delivery.
 
+## Curriculum Benchmark and Parity Model
+
+- Treat real educational structures as the preferred skeleton for generated courses and programs.
+- Use `CurriculumBenchmark` records for university catalogs, syllabi, certification outlines, employer skill profiles, and expert-reviewed references.
+- Extract benchmark topics, learning outcomes, prerequisites, and requirements before drafting the course structure when benchmark sources are available.
+- Compare similar benchmarks to classify material as `required`, `recommended`, `optional`, `remedial`, `alternate`, or `enrichment`.
+- Record `RequirementOrigin` metadata on program and course requirements when a requirement is supported by benchmarks, certification standards, employer profiles, expert review, or generated gap filling.
+- Do not treat source availability as the course skeleton. First decide the curriculum requirement, then map the best available source material to it.
+- Use course equivalence groups when multiple course variants satisfy the same requirement through different modality, pacing, source sets, or pedagogy.
+- Use source slots for required concepts: a primary source, fallback sources, and a replacement policy.
+- Career-path and degree-equivalent programs should include portfolio artifact requirements unless a reviewer explicitly marks them not applicable.
+- College-course parity metadata is not accreditation, credit transfer, or an articulation agreement unless the referenced institution explicitly says so.
+
 ## Model Capability Guidance
 
 - Full course generation should use a high-capability model because the task requires source synthesis, curriculum structure, valid JSON, assessment design, and self-consistent summaries.
@@ -37,6 +50,9 @@ Use the repo-local course generation skill as the starting point:
 Course generation is a gated workflow. Each gate should produce inspectable artifacts and issues before the next stage is trusted:
 
 - `intake`: parse the prompt, links, files, level, goals, constraints, and intended course type.
+- `benchmark_intake`: identify university catalogs, syllabi, certification outlines, employer profiles, or expert references that can anchor the curriculum.
+- `requirement_extraction`: extract benchmark requirements, topics, outcomes, prerequisites, and course-parity metadata.
+- `commonality_analysis`: compare comparable benchmarks to separate required material from recommended, optional, remedial, alternate, or enrichment material.
 - `source_analysis`: inspect provided sources and extract topics, claims, examples, media, exercises, prerequisites, and source metadata.
 - `source_enrichment`: add reputable supplemental sources when coverage is weak.
 - `classification`: assign college/school category, selected department metadata, tags, difficulty, parity metadata, and prerequisites.
@@ -69,6 +85,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 
 6. Find citations and sources for each idea.
    Use reputable sources, record them centrally, and map every sourced idea to source IDs before writing final content.
+   If benchmark curricula are available, map sources to benchmark-derived requirements rather than letting the source list define the curriculum.
 
 7. Generate instructional content for each idea.
    Teach the concept, connect it to prior units, include examples or practice where useful, and keep the pacing coherent.
@@ -108,6 +125,10 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `tags`: specific subject labels that are narrower than the category.
 - `learningTypes`: an array reserved for future course modality metadata; leave empty for now.
 - `courseEquivalencies`: optional real or representative college catalog parity records.
+- `metadata.curriculumBenchmarks`: optional benchmark records or benchmark IDs used to derive course requirements.
+- `metadata.requirementOrigins`: optional evidence records explaining whether requirements came from common academic requirements, certification requirements, employer requirements, expert review, or generated gap filling.
+- `metadata.courseParityProfile`: optional summary of benchmark coverage, required topics, optional topics, and parity status.
+- `metadata.sourceSlots`: optional primary/fallback source mappings for required concepts.
 - `prerequisites`: optional course, competency, assessment, program, or external prerequisites.
 - `metadata.prerequisiteCourseIds`: optional fast-reference list for planned/wrapper courses.
 - `metadata.pacingLabel`: exactly `Module` or `Week`, used consistently in learner-facing titles.
