@@ -43,6 +43,79 @@ def _extract_goals(prompt: str, explicit_goals: list[str], tokens: list[str]) ->
     return [f"Understand {token}" for token in unique[:6]]
 
 
+def _catalog_metadata_from_prompt(prompt: str) -> dict[str, Any]:
+    tokens = [token for token in re.findall(r"[a-zA-Z][a-zA-Z0-9]+", prompt.lower()) if len(token) > 3]
+    tags = list(dict.fromkeys(tokens))[:6] or ["generated-course"]
+    return {
+        "category": "computing-information-sciences",
+        "department": "computer-science",
+        "tags": tags,
+    }
+
+
+def _build_instructional_blocks(section_title: str, prompt: str, source_excerpt: str | None = None) -> list[dict[str, Any]]:
+    subject = section_title.strip() or prompt.strip() or "the topic"
+    excerpt = (source_excerpt or "").strip()
+    grounding = (
+        f" The available source material says: {excerpt[:420]}"
+        if excerpt
+        else " The available source coverage is sparse, so this lesson uses a conservative scaffold that should be reviewed."
+    )
+    return [
+        {
+            "type": "text",
+            "heading": "Explanation",
+            "value": (
+                f"{subject} is introduced as a practical capability rather than a vocabulary item. "
+                f"Learners identify what the idea is, why it matters, what problem it helps solve, and what signals show that it is being used correctly."
+                f"{grounding} The goal is to connect the definition to decisions a practitioner would actually make."
+            ),
+        },
+        {
+            "type": "text",
+            "heading": "Worked example",
+            "value": (
+                f"In a worked example for {subject}, start with a concrete task, name the constraint, choose an approach, and explain the tradeoff. "
+                "A strong answer states what evidence supports the choice, what alternative was rejected, and what risk should be monitored after the decision."
+            ),
+        },
+        {
+            "type": "text",
+            "heading": "Practice",
+            "value": (
+                f"Practice by writing a short decision note for {subject}. Define the situation, list two alternatives, choose one, and justify it with source-backed reasoning. "
+                "Then revise the note by adding one limitation and one follow-up question that would improve confidence."
+            ),
+        },
+    ]
+
+
+def _ensure_minimum_outline_modules(raw_modules: Any) -> list[dict[str, Any]]:
+    modules = [module for module in raw_modules if isinstance(module, dict)] if isinstance(raw_modules, list) else []
+    if len(modules) != 1:
+        return modules
+    first = modules[0]
+    first_section = next((section for section in first.get("sections", []) if isinstance(section, dict)), {})
+    applied_title = f"Applied {first_section.get('title') or first.get('title') or 'practice'}"
+    return [
+        first,
+        {
+            "id": _stable_id("module", str(first.get("id") or "module"), "applied"),
+            "title": "Module 2: Applied Practice",
+            "learning_objectives": first.get("learning_objectives", []),
+            "sections": [
+                {
+                    "id": _stable_id("sec", applied_title),
+                    "title": applied_title,
+                    "learning_objectives": first_section.get("learning_objectives", []),
+                    "concept_keywords": first_section.get("concept_keywords", []),
+                    "estimated_minutes": first_section.get("estimated_minutes", 20),
+                }
+            ],
+        },
+    ]
+
+
 def _youtube_embed(url: str) -> str | None:
     if "youtube.com/watch?v=" in url:
         video_id = url.split("watch?v=")[-1].split("&", 1)[0]
@@ -59,11 +132,32 @@ def _build_quiz_for_section(section_title: str, concept_tokens: list[str]) -> di
     answer = concept_tokens[0].replace("_", " ").title() if concept_tokens else "Core Concept"
     distractor_1 = concept_tokens[1].replace("_", " ").title() if len(concept_tokens) > 1 else "Unrelated Detail"
     distractor_2 = concept_tokens[2].replace("_", " ").title() if len(concept_tokens) > 2 else "Advanced Edge Case"
+    questions = [
+        {
+            "id": f"q{index}",
+            "question": template.format(section=section_title, answer=answer),
+            "options": [correct, distractor_1, distractor_2, "A memorized definition without context"],
+            "answers": [0],
+        }
+        for index, (template, correct) in enumerate(
+            [
+                ("Which concept is most central to: {section}?", answer),
+                ("What should a learner explain first when applying {section}?", "The practical purpose and constraint"),
+                ("What makes an example of {section} stronger?", "It states evidence, tradeoffs, and risk"),
+                ("Which action best shows understanding of {section}?", "Choosing an approach and justifying it under constraints"),
+                ("What should be avoided when studying {section}?", "Treating the concept as isolated vocabulary"),
+                ("What belongs in a practice note about {section}?", "Situation, alternatives, choice, and justification"),
+                ("Why should alternatives be compared in {section}?", "Comparison makes the tradeoff explicit"),
+                ("What evidence improves reasoning about {section}?", "Source-backed facts and observed constraints"),
+                ("What follow-up strengthens work on {section}?", "Naming a limitation and a next question"),
+                ("What is the best completion standard for {section}?", "Explaining the idea in a realistic decision"),
+            ],
+            start=1,
+        )
+    ]
     return {
         "type": "quiz",
-        "question": f"Which concept is most central to: {section_title}?",
-        "options": [answer, distractor_1, distractor_2],
-        "answer": 0,
+        "questions": questions,
         "questionsPerAttempt": "",
         "maxAttempts": "",
         "timeLimitSeconds": "",

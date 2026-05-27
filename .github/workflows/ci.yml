@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check code file size limits
+        run: pnpm check:loc
+
       - name: Test shared contracts
         run: pnpm --filter @lycium/contracts test
 

@@ -4,25 +4,37 @@
   "difficultyLevel": "undergrad",
   "category": "computing-information-sciences",
   "department": "computer-science",
-  "tags": ["web", "networking"],
+  "tags": ["web", "networking", "http"],
   "learningTypes": [],
   "orderMandatory": false,
-  "sourceIds": ["source-http"],
+  "sourceIds": ["source-http", "source-mdn-status"],
   "sourceRecords": [
     {
       "id": "source-http",
       "type": "article",
       "title": "HTTP overview",
       "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP"
+    },
+    {
+      "id": "source-mdn-status",
+      "type": "article",
+      "title": "HTTP response status codes",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status"
     }
   ],
   "metadata": {
-    "pacingLabel": "Module"
+    "pacingLabel": "Module",
+    "scope": {
+      "audience": "undergraduate web development learner",
+      "level": "undergrad",
+      "duration": "two compact modules",
+      "outcome": "Explain how HTTP clients and servers exchange requests, responses, methods, headers, and status codes."
+    }
   },
   "modules": [
     {
-      "id": "module-http",
-      "title": "HTTP Basics",
+      "id": "module-http-messages",
+      "title": "Module 1: HTTP Messages",
       "sourceIds": ["source-http"],
       "sections": [
         {
@@ -34,7 +46,26 @@
           "content": [
             {
               "type": "text",
-              "value": "HTTP clients send requests and servers return responses.",
+              "heading": "Explanation",
+              "value": "HTTP is a request-response protocol used by browsers, servers, command-line clients, APIs, and many distributed systems. A client starts an exchange by sending a request that names the desired resource and the action it wants performed. A server answers with a response that includes a status code, metadata, and sometimes a response body. This structure matters because web developers debug systems by locating where an exchange failed: the request may target the wrong URL, omit required headers, use the wrong method, or send a body the server cannot interpret.",
+              "sourceIds": ["source-http"]
+            },
+            {
+              "type": "text",
+              "heading": "Worked example",
+              "value": "Imagine a browser loading a course page. The browser sends an HTTP request for the page URL. The server checks whether the route exists, chooses the resource representation, and returns an HTTP response. A successful response usually includes a status code in the 200 range and headers describing the content type and caching behavior. If the page is missing, the server returns a 404 response instead. The learner should be able to separate the request decision from the response outcome and explain what each side contributes.",
+              "sourceIds": ["source-http"]
+            },
+            {
+              "type": "text",
+              "heading": "Practice",
+              "value": "Practice by opening a browser network panel and reloading a page. Pick one request and identify the request URL, method, request headers, response status code, response headers, and response body type. Then write a short diagnosis of what would change if the request used a different method or if the server returned a redirect. This exercise turns HTTP from an abstract protocol into an observable engineering trace.",
+              "sourceIds": ["source-http"]
+            },
+            {
+              "type": "video",
+              "title": "HTTP overview video",
+              "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP",
               "sourceIds": ["source-http"]
             },
             {
@@ -66,25 +97,26 @@
               "type": "quiz",
               "sourceIds": ["source-http"],
               "questions": [
-                {
-                  "question": "Which message is sent by the client?",
-                  "options": ["HTTP request", "HTTP response", "Status line", "Server log"],
-                  "answers": [0]
-                },
-                {
-                  "question": "Which message contains the status code returned by the server?",
-                  "options": ["HTTP request", "HTTP response", "DNS record", "HTML selector"],
-                  "answers": [1]
-                }
+                { "id": "q1", "question": "Which message is sent by the client?", "options": ["HTTP request", "HTTP response", "Status line", "Server log"], "answers": [0] },
+                { "id": "q2", "question": "Which message contains the status code returned by the server?", "options": ["HTTP request", "HTTP response", "DNS record", "HTML selector"], "answers": [1] },
+                { "id": "q3", "question": "What does the request URL identify?", "options": ["The target resource", "The browser theme", "The user's password", "The local file path only"], "answers": [0] },
+                { "id": "q4", "question": "What does a response body commonly contain?", "options": ["The returned representation", "The client socket number", "A DNS zone file", "Only the request headers"], "answers": [0] },
+                { "id": "q5", "question": "Which tool can reveal HTTP exchanges in a browser?", "options": ["Network panel", "Font selector", "Color picker", "Clipboard history"], "answers": [0] },
+                { "id": "q6", "question": "Why do headers matter?", "options": ["They carry metadata about the message", "They replace all response bodies", "They prevent every error", "They are only visual labels"], "answers": [0] },
+                { "id": "q7", "question": "What does the server primarily control in the exchange?", "options": ["The response", "The user's browser extensions", "The client's operating system", "The DNS root"], "answers": [0] },
+                { "id": "q8", "question": "What does the client primarily initiate?", "options": ["The request", "The status code registry", "The server's deployment", "The response cache policy"], "answers": [0] },
+                { "id": "q9", "question": "What should debugging separate first?", "options": ["Request facts from response facts", "Fonts from colors", "HTML from CSS only", "Laptop brand from browser brand"], "answers": [0] },
+                { "id": "q10", "question": "What does a 404 response usually mean?", "options": ["The requested resource was not found", "The request was always successful", "The server sent no metadata", "The browser disabled HTTP"], "answers": [0] }
               ]
             }
           ]
         },
         {
-          "id": "module-http-summary",
-          "title": "Module Summary: HTTP Basics",
+          "id": "module-http-messages-summary",
+          "title": "Module Summary: HTTP Messages",
           "pageType": "learn",
           "sectionType": "summary",
+          "sourceIds": ["source-http"],
           "content": [
             {
               "type": "conceptCards",
@@ -99,6 +131,112 @@
                   "name": "HTTP response",
                   "description": "A message sent by a server with status, metadata, and optional content.",
                   "sourceSectionId": "http-request-response"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "module-http-semantics",
+      "title": "Module 2: HTTP Semantics",
+      "sourceIds": ["source-mdn-status"],
+      "sections": [
+        {
+          "id": "http-methods-status-codes",
+          "title": "HTTP methods and status codes",
+          "pageType": "learn",
+          "sectionType": "lesson",
+          "sourceIds": ["source-mdn-status"],
+          "content": [
+            {
+              "type": "text",
+              "heading": "Explanation",
+              "value": "HTTP methods and status codes give shared meaning to web exchanges. A method such as GET, POST, PUT, PATCH, or DELETE tells the server what kind of action the client is requesting. A status code tells the client how the server interpreted the request. This vocabulary allows clients, servers, proxies, caches, and developers to coordinate without a private explanation for every endpoint. The exact response body may differ across applications, but the method and status code provide a common diagnostic frame.",
+              "sourceIds": ["source-mdn-status"]
+            },
+            {
+              "type": "text",
+              "heading": "Worked example",
+              "value": "Consider a form that creates a new course note. The client might send a POST request to a notes endpoint with a JSON body. If the note is created, the server can return a 201 status. If the submitted JSON is missing a required field, the server might return a 400-level status. If the learner is not signed in, the response may be 401 or 403 depending on the authorization problem. Reading the method and status code together helps identify whether the issue is intent, input, authentication, authorization, or missing resources.",
+              "sourceIds": ["source-mdn-status"]
+            },
+            {
+              "type": "text",
+              "heading": "Practice",
+              "value": "Practice by describing three API interactions: reading a resource, creating a resource, and handling a missing resource. For each interaction, choose a method, predict a likely success status code, and name one failure status code. Then explain what evidence you would inspect in the request and response to confirm your diagnosis. This creates a habit of using HTTP semantics as engineering evidence rather than memorized trivia.",
+              "sourceIds": ["source-mdn-status"]
+            },
+            {
+              "type": "video",
+              "title": "HTTP status reference",
+              "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status",
+              "sourceIds": ["source-mdn-status"]
+            },
+            {
+              "type": "conceptCards",
+              "title": "Concepts introduced",
+              "concepts": [
+                {
+                  "name": "HTTP method",
+                  "description": "A request verb that communicates the action the client wants the server to consider.",
+                  "sourceSectionId": "http-methods-status-codes"
+                },
+                {
+                  "name": "HTTP status code",
+                  "description": "A numeric response classification that communicates the outcome of a request.",
+                  "sourceSectionId": "http-methods-status-codes"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "quiz-http-methods-status-codes",
+          "title": "Quiz: HTTP methods and status codes",
+          "pageType": "apply",
+          "sectionType": "assessment",
+          "sourceIds": ["source-mdn-status"],
+          "content": [
+            {
+              "type": "quiz",
+              "sourceIds": ["source-mdn-status"],
+              "questions": [
+                { "id": "q1", "question": "What does an HTTP method communicate?", "options": ["The requested action", "The user's screen size", "The server rack number", "The database password"], "answers": [0] },
+                { "id": "q2", "question": "What does an HTTP status code communicate?", "options": ["The outcome classification", "The CSS layout", "The client brand", "The source code editor"], "answers": [0] },
+                { "id": "q3", "question": "Which method is commonly used to retrieve a resource?", "options": ["GET", "DELETE", "PATCH", "TRACE only"], "answers": [0] },
+                { "id": "q4", "question": "Which method is commonly used to submit data for creation?", "options": ["POST", "GET", "OPTIONS only", "HEAD only"], "answers": [0] },
+                { "id": "q5", "question": "What does a 200-range status generally indicate?", "options": ["Success", "Client-side failure", "Server-side failure only", "Redirect only"], "answers": [0] },
+                { "id": "q6", "question": "What does a 400-range status generally indicate?", "options": ["A client-side request problem", "A successful response", "A cache hit only", "A video format"], "answers": [0] },
+                { "id": "q7", "question": "What does a 500-range status generally indicate?", "options": ["A server-side problem", "A perfect request", "A CSS parsing issue", "A browser bookmark"], "answers": [0] },
+                { "id": "q8", "question": "Why read method and status together?", "options": ["They connect intent with outcome", "They replace all logs", "They identify font files", "They bypass authentication"], "answers": [0] },
+                { "id": "q9", "question": "What evidence helps diagnose a failed API call?", "options": ["Method, URL, headers, body, and status", "Only the page color", "Only the monitor size", "Only the file extension"], "answers": [0] },
+                { "id": "q10", "question": "What should a developer avoid?", "options": ["Treating status codes as meaningless numbers", "Comparing request and response facts", "Checking endpoint intent", "Reading response metadata"], "answers": [0] }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "module-http-semantics-summary",
+          "title": "Module Summary: HTTP Semantics",
+          "pageType": "learn",
+          "sectionType": "summary",
+          "sourceIds": ["source-mdn-status"],
+          "content": [
+            {
+              "type": "conceptCards",
+              "title": "Module concepts",
+              "concepts": [
+                {
+                  "name": "HTTP method",
+                  "description": "A request verb that communicates the action the client wants the server to consider.",
+                  "sourceSectionId": "http-methods-status-codes"
+                },
+                {
+                  "name": "HTTP status code",
+                  "description": "A numeric response classification that communicates the outcome of a request.",
+                  "sourceSectionId": "http-methods-status-codes"
                 }
               ]
             }

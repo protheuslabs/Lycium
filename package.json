@@ -16,7 +16,8 @@
     "test:api": "cd services/lycium-api && python3 -m pytest -q",
     "test:workers": "cd services/lycium-workers && PYTHONPATH=src pytest -q",
     "test:e2e": "corepack pnpm --filter @lycium/web e2e",
-    "validate": "corepack pnpm test:contracts && corepack pnpm --filter @lycium/web typecheck && corepack pnpm --filter @lycium/web build",
+    "check:loc": "node scripts/check-loc.mjs",
+    "validate": "corepack pnpm check:loc && corepack pnpm test:contracts && corepack pnpm --filter @lycium/web typecheck && corepack pnpm --filter @lycium/web build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck"
   },

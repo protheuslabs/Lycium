@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
 from app.contract_validation import validate_course_schema
@@ -32,3 +33,32 @@ def test_backend_rejects_shared_invalid_course_fixture() -> None:
     errors = validate_course_contract(course)
 
     assert any("mixes quiz blocks with non-quiz content" in error for error in errors)
+
+
+def test_quality_gate_rejects_prompt_like_placeholder_lessons() -> None:
+    course = deepcopy(read_fixture("valid-course.json"))
+    for module in course["modules"]:
+        for section in module["sections"]:
+            if section.get("pageType") != "learn" or section.get("sectionType") == "summary":
+                continue
+            section["content"] = [
+                {
+                    "type": "text",
+                    "heading": "Working model",
+                    "value": (
+                        "Working model studies working model for this topic. "
+                        "Learners define the important terms and students should connect them "
+                        "to the module objective before the model generates instructional content."
+                    ),
+                },
+                {
+                    "type": "conceptCards",
+                    "title": "Concepts introduced",
+                    "concepts": [{"name": "Placeholder concept", "description": "A placeholder concept."}],
+                },
+            ]
+
+    report = assess_course_quality(course, gate="publish")
+
+    assert report["passed"] is False
+    assert report["metrics"]["qualityEvalFailedDimensionCount"] >= 1

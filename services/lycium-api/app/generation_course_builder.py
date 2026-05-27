@@ -5,13 +5,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.course_quality import assess_course_quality
-from app.generation_helpers import (
-    COURSE_GENERATION_RULES,
-    _build_module_summary_section,
-    _build_quiz_for_section,
-    _stable_id,
-    _youtube_embed,
-)
+from app.generation_helpers import COURSE_GENERATION_RULES, _build_instructional_blocks, _build_module_summary_section, _build_quiz_for_section, _catalog_metadata_from_prompt, _ensure_minimum_outline_modules, _stable_id, _youtube_embed
 from app.generation_outline import create_draft
 from app.models import CourseDraft, CourseSnapshot, Source
 from app.retrieval import search_knowledge_objects, tokenize
@@ -141,12 +135,13 @@ def _build_section_content(
     for obj in candidates:
         selected_ids.append(obj.id)
         if not blocks:
-            blocks.append({"type": "text", "value": obj.content[:900]})
+            blocks.extend(_build_instructional_blocks(section_title, prompt, obj.content[:900]))
 
         if obj.modality == "video":
             embed_url = _youtube_embed(obj.object_metadata.get("source_url", ""))
-            if embed_url:
-                blocks.append({"type": "video", "url": embed_url})
+            video_url = embed_url or obj.object_metadata.get("source_url")
+            if video_url:
+                blocks.append({"type": "video", "url": video_url, "title": obj.title})
 
         if obj.object_type in {"practice", "project", "lab"}:
             blocks.append(
@@ -174,15 +169,7 @@ def _build_section_content(
                 seen_sources.add(obj.source_id)
 
     if not blocks:
-        blocks.append(
-            {
-                "type": "text",
-                "value": (
-                    f"This section covers {section_title}. Repository coverage is still sparse for this concept, "
-                    "so this explanation is a synthesized scaffold."
-                ),
-            }
-        )
+        blocks.extend(_build_instructional_blocks(section_title, prompt))
 
     return blocks, citations[:5], selected_ids
 
@@ -201,7 +188,7 @@ def generate_course_from_draft(
     section_source_map: dict[str, list[int]] = {}
     citation_map: dict[str, list[dict[str, Any]]] = {}
 
-    for module in outline.get("modules", []):
+    for module in _ensure_minimum_outline_modules(outline.get("modules", [])):
         section_rows: list[dict[str, Any]] = []
         for section in module.get("sections", []):
             blocks, citations, selected_ids = _build_section_content(
@@ -295,12 +282,14 @@ def generate_course_from_draft(
     }
     source_records = list(source_records_by_id.values())
     course_source_ids = [source["id"] for source in source_records]
+    catalog_metadata = _catalog_metadata_from_prompt(draft.prompt)
     structure = {
         "title": draft.title,
         "shortDescription": outline.get("shortDescription") or outline.get("summary") or f"A generated Lycium course for {draft.title}.",
         "difficultyLevel": draft.difficulty or "beginner",
-        "category": "interdisciplinary-studies",
-        "tags": [],
+        "category": catalog_metadata["category"],
+        "department": catalog_metadata["department"],
+        "tags": catalog_metadata["tags"],
         "learningTypes": [],
         "orderMandatory": bool(draft.constraints.get("order_mandatory", False)),
         "sourceIds": course_source_ids,
@@ -310,6 +299,12 @@ def generate_course_from_draft(
             "pacingLabel": "Module",
             "targetAudience": draft.target_audience,
             "durationMinutes": draft.expected_duration_minutes,
+            "scope": {
+                "audience": draft.target_audience or "self-directed learner",
+                "level": draft.difficulty or "undergrad",
+                "duration": f"{draft.expected_duration_minutes} minutes",
+                "outcome": outline.get("summary") or f"Complete a structured introduction to {draft.title}.",
+            },
             "difficulty": draft.difficulty,
             "language": draft.language,
             "status": "generated",
