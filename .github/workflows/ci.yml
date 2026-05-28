@@ -35,11 +35,21 @@ jobs:
       - name: Test shared contracts
         run: pnpm --filter @lycium/contracts test
 
+      - name: Check generated contract docs
+        run: pnpm check:docs
+
       - name: Typecheck web app
         run: pnpm --filter @lycium/web typecheck
 
       - name: Build web app
+        env:
+          NEXT_OUTPUT: export
+          NEXT_PUBLIC_LYCIUM_BASE_PATH: /Lycium
+          NEXT_PUBLIC_LYCIUM_RUNTIME: static
         run: pnpm --filter @lycium/web build
+
+      - name: Verify GitHub Pages export
+        run: pnpm verify:pages-export
 
       - name: Install browser for E2E smoke tests
         run: pnpm --filter @lycium/web exec playwright install --with-deps chromium

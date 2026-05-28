@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack --hostname 0.0.0.0 --port 5001",
-    "build": "next build --webpack",
+    "build": "node scripts/sync-contract-schemas.mjs && next build --webpack",
+    "sync:schemas": "node scripts/sync-contract-schemas.mjs",
     "start": "next start --hostname 0.0.0.0 --port 5001",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit",

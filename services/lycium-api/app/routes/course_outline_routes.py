@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, status
@@ -65,6 +64,7 @@ from app.models import (
     Source,
 )
 from app.retrieval import assemble_learning_packet, search_knowledge_objects
+from app.routes.course_generation_responses import course_generation_job_response, failed_experiment_response
 from app.schemas import (
     AnalyticsSummaryRead,
     ApproveOutlineRequest,
@@ -111,73 +111,6 @@ from app.schemas import (
     SourceRead,
     UpdateOutlineRequest,
 )
-
-
-def _failed_experiment_response(payload: GenerateCourseRequest, exc: CourseAgentError) -> dict[str, Any]:
-    trace = getattr(exc, "trace", {}) or {}
-    partial_course = trace.get("partial_course")
-    course = partial_course if isinstance(partial_course, dict) else {
-        "title": "Failed course generation",
-        "shortDescription": "Course generation did not complete.",
-        "difficultyLevel": payload.level or "undergrad",
-        "category": "interdisciplinary-studies",
-        "tags": [],
-        "learningTypes": [],
-        "orderMandatory": False,
-        "sourceIds": [],
-        "sourceRecords": [],
-        "metadata": {
-            "pacingLabel": "Module",
-            "generationPlan": {"status": ["failed_generation"], "mode": trace.get("mode") or "llm-agent"},
-        },
-        "modules": [],
-    }
-    quality_report = {
-        "gate": "generation",
-        "passed": False,
-        "score": 0.0,
-        "errors": [str(exc)],
-        "warnings": ["The provider failed before Lycium could complete a quality evaluation."],
-        "metrics": {
-            "provider_failure": 1,
-            "completed_module_count": len(course.get("modules") or []),
-        },
-        "evals": None,
-        "workflow": {"status": "failed", "failedGate": "llm_generation"},
-        "checkedAt": datetime.now(timezone.utc).isoformat(),
-        "contractVersion": "COURSE_AGENT_CONTRACT.md",
-    }
-    safe_trace = {key: value for key, value in trace.items() if key != "partial_course"}
-    return {
-        "accepted": False,
-        "course": course,
-        "quality_report": quality_report,
-        "trace": {**safe_trace, "status": "failed", "error": str(exc), "quality_report": quality_report},
-    }
-
-
-def _course_generation_job_response(job: Job) -> dict[str, Any]:
-    result = job.result or {}
-    status_map = {"pending": "queued", "running": "running", "completed": "ready", "failed": "failed"}
-    return {
-        "id": job.id,
-        "status": status_map.get(job.status, "failed"),
-        "request": result.get("request") or job.payload or {},
-        "progress": result.get("progress") or (1.0 if job.status == "completed" else 0.0),
-        "current_stage": result.get("current_stage"),
-        "message": result.get("message"),
-        "course": result.get("course"),
-        "quality_report": result.get("quality_report"),
-        "trace": result.get("trace") or {},
-        "course_snapshot": result.get("course_snapshot"),
-        "error": job.error,
-        "created_at": job.created_at,
-        "updated_at": job.updated_at,
-    }
-
-
-
-
 
 
 def register(app: FastAPI) -> None:
@@ -400,7 +333,7 @@ def register(app: FastAPI) -> None:
                 "trace": {**generated.trace, "quality_report": quality_report},
             }
         except CourseAgentError as exc:
-            return _failed_experiment_response(payload, exc)
+            return failed_experiment_response(payload, exc)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -433,7 +366,7 @@ def register(app: FastAPI) -> None:
                 "trace": {**generated.trace, "quality_report": quality_report},
             }
         except CourseAgentError as exc:
-            return _failed_experiment_response(payload, exc)
+            return failed_experiment_response(payload, exc)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -470,7 +403,7 @@ def register(app: FastAPI) -> None:
         session.commit()
         session.refresh(job)
         background_tasks.add_task(run_agent_course_generation_job, job.id)
-        return _course_generation_job_response(job)
+        return course_generation_job_response(job)
 
 
     @app.get("/v1/agent/courses/jobs/{job_id}", response_model=CourseGenerationJobRead)
@@ -478,7 +411,7 @@ def register(app: FastAPI) -> None:
         job = session.get(Job, job_id)
         if job is None or job.job_type != "agent_generate_course_staged":
             raise HTTPException(status_code=404, detail="Course generation job not found.")
-        return _course_generation_job_response(job)
+        return course_generation_job_response(job)
 
 
     @app.get("/v1/agent/courses/runs", response_model=list[GenerationRunRead])
@@ -511,11 +444,11 @@ def register(app: FastAPI) -> None:
         if job is None or job.job_type != "agent_generate_course_staged":
             raise HTTPException(status_code=404, detail="Course generation job not found.")
         if job.status == "running":
-            return _course_generation_job_response(job)
+            return course_generation_job_response(job)
         job.status = "pending"
         job.error = None
         job.result = {**(job.result or {}), "message": "Generation re-queued from the saved request."}
         session.commit()
         session.refresh(job)
         background_tasks.add_task(run_agent_course_generation_job, job.id)
-        return _course_generation_job_response(job)
+        return course_generation_job_response(job)

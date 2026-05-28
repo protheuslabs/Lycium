@@ -46,6 +46,12 @@ jobs:
       - name: Support direct route fallback on GitHub Pages
         run: cp apps/lycium-web/out/index.html apps/lycium-web/out/404.html
 
+      - name: Verify GitHub Pages export
+        env:
+          NEXT_PUBLIC_LYCIUM_BASE_PATH: /Lycium
+          LYCIUM_REQUIRE_404: "1"
+        run: pnpm verify:pages-export
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
