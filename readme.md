@@ -4,7 +4,7 @@ Lycium is a local-first learning platform for building, organizing, and studying
 
 The project is designed around one core idea: high-quality courses should be portable, inspectable, and generated from explicit structure rather than hidden application state.
 
-[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Professional Readiness](./docs/professional-readiness.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
 
 ## Current capabilities
 
@@ -23,6 +23,7 @@ The project is designed around one core idea: high-quality courses should be por
 - Software engineering program/catalog scaffolds with prerequisite metadata, college-course parity metadata, and generated module/quiz/summary structure
 - Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
 - Retrieval quality reports for source-backed search and learning-packet assembly
+- Professional readiness guardrails for review/publish, benchmarks, extraction, evals, providers, observability, contracts, migrations, secrets, and deployment
 - Playwright E2E smoke coverage for the catalog and course-opening flow
 
 ## Repository structure
