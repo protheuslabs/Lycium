@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import GenerationRun, GenerationRunEvent, Job, utcnow
+from app.security import redact_sensitive_payload
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
@@ -119,7 +120,7 @@ def start_generation_run(session: Session, job: Job, *, message: str, progress: 
         progress=progress,
         current_stage="course_plan",
         message=message,
-        request_payload=payload,
+        request_payload=redact_sensitive_payload(payload),
         result_summary={},
         trace={"mode": "staged-llm-agent", "stages": []},
     )
@@ -132,7 +133,7 @@ def start_generation_run(session: Session, job: Job, *, message: str, progress: 
         stage="course_plan",
         status="running",
         message=message,
-        payload=_event_payload(progress=progress),
+        payload=redact_sensitive_payload(_event_payload(progress=progress)),
     )
     return run
 
@@ -158,7 +159,7 @@ def record_generation_run_checkpoint(job_id: int, update: dict[str, Any], *, ses
             stage=current_stage,
             status="running",
             message=message,
-            payload=_event_payload(progress=progress, trace=trace),
+            payload=redact_sensitive_payload(_event_payload(progress=progress, trace=trace)),
         )
         session.commit()
 
@@ -197,7 +198,7 @@ def complete_generation_run(
         stage=run.current_stage,
         status=run.status,
         message=message,
-        payload=_event_payload(progress=1.0, trace=run.trace, extra=run.result_summary),
+        payload=redact_sensitive_payload(_event_payload(progress=1.0, trace=run.trace, extra=run.result_summary)),
     )
 
 
@@ -222,7 +223,7 @@ def fail_generation_run(job_id: int, *, error: str, result: dict[str, Any], sess
             stage=run.current_stage,
             status="failed",
             message=error,
-            payload=_event_payload(progress=progress, trace=trace, extra={"error": error}),
+            payload=redact_sensitive_payload(_event_payload(progress=progress, trace=trace, extra={"error": error})),
         )
         session.commit()
 

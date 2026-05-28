@@ -67,6 +67,19 @@ class LocalDataMigrationStatusRead(BaseModel):
     updated_at: str | None = None
 
 
+class LocalSecurityStatusRead(BaseModel):
+    local_data_dir: str
+    secret_backend: Literal["local-file"]
+    encryption_at_rest: bool = False
+    os_keychain_backed: bool = False
+    secrets_file_exists: bool = False
+    local_data_dir_mode: str | None = None
+    secrets_dir_mode: str | None = None
+    secrets_file_mode: str | None = None
+    permissions_private: bool
+    warnings: list[str] = Field(default_factory=list)
+
+
 class LocalSettingsUpdate(BaseModel):
     provider_id: str = Field(min_length=1, max_length=120)
     agent_api_key: str = Field(min_length=1, max_length=4096)

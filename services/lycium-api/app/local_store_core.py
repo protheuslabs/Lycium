@@ -9,6 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from app.config import SETTINGS
+from app.security import PRIVATE_DIR_MODE, PRIVATE_FILE_MODE, chmod_private, permission_mode, permissions_are_private
 
 LOCAL_DATA_SUBDIRS = ("courses", "completion", "links", "secrets", "user")
 LOCAL_DATA_SCHEMA_VERSION = 2
@@ -45,8 +46,11 @@ def _safe_key(value: str) -> str:
 def ensure_local_data_dirs() -> Path:
     root = SETTINGS.local_data_dir
     root.mkdir(parents=True, exist_ok=True)
+    chmod_private(root, PRIVATE_DIR_MODE)
     for subdir in LOCAL_DATA_SUBDIRS:
-        (root / subdir).mkdir(parents=True, exist_ok=True)
+        path = root / subdir
+        path.mkdir(parents=True, exist_ok=True)
+        chmod_private(path, PRIVATE_DIR_MODE)
 
     run_local_data_migrations(root)
     return root
@@ -63,9 +67,12 @@ def _read_json(path: Path, fallback: Any) -> Any:
 
 def _write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    chmod_private(path.parent, PRIVATE_DIR_MODE)
     tmp_path = path.with_name(f".{path.name}.{uuid4().hex}.tmp")
     tmp_path.write_text(json.dumps(payload, indent=2, default=str) + "\n", encoding="utf-8")
+    chmod_private(tmp_path, PRIVATE_FILE_MODE)
     tmp_path.replace(path)
+    chmod_private(path, PRIVATE_FILE_MODE)
 
 
 def _normalize_model_records(models: Any, selected_model: str | None = None) -> list[dict[str, str]]:
@@ -246,4 +253,34 @@ def local_data_migration_status(root: Path | None = None) -> dict[str, Any]:
         "pending_migrations": pending,
         "migrations": manifest.get("migrations", []),
         "updated_at": manifest.get("updated_at"),
+    }
+
+
+def local_data_security_status(root: Path | None = None) -> dict[str, Any]:
+    local_root = root or SETTINGS.local_data_dir
+    secret_dir = local_root / "secrets"
+    agent_secret_path = secret_dir / "agent.json"
+    root_private = permissions_are_private(local_root)
+    secret_dir_private = permissions_are_private(secret_dir)
+    secret_file_private = permissions_are_private(agent_secret_path)
+    warnings: list[str] = []
+    if not root_private:
+        warnings.append("Local data directory is readable by group or others.")
+    if not secret_dir_private:
+        warnings.append("Secrets directory is readable by group or others.")
+    if not secret_file_private:
+        warnings.append("Agent secret file is readable by group or others.")
+    warnings.append("Local secrets are stored in a private local file, not encrypted-at-rest or OS-keychain backed yet.")
+
+    return {
+        "local_data_dir": str(local_root),
+        "secret_backend": "local-file",
+        "encryption_at_rest": False,
+        "os_keychain_backed": False,
+        "secrets_file_exists": agent_secret_path.exists(),
+        "local_data_dir_mode": permission_mode(local_root),
+        "secrets_dir_mode": permission_mode(secret_dir),
+        "secrets_file_mode": permission_mode(agent_secret_path),
+        "permissions_private": root_private and secret_dir_private and secret_file_private,
+        "warnings": warnings,
     }
