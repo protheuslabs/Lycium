@@ -51,6 +51,22 @@ class LocalSettingsRead(BaseModel):
     agent_keys: list[LocalAgentKeyRead] = Field(default_factory=list)
 
 
+class LocalDataMigrationRecordRead(BaseModel):
+    id: str
+    version: int
+    description: str
+    applied_at: str | None = None
+
+
+class LocalDataMigrationStatusRead(BaseModel):
+    local_data_dir: str
+    schema_version: int
+    target_schema_version: int
+    pending_migrations: list[dict[str, Any]] = Field(default_factory=list)
+    migrations: list[LocalDataMigrationRecordRead] = Field(default_factory=list)
+    updated_at: str | None = None
+
+
 class LocalSettingsUpdate(BaseModel):
     provider_id: str = Field(min_length=1, max_length=120)
     agent_api_key: str = Field(min_length=1, max_length=4096)

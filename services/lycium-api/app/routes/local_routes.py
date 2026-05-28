@@ -37,6 +37,7 @@ from app.local_store import (
     ensure_local_data_dirs,
     get_active_agent_profile,
     get_agent_profile_by_id,
+    local_data_migration_status,
     local_settings_summary,
     read_course_bookmark,
     read_course_feedback,
@@ -93,6 +94,7 @@ from app.schemas import (
     LocalAgentKeyModelUpdate,
     LocalAgentKeyVerifyUpdate,
     LocalAiProviderRead,
+    LocalDataMigrationStatusRead,
     LocalCourseBookmarkRead,
     LocalCourseBookmarkUpdate,
     LocalCourseFeedbackRead,
@@ -133,6 +135,12 @@ def register(app: FastAPI) -> None:
     @app.get("/v1/local/settings", response_model=LocalSettingsRead)
     def get_local_settings() -> dict[str, Any]:
         return local_settings_summary()
+
+
+    @app.get("/v1/local/migrations", response_model=LocalDataMigrationStatusRead)
+    def get_local_data_migrations() -> dict[str, Any]:
+        ensure_local_data_dirs()
+        return local_data_migration_status()
 
 
     @app.get("/v1/local/ai/providers", response_model=list[LocalAiProviderRead])
