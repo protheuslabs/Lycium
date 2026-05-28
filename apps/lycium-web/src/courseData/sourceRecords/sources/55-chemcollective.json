@@ -1,0 +1,14 @@
+{
+  "publisher": "ChemCollective",
+  "id": "source-chemcollective",
+  "type": "virtual-lab",
+  "title": "ChemCollective virtual labs",
+  "url": "https://chemcollective.org/",
+  "license": "free educational access",
+  "usedByCourseIds": [
+    "local-chem-105"
+  ],
+  "usedByCourseTitles": [
+    "CHEM 105 General Chemistry I"
+  ]
+}

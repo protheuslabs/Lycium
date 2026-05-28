@@ -1,0 +1,14 @@
+{
+  "publisher": "University of Colorado Boulder PhET Interactive Simulations",
+  "id": "source-phet-chemistry",
+  "type": "simulation",
+  "title": "PhET chemistry simulations",
+  "url": "https://phet.colorado.edu/en/simulations/filter?subjects=chemistry&type=html",
+  "license": "free simulations",
+  "usedByCourseIds": [
+    "local-chem-105"
+  ],
+  "usedByCourseTitles": [
+    "CHEM 105 General Chemistry I"
+  ]
+}

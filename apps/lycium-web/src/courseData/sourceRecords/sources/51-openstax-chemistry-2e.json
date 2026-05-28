@@ -1,0 +1,14 @@
+{
+  "publisher": "OpenStax",
+  "id": "source-openstax-chemistry-2e",
+  "type": "textbook",
+  "title": "OpenStax Chemistry 2e",
+  "url": "https://openstax.org/details/books/chemistry-2e",
+  "license": "free textbook",
+  "usedByCourseIds": [
+    "local-chem-105"
+  ],
+  "usedByCourseTitles": [
+    "CHEM 105 General Chemistry I"
+  ]
+}

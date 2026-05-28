@@ -4,6 +4,7 @@ import webDevCourse from "./webDevCourse";
 import pythonCourse from "./introToPythonCourse";
 import mlsysCourse from "./machineLearningSystemsCourse";
 import softwareArchitectureCourse from "./softwareArchitectureCourse";
+import chem105Course from "./chem105Course";
 import { softwareEngineeringCourseWrappers } from "./programs";
 
 export const localCourses: CourseEntry[] = [
@@ -36,6 +37,13 @@ export const localCourses: CourseEntry[] = [
     title: softwareArchitectureCourse.title,
     data: softwareArchitectureCourse as CourseData,
     source: "local",
+  },
+  {
+    key: "local-chem-105",
+    title: chem105Course.title,
+    data: chem105Course as CourseData,
+    source: "local",
+    status: "published",
   },
   ...softwareEngineeringCourseWrappers,
 ];

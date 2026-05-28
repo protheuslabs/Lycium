@@ -48,5 +48,11 @@ import source47 from "./sources/47-swebok-v4.json";
 import source48 from "./sources/48-acm-computing-curricula-2020.json";
 import source49 from "./sources/49-software-engineering-2014.json";
 import source50 from "./sources/50-owasp-wstg.json";
+import source51 from "./sources/51-openstax-chemistry-2e.json";
+import source52 from "./sources/52-libretexts-openstax-chemistry-2e.json";
+import source53 from "./sources/53-khan-academy-chemistry.json";
+import source54 from "./sources/54-mit-ocw-5111.json";
+import source55 from "./sources/55-chemcollective.json";
+import source56 from "./sources/56-phet-chemistry.json";
 
-export default { sources: [source01, source02, source03, source04, source05, source06, source07, source08, source09, source10, source11, source12, source13, source14, source15, source16, source17, source18, source19, source20, source21, source22, source23, source24, source25, source26, source27, source28, source29, source30, source31, source32, source33, source34, source35, source36, source37, source38, source39, source40, source41, source42, source43, source44, source45, source46, source47, source48, source49, source50] };
+export default { sources: [source01, source02, source03, source04, source05, source06, source07, source08, source09, source10, source11, source12, source13, source14, source15, source16, source17, source18, source19, source20, source21, source22, source23, source24, source25, source26, source27, source28, source29, source30, source31, source32, source33, source34, source35, source36, source37, source38, source39, source40, source41, source42, source43, source44, source45, source46, source47, source48, source49, source50, source51, source52, source53, source54, source55, source56] };
