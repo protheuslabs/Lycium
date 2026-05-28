@@ -10,6 +10,7 @@ type SettingsModalProps = {
   agentProviderId: string;
   agentApiKey: string;
   apiKeySaveStatus: "idle" | "loading" | "invalid";
+  verifyingAgentKeyId: string | null;
   canAddAgentKey: boolean;
   themeMode: ThemeMode;
   settingsMessage: string;
@@ -17,6 +18,7 @@ type SettingsModalProps = {
   onClose: () => void;
   onActivateAgentKey: (keyId: string) => void;
   onAgentModelChange: (keyId: string, model: string) => void;
+  onVerifyAgentKey: (keyId: string) => void;
   onAgentProviderChange: (providerId: string) => void;
   onAgentApiKeyChange: (apiKey: string) => void;
   onApiKeySaveStatusChange: Dispatch<SetStateAction<"idle" | "loading" | "invalid">>;
@@ -31,6 +33,7 @@ export default function SettingsModal({
   agentProviderId,
   agentApiKey,
   apiKeySaveStatus,
+  verifyingAgentKeyId,
   canAddAgentKey,
   themeMode,
   settingsMessage,
@@ -38,6 +41,7 @@ export default function SettingsModal({
   onClose,
   onActivateAgentKey,
   onAgentModelChange,
+  onVerifyAgentKey,
   onAgentProviderChange,
   onAgentApiKeyChange,
   onApiKeySaveStatusChange,
@@ -49,6 +53,7 @@ export default function SettingsModal({
   }
 
   const isSavingAgentKey = apiKeySaveStatus === "loading";
+  const isSettingsBusy = isSavingAgentKey || Boolean(verifyingAgentKeyId);
   const selectedProvider =
     agentProviders.find((provider) => provider.id === agentProviderId) ?? agentProviders[0];
   const credentialLabel = selectedProvider?.credential_label ?? "api key";
@@ -81,41 +86,56 @@ export default function SettingsModal({
             {agentKeys.length > 0 && (
               <section className="settings-key-list" aria-label="Saved API keys">
                 <div className="settings-key-stack">
-                  {agentKeys.map((key) => (
-                    <div
-                      key={key.id}
-                      className={`settings-key-row${key.is_active ? " settings-key-row-active" : ""}`}
-                      role="button"
-                      tabIndex={isSavingAgentKey ? -1 : 0}
-                      onClick={() => onActivateAgentKey(key.id)}
-                      onKeyDown={(event) => {
-                        if (isSavingAgentKey) return;
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          onActivateAgentKey(key.id);
-                        }
-                      }}
-                      aria-disabled={isSavingAgentKey}
-                    >
-                      <span className="settings-key-provider">{key.provider_label}</span>
-                      <span className="settings-key-preview">{key.key_preview}</span>
-                      <label className="settings-model-field" onClick={(event) => event.stopPropagation()}>
-                        <Dropdown
-                          className="settings-model-dropdown"
-                          value={key.model ?? ""}
-                          options={(key.models ?? []).map((model) => ({
-                            value: model.id,
-                            label: model.label || model.id,
-                          }))}
-                          onChange={(nextModel) => onAgentModelChange(key.id, nextModel)}
-                          disabled={isSavingAgentKey || !key.models?.length}
-                          ariaLabel={`Model for ${key.provider_label}`}
-                          placeholder="Model"
-                        />
-                      </label>
-                      <span className="settings-key-state">{key.is_active ? "Active" : "Use"}</span>
-                    </div>
-                  ))}
+                  {agentKeys.map((key) => {
+                    const isVerifyingKey = verifyingAgentKeyId === key.id;
+                    const isUnverified = key.connection_status === "unverified";
+                    return (
+                      <div
+                        key={key.id}
+                        className={`settings-key-row${key.is_active ? " settings-key-row-active" : ""}${isUnverified ? " settings-key-row-unverified" : ""}`}
+                        role="button"
+                        tabIndex={isSettingsBusy ? -1 : 0}
+                        onClick={() => onActivateAgentKey(key.id)}
+                        onKeyDown={(event) => {
+                          if (isSettingsBusy) return;
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onActivateAgentKey(key.id);
+                          }
+                        }}
+                        aria-disabled={isSettingsBusy}
+                      >
+                        <span className="settings-key-provider">{key.provider_label}</span>
+                        <span className="settings-key-preview">{key.key_preview}</span>
+                        <label className="settings-model-field" onClick={(event) => event.stopPropagation()}>
+                          <Dropdown
+                            className="settings-model-dropdown"
+                            value={key.model ?? ""}
+                            options={(key.models ?? []).map((model) => ({
+                              value: model.id,
+                              label: model.label || model.id,
+                            }))}
+                            onChange={(nextModel) => onAgentModelChange(key.id, nextModel)}
+                            disabled={isSettingsBusy || !key.models?.length}
+                            ariaLabel={`Model for ${key.provider_label}`}
+                            placeholder="Model"
+                          />
+                        </label>
+                        <button
+                          className="settings-verify-button"
+                          type="button"
+                          disabled={isSettingsBusy}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onVerifyAgentKey(key.id);
+                          }}
+                        >
+                          {isVerifyingKey ? "Checking" : isUnverified ? "Verify" : "Recheck"}
+                        </button>
+                        <span className="settings-key-state">{key.is_active ? "Active" : "Use"}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -128,7 +148,7 @@ export default function SettingsModal({
                     options={providerOptions}
                     onChange={onAgentProviderChange}
                     ariaLabel="AI provider"
-                    disabled={isSavingAgentKey}
+                    disabled={isSettingsBusy}
                     emptyLabel="No providers available"
                     placeholder="Provider"
                   />
@@ -142,7 +162,7 @@ export default function SettingsModal({
                     onChange={(event) => handleApiKeyChange(event.target.value)}
                     placeholder={apiKeySaveStatus === "invalid" ? `${credentialLabel} invalid` : credentialPlaceholder}
                     autoComplete="off"
-                    disabled={isSavingAgentKey}
+                    disabled={isSettingsBusy}
                   />
                 </label>
                 <button

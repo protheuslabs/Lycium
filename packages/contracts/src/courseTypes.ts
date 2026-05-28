@@ -323,6 +323,7 @@ export type LyciumAgentProviderRecord = {
   credential_label?: string;
   credential_placeholder?: string;
   credential_default?: string;
+  local_endpoint_candidates?: string[];
 };
 
 export type LyciumAgentKeyRecord = {
@@ -333,6 +334,10 @@ export type LyciumAgentKeyRecord = {
   model?: string | null;
   models?: LyciumAgentModelRecord[];
   models_fetched_at?: string | null;
+  connection_status?: "verified" | "unverified";
+  connection_message?: string | null;
+  last_verified_at?: string | null;
+  last_error?: string | null;
   is_active: boolean;
 };
 

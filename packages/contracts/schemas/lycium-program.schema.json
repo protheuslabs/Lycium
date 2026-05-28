@@ -321,7 +321,23 @@
         "completionRule": { "$ref": "#/$defs/completionRule" },
         "estimatedHours": { "type": "number", "minimum": 0 },
         "masteryPolicy": { "$ref": "#/$defs/masteryPolicy" },
-        "prerequisites": { "type": "array", "items": { "type": "string" } }
+        "prerequisites": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["nodeId"],
+                "properties": {
+                  "nodeId": { "type": "string" },
+                  "type": { "type": "string", "enum": ["required", "recommended", "remedial"] }
+                }
+              }
+            ]
+          }
+        }
       }
     },
     "dependencyGraph": {

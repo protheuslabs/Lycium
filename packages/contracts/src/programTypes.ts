@@ -89,7 +89,7 @@ export type LyciumRequirementGroup = {
   completionRule: LyciumCompletionRule;
   estimatedHours?: number;
   masteryPolicy?: LyciumMasteryPolicy;
-  prerequisites?: LyciumPrerequisiteRef[];
+  prerequisites?: Array<string | LyciumPrerequisiteRef>;
 };
 
 export type LyciumPrerequisiteRef = {

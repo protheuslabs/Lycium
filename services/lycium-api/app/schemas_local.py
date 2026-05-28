@@ -20,6 +20,7 @@ class LocalAiProviderRead(BaseModel):
     credential_label: str = "api key"
     credential_placeholder: str = "api key"
     credential_default: str = ""
+    local_endpoint_candidates: list[str] = Field(default_factory=list)
 
 
 class LocalAgentModelRead(BaseModel):
@@ -35,6 +36,10 @@ class LocalAgentKeyRead(BaseModel):
     model: str | None = None
     models: list[LocalAgentModelRead] = Field(default_factory=list)
     models_fetched_at: str | None = None
+    connection_status: Literal["verified", "unverified"] = "verified"
+    connection_message: str | None = None
+    last_verified_at: str | None = None
+    last_error: str | None = None
     is_active: bool = False
 
 
@@ -58,6 +63,10 @@ class LocalActiveAgentKeyUpdate(BaseModel):
 class LocalAgentKeyModelUpdate(BaseModel):
     key_id: str = Field(min_length=1, max_length=160)
     model: str = Field(min_length=1, max_length=255)
+
+
+class LocalAgentKeyVerifyUpdate(BaseModel):
+    key_id: str = Field(min_length=1, max_length=160)
 
 
 class LocalCompletionUpdate(BaseModel):

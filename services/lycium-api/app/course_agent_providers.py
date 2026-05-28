@@ -53,6 +53,7 @@ def list_agent_provider_summaries() -> list[dict[str, Any]]:
             "credential_label": str(provider.get("credentialLabel") or "api key"),
             "credential_placeholder": str(provider.get("credentialPlaceholder") or "api key"),
             "credential_default": str(provider.get("credentialDefault") or ""),
+            "local_endpoint_candidates": provider.get("localEndpointCandidates") if isinstance(provider.get("localEndpointCandidates"), list) else [],
         }
         for provider in load_agent_providers()
         if provider.get("id")
@@ -233,7 +234,30 @@ def fetch_agent_models(provider_id: str, api_key: str) -> list[dict[str, str]]:
         detail = exc.response.text[:300]
         raise CourseAgentError(f"Model fetch failed: {detail}") from exc
     except httpx.HTTPError as exc:
-        raise CourseAgentError(f"Model fetch failed: {exc}") from exc
+            raise CourseAgentError(f"Model fetch failed: {exc}") from exc
+
+
+def detect_local_agent_endpoint(provider_id: str) -> tuple[str, list[dict[str, str]]] | None:
+    provider = get_agent_provider(provider_id)
+    if provider.get("generationAdapter") != "ollama-chat":
+        return None
+
+    candidates = [
+        str(candidate)
+        for candidate in provider.get("localEndpointCandidates", [])
+        if isinstance(candidate, str) and candidate.strip()
+    ]
+    for fallback in [provider.get("credentialDefault"), provider.get("baseUrl"), "http://localhost:11434"]:
+        fallback_value = str(fallback or "").strip()
+        if fallback_value and fallback_value not in candidates:
+            candidates.append(fallback_value)
+
+    for endpoint in candidates:
+        try:
+            return endpoint, fetch_agent_models(provider_id, endpoint)
+        except CourseAgentError:
+            continue
+    return None
 
 
 def _call_openai_chat_completions(provider: dict[str, Any], api_key: str, messages: list[dict[str, str]], model: str) -> dict[str, Any]:

@@ -24,6 +24,7 @@ from app.course_agent_prompting import _llm_messages, _staged_plan_messages, loa
 from app.course_agent_providers import (
     assess_agent_model_capability,
     call_agent_model,
+    detect_local_agent_endpoint,
     get_agent_provider,
     list_agent_provider_summaries,
     validate_agent_api_key,

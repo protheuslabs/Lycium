@@ -73,6 +73,10 @@ def _normalize_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
                     "model": selected_model,
                     "models": _normalize_model_records(key.get("models"), selected_model),
                     "models_fetched_at": key.get("models_fetched_at"),
+                    "connection_status": str(key.get("connection_status") or "verified"),
+                    "connection_message": key.get("connection_message"),
+                    "last_verified_at": key.get("last_verified_at"),
+                    "last_error": key.get("last_error"),
                     "created_at": key.get("created_at") or _now(),
                     "updated_at": key.get("updated_at") or key.get("created_at") or _now(),
                 }
@@ -94,6 +98,10 @@ def _normalize_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
                     "model": SETTINGS.agent_model,
                     "models": _normalize_model_records([], SETTINGS.agent_model),
                     "models_fetched_at": secret.get("updated_at"),
+                    "connection_status": "verified",
+                    "connection_message": None,
+                    "last_verified_at": secret.get("updated_at") or _now(),
+                    "last_error": None,
                     "created_at": secret.get("updated_at") or _now(),
                     "updated_at": secret.get("updated_at") or _now(),
                 }
@@ -124,6 +132,10 @@ def local_settings_summary() -> dict[str, Any]:
                 "model": key.get("model"),
                 "models": key.get("models", []),
                 "models_fetched_at": key.get("models_fetched_at"),
+                "connection_status": key.get("connection_status") or "verified",
+                "connection_message": key.get("connection_message"),
+                "last_verified_at": key.get("last_verified_at"),
+                "last_error": key.get("last_error"),
                 "is_active": key["id"] == (active_key["id"] if active_key else None),
             }
             for key in keys
@@ -138,6 +150,8 @@ def save_agent_api_key(
     api_key: str,
     models: list[dict[str, str]],
     model: str | None = None,
+    connection_status: str = "verified",
+    connection_message: str | None = None,
 ) -> dict[str, Any]:
     cleaned = api_key.strip()
     cleaned_provider_id = provider_id.strip()
@@ -150,6 +164,7 @@ def save_agent_api_key(
     secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
     selected_model = model or (models[0]["id"] if models else SETTINGS.agent_model)
     normalized_models = _normalize_model_records(models, selected_model)
+    verified_at = _now() if connection_status == "verified" else None
     key_id_base = _safe_key(cleaned_provider_id.lower())
     key_id = key_id_base
     existing_ids = {key["id"] for key in secret["agent_keys"]}
@@ -167,6 +182,10 @@ def save_agent_api_key(
             "model": selected_model,
             "models": normalized_models,
             "models_fetched_at": _now(),
+            "connection_status": connection_status,
+            "connection_message": connection_message,
+            "last_verified_at": verified_at,
+            "last_error": None if connection_status == "verified" else connection_message,
             "created_at": _now(),
             "updated_at": _now(),
         }
@@ -176,6 +195,39 @@ def save_agent_api_key(
     secret["purpose"] = "Course generation agent access."
     _write_json(_agent_secret_path(), secret)
     return local_settings_summary()
+
+
+def get_agent_profile_by_id(key_id: str) -> dict[str, Any] | None:
+    secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
+    return next((key for key in secret.get("agent_keys", []) if key["id"] == key_id), None)
+
+
+def update_agent_key_verification(
+    key_id: str,
+    *,
+    models: list[dict[str, str]],
+    model: str | None,
+    connection_status: str,
+    connection_message: str | None = None,
+) -> dict[str, Any]:
+    secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
+    for key in secret["agent_keys"]:
+        if key["id"] != key_id:
+            continue
+        selected_model = model or key.get("model") or (models[0]["id"] if models else SETTINGS.agent_model)
+        key["models"] = _normalize_model_records(models, selected_model)
+        key["model"] = selected_model
+        key["models_fetched_at"] = _now()
+        key["connection_status"] = connection_status
+        key["connection_message"] = connection_message
+        key["last_verified_at"] = _now() if connection_status == "verified" else key.get("last_verified_at")
+        key["last_error"] = None if connection_status == "verified" else connection_message
+        key["updated_at"] = _now()
+        secret["updated_at"] = _now()
+        _write_json(_agent_secret_path(), secret)
+        return local_settings_summary()
+
+    raise ValueError("API key not found.")
 
 
 def activate_agent_api_key(key_id: str) -> dict[str, Any]:

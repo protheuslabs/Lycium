@@ -231,6 +231,15 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       });
       return readJsonResponse(response, "Model update failed");
     },
+
+    async verifyAgentKey(payload) {
+      const response = await fetch(`${base}/v1/local/settings/verify-key`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      return readJsonResponse(response, "Connection verification failed");
+    },
   };
 }
 

@@ -189,7 +189,12 @@ export function validateLyciumProgram(
       nodeIds.add(group.id);
     }
     errors.push(...validateCompletionRule(group.completionRule, group, groupLabel));
-    for (const prerequisite of group.prerequisites ?? []) if (!groupIds.has(prerequisite) && !nodeIds.has(prerequisite)) errors.push(`${groupLabel}.prerequisites references unknown node: ${prerequisite}.`);
+    for (const prerequisite of group.prerequisites ?? []) {
+      const prerequisiteNodeId = typeof prerequisite === "string" ? prerequisite : prerequisite.nodeId;
+      if (!groupIds.has(prerequisiteNodeId) && !nodeIds.has(prerequisiteNodeId)) {
+        errors.push(`${groupLabel}.prerequisites references unknown node: ${prerequisiteNodeId}.`);
+      }
+    }
 
     for (const [requirementIndex, requirement] of (group.requirements ?? []).entries()) {
       const requirementLabel = `${groupLabel}.requirements[${requirementIndex}]`;

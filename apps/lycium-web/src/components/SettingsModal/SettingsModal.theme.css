@@ -29,6 +29,10 @@
   background: linear-gradient(145deg, rgba(72, 216, 109, 0.16), rgba(15, 23, 42, 0.98));
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-row-unverified {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.16), rgba(17, 17, 18, 0.96));
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-close-button,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .theme-toggle::before {
   color: #f8fafc;
@@ -103,6 +107,10 @@ html[data-theme="light"] .settings-key-row-active {
   background:
     linear-gradient(135deg, rgba(183, 246, 200, 0.28), rgba(255, 255, 255, 0.96) 62%),
     transparent;
+}
+
+html[data-theme="light"] .settings-key-row-unverified {
+  background: rgba(245, 158, 11, 0.1);
 }
 
 html[data-theme="light"] .settings-close-button {

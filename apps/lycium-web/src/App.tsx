@@ -239,6 +239,9 @@ function App() {
     }
   }, [pushSectionPath, sections, selectedCourse]);
 
+  const activeAiReady = agentSettings.agentKeys.some(
+    (key) => key.is_active && Boolean(key.model) && key.connection_status !== "unverified",
+  );
 
 const {
   generateStatus,
@@ -250,6 +253,7 @@ const {
   prompt,
   level,
   learnerId,
+  activeAiReady,
   setCourses,
   setPrompt,
   openCourseByEntry,
@@ -404,7 +408,7 @@ const {
           courses={courses}
           prompt={prompt}
           level={level}
-          canCreateCourse={agentSettings.agentKeys.some((key) => key.is_active && Boolean(key.model))}
+          canCreateCourse={activeAiReady}
           generateStatus={generateStatus}
           generateMessage={generateMessage}
           onPromptChange={setPrompt}
@@ -457,6 +461,7 @@ const {
         agentProviderId={agentSettings.agentProviderId}
         agentApiKey={agentSettings.agentApiKey}
         apiKeySaveStatus={agentSettings.apiKeySaveStatus}
+        verifyingAgentKeyId={agentSettings.verifyingAgentKeyId}
         canAddAgentKey={agentSettings.canAddAgentKey}
         themeMode={agentSettings.themeMode}
         settingsMessage={agentSettings.settingsMessage}
@@ -464,6 +469,7 @@ const {
         onClose={closeSettingsModal}
         onActivateAgentKey={agentSettings.handleActivateAgentKey}
         onAgentModelChange={agentSettings.handleAgentModelChange}
+        onVerifyAgentKey={agentSettings.handleVerifyAgentKey}
         onAgentProviderChange={agentSettings.setAgentProviderId}
         onAgentApiKeyChange={agentSettings.setAgentApiKey}
         onApiKeySaveStatusChange={agentSettings.setApiKeySaveStatus}

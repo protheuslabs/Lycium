@@ -6,7 +6,8 @@ from app.local_store_courses import (
     save_course_snapshot, save_learner_record, read_course_bookmark, save_course_bookmark, read_course_feedback, save_course_feedback, read_course_health, read_completion, save_completion,
 )
 from app.local_store_settings import (
-    local_settings_summary, save_agent_api_key, activate_agent_api_key, update_agent_key_model, get_active_agent_profile, get_active_agent_api_key,
+    local_settings_summary, save_agent_api_key, activate_agent_api_key, update_agent_key_model,
+    get_active_agent_profile, get_active_agent_api_key, get_agent_profile_by_id, update_agent_key_verification,
 )
 
-__all__ = ['ensure_local_data_dirs', 'local_settings_summary', 'save_agent_api_key', 'activate_agent_api_key', 'update_agent_key_model', 'get_active_agent_profile', 'get_active_agent_api_key', 'save_course_snapshot', 'save_learner_record', 'read_course_bookmark', 'save_course_bookmark', 'read_course_feedback', 'save_course_feedback', 'read_course_health', 'read_completion', 'save_completion']
+__all__ = ['ensure_local_data_dirs', 'local_settings_summary', 'save_agent_api_key', 'activate_agent_api_key', 'update_agent_key_model', 'get_active_agent_profile', 'get_active_agent_api_key', 'get_agent_profile_by_id', 'update_agent_key_verification', 'save_course_snapshot', 'save_learner_record', 'read_course_bookmark', 'save_course_bookmark', 'read_course_feedback', 'save_course_feedback', 'read_course_health', 'read_completion', 'save_completion']

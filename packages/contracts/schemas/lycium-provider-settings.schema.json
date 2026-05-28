@@ -30,6 +30,10 @@
             }
           },
           "models_fetched_at": { "type": ["string", "null"] },
+          "connection_status": { "type": "string", "enum": ["verified", "unverified"] },
+          "connection_message": { "type": ["string", "null"] },
+          "last_verified_at": { "type": ["string", "null"] },
+          "last_error": { "type": ["string", "null"] },
           "is_active": { "type": "boolean" }
         }
       }

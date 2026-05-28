@@ -12,6 +12,7 @@ from app.analytics import analytics_summary, record_event, upsert_progress
 from app.coverage import recompute_coverage
 from app.course_agent_harness import (
     CourseAgentError,
+    detect_local_agent_endpoint,
     generate_course_with_agent,
     get_agent_provider,
     list_agent_provider_summaries,
@@ -35,6 +36,7 @@ from app.local_store import (
     activate_agent_api_key,
     ensure_local_data_dirs,
     get_active_agent_profile,
+    get_agent_profile_by_id,
     local_settings_summary,
     read_course_bookmark,
     read_course_feedback,
@@ -46,6 +48,7 @@ from app.local_store import (
     save_completion,
     save_course_snapshot,
     save_learner_record,
+    update_agent_key_verification,
     update_agent_key_model,
 )
 from app.models import (
@@ -88,6 +91,7 @@ from app.schemas import (
     LearningPacketRequest,
     LocalActiveAgentKeyUpdate,
     LocalAgentKeyModelUpdate,
+    LocalAgentKeyVerifyUpdate,
     LocalAiProviderRead,
     LocalCourseBookmarkRead,
     LocalCourseBookmarkUpdate,
@@ -140,10 +144,27 @@ def register(app: FastAPI) -> None:
     def update_local_settings(payload: LocalSettingsUpdate) -> dict[str, Any]:
         try:
             provider = get_agent_provider(payload.provider_id)
-            models = validate_agent_api_key(payload.agent_api_key, provider_id=payload.provider_id)
+            is_local_provider = provider.get("generationAdapter") == "ollama-chat"
+            connection_status = "verified"
+            connection_message = None
+            try:
+                models = validate_agent_api_key(payload.agent_api_key, provider_id=payload.provider_id)
+            except CourseAgentError as exc:
+                if not is_local_provider:
+                    raise
+                detected = detect_local_agent_endpoint(payload.provider_id)
+                if detected:
+                    payload.agent_api_key, models = detected
+                    connection_message = f"Auto-detected local model endpoint at {payload.agent_api_key}."
+                else:
+                    models = []
+                    connection_status = "unverified"
+                    connection_message = str(exc)
             default_model = str(provider.get("defaultModel") or "")
-            if provider.get("generationAdapter") == "ollama-chat":
+            if is_local_provider:
                 selected_model = models[0]["id"] if models else default_model or None
+                if selected_model and not any(model.get("id") == selected_model for model in models):
+                    models.insert(0, {"id": selected_model, "label": selected_model})
             else:
                 selected_model = (
                     default_model
@@ -156,7 +177,47 @@ def register(app: FastAPI) -> None:
                 api_key=payload.agent_api_key,
                 models=models,
                 model=selected_model,
+                connection_status=connection_status,
+                connection_message=connection_message,
             )
+        except CourseAgentError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+    @app.put("/v1/local/settings/verify-key", response_model=LocalSettingsRead)
+    def verify_local_agent_key(payload: LocalAgentKeyVerifyUpdate) -> dict[str, Any]:
+        profile = get_agent_profile_by_id(payload.key_id)
+        if not profile:
+            raise HTTPException(status_code=404, detail="API key not found.")
+        try:
+            provider = get_agent_provider(str(profile.get("provider_id") or ""))
+            models = validate_agent_api_key(
+                str(profile.get("agent_api_key") or ""),
+                provider_id=str(profile.get("provider_id") or ""),
+                model=str(profile.get("model") or "") or None,
+            )
+            selected_model = str(profile.get("model") or "") or (models[0]["id"] if models else str(provider.get("defaultModel") or ""))
+            return update_agent_key_verification(
+                payload.key_id,
+                models=models,
+                model=selected_model or None,
+                connection_status="verified",
+                connection_message="Connection verified.",
+            )
+        except CourseAgentError as exc:
+            is_local_provider = str(profile.get("provider_id") or "") == "local-model"
+            update_agent_key_verification(
+                payload.key_id,
+                models=profile.get("models", []),
+                model=str(profile.get("model") or "") or None,
+                connection_status="unverified",
+                connection_message=str(exc),
+            )
+            if is_local_provider:
+                return local_settings_summary()
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

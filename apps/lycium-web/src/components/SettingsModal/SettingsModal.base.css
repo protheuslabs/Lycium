@@ -125,12 +125,17 @@
 }
 
 .settings-key-row {
-  grid-template-columns: minmax(8rem, 0.8fr) minmax(9rem, 1fr) minmax(12rem, 1.35fr) auto;
+  grid-template-columns: minmax(8rem, 0.8fr) minmax(9rem, 1fr) minmax(12rem, 1.35fr) auto auto;
   padding: 0 0 0 0.95rem;
   cursor: pointer;
   overflow: visible;
   text-align: left;
   transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.settings-key-row-unverified {
+  color: #3b2f13;
+  background: rgba(245, 158, 11, 0.1);
 }
 
 .settings-entry-field,
@@ -152,6 +157,33 @@
 
 .settings-model-dropdown {
   min-width: 12rem;
+}
+
+.settings-verify-button {
+  min-width: 4.6rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 0.7rem;
+  color: #ffffff;
+  background: #2f3542;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, opacity 160ms ease;
+}
+
+.settings-verify-button:not(:disabled):hover,
+.settings-verify-button:not(:disabled):focus-visible {
+  outline: none;
+  background: #171717;
+  transform: translateY(-1px);
+}
+
+.settings-verify-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
 }
 
 .settings-entry-field-key {

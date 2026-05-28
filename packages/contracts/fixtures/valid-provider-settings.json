@@ -8,6 +8,10 @@
       "model": "gpt-4.1-mini",
       "models": [{ "id": "gpt-4.1-mini", "label": "GPT-4.1 Mini" }],
       "models_fetched_at": "2026-05-24T00:00:00.000Z",
+      "connection_status": "verified",
+      "connection_message": "Connection verified.",
+      "last_verified_at": "2026-05-24T00:00:00.000Z",
+      "last_error": null,
       "is_active": true
     }
   ]

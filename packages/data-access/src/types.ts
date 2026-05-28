@@ -144,6 +144,10 @@ export type LocalKeyModelPayload = {
   model: string;
 };
 
+export type LocalVerifyKeyPayload = {
+  key_id: string;
+};
+
 export type LyciumLocalApi = {
   listRemoteCourses(limit?: number, status?: string): Promise<LyciumGeneratedCourseRecord[]>;
   generateCourse(request: LyciumCourseGenerationRequest): Promise<LyciumGeneratedCourseRecord>;
@@ -168,6 +172,7 @@ export type LyciumLocalApi = {
   saveSettings(payload: LocalSettingsPayload): Promise<LyciumLocalSettings>;
   activateAgentKey(payload: LocalActiveKeyPayload): Promise<LyciumLocalSettings>;
   updateAgentKeyModel(payload: LocalKeyModelPayload): Promise<LyciumLocalSettings>;
+  verifyAgentKey(payload: LocalVerifyKeyPayload): Promise<LyciumLocalSettings>;
 };
 
 export type {

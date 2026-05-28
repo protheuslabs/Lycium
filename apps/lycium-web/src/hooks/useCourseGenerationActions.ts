@@ -17,6 +17,7 @@ type UseCourseGenerationActionsArgs = {
   prompt: string;
   level: string;
   learnerId: number | null;
+  activeAiReady: boolean;
   setCourses: Dispatch<SetStateAction<CourseEntry[]>>;
   setPrompt: Dispatch<SetStateAction<string>>;
   openCourseByEntry: (course: CourseEntry, replace?: boolean) => void | Promise<void>;
@@ -26,6 +27,7 @@ export function useCourseGenerationActions({
   prompt,
   level,
   learnerId,
+  activeAiReady,
   setCourses,
   setPrompt,
   openCourseByEntry,
@@ -40,6 +42,11 @@ export function useCourseGenerationActions({
     classification?: CourseClassification,
   ) => {
     evt.preventDefault();
+    if (!activeAiReady) {
+      setGenerateStatus("error");
+      setGenerateMessage("Connect and verify an active AI model before generating a course.");
+      return;
+    }
     if (!prompt.trim() || !classification?.category || !classification.department) return;
     setGenerateStatus("loading");
     setGenerateMessage("Starting course generation...");
