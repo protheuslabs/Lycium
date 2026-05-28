@@ -369,3 +369,48 @@ class Job(Base):
     attempts: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class GenerationRun(Base):
+    __tablename__ = "generation_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    job_id: Mapped[int | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"), index=True)
+    course_snapshot_id: Mapped[int | None] = mapped_column(ForeignKey("course_snapshots.id", ondelete="SET NULL"), index=True)
+    run_type: Mapped[str] = mapped_column(String(80), default="agent_generate_course_staged", index=True)
+    status: Mapped[str] = mapped_column(String(30), default="running", index=True)
+    prompt: Mapped[str] = mapped_column(Text, default="")
+    provider_id: Mapped[str | None] = mapped_column(String(120))
+    model: Mapped[str | None] = mapped_column(String(255))
+    progress: Mapped[float] = mapped_column(Float, default=0.0)
+    current_stage: Mapped[str | None] = mapped_column(String(120), index=True)
+    message: Mapped[str | None] = mapped_column(Text)
+    request_payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    result_summary: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    trace: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    job: Mapped["Job | None"] = relationship()
+    course_snapshot: Mapped["CourseSnapshot | None"] = relationship()
+    events: Mapped[list["GenerationRunEvent"]] = relationship(
+        back_populates="generation_run",
+        cascade="all, delete-orphan",
+        order_by="GenerationRunEvent.created_at",
+    )
+
+
+class GenerationRunEvent(Base):
+    __tablename__ = "generation_run_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    generation_run_id: Mapped[int] = mapped_column(ForeignKey("generation_runs.id"), index=True)
+    event_type: Mapped[str] = mapped_column(String(80), index=True)
+    stage: Mapped[str | None] = mapped_column(String(120), index=True)
+    status: Mapped[str | None] = mapped_column(String(30), index=True)
+    message: Mapped[str | None] = mapped_column(Text)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    generation_run: Mapped[GenerationRun] = relationship(back_populates="events")

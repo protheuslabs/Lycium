@@ -13,6 +13,12 @@ from app.course_quality import assess_course_quality
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import SessionLocal
 from app.generation import generate_course_direct
+from app.generation_observability import (
+    complete_generation_run,
+    fail_generation_run,
+    record_generation_run_checkpoint,
+    start_generation_run,
+)
 from app.ingestion import ingest_source
 from app.local_store import require_verified_active_agent_profile, save_course_snapshot
 from app.models import CourseSnapshot, Job, Source
@@ -182,6 +188,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
             "message": "Planning course structure.",
             "trace": {"mode": "staged-llm-agent", "stages": []},
         }
+        start_generation_run(session, job, message="Planning course structure.", progress=0.0)
         session.commit()
 
     try:
@@ -201,6 +208,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
             if isinstance(partial_course, dict):
                 next_result["course"] = partial_course
             _update_generation_job(job_id, next_result, status="running")
+            record_generation_run_checkpoint(job_id, next_result, session_factory=SessionLocal)
 
         generated = generate_course_with_agent_staged(
             prompt=str(payload.get("prompt") or ""),
@@ -265,6 +273,15 @@ def run_agent_course_generation_job(job_id: int) -> None:
                 "trace": {**generated.trace, "quality_report": quality_report},
                 "course_snapshot": snapshot_payload,
             }
+            complete_generation_run(
+                session,
+                job_id=job_id,
+                accepted=accepted,
+                message="Course ready for review." if accepted else "Course failed the generation quality gate.",
+                trace={**generated.trace, "quality_report": quality_report},
+                quality_report=quality_report,
+                course_snapshot_id=snapshot_payload["id"] if snapshot_payload else None,
+            )
             _trim_generation_job_logs(session)
             session.commit()
     except Exception as exc:
@@ -280,6 +297,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
         }
         if isinstance(partial_course, dict):
             result["course"] = partial_course
+        fail_generation_run(job_id, error=str(exc), result=result, session_factory=SessionLocal)
         _update_generation_job(job_id, result, status="failed", error=str(exc))
 
 

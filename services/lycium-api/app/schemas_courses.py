@@ -145,6 +145,38 @@ class CourseGenerationJobRead(BaseModel):
     updated_at: datetime
 
 
+class GenerationRunEventRead(BaseModel):
+    id: int
+    generation_run_id: int
+    event_type: str
+    stage: str | None = None
+    status: str | None = None
+    message: str | None = None
+    payload: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+
+class GenerationRunRead(BaseModel):
+    id: int
+    job_id: int | None = None
+    course_snapshot_id: int | None = None
+    run_type: str
+    status: Literal["running", "completed", "failed"]
+    prompt: str
+    provider_id: str | None = None
+    model: str | None = None
+    progress: float = Field(default=0.0, ge=0.0, le=1.0)
+    current_stage: str | None = None
+    message: str | None = None
+    request_payload: dict[str, Any] = Field(default_factory=dict)
+    result_summary: dict[str, Any] = Field(default_factory=dict)
+    trace: dict[str, Any] = Field(default_factory=dict)
+    events: list[GenerationRunEventRead] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None = None
+
+
 class CurriculumArtifactsRead(BaseModel):
     course_snapshot_id: int
     artifactReferences: dict[str, list[int]]

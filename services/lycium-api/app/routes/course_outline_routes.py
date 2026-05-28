@@ -33,6 +33,7 @@ from app.generation import (
     regenerate_section,
     validate_learner_exists,
 )
+from app.generation_observability import generation_run_payload, get_generation_run, list_generation_runs
 from app.ingestion import ingest_source
 from app.jobs import enqueue_job, list_jobs, run_agent_course_generation_job, run_job, run_pending_jobs
 from app.local_store import (
@@ -78,6 +79,7 @@ from app.schemas import (
     CredentialRead,
     GenerateCourseFromOutlineRequest,
     GenerateCourseRequest,
+    GenerationRunRead,
     GenerateOutlineRequest,
     IngestSourceRequest,
     IngestSourceResponse,
@@ -477,6 +479,26 @@ def register(app: FastAPI) -> None:
         if job is None or job.job_type != "agent_generate_course_staged":
             raise HTTPException(status_code=404, detail="Course generation job not found.")
         return _course_generation_job_response(job)
+
+
+    @app.get("/v1/agent/courses/runs", response_model=list[GenerationRunRead])
+    def list_agent_course_generation_runs(
+        limit: int = Query(default=50, ge=1, le=200),
+        status_filter: str | None = Query(default=None, alias="status"),
+        session: Session = Depends(get_session),
+    ) -> list[dict[str, Any]]:
+        return [
+            generation_run_payload(run)
+            for run in list_generation_runs(session, status=status_filter, limit=limit)
+        ]
+
+
+    @app.get("/v1/agent/courses/runs/{run_id}", response_model=GenerationRunRead)
+    def get_agent_course_generation_run(run_id: int, session: Session = Depends(get_session)) -> dict[str, Any]:
+        run = get_generation_run(session, run_id)
+        if run is None:
+            raise HTTPException(status_code=404, detail="Generation run not found.")
+        return generation_run_payload(run)
 
 
     @app.post("/v1/agent/courses/jobs/{job_id}/resume", response_model=CourseGenerationJobRead, status_code=status.HTTP_202_ACCEPTED)
