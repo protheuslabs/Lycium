@@ -145,6 +145,14 @@ class CourseGenerationJobRead(BaseModel):
     updated_at: datetime
 
 
+class CurriculumArtifactsRead(BaseModel):
+    course_snapshot_id: int
+    artifactReferences: dict[str, list[int]]
+    curriculumBenchmarks: list[dict[str, Any]] = Field(default_factory=list)
+    requirementOrigins: list[dict[str, Any]] = Field(default_factory=list)
+    sourceSlots: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class CoursePublishRequest(BaseModel):
     reviewer_id: str | None = None
     notes: str | None = None

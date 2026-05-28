@@ -17,6 +17,7 @@ from app.course_agent_harness import (
     list_agent_provider_summaries,
     validate_agent_api_key,
 )
+from app.curriculum_artifacts import curriculum_artifacts_for_course
 from app.db import get_session, init_db
 from app.generation import (
     ask_instructor,
@@ -65,6 +66,7 @@ from app.schemas import (
     AskInstructorRequest,
     AskInstructorResponse,
     CourseDraftRead,
+    CurriculumArtifactsRead,
     CourseSnapshotRead,
     CoverageRead,
     CredentialCreate,
@@ -157,6 +159,17 @@ def register(app: FastAPI) -> None:
             "generation_trace": row.generation_trace,
         }
         return JSONResponse(payload)
+
+
+    @app.get("/v1/courses/{course_snapshot_id}/curriculum-artifacts", response_model=CurriculumArtifactsRead)
+    def get_course_curriculum_artifacts(
+        course_snapshot_id: int,
+        session: Session = Depends(get_session),
+    ) -> dict[str, Any]:
+        row = session.get(CourseSnapshot, course_snapshot_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Course snapshot not found")
+        return curriculum_artifacts_for_course(session, row.id)
 
 
 

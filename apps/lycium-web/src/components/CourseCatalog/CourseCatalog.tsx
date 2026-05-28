@@ -289,7 +289,6 @@ export default function CourseCatalog({
                 visibleCourse={visibleCourse}
                 onOpenCourse={onOpenCourse}
                 onOpenInfo={setInfoCourse}
-                onPublishCourse={onPublishCourse}
                 isPublishing={publishingCourseKey === visibleCourse.course.key}
               />
             ))}
@@ -335,7 +334,17 @@ export default function CourseCatalog({
         />
       )}
 
-      {infoCourse && <CourseInfoModal course={infoCourse} onClose={() => setInfoCourse(null)} />}
+      {infoCourse && (
+        <CourseInfoModal
+          course={infoCourse}
+          isPublishing={publishingCourseKey === infoCourse.key}
+          onPublishCourse={(course) => {
+            onPublishCourse(course);
+            setInfoCourse(null);
+          }}
+          onClose={() => setInfoCourse(null)}
+        />
+      )}
 
       <CatalogFooter />
     </div>

@@ -6,7 +6,6 @@ type CatalogCourseCardProps = {
   visibleCourse: CatalogVisibleCourse;
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
-  onPublishCourse: (course: CourseEntry) => void;
   isPublishing: boolean;
 };
 
@@ -14,7 +13,6 @@ export default function CatalogCourseCard({
   visibleCourse,
   onOpenCourse,
   onOpenInfo,
-  onPublishCourse,
   isPublishing,
 }: CatalogCourseCardProps) {
   const { course, courseProgress, bookmarkedSection, hasCourseActivity } = visibleCourse;
@@ -78,11 +76,11 @@ export default function CatalogCourseCard({
           disabled={isPublishing}
           onClick={(event) => {
             event.stopPropagation();
-            onPublishCourse(course);
+            onOpenInfo(course);
           }}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          {isPublishing ? "Publishing..." : "Publish"}
+          {isPublishing ? "Publishing..." : "Review"}
         </button>
       )}
     </article>

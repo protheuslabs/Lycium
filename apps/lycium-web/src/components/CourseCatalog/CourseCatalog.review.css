@@ -1,0 +1,140 @@
+.course-review-panel {
+  border-top: 1px solid #e3e8f2;
+  padding-top: 1.1rem;
+}
+
+.course-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.course-review-status {
+  border-radius: 999px;
+  padding: 0.32rem 0.58rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.course-review-status-pass {
+  color: #1f6f42;
+  background: rgba(47, 122, 79, 0.12);
+}
+
+.course-review-status-wait {
+  color: #8a4f00;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.course-review-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.course-review-summary-grid article,
+.course-review-gate,
+.course-review-row {
+  border-radius: 16px;
+  padding: 0.75rem;
+  background: #f8fafc;
+}
+
+.course-review-summary-grid span,
+.course-review-gate span,
+.course-review-row span {
+  color: #667085;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.course-review-summary-grid strong,
+.course-review-gate strong,
+.course-review-row strong {
+  color: #253049;
+  font-size: 0.9rem;
+}
+
+.course-review-section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.course-review-section h4 {
+  margin: 0;
+  color: #253049;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.course-review-gate-list,
+.course-review-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.course-review-gate {
+  display: grid;
+  gap: 0.3rem;
+  border-left: 4px solid #94a3b8;
+}
+
+.course-review-gate div,
+.course-review-row {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.course-review-gate p {
+  margin: 0;
+  color: #4f5d76;
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.course-review-gate-passed {
+  border-left-color: #2f7a4f;
+}
+
+.course-review-gate-needs_review {
+  border-left-color: #f59e0b;
+}
+
+.course-review-gate-failed {
+  border-left-color: #d64545;
+}
+
+.course-review-publish-button {
+  justify-self: end;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.68rem 1rem;
+  color: #ffffff;
+  background: #2f3542;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease, opacity 160ms ease;
+}
+
+.course-review-publish-button:not(:disabled):hover,
+.course-review-publish-button:not(:disabled):focus-visible {
+  outline: none;
+  background: #4a6cf7;
+  transform: translateY(-1px);
+}
+
+.course-review-publish-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+@media (max-width: 620px) {
+  .course-review-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

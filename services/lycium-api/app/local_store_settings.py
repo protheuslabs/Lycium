@@ -275,6 +275,17 @@ def get_active_agent_profile() -> dict[str, Any] | None:
     return active_key
 
 
+def require_verified_active_agent_profile() -> dict[str, Any]:
+    active_key = get_active_agent_profile()
+    if not active_key or not str(active_key.get("agent_api_key") or "").strip():
+        raise ValueError("No active agent API key is saved. Add one in Settings first.")
+    if active_key.get("connection_status") != "verified":
+        raise ValueError("Active AI connection is unverified. Verify it in Settings before generating a course.")
+    if not str(active_key.get("model") or "").strip():
+        raise ValueError("Choose an AI model in Settings before generating a course.")
+    return active_key
+
+
 def get_active_agent_api_key() -> str | None:
     active_key = get_active_agent_profile()
     if not active_key:

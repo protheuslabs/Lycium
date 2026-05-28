@@ -9,7 +9,10 @@ import pytest
 from app.config import SETTINGS
 from app.course_agent_types import CourseAgentError
 from app.course_generation_workflow import run_course_generation_workflow
+from app.curriculum_artifacts import curriculum_artifacts_for_course, persist_curriculum_artifacts_for_snapshot
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
+from app import db
+from app.models import CourseSnapshot
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -48,6 +51,44 @@ def test_curriculum_context_derives_requirements_origins_and_source_slots() -> N
     assert "benchmark_intake" in context["workflowGates"]
 
 
+def test_curriculum_context_extracts_real_syllabus_structure() -> None:
+    syllabus = """
+    CHEM 105 General Chemistry I
+    Course Description
+    Students will apply atomic structure, stoichiometry, bonding, thermochemistry, and gases to explain chemical systems.
+    Learning Outcomes
+    1. Calculate quantities in chemical reactions using dimensional analysis and stoichiometry.
+    2. Explain atomic structure, periodic trends, and electron configurations.
+    3. Compare ionic, covalent, and metallic bonding models.
+    4. Solve thermochemistry problems using enthalpy and calorimetry.
+    Topics
+    Week 1: Measurement, matter, and significant figures
+    Week 2: Atoms, isotopes, and periodic trends
+    Week 3: Chemical formulas, reactions, and stoichiometry
+    Week 4: Chemical bonding and molecular geometry
+    """
+    context = compile_curriculum_benchmark_context(
+        prompt="CHEM 105 General Chemistry I",
+        source_urls=[],
+        source_documents=[
+            {
+                "url": "https://catalog.example.edu/courses/chem105",
+                "contentType": "text/plain",
+                "text": syllabus,
+            }
+        ],
+        category="college-of-sciences",
+        department="chemistry",
+    )
+    benchmark = context["curriculumBenchmarks"][0]
+
+    assert benchmark["extraction"]["status"] == "parsed"
+    assert benchmark["sourceType"] == "university_catalog"
+    assert len(benchmark["extractedRequirements"]) >= 4
+    assert any("Stoichiometry" in topic for topic in context["courseParityProfile"]["commonRequiredTopics"])
+    assert context["sourceSlots"]
+
+
 def test_curriculum_context_is_visible_to_generation_workflow() -> None:
     course = read_fixture("valid-course.json")
     context = compile_curriculum_benchmark_context(
@@ -62,6 +103,55 @@ def test_curriculum_context_is_visible_to_generation_workflow() -> None:
     assert gates["benchmark_intake"]["status"] == "passed"
     assert gates["requirement_extraction"]["artifacts"]["requirementOriginCount"] > 0
     assert gates["commonality_analysis"]["artifacts"]["sourceSlotCount"] > 0
+
+
+def test_curriculum_artifacts_are_persisted_as_course_records(client) -> None:
+    course = read_fixture("valid-course.json")
+    context = compile_curriculum_benchmark_context(
+        prompt=course["title"],
+        source_urls=[
+            "https://catalog.example.edu/courses/web101",
+            "https://syllabus.example.edu/web101",
+        ],
+        category=course["category"],
+        department=course["department"],
+    )
+    attached_course = attach_curriculum_context(course, context)
+
+    with db.SessionLocal() as session:
+        snapshot = CourseSnapshot(
+            learner_id=None,
+            draft_id=None,
+            title=attached_course["title"],
+            prompt="Create a web development course from benchmark curricula.",
+            language="en",
+            level="undergrad",
+            source_policy="balanced",
+            status="ready_for_review",
+            version=1,
+            structure=attached_course,
+            generation_trace={"curriculum_benchmark_context": context},
+        )
+        session.add(snapshot)
+        session.flush()
+        refs = persist_curriculum_artifacts_for_snapshot(session, snapshot, context=context)
+        session.commit()
+        course_snapshot_id = snapshot.id
+
+    assert refs["curriculumBenchmarkRecordIds"]
+    assert refs["requirementOriginRecordIds"]
+    assert refs["sourceSlotRecordIds"]
+
+    with db.SessionLocal() as session:
+        artifacts = curriculum_artifacts_for_course(session, course_snapshot_id)
+
+    assert len(artifacts["curriculumBenchmarks"]) == len(context["curriculumBenchmarks"])
+    assert artifacts["requirementOrigins"][0]["recordId"] in refs["requirementOriginRecordIds"]
+    assert artifacts["sourceSlots"][0]["recordId"] in refs["sourceSlotRecordIds"]
+
+    response = client.get(f"/v1/courses/{course_snapshot_id}/curriculum-artifacts")
+    assert response.status_code == 200, response.text
+    assert response.json()["artifactReferences"] == artifacts["artifactReferences"]
 
 
 def test_local_endpoint_save_persists_unverified_connection(client, monkeypatch, isolated_local_data) -> None:

@@ -20,6 +20,7 @@ from app.course_agent_harness import (
     validate_agent_api_key,
 )
 from app.course_quality import assess_course_quality
+from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
 from app.generation import (
     ask_instructor,
@@ -41,6 +42,7 @@ from app.local_store import (
     local_settings_summary,
     read_course_bookmark,
     read_completion,
+    require_verified_active_agent_profile,
     save_agent_api_key,
     save_course_bookmark,
     save_completion,
@@ -314,9 +316,7 @@ def register(app: FastAPI) -> None:
     ) -> CourseSnapshot:
         try:
             validate_learner_exists(session, payload.learner_id)
-            agent_profile = get_active_agent_profile()
-            if not agent_profile or not agent_profile.get("agent_api_key"):
-                raise ValueError("No active agent API key is saved. Add one in Settings first.")
+            agent_profile = require_verified_active_agent_profile()
 
             generated = generate_course_with_agent(
                 prompt=payload.prompt,
@@ -352,6 +352,12 @@ def register(app: FastAPI) -> None:
                 generation_trace={**generated.trace, "quality_report": quality_report},
             )
             session.add(snapshot)
+            session.flush()
+            persist_curriculum_artifacts_for_snapshot(
+                session,
+                snapshot,
+                context=generated.trace.get("curriculum_benchmark_context"),
+            )
             session.commit()
             session.refresh(snapshot)
             save_course_snapshot(snapshot)
@@ -367,9 +373,7 @@ def register(app: FastAPI) -> None:
     @app.post("/v1/agent/courses/experiment", response_model=CourseGenerationExperimentRead)
     def experiment_with_llm_course_generation(payload: GenerateCourseRequest) -> dict[str, Any]:
         try:
-            agent_profile = get_active_agent_profile()
-            if not agent_profile or not agent_profile.get("agent_api_key"):
-                raise ValueError("No active agent API key is saved. Add one in Settings first.")
+            agent_profile = require_verified_active_agent_profile()
 
             generated = generate_course_with_agent(
                 prompt=payload.prompt,
@@ -402,9 +406,7 @@ def register(app: FastAPI) -> None:
     @app.post("/v1/agent/courses/experiment/staged", response_model=CourseGenerationExperimentRead)
     def experiment_with_staged_llm_course_generation(payload: GenerateCourseRequest) -> dict[str, Any]:
         try:
-            agent_profile = get_active_agent_profile()
-            if not agent_profile or not agent_profile.get("agent_api_key"):
-                raise ValueError("No active agent API key is saved. Add one in Settings first.")
+            agent_profile = require_verified_active_agent_profile()
 
             generated = generate_course_with_agent_staged(
                 prompt=payload.prompt,
@@ -440,9 +442,10 @@ def register(app: FastAPI) -> None:
         background_tasks: BackgroundTasks,
         session: Session = Depends(get_session),
     ) -> dict[str, Any]:
-        agent_profile = get_active_agent_profile()
-        if not agent_profile or not agent_profile.get("agent_api_key"):
-            raise HTTPException(status_code=400, detail="No active agent API key is saved. Add one in Settings first.")
+        try:
+            agent_profile = require_verified_active_agent_profile()
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         job = enqueue_job(
             session,
             job_type="agent_generate_course_staged",

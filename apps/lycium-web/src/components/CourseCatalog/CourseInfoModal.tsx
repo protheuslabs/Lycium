@@ -1,16 +1,20 @@
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryLabel, getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
 import Modal from "../Modal/Modal";
+import CourseReviewPanel from "./CourseReviewPanel";
 
 type CourseInfoModalProps = {
   course: CourseEntry;
+  isPublishing: boolean;
   onClose: () => void;
+  onPublishCourse: (course: CourseEntry) => void;
 };
 
-export default function CourseInfoModal({ course, onClose }: CourseInfoModalProps) {
+export default function CourseInfoModal({ course, isPublishing, onClose, onPublishCourse }: CourseInfoModalProps) {
   const tagLabels = getCourseTagLabels(course.data.tags);
   const learningTypes = course.data.learningTypes ?? [];
   const courseEquivalencies = course.data.courseEquivalencies ?? [];
+  const isGeneratedCourse = course.source === "remote" || Boolean(course.generation_trace);
 
   return (
     <Modal
@@ -18,7 +22,7 @@ export default function CourseInfoModal({ course, onClose }: CourseInfoModalProp
       title={course.title}
       eyebrow="Course info"
       labelledById="course-info-title"
-      size="md"
+      size={isGeneratedCourse ? "lg" : "md"}
       onClose={onClose}
     >
         {course.data.shortDescription && <p className="course-info-description">{course.data.shortDescription}</p>}
@@ -90,6 +94,9 @@ export default function CourseInfoModal({ course, onClose }: CourseInfoModalProp
               })}
             </div>
             </section>
+        )}
+        {isGeneratedCourse && (
+          <CourseReviewPanel course={course} isPublishing={isPublishing} onPublishCourse={onPublishCourse} />
         )}
     </Modal>
   );

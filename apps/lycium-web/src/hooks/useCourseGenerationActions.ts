@@ -86,6 +86,8 @@ export function useCourseGenerationActions({
         snapshotId: Number(generatedSnapshot.id),
         source: "remote",
         status: generatedSnapshot.status,
+        generation_trace: generatedSnapshot.generation_trace,
+        qualityReport: generatedSnapshot.qualityReport,
       };
       const validation = validateCourseEntry(entry, {
         centralSourceRecords: sourceRecordsData.sources,
@@ -119,6 +121,8 @@ export function useCourseGenerationActions({
           snapshotId: Number(publishedCourse.id),
           source: "remote",
           status: publishedCourse.status,
+          generation_trace: publishedCourse.generation_trace,
+          qualityReport: publishedCourse.qualityReport,
         };
         const validation = validateCourseEntry(entry, {
           centralSourceRecords: sourceRecordsData.sources,

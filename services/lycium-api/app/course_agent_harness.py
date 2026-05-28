@@ -55,6 +55,7 @@ def generate_course_with_agent(
         source_urls=source_urls,
         category=category,
         department=department,
+        fetch_sources=True,
     )
     messages = _llm_messages(
         prompt=prompt,
@@ -138,6 +139,7 @@ def generate_course_with_agent_staged(
         source_urls=source_urls,
         category=category,
         department=department,
+        fetch_sources=True,
     )
     provider = get_agent_provider(provider_id)
     selected_model = model or provider.get("defaultModel") or SETTINGS.agent_model

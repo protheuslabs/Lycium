@@ -10,10 +10,11 @@ from sqlalchemy.orm import Session
 from app.coverage import recompute_coverage
 from app.course_agent_harness import CourseAgentError, generate_course_with_agent_staged
 from app.course_quality import assess_course_quality
+from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import SessionLocal
 from app.generation import generate_course_direct
 from app.ingestion import ingest_source
-from app.local_store import get_active_agent_profile, save_course_snapshot
+from app.local_store import require_verified_active_agent_profile, save_course_snapshot
 from app.models import CourseSnapshot, Job, Source
 
 GENERATION_JOB_LOG_LIMIT = 5
@@ -184,9 +185,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
         session.commit()
 
     try:
-        agent_profile = get_active_agent_profile()
-        if not agent_profile or not agent_profile.get("agent_api_key"):
-            raise ValueError("No active agent API key is saved. Add one in Settings first.")
+        agent_profile = require_verified_active_agent_profile()
 
         def checkpoint(update: dict[str, Any]) -> None:
             trace = update.get("trace") if isinstance(update.get("trace"), dict) else {}
@@ -241,6 +240,12 @@ def run_agent_course_generation_job(job_id: int) -> None:
                     generation_trace={**generated.trace, "quality_report": quality_report},
                 )
                 session.add(snapshot)
+                session.flush()
+                persist_curriculum_artifacts_for_snapshot(
+                    session,
+                    snapshot,
+                    context=generated.trace.get("curriculum_benchmark_context"),
+                )
                 session.commit()
                 session.refresh(snapshot)
                 save_course_snapshot(snapshot)

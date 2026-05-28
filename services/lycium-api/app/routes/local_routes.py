@@ -198,7 +198,14 @@ def register(app: FastAPI) -> None:
                 provider_id=str(profile.get("provider_id") or ""),
                 model=str(profile.get("model") or "") or None,
             )
-            selected_model = str(profile.get("model") or "") or (models[0]["id"] if models else str(provider.get("defaultModel") or ""))
+            current_model = str(profile.get("model") or "").strip()
+            available_model_ids = {str(model.get("id") or "") for model in models}
+            default_model = str(provider.get("defaultModel") or "").strip()
+            selected_model = (
+                current_model
+                if current_model and current_model in available_model_ids
+                else (models[0]["id"] if models else current_model or default_model)
+            )
             return update_agent_key_verification(
                 payload.key_id,
                 models=models,

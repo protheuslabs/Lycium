@@ -5,6 +5,8 @@ from collections import Counter
 from urllib.parse import urlparse
 from typing import Any
 
+from app.curriculum_benchmark_extraction import extract_curriculum_benchmarks_from_sources
+
 
 STOPWORDS = {
     "about",
@@ -206,19 +208,30 @@ def compile_curriculum_benchmark_context(
     source_urls: list[str] | None,
     category: str | None = None,
     department: str | None = None,
+    fetch_sources: bool = False,
+    source_documents: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     keywords = _keywords(prompt, source_urls)
-    benchmarks = [
-        _benchmark_from_url(
-            prompt=prompt,
-            url=url,
-            index=index,
-            category=category,
-            department=department,
-            keywords=keywords,
-        )
-        for index, url in enumerate(source_urls or [], start=1)
-    ]
+    benchmarks = extract_curriculum_benchmarks_from_sources(
+        prompt=prompt,
+        source_urls=source_urls,
+        category=category,
+        department=department,
+        fetch_sources=fetch_sources,
+        source_documents=source_documents,
+    )
+    if not benchmarks:
+        benchmarks = [
+            _benchmark_from_url(
+                prompt=prompt,
+                url=url,
+                index=index,
+                category=category,
+                department=department,
+                keywords=keywords,
+            )
+            for index, url in enumerate(source_urls or [], start=1)
+        ]
     if not benchmarks:
         benchmarks.append(_synthetic_benchmark(prompt, category, department, keywords))
 

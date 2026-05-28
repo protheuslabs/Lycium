@@ -238,6 +238,10 @@
   .course-info-facts {
     grid-template-columns: 1fr;
   }
+
+  .course-review-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -245,7 +249,10 @@
   .course-info-close,
   .course-info-chip,
   .course-info-facts article,
-  .course-equivalency-card {
+  .course-equivalency-card,
+  .course-review-summary-grid article,
+  .course-review-gate,
+  .course-review-row {
     background: #262626;
   }
 
@@ -254,6 +261,10 @@
   .course-info-chip,
   .course-info-facts strong,
   .course-equivalency-card strong,
+  .course-review-summary-grid strong,
+  .course-review-gate strong,
+  .course-review-row strong,
+  .course-review-section h4,
   .course-info-section h3,
   .course-info-header h2 {
     color: #f8fafc;
@@ -269,7 +280,11 @@
   .course-info-description,
   .course-info-muted,
   .course-equivalency-card span,
-  .course-equivalency-card p {
+  .course-equivalency-card p,
+  .course-review-summary-grid span,
+  .course-review-gate span,
+  .course-review-gate p,
+  .course-review-row span {
     color: #cbd5e1;
   }
 
@@ -282,7 +297,10 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-close,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts article,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-summary-grid article,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-gate,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-row {
   background: #262626;
 }
 
@@ -291,6 +309,10 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts strong,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-summary-grid strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-gate strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-row strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-section h4,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-section h3,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-header h2 {
   color: #f8fafc;
@@ -306,7 +328,11 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-description,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-muted,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card span,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card p {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card p,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-summary-grid span,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-gate span,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-gate p,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-row span {
   color: #cbd5e1;
 }
 
@@ -318,7 +344,10 @@ html[data-theme="light"] .course-info-button,
 html[data-theme="light"] .course-info-close,
 html[data-theme="light"] .course-info-chip,
 html[data-theme="light"] .course-info-facts article,
-html[data-theme="light"] .course-equivalency-card {
+html[data-theme="light"] .course-equivalency-card,
+html[data-theme="light"] .course-review-summary-grid article,
+html[data-theme="light"] .course-review-gate,
+html[data-theme="light"] .course-review-row {
   background: #eef2f7;
 }
 
@@ -327,6 +356,10 @@ html[data-theme="light"] .course-info-close,
 html[data-theme="light"] .course-info-chip,
 html[data-theme="light"] .course-info-facts strong,
 html[data-theme="light"] .course-equivalency-card strong,
+html[data-theme="light"] .course-review-summary-grid strong,
+html[data-theme="light"] .course-review-gate strong,
+html[data-theme="light"] .course-review-row strong,
+html[data-theme="light"] .course-review-section h4,
 html[data-theme="light"] .course-info-section h3,
 html[data-theme="light"] .course-info-header h2 {
   color: #253049;
@@ -346,7 +379,11 @@ html[data-theme="light"] .course-info-description {
 html[data-theme="light"] .course-info-muted,
 html[data-theme="light"] .course-equivalency-card span,
 html[data-theme="light"] .course-equivalency-card p,
-html[data-theme="light"] .course-info-facts span {
+html[data-theme="light"] .course-info-facts span,
+html[data-theme="light"] .course-review-summary-grid span,
+html[data-theme="light"] .course-review-gate span,
+html[data-theme="light"] .course-review-gate p,
+html[data-theme="light"] .course-review-row span {
   color: #667085;
 }
 

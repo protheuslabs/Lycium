@@ -43,12 +43,14 @@ const themeBootstrapScript = `
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <Script
-        id="lycium-theme-bootstrap"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{ __html: themeBootstrapScript }}
-      />
-      <body>{children}</body>
+      <body>
+        <Script
+          id="lycium-theme-bootstrap"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: themeBootstrapScript }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

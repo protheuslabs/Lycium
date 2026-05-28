@@ -358,6 +358,8 @@ const {
             snapshotId,
             source: "remote",
             status: row.status,
+            generation_trace: row.generation_trace,
+            qualityReport: row.qualityReport,
           };
           const validation = validateCourseEntry(entry, {
             centralSourceRecords: sourceRecordsData.sources,

@@ -194,6 +194,8 @@ export type LyciumCourseEntry = {
   snapshotId?: number;
   source: "local" | "remote" | string;
   status?: LyciumCourseLifecycleStatus;
+  generation_trace?: Record<string, unknown>;
+  qualityReport?: LyciumCourseQualityReport | null;
 };
 
 export type LyciumCourseLifecycleStatus =

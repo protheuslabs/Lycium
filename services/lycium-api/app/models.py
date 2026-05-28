@@ -199,6 +199,82 @@ class CourseSnapshot(Base):
     section_progress: Mapped[list["LearnerSectionProgress"]] = relationship(back_populates="course_snapshot")
     events: Mapped[list["LearningEvent"]] = relationship(back_populates="course_snapshot")
     portfolio_items: Mapped[list["PortfolioArtifact"]] = relationship(back_populates="course_snapshot")
+    curriculum_benchmarks: Mapped[list["CurriculumBenchmarkRecord"]] = relationship(
+        back_populates="course_snapshot",
+        cascade="all, delete-orphan",
+    )
+    requirement_origins: Mapped[list["RequirementOriginRecord"]] = relationship(
+        back_populates="course_snapshot",
+        cascade="all, delete-orphan",
+    )
+    source_slots: Mapped[list["SourceSlotRecord"]] = relationship(
+        back_populates="course_snapshot",
+        cascade="all, delete-orphan",
+    )
+
+
+class CurriculumBenchmarkRecord(Base):
+    __tablename__ = "curriculum_benchmark_records"
+    __table_args__ = (
+        UniqueConstraint("course_snapshot_id", "benchmark_id", name="ux_curriculum_benchmark_course_benchmark"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_snapshot_id: Mapped[int] = mapped_column(ForeignKey("course_snapshots.id"), index=True)
+    benchmark_id: Mapped[str] = mapped_column(String(160), index=True)
+    source_type: Mapped[str] = mapped_column(String(80), default="expert_reference")
+    title: Mapped[str] = mapped_column(String(512))
+    institution: Mapped[str | None] = mapped_column(String(255))
+    department: Mapped[str | None] = mapped_column(String(160))
+    url: Mapped[str | None] = mapped_column(String(2048))
+    confidence: Mapped[float] = mapped_column(Float, default=0.0)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    course_snapshot: Mapped[CourseSnapshot] = relationship(back_populates="curriculum_benchmarks")
+
+
+class RequirementOriginRecord(Base):
+    __tablename__ = "requirement_origin_records"
+    __table_args__ = (
+        UniqueConstraint("course_snapshot_id", "requirement_id", name="ux_requirement_origin_course_requirement"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_snapshot_id: Mapped[int] = mapped_column(ForeignKey("course_snapshots.id"), index=True)
+    requirement_id: Mapped[str] = mapped_column(String(160), index=True)
+    title: Mapped[str] = mapped_column(String(512))
+    importance: Mapped[str] = mapped_column(String(40), default="optional")
+    origin_type: Mapped[str] = mapped_column(String(80), default="generated_gap_fill")
+    frequency: Mapped[float] = mapped_column(Float, default=0.0)
+    evidence_refs: Mapped[list[str]] = mapped_column(JSON, default=list)
+    benchmark_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    course_snapshot: Mapped[CourseSnapshot] = relationship(back_populates="requirement_origins")
+
+
+class SourceSlotRecord(Base):
+    __tablename__ = "source_slot_records"
+    __table_args__ = (
+        UniqueConstraint("course_snapshot_id", "slot_id", name="ux_source_slot_course_slot"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    course_snapshot_id: Mapped[int] = mapped_column(ForeignKey("course_snapshots.id"), index=True)
+    slot_id: Mapped[str] = mapped_column(String(180), index=True)
+    required_concept_id: Mapped[str] = mapped_column(String(160), index=True)
+    primary_source_id: Mapped[str | None] = mapped_column(String(160))
+    fallback_source_ids: Mapped[list[str]] = mapped_column(JSON, default=list)
+    replacement_policy: Mapped[str] = mapped_column(String(80), default="review_required")
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    course_snapshot: Mapped[CourseSnapshot] = relationship(back_populates="source_slots")
 
 
 class LearnerSectionProgress(Base):
