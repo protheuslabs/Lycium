@@ -10,7 +10,7 @@ CHEM_105_FLAGSHIP_BLUEPRINT: dict[str, Any] = {
     "scenario": {
         "label": "CHEM 105 General Chemistry I",
         "kind": "course",
-        "expectedCategory": "college-of-sciences",
+        "expectedCategory": "natural-sciences-mathematics",
         "expectedDepartment": "chemistry",
         "minModules": 14,
         "minLearnSections": 14,

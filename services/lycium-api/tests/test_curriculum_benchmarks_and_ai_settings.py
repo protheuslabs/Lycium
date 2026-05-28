@@ -77,7 +77,7 @@ def test_curriculum_context_extracts_real_syllabus_structure() -> None:
                 "text": syllabus,
             }
         ],
-        category="college-of-sciences",
+        category="natural-sciences-mathematics",
         department="chemistry",
     )
     benchmark = context["curriculumBenchmarks"][0]

@@ -104,7 +104,7 @@ def _course_for_scenario() -> dict[str, Any]:
         "title": "CHEM 105 General Chemistry I",
         "shortDescription": "A first-semester general chemistry course aligned to college CHEM 105 expectations.",
         "difficultyLevel": "undergrad",
-        "category": "college-of-sciences",
+        "category": "natural-sciences-mathematics",
         "department": "chemistry",
         "tags": ["chemistry", "stoichiometry", "thermochemistry", "equilibrium"],
         "sourceIds": [source["id"] for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]],
