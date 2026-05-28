@@ -32,6 +32,9 @@ jobs:
       - name: Check import boundaries
         run: pnpm check:boundaries
 
+      - name: Check professional readiness
+        run: pnpm check:readiness
+
       - name: Test shared contracts
         run: pnpm --filter @lycium/contracts test
 
