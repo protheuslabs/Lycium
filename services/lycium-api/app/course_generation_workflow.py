@@ -155,6 +155,61 @@ def _gate_intake(course: dict[str, Any]) -> GateResult:
     return _gate("intake", "Course identity and learner-facing catalog metadata are present.", issues)
 
 
+def _gate_benchmark_intake(course: dict[str, Any]) -> GateResult:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    benchmarks = metadata.get("curriculumBenchmarks")
+    issues: list[GateIssue] = []
+    benchmark_count = len(benchmarks) if isinstance(benchmarks, list) else 0
+    if benchmark_count == 0:
+        issues.append(_issue("warning", "Course has no curriculum benchmark records.", "metadata.curriculumBenchmarks"))
+    return _gate(
+        "benchmark_intake",
+        "Curriculum benchmark records were checked.",
+        issues,
+        {"benchmarkCount": benchmark_count},
+    )
+
+
+def _gate_requirement_extraction(course: dict[str, Any]) -> GateResult:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    origins = metadata.get("requirementOrigins")
+    benchmarks = metadata.get("curriculumBenchmarks")
+    requirement_count = 0
+    if isinstance(origins, list):
+        requirement_count = len(origins)
+    elif isinstance(benchmarks, list):
+        for benchmark in benchmarks:
+            if isinstance(benchmark, dict) and isinstance(benchmark.get("extractedRequirements"), list):
+                requirement_count += len(benchmark["extractedRequirements"])
+    issues: list[GateIssue] = []
+    if requirement_count == 0:
+        issues.append(_issue("warning", "No benchmark-derived requirements were extracted.", "metadata.requirementOrigins"))
+    return _gate(
+        "requirement_extraction",
+        "Benchmark-derived requirements and origins were inspected.",
+        issues,
+        {"requirementOriginCount": requirement_count},
+    )
+
+
+def _gate_commonality_analysis(course: dict[str, Any]) -> GateResult:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    parity = metadata.get("courseParityProfile") if isinstance(metadata.get("courseParityProfile"), dict) else {}
+    source_slots = metadata.get("sourceSlots") if isinstance(metadata.get("sourceSlots"), list) else []
+    required_topics = parity.get("commonRequiredTopics") if isinstance(parity.get("commonRequiredTopics"), list) else []
+    issues: list[GateIssue] = []
+    if not required_topics:
+        issues.append(_issue("warning", "No common required topics were identified.", "metadata.courseParityProfile.commonRequiredTopics"))
+    if required_topics and not source_slots:
+        issues.append(_issue("warning", "Required topics should have source slots with fallback policy.", "metadata.sourceSlots"))
+    return _gate(
+        "commonality_analysis",
+        "Required, optional, and fallback-source coverage were checked.",
+        issues,
+        {"requiredTopicCount": len(required_topics), "sourceSlotCount": len(source_slots)},
+    )
+
+
 def _gate_source_analysis(course: dict[str, Any]) -> GateResult:
     referenced = set(_source_ids(course))
     for module in _modules(course):
@@ -348,6 +403,9 @@ def _gate_review_publish(gates: list[GateResult]) -> GateResult:
 def run_course_generation_workflow(course: dict[str, Any]) -> CourseGenerationWorkflowReport:
     gates = [
         _gate_intake(course),
+        _gate_benchmark_intake(course),
+        _gate_requirement_extraction(course),
+        _gate_commonality_analysis(course),
         _gate_source_analysis(course),
         _gate_source_enrichment(course),
         _gate_classification(course),

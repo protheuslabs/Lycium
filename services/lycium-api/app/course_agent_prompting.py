@@ -22,6 +22,7 @@ def _llm_messages(
     category: str | None = None,
     department: str | None = None,
     source_urls: list[str] | None = None,
+    benchmark_context: dict | None = None,
 ) -> list[dict[str, str]]:
     user_contract = {
         "prompt": prompt,
@@ -33,6 +34,12 @@ def _llm_messages(
         "expected_duration_minutes": expected_duration_minutes,
         "source_policy": source_policy,
         "source_urls": source_urls or [],
+        "curriculum_benchmark_context": benchmark_context or {},
+        "curriculum_benchmark_rule": (
+            "Use curriculum_benchmark_context as the requirement skeleton when present. "
+            "Required topics must appear in module objectives, concept cards, assessments, and source mappings. "
+            "Optional topics may be enrichment, alternate paths, or later modules."
+        ),
         "course_short_description": "Return a top-level shortDescription: one concise sentence for catalog cards.",
         "classification_rule": (
             "If category and department are provided, preserve them exactly as top-level course.category and course.department. "
@@ -98,6 +105,7 @@ def _staged_plan_messages(
     category: str | None,
     department: str | None,
     source_urls: list[str] | None,
+    benchmark_context: dict | None = None,
 ) -> list[dict[str, str]]:
     source_ids = _source_ids_for_input(source_urls)
     return [
@@ -123,6 +131,11 @@ def _staged_plan_messages(
                     "department": department,
                     "source_urls": source_urls or [],
                     "available_source_ids": source_ids,
+                    "curriculum_benchmark_context": benchmark_context or {},
+                    "benchmark_instruction": (
+                        "Use curriculum_benchmark_context.requirementOrigins to build the course skeleton. "
+                        "Do not let source availability alone decide the curriculum sequence."
+                    ),
                     "required_json_shape": {
                         "title": "Course title",
                         "shortDescription": "One catalog sentence.",

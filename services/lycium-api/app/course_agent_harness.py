@@ -17,6 +17,7 @@ _insert_media_block,
 _coerce_plan_modules,
 )
 from app.course_agent_contract import normalize_course, validate_course_contract
+from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 
 from app.course_agent_assessment_prompting import _staged_quiz_messages, _staged_summary_messages
 from app.course_agent_lesson_prompting import _staged_lesson_messages, _staged_media_messages
@@ -49,6 +50,12 @@ def generate_course_with_agent(
     department: str | None = None,
     enforce_contract: bool = True,
 ) -> CourseAgentResult:
+    benchmark_context = compile_curriculum_benchmark_context(
+        prompt=prompt,
+        source_urls=source_urls,
+        category=category,
+        department=department,
+    )
     messages = _llm_messages(
         prompt=prompt,
         level=level,
@@ -59,6 +66,7 @@ def generate_course_with_agent(
         desired_module_count=desired_module_count,
         expected_duration_minutes=expected_duration_minutes,
         source_urls=source_urls,
+        benchmark_context=benchmark_context,
     )
     provider = get_agent_provider(provider_id)
     selected_model = model or provider.get("defaultModel") or SETTINGS.agent_model
@@ -74,6 +82,7 @@ def generate_course_with_agent(
         expected_duration_minutes=expected_duration_minutes,
         source_urls=source_urls,
     )
+    base_trace["curriculum_benchmark_context"] = benchmark_context
     try:
         response = call_agent_model(provider, api_key, messages, selected_model)
     except CourseAgentError as exc:
@@ -88,7 +97,7 @@ def generate_course_with_agent(
             f"LLM response could not be parsed as course JSON: {exc}",
             trace={**base_trace, "status": "failed", "failed_stage": "course_generation"},
         ) from exc
-    course = _merge_input_sources(normalize_course(raw_course), source_urls)
+    course = attach_curriculum_context(_merge_input_sources(normalize_course(raw_course), source_urls), benchmark_context)
     if category:
         course["category"] = category
     if department:
@@ -124,6 +133,12 @@ def generate_course_with_agent_staged(
     enforce_contract: bool = True,
     on_checkpoint: CourseGenerationCheckpoint | None = None,
 ) -> CourseAgentResult:
+    benchmark_context = compile_curriculum_benchmark_context(
+        prompt=prompt,
+        source_urls=source_urls,
+        category=category,
+        department=department,
+    )
     provider = get_agent_provider(provider_id)
     selected_model = model or provider.get("defaultModel") or SETTINGS.agent_model
     model_capability = assess_agent_model_capability(provider, str(selected_model))
@@ -140,6 +155,7 @@ def generate_course_with_agent_staged(
             source_urls=source_urls,
         ),
         "stages": [],
+        "curriculum_benchmark_context": benchmark_context,
     }
     try:
         plan, plan_response = _model_json(
@@ -158,6 +174,7 @@ def generate_course_with_agent_staged(
                 category=category,
                 department=department,
                 source_urls=source_urls,
+                benchmark_context=benchmark_context,
             ),
         )
     except CourseAgentError as exc:
@@ -439,7 +456,7 @@ def generate_course_with_agent_staged(
     }
     if resolved_department:
         course_payload["department"] = resolved_department
-    course = normalize_course(course_payload)
+    course = attach_curriculum_context(normalize_course(course_payload), benchmark_context)
     validation_errors = validate_course_contract(course)
     if validation_errors and enforce_contract:
         raise CourseAgentError(
