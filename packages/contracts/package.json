@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "docs:schemas": "node scripts/generate-schema-docs.mjs",
+    "docs:schemas:check": "node scripts/generate-schema-docs.mjs --check",
     "test": "vitest run --config vitest.config.ts"
   },
   "exports": {

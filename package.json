@@ -13,6 +13,8 @@
     "build": "corepack pnpm build:web",
     "build:web": "corepack pnpm --filter @lycium/web build",
     "check:boundaries": "node scripts/check-import-boundaries.mjs",
+    "docs:contracts": "corepack pnpm --filter @lycium/contracts docs:schemas",
+    "check:docs": "corepack pnpm --filter @lycium/contracts docs:schemas:check",
     "test:contracts": "corepack pnpm --filter @lycium/contracts test",
     "test:api": "cd services/lycium-api && python3 -m pytest -q",
     "test:workers": "cd services/lycium-workers && PYTHONPATH=src pytest -q",
