@@ -16,6 +16,7 @@ corepack pnpm check:readiness
 | First-class benchmark persistence | Curriculum benchmark schema, artifact persistence, and benchmark/API settings tests. |
 | Benchmark extraction pipeline | Benchmark extraction and benchmark compilation modules. |
 | Course generation eval suite | Course generation scenario fixtures and scenario tests. |
+| Flagship generation target | CHEM 105 benchmark/source blueprint and scenario tests for a real college-style course target. |
 | Provider connection test matrix | Provider catalog and provider connection tests for cloud/local cases. |
 | Generation observability | Generation run records, payload helpers, and observability tests. |
 | Contract docs generated from schemas | Schema docs generator, generated schema reference, and CI docs check. |

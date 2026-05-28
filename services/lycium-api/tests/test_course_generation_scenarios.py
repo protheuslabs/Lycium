@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.course_generation_flagships import CHEM_105_FLAGSHIP_BLUEPRINT, chem_105_source_slots
 from app.course_generation_scenarios import (
     evaluate_course_generation_scenario,
     evaluate_program_generation_scenario,
@@ -26,29 +27,37 @@ def _course_for_scenario() -> dict[str, Any]:
         "matter and measurement",
         "atomic structure",
         "periodic trends",
+        "chemical formulas and nomenclature",
         "stoichiometry",
         "chemical reactions",
         "aqueous solutions",
         "thermochemistry",
         "chemical bonding",
         "molecular geometry",
+        "intermolecular forces",
         "gases",
+        "solutions",
+        "kinetics",
+        "equilibrium",
+        "acid-base chemistry",
+        "laboratory safety",
     ]
     modules = []
+    primary_source_id = CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"][0]["id"]
     for index, topic in enumerate(topics, start=1):
         section_id = f"chem-105-{index}"
         modules.append(
             {
                 "id": f"module-{index}",
                 "title": f"Week {index}: {topic.title()}",
-                "sourceIds": ["chem-openstax"],
+                "sourceIds": [primary_source_id],
                 "sections": [
                     {
                         "id": section_id,
                         "title": topic.title(),
                         "pageType": "learn",
                         "sectionType": "lesson",
-                        "sourceIds": ["chem-openstax"],
+                        "sourceIds": [primary_source_id],
                         "content": [
                             {
                                 "type": "text",
@@ -71,15 +80,15 @@ def _course_for_scenario() -> dict[str, Any]:
                         "title": f"Quiz: {topic.title()}",
                         "pageType": "apply",
                         "sectionType": "assessment",
-                        "sourceIds": ["chem-openstax"],
-                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": ["chem-openstax"]}],
+                        "sourceIds": [primary_source_id],
+                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": [primary_source_id]}],
                     },
                     {
                         "id": f"{section_id}-summary",
                         "title": f"Week {index} Summary",
                         "pageType": "learn",
                         "sectionType": "summary",
-                        "sourceIds": ["chem-openstax"],
+                        "sourceIds": [primary_source_id],
                         "content": [
                             {
                                 "type": "conceptCards",
@@ -98,16 +107,21 @@ def _course_for_scenario() -> dict[str, Any]:
         "category": "college-of-sciences",
         "department": "chemistry",
         "tags": ["chemistry", "stoichiometry", "thermochemistry", "equilibrium"],
-        "sourceIds": ["chem-openstax", "chem-libretexts", "chem-syllabus"],
+        "sourceIds": [source["id"] for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]],
         "sourceRecords": [
-            {"id": "chem-openstax", "type": "textbook", "title": "OpenStax Chemistry", "url": "https://openstax.org"},
-            {"id": "chem-libretexts", "type": "article", "title": "Chemistry LibreTexts", "url": "https://chem.libretexts.org"},
-            {"id": "chem-syllabus", "type": "syllabus", "title": "CHEM 105 syllabus", "url": "https://example.edu/chem105"},
+            {
+                "id": source["id"],
+                "type": source["type"],
+                "title": source["title"],
+                "url": source["url"],
+            }
+            for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]
         ],
         "metadata": {
             "pacingLabel": "Week",
-            "curriculumBenchmarks": [{"id": "bench-chem-105", "title": "CHEM 105 benchmark"}],
+            "curriculumBenchmarks": CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"],
             "requirementOrigins": [{"requirementId": f"req-{index}", "title": topic.title()} for index, topic in enumerate(topics, start=1)],
+            "sourceSlots": chem_105_source_slots(),
         },
         "modules": modules,
     }
@@ -183,7 +197,18 @@ def test_chem_105_scenario_accepts_complete_college_course_shape() -> None:
     assert report["status"] == "passed"
     assert report["score"] >= 0.9
     coverage = next(check for check in report["checks"] if check["key"] == "required_topic_coverage")
-    assert coverage["metrics"]["coveredRequiredKeywordCount"] >= 9
+    assert coverage["metrics"]["coveredRequiredKeywordCount"] >= 14
+
+
+def test_chem_105_flagship_blueprint_has_real_benchmarks_sources_and_slots() -> None:
+    assert len(CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"]) >= 3
+    assert len(CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]) >= 6
+    assert len(CHEM_105_FLAGSHIP_BLUEPRINT["weekPlan"]) == 14
+
+    source_ids = {source["id"] for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]}
+    for slot in chem_105_source_slots():
+        assert slot["primarySourceId"] in source_ids
+        assert slot["replacementPolicy"] == "review_required"
 
 
 def test_chem_105_scenario_rejects_wrong_department_and_thin_assessment() -> None:

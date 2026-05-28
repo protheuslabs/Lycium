@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any, Literal
 
+from app.course_generation_flagships import CHEM_105_FLAGSHIP_BLUEPRINT
+
 
 ScenarioStatus = Literal["passed", "needs_review", "failed"]
 FindingSeverity = Literal["warning", "error"]
@@ -10,33 +12,7 @@ FindingSeverity = Literal["warning", "error"]
 SCENARIO_EVAL_VERSION = "course-generation-scenarios-v1"
 
 COURSE_SCENARIOS: dict[str, dict[str, Any]] = {
-    "chem-105-general-chemistry": {
-        "label": "CHEM 105 General Chemistry I",
-        "kind": "course",
-        "expectedCategory": "college-of-sciences",
-        "expectedDepartment": "chemistry",
-        "minModules": 10,
-        "minLearnSections": 10,
-        "minQuizBlocks": 10,
-        "minQuestionsPerQuiz": 10,
-        "minSourceRecords": 3,
-        "minModuleVideoCoverage": 0.8,
-        "minRequiredKeywordCoverage": 0.75,
-        "requiredKeywords": [
-            "matter and measurement",
-            "atomic structure",
-            "periodic trends",
-            "stoichiometry",
-            "chemical reactions",
-            "aqueous solutions",
-            "thermochemistry",
-            "chemical bonding",
-            "molecular geometry",
-            "gases",
-            "equilibrium",
-            "laboratory safety",
-        ],
-    },
+    "chem-105-general-chemistry": CHEM_105_FLAGSHIP_BLUEPRINT["scenario"],
     "intro-programming-foundations": {
         "label": "Intro Programming Foundations",
         "kind": "course",
