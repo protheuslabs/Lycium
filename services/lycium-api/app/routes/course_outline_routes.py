@@ -19,7 +19,11 @@ from app.course_agent_harness import (
     validate_agent_api_key,
 )
 from app.course_quality import assess_course_quality
-from app.course_generation_service import assess_agent_generation_result, build_course_snapshot_from_agent_result
+from app.course_generation_service import (
+    assess_agent_generation_result,
+    build_course_snapshot_from_agent_result,
+    validate_generation_taxonomy_input,
+)
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
 from app.generation import (
@@ -252,6 +256,9 @@ def register(app: FastAPI) -> None:
     ) -> CourseSnapshot:
         try:
             validate_learner_exists(session, payload.learner_id)
+            taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
+            if taxonomy_errors:
+                raise ValueError("; ".join(taxonomy_errors))
             agent_profile = require_verified_active_agent_profile()
 
             generated = generate_course_with_agent_staged(
@@ -299,6 +306,9 @@ def register(app: FastAPI) -> None:
     @app.post("/v1/agent/courses/experiment", response_model=CourseGenerationExperimentRead)
     def experiment_with_llm_course_generation(payload: GenerateCourseRequest) -> dict[str, Any]:
         try:
+            taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
+            if taxonomy_errors:
+                raise ValueError("; ".join(taxonomy_errors))
             agent_profile = require_verified_active_agent_profile()
 
             generated = generate_course_with_agent(
@@ -332,6 +342,9 @@ def register(app: FastAPI) -> None:
     @app.post("/v1/agent/courses/experiment/staged", response_model=CourseGenerationExperimentRead)
     def experiment_with_staged_llm_course_generation(payload: GenerateCourseRequest) -> dict[str, Any]:
         try:
+            taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
+            if taxonomy_errors:
+                raise ValueError("; ".join(taxonomy_errors))
             agent_profile = require_verified_active_agent_profile()
 
             generated = generate_course_with_agent_staged(
@@ -369,6 +382,9 @@ def register(app: FastAPI) -> None:
         session: Session = Depends(get_session),
     ) -> dict[str, Any]:
         try:
+            taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
+            if taxonomy_errors:
+                raise ValueError("; ".join(taxonomy_errors))
             agent_profile = require_verified_active_agent_profile()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc

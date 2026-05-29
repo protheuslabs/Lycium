@@ -20,6 +20,7 @@ from app.course_agent_lesson_prompting import _staged_lesson_messages, _staged_m
 from app.course_agent_prompting import _staged_plan_messages
 from app.course_agent_providers import assess_agent_model_capability, get_agent_provider
 from app.course_agent_types import CourseAgentError, CourseAgentResult
+from app.course_generation_service import validate_generation_taxonomy_input
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 
 
@@ -40,6 +41,10 @@ def generate_course_with_agent_staged(
     enforce_contract: bool = True,
     on_checkpoint: CourseGenerationCheckpoint | None = None,
 ) -> CourseAgentResult:
+    taxonomy_errors = validate_generation_taxonomy_input(category, department)
+    if taxonomy_errors:
+        raise CourseAgentError("Invalid course generation taxonomy input: " + "; ".join(taxonomy_errors))
+
     benchmark_context = compile_curriculum_benchmark_context(
         prompt=prompt,
         source_urls=source_urls,

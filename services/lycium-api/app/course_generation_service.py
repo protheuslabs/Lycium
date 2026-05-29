@@ -5,9 +5,22 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.course_agent_types import CourseAgentResult
+from app.course_taxonomy import COURSE_TAXONOMY
 from app.course_quality import assess_course_quality
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.models import CourseSnapshot
+
+
+def validate_generation_taxonomy_input(category: str | None, department: str | None) -> list[str]:
+    errors: list[str] = []
+    if not category:
+        return errors
+    if category not in COURSE_TAXONOMY:
+        errors.append(f'Course category "{category}" is not in the taxonomy.')
+        return errors
+    if department and department not in COURSE_TAXONOMY[category]:
+        errors.append(f'Course department "{department}" is not in category "{category}".')
+    return errors
 
 
 def assess_agent_generation_result(generated: CourseAgentResult, *, gate: str) -> dict[str, Any]:

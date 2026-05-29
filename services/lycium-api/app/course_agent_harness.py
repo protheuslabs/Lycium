@@ -10,6 +10,7 @@ from app.course_agent_contract import normalize_course, validate_course_contract
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 
 from app.course_agent_prompting import _llm_messages, load_behavioral_contract
+from app.course_generation_service import validate_generation_taxonomy_input
 from app.course_agent_providers import (
     assess_agent_model_capability,
     call_agent_model,
@@ -40,6 +41,10 @@ def generate_course_with_agent(
     department: str | None = None,
     enforce_contract: bool = True,
 ) -> CourseAgentResult:
+    taxonomy_errors = validate_generation_taxonomy_input(category, department)
+    if taxonomy_errors:
+        raise CourseAgentError("Invalid course generation taxonomy input: " + "; ".join(taxonomy_errors))
+
     benchmark_context = compile_curriculum_benchmark_context(
         prompt=prompt,
         source_urls=source_urls,
