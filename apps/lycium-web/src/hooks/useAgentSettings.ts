@@ -60,6 +60,15 @@ const isLocalAgentKey = (key: AgentKeyRecord | undefined, providers: AgentProvid
 const activeAgentKey = (settings: { agent_keys?: AgentKeyRecord[] }) =>
   (settings.agent_keys ?? []).find((key: AgentKeyRecord) => key.is_active);
 
+const localEndpointPattern = /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?(\/.*)?$/i;
+
+const errorMessage = (err: unknown) => (err instanceof Error ? err.message : "");
+
+const isInvalidCredentialError = (err: unknown) => {
+  const message = errorMessage(err).toLowerCase();
+  return message.includes("api key invalid") || message.includes("invalid api key");
+};
+
 export function useAgentSettings(routeKind: string, apiBase: string) {
   const lyciumApi = useMemo(() => createLyciumLocalApi(apiBase), [apiBase]);
   const [agentProviders, setAgentProviders] = useState<AgentProviderRecord[]>(DEFAULT_AGENT_PROVIDERS);
@@ -94,8 +103,13 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     setSettingsMessage("");
 
     try {
+      const providerIdForCredential =
+        localEndpointPattern.test(trimmedKey) &&
+        agentProviders.some((provider) => provider.id === "local-model")
+          ? "local-model"
+          : agentProviderId;
       const settings = await lyciumApi.saveSettings({
-        provider_id: agentProviderId,
+        provider_id: providerIdForCredential,
         agent_api_key: trimmedKey,
       });
       const activeKey = activeAgentKey(settings);
@@ -115,10 +129,20 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
       }
     } catch (err) {
       console.warn("Unable to save settings:", err);
-      setAgentApiKey("");
-      setApiKeySaveStatus("invalid");
       setSettingsStatus("error");
-      setSettingsMessage("");
+      if (isInvalidCredentialError(err)) {
+        setAgentApiKey("");
+        setApiKeySaveStatus("invalid");
+        setSettingsMessage("");
+      } else {
+        setAgentApiKey(trimmedKey);
+        setApiKeySaveStatus("idle");
+        setSettingsMessage(
+          localEndpointPattern.test(trimmedKey)
+            ? "Could not reach the Lycium API to save this local model path. Start the API and try again."
+            : errorMessage(err) || "Could not save settings. Is the Lycium API running?"
+        );
+      }
     }
   };
 
@@ -256,7 +280,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
   }, [lyciumApi]);
 
   useEffect(() => {
-    if (routeKind !== "settings" || !localApiSyncEnabled) {
+    if (routeKind !== "settings") {
       return;
     }
 

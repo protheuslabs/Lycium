@@ -7,8 +7,22 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from app.course_agent_contract import validate_course_contract
+from app.course_generation_gates import COURSE_GENERATION_GATE_NAMES
 from app.course_taxonomy import validate_course_taxonomy
 from app.course_quality_evals import run_course_quality_evals
+from app.course_structure import (
+    content_blocks as _content,
+    is_concept_cards_block as _is_concept_cards_block,
+    is_quiz_block as _is_quiz_block,
+    is_summary_section as _is_summary_section,
+    is_video_block as _is_video_block,
+    modules as _modules,
+    question_count as _question_count,
+    section_text as _section_text,
+    sections as _sections,
+    source_ids as _source_ids,
+    source_record_count as _source_record_count,
+)
 
 
 WORKFLOW_VERSION = "course-generation-workflow-v1"
@@ -58,69 +72,6 @@ PLACEHOLDER_PATTERNS = [
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
-
-
-def _items(value: Any) -> list[dict[str, Any]]:
-    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
-
-
-def _modules(course: dict[str, Any]) -> list[dict[str, Any]]:
-    return _items(course.get("modules"))
-
-
-def _sections(module: dict[str, Any]) -> list[dict[str, Any]]:
-    return _items(module.get("sections"))
-
-
-def _content(section: dict[str, Any]) -> list[dict[str, Any]]:
-    return _items(section.get("content"))
-
-
-def _source_ids(value: dict[str, Any]) -> list[str]:
-    ids = value.get("sourceIds") or value.get("source_ids") or []
-    return [source_id for source_id in ids if isinstance(source_id, str) and source_id.strip()] if isinstance(ids, list) else []
-
-
-def _source_record_count(course: dict[str, Any]) -> int:
-    records = course.get("sourceRecords")
-    if isinstance(records, list):
-        return len(records)
-    if isinstance(records, dict):
-        return len(records)
-    return 0
-
-
-def _is_quiz_block(block: dict[str, Any]) -> bool:
-    return block.get("type") == "quiz"
-
-
-def _is_concept_cards_block(block: dict[str, Any]) -> bool:
-    return block.get("type") in {"conceptCards", "concept_cards"}
-
-
-def _is_video_block(block: dict[str, Any]) -> bool:
-    return block.get("type") == "video"
-
-
-def _is_summary_section(section: dict[str, Any]) -> bool:
-    section_type = str(section.get("sectionType") or section.get("section_type") or "").lower()
-    title = str(section.get("title") or "").lower()
-    return section_type == "summary" or "summary" in title or "concept review" in title
-
-
-def _question_count(block: dict[str, Any]) -> int:
-    questions = block.get("questions") or block.get("questionBank") or block.get("question_bank") or []
-    return len(questions) if isinstance(questions, list) else 0
-
-
-def _section_text(section: dict[str, Any]) -> str:
-    values: list[str] = []
-    for block in _content(section):
-        for key in ("heading", "title", "value", "text", "body"):
-            value = block.get(key)
-            if isinstance(value, str):
-                values.append(value)
-    return "\n".join(values)
 
 
 def _status(issues: list[GateIssue]) -> GateStatus:
@@ -400,25 +351,28 @@ def _gate_review_publish(gates: list[GateResult]) -> GateResult:
     return _gate("review_publish", "Workflow gate status was summarized for review/publish readiness.", issues, {"failedGateCount": len(failed_gate_names)})
 
 
+_COURSE_GATE_RUNNERS = {
+    "intake": _gate_intake,
+    "benchmark_intake": _gate_benchmark_intake,
+    "requirement_extraction": _gate_requirement_extraction,
+    "commonality_analysis": _gate_commonality_analysis,
+    "source_analysis": _gate_source_analysis,
+    "source_enrichment": _gate_source_enrichment,
+    "classification": _gate_classification,
+    "scope": _gate_scope,
+    "module_structure": _gate_module_structure,
+    "section_structure": _gate_section_structure,
+    "content_draft": _gate_content_draft,
+    "assessment": _gate_assessment,
+    "media": _gate_media,
+    "summary": _gate_summary,
+    "validation": _gate_validation,
+    "quality_eval": _gate_quality_eval,
+}
+
+
 def run_course_generation_workflow(course: dict[str, Any]) -> CourseGenerationWorkflowReport:
-    gates = [
-        _gate_intake(course),
-        _gate_benchmark_intake(course),
-        _gate_requirement_extraction(course),
-        _gate_commonality_analysis(course),
-        _gate_source_analysis(course),
-        _gate_source_enrichment(course),
-        _gate_classification(course),
-        _gate_scope(course),
-        _gate_module_structure(course),
-        _gate_section_structure(course),
-        _gate_content_draft(course),
-        _gate_assessment(course),
-        _gate_media(course),
-        _gate_summary(course),
-        _gate_validation(course),
-        _gate_quality_eval(course),
-    ]
+    gates = [_COURSE_GATE_RUNNERS[gate_name](course) for gate_name in COURSE_GENERATION_GATE_NAMES if gate_name != "review_publish"]
     gates.append(_gate_review_publish(gates))
 
     failed_count = sum(1 for gate in gates if gate.status == "failed")

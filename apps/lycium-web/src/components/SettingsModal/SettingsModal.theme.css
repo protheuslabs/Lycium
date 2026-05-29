@@ -19,18 +19,29 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-input,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-select,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-preview,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-provider,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-row {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-provider {
   color: #e5e7eb;
   background: transparent;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-row {
+  color: #e5e7eb;
+  background: #1a1a1c;
+  box-shadow: inset 0 0 0 1px rgba(82, 82, 91, 0.34), 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-row:not([aria-disabled="true"]):hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-row:not([aria-disabled="true"]):focus-visible {
+  background: #222225;
+  box-shadow: inset 0 0 0 1px rgba(113, 113, 122, 0.42), 0 14px 26px rgba(0, 0, 0, 0.28);
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-row-active {
-  background: linear-gradient(145deg, rgba(72, 216, 109, 0.16), rgba(15, 23, 42, 0.98));
+  background: linear-gradient(145deg, rgba(72, 216, 109, 0.18), #1a1a1c 70%);
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-row-unverified {
-  background: linear-gradient(145deg, rgba(245, 158, 11, 0.16), rgba(17, 17, 18, 0.96));
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.18), #1a1a1c 72%);
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-close-button,
@@ -86,12 +97,23 @@ html[data-theme="light"] .settings-ai-data-panel {
 }
 
 html[data-theme="light"] .settings-entry-row,
-html[data-theme="light"] .settings-key-row,
 html[data-theme="light"] .settings-input,
 html[data-theme="light"] .settings-select,
 html[data-theme="light"] .settings-key-provider {
   color: #171717;
   background: transparent;
+}
+
+html[data-theme="light"] .settings-key-row {
+  color: #171717;
+  background: rgba(248, 250, 252, 0.96);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.16), 0 8px 18px rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .settings-key-row:not([aria-disabled="true"]):hover,
+html[data-theme="light"] .settings-key-row:not([aria-disabled="true"]):focus-visible {
+  background: rgba(241, 245, 249, 0.98);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.24), 0 12px 24px rgba(15, 23, 42, 0.08);
 }
 
 html[data-theme="light"] .settings-key-preview {
@@ -106,7 +128,7 @@ html[data-theme="light"] .settings-select:focus {
 html[data-theme="light"] .settings-key-row-active {
   background:
     linear-gradient(135deg, rgba(183, 246, 200, 0.28), rgba(255, 255, 255, 0.96) 62%),
-    transparent;
+    rgba(248, 250, 252, 0.96);
 }
 
 html[data-theme="light"] .settings-key-row-unverified {

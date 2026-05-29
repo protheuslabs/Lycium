@@ -5,6 +5,7 @@ from typing import Any
 
 from app.contract_validation import validate_course_schema
 from app.course_taxonomy import validate_course_taxonomy
+from app.course_structure import source_record_ids as _source_record_ids
 
 
 def _slug(value: str, fallback: str) -> str:
@@ -88,14 +89,7 @@ def _validate_concept_cards(block: dict[str, Any], errors: list[str], location: 
 
 
 def _declared_source_ids(course: dict[str, Any], errors: list[str]) -> set[str]:
-    declared_sources = course.get("sourceRecords", [])
-    declared_source_ids: set[str] = set()
-    if isinstance(declared_sources, dict):
-        declared_source_ids.update(str(source_id) for source_id in declared_sources.keys())
-    elif isinstance(declared_sources, list):
-        declared_source_ids.update(
-            str(source.get("id")) for source in declared_sources if isinstance(source, dict) and source.get("id")
-        )
+    declared_source_ids = _source_record_ids(course)
     if not declared_source_ids:
         errors.append("Course must include sourceRecords with at least one source.")
     return declared_source_ids

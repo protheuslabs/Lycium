@@ -1,0 +1,101 @@
+from __future__ import annotations
+
+from typing import Any
+
+from app.course_generation_flagships import CHEM_105_FLAGSHIP_BLUEPRINT
+
+
+COURSE_SCENARIOS: dict[str, dict[str, Any]] = {
+    "chem-105-general-chemistry": CHEM_105_FLAGSHIP_BLUEPRINT["scenario"],
+    "intro-programming-foundations": {
+        "label": "Intro Programming Foundations",
+        "kind": "course",
+        "expectedCategory": "computing-information-sciences",
+        "expectedDepartment": "computer-science",
+        "minModules": 10,
+        "minLearnSections": 10,
+        "minQuizBlocks": 10,
+        "minQuestionsPerQuiz": 10,
+        "minSourceRecords": 3,
+        "minModuleVideoCoverage": 0.75,
+        "minRequiredKeywordCoverage": 0.75,
+        "requiredKeywords": [
+            "variables",
+            "data types",
+            "control flow",
+            "functions",
+            "arrays",
+            "objects",
+            "debugging",
+            "testing",
+            "algorithms",
+            "input and output",
+            "errors",
+            "abstraction",
+        ],
+    },
+    "software-engineering-methods": {
+        "label": "Software Engineering Methods",
+        "kind": "course",
+        "expectedCategory": "computing-information-sciences",
+        "expectedDepartment": "software-engineering",
+        "minModules": 10,
+        "minLearnSections": 10,
+        "minQuizBlocks": 10,
+        "minQuestionsPerQuiz": 10,
+        "minSourceRecords": 3,
+        "minModuleVideoCoverage": 0.75,
+        "minRequiredKeywordCoverage": 0.72,
+        "requiredKeywords": [
+            "requirements engineering",
+            "software architecture",
+            "design patterns",
+            "version control",
+            "testing strategy",
+            "continuous integration",
+            "agile",
+            "code review",
+            "maintenance",
+            "technical debt",
+            "security",
+            "deployment",
+        ],
+    },
+}
+
+PROGRAM_SCENARIOS: dict[str, dict[str, Any]] = {
+    "full-stack-software-engineer-program": {
+        "label": "Full-Stack Software Engineer Program",
+        "kind": "program",
+        "minRequirementGroups": 6,
+        "minCourseRequirements": 18,
+        "minAssessmentRequirements": 2,
+        "minProjectRequirements": 1,
+        "minDependencyEdges": 5,
+        "minRequiredKeywordCoverage": 0.7,
+        "requiredGroupKeywords": [
+            "foundations",
+            "programming",
+            "frontend",
+            "backend",
+            "data",
+            "deployment",
+            "professional",
+            "capstone",
+        ],
+        "requiredRequirementKeywords": [
+            "html",
+            "css",
+            "javascript",
+            "typescript",
+            "react",
+            "api",
+            "database",
+            "authentication",
+            "testing",
+            "docker",
+            "ci/cd",
+            "capstone",
+        ],
+    },
+}

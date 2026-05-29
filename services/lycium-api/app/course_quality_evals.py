@@ -3,6 +3,21 @@ from __future__ import annotations
 import re
 from typing import Any, Literal
 
+from app.course_structure import (
+    block_text as _block_text,
+    content_blocks as _content,
+    is_concept_cards_block as _is_concept_cards,
+    is_quiz_block as _is_quiz,
+    is_summary_section as _is_summary,
+    is_video_block as _is_video,
+    modules as _modules,
+    section_text as _section_text,
+    sections as _sections,
+    source_ids as _source_ids,
+    source_record_ids as _source_record_ids,
+    word_count as _word_count,
+)
+
 
 EvalSeverity = Literal["warning", "error"]
 
@@ -22,70 +37,6 @@ GENERIC_CONTENT_PATTERNS = [
         r"\bworking model studies\b",
     ]
 ]
-
-
-def _items(value: Any) -> list[dict[str, Any]]:
-    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
-
-
-def _modules(course: dict[str, Any]) -> list[dict[str, Any]]:
-    return _items(course.get("modules"))
-
-
-def _sections(module: dict[str, Any]) -> list[dict[str, Any]]:
-    return _items(module.get("sections"))
-
-
-def _content(section: dict[str, Any]) -> list[dict[str, Any]]:
-    return _items(section.get("content"))
-
-
-def _is_quiz(block: dict[str, Any]) -> bool:
-    return block.get("type") == "quiz"
-
-
-def _is_concept_cards(block: dict[str, Any]) -> bool:
-    return block.get("type") in {"conceptCards", "concept_cards"}
-
-
-def _is_video(block: dict[str, Any]) -> bool:
-    return block.get("type") == "video"
-
-
-def _is_summary(section: dict[str, Any]) -> bool:
-    section_type = str(section.get("sectionType") or section.get("section_type") or "").lower()
-    title = str(section.get("title") or "").lower()
-    return section_type == "summary" or "concept review" in title or "summary" in title
-
-
-def _source_ids(value: dict[str, Any]) -> list[str]:
-    ids = value.get("sourceIds") or value.get("source_ids") or []
-    return [source_id for source_id in ids if isinstance(source_id, str) and source_id.strip()] if isinstance(ids, list) else []
-
-
-def _block_text(block: dict[str, Any]) -> str:
-    values: list[str] = []
-    for key in ("heading", "title", "value", "text", "body", "question", "description"):
-        value = block.get(key)
-        if isinstance(value, str):
-            values.append(value)
-    if isinstance(block.get("concepts"), list):
-        for concept in block["concepts"]:
-            if isinstance(concept, dict):
-                values.extend(str(concept.get(key) or "") for key in ("name", "description"))
-    if isinstance(block.get("questions"), list):
-        for question in block["questions"]:
-            if isinstance(question, dict):
-                values.append(str(question.get("question") or ""))
-    return "\n".join(part for part in values if part)
-
-
-def _section_text(section: dict[str, Any]) -> str:
-    return "\n".join(_block_text(block) for block in _content(section))
-
-
-def _word_count(text: str) -> int:
-    return len(re.findall(r"[A-Za-z0-9']+", text))
 
 
 def _finding(severity: EvalSeverity, message: str, location: str | None = None) -> dict[str, str]:
@@ -121,15 +72,6 @@ def _dimension(
         "findings": findings,
         "metrics": metrics,
     }
-
-
-def _source_record_ids(course: dict[str, Any]) -> set[str]:
-    records = course.get("sourceRecords")
-    if isinstance(records, dict):
-        return {str(source_id) for source_id in records if source_id}
-    if isinstance(records, list):
-        return {str(record.get("id")) for record in records if isinstance(record, dict) and record.get("id")}
-    return set()
 
 
 def _eval_structure(course: dict[str, Any]) -> dict[str, Any]:

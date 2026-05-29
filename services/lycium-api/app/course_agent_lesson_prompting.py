@@ -146,13 +146,13 @@ def _staged_lesson_messages(
                         "sectionType": "lesson",
                         "sourceIds": source_ids,
                         "content": [
-                            {"type": "text", "heading": "Explanation", "value": "Teach the chemistry idea directly in learner-facing prose."},
+                            {"type": "text", "heading": "Explanation", "value": "Teach the core idea directly in learner-facing prose."},
                             {"type": "text", "heading": "Worked example", "value": "Show a concrete problem or classification example with reasoning."},
                             {"type": "text", "heading": "Practice", "value": "Give the learner a short action prompt or self-check."},
                             {
                                 "type": "conceptCards",
                                 "title": "Concepts introduced",
-                                "concepts": [{"name": "Specific chemistry concept", "description": "Concise definition."}],
+                                "concepts": [{"name": "Specific course concept", "description": "Concise definition."}],
                             },
                         ],
                     },

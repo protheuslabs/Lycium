@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.coverage import recompute_coverage
 from app.course_agent_harness import CourseAgentError, generate_course_with_agent_staged
 from app.course_quality import assess_course_quality
+from app.course_generation_service import build_course_snapshot_from_agent_result
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import SessionLocal
 from app.generation import generate_course_direct
@@ -227,34 +228,24 @@ def run_agent_course_generation_job(job_id: int) -> None:
             on_checkpoint=checkpoint,
         )
         quality_report = assess_course_quality(generated.course, gate="generation")
-        snapshot_payload = None
+            snapshot_payload = None
 
-        with SessionLocal() as session:
-            job = session.get(Job, job_id)
-            if job is None:
-                return
-            if quality_report["passed"]:
-                snapshot = CourseSnapshot(
-                    learner_id=payload.get("learner_id"),
-                    draft_id=None,
-                    title=generated.course["title"],
-                    prompt=str(payload.get("prompt") or ""),
-                    language=str(payload.get("language") or "en"),
-                    level=payload.get("level"),
-                    source_policy=str(payload.get("source_policy") or "balanced"),
-                    status="ready_for_review",
-                    version=1,
-                    structure=generated.course,
-                    generation_trace={**generated.trace, "quality_report": quality_report},
-                )
-                session.add(snapshot)
-                session.flush()
-                persist_curriculum_artifacts_for_snapshot(
-                    session,
-                    snapshot,
-                    context=generated.trace.get("curriculum_benchmark_context"),
-                )
-                session.commit()
+            with SessionLocal() as session:
+                job = session.get(Job, job_id)
+                if job is None:
+                    return
+                if quality_report["passed"]:
+                    snapshot = build_course_snapshot_from_agent_result(
+                        session,
+                        learner_id=payload.get("learner_id"),
+                        prompt=str(payload.get("prompt") or ""),
+                        language=str(payload.get("language") or "en"),
+                        level=payload.get("level"),
+                        source_policy=str(payload.get("source_policy") or "balanced"),
+                        generated=generated,
+                        quality_report=quality_report,
+                    )
+                    session.commit()
                 session.refresh(snapshot)
                 save_course_snapshot(snapshot)
                 snapshot_payload = _course_snapshot_payload(snapshot)

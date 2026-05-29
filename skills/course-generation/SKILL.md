@@ -46,7 +46,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record benchmark evidence in `metadata.curriculumBenchmarks`, `metadata.requirementOrigins`, `metadata.courseParityProfile`, and `metadata.sourceSlots` when applicable
    - record module, unit, idea, and source planning in `metadata.generationPlan`
    - update progress markers as the plan becomes content
-   - align progress markers with the backend gate names: `intake`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`
+   - align progress markers with the backend gate names in `services/lycium-api/app/course_generation_gates.py`: `intake`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`
    - inspect `quality_report.evals` after backend LLM generation experiments to tune prompts, source coverage, and course structure before review or publish
 7. Build or revise the course around modules and sections, not a single long page.
    - write learner-facing instruction directly in the course, not prompts or directions for a future model to fill in later

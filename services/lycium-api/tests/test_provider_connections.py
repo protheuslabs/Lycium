@@ -85,6 +85,49 @@ def test_local_key_can_be_saved_unverified_then_verified_later(client, monkeypat
     assert verified_key["models"][0]["id"] == "llama3.1:70b"
 
 
+def test_local_endpoint_input_routes_to_local_provider_even_if_provider_dropdown_is_stale(
+    client,
+    monkeypatch,
+    isolated_local_data,
+) -> None:
+    def fail_validation(*args, **kwargs):
+        raise CourseAgentError("Ollama is unavailable at http://localhost:11434")
+
+    monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", fail_validation)
+    monkeypatch.setattr("app.routes.local_routes.detect_local_agent_endpoint", lambda provider_id: None)
+
+    response = client.put("/v1/local/settings", json={"provider_id": "openai", "agent_api_key": "http://localhost:11434"})
+
+    assert response.status_code == 200, response.text
+    key = response.json()["agent_keys"][0]
+    assert key["provider_id"] == "local-model"
+    assert key["connection_status"] == "unverified"
+    assert key["key_preview"] == "http://localhost:11434"
+
+
+def test_saving_same_local_endpoint_updates_existing_key_instead_of_duplicating(
+    client,
+    monkeypatch,
+    isolated_local_data,
+) -> None:
+    monkeypatch.setattr(
+        "app.routes.local_routes.validate_agent_api_key",
+        lambda *args, **kwargs: _mock_models("kimi-k2.6:cloud", "qwen3:8b"),
+    )
+
+    first = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
+    second = client.put("/v1/local/settings", json={"provider_id": "openai", "agent_api_key": "http://localhost:11434"})
+
+    assert first.status_code == 200, first.text
+    assert second.status_code == 200, second.text
+    settings = second.json()
+    assert len(settings["agent_keys"]) == 1
+    key = settings["agent_keys"][0]
+    assert key["provider_id"] == "local-model"
+    assert key["connection_status"] == "verified"
+    assert key["key_preview"] == "http://localhost:11434"
+
+
 def test_model_update_persists_for_active_key(client, monkeypatch, isolated_local_data) -> None:
     monkeypatch.setattr(
         "app.routes.local_routes.validate_agent_api_key",

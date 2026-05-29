@@ -165,6 +165,24 @@ def save_agent_api_key(
     selected_model = model or (models[0]["id"] if models else SETTINGS.agent_model)
     normalized_models = _normalize_model_records(models, selected_model)
     verified_at = _now() if connection_status == "verified" else None
+    for key in secret["agent_keys"]:
+        if key.get("provider_id") != cleaned_provider_id or key.get("agent_api_key") != cleaned:
+            continue
+        key["provider_label"] = cleaned_provider_label
+        key["model"] = selected_model
+        key["models"] = normalized_models
+        key["models_fetched_at"] = _now()
+        key["connection_status"] = connection_status
+        key["connection_message"] = connection_message
+        key["last_verified_at"] = verified_at or key.get("last_verified_at")
+        key["last_error"] = None if connection_status == "verified" else connection_message
+        key["updated_at"] = _now()
+        secret["active_agent_key_id"] = key["id"]
+        secret["updated_at"] = _now()
+        secret["purpose"] = "Course generation agent access."
+        _write_json(_agent_secret_path(), secret)
+        return local_settings_summary()
+
     key_id_base = _safe_key(cleaned_provider_id.lower())
     key_id = key_id_base
     existing_ids = {key["id"] for key in secret["agent_keys"]}

@@ -84,6 +84,21 @@ def _local_endpoint(provider: dict[str, Any], input_value: str) -> str:
     return cleaned.rstrip("/")
 
 
+def looks_like_local_agent_endpoint(value: str) -> bool:
+    cleaned = value.strip().lower()
+    return (
+        cleaned.startswith("http://localhost")
+        or cleaned.startswith("https://localhost")
+        or cleaned.startswith("localhost")
+        or cleaned.startswith("http://127.0.0.1")
+        or cleaned.startswith("https://127.0.0.1")
+        or cleaned.startswith("127.0.0.1")
+        or cleaned.startswith("http://0.0.0.0")
+        or cleaned.startswith("https://0.0.0.0")
+        or cleaned.startswith("0.0.0.0")
+    )
+
+
 def _provider_headers(provider: dict[str, Any], api_key: str, *, content_type: bool = False) -> dict[str, str]:
     headers = {str(key): str(value) for key, value in provider.get("headers", {}).items()}
     auth = provider.get("auth", {})

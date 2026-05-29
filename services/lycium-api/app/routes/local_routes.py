@@ -16,6 +16,7 @@ from app.course_agent_harness import (
     generate_course_with_agent,
     get_agent_provider,
     list_agent_provider_summaries,
+    looks_like_local_agent_endpoint,
     validate_agent_api_key,
 )
 from app.db import get_session, init_db
@@ -159,16 +160,19 @@ def register(app: FastAPI) -> None:
     @app.put("/v1/local/settings", response_model=LocalSettingsRead)
     def update_local_settings(payload: LocalSettingsUpdate) -> dict[str, Any]:
         try:
-            provider = get_agent_provider(payload.provider_id)
+            provider_id = payload.provider_id
+            if provider_id != "local-model" and looks_like_local_agent_endpoint(payload.agent_api_key):
+                provider_id = "local-model"
+            provider = get_agent_provider(provider_id)
             is_local_provider = provider.get("generationAdapter") == "ollama-chat"
             connection_status = "verified"
             connection_message = None
             try:
-                models = validate_agent_api_key(payload.agent_api_key, provider_id=payload.provider_id)
+                models = validate_agent_api_key(payload.agent_api_key, provider_id=provider_id)
             except CourseAgentError as exc:
                 if not is_local_provider:
                     raise
-                detected = detect_local_agent_endpoint(payload.provider_id)
+                detected = detect_local_agent_endpoint(provider_id)
                 if detected:
                     payload.agent_api_key, models = detected
                     connection_message = f"Auto-detected local model endpoint at {payload.agent_api_key}."
@@ -188,8 +192,8 @@ def register(app: FastAPI) -> None:
                     else (models[0]["id"] if models else default_model or None)
                 )
             return save_agent_api_key(
-                provider_id=payload.provider_id,
-                provider_label=str(provider.get("label") or payload.provider_id),
+                provider_id=provider_id,
+                provider_label=str(provider.get("label") or provider_id),
                 api_key=payload.agent_api_key,
                 models=models,
                 model=selected_model,

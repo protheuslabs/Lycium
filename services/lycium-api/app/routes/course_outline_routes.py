@@ -19,6 +19,7 @@ from app.course_agent_harness import (
     validate_agent_api_key,
 )
 from app.course_quality import assess_course_quality
+from app.course_generation_service import assess_agent_generation_result, build_course_snapshot_from_agent_result
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
 from app.generation import (
@@ -253,7 +254,7 @@ def register(app: FastAPI) -> None:
             validate_learner_exists(session, payload.learner_id)
             agent_profile = require_verified_active_agent_profile()
 
-            generated = generate_course_with_agent(
+            generated = generate_course_with_agent_staged(
                 prompt=payload.prompt,
                 api_key=str(agent_profile["agent_api_key"]),
                 provider_id=str(agent_profile.get("provider_id") or "openai"),
@@ -267,31 +268,21 @@ def register(app: FastAPI) -> None:
                 model=payload.model or agent_profile.get("model"),
                 source_urls=[str(url) for url in payload.source_urls],
             )
-            quality_report = assess_course_quality(generated.course, gate="review")
+            quality_report = assess_agent_generation_result(generated, gate="review")
             if not quality_report["passed"]:
                 raise ValueError(
                     "Generated course failed quality gate: "
                     + "; ".join([*quality_report["errors"], *quality_report["warnings"]][:12])
                 )
-            snapshot = CourseSnapshot(
+            snapshot = build_course_snapshot_from_agent_result(
+                session,
                 learner_id=payload.learner_id,
-                draft_id=None,
-                title=generated.course["title"],
                 prompt=payload.prompt,
                 language=payload.language,
                 level=payload.level,
                 source_policy=payload.source_policy,
-                status="ready_for_review",
-                version=1,
-                structure=generated.course,
-                generation_trace={**generated.trace, "quality_report": quality_report},
-            )
-            session.add(snapshot)
-            session.flush()
-            persist_curriculum_artifacts_for_snapshot(
-                session,
-                snapshot,
-                context=generated.trace.get("curriculum_benchmark_context"),
+                generated=generated,
+                quality_report=quality_report,
             )
             session.commit()
             session.refresh(snapshot)
