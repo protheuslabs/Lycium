@@ -228,24 +228,23 @@ def run_agent_course_generation_job(job_id: int) -> None:
             on_checkpoint=checkpoint,
         )
         quality_report = assess_course_quality(generated.course, gate="generation")
-            snapshot_payload = None
+        snapshot_payload = None
 
-            with SessionLocal() as session:
-                job = session.get(Job, job_id)
-                if job is None:
-                    return
-                if quality_report["passed"]:
-                    snapshot = build_course_snapshot_from_agent_result(
-                        session,
-                        learner_id=payload.get("learner_id"),
-                        prompt=str(payload.get("prompt") or ""),
-                        language=str(payload.get("language") or "en"),
-                        level=payload.get("level"),
-                        source_policy=str(payload.get("source_policy") or "balanced"),
-                        generated=generated,
-                        quality_report=quality_report,
-                    )
-                    session.commit()
+        with SessionLocal() as session:
+            job = session.get(Job, job_id)
+            if job is None:
+                return
+            if quality_report["passed"]:
+                snapshot = build_course_snapshot_from_agent_result(
+                    session,
+                    learner_id=payload.get("learner_id"),
+                    prompt=str(payload.get("prompt") or ""),
+                    language=str(payload.get("language") or "en"),
+                    level=payload.get("level"),
+                    source_policy=str(payload.get("source_policy") or "balanced"),
+                    generated=generated,
+                    quality_report=quality_report,
+                )
                 session.refresh(snapshot)
                 save_course_snapshot(snapshot)
                 snapshot_payload = _course_snapshot_payload(snapshot)
