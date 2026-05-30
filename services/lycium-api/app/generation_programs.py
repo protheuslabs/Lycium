@@ -10,6 +10,22 @@ from app.program_quality import assess_program_quality
 from app.program_validation import validate_program_contract
 from app.retrieval import assemble_learning_packet, tokenize
 
+PROGRAM_TOPIC_STOPWORDS = {
+    "become",
+    "build",
+    "course",
+    "free",
+    "from",
+    "learn",
+    "learning",
+    "online",
+    "path",
+    "program",
+    "resources",
+    "study",
+    "with",
+}
+
 
 def ask_instructor(
     course: CourseSnapshot,
@@ -89,7 +105,7 @@ def _split_requirements(requirements: list[dict[str, Any]]) -> tuple[list[dict[s
 
 
 def _build_program(goal: str, level: str | None, desired_course_count: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    terms = [term for term in tokenize(goal) if len(term) > 3]
+    terms = [term for term in tokenize(goal) if len(term) > 3 and term not in PROGRAM_TOPIC_STOPWORDS]
     defaults = ["foundation", "programming", "systems", "practice", "deployment", "capstone"]
     course_terms = list(dict.fromkeys([*terms, *defaults]))[: max(4, desired_course_count)]
     course_requirements = [_course_requirement(goal, term, index) for index, term in enumerate(course_terms, start=1)]
@@ -222,6 +238,39 @@ def _build_program(goal: str, level: str | None, desired_course_count: int) -> t
     return program, course_requirements
 
 
+def _assemble_program_packet(
+    session: Session,
+    *,
+    query: str,
+    free_only: bool,
+    trust_min: float,
+    level: str | None,
+) -> dict[str, Any]:
+    packet = assemble_learning_packet(
+        session,
+        query=query,
+        top_k=8,
+        free_only=free_only,
+        trust_min=trust_min,
+        level=level,
+    )
+    if packet.get("object_ids") or not level:
+        packet["retrievalLevelPolicy"] = "strict" if level else "any"
+        return packet
+
+    fallback = assemble_learning_packet(
+        session,
+        query=query,
+        top_k=8,
+        free_only=free_only,
+        trust_min=trust_min,
+        level=None,
+    )
+    fallback["retrievalLevelPolicy"] = "fallback_any_level"
+    fallback["strictLevelAttempt"] = packet
+    return fallback
+
+
 def generate_program(
     session: Session,
     *,
@@ -237,10 +286,9 @@ def generate_program(
     course_packets = []
     for requirement in course_requirements:
         term = str(requirement["title"]).replace(" Course", "")
-        packet = assemble_learning_packet(
+        packet = _assemble_program_packet(
             session,
             query=f"{goal} {term}",
-            top_k=8,
             free_only=free_only,
             trust_min=trust_min,
             level=level,

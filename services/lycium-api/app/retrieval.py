@@ -234,8 +234,8 @@ def assemble_learning_packet(
 
     modality_mix = Counter(obj.modality for obj in selected)
     rationale = (
-        "Hybrid retrieval selected objects by lexical relevance, trust/freshness thresholds, "
-        "and modality balancing. "
+        "Heuristic lexical retrieval selected objects by lexical relevance, trust/freshness thresholds, "
+        "prerequisite expansion, and modality balancing. "
         f"Selected {len(selected)} objects across {len(modality_mix)} modalities."
     )
 

@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import httpx
+
 from source_index.crawl.contracts import CrawlTask, CrawlWorkerResult, ExtractionResult, FetchResult, PageClassification
 from source_index.crawl.policies import default_policy_payload, should_visit_url
+from source_index.crawl.worker import run_crawl_task
 
 
 def test_health(client) -> None:
@@ -206,6 +209,68 @@ def test_crawl_worker_result_contract_is_language_portable() -> None:
     assert payload["contract_version"] == "crawl-worker-result-v1"
     assert payload["task"]["contract_version"] == "crawl-task-v1"
     assert payload["classification"]["label"] == "syllabus"
+
+
+def test_crawl_worker_rejects_out_of_policy_url_without_fetching() -> None:
+    task = CrawlTask(
+        crawl_run_id=1,
+        policy_id=2,
+        url="https://other.edu/catalog/courses/chem105",
+        policy={"seed_domains": ["example.edu"]},
+    )
+
+    result = run_crawl_task(task)
+
+    assert result.accepted is False
+    assert result.rejection_reason == "outside_seed_domains"
+    assert result.fetch.error == "outside_seed_domains"
+
+
+def test_crawl_worker_fetches_extracts_classifies_and_discovers_links(monkeypatch) -> None:
+    html = """
+        <html>
+            <head><title>CHEM 105 Course Catalog</title></head>
+            <body>
+                <h1>CHEM 105 General Chemistry I</h1>
+                <p>Course description: atomic structure, stoichiometry, bonding, and thermochemistry.</p>
+                <p>Credits: 4. Prerequisite: placement into college algebra.</p>
+                <a href="/catalog/courses/chem106">Next chemistry course</a>
+                <a href="/news/athletics">Campus news</a>
+                <script>window.noise = true;</script>
+            </body>
+        </html>
+    """
+
+    def fake_get(url, **_kwargs):
+        request = httpx.Request("GET", url)
+        return httpx.Response(
+            200,
+            request=request,
+            headers={"content-type": "text/html"},
+            content=html.encode("utf-8"),
+        )
+
+    monkeypatch.setattr(httpx, "get", fake_get)
+    task = CrawlTask(
+        crawl_run_id=1,
+        policy_id=2,
+        url="https://example.edu/catalog/courses/chem105",
+        policy={"seed_domains": ["example.edu"], "max_depth": 2},
+    )
+
+    result = run_crawl_task(task)
+
+    assert result.accepted is True
+    assert result.rejection_reason is None
+    assert result.fetch.status_code == 200
+    assert result.fetch.raw_storage_ref is None
+    assert result.extraction is not None
+    assert result.extraction.title == "CHEM 105 Course Catalog"
+    assert "stoichiometry" in result.extraction.extracted_text
+    assert "window.noise" not in result.extraction.extracted_text
+    assert result.classification is not None
+    assert result.classification.label == "course_catalog"
+    assert [link.url for link in result.discovered_links] == ["https://example.edu/catalog/courses/chem106"]
 
 
 def test_source_index_does_not_import_lycium_modules() -> None:
