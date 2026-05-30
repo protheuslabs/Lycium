@@ -11,6 +11,7 @@ from app.course_agent_types import CourseAgentError
 from app.course_generation_workflow import run_course_generation_workflow
 from app.curriculum_artifacts import curriculum_artifacts_for_course, persist_curriculum_artifacts_for_snapshot
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
+from app.program_validation import validate_program_contract
 from app.source_corpus import compile_source_corpus_preflight
 from app import db
 from app.models import CourseSnapshot
@@ -174,6 +175,7 @@ def test_source_index_snapshots_feed_curriculum_benchmark_extraction(client, mon
 
 def test_source_index_snapshot_to_program_compiler_flow(client, monkeypatch) -> None:
     url = "https://catalog.example.edu/programs/data-science-foundations"
+    irrelevant_url = "https://example.org/gardening/soil-preparation"
     _install_source_fetch_mock(
         monkeypatch,
         {
@@ -195,6 +197,28 @@ def test_source_index_snapshot_to_program_compiler_flow(client, monkeypatch) -> 
             """,
         },
     )
+    preflight = compile_source_corpus_preflight(
+        prompt="Data science statistics programming visualization modeling project",
+        source_urls=[url, irrelevant_url],
+        source_documents=[
+            {
+                "url": url,
+                "contentType": "text/plain",
+                "text": "Data science combines statistics, programming, data visualization, modeling, and project communication.",
+            },
+            {
+                "url": irrelevant_url,
+                "contentType": "text/plain",
+                "text": "This gardening page covers soil preparation, compost, basil harvesting, and watering schedules.",
+            },
+        ],
+    )
+    assert preflight.source_urls == [url]
+    assert preflight.synthesis["metrics"]["includedSourceCount"] == 1
+    assert preflight.synthesis["metrics"]["excludedSourceCount"] == 1
+    assert preflight.synthesis["includedSources"][0]["url"] == url
+    assert preflight.synthesis["excludedSources"][0]["url"] == irrelevant_url
+
     ingested = client.post(
         "/v1/sources/ingest",
         json={"url": url, "source_type": "catalog", "license": "cc-by", "is_free": True},
@@ -216,17 +240,24 @@ def test_source_index_snapshot_to_program_compiler_flow(client, monkeypatch) -> 
             "free_only": True,
             "source_policy": "free-only",
             "desired_course_count": 3,
-            "source_urls": [url],
+            "source_urls": preflight.source_urls,
         },
     )
     assert program.status_code == 201, program.text
     structure = program.json()["structure"]
+    generated_program = structure["program"]
     quality = structure["qualityReport"]
     trace = structure["generationTrace"]
 
+    assert structure["contractValidation"]["passed"] is True
+    assert validate_program_contract(generated_program) == []
     assert trace["sourceIndexSnapshotDocumentCount"] == 1
     assert trace["curriculumBenchmarkContext"]["curriculumBenchmarks"][0]["extraction"]["status"] == "parsed"
+    assert trace["curriculumBenchmarkContext"]["requirementOrigins"]
     assert quality["passed"] is True
+    gates = {gate["gate"]: gate for gate in quality["gates"]}
+    assert gates["source_coverage"]["status"] == "passed"
+    assert gates["publish_readiness"]["status"] == "passed"
     assert quality["metrics"]["benchmarkCount"] >= 1
     assert quality["metrics"]["requirementOriginEvidenceCoverageRatio"] > 0
     assert quality["metrics"]["sourceSlotPrimaryCoverageRatio"] > 0
