@@ -11,6 +11,7 @@ from app.ingestion import canonicalize_url
 from app.models import Snapshot, Source, SourceCorpusRun, SourceDecision
 from app.scoring import baseline_trust
 from app.source_corpus import compile_source_corpus_preflight
+from app.source_index_client import SourceIndexClient, normalize_remote_source_payload, source_index_client_configured
 from app.source_identity import stable_snapshot_public_id, stable_source_public_id
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
@@ -59,6 +60,71 @@ def source_payload(source: Source) -> dict[str, Any]:
     }
 
 
+def create_indexed_source_response(
+    session: Session,
+    *,
+    url: str,
+    title: str | None = None,
+    source_type: str | None = None,
+    license: str = "unknown",
+    is_free: bool = True,
+) -> dict[str, Any]:
+    if source_index_client_configured():
+        return normalize_remote_source_payload(
+            SourceIndexClient().create_source(
+                url=url,
+                title=title,
+                source_type=source_type,
+                license=license,
+                is_free=is_free,
+            )
+        )
+
+    source = upsert_indexed_source(
+        session,
+        url=url,
+        title=title,
+        source_type=source_type,
+        license=license,
+        is_free=is_free,
+    )
+    session.commit()
+    session.refresh(source)
+    return source_payload(source)
+
+
+def list_indexed_source_responses(
+    session: Session,
+    *,
+    query: str | None = None,
+    domain: str | None = None,
+    source_type: str | None = None,
+    limit: int = 100,
+) -> list[dict[str, Any]]:
+    if source_index_client_configured():
+        return [
+            normalize_remote_source_payload(source)
+            for source in SourceIndexClient().list_sources(query=query, domain=domain, source_type=source_type, limit=limit)
+        ]
+    return [
+        source_payload(source)
+        for source in list_indexed_sources(
+            session,
+            query=query,
+            domain=domain,
+            source_type=source_type,
+            limit=limit,
+        )
+    ]
+
+
+def get_indexed_source_response(session: Session, *, source_id: int) -> dict[str, Any] | None:
+    if source_index_client_configured():
+        return normalize_remote_source_payload(SourceIndexClient().get_source(source_id))
+    source = session.get(Source, source_id)
+    return source_payload(source) if source else None
+
+
 def source_decision_payload(decision: SourceDecision) -> dict[str, Any]:
     return {
         "id": decision.id,
@@ -92,6 +158,44 @@ def corpus_run_payload(run: SourceCorpusRun) -> dict[str, Any]:
         "created_at": run.created_at,
         "updated_at": run.updated_at,
     }
+
+
+def create_source_corpus_run_response(
+    session: Session,
+    *,
+    consumer: str,
+    context_id: str,
+    prompt: str,
+    source_urls: list[str],
+    fetch_sources: bool = True,
+) -> dict[str, Any]:
+    if source_index_client_configured():
+        return SourceIndexClient().create_corpus_run(
+            consumer=consumer,
+            context_id=context_id,
+            prompt=prompt,
+            source_urls=source_urls,
+            fetch_sources=fetch_sources,
+        )
+
+    run = create_source_corpus_run(
+        session,
+        consumer=consumer,
+        context_id=context_id,
+        prompt=prompt,
+        source_urls=source_urls,
+        fetch_sources=fetch_sources,
+    )
+    session.commit()
+    session.refresh(run)
+    return corpus_run_payload(run)
+
+
+def get_source_corpus_run_response(session: Session, *, run_id: int) -> dict[str, Any] | None:
+    if source_index_client_configured():
+        return SourceIndexClient().get_corpus_run(run_id)
+    run = session.get(SourceCorpusRun, run_id)
+    return corpus_run_payload(run) if run else None
 
 
 def upsert_indexed_source(
@@ -165,6 +269,11 @@ def source_documents_from_index_snapshots(
     source_ids: list[int] | None = None,
     limit: int = 25,
 ) -> list[dict[str, Any]]:
+    if source_index_client_configured():
+        remote_documents = _remote_source_documents_from_index_snapshots(source_urls=source_urls, limit=limit)
+        if remote_documents:
+            return remote_documents
+
     canonical_urls = {canonicalize_url(url) for url in source_urls or []}
     source_id_set = set(source_ids or [])
     stmt = (
@@ -207,6 +316,54 @@ def source_documents_from_index_snapshots(
             }
         )
         seen_sources.add(source.id)
+        if len(documents) >= limit:
+            break
+    return documents
+
+
+def _remote_source_documents_from_index_snapshots(
+    *,
+    source_urls: list[str] | None = None,
+    limit: int = 25,
+) -> list[dict[str, Any]]:
+    client = SourceIndexClient()
+    documents: list[dict[str, Any]] = []
+    seen_sources: set[str] = set()
+    for url in source_urls or []:
+        canonical_url = canonicalize_url(url)
+        matches = client.list_sources(query=canonical_url, limit=5)
+        source = next((row for row in matches if row.get("canonical_url") == canonical_url), None)
+        if not source:
+            continue
+        source_public_id = str(source.get("public_id") or stable_source_public_id(canonical_url))
+        if source_public_id in seen_sources:
+            continue
+        snapshots = client.list_source_snapshots(int(source["id"]), limit=1)
+        if not snapshots:
+            continue
+        snapshot = snapshots[0]
+        text = str(snapshot.get("extracted_text") or "")
+        if not text.strip():
+            continue
+        snapshot_public_id = str(snapshot.get("public_id") or stable_snapshot_public_id(source_public_id, str(snapshot.get("content_hash") or "")))
+        documents.append(
+            {
+                "url": canonical_url,
+                "contentType": str(snapshot.get("content_type") or "text/plain"),
+                "text": text,
+                "sourceId": source_public_id,
+                "snapshotId": snapshot_public_id,
+                "sourceIndexRef": {
+                    "service": client.base_url,
+                    "sourcePublicId": source_public_id,
+                    "snapshotPublicId": snapshot_public_id,
+                    "sourceRemoteId": source.get("id"),
+                    "snapshotRemoteId": snapshot.get("id"),
+                },
+                "title": source.get("title") or snapshot.get("title"),
+            }
+        )
+        seen_sources.add(source_public_id)
         if len(documents) >= limit:
             break
     return documents

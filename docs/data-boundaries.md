@@ -31,6 +31,8 @@ The Source Index owns reusable internet/source evidence:
 
 Lycium may keep transitional source tables while the service boundary matures, but long-lived references should point to Source Index `public_id` values instead of local integer IDs.
 
+When `LYCIUM_SOURCE_INDEX_API_URL` is configured, Lycium should route source-index API calls through the standalone Source Index service. When it is not configured, the transitional internal source tables remain available for local development and offline tests.
+
 ## Stable IDs
 
 Stable IDs are the migration seam for future real-server deployments:

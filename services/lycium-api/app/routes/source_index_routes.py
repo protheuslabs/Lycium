@@ -4,31 +4,31 @@ from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.models import Source, SourceCorpusRun
 from app.schemas import IndexedSourceCreate, IndexedSourceRead, SourceCorpusRunCreate, SourceCorpusRunRead
+from app.source_index_client import SourceIndexClientError
 from app.source_index import (
-    corpus_run_payload,
-    create_source_corpus_run,
-    list_indexed_sources,
-    source_payload,
-    upsert_indexed_source,
+    create_indexed_source_response,
+    create_source_corpus_run_response,
+    get_indexed_source_response,
+    get_source_corpus_run_response,
+    list_indexed_source_responses,
 )
 
 
 def register(app: FastAPI) -> None:
     @app.post("/v1/index/sources", response_model=IndexedSourceRead, status_code=status.HTTP_201_CREATED)
     def create_indexed_source(payload: IndexedSourceCreate, session: Session = Depends(get_session)) -> dict:
-        source = upsert_indexed_source(
-            session,
-            url=str(payload.url),
-            title=payload.title,
-            source_type=payload.source_type,
-            license=payload.license,
-            is_free=payload.is_free,
-        )
-        session.commit()
-        session.refresh(source)
-        return source_payload(source)
+        try:
+            return create_indexed_source_response(
+                session,
+                url=str(payload.url),
+                title=payload.title,
+                source_type=payload.source_type,
+                license=payload.license,
+                is_free=payload.is_free,
+            )
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     @app.get("/v1/index/sources", response_model=list[IndexedSourceRead])
     def list_sources(
@@ -38,41 +38,47 @@ def register(app: FastAPI) -> None:
         limit: int = Query(default=100, ge=1, le=500),
         session: Session = Depends(get_session),
     ) -> list[dict]:
-        return [
-            source_payload(source)
-            for source in list_indexed_sources(
+        try:
+            return list_indexed_source_responses(
                 session,
                 query=query,
                 domain=domain,
                 source_type=source_type,
                 limit=limit,
             )
-        ]
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     @app.get("/v1/index/sources/{source_id}", response_model=IndexedSourceRead)
     def get_indexed_source(source_id: int, session: Session = Depends(get_session)) -> dict:
-        source = session.get(Source, source_id)
+        try:
+            source = get_indexed_source_response(session, source_id=source_id)
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         if source is None:
             raise HTTPException(status_code=404, detail="Indexed source not found.")
-        return source_payload(source)
+        return source
 
     @app.post("/v1/index/corpus-runs", response_model=SourceCorpusRunRead, status_code=status.HTTP_201_CREATED)
     def create_corpus_run(payload: SourceCorpusRunCreate, session: Session = Depends(get_session)) -> dict:
-        run = create_source_corpus_run(
-            session,
-            consumer=payload.consumer,
-            context_id=payload.context_id,
-            prompt=payload.prompt,
-            source_urls=[str(url) for url in payload.source_urls],
-            fetch_sources=payload.fetch_sources,
-        )
-        session.commit()
-        session.refresh(run)
-        return corpus_run_payload(run)
+        try:
+            return create_source_corpus_run_response(
+                session,
+                consumer=payload.consumer,
+                context_id=payload.context_id,
+                prompt=payload.prompt,
+                source_urls=[str(url) for url in payload.source_urls],
+                fetch_sources=payload.fetch_sources,
+            )
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     @app.get("/v1/index/corpus-runs/{run_id}", response_model=SourceCorpusRunRead)
     def get_corpus_run(run_id: int, session: Session = Depends(get_session)) -> dict:
-        run = session.get(SourceCorpusRun, run_id)
+        try:
+            run = get_source_corpus_run_response(session, run_id=run_id)
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         if run is None:
             raise HTTPException(status_code=404, detail="Source corpus run not found.")
-        return corpus_run_payload(run)
+        return run

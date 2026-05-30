@@ -15,6 +15,8 @@ class Settings:
     agent_api_url: str
     agent_model: str
     agent_timeout_seconds: float
+    source_index_api_url: str | None
+    source_index_timeout_seconds: float
 
 
 def _default_db_path() -> Path:
@@ -42,6 +44,8 @@ def load_settings() -> Settings:
         agent_api_url=os.getenv("LYCIUM_AGENT_API_URL", "https://api.openai.com/v1/chat/completions"),
         agent_model=os.getenv("LYCIUM_AGENT_MODEL", "gpt-4.1-mini"),
         agent_timeout_seconds=float(os.getenv("LYCIUM_AGENT_TIMEOUT_SECONDS", "120")),
+        source_index_api_url=os.getenv("LYCIUM_SOURCE_INDEX_API_URL") or None,
+        source_index_timeout_seconds=float(os.getenv("LYCIUM_SOURCE_INDEX_TIMEOUT_SECONDS", "20")),
     )
 
 

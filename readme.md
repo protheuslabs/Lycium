@@ -115,6 +115,8 @@ NEXT_PUBLIC_LYCIUM_API_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL=https://example.com/catalog.json
 NEXT_PUBLIC_LYCIUM_COURSE_BASE_URL=https://example.com/courses
 LYCIUM_API_TOKEN=optional-bearer-token-for-non-public-API-runtimes
+LYCIUM_SOURCE_INDEX_API_URL=http://127.0.0.1:8100
+LYCIUM_SOURCE_INDEX_TIMEOUT_SECONDS=20
 ```
 
 If `LYCIUM_API_TOKEN` is set, callers must send `Authorization: Bearer <token>` for protected API paths.
@@ -149,7 +151,7 @@ LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 
 ### Source index service
 
-The source index is a neutral Protheus service boundary intended to be reusable by Lycium, InfRing, and future AI systems. It starts without a crawler and focuses on canonical source records, corpus runs, and include/exclude source decisions.
+The source index is a neutral Protheus service boundary intended to be reusable by Lycium, InfRing, and future AI systems. It starts with canonical source records, source snapshots, crawl policy contracts, corpus runs, and include/exclude source decisions.
 
 ```bash
 cd services/source-index
@@ -164,6 +166,8 @@ The source index defaults to:
 ```text
 http://127.0.0.1:8100
 ```
+
+When `LYCIUM_SOURCE_INDEX_API_URL` is set on the Lycium API, Lycium routes `/v1/index/*` requests to this standalone service and uses its snapshots as upstream evidence for curriculum benchmark extraction. When the variable is unset, Lycium uses its transitional internal source tables for local development.
 
 ## Useful commands
 
