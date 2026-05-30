@@ -40,7 +40,8 @@ The project is designed around one core idea: high-quality courses should be por
 │   └── ui/                  # Shared UI package stub
 ├── services/
 │   ├── lycium-api/        # FastAPI API for local data, generation, analytics, and course snapshots
-│   └── lycium-workers/    # Async worker entrypoints for ingestion and generation jobs
+│   ├── lycium-workers/    # Async worker entrypoints for ingestion and generation jobs
+│   └── source-index/      # Standalone Protheus source reference index service
 └── skills/
     └── course-generation/   # Canonical agent instructions for authoring Lycium courses
 ```
@@ -52,6 +53,7 @@ The project is designed around one core idea: high-quality courses should be por
 | Web app | React 19, TypeScript, Next.js, Vitest, ESLint |
 | Monorepo | pnpm 10, Turborepo |
 | API | Python 3.13, FastAPI, Pydantic, SQLAlchemy, Uvicorn |
+| Source index | Python 3.13, FastAPI, Pydantic, SQLAlchemy, HTTPX, BeautifulSoup |
 | Workers | Python 3.13, HTTPX, Pydantic |
 | Course content | JSON course records with centralized source records |
 
@@ -129,6 +131,24 @@ pip install -e '.[test]'
 LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 ```
 
+### Source index service
+
+The source index is a neutral Protheus service boundary intended to be reusable by Lycium, InfRing, and future AI systems. It starts without a crawler and focuses on canonical source records, corpus runs, and include/exclude source decisions.
+
+```bash
+cd services/source-index
+python3.13 -m venv .venv
+source .venv/bin/activate
+pip install -e '.[test]'
+source-index-api
+```
+
+The source index defaults to:
+
+```text
+http://127.0.0.1:8100
+```
+
 ## Useful commands
 
 | Command | Description |
@@ -136,6 +156,7 @@ LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 | `corepack pnpm dev` | Start the web app through the monorepo script |
 | `corepack pnpm dev:all` | Start the web app and local API together |
 | `corepack pnpm dev:api` | Start the local FastAPI service |
+| `corepack pnpm dev:source-index` | Start the standalone source index service |
 | `corepack pnpm build` | Build the web app |
 | `corepack pnpm test:contracts` | Run shared contract fixture tests |
 | `corepack pnpm validate` | Run contract tests, web typecheck, and web build |
@@ -144,6 +165,7 @@ LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 | `corepack pnpm --filter @lycium/web lint` | Run web linting |
 | `corepack pnpm --filter @lycium/web typecheck` | Run TypeScript checks |
 | `cd services/lycium-api && pytest -q` | Run API tests |
+| `cd services/source-index && pytest -q` | Run source index tests |
 | `cd services/lycium-workers && PYTHONPATH=src pytest -q` | Run worker tests |
 
 ## Course content model
@@ -193,6 +215,7 @@ These are intended for data such as:
 - course bookmarks
 - generated course snapshots
 - source links and local source metadata
+- source index SQLite databases and source-corpus decision records
 
 Do not commit secrets or machine-local learner data.
 

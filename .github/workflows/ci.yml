@@ -77,6 +77,23 @@ jobs:
       - name: Run API tests
         run: cd services/lycium-api && pytest -q
 
+  source-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install source index test dependencies
+        run: python -m pip install -e 'services/source-index[test]'
+
+      - name: Run source index tests
+        run: cd services/source-index && pytest -q
+
   workers:
     runs-on: ubuntu-latest
     steps:
