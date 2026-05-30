@@ -96,6 +96,7 @@ def _staged_summary_messages(
     module_number: int,
     lesson_sections: list[dict],
     source_urls: list[str] | None,
+    pacing_label: str = "Module",
 ) -> list[dict[str, str]]:
     source_ids = _source_ids_for_input(source_urls)
     return [
@@ -118,14 +119,14 @@ def _staged_summary_messages(
                     "available_source_ids": source_ids,
                     "required_shape": {
                         "id": f"module-{module_number}-summary",
-                        "title": f"Module {module_number} Concept Review",
+                        "title": f"{pacing_label} {module_number} Concept Review",
                         "pageType": "learn",
                         "sectionType": "summary",
                         "sourceIds": source_ids,
                         "content": [
                             {
                                 "type": "conceptCards",
-                                "title": "Module concepts",
+                                "title": f"{pacing_label} concepts",
                                 "concepts": "copy the provided concepts_to_include array, preserving sourceSectionId",
                             }
                         ],
