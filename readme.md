@@ -1,10 +1,26 @@
 # Lycium
 
-Lycium is a local-first learning platform for building, organizing, and studying structured online courses. Courses are represented as JSON, rendered dynamically in a Next.js learner experience, and backed by a FastAPI control plane for course generation, source records, local progress, and user-owned settings.
+Lycium is an internet curriculum compiler for turning scattered free knowledge into structured, source-backed learning pathways. It is built for real skill development and vertical understanding: prerequisites, concepts, practice, assessment, projects, provenance, and mastery evidence.
 
-The project is designed around one core idea: high-quality courses should be portable, inspectable, and generated from explicit structure rather than hidden application state.
+Courses and programs are represented as portable JSON snapshots, rendered dynamically in a Next.js learner experience, and backed by a FastAPI control plane for generation, source records, local progress, and user-owned settings.
 
-[Product Vision](./VISION.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Professional Readiness](./docs/professional-readiness.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+The project is designed around one core idea: the internet already has enough educational information, but learners need coherent pathways, source evidence, and feedback loops to turn that information into capability.
+
+[Product Vision](./VISION.md) | [Product Principles](./docs/product-principles.md) | [Data Boundaries](./docs/data-boundaries.md) | [Data Use and Trust](./docs/data-use-and-trust.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Professional Readiness](./docs/professional-readiness.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+
+## Mission and trust model
+
+Lycium should make public internet knowledge usable for building real skills. The reusable data flywheel should come primarily from public source and curriculum infrastructure:
+
+- source records and snapshots
+- curriculum benchmarks
+- requirement origins
+- source slots and fallback evidence
+- concept and prerequisite graphs
+- course/program quality signals
+- rubrics and portfolio requirements
+
+Private learner data is a separate trust zone. Progress, quiz attempts, goals, notes, feedback linked to identity, and local provider secrets should remain user-owned, exportable, deletable, and protected from silent repurposing.
 
 ## Current capabilities
 

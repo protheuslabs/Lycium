@@ -106,3 +106,42 @@ def test_program_quality_requires_requirement_level_source_coverage() -> None:
     assert covered_source_gate["metrics"]["courseRequirementCoverageRatio"] >= 0.8
     assert "benchmarkCount" in covered_source_gate["metrics"]
     assert "sourceSlotPrimaryCoverageRatio" in covered_report["metrics"]
+
+
+def test_course_quality_reports_vertical_understanding_dimension() -> None:
+    course = read_fixture("valid-course.json")
+    course["prerequisites"] = ["Basic computer literacy"]
+    metadata = dict(course.get("metadata") or {})
+    metadata["requirementOrigins"] = [
+        {
+            "requirementId": "req-http",
+            "title": "HTTP",
+            "importance": "required",
+            "originType": "common_academic_requirement",
+            "evidenceRefs": ["source-mdn-http"],
+            "benchmarkIds": ["benchmark-web101"],
+            "frequency": 1,
+        }
+    ]
+    metadata["sourceSlots"] = [
+        {
+            "requiredConceptId": "req-http",
+            "primarySourceId": "source-mdn-http",
+            "fallbackSourceIds": ["source-web-dev"],
+            "replacementPolicy": "review_required",
+        }
+    ]
+    course["metadata"] = metadata
+    first_learn = course["modules"][0]["sections"][0]["content"][0]
+    first_learn["value"] = (
+        f"{first_learn['value']} This foundation builds on prerequisites before moving to deeper tradeoff reasoning. "
+        "Learners practice with an exercise, assess mastery with a quiz, and produce portfolio evidence."
+    )
+
+    report = assess_course_quality(course, gate="publish")
+    vertical = next(dimension for dimension in report["evals"]["dimensions"] if dimension["key"] == "vertical_understanding")
+
+    assert vertical["status"] == "passed"
+    assert vertical["metrics"]["hasPrerequisiteSignal"] == 1
+    assert vertical["metrics"]["requirementOriginCount"] == 1
+    assert vertical["metrics"]["sourceSlotCount"] == 1

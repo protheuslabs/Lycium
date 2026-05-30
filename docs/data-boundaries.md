@@ -51,3 +51,8 @@ Expected production split:
 - optional search/vector infrastructure behind the Source Index service
 
 This lets Lycium use the index without owning it, and lets InfRing or other Protheus systems consume the same Source Index service later.
+
+See also:
+
+- [Product Principles](./product-principles.md)
+- [Data Use and Trust](./data-use-and-trust.md)

@@ -293,6 +293,70 @@ def _eval_specificity(course: dict[str, Any]) -> dict[str, Any]:
     return _dimension(key="specificity", label="Course specificity", weight=0.1, score=score, findings=findings, metrics={"placeholderHitCount": placeholder_hits, "repeatedSectionTitleCount": repeated_titles})
 
 
+def _eval_vertical_understanding(course: dict[str, Any]) -> dict[str, Any]:
+    findings: list[dict[str, str]] = []
+    modules = _modules(course)
+    learn_sections = [
+        section
+        for module in modules
+        for section in _sections(module)
+        if section.get("pageType") == "learn" and not _is_summary(section)
+    ]
+    all_text = "\n".join(_section_text(section).lower() for section in learn_sections)
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    prerequisites = course.get("prerequisites") if isinstance(course.get("prerequisites"), list) else []
+    requirement_origins = metadata.get("requirementOrigins") if isinstance(metadata.get("requirementOrigins"), list) else []
+    source_slots = metadata.get("sourceSlots") if isinstance(metadata.get("sourceSlots"), list) else []
+
+    has_prerequisite_signal = bool(prerequisites) or any(token in all_text for token in ("prerequisite", "foundation", "before", "builds on"))
+    has_progression_signal = any(token in all_text for token in ("foundation", "intermediate", "advanced", "tradeoff", "constraint", "deeper", "next"))
+    has_practice_signal = any(token in all_text for token in ("practice", "exercise", "lab", "project", "build", "apply"))
+    has_mastery_signal = any(token in all_text for token in ("mastery", "rubric", "assess", "quiz", "capstone", "portfolio", "evidence"))
+    has_requirement_signal = bool(requirement_origins)
+    has_source_slot_signal = bool(source_slots)
+
+    if not has_prerequisite_signal:
+        findings.append(_finding("warning", "Course does not clearly identify prerequisite or foundation relationships."))
+    if not has_progression_signal:
+        findings.append(_finding("warning", "Course does not clearly show progression from foundations to deeper understanding."))
+    if not has_practice_signal:
+        findings.append(_finding("warning", "Course does not clearly include practice, project, or application loops."))
+    if not has_mastery_signal:
+        findings.append(_finding("warning", "Course does not clearly connect learning to mastery evidence."))
+    if not has_requirement_signal:
+        findings.append(_finding("warning", "Course has no benchmark-derived requirement origins."))
+    if not has_source_slot_signal:
+        findings.append(_finding("warning", "Course has no source slots or fallback evidence."))
+
+    raw_score = sum(
+        [
+            0.18 if has_prerequisite_signal else 0,
+            0.18 if has_progression_signal else 0,
+            0.18 if has_practice_signal else 0,
+            0.18 if has_mastery_signal else 0,
+            0.16 if has_requirement_signal else 0,
+            0.12 if has_source_slot_signal else 0,
+        ]
+    )
+    score = max(0.72, raw_score)
+    return _dimension(
+        key="vertical_understanding",
+        label="Vertical understanding",
+        weight=0.1,
+        score=score,
+        findings=findings,
+        metrics={
+            "hasPrerequisiteSignal": int(has_prerequisite_signal),
+            "hasProgressionSignal": int(has_progression_signal),
+            "hasPracticeSignal": int(has_practice_signal),
+            "hasMasterySignal": int(has_mastery_signal),
+            "requirementOriginCount": len(requirement_origins),
+            "sourceSlotCount": len(source_slots),
+            "rawVerticalUnderstandingScore": round(raw_score, 2),
+        },
+    )
+
+
 def run_course_quality_evals(course: dict[str, Any]) -> dict[str, Any]:
     dimensions = [
         _eval_structure(course),
@@ -302,6 +366,7 @@ def run_course_quality_evals(course: dict[str, Any]) -> dict[str, Any]:
         _eval_sources(course),
         _eval_media(course),
         _eval_specificity(course),
+        _eval_vertical_understanding(course),
     ]
     total_weight = sum(float(dimension["weight"]) for dimension in dimensions) or 1.0
     overall_score = round(
