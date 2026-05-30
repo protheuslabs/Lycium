@@ -29,6 +29,11 @@ from app.curriculum_benchmarks import attach_curriculum_context, compile_curricu
 DEFAULT_MODULE_PARALLELISM = 2
 
 
+def _plan_timeout_seconds(desired_module_count: int) -> float:
+    scaled_timeout = 180 + (max(1, desired_module_count) * 25)
+    return max(SETTINGS.agent_timeout_seconds, min(720, scaled_timeout))
+
+
 def _infer_pacing_label(plan: dict) -> str:
     explicit = str(plan.get("pacingLabel") or "").strip()
     if explicit in {"Module", "Week"}:
@@ -324,6 +329,7 @@ def generate_course_with_agent_staged(
             adapter=adapter,
             model=str(selected_model),
             stage="course_plan",
+            timeout_seconds=_plan_timeout_seconds(desired_module_count),
             messages=_staged_plan_messages(
                 prompt=prompt,
                 level=level,
@@ -344,6 +350,7 @@ def generate_course_with_agent_staged(
 
     title = str(plan.get("title") or "Generated course")
     pacing_label = _infer_pacing_label(plan)
+    trace["plan_timeout_seconds"] = _plan_timeout_seconds(desired_module_count)
     source_records = _input_source_records(source_urls, title)
     source_ids = [str(record["id"]) for record in source_records]
     module_outlines = _coerce_plan_modules(plan, desired_module_count)

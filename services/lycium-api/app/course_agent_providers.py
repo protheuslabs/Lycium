@@ -275,17 +275,31 @@ def detect_local_agent_endpoint(provider_id: str) -> tuple[str, list[dict[str, s
     return None
 
 
-def _call_openai_chat_completions(provider: dict[str, Any], api_key: str, messages: list[dict[str, str]], model: str) -> dict[str, Any]:
+def _call_openai_chat_completions(
+    provider: dict[str, Any],
+    api_key: str,
+    messages: list[dict[str, str]],
+    model: str,
+    *,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
     payload: dict[str, Any] = {
         "model": model,
         "messages": messages,
         "temperature": 0.2,
         "response_format": {"type": "json_object"},
     }
-    return _post_json(provider, api_key, _provider_url(provider, "chatCompletionsPath"), payload)
+    return _post_json(provider, api_key, _provider_url(provider, "chatCompletionsPath"), payload, timeout_seconds=timeout_seconds)
 
 
-def _call_anthropic_messages(provider: dict[str, Any], api_key: str, messages: list[dict[str, str]], model: str) -> dict[str, Any]:
+def _call_anthropic_messages(
+    provider: dict[str, Any],
+    api_key: str,
+    messages: list[dict[str, str]],
+    model: str,
+    *,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
     system_content = "\n\n".join(message["content"] for message in messages if message["role"] == "system")
     user_messages = [message for message in messages if message["role"] != "system"]
     payload: dict[str, Any] = {
@@ -295,10 +309,17 @@ def _call_anthropic_messages(provider: dict[str, Any], api_key: str, messages: l
         "system": system_content,
         "messages": user_messages,
     }
-    return _post_json(provider, api_key, _provider_url(provider, "messagesPath"), payload)
+    return _post_json(provider, api_key, _provider_url(provider, "messagesPath"), payload, timeout_seconds=timeout_seconds)
 
 
-def _call_gemini_generate_content(provider: dict[str, Any], api_key: str, messages: list[dict[str, str]], model: str) -> dict[str, Any]:
+def _call_gemini_generate_content(
+    provider: dict[str, Any],
+    api_key: str,
+    messages: list[dict[str, str]],
+    model: str,
+    *,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
     system_content = "\n\n".join(message["content"] for message in messages if message["role"] == "system")
     user_content = "\n\n".join(message["content"] for message in messages if message["role"] != "system")
     model_path = model if model.startswith("models/") else f"models/{model}"
@@ -308,10 +329,17 @@ def _call_gemini_generate_content(provider: dict[str, Any], api_key: str, messag
         "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"},
     }
     url = f"{str(provider.get('baseUrl') or '').rstrip('/')}/{model_path}:generateContent"
-    return _post_json(provider, api_key, url, payload)
+    return _post_json(provider, api_key, url, payload, timeout_seconds=timeout_seconds)
 
 
-def _call_ollama_chat(provider: dict[str, Any], model_or_endpoint: str, messages: list[dict[str, str]], model: str) -> dict[str, Any]:
+def _call_ollama_chat(
+    provider: dict[str, Any],
+    model_or_endpoint: str,
+    messages: list[dict[str, str]],
+    model: str,
+    *,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
     base_url = _local_endpoint(provider, model_or_endpoint)
     selected_model = str(model or provider.get("defaultModel") or "").strip()
     if not selected_model:
@@ -325,23 +353,31 @@ def _call_ollama_chat(provider: dict[str, Any], model_or_endpoint: str, messages
         "options": {"temperature": 0.2},
     }
     url = f"{base_url}/{str(provider.get('chatPath') or '/api/chat').lstrip('/')}"
-    return _post_json(provider, "", url, payload)
+    return _post_json(provider, "", url, payload, timeout_seconds=timeout_seconds)
 
 
-def _post_json(provider: dict[str, Any], api_key: str, url: str, payload: dict[str, Any]) -> dict[str, Any]:
+def _post_json(
+    provider: dict[str, Any],
+    api_key: str,
+    url: str,
+    payload: dict[str, Any],
+    *,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
     max_attempts = 3
     attempt_errors: list[dict[str, Any]] = []
+    timeout = timeout_seconds or SETTINGS.agent_timeout_seconds
 
     for attempt in range(1, max_attempts + 1):
         try:
-            with httpx.Client(timeout=SETTINGS.agent_timeout_seconds) as client:
+            with httpx.Client(timeout=timeout) as client:
                 response = client.post(url, headers=_provider_headers(provider, api_key, content_type=True), json=payload)
                 response.raise_for_status()
                 return response.json()
         except httpx.HTTPStatusError as exc:
             detail = exc.response.text[:500]
             status_code = exc.response.status_code
-            attempt_errors.append({"attempt": attempt, "status_code": status_code, "detail": detail})
+            attempt_errors.append({"attempt": attempt, "timeout_seconds": timeout, "status_code": status_code, "detail": detail})
             if status_code in RETRYABLE_STATUS_CODES and attempt < max_attempts:
                 time.sleep(0.75 * attempt)
                 continue
@@ -351,7 +387,7 @@ def _post_json(provider: dict[str, Any], api_key: str, url: str, payload: dict[s
             ) from exc
         except httpx.HTTPError as exc:
             detail = str(exc)
-            attempt_errors.append({"attempt": attempt, "detail": detail})
+            attempt_errors.append({"attempt": attempt, "timeout_seconds": timeout, "detail": detail})
             is_transient = any(marker in detail.lower() for marker in TRANSIENT_ERROR_MARKERS)
             if is_transient and attempt < max_attempts:
                 time.sleep(0.75 * attempt)
@@ -364,15 +400,22 @@ def _post_json(provider: dict[str, Any], api_key: str, url: str, payload: dict[s
     raise CourseAgentError("LLM API request failed without a response.", trace={"provider_attempts": attempt_errors})
 
 
-def call_agent_model(provider: dict[str, Any], api_key: str, messages: list[dict[str, str]], model: str) -> dict[str, Any]:
+def call_agent_model(
+    provider: dict[str, Any],
+    api_key: str,
+    messages: list[dict[str, str]],
+    model: str,
+    *,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
     adapter = provider.get("generationAdapter")
     if adapter == "ollama-chat":
-        return _call_ollama_chat(provider, api_key, messages, model)
+        return _call_ollama_chat(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
     if adapter == "anthropic-messages":
-        return _call_anthropic_messages(provider, api_key, messages, model)
+        return _call_anthropic_messages(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
     if adapter == "gemini-generate-content":
-        return _call_gemini_generate_content(provider, api_key, messages, model)
-    return _call_openai_chat_completions(provider, api_key, messages, model)
+        return _call_gemini_generate_content(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
+    return _call_openai_chat_completions(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
 
 
 def validate_agent_api_key(api_key: str, provider_id: str = "openai", model: str | None = None) -> list[dict[str, str]]:

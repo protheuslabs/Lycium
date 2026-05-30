@@ -49,9 +49,10 @@ def _model_json(
     model: str,
     messages: list[dict[str, str]],
     stage: str,
+    timeout_seconds: float | None = None,
 ) -> tuple[dict, dict]:
     try:
-        response = call_agent_model(provider, api_key, messages, model)
+        response = call_agent_model(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
         return json_from_model_text(extract_message_content(response, adapter)), response
     except CourseAgentError as exc:
         raise CourseAgentError(
