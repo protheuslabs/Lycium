@@ -84,6 +84,19 @@ This service is designed to be extractable into its own repository:
 - crawl behavior should be policy-driven, not hardcoded to Lycium
 - education-institution crawling is the first default policy, not the crawler's only possible mode
 - source snapshots, crawl policies, crawl runs, and corpus decisions are owned by this service
+- `public_id` fields are stable cross-database references; consumers should prefer them over local integer IDs when storing durable evidence references
+
+## Permanent data boundary
+
+Source Index records should be safe to move from local SQLite to a standalone Postgres-backed service later.
+
+Durable references:
+
+- `IndexedSource.public_id` is derived from the canonical URL.
+- `SourceSnapshot.public_id` is derived from the source public ID and content hash.
+- API consumers may keep local integer IDs for short-lived requests, but generated courses, programs, benchmark evidence, and external systems should store `public_id` references.
+
+Large raw artifacts should eventually move to object storage while the database retains hashes, extracted text digests, metadata, and storage references.
 
 ## Worker boundary
 

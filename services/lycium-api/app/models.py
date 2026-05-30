@@ -70,6 +70,7 @@ class Source(Base):
     __tablename__ = "sources"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    public_id: Mapped[str | None] = mapped_column(String(80), unique=True, index=True)
     canonical_url: Mapped[str] = mapped_column(String(2048), unique=True, nullable=False, index=True)
     normalized_domain: Mapped[str] = mapped_column(String(255), index=True)
     title: Mapped[str | None] = mapped_column(String(512))
@@ -94,6 +95,7 @@ class Snapshot(Base):
     __tablename__ = "snapshots"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    public_id: Mapped[str | None] = mapped_column(String(80), unique=True, index=True)
     source_id: Mapped[int] = mapped_column(ForeignKey("sources.id"), index=True)
     content_hash: Mapped[str] = mapped_column(String(128), index=True)
     extraction_status: Mapped[str] = mapped_column(String(30), default="processed")

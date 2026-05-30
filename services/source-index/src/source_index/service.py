@@ -13,6 +13,7 @@ from source_index.config import SETTINGS
 from source_index.corpus import compile_source_corpus_preflight
 from source_index.crawl.policies import normalize_policy_payload
 from source_index.crawl.tasks import build_seed_tasks
+from source_index.identity import stable_snapshot_public_id, stable_source_public_id
 from source_index.models import CrawlPolicyRecord, CrawlRun, IndexedSource, SourceCorpusRun, SourceDecision, SourceSnapshot
 from source_index.url_utils import baseline_trust, canonicalize_url, infer_source_type, normalized_domain
 
@@ -22,6 +23,7 @@ SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
 def source_payload(source: IndexedSource) -> dict[str, Any]:
     return {
         "id": source.id,
+        "public_id": source.public_id or stable_source_public_id(source.canonical_url),
         "canonical_url": source.canonical_url,
         "normalized_domain": source.normalized_domain,
         "submitted_urls": source.submitted_urls,
@@ -37,8 +39,11 @@ def source_payload(source: IndexedSource) -> dict[str, Any]:
 
 
 def snapshot_payload(snapshot: SourceSnapshot) -> dict[str, Any]:
+    source_public_id = snapshot.source.public_id if snapshot.source else None
     return {
         "id": snapshot.id,
+        "public_id": snapshot.public_id
+        or stable_snapshot_public_id(source_public_id or f"source-{snapshot.source_id}", snapshot.content_hash or ""),
         "source_id": snapshot.source_id,
         "fetched_at": snapshot.fetched_at,
         "status": snapshot.status,
@@ -128,9 +133,11 @@ def upsert_source(
     is_free: bool = True,
 ) -> IndexedSource:
     canonical_url = canonicalize_url(url)
+    source_public_id = stable_source_public_id(canonical_url)
     source = session.scalar(select(IndexedSource).where(IndexedSource.canonical_url == canonical_url))
     if source is None:
         source = IndexedSource(
+            public_id=source_public_id,
             canonical_url=canonical_url,
             normalized_domain=normalized_domain(canonical_url),
             submitted_urls=[url],
@@ -145,6 +152,7 @@ def upsert_source(
         session.flush()
         return source
 
+    source.public_id = source.public_id or source_public_id
     if url not in source.submitted_urls:
         source.submitted_urls = [*source.submitted_urls, url]
     if title and not source.title:
@@ -219,7 +227,9 @@ def create_source_snapshot(
 
     extracted_title, extracted_text = _extract_title_and_text(raw_text or "", content_type, title or source.title)
     content_hash = hashlib.sha256(extracted_text.encode("utf-8")).hexdigest() if extracted_text else None
+    source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
     snapshot = SourceSnapshot(
+        public_id=stable_snapshot_public_id(source_public_id, content_hash or ""),
         source_id=source.id,
         status=status,
         content_hash=content_hash,

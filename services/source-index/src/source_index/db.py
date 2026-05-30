@@ -53,13 +53,19 @@ def _run_light_migrations() -> None:
         return
 
     inspector = inspect(engine)
-    if "source_snapshots" not in inspector.get_table_names():
-        return
-
-    snapshot_columns = {column["name"] for column in inspector.get_columns("source_snapshots")}
     with engine.begin() as connection:
-        if "extracted_text" not in snapshot_columns:
-            connection.execute(text("ALTER TABLE source_snapshots ADD COLUMN extracted_text TEXT NOT NULL DEFAULT ''"))
+        if "indexed_sources" in inspector.get_table_names():
+            source_columns = {column["name"] for column in inspector.get_columns("indexed_sources")}
+            if "public_id" not in source_columns:
+                connection.execute(text("ALTER TABLE indexed_sources ADD COLUMN public_id VARCHAR(80)"))
+                connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_indexed_sources_public_id ON indexed_sources (public_id)"))
+        if "source_snapshots" in inspector.get_table_names():
+            snapshot_columns = {column["name"] for column in inspector.get_columns("source_snapshots")}
+            if "extracted_text" not in snapshot_columns:
+                connection.execute(text("ALTER TABLE source_snapshots ADD COLUMN extracted_text TEXT NOT NULL DEFAULT ''"))
+            if "public_id" not in snapshot_columns:
+                connection.execute(text("ALTER TABLE source_snapshots ADD COLUMN public_id VARCHAR(80)"))
+                connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_source_snapshots_public_id ON source_snapshots (public_id)"))
 
 
 def get_session() -> Generator[Session, None, None]:

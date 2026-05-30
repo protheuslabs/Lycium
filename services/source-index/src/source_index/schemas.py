@@ -16,6 +16,7 @@ class IndexedSourceCreate(BaseModel):
 
 class IndexedSourceRead(BaseModel):
     id: int
+    public_id: str | None = None
     canonical_url: str
     normalized_domain: str
     submitted_urls: list[str]
@@ -40,6 +41,7 @@ class SourceSnapshotCreate(BaseModel):
 
 class SourceSnapshotRead(BaseModel):
     id: int
+    public_id: str | None = None
     source_id: int
     fetched_at: datetime
     status: str

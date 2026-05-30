@@ -54,6 +54,7 @@ class SourceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    public_id: str | None = None
     canonical_url: str
     normalized_domain: str
     title: str | None

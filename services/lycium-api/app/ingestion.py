@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.config import SETTINGS
 from app.models import Claim, GraphEdge, KnowledgeObject, Snapshot, Source
 from app.scoring import accessibility_score, baseline_trust, combine_scores, freshness_score, pedagogy_score
+from app.source_identity import stable_snapshot_public_id, stable_source_public_id
 
 TRACKING_PREFIXES = (
     "utm_",
@@ -172,6 +173,7 @@ def ingest_source(
     canonical_url = canonicalize_url(url)
     parsed = urlparse(canonical_url)
     normalized_domain = parsed.netloc.lower().replace("www.", "")
+    source_public_id = stable_source_public_id(canonical_url)
 
     html, content_type = fetch_url(canonical_url)
     title, text = extract_title_and_text(html)
@@ -183,6 +185,7 @@ def ingest_source(
     source = session.scalar(select(Source).where(Source.canonical_url == canonical_url))
     if source is None:
         source = Source(
+            public_id=source_public_id,
             canonical_url=canonical_url,
             normalized_domain=normalized_domain,
             title=title,
@@ -198,6 +201,7 @@ def ingest_source(
         session.add(source)
         session.flush()
     else:
+        source.public_id = source.public_id or source_public_id
         source.title = title
         source.author = author or source.author
         source.publisher = publisher or source.publisher
@@ -215,6 +219,10 @@ def ingest_source(
         .limit(1)
     )
     if latest_snapshot and latest_snapshot.content_hash == content_hash:
+        latest_snapshot.public_id = latest_snapshot.public_id or stable_snapshot_public_id(
+            source.public_id or source_public_id,
+            latest_snapshot.content_hash,
+        )
         return IngestionResult(
             source_id=source.id,
             snapshot_id=latest_snapshot.id,
@@ -224,6 +232,7 @@ def ingest_source(
         )
 
     snapshot = Snapshot(
+        public_id=stable_snapshot_public_id(source.public_id or source_public_id, content_hash),
         source_id=source.id,
         content_hash=content_hash,
         extraction_status="processed",

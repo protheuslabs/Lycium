@@ -19,6 +19,7 @@ class IndexedSource(Base):
     __tablename__ = "indexed_sources"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    public_id: Mapped[str | None] = mapped_column(String(80), unique=True, index=True)
     canonical_url: Mapped[str] = mapped_column(String(2048), unique=True, nullable=False, index=True)
     normalized_domain: Mapped[str] = mapped_column(String(255), index=True)
     submitted_urls: Mapped[list[str]] = mapped_column(JSON, default=list)
@@ -39,6 +40,7 @@ class SourceSnapshot(Base):
     __tablename__ = "source_snapshots"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    public_id: Mapped[str | None] = mapped_column(String(80), unique=True, index=True)
     source_id: Mapped[int] = mapped_column(ForeignKey("indexed_sources.id"), index=True)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     status: Mapped[str] = mapped_column(String(30), default="fetched", index=True)

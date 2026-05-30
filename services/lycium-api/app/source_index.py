@@ -11,6 +11,7 @@ from app.ingestion import canonicalize_url
 from app.models import Snapshot, Source, SourceCorpusRun, SourceDecision
 from app.scoring import baseline_trust
 from app.source_corpus import compile_source_corpus_preflight
+from app.source_identity import stable_snapshot_public_id, stable_source_public_id
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
 
@@ -42,6 +43,7 @@ def _infer_source_type(url: str) -> str:
 def source_payload(source: Source) -> dict[str, Any]:
     return {
         "id": source.id,
+        "public_id": source.public_id or stable_source_public_id(source.canonical_url),
         "canonical_url": source.canonical_url,
         "normalized_domain": source.normalized_domain,
         "title": source.title,
@@ -102,9 +104,11 @@ def upsert_indexed_source(
     is_free: bool = True,
 ) -> Source:
     canonical_url = canonicalize_url(url)
+    source_public_id = stable_source_public_id(canonical_url)
     source = session.scalar(select(Source).where(Source.canonical_url == canonical_url))
     if source is None:
         source = Source(
+            public_id=source_public_id,
             canonical_url=canonical_url,
             normalized_domain=_domain(canonical_url),
             title=title,
@@ -120,6 +124,7 @@ def upsert_indexed_source(
         session.flush()
         return source
 
+    source.public_id = source.public_id or source_public_id
     if title and not source.title:
         source.title = title
     if source_type:
@@ -182,13 +187,22 @@ def source_documents_from_index_snapshots(
         if not text.strip():
             continue
         metadata = snapshot.artifact_metadata if isinstance(snapshot.artifact_metadata, dict) else {}
+        source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
+        snapshot_public_id = snapshot.public_id or stable_snapshot_public_id(source_public_id, snapshot.content_hash)
         documents.append(
             {
                 "url": source.canonical_url,
                 "contentType": str(metadata.get("content_type") or "text/plain"),
                 "text": text,
-                "sourceId": f"source-{source.id}",
-                "snapshotId": snapshot.id,
+                "sourceId": source_public_id,
+                "snapshotId": snapshot_public_id,
+                "sourceIndexRef": {
+                    "service": "lycium-api-transitional-index",
+                    "sourcePublicId": source_public_id,
+                    "snapshotPublicId": snapshot_public_id,
+                    "sourceLocalId": source.id,
+                    "snapshotLocalId": snapshot.id,
+                },
                 "title": source.title,
             }
         )
