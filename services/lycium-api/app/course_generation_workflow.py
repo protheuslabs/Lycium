@@ -106,6 +106,32 @@ def _gate_intake(course: dict[str, Any]) -> GateResult:
     return _gate("intake", "Course identity and learner-facing catalog metadata are present.", issues)
 
 
+def _gate_source_corpus_preflight(course: dict[str, Any]) -> GateResult:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    synthesis = metadata.get("sourceCorpusSynthesis") if isinstance(metadata.get("sourceCorpusSynthesis"), dict) else {}
+    metrics = synthesis.get("metrics") if isinstance(synthesis.get("metrics"), dict) else {}
+    submitted_count = int(metrics.get("submittedSourceCount") or 0)
+    included_count = int(metrics.get("includedSourceCount") or 0)
+    excluded_count = int(metrics.get("excludedSourceCount") or 0)
+    issues: list[GateIssue] = []
+
+    if not synthesis and _source_record_count(course) > 0:
+        issues.append(_issue("warning", "Course has source records but no source corpus preflight evidence.", "metadata.sourceCorpusSynthesis"))
+    if submitted_count > 0 and included_count == 0:
+        issues.append(_issue("warning", "No submitted sources passed relevance preflight.", "metadata.sourceCorpusSynthesis.includedSources"))
+
+    return _gate(
+        "source_corpus_preflight",
+        "Submitted sources were checked for relevance to the course prompt.",
+        issues,
+        {
+            "submittedSourceCount": submitted_count,
+            "includedSourceCount": included_count,
+            "excludedSourceCount": excluded_count,
+        },
+    )
+
+
 def _gate_benchmark_intake(course: dict[str, Any]) -> GateResult:
     metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
     benchmarks = metadata.get("curriculumBenchmarks")
@@ -353,6 +379,7 @@ def _gate_review_publish(gates: list[GateResult]) -> GateResult:
 
 _COURSE_GATE_RUNNERS = {
     "intake": _gate_intake,
+    "source_corpus_preflight": _gate_source_corpus_preflight,
     "benchmark_intake": _gate_benchmark_intake,
     "requirement_extraction": _gate_requirement_extraction,
     "commonality_analysis": _gate_commonality_analysis,

@@ -136,6 +136,11 @@ def _staged_plan_messages(
                         "Use curriculum_benchmark_context.requirementOrigins to build the course skeleton. "
                         "Do not let source availability alone decide the curriculum sequence."
                     ),
+                    "source_corpus_instruction": (
+                        "If curriculum_benchmark_context.sourceCorpusSynthesis is present, use includedSources as the trusted source corpus. "
+                        "Do not use excludedSources for course requirements, lessons, quizzes, or citations unless a reviewer later restores them. "
+                        "Use commonThemes to identify recurring source themes, but still prioritize the requested course prompt and benchmark-derived requirements."
+                    ),
                     "required_json_shape": {
                         "title": "Course title",
                         "shortDescription": "One catalog sentence.",

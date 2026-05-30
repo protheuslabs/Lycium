@@ -23,6 +23,7 @@ from app.generation_observability import (
 from app.ingestion import ingest_source
 from app.local_store import require_verified_active_agent_profile, save_course_snapshot
 from app.models import CourseSnapshot, Job, Source
+from app.source_index import persist_source_corpus_run
 
 GENERATION_JOB_LOG_LIMIT = 5
 
@@ -173,6 +174,20 @@ def _course_snapshot_payload(snapshot: CourseSnapshot) -> dict[str, Any]:
     }
 
 
+def _persist_source_index_for_generation(session: Session, *, job_id: int, payload: dict[str, Any], trace: dict[str, Any]) -> None:
+    synthesis = trace.get("source_corpus_synthesis") or trace.get("sourceCorpusSynthesis")
+    if not isinstance(synthesis, dict):
+        return
+    persist_source_corpus_run(
+        session,
+        consumer="lycium",
+        context_id=f"course-generation-job:{job_id}",
+        prompt=str(payload.get("prompt") or ""),
+        source_urls=[str(url) for url in payload.get("source_urls") or []],
+        synthesis=synthesis,
+    )
+
+
 def run_agent_course_generation_job(job_id: int) -> None:
     with SessionLocal() as session:
         job = session.get(Job, job_id)
@@ -257,6 +272,8 @@ def run_agent_course_generation_job(job_id: int) -> None:
             accepted = bool(quality_report["passed"])
             job.status = "completed" if accepted else "failed"
             job.error = None if accepted else "; ".join([*quality_report["errors"], *quality_report["warnings"]][:12])
+            final_trace = {**generated.trace, "quality_report": quality_report}
+            _persist_source_index_for_generation(session, job_id=job_id, payload=payload, trace=final_trace)
             job.result = {
                 "request": payload,
                 "accepted": accepted,
@@ -265,7 +282,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
                 "message": "Course ready for review." if accepted else "Course failed the generation quality gate.",
                 "course": generated.course,
                 "quality_report": quality_report,
-                "trace": {**generated.trace, "quality_report": quality_report},
+                "trace": final_trace,
                 "course_snapshot": snapshot_payload,
             }
             complete_generation_run(
@@ -273,7 +290,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
                 job_id=job_id,
                 accepted=accepted,
                 message="Course ready for review." if accepted else "Course failed the generation quality gate.",
-                trace={**generated.trace, "quality_report": quality_report},
+                trace=final_trace,
                 quality_report=quality_report,
                 course_snapshot_id=snapshot_payload["id"] if snapshot_payload else None,
             )
@@ -294,6 +311,10 @@ def run_agent_course_generation_job(job_id: int) -> None:
         if isinstance(partial_course, dict):
             result["course"] = partial_course
         fail_generation_run(job_id, error=str(exc), result=result, session_factory=SessionLocal)
+        if isinstance(trace, dict):
+            with SessionLocal() as session:
+                _persist_source_index_for_generation(session, job_id=job_id, payload=payload, trace=trace)
+                session.commit()
         _update_generation_job(job_id, result, status="failed", error=str(exc))
 
 

@@ -87,6 +87,7 @@ class Source(Base):
 
     snapshots: Mapped[list[Snapshot]] = relationship(back_populates="source", cascade="all, delete-orphan")
     knowledge_objects: Mapped[list[KnowledgeObject]] = relationship(back_populates="source", cascade="all, delete-orphan")
+    source_decisions: Mapped[list["SourceDecision"]] = relationship(back_populates="source")
 
 
 class Snapshot(Base):
@@ -275,6 +276,55 @@ class SourceSlotRecord(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
     course_snapshot: Mapped[CourseSnapshot] = relationship(back_populates="source_slots")
+
+
+class SourceCorpusRun(Base):
+    __tablename__ = "source_corpus_runs"
+    __table_args__ = (
+        UniqueConstraint("consumer", "context_id", "workflow_version", name="ux_source_corpus_consumer_context_version"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    consumer: Mapped[str] = mapped_column(String(80), default="lycium", index=True)
+    context_id: Mapped[str] = mapped_column(String(180), index=True)
+    prompt: Mapped[str] = mapped_column(Text, default="")
+    workflow_version: Mapped[str] = mapped_column(String(120), default="source-corpus-preflight-v1")
+    submitted_source_count: Mapped[int] = mapped_column(Integer, default=0)
+    included_source_count: Mapped[int] = mapped_column(Integer, default=0)
+    excluded_source_count: Mapped[int] = mapped_column(Integer, default=0)
+    common_themes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    decisions: Mapped[list["SourceDecision"]] = relationship(
+        back_populates="corpus_run",
+        cascade="all, delete-orphan",
+        order_by="SourceDecision.id",
+    )
+
+
+class SourceDecision(Base):
+    __tablename__ = "source_decisions"
+    __table_args__ = (
+        UniqueConstraint("corpus_run_id", "original_url", name="ux_source_decision_run_original_url"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    corpus_run_id: Mapped[int] = mapped_column(ForeignKey("source_corpus_runs.id"), index=True)
+    source_id: Mapped[int] = mapped_column(ForeignKey("sources.id"), index=True)
+    consumer: Mapped[str] = mapped_column(String(80), default="lycium", index=True)
+    context_id: Mapped[str] = mapped_column(String(180), index=True)
+    original_url: Mapped[str] = mapped_column(String(2048))
+    decision: Mapped[str] = mapped_column(String(40), index=True)
+    relevance_score: Mapped[float] = mapped_column(Float, default=0.0)
+    matched_terms: Mapped[list[str]] = mapped_column(JSON, default=list)
+    reason: Mapped[str | None] = mapped_column(Text)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    corpus_run: Mapped[SourceCorpusRun] = relationship(back_populates="decisions")
+    source: Mapped[Source] = relationship(back_populates="source_decisions")
 
 
 class LearnerSectionProgress(Base):

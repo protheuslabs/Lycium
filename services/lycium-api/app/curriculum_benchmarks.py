@@ -202,6 +202,47 @@ def _aggregate_requirement_origins(benchmarks: list[dict[str, Any]]) -> list[dic
     return origins
 
 
+def _source_corpus_requirement_origins(source_corpus_synthesis: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(source_corpus_synthesis, dict):
+        return []
+
+    included_sources = source_corpus_synthesis.get("includedSources")
+    common_themes = source_corpus_synthesis.get("commonThemes")
+    metrics = source_corpus_synthesis.get("metrics") if isinstance(source_corpus_synthesis.get("metrics"), dict) else {}
+    included_count = int(metrics.get("includedSourceCount") or 0)
+    if not isinstance(included_sources, list) or not isinstance(common_themes, list) or included_count == 0:
+        return []
+
+    origins: list[dict[str, Any]] = []
+    for theme in common_themes[:12]:
+        if not isinstance(theme, dict):
+            continue
+        term = str(theme.get("term") or "").strip()
+        source_count = int(theme.get("sourceCount") or 0)
+        if not term or source_count < 2:
+            continue
+        matched_source_ids = [
+            str(source.get("sourceId"))
+            for source in included_sources
+            if isinstance(source, dict)
+            and source.get("sourceId")
+            and term in [str(match) for match in source.get("matchedTerms", [])]
+        ]
+        frequency = round(source_count / included_count, 2)
+        origins.append(
+            {
+                "requirementId": f"req-corpus-theme-{_slug(term)}",
+                "title": _title(term),
+                "importance": "required" if frequency >= 0.34 else "recommended",
+                "originType": "common_academic_requirement" if frequency >= 0.34 else "expert_review",
+                "evidenceRefs": matched_source_ids[:8],
+                "benchmarkIds": ["source-corpus-preflight"],
+                "frequency": frequency,
+            }
+        )
+    return origins
+
+
 def compile_curriculum_benchmark_context(
     *,
     prompt: str,
@@ -210,6 +251,7 @@ def compile_curriculum_benchmark_context(
     department: str | None = None,
     fetch_sources: bool = False,
     source_documents: list[dict[str, Any]] | None = None,
+    source_corpus_synthesis: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     keywords = _keywords(prompt, source_urls)
     benchmarks = extract_curriculum_benchmarks_from_sources(
@@ -236,6 +278,11 @@ def compile_curriculum_benchmark_context(
         benchmarks.append(_synthetic_benchmark(prompt, category, department, keywords))
 
     requirement_origins = _aggregate_requirement_origins(benchmarks)
+    existing_titles = {_slug(str(origin.get("title") or "")) for origin in requirement_origins}
+    for origin in _source_corpus_requirement_origins(source_corpus_synthesis):
+        if _slug(str(origin.get("title") or "")) not in existing_titles:
+            requirement_origins.append(origin)
+            existing_titles.add(_slug(str(origin.get("title") or "")))
     required_topics = [row["title"] for row in requirement_origins if row["importance"] == "required"]
     optional_topics = [row["title"] for row in requirement_origins if row["importance"] != "required"]
     evidence_refs = [ref for row in requirement_origins for ref in row["evidenceRefs"]]
@@ -251,7 +298,7 @@ def compile_curriculum_benchmark_context(
         if row["importance"] == "required"
     ]
 
-    return {
+    context = {
         "workflowGates": ["benchmark_intake", "requirement_extraction", "commonality_analysis"],
         "curriculumBenchmarks": benchmarks,
         "requirementOrigins": requirement_origins,
@@ -274,6 +321,10 @@ def compile_curriculum_benchmark_context(
         },
         "sourceSlots": source_slots,
     }
+    if source_corpus_synthesis:
+        context["sourceCorpusSynthesis"] = source_corpus_synthesis
+        context["workflowGates"] = list(dict.fromkeys(["source_corpus_preflight", *context["workflowGates"]]))
+    return context
 
 
 def attach_curriculum_context(course: dict[str, Any], context: dict[str, Any]) -> dict[str, Any]:
@@ -284,6 +335,8 @@ def attach_curriculum_context(course: dict[str, Any], context: dict[str, Any]) -
     metadata["requirementOrigins"] = context.get("requirementOrigins", [])
     metadata["courseParityProfile"] = context.get("courseParityProfile", {})
     metadata["sourceSlots"] = context.get("sourceSlots", [])
+    if context.get("sourceCorpusSynthesis"):
+        metadata["sourceCorpusSynthesis"] = context["sourceCorpusSynthesis"]
     generation_plan = dict(metadata.get("generationPlan") if isinstance(metadata.get("generationPlan"), dict) else {})
     status = generation_plan.get("status") if isinstance(generation_plan.get("status"), list) else []
     generation_plan["status"] = list(dict.fromkeys([*status, *context.get("workflowGates", [])]))

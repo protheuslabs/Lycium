@@ -2,6 +2,7 @@ from __future__ import annotations
 
 COURSE_GENERATION_GATE_NAMES = (
     "intake",
+    "source_corpus_preflight",
     "benchmark_intake",
     "requirement_extraction",
     "commonality_analysis",

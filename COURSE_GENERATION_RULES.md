@@ -50,6 +50,7 @@ Use the repo-local course generation skill as the starting point:
 Course generation is a gated workflow. Each gate should produce inspectable artifacts and issues before the next stage is trusted:
 
 - `intake`: parse the prompt, links, files, level, goals, constraints, and intended course type.
+- `source_corpus_preflight`: score submitted sources against the course prompt, keep relevant sources, and exclude unrelated sources before benchmark extraction or course planning.
 - `benchmark_intake`: identify university catalogs, syllabi, certification outlines, employer profiles, or expert references that can anchor the curriculum.
 - `requirement_extraction`: extract benchmark requirements, topics, outcomes, prerequisites, and course-parity metadata.
 - `commonality_analysis`: compare comparable benchmarks to separate required material from recommended, optional, remedial, alternate, or enrichment material.
@@ -86,6 +87,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 6. Find citations and sources for each idea.
    Use reputable sources, record them centrally, and map every sourced idea to source IDs before writing final content.
    If benchmark curricula are available, map sources to benchmark-derived requirements rather than letting the source list define the curriculum.
+   When many sources are submitted, run source corpus preflight first and do not use excluded sources as course evidence unless a reviewer restores them.
 
 7. Generate instructional content for each idea.
    Teach the concept, connect it to prior units, include examples or practice where useful, and keep the pacing coherent.
@@ -129,6 +131,7 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `metadata.requirementOrigins`: optional evidence records explaining whether requirements came from common academic requirements, certification requirements, employer requirements, expert review, or generated gap filling.
 - `metadata.courseParityProfile`: optional summary of benchmark coverage, required topics, optional topics, and parity status.
 - `metadata.sourceSlots`: optional primary/fallback source mappings for required concepts.
+- `metadata.sourceCorpusSynthesis`: optional source corpus preflight evidence showing included sources, excluded sources, common themes, relevance scores, and source-count metrics.
 - `prerequisites`: optional course, competency, assessment, program, or external prerequisites.
 - `metadata.prerequisiteCourseIds`: optional fast-reference list for planned/wrapper courses.
 - `metadata.pacingLabel`: exactly `Module` or `Week`, used consistently in learner-facing titles.

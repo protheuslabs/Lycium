@@ -11,6 +11,7 @@ from app.course_agent_types import CourseAgentError
 from app.course_generation_workflow import run_course_generation_workflow
 from app.curriculum_artifacts import curriculum_artifacts_for_course, persist_curriculum_artifacts_for_snapshot
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
+from app.source_corpus import compile_source_corpus_preflight
 from app import db
 from app.models import CourseSnapshot
 
@@ -49,6 +50,33 @@ def test_curriculum_context_derives_requirements_origins_and_source_slots() -> N
     assert context["courseParityProfile"]["commonRequiredTopics"]
     assert context["sourceSlots"]
     assert "benchmark_intake" in context["workflowGates"]
+
+
+def test_source_corpus_preflight_filters_irrelevant_sources() -> None:
+    preflight = compile_source_corpus_preflight(
+        prompt="CHEM 105 General Chemistry I covering atoms, bonding, stoichiometry, gases, equilibrium, and acids",
+        source_urls=[
+            "https://catalog.example.edu/courses/chem105",
+            "https://example.org/gardening/herb-roasting-guide",
+        ],
+        source_documents=[
+            {
+                "url": "https://catalog.example.edu/courses/chem105",
+                "contentType": "text/plain",
+                "text": "CHEM 105 covers atoms, isotopes, periodic trends, bonding, stoichiometry, gases, equilibrium, acids, and bases.",
+            },
+            {
+                "url": "https://example.org/gardening/herb-roasting-guide",
+                "contentType": "text/plain",
+                "text": "This guide explains soil preparation, basil harvesting, olive oil, roasting vegetables, and kitchen storage.",
+            },
+        ],
+    )
+
+    assert preflight.source_urls == ["https://catalog.example.edu/courses/chem105"]
+    assert preflight.synthesis["metrics"]["includedSourceCount"] == 1
+    assert preflight.synthesis["metrics"]["excludedSourceCount"] == 1
+    assert preflight.synthesis["excludedSources"][0]["url"] == "https://example.org/gardening/herb-roasting-guide"
 
 
 def test_curriculum_context_extracts_real_syllabus_structure() -> None:

@@ -24,6 +24,7 @@ from app.course_agent_providers import assess_agent_model_capability, get_agent_
 from app.course_agent_types import CourseAgentError, CourseAgentResult
 from app.course_generation_service import validate_generation_taxonomy_input
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
+from app.source_corpus import compile_source_corpus_preflight
 
 
 DEFAULT_MODULE_PARALLELISM = 2
@@ -318,12 +319,20 @@ def generate_course_with_agent_staged(
     if taxonomy_errors:
         raise CourseAgentError("Invalid course generation taxonomy input: " + "; ".join(taxonomy_errors))
 
-    benchmark_context = compile_curriculum_benchmark_context(
+    source_corpus = compile_source_corpus_preflight(
         prompt=prompt,
         source_urls=source_urls,
+        fetch_sources=True,
+    )
+    effective_source_urls = source_corpus.source_urls
+    benchmark_context = compile_curriculum_benchmark_context(
+        prompt=prompt,
+        source_urls=effective_source_urls,
         category=category,
         department=department,
-        fetch_sources=True,
+        fetch_sources=False,
+        source_documents=source_corpus.source_documents,
+        source_corpus_synthesis=source_corpus.synthesis,
     )
     provider = get_agent_provider(provider_id)
     selected_model = model or provider.get("defaultModel") or SETTINGS.agent_model
@@ -345,6 +354,8 @@ def generate_course_with_agent_staged(
         ),
         "stages": list(previous_stages),
         "curriculum_benchmark_context": benchmark_context,
+        "source_corpus_synthesis": source_corpus.synthesis,
+        "effective_source_urls": effective_source_urls,
         "module_parallelism": min(DEFAULT_MODULE_PARALLELISM, max(1, desired_module_count)),
     }
     if previous_media_logs:
@@ -373,7 +384,7 @@ def generate_course_with_agent_staged(
                     source_policy=source_policy,
                     category=category,
                     department=department,
-                    source_urls=source_urls,
+                    source_urls=effective_source_urls,
                     benchmark_context=benchmark_context,
                 ),
             )
@@ -387,7 +398,7 @@ def generate_course_with_agent_staged(
     pacing_label = _infer_pacing_label(plan)
     trace["plan_timeout_seconds"] = _plan_timeout_seconds(desired_module_count)
     trace["plan"] = plan
-    source_records = _input_source_records(source_urls, title)
+    source_records = _input_source_records(effective_source_urls, title)
     source_ids = [str(record["id"]) for record in source_records]
     module_outlines = _coerce_plan_modules(plan, desired_module_count)
     resume_modules = _resume_modules_from_course(resume_course, desired_module_count)
@@ -425,7 +436,7 @@ def generate_course_with_agent_staged(
                     plan=plan,
                     module_outline=module_outline,
                     module_number=index,
-                    source_urls=source_urls,
+                    source_urls=effective_source_urls,
                     source_ids=source_ids,
                     source_records=source_records,
                     existing_modules=[completed_modules[key] for key in sorted(completed_modules)],
@@ -493,7 +504,7 @@ def generate_course_with_agent_staged(
                         module_number=index,
                         lesson_number=lesson_index,
                         lesson_title=lesson_title,
-                        source_urls=source_urls,
+                        source_urls=effective_source_urls,
                     ),
                 )
             except CourseAgentError as exc:
@@ -554,7 +565,7 @@ def generate_course_with_agent_staged(
                     module_outline=module_outline,
                     module_number=index,
                     lesson_sections=sections,
-                    source_urls=source_urls,
+                    source_urls=effective_source_urls,
                 ),
             )
             media_block, media_skip_reason = _coerce_media_block(media_payload, source_ids)
@@ -610,7 +621,7 @@ def generate_course_with_agent_staged(
                     module_outline=module_outline,
                     module_number=index,
                     lesson_sections=sections,
-                    source_urls=source_urls,
+                    source_urls=effective_source_urls,
                 ),
             )
         except CourseAgentError as exc:
@@ -671,7 +682,7 @@ def generate_course_with_agent_staged(
                     module_outline=module_outline,
                     module_number=index,
                     lesson_sections=sections,
-                    source_urls=source_urls,
+                    source_urls=effective_source_urls,
                     pacing_label=pacing_label,
                 ),
             )

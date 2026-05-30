@@ -20,7 +20,7 @@
 
 Use the course JSON as both the output artifact and the progress tracker.
 
-Course generation should move through named gates that can be checked by deterministic validators and later by LLM-assisted evals. The backend source of truth for gate names is `services/lycium-api/app/course_generation_gates.py`: `intake`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`.
+Course generation should move through named gates that can be checked by deterministic validators and later by LLM-assisted evals. The backend source of truth for gate names is `services/lycium-api/app/course_generation_gates.py`: `intake`, `source_corpus_preflight`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`.
 
 Backend LLM experiments should return `quality_report.evals` before persistence. Use those deterministic eval dimensions to judge structure, instructional substance, assessment quality, concept-card integrity, source grounding, media support, and course specificity before a generated course is accepted for review.
 
@@ -41,6 +41,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 
 6. Source each idea.
    Find reputable sources for the idea level, not only the course level. Prefer primary docs, textbooks, academic sources, standards bodies, established university material, and reputable technical talks.
+   When many sources are submitted, first run source corpus preflight. Use included sources as the course corpus and exclude irrelevant sources from requirements, lessons, quizzes, and citations unless a reviewer restores them.
 
 7. Draft instruction.
    Turn sub-units into teachable content blocks with examples, transitions, practice prompts, and source references.

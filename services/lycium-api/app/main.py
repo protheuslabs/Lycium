@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.db import init_db
 from app.local_store import ensure_local_data_dirs
 from app.observability import request_context_middleware
-from app.routes import course_routes, learning_routes, local_routes, portfolio_job_routes
+from app.routes import course_routes, learning_routes, local_routes, portfolio_job_routes, source_index_routes
 
 
 def create_app() -> FastAPI:
@@ -37,6 +37,7 @@ def create_app() -> FastAPI:
     learning_routes.register(app)
     course_routes.register(app)
     portfolio_job_routes.register(app)
+    source_index_routes.register(app)
     return app
 
 
