@@ -30,6 +30,22 @@ class IndexedSourceRead(BaseModel):
     updated_at: datetime
 
 
+class BulkSourceImportItem(BaseModel):
+    url: HttpUrl
+    title: str | None = None
+    source_type: str | None = None
+    license: str = "unknown"
+    is_free: bool = True
+    raw_text: str | None = None
+    content_type: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class BulkSourceImportCreate(BaseModel):
+    batch_id: str | None = None
+    sources: list[BulkSourceImportItem]
+
+
 class SourceSnapshotCreate(BaseModel):
     fetch: bool = True
     raw_text: str | None = None
@@ -52,6 +68,24 @@ class SourceSnapshotRead(BaseModel):
     extracted_text: str
     raw_storage_ref: str | None
     snapshot_metadata: dict[str, Any]
+
+
+class BulkSourceImportRowRead(BaseModel):
+    original_index: int
+    source: IndexedSourceRead
+    snapshot: SourceSnapshotRead | None = None
+    created_snapshot: bool
+    warnings: list[str]
+
+
+class BulkSourceImportRead(BaseModel):
+    contract_version: str
+    batch_id: str
+    submitted_count: int
+    imported_count: int
+    snapshot_count: int
+    sources: list[BulkSourceImportRowRead]
+    warnings: list[str]
 
 
 class CrawlPolicyCreate(BaseModel):

@@ -113,6 +113,66 @@ def test_source_packet_builds_generation_ready_evidence_from_documents(client) -
     assert "Stoichiometry" in packet["source_documents"][0]["text"]
 
 
+def test_bulk_source_import_feeds_generation_packet_eval(client) -> None:
+    import_response = client.post(
+        "/v1/index/source-imports",
+        json={
+            "batch_id": "chem105-seed-batch",
+            "sources": [
+                {
+                    "url": "https://chem.example.edu/chemistry/stoichiometry",
+                    "title": "Stoichiometry Tutorial",
+                    "source_type": "open_courseware",
+                    "license": "cc-by",
+                    "raw_text": "Stoichiometry connects balanced equations, mole ratios, limiting reactants, and yields.",
+                },
+                {
+                    "url": "https://chem.example.edu/chemistry/bonding-acids-bases",
+                    "title": "Bonding and Acids/Bases",
+                    "source_type": "open_courseware",
+                    "license": "cc-by",
+                    "raw_text": "General chemistry covers ionic bonding, covalent bonding, acids, bases, pH, and buffers.",
+                },
+                {
+                    "url": "https://recipes.example.com/dinner/pasta",
+                    "title": "Pasta Dinner",
+                    "source_type": "web",
+                    "raw_text": "A pasta recipe with tomato sauce, basil, and garlic.",
+                },
+            ],
+        },
+    )
+    assert import_response.status_code == 201, import_response.text
+    import_report = import_response.json()
+
+    assert import_report["contract_version"] == "source-import-batch-v1"
+    assert import_report["submitted_count"] == 3
+    assert import_report["snapshot_count"] == 3
+
+    packet_response = client.post(
+        "/v1/index/source-packets",
+        json={
+            "consumer": "lycium-course-generation",
+            "context_id": "chem105-import-eval",
+            "prompt": "CHEM 105 chemistry stoichiometry bonding acids bases",
+            "fetch_sources": False,
+            "source_urls": [row["source"]["canonical_url"] for row in import_report["sources"]],
+        },
+    )
+    assert packet_response.status_code == 201, packet_response.text
+    packet = packet_response.json()
+
+    assert packet["contract_version"] == "source-packet-v1"
+    assert packet["corpus_run"]["included_source_count"] == 2
+    assert packet["corpus_run"]["excluded_source_count"] == 1
+    assert len(packet["source_documents"]) == 2
+    assert all(document["snapshotId"] for document in packet["source_documents"])
+    assert "pasta" not in " ".join(packet["source_urls"]).lower()
+    assert {"stoichiometry", "bonding"}.issubset(
+        set().union(*(set(decision["matched_terms"]) for decision in packet["corpus_run"]["decisions"]))
+    )
+
+
 def test_source_snapshot_extracts_provided_html(client) -> None:
     source_response = client.post(
         "/v1/index/sources",

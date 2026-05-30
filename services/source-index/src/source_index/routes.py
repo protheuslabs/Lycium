@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from source_index.db import get_session
 from source_index.models import CrawlPolicyRecord, CrawlRun, IndexedSource, SourceCorpusRun
 from source_index.schemas import (
+    BulkSourceImportCreate,
+    BulkSourceImportRead,
     CrawlPolicyCreate,
     CrawlPolicyRead,
     CrawlRunCreate,
@@ -30,6 +32,7 @@ from source_index.service import (
     create_source_snapshot,
     crawl_policy_payload,
     crawl_run_payload,
+    import_source_batch,
     list_crawl_policies,
     list_crawl_run_seed_tasks,
     list_source_snapshots,
@@ -84,6 +87,16 @@ def register(app: FastAPI) -> None:
         if source is None:
             raise HTTPException(status_code=404, detail="Indexed source not found.")
         return source_payload(source)
+
+    @app.post("/v1/index/source-imports", response_model=BulkSourceImportRead, status_code=status.HTTP_201_CREATED)
+    def create_source_import(payload: BulkSourceImportCreate, session: Session = Depends(get_session)) -> dict:
+        report = import_source_batch(
+            session,
+            batch_id=payload.batch_id,
+            sources=[source.model_dump(mode="json") for source in payload.sources],
+        )
+        session.commit()
+        return report
 
     @app.post("/v1/index/crawl-policies", response_model=CrawlPolicyRead, status_code=status.HTTP_201_CREATED)
     def create_index_crawl_policy(payload: CrawlPolicyCreate, session: Session = Depends(get_session)) -> dict:

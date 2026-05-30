@@ -19,6 +19,7 @@ from source_index.url_utils import baseline_trust, canonicalize_url, infer_sourc
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
 SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
+SOURCE_IMPORT_BATCH_CONTRACT_VERSION = "source-import-batch-v1"
 
 
 def source_payload(source: IndexedSource) -> dict[str, Any]:
@@ -227,10 +228,15 @@ def create_source_snapshot(
         raise ValueError("Snapshot requires raw_text when fetch is false.")
 
     extracted_title, extracted_text = _extract_title_and_text(raw_text or "", content_type, title or source.title)
-    content_hash = hashlib.sha256(extracted_text.encode("utf-8")).hexdigest() if extracted_text else None
     source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
+    content_hash = hashlib.sha256(extracted_text.encode("utf-8")).hexdigest() if extracted_text else None
+    snapshot_public_id = stable_snapshot_public_id(source_public_id, content_hash or "")
+    existing_snapshot = session.scalar(select(SourceSnapshot).where(SourceSnapshot.public_id == snapshot_public_id))
+    if existing_snapshot is not None:
+        return existing_snapshot
+
     snapshot = SourceSnapshot(
-        public_id=stable_snapshot_public_id(source_public_id, content_hash or ""),
+        public_id=snapshot_public_id,
         source_id=source.id,
         status=status,
         content_hash=content_hash,
@@ -251,6 +257,68 @@ def create_source_snapshot(
 
     session.flush()
     return snapshot
+
+
+def import_source_batch(
+    session: Session,
+    *,
+    sources: list[dict[str, Any]],
+    batch_id: str | None = None,
+) -> dict[str, Any]:
+    resolved_batch_id = batch_id or f"manual-import-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+    rows: list[dict[str, Any]] = []
+    warnings: list[str] = []
+
+    for index, item in enumerate(sources, start=1):
+        row_warnings: list[str] = []
+        raw_text = str(item.get("raw_text") or item.get("rawText") or "").strip()
+        source = upsert_source(
+            session,
+            url=str(item.get("url") or ""),
+            title=item.get("title"),
+            source_type=item.get("source_type") or item.get("sourceType"),
+            license=str(item.get("license") or "unknown"),
+            is_free=bool(item.get("is_free", item.get("isFree", True))),
+        )
+        snapshot = None
+        if raw_text:
+            snapshot = create_source_snapshot(
+                session,
+                source_id=source.id,
+                fetch=False,
+                raw_text=raw_text,
+                content_type=item.get("content_type") or item.get("contentType") or "text/plain",
+                title=item.get("title") or source.title,
+                snapshot_metadata={
+                    **(item.get("metadata") if isinstance(item.get("metadata"), dict) else {}),
+                    "source_import_batch": resolved_batch_id,
+                },
+            )
+        else:
+            row_warnings.append("No raw_text provided; source was indexed without a snapshot.")
+
+        rows.append(
+            {
+                "original_index": index,
+                "source": source_payload(source),
+                "snapshot": snapshot_payload(snapshot) if snapshot else None,
+                "created_snapshot": bool(snapshot),
+                "warnings": row_warnings,
+            }
+        )
+
+    if not sources:
+        warnings.append("Import batch contained no sources.")
+
+    return {
+        "contract_version": SOURCE_IMPORT_BATCH_CONTRACT_VERSION,
+        "batch_id": resolved_batch_id,
+        "submitted_count": len(sources),
+        "imported_count": len(rows),
+        "snapshot_count": len([row for row in rows if row["snapshot"]]),
+        "sources": rows,
+        "warnings": warnings,
+    }
 
 
 def list_source_snapshots(session: Session, *, source_id: int, limit: int = 50) -> list[SourceSnapshot]:
