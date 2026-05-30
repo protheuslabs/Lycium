@@ -55,6 +55,26 @@ def _normalize_summary_for_pacing(summary_section: dict, pacing_label: str) -> d
     return summary_section
 
 
+def _resume_modules_from_course(resume_course: dict | None, desired_module_count: int) -> list[dict]:
+    if not isinstance(resume_course, dict):
+        return []
+    modules = resume_course.get("modules")
+    if not isinstance(modules, list):
+        return []
+    return [module for module in modules[:desired_module_count] if isinstance(module, dict)]
+
+
+def _resume_trace(value: dict | None) -> dict:
+    return value if isinstance(value, dict) else {}
+
+
+def _failure_trace_context(exc: CourseAgentError) -> dict:
+    trace = getattr(exc, "trace", {})
+    if not isinstance(trace, dict):
+        return {}
+    return {key: value for key, value in trace.items() if key not in {"stages", "partial_course"}}
+
+
 def _generate_module_bundle(
     *,
     provider: dict,
@@ -291,6 +311,8 @@ def generate_course_with_agent_staged(
     department: str | None = None,
     enforce_contract: bool = True,
     on_checkpoint: CourseGenerationCheckpoint | None = None,
+    resume_course: dict | None = None,
+    resume_trace: dict | None = None,
 ) -> CourseAgentResult:
     taxonomy_errors = validate_generation_taxonomy_input(category, department)
     if taxonomy_errors:
@@ -307,6 +329,9 @@ def generate_course_with_agent_staged(
     selected_model = model or provider.get("defaultModel") or SETTINGS.agent_model
     model_capability = assess_agent_model_capability(provider, str(selected_model))
     adapter = str(provider.get("generationAdapter") or "openai-chat-completions")
+    previous_trace = _resume_trace(resume_trace)
+    previous_stages = previous_trace.get("stages") if isinstance(previous_trace.get("stages"), list) else []
+    previous_media_logs = previous_trace.get("media_logs") if isinstance(previous_trace.get("media_logs"), list) else []
     trace = {
         **_base_agent_trace(
             provider=provider,
@@ -318,43 +343,58 @@ def generate_course_with_agent_staged(
             expected_duration_minutes=expected_duration_minutes,
             source_urls=source_urls,
         ),
-        "stages": [],
+        "stages": list(previous_stages),
         "curriculum_benchmark_context": benchmark_context,
         "module_parallelism": min(DEFAULT_MODULE_PARALLELISM, max(1, desired_module_count)),
     }
+    if previous_media_logs:
+        trace["media_logs"] = list(previous_media_logs)
+
+    resumed_plan = previous_trace.get("plan") if isinstance(previous_trace.get("plan"), dict) else None
     try:
-        plan, plan_response = _model_json(
-            provider=provider,
-            api_key=api_key,
-            adapter=adapter,
-            model=str(selected_model),
-            stage="course_plan",
-            timeout_seconds=_plan_timeout_seconds(desired_module_count),
-            messages=_staged_plan_messages(
-                prompt=prompt,
-                level=level,
-                language=language,
-                desired_module_count=desired_module_count,
-                expected_duration_minutes=expected_duration_minutes,
-                source_policy=source_policy,
-                category=category,
-                department=department,
-                source_urls=source_urls,
-                benchmark_context=benchmark_context,
-            ),
-        )
+        if resumed_plan:
+            plan = resumed_plan
+            plan_response = {"usage": {}, "resumed": True}
+            trace["stages"].append({"stage": "course_plan", "status": "resumed"})
+        else:
+            plan, plan_response = _model_json(
+                provider=provider,
+                api_key=api_key,
+                adapter=adapter,
+                model=str(selected_model),
+                stage="course_plan",
+                timeout_seconds=_plan_timeout_seconds(desired_module_count),
+                messages=_staged_plan_messages(
+                    prompt=prompt,
+                    level=level,
+                    language=language,
+                    desired_module_count=desired_module_count,
+                    expected_duration_minutes=expected_duration_minutes,
+                    source_policy=source_policy,
+                    category=category,
+                    department=department,
+                    source_urls=source_urls,
+                    benchmark_context=benchmark_context,
+                ),
+            )
     except CourseAgentError as exc:
         trace["stages"].append({"stage": "course_plan", "status": "failed", "error": str(exc)})
         raise CourseAgentError(str(exc), trace={**trace, **getattr(exc, "trace", {})}) from exc
-    trace["stages"].append({"stage": "course_plan", "status": "passed"})
+    if not resumed_plan:
+        trace["stages"].append({"stage": "course_plan", "status": "passed"})
 
     title = str(plan.get("title") or "Generated course")
     pacing_label = _infer_pacing_label(plan)
     trace["plan_timeout_seconds"] = _plan_timeout_seconds(desired_module_count)
+    trace["plan"] = plan
     source_records = _input_source_records(source_urls, title)
     source_ids = [str(record["id"]) for record in source_records]
     module_outlines = _coerce_plan_modules(plan, desired_module_count)
-    modules: list[dict] = []
+    resume_modules = _resume_modules_from_course(resume_course, desired_module_count)
+    completed_modules: dict[int, dict] = {index: module for index, module in enumerate(resume_modules, start=1)}
+    if completed_modules:
+        trace["resume"] = {"completedModuleCount": len(completed_modules)}
+    modules: list[dict] = [completed_modules[index] for index in sorted(completed_modules)]
     module_usage: list[dict] = []
     _emit_checkpoint(
         on_checkpoint,
@@ -369,11 +409,11 @@ def generate_course_with_agent_staged(
         ),
     )
 
-    module_outlines_for_serial = module_outlines
-    if len(module_outlines) > 1:
+    pending_module_outlines = [(index, module_outline) for index, module_outline in enumerate(module_outlines, start=1) if index not in completed_modules]
+    module_outlines_for_serial = pending_module_outlines
+    if len(pending_module_outlines) > 1:
         module_outlines_for_serial = []
-        completed_modules: dict[int, dict] = {}
-        parallelism = min(DEFAULT_MODULE_PARALLELISM, len(module_outlines))
+        parallelism = min(DEFAULT_MODULE_PARALLELISM, len(pending_module_outlines))
         with ThreadPoolExecutor(max_workers=parallelism) as executor:
             futures = {
                 executor.submit(
@@ -388,11 +428,11 @@ def generate_course_with_agent_staged(
                     source_urls=source_urls,
                     source_ids=source_ids,
                     source_records=source_records,
-                    existing_modules=[],
+                    existing_modules=[completed_modules[key] for key in sorted(completed_modules)],
                     level=level,
                     pacing_label=pacing_label,
                 ): index
-                for index, module_outline in enumerate(module_outlines, start=1)
+                for index, module_outline in pending_module_outlines
             }
             for future in as_completed(futures):
                 index = futures[future]
@@ -407,10 +447,12 @@ def generate_course_with_agent_staged(
                         source_records=source_records,
                         modules=partial_modules,
                         level=level,
+                        category=category,
+                        department=department,
                     )
                     failed_trace = getattr(exc, "trace", {})
                     trace["stages"].extend(failed_trace.get("stages", []) if isinstance(failed_trace, dict) else [])
-                    raise CourseAgentError(str(exc), trace={**trace, **failed_trace, "partial_course": partial_course}) from exc
+                    raise CourseAgentError(str(exc), trace={**trace, **_failure_trace_context(exc), "partial_course": partial_course}) from exc
 
                 completed_modules[index] = result["module"]
                 module_usage.extend(result["usage"])
@@ -421,10 +463,17 @@ def generate_course_with_agent_staged(
                 _emit_checkpoint(
                     on_checkpoint,
                     trace=trace,
-                    partial_course=_partial_course_from_stages(plan=plan, source_records=source_records, modules=modules, level=level),
+                    partial_course=_partial_course_from_stages(
+                        plan=plan,
+                        source_records=source_records,
+                        modules=modules,
+                        level=level,
+                        category=category,
+                        department=department,
+                    ),
                 )
 
-    for index, module_outline in enumerate(module_outlines_for_serial, start=1):
+    for index, module_outline in module_outlines_for_serial:
         module_id = str(module_outline.get("id") or f"module-{index}")
         module_title = str(module_outline.get("title") or f"Module {index}")
         sections: list[dict] = []
@@ -449,7 +498,14 @@ def generate_course_with_agent_staged(
                 )
             except CourseAgentError as exc:
                 partial_module = {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}
-                partial_course = _partial_course_from_stages(plan=plan, source_records=source_records, modules=[*modules, partial_module], level=level)
+                partial_course = _partial_course_from_stages(
+                    plan=plan,
+                    source_records=source_records,
+                    modules=[*modules, partial_module],
+                    level=level,
+                    category=category,
+                    department=department,
+                )
                 trace["stages"].append(
                     {
                         "stage": stage,
@@ -460,7 +516,7 @@ def generate_course_with_agent_staged(
                         "error": str(exc),
                     }
                 )
-                raise CourseAgentError(str(exc), trace={**trace, **getattr(exc, "trace", {}), "partial_course": partial_course}) from exc
+                raise CourseAgentError(str(exc), trace={**trace, **_failure_trace_context(exc), "partial_course": partial_course}) from exc
             section = _coerce_generated_section(
                 section,
                 fallback_id=f"module-{index}-lesson-{lesson_index}",
@@ -480,6 +536,8 @@ def generate_course_with_agent_staged(
                     source_records=source_records,
                     modules=[*modules, {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}],
                     level=level,
+                    category=category,
+                    department=department,
                 ),
             )
 
@@ -534,6 +592,8 @@ def generate_course_with_agent_staged(
                 source_records=source_records,
                 modules=[*modules, {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}],
                 level=level,
+                category=category,
+                department=department,
             ),
         )
 
@@ -555,7 +615,14 @@ def generate_course_with_agent_staged(
             )
         except CourseAgentError as exc:
             partial_module = {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}
-            partial_course = _partial_course_from_stages(plan=plan, source_records=source_records, modules=[*modules, partial_module], level=level)
+            partial_course = _partial_course_from_stages(
+                plan=plan,
+                source_records=source_records,
+                modules=[*modules, partial_module],
+                level=level,
+                category=category,
+                department=department,
+            )
             trace["stages"].append(
                 {
                     "stage": quiz_stage,
@@ -566,7 +633,7 @@ def generate_course_with_agent_staged(
                     "error": str(exc),
                 }
             )
-            raise CourseAgentError(str(exc), trace={**trace, **getattr(exc, "trace", {}), "partial_course": partial_course}) from exc
+            raise CourseAgentError(str(exc), trace={**trace, **_failure_trace_context(exc), "partial_course": partial_course}) from exc
         quiz_section = _coerce_generated_section(
             quiz_section,
             fallback_id=f"module-{index}-quiz",
@@ -586,6 +653,8 @@ def generate_course_with_agent_staged(
                 source_records=source_records,
                 modules=[*modules, {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}],
                 level=level,
+                category=category,
+                department=department,
             ),
         )
 
@@ -608,7 +677,14 @@ def generate_course_with_agent_staged(
             )
         except CourseAgentError as exc:
             partial_module = {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}
-            partial_course = _partial_course_from_stages(plan=plan, source_records=source_records, modules=[*modules, partial_module], level=level)
+            partial_course = _partial_course_from_stages(
+                plan=plan,
+                source_records=source_records,
+                modules=[*modules, partial_module],
+                level=level,
+                category=category,
+                department=department,
+            )
             trace["stages"].append(
                 {
                     "stage": summary_stage,
@@ -619,7 +695,7 @@ def generate_course_with_agent_staged(
                     "error": str(exc),
                 }
             )
-            raise CourseAgentError(str(exc), trace={**trace, **getattr(exc, "trace", {}), "partial_course": partial_course}) from exc
+            raise CourseAgentError(str(exc), trace={**trace, **_failure_trace_context(exc), "partial_course": partial_course}) from exc
         summary_section = _coerce_generated_section(
             summary_section,
             fallback_id=f"module-{index}-summary",
@@ -640,16 +716,26 @@ def generate_course_with_agent_staged(
                 source_records=source_records,
                 modules=[*modules, {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}],
                 level=level,
+                category=category,
+                department=department,
             ),
         )
 
         module = {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}
-        modules.append(module)
+        completed_modules[index] = module
+        modules = [completed_modules[key] for key in sorted(completed_modules)]
         trace["stages"].append({"stage": f"module_{index}", "status": "assembled", "module_id": module_id, "module_title": module_title})
         _emit_checkpoint(
             on_checkpoint,
             trace=trace,
-            partial_course=_partial_course_from_stages(plan=plan, source_records=source_records, modules=modules, level=level),
+            partial_course=_partial_course_from_stages(
+                plan=plan,
+                source_records=source_records,
+                modules=modules,
+                level=level,
+                category=category,
+                department=department,
+            ),
         )
 
     resolved_department = str(department or plan.get("department") or "").strip()

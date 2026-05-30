@@ -179,6 +179,9 @@ def run_agent_course_generation_job(job_id: int) -> None:
         if job is None:
             return
         payload = dict(job.payload or {})
+        previous_result = dict(job.result or {}) if isinstance(job.result, dict) else {}
+        resume_course = previous_result.get("course") if isinstance(previous_result.get("course"), dict) else None
+        resume_trace = previous_result.get("trace") if isinstance(previous_result.get("trace"), dict) else None
         job.status = "running"
         job.attempts += 1
         job.error = None
@@ -226,6 +229,8 @@ def run_agent_course_generation_job(job_id: int) -> None:
             source_urls=[str(url) for url in payload.get("source_urls") or []],
             enforce_contract=False,
             on_checkpoint=checkpoint,
+            resume_course=resume_course,
+            resume_trace=resume_trace,
         )
         quality_report = assess_course_quality(generated.course, gate="generation")
         snapshot_payload = None
@@ -277,11 +282,12 @@ def run_agent_course_generation_job(job_id: int) -> None:
     except Exception as exc:
         trace = getattr(exc, "trace", {}) if isinstance(exc, CourseAgentError) else {}
         partial_course = trace.get("partial_course") if isinstance(trace, dict) else None
+        failed_stage = trace.get("failed_stage") or _checkpoint_stage(trace) if isinstance(trace, dict) else None
         result: dict[str, Any] = {
             "request": payload,
             "accepted": False,
             "progress": _checkpoint_progress(payload, trace) if isinstance(trace, dict) else 0.0,
-            "current_stage": trace.get("failed_stage") if isinstance(trace, dict) else None,
+            "current_stage": failed_stage,
             "message": "Course generation failed.",
             "trace": {key: value for key, value in trace.items() if key != "partial_course"} if isinstance(trace, dict) else {},
         }

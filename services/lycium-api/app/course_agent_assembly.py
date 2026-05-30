@@ -103,6 +103,10 @@ def _partial_course_from_stages(
     title = str((plan or {}).get("title") or "Partially generated course")
     source_ids = [str(record["id"]) for record in source_records]
     resolved_department = str(department or (plan or {}).get("department") or "").strip()
+    pacing_label = str((plan or {}).get("pacingLabel") or "").strip()
+    if pacing_label not in {"Module", "Week"}:
+        module_titles = [str(module.get("title") or "") for module in (plan or {}).get("modules", []) if isinstance(module, dict)]
+        pacing_label = "Week" if any(title.startswith("Week ") for title in module_titles) else "Module"
     course_payload = {
         "title": title,
         "shortDescription": str((plan or {}).get("shortDescription") or f"A partial generation artifact for {title}."),
@@ -114,7 +118,7 @@ def _partial_course_from_stages(
         "sourceIds": source_ids,
         "sourceRecords": source_records,
         "metadata": {
-            "pacingLabel": "Module",
+            "pacingLabel": pacing_label,
             "scope": (plan or {}).get("scope") if isinstance((plan or {}).get("scope"), dict) else {},
             "generationPlan": {"status": ["failed_partial_generation"], "mode": "staged-llm-agent"},
         },
