@@ -1,0 +1,38 @@
+{
+  "batch_id": "primitive-source-index-smoke",
+  "sources": [
+    {
+      "url": "https://example.edu/learning/distributed-systems-reliability",
+      "title": "Distributed Systems Reliability Notes",
+      "source_type": "open_courseware",
+      "license": "cc-by",
+      "raw_text": "Distributed systems reliability depends on replication, fault tolerance, latency budgets, consistency models, failure detection, and recovery planning.",
+      "content_type": "text/plain",
+      "metadata": {
+        "fixture": "primitive-source-index-smoke"
+      }
+    },
+    {
+      "url": "https://example.edu/learning/observability-tracing",
+      "title": "Observability and Tracing Primer",
+      "source_type": "open_courseware",
+      "license": "cc-by",
+      "raw_text": "Observability uses metrics, logs, traces, service-level indicators, and alerting to understand reliability and latency in production systems.",
+      "content_type": "text/plain",
+      "metadata": {
+        "fixture": "primitive-source-index-smoke"
+      }
+    },
+    {
+      "url": "https://example.com/gardening/tomato-care",
+      "title": "Tomato Care Basics",
+      "source_type": "web",
+      "license": "unknown",
+      "raw_text": "Tomato plants need sunlight, soil preparation, watering schedules, pruning, and seasonal garden maintenance.",
+      "content_type": "text/plain",
+      "metadata": {
+        "fixture": "primitive-source-index-smoke"
+      }
+    }
+  ]
+}
