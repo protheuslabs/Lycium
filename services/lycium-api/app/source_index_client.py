@@ -16,9 +16,16 @@ def source_index_client_configured() -> bool:
 
 
 class SourceIndexClient:
-    def __init__(self, *, base_url: str | None = None, timeout_seconds: float | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        base_url: str | None = None,
+        timeout_seconds: float | None = None,
+        transport: httpx.BaseTransport | None = None,
+    ) -> None:
         self.base_url = (base_url or SETTINGS.source_index_api_url or "").rstrip("/")
         self.timeout_seconds = timeout_seconds or SETTINGS.source_index_timeout_seconds
+        self.transport = transport
         if not self.base_url:
             raise SourceIndexClientError("LYCIUM_SOURCE_INDEX_API_URL is not configured.")
 
@@ -101,7 +108,7 @@ class SourceIndexClient:
 
     def _request(self, method: str, path: str, **kwargs: Any) -> Any:
         try:
-            with httpx.Client(base_url=self.base_url, timeout=self.timeout_seconds) as client:
+            with httpx.Client(base_url=self.base_url, timeout=self.timeout_seconds, transport=self.transport) as client:
                 response = client.request(method, path, **kwargs)
                 response.raise_for_status()
                 return response.json()
