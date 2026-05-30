@@ -18,6 +18,7 @@ from source_index.models import CrawlPolicyRecord, CrawlRun, IndexedSource, Sour
 from source_index.url_utils import baseline_trust, canonicalize_url, infer_source_type, normalized_domain
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
+SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
 
 
 def source_payload(source: IndexedSource) -> dict[str, Any]:
@@ -444,8 +445,14 @@ def create_corpus_run(
     prompt: str,
     source_urls: list[str],
     fetch_sources: bool = True,
+    source_documents: list[dict[str, Any]] | None = None,
 ) -> SourceCorpusRun:
-    preflight = compile_source_corpus_preflight(prompt=prompt, source_urls=source_urls, fetch_sources=fetch_sources)
+    preflight = compile_source_corpus_preflight(
+        prompt=prompt,
+        source_urls=source_urls,
+        fetch_sources=fetch_sources,
+        source_documents=source_documents,
+    )
     return persist_corpus_run(
         session,
         consumer=consumer,
@@ -453,4 +460,166 @@ def create_corpus_run(
         prompt=prompt,
         source_urls=source_urls,
         synthesis=preflight.synthesis,
+    )
+
+
+def _document_text(document: dict[str, Any]) -> str:
+    return str(document.get("text") or document.get("rawText") or document.get("content") or "")
+
+
+def _document_content_type(document: dict[str, Any]) -> str:
+    return str(document.get("contentType") or document.get("content_type") or "text/plain")
+
+
+def _documents_by_url(documents: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    return {str(document.get("url") or ""): document for document in documents if str(document.get("url") or "")}
+
+
+def _latest_source_snapshots(session: Session, source_id: int, *, limit: int) -> list[SourceSnapshot]:
+    if limit <= 0:
+        return []
+    return list_source_snapshots(session, source_id=source_id, limit=limit)
+
+
+def _snapshot_document(source: IndexedSource, snapshot: SourceSnapshot, *, service_name: str) -> dict[str, Any]:
+    source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
+    snapshot_public_id = snapshot.public_id or stable_snapshot_public_id(source_public_id, snapshot.content_hash or "")
+    return {
+        "url": source.canonical_url,
+        "contentType": snapshot.content_type or "text/plain",
+        "text": snapshot.extracted_text,
+        "sourceId": source_public_id,
+        "snapshotId": snapshot_public_id,
+        "title": source.title or snapshot.title,
+        "sourceIndexRef": {
+            "service": service_name,
+            "sourcePublicId": source_public_id,
+            "snapshotPublicId": snapshot_public_id,
+            "sourceRemoteId": source.id,
+            "snapshotRemoteId": snapshot.id,
+        },
+    }
+
+
+def source_packet_payload(
+    session: Session,
+    *,
+    run: SourceCorpusRun,
+    source_documents: list[dict[str, Any]] | None = None,
+    snapshot_limit: int = 1,
+    service_name: str = "source-index",
+) -> dict[str, Any]:
+    documents_by_url = _documents_by_url(source_documents or [])
+    packet_sources: list[dict[str, Any]] = []
+    packet_documents: list[dict[str, Any]] = []
+    warnings: list[str] = []
+
+    for decision in run.decisions:
+        if decision.decision != "included":
+            continue
+        source = decision.source or session.get(IndexedSource, decision.source_id)
+        if source is None:
+            warnings.append(f"Included decision {decision.id} has no indexed source.")
+            continue
+
+        source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
+        document = documents_by_url.get(decision.original_url) or documents_by_url.get(source.canonical_url)
+        snapshots = _latest_source_snapshots(session, source.id, limit=snapshot_limit)
+        if not snapshots and document is not None and _document_text(document).strip() and snapshot_limit > 0:
+            snapshot = create_source_snapshot(
+                session,
+                source_id=source.id,
+                fetch=False,
+                raw_text=_document_text(document),
+                content_type=_document_content_type(document),
+                title=str(document.get("title") or source.title or "") or None,
+                snapshot_metadata={"source_packet": run.context_id, "consumer": run.consumer},
+            )
+            snapshots = [snapshot]
+
+        snapshot_payloads = [snapshot_payload(snapshot) for snapshot in snapshots]
+        source_document = _snapshot_document(source, snapshots[0], service_name=service_name) if snapshots else None
+        if source_document is None and document is not None and _document_text(document).strip():
+            source_document = {
+                "url": source.canonical_url,
+                "contentType": _document_content_type(document),
+                "text": _document_text(document),
+                "sourceId": source_public_id,
+                "snapshotId": None,
+                "title": source.title or document.get("title"),
+                "sourceIndexRef": {
+                    "service": service_name,
+                    "sourcePublicId": source_public_id,
+                    "snapshotPublicId": None,
+                    "sourceRemoteId": source.id,
+                    "snapshotRemoteId": None,
+                },
+            }
+
+        evidence_refs = [source_public_id]
+        if snapshots:
+            evidence_refs.append(snapshot_payloads[0].get("public_id") or f"snapshot-{snapshots[0].id}")
+        if source_document is not None:
+            packet_documents.append(source_document)
+
+        packet_sources.append(
+            {
+                "source": source_payload(source),
+                "decision": decision_payload(decision),
+                "snapshots": snapshot_payloads,
+                "evidence_refs": evidence_refs,
+                "source_document": source_document,
+            }
+        )
+
+    synthesis = dict(run.payload or {})
+    if run.included_source_count and not packet_sources:
+        warnings.append("Corpus run included sources, but no packet source records could be assembled.")
+    if packet_sources and not packet_documents:
+        warnings.append("Packet has included sources but no extracted source documents.")
+
+    return {
+        "contract_version": SOURCE_PACKET_CONTRACT_VERSION,
+        "consumer": run.consumer,
+        "context_id": run.context_id,
+        "prompt": run.prompt,
+        "source_urls": [str(source.get("source", {}).get("canonical_url") or "") for source in packet_sources],
+        "corpus_run": corpus_run_payload(run),
+        "sources": packet_sources,
+        "source_documents": packet_documents,
+        "synthesis": synthesis,
+        "warnings": warnings,
+    }
+
+
+def create_source_packet(
+    session: Session,
+    *,
+    consumer: str,
+    context_id: str,
+    prompt: str,
+    source_urls: list[str],
+    fetch_sources: bool = True,
+    source_documents: list[dict[str, Any]] | None = None,
+    snapshot_limit: int = 1,
+) -> dict[str, Any]:
+    preflight = compile_source_corpus_preflight(
+        prompt=prompt,
+        source_urls=source_urls,
+        fetch_sources=fetch_sources,
+        source_documents=source_documents,
+    )
+    run = persist_corpus_run(
+        session,
+        consumer=consumer,
+        context_id=context_id,
+        prompt=prompt,
+        source_urls=source_urls,
+        synthesis=preflight.synthesis,
+    )
+    return source_packet_payload(
+        session,
+        run=run,
+        source_documents=preflight.source_documents,
+        snapshot_limit=snapshot_limit,
     )

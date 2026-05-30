@@ -4,10 +4,18 @@ from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.db import get_session
-from app.schemas import IndexedSourceCreate, IndexedSourceRead, SourceCorpusRunCreate, SourceCorpusRunRead
+from app.schemas import (
+    IndexedSourceCreate,
+    IndexedSourceRead,
+    SourceCorpusRunCreate,
+    SourceCorpusRunRead,
+    SourcePacketCreate,
+    SourcePacketRead,
+)
 from app.source_index_client import SourceIndexClientError
 from app.source_index import (
     create_indexed_source_response,
+    create_source_packet_response,
     create_source_corpus_run_response,
     get_indexed_source_response,
     get_source_corpus_run_response,
@@ -69,6 +77,7 @@ def register(app: FastAPI) -> None:
                 prompt=payload.prompt,
                 source_urls=[str(url) for url in payload.source_urls],
                 fetch_sources=payload.fetch_sources,
+                source_documents=payload.source_documents,
             )
         except SourceIndexClientError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -82,3 +91,19 @@ def register(app: FastAPI) -> None:
         if run is None:
             raise HTTPException(status_code=404, detail="Source corpus run not found.")
         return run
+
+    @app.post("/v1/index/source-packets", response_model=SourcePacketRead, status_code=status.HTTP_201_CREATED)
+    def create_source_packet(payload: SourcePacketCreate, session: Session = Depends(get_session)) -> dict:
+        try:
+            return create_source_packet_response(
+                session,
+                consumer=payload.consumer,
+                context_id=payload.context_id,
+                prompt=payload.prompt,
+                source_urls=[str(url) for url in payload.source_urls],
+                fetch_sources=payload.fetch_sources,
+                source_documents=payload.source_documents,
+                snapshot_limit=payload.snapshot_limit,
+            )
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc

@@ -16,6 +16,8 @@ from source_index.schemas import (
     IndexedSourceRead,
     SourceCorpusRunCreate,
     SourceCorpusRunRead,
+    SourcePacketCreate,
+    SourcePacketRead,
     SourceSnapshotCreate,
     SourceSnapshotRead,
 )
@@ -24,6 +26,7 @@ from source_index.service import (
     create_corpus_run,
     create_crawl_policy,
     create_crawl_run,
+    create_source_packet,
     create_source_snapshot,
     crawl_policy_payload,
     crawl_run_payload,
@@ -190,6 +193,7 @@ def register(app: FastAPI) -> None:
             prompt=payload.prompt,
             source_urls=[str(url) for url in payload.source_urls],
             fetch_sources=payload.fetch_sources,
+            source_documents=payload.source_documents,
         )
         session.commit()
         session.refresh(run)
@@ -201,3 +205,18 @@ def register(app: FastAPI) -> None:
         if run is None:
             raise HTTPException(status_code=404, detail="Source corpus run not found.")
         return corpus_run_payload(run)
+
+    @app.post("/v1/index/source-packets", response_model=SourcePacketRead, status_code=status.HTTP_201_CREATED)
+    def create_index_source_packet(payload: SourcePacketCreate, session: Session = Depends(get_session)) -> dict:
+        packet = create_source_packet(
+            session,
+            consumer=payload.consumer,
+            context_id=payload.context_id,
+            prompt=payload.prompt,
+            source_urls=[str(url) for url in payload.source_urls],
+            fetch_sources=payload.fetch_sources,
+            source_documents=payload.source_documents,
+            snapshot_limit=payload.snapshot_limit,
+        )
+        session.commit()
+        return packet

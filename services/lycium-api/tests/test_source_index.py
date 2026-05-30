@@ -71,6 +71,55 @@ REMOTE_CORPUS_RUN = {
     ],
 }
 
+REMOTE_SOURCE_PACKET = {
+    "contract_version": "source-packet-v1",
+    "consumer": "lycium-course-generation",
+    "context_id": "chem105",
+    "prompt": "CHEM 105 general chemistry",
+    "source_urls": ["https://example.edu/catalog/chem105"],
+    "corpus_run": REMOTE_CORPUS_RUN,
+    "sources": [
+        {
+            "source": REMOTE_SOURCE,
+            "decision": REMOTE_CORPUS_RUN["decisions"][0],
+            "snapshots": [REMOTE_SNAPSHOT],
+            "evidence_refs": ["src_remote_chem105", "snap_remote_chem105"],
+            "source_document": {
+                "url": "https://example.edu/catalog/chem105",
+                "contentType": "text/html",
+                "text": "CHEM 105 covers stoichiometry, atomic structure, bonding, and acids and bases.",
+                "sourceId": "src_remote_chem105",
+                "snapshotId": "snap_remote_chem105",
+                "sourceIndexRef": {
+                    "service": "source-index",
+                    "sourcePublicId": "src_remote_chem105",
+                    "snapshotPublicId": "snap_remote_chem105",
+                    "sourceRemoteId": 7,
+                    "snapshotRemoteId": 11,
+                },
+            },
+        }
+    ],
+    "source_documents": [
+        {
+            "url": "https://example.edu/catalog/chem105",
+            "contentType": "text/html",
+            "text": "CHEM 105 covers stoichiometry, atomic structure, bonding, and acids and bases.",
+            "sourceId": "src_remote_chem105",
+            "snapshotId": "snap_remote_chem105",
+            "sourceIndexRef": {
+                "service": "source-index",
+                "sourcePublicId": "src_remote_chem105",
+                "snapshotPublicId": "snap_remote_chem105",
+                "sourceRemoteId": 7,
+                "snapshotRemoteId": 11,
+            },
+        }
+    ],
+    "synthesis": {"workflowGate": "source_corpus_preflight"},
+    "warnings": [],
+}
+
 
 def test_source_index_client_uses_http_contract_for_sources_and_snapshots() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
@@ -119,6 +168,32 @@ def test_source_index_client_uses_http_contract_for_corpus_runs() -> None:
     assert created["public_id"] == "corpus_remote_chem105"
     assert fetched["included_source_count"] == 1
     assert fetched["decisions"][0]["decision"] == "included"
+
+
+def test_source_index_client_uses_http_contract_for_source_packets() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/v1/index/source-packets":
+            return httpx.Response(201, json=REMOTE_SOURCE_PACKET)
+        return httpx.Response(404, json={"detail": "not found"})
+
+    client = SourceIndexClient(base_url="http://source-index.test", transport=httpx.MockTransport(handler))
+
+    packet = client.create_source_packet(
+        consumer="lycium-course-generation",
+        context_id="chem105",
+        prompt="CHEM 105 general chemistry",
+        source_urls=["https://example.edu/catalog/chem105"],
+        source_documents=[
+            {
+                "url": "https://example.edu/catalog/chem105",
+                "contentType": "text/html",
+                "text": "CHEM 105 covers stoichiometry and bonding.",
+            }
+        ],
+    )
+
+    assert packet["contract_version"] == "source-packet-v1"
+    assert packet["source_documents"][0]["snapshotId"] == "snap_remote_chem105"
 
 
 def test_index_source_upsert_canonicalizes_and_dedupes(client) -> None:

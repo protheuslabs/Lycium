@@ -15,6 +15,7 @@ from app.source_index_client import SourceIndexClient, normalize_remote_source_p
 from app.source_identity import stable_snapshot_public_id, stable_source_public_id
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
+SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
 
 
 def _domain(url: str) -> str:
@@ -168,6 +169,7 @@ def create_source_corpus_run_response(
     prompt: str,
     source_urls: list[str],
     fetch_sources: bool = True,
+    source_documents: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     if source_index_client_configured():
         return SourceIndexClient().create_corpus_run(
@@ -176,6 +178,7 @@ def create_source_corpus_run_response(
             prompt=prompt,
             source_urls=source_urls,
             fetch_sources=fetch_sources,
+            source_documents=source_documents,
         )
 
     run = create_source_corpus_run(
@@ -185,10 +188,106 @@ def create_source_corpus_run_response(
         prompt=prompt,
         source_urls=source_urls,
         fetch_sources=fetch_sources,
+        source_documents=source_documents,
     )
     session.commit()
     session.refresh(run)
     return corpus_run_payload(run)
+
+
+def create_source_packet_response(
+    session: Session,
+    *,
+    consumer: str,
+    context_id: str,
+    prompt: str,
+    source_urls: list[str],
+    fetch_sources: bool = True,
+    source_documents: list[dict[str, Any]] | None = None,
+    snapshot_limit: int = 1,
+) -> dict[str, Any]:
+    if source_index_client_configured():
+        return SourceIndexClient().create_source_packet(
+            consumer=consumer,
+            context_id=context_id,
+            prompt=prompt,
+            source_urls=source_urls,
+            fetch_sources=fetch_sources,
+            source_documents=source_documents,
+            snapshot_limit=snapshot_limit,
+        )
+
+    preflight = compile_source_corpus_preflight(
+        prompt=prompt,
+        source_urls=source_urls,
+        fetch_sources=fetch_sources,
+        source_documents=source_documents,
+    )
+    run = persist_source_corpus_run(
+        session,
+        consumer=consumer,
+        context_id=context_id,
+        prompt=prompt,
+        source_urls=source_urls,
+        synthesis=preflight.synthesis,
+    )
+    session.commit()
+    session.refresh(run)
+
+    documents_by_url = {str(document.get("url") or ""): document for document in preflight.source_documents}
+    packet_sources: list[dict[str, Any]] = []
+    packet_documents: list[dict[str, Any]] = []
+    for decision in run.decisions:
+        if decision.decision != "included":
+            continue
+        source = decision.source or session.get(Source, decision.source_id)
+        if source is None:
+            continue
+        source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
+        document = documents_by_url.get(decision.original_url) or documents_by_url.get(source.canonical_url)
+        source_document = None
+        if document and str(document.get("text") or document.get("rawText") or document.get("content") or "").strip():
+            source_document = {
+                "url": source.canonical_url,
+                "contentType": document.get("contentType") or document.get("content_type") or "text/plain",
+                "text": document.get("text") or document.get("rawText") or document.get("content") or "",
+                "sourceId": source_public_id,
+                "snapshotId": None,
+                "title": source.title or document.get("title"),
+                "sourceIndexRef": {
+                    "service": "lycium-api-transitional-index",
+                    "sourcePublicId": source_public_id,
+                    "snapshotPublicId": None,
+                    "sourceLocalId": source.id,
+                    "snapshotLocalId": None,
+                },
+            }
+            packet_documents.append(source_document)
+        packet_sources.append(
+            {
+                "source": source_payload(source),
+                "decision": source_decision_payload(decision),
+                "snapshots": [],
+                "evidence_refs": [source_public_id],
+                "source_document": source_document,
+            }
+        )
+
+    warnings = []
+    if packet_sources and not packet_documents:
+        warnings.append("Packet has included sources but no extracted source documents.")
+    return {
+        "contract_version": SOURCE_PACKET_CONTRACT_VERSION,
+        "consumer": run.consumer,
+        "context_id": run.context_id,
+        "prompt": run.prompt,
+        "source_urls": [str(source["source"]["canonical_url"]) for source in packet_sources],
+        "corpus_run": corpus_run_payload(run),
+        "sources": packet_sources,
+        "source_documents": packet_documents,
+        "synthesis": preflight.synthesis,
+        "warnings": warnings,
+    }
 
 
 def get_source_corpus_run_response(session: Session, *, run_id: int) -> dict[str, Any] | None:
@@ -440,11 +539,13 @@ def create_source_corpus_run(
     prompt: str,
     source_urls: list[str],
     fetch_sources: bool = True,
+    source_documents: list[dict[str, Any]] | None = None,
 ) -> SourceCorpusRun:
     preflight = compile_source_corpus_preflight(
         prompt=prompt,
         source_urls=source_urls,
         fetch_sources=fetch_sources,
+        source_documents=source_documents,
     )
     return persist_source_corpus_run(
         session,

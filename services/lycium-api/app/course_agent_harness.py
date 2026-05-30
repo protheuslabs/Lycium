@@ -23,6 +23,7 @@ from app.course_agent_providers import (
 from app.course_agent_response import extract_message_content, json_from_model_text
 from app.course_agent_staged import generate_course_with_agent_staged
 from app.course_agent_types import CourseAgentError, CourseAgentResult
+from app.source_corpus import compile_generation_source_corpus
 
 
 def generate_course_with_agent(
@@ -45,12 +46,20 @@ def generate_course_with_agent(
     if taxonomy_errors:
         raise CourseAgentError("Invalid course generation taxonomy input: " + "; ".join(taxonomy_errors))
 
-    benchmark_context = compile_curriculum_benchmark_context(
+    source_corpus = compile_generation_source_corpus(
         prompt=prompt,
         source_urls=source_urls,
+        fetch_sources=True,
+    )
+    effective_source_urls = source_corpus.source_urls
+    benchmark_context = compile_curriculum_benchmark_context(
+        prompt=prompt,
+        source_urls=effective_source_urls,
         category=category,
         department=department,
-        fetch_sources=True,
+        fetch_sources=False,
+        source_documents=source_corpus.source_documents,
+        source_corpus_synthesis=source_corpus.synthesis,
     )
     messages = _llm_messages(
         prompt=prompt,
@@ -61,7 +70,7 @@ def generate_course_with_agent(
         department=department,
         desired_module_count=desired_module_count,
         expected_duration_minutes=expected_duration_minutes,
-        source_urls=source_urls,
+        source_urls=effective_source_urls,
         benchmark_context=benchmark_context,
     )
     provider = get_agent_provider(provider_id)
@@ -79,6 +88,8 @@ def generate_course_with_agent(
         source_urls=source_urls,
     )
     base_trace["curriculum_benchmark_context"] = benchmark_context
+    base_trace["source_corpus_synthesis"] = source_corpus.synthesis
+    base_trace["effective_source_urls"] = effective_source_urls
     try:
         response = call_agent_model(provider, api_key, messages, selected_model)
     except CourseAgentError as exc:
@@ -93,7 +104,7 @@ def generate_course_with_agent(
             f"LLM response could not be parsed as course JSON: {exc}",
             trace={**base_trace, "status": "failed", "failed_stage": "course_generation"},
         ) from exc
-    course = attach_curriculum_context(_merge_input_sources(normalize_course(raw_course), source_urls), benchmark_context)
+    course = attach_curriculum_context(_merge_input_sources(normalize_course(raw_course), effective_source_urls), benchmark_context)
     if category:
         course["category"] = category
     if department:

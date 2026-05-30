@@ -65,6 +65,54 @@ def test_corpus_run_persists_include_exclude_decisions(client) -> None:
     assert fetched.json()["context_id"] == "test-chem-corpus"
 
 
+def test_source_packet_builds_generation_ready_evidence_from_documents(client) -> None:
+    response = client.post(
+        "/v1/index/source-packets",
+        json={
+            "consumer": "lycium-course-generation",
+            "context_id": "packet-chem105",
+            "prompt": "CHEM 105 chemistry stoichiometry bonding acids bases",
+            "fetch_sources": False,
+            "source_urls": [
+                "https://chem.example.edu/chemistry/stoichiometry",
+                "https://recipes.example.com/dinner/pasta",
+            ],
+            "source_documents": [
+                {
+                    "url": "https://chem.example.edu/chemistry/stoichiometry",
+                    "contentType": "text/html",
+                    "text": """
+                        <html>
+                            <body>
+                                <h1>General Chemistry I</h1>
+                                <p>Stoichiometry, atomic structure, bonding, and acids and bases.</p>
+                            </body>
+                        </html>
+                    """,
+                },
+                {
+                    "url": "https://recipes.example.com/dinner/pasta",
+                    "contentType": "text/plain",
+                    "text": "Pasta dinner recipes with tomatoes and basil.",
+                },
+            ],
+        },
+    )
+    assert response.status_code == 201, response.text
+    packet = response.json()
+
+    assert packet["contract_version"] == "source-packet-v1"
+    assert packet["corpus_run"]["included_source_count"] == 1
+    assert packet["corpus_run"]["excluded_source_count"] == 1
+    assert packet["source_urls"] == ["https://chem.example.edu/chemistry/stoichiometry"]
+    assert len(packet["sources"]) == 1
+    assert len(packet["source_documents"]) == 1
+    assert packet["sources"][0]["decision"]["decision"] == "included"
+    assert packet["sources"][0]["snapshots"][0]["public_id"]
+    assert packet["source_documents"][0]["sourceIndexRef"]["snapshotPublicId"]
+    assert "Stoichiometry" in packet["source_documents"][0]["text"]
+
+
 def test_source_snapshot_extracts_provided_html(client) -> None:
     source_response = client.post(
         "/v1/index/sources",

@@ -24,7 +24,7 @@ from app.course_agent_providers import assess_agent_model_capability, get_agent_
 from app.course_agent_types import CourseAgentError, CourseAgentResult
 from app.course_generation_service import validate_generation_taxonomy_input
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
-from app.source_corpus import compile_source_corpus_preflight
+from app.source_corpus import compile_generation_source_corpus
 
 
 DEFAULT_MODULE_PARALLELISM = 2
@@ -319,7 +319,7 @@ def generate_course_with_agent_staged(
     if taxonomy_errors:
         raise CourseAgentError("Invalid course generation taxonomy input: " + "; ".join(taxonomy_errors))
 
-    source_corpus = compile_source_corpus_preflight(
+    source_corpus = compile_generation_source_corpus(
         prompt=prompt,
         source_urls=source_urls,
         fetch_sources=True,

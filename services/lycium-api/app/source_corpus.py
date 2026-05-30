@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from hashlib import sha256
 from typing import Any, NamedTuple
 from urllib.parse import urlparse
 
@@ -9,11 +10,13 @@ import httpx
 from bs4 import BeautifulSoup
 
 from app.config import SETTINGS
+from app.source_index_client import SourceIndexClient, SourceIndexClientError, source_index_client_configured
 
 
 MIN_RELEVANCE_SCORE = 0.12
 STRONG_RELEVANCE_SCORE = 0.35
 MAX_CORPUS_FETCHES = 40
+SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
 AMBIGUOUS_RELEVANCE_TERMS = {
     "basis",
     "covering",
@@ -357,3 +360,80 @@ def compile_source_corpus_preflight(
     if source_urls and not included:
         synthesis["warning"] = "No submitted sources passed relevance preflight; course planning should not treat the source list as authoritative."
     return SourceCorpusPreflight(synthesis=synthesis, source_urls=selected_urls, source_documents=selected_documents)
+
+
+def _source_packet_context_id(prompt: str, source_urls: list[str]) -> str:
+    digest = sha256(f"{prompt}\n{'|'.join(source_urls)}".encode("utf-8")).hexdigest()[:16]
+    return f"course-generation-{digest}"
+
+
+def _source_packet_to_preflight(packet: dict[str, Any]) -> SourceCorpusPreflight:
+    synthesis = packet.get("synthesis") if isinstance(packet.get("synthesis"), dict) else {}
+    synthesis = dict(synthesis)
+    source_documents = [
+        document
+        for document in packet.get("source_documents", [])
+        if isinstance(document, dict) and str(document.get("url") or "").strip()
+    ]
+    source_urls = [str(document.get("url")) for document in source_documents]
+    if not source_urls:
+        for source in packet.get("sources", []):
+            source_record = source.get("source") if isinstance(source, dict) else None
+            if isinstance(source_record, dict) and str(source_record.get("canonical_url") or "").strip():
+                source_urls.append(str(source_record.get("canonical_url")))
+    synthesis["sourcePacket"] = {
+        "contractVersion": str(packet.get("contract_version") or SOURCE_PACKET_CONTRACT_VERSION),
+        "contextId": packet.get("context_id"),
+        "sourceCount": len(packet.get("sources", []) if isinstance(packet.get("sources"), list) else []),
+        "sourceDocumentCount": len(source_documents),
+        "warnings": packet.get("warnings") if isinstance(packet.get("warnings"), list) else [],
+    }
+    return SourceCorpusPreflight(synthesis=synthesis, source_urls=source_urls, source_documents=source_documents)
+
+
+def compile_generation_source_corpus(
+    *,
+    prompt: str,
+    source_urls: list[str] | None,
+    fetch_sources: bool = True,
+    source_documents: list[dict[str, Any]] | None = None,
+    context_id: str | None = None,
+) -> SourceCorpusPreflight:
+    normalized_urls = [str(url) for url in source_urls or [] if str(url).strip()]
+    if source_index_client_configured() and normalized_urls:
+        try:
+            packet = SourceIndexClient().create_source_packet(
+                consumer="lycium-course-generation",
+                context_id=context_id or _source_packet_context_id(prompt, normalized_urls),
+                prompt=prompt,
+                source_urls=normalized_urls,
+                fetch_sources=fetch_sources,
+                source_documents=source_documents,
+                snapshot_limit=1,
+            )
+            return _source_packet_to_preflight(packet)
+        except SourceIndexClientError as exc:
+            fallback = compile_source_corpus_preflight(
+                prompt=prompt,
+                source_urls=normalized_urls,
+                fetch_sources=fetch_sources,
+                source_documents=source_documents,
+            )
+            synthesis = dict(fallback.synthesis)
+            synthesis["sourcePacket"] = {
+                "contractVersion": SOURCE_PACKET_CONTRACT_VERSION,
+                "status": "fallback",
+                "error": str(exc)[:300],
+            }
+            return SourceCorpusPreflight(
+                synthesis=synthesis,
+                source_urls=fallback.source_urls,
+                source_documents=fallback.source_documents,
+            )
+
+    return compile_source_corpus_preflight(
+        prompt=prompt,
+        source_urls=normalized_urls,
+        fetch_sources=fetch_sources,
+        source_documents=source_documents,
+    )

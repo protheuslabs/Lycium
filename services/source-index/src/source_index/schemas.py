@@ -127,6 +127,7 @@ class SourceCorpusRunCreate(BaseModel):
     prompt: str
     source_urls: list[HttpUrl]
     fetch_sources: bool = True
+    source_documents: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class SourceCorpusRunRead(BaseModel):
@@ -143,3 +144,28 @@ class SourceCorpusRunRead(BaseModel):
     decisions: list[SourceDecisionRead]
     created_at: datetime
     updated_at: datetime
+
+
+class SourcePacketCreate(SourceCorpusRunCreate):
+    snapshot_limit: int = Field(default=1, ge=0, le=5)
+
+
+class SourcePacketSourceRead(BaseModel):
+    source: IndexedSourceRead
+    decision: SourceDecisionRead
+    snapshots: list[SourceSnapshotRead]
+    evidence_refs: list[str]
+    source_document: dict[str, Any] | None = None
+
+
+class SourcePacketRead(BaseModel):
+    contract_version: str
+    consumer: str
+    context_id: str
+    prompt: str
+    source_urls: list[str]
+    corpus_run: SourceCorpusRunRead
+    sources: list[SourcePacketSourceRead]
+    source_documents: list[dict[str, Any]]
+    synthesis: dict[str, Any]
+    warnings: list[str]
