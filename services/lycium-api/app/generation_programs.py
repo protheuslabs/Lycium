@@ -6,9 +6,11 @@ from sqlalchemy.orm import Session
 
 from app.generation_helpers import _stable_id, _title_from_prompt
 from app.models import CourseSnapshot, Learner, ProgramSnapshot
+from app.curriculum_benchmarks import compile_curriculum_benchmark_context
 from app.program_quality import assess_program_quality
 from app.program_validation import validate_program_contract
 from app.retrieval import assemble_learning_packet, tokenize
+from app.source_index import source_documents_from_index_snapshots
 
 PROGRAM_TOPIC_STOPWORDS = {
     "become",
@@ -281,8 +283,16 @@ def generate_program(
     source_policy: str,
     trust_min: float,
     desired_course_count: int,
+    source_urls: list[str] | None = None,
 ) -> ProgramSnapshot:
     program, course_requirements = _build_program(goal, level, desired_course_count)
+    indexed_source_documents = source_documents_from_index_snapshots(session, source_urls=source_urls or []) if source_urls else []
+    benchmark_context = compile_curriculum_benchmark_context(
+        prompt=goal,
+        source_urls=source_urls or [],
+        fetch_sources=False,
+        source_documents=indexed_source_documents,
+    )
     course_packets = []
     for requirement in course_requirements:
         term = str(requirement["title"]).replace(" Course", "")
@@ -312,6 +322,9 @@ def generate_program(
             "freeOnly": free_only,
             "trustMin": trust_min,
             "coursePackets": course_packets,
+            "sourceUrls": source_urls or [],
+            "sourceIndexSnapshotDocumentCount": len(indexed_source_documents),
+            "curriculumBenchmarkContext": benchmark_context,
         },
         "contractValidation": {
             "passed": len(validation_errors) == 0,

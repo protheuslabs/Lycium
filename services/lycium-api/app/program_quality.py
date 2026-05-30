@@ -63,6 +63,41 @@ def _course_source_coverage(requirements: list[dict[str, Any]], course_packets: 
     }
 
 
+def _benchmark_source_coverage(trace: dict[str, Any]) -> dict[str, Any]:
+    context = trace.get("curriculumBenchmarkContext")
+    if not isinstance(context, dict):
+        context = trace.get("curriculum_benchmark_context")
+    if not isinstance(context, dict):
+        return {
+            "benchmarkCount": 0,
+            "requirementOriginCount": 0,
+            "requirementOriginEvidenceCoverageRatio": 0.0,
+            "sourceSlotCount": 0,
+            "sourceSlotPrimaryCoverageRatio": 0.0,
+            "sourceSlotFallbackCoverageRatio": 0.0,
+            "courseParityCoveragePercent": 0,
+            "courseParityStatus": "unknown",
+        }
+
+    origins = _items(context.get("requirementOrigins"))
+    source_slots = _items(context.get("sourceSlots"))
+    profile = context.get("courseParityProfile") if isinstance(context.get("courseParityProfile"), dict) else {}
+    origins_with_evidence = sum(1 for origin in origins if origin.get("evidenceRefs"))
+    slots_with_primary = sum(1 for slot in source_slots if slot.get("primarySourceId"))
+    slots_with_fallback = sum(1 for slot in source_slots if slot.get("fallbackSourceIds"))
+
+    return {
+        "benchmarkCount": len(_items(context.get("curriculumBenchmarks"))),
+        "requirementOriginCount": len(origins),
+        "requirementOriginEvidenceCoverageRatio": round(origins_with_evidence / len(origins), 4) if origins else 0.0,
+        "sourceSlotCount": len(source_slots),
+        "sourceSlotPrimaryCoverageRatio": round(slots_with_primary / len(source_slots), 4) if source_slots else 0.0,
+        "sourceSlotFallbackCoverageRatio": round(slots_with_fallback / len(source_slots), 4) if source_slots else 0.0,
+        "courseParityCoveragePercent": int(profile.get("coveragePercent") or 0),
+        "courseParityStatus": str(profile.get("parityStatus") or "unknown"),
+    }
+
+
 def _program_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
     return payload.get("program") if isinstance(payload.get("program"), dict) else payload
 
@@ -89,6 +124,8 @@ def assess_program_quality(payload: dict[str, Any]) -> dict[str, Any]:
     course_packets = _items(trace.get("coursePackets"))
     packet_count = len(course_packets)
     source_coverage = _course_source_coverage(requirements, course_packets)
+    benchmark_coverage = _benchmark_source_coverage(trace)
+    assessment_project_requirement_count = assessment_count + project_count
     source_coverage_passed = (
         packet_count > 0
         and source_coverage["requiredCourseRequirementCount"] > 0
@@ -106,7 +143,7 @@ def assess_program_quality(payload: dict[str, Any]) -> dict[str, Any]:
             []
             if source_coverage_passed
             else ["Program generation trace should cover at least 80% of course-bearing requirements with source-backed packets."],
-            {"coursePacketCount": packet_count, **source_coverage},
+            {"coursePacketCount": packet_count, **source_coverage, **benchmark_coverage},
         ),
         _gate("assessment_coverage", assessment_count > 0, [] if assessment_count else ["Program should include at least one assessment requirement."]),
         _gate("capstone_coverage", bool(capstone_groups and project_count), [] if capstone_groups and project_count else ["Program should include a capstone group with a project requirement."]),
@@ -128,7 +165,9 @@ def assess_program_quality(payload: dict[str, Any]) -> dict[str, Any]:
             "projectRequirementCount": project_count,
             "dependencyEdgeCount": len(dependency_edges),
             "failedGateCount": len(failed),
+            "assessmentProjectRequirementCount": assessment_project_requirement_count,
             **source_coverage,
+            **benchmark_coverage,
         },
         "checkedAt": _now(),
     }

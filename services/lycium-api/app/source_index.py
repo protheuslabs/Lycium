@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.ingestion import canonicalize_url
-from app.models import Source, SourceCorpusRun, SourceDecision
+from app.models import Snapshot, Source, SourceCorpusRun, SourceDecision
 from app.scoring import baseline_trust
 from app.source_corpus import compile_source_corpus_preflight
 
@@ -151,6 +151,51 @@ def list_indexed_sources(
     if source_type:
         stmt = stmt.where(Source.source_type == source_type)
     return list(session.scalars(stmt))
+
+
+def source_documents_from_index_snapshots(
+    session: Session,
+    *,
+    source_urls: list[str] | None = None,
+    source_ids: list[int] | None = None,
+    limit: int = 25,
+) -> list[dict[str, Any]]:
+    canonical_urls = {canonicalize_url(url) for url in source_urls or []}
+    source_id_set = set(source_ids or [])
+    stmt = (
+        select(Snapshot, Source)
+        .join(Source, Source.id == Snapshot.source_id)
+        .order_by(Snapshot.fetched_at.desc(), Snapshot.id.desc())
+        .limit(max(limit * 4, limit))
+    )
+    if canonical_urls:
+        stmt = stmt.where(Source.canonical_url.in_(canonical_urls))
+    if source_id_set:
+        stmt = stmt.where(Source.id.in_(source_id_set))
+
+    documents: list[dict[str, Any]] = []
+    seen_sources: set[int] = set()
+    for snapshot, source in session.execute(stmt).all():
+        if source.id in seen_sources:
+            continue
+        text = snapshot.cleaned_text or snapshot.raw_text
+        if not text.strip():
+            continue
+        metadata = snapshot.artifact_metadata if isinstance(snapshot.artifact_metadata, dict) else {}
+        documents.append(
+            {
+                "url": source.canonical_url,
+                "contentType": str(metadata.get("content_type") or "text/plain"),
+                "text": text,
+                "sourceId": f"source-{source.id}",
+                "snapshotId": snapshot.id,
+                "title": source.title,
+            }
+        )
+        seen_sources.add(source.id)
+        if len(documents) >= limit:
+            break
+    return documents
 
 
 def persist_source_corpus_run(

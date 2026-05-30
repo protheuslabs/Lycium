@@ -14,6 +14,7 @@ from app.curriculum_benchmarks import attach_curriculum_context, compile_curricu
 from app.source_corpus import compile_source_corpus_preflight
 from app import db
 from app.models import CourseSnapshot
+from app.source_index import source_documents_from_index_snapshots
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -32,6 +33,13 @@ def isolated_local_data(tmp_path: Path) -> Iterator[None]:
 
 def read_fixture(name: str) -> dict:
     return json.loads((FIXTURE_DIR / name).read_text(encoding="utf-8"))
+
+
+def _install_source_fetch_mock(monkeypatch, mapping: dict[str, str]) -> None:
+    def fake_fetch(url: str) -> tuple[str, str]:
+        return mapping[url], "text/html"
+
+    monkeypatch.setattr("app.ingestion.fetch_url", fake_fetch)
 
 
 def test_curriculum_context_derives_requirements_origins_and_source_slots() -> None:
@@ -115,6 +123,113 @@ def test_curriculum_context_extracts_real_syllabus_structure() -> None:
     assert len(benchmark["extractedRequirements"]) >= 4
     assert any("Stoichiometry" in topic for topic in context["courseParityProfile"]["commonRequiredTopics"])
     assert context["sourceSlots"]
+
+
+def test_source_index_snapshots_feed_curriculum_benchmark_extraction(client, monkeypatch) -> None:
+    url = "https://catalog.example.edu/courses/chem105"
+    _install_source_fetch_mock(
+        monkeypatch,
+        {
+            url: """
+            <html><head><title>CHEM 105 Catalog</title></head><body>
+            <h1>CHEM 105 General Chemistry I</h1>
+            <h2>Course Description</h2>
+            <p>Students study atomic structure, stoichiometry, bonding, thermochemistry, and gases.</p>
+            <h2>Learning Outcomes</h2>
+            <ol>
+              <li>Calculate stoichiometric quantities in chemical reactions.</li>
+              <li>Explain periodic trends, atomic structure, and electron configurations.</li>
+              <li>Compare ionic, covalent, and metallic bonding models.</li>
+              <li>Solve thermochemistry and gas law problems.</li>
+            </ol>
+            </body></html>
+            """,
+        },
+    )
+    ingested = client.post(
+        "/v1/sources/ingest",
+        json={"url": url, "source_type": "catalog", "license": "cc-by", "is_free": True},
+    )
+    assert ingested.status_code == 201, ingested.text
+
+    with db.SessionLocal() as session:
+        documents = source_documents_from_index_snapshots(session, source_urls=[url])
+
+    assert len(documents) == 1
+    assert documents[0]["snapshotId"]
+    assert "stoichiometry" in documents[0]["text"].lower()
+
+    context = compile_curriculum_benchmark_context(
+        prompt="CHEM 105 General Chemistry I",
+        source_urls=[url],
+        source_documents=documents,
+        category="natural-sciences-mathematics",
+        department="chemistry",
+    )
+
+    assert context["curriculumBenchmarks"][0]["extraction"]["status"] == "parsed"
+    assert context["requirementOrigins"]
+    assert context["sourceSlots"]
+
+
+def test_source_index_snapshot_to_program_compiler_flow(client, monkeypatch) -> None:
+    url = "https://catalog.example.edu/programs/data-science-foundations"
+    _install_source_fetch_mock(
+        monkeypatch,
+        {
+            url: """
+            <html><head><title>Data Science Foundations Catalog</title></head><body>
+            <h1>Data Science Foundations</h1>
+            <h2>Course Description</h2>
+            <p>Data science combines statistics, programming, data visualization, modeling, and project communication.</p>
+            <h2>Learning Outcomes</h2>
+            <ul>
+              <li>Apply statistics to summarize and reason about data.</li>
+              <li>Use programming to clean, transform, and analyze datasets.</li>
+              <li>Create visualizations and communicate findings in a project artifact.</li>
+              <li>Evaluate models and explain limitations.</li>
+            </ul>
+            <h2>Assessment</h2>
+            <p>Students complete quizzes, labs, and a final data project.</p>
+            </body></html>
+            """,
+        },
+    )
+    ingested = client.post(
+        "/v1/sources/ingest",
+        json={"url": url, "source_type": "catalog", "license": "cc-by", "is_free": True},
+    )
+    assert ingested.status_code == 201, ingested.text
+
+    learner = client.post(
+        "/v1/learners",
+        json={"name": "Compiler Test Learner", "goal": "Learn data science", "level": "beginner", "preferences": {}},
+    )
+    assert learner.status_code == 201, learner.text
+
+    program = client.post(
+        "/v1/programs/generate",
+        json={
+            "goal": "Data science statistics programming visualization modeling project",
+            "learner_id": learner.json()["id"],
+            "level": "beginner",
+            "free_only": True,
+            "source_policy": "free-only",
+            "desired_course_count": 3,
+            "source_urls": [url],
+        },
+    )
+    assert program.status_code == 201, program.text
+    structure = program.json()["structure"]
+    quality = structure["qualityReport"]
+    trace = structure["generationTrace"]
+
+    assert trace["sourceIndexSnapshotDocumentCount"] == 1
+    assert trace["curriculumBenchmarkContext"]["curriculumBenchmarks"][0]["extraction"]["status"] == "parsed"
+    assert quality["passed"] is True
+    assert quality["metrics"]["benchmarkCount"] >= 1
+    assert quality["metrics"]["requirementOriginEvidenceCoverageRatio"] > 0
+    assert quality["metrics"]["sourceSlotPrimaryCoverageRatio"] > 0
 
 
 def test_curriculum_context_is_visible_to_generation_workflow() -> None:

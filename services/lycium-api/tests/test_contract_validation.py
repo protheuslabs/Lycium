@@ -104,3 +104,5 @@ def test_program_quality_requires_requirement_level_source_coverage() -> None:
     covered_source_gate = next(gate for gate in covered_report["gates"] if gate["gate"] == "source_coverage")
     assert covered_source_gate["status"] == "passed"
     assert covered_source_gate["metrics"]["courseRequirementCoverageRatio"] >= 0.8
+    assert "benchmarkCount" in covered_source_gate["metrics"]
+    assert "sourceSlotPrimaryCoverageRatio" in covered_report["metrics"]

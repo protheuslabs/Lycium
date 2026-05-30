@@ -55,6 +55,7 @@ class ProgramGenerateRequest(BaseModel):
     source_policy: Literal["balanced", "high-trust", "free-only"] = "balanced"
     trust_min: float = Field(default=0.0, ge=0.0, le=1.0)
     desired_course_count: int = Field(default=4, ge=1, le=30)
+    source_urls: list[HttpUrl] = Field(default_factory=list)
 
 
 class ProgramSnapshotRead(BaseModel):

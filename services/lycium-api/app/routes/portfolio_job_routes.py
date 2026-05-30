@@ -187,6 +187,7 @@ def register(app: FastAPI) -> None:
                 source_policy=payload.source_policy,
                 trust_min=payload.trust_min,
                 desired_course_count=payload.desired_course_count,
+                source_urls=[str(url) for url in payload.source_urls],
             )
             session.commit()
             session.refresh(program)
