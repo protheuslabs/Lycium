@@ -15,6 +15,7 @@ from source_index.crawl.policies import (
     should_visit_url,
 )
 from source_index.crawl.tasks import build_seed_tasks, crawl_task_payload
+from source_index.crawl.worker import run_crawl_task
 
 __all__ = [
     "CRAWL_TASK_CONTRACT_VERSION",
@@ -30,5 +31,6 @@ __all__ = [
     "crawl_task_payload",
     "default_policy_payload",
     "normalize_policy_payload",
+    "run_crawl_task",
     "should_visit_url",
 ]

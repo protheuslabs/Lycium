@@ -18,6 +18,7 @@ dependencies = [
 
 [project.scripts]
 source-index-api = "source_index.main:run"
+source-index-crawl-task = "source_index.crawl.worker:run_cli"
 
 [project.optional-dependencies]
 test = [

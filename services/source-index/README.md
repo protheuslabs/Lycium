@@ -103,3 +103,12 @@ GET /v1/index/crawl-runs/{run_id}/tasks
 ```
 
 This endpoint is not a scheduler yet. It is the contract seam where future queue-backed workers can plug in without coupling worker code to Lycium or the API database internals.
+
+The first Python worker implementation can execute a single task payload and emit a `crawl-worker-result-v1` JSON object:
+
+```bash
+source-index-crawl-task task.json
+cat task.json | source-index-crawl-task
+```
+
+This worker is intentionally stateless. It fetches one URL, extracts readable text, classifies the page against the crawl policy, discovers policy-accepted links, and prints the result contract. Persistence, queue leasing, retries, and scheduling remain outside this worker seam.
