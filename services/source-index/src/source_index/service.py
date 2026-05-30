@@ -11,7 +11,9 @@ from sqlalchemy.orm import Session
 
 from source_index.config import SETTINGS
 from source_index.corpus import compile_source_corpus_preflight
-from source_index.models import IndexedSource, SourceCorpusRun, SourceDecision, SourceSnapshot
+from source_index.crawl.policies import normalize_policy_payload
+from source_index.crawl.tasks import build_seed_tasks
+from source_index.models import CrawlPolicyRecord, CrawlRun, IndexedSource, SourceCorpusRun, SourceDecision, SourceSnapshot
 from source_index.url_utils import baseline_trust, canonicalize_url, infer_source_type, normalized_domain
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
@@ -80,6 +82,37 @@ def corpus_run_payload(run: SourceCorpusRun) -> dict[str, Any]:
         "common_themes": run.common_themes,
         "payload": run.payload,
         "decisions": [decision_payload(decision) for decision in run.decisions],
+        "created_at": run.created_at,
+        "updated_at": run.updated_at,
+    }
+
+
+def crawl_policy_payload(policy: CrawlPolicyRecord) -> dict[str, Any]:
+    return {
+        "id": policy.id,
+        "name": policy.name,
+        "version": policy.version,
+        "description": policy.description,
+        "payload": policy.payload,
+        "created_at": policy.created_at,
+        "updated_at": policy.updated_at,
+    }
+
+
+def crawl_run_payload(run: CrawlRun) -> dict[str, Any]:
+    return {
+        "id": run.id,
+        "policy_id": run.policy_id,
+        "status": run.status,
+        "seed_urls": run.seed_urls,
+        "max_pages": run.max_pages,
+        "pages_queued": run.pages_queued,
+        "pages_fetched": run.pages_fetched,
+        "pages_accepted": run.pages_accepted,
+        "pages_rejected": run.pages_rejected,
+        "started_at": run.started_at,
+        "finished_at": run.finished_at,
+        "payload": run.payload,
         "created_at": run.created_at,
         "updated_at": run.updated_at,
     }
@@ -218,6 +251,93 @@ def list_source_snapshots(session: Session, *, source_id: int, limit: int = 50) 
             .limit(limit)
         )
     )
+
+
+def create_crawl_policy(
+    session: Session,
+    *,
+    name: str,
+    version: str = "v1",
+    description: str | None = None,
+    payload: dict[str, Any] | None = None,
+) -> CrawlPolicyRecord:
+    normalized_payload = normalize_policy_payload(payload)
+    normalized_payload["name"] = name
+    normalized_payload["version"] = version
+    policy = session.scalar(
+        select(CrawlPolicyRecord).where(
+            CrawlPolicyRecord.name == name,
+            CrawlPolicyRecord.version == version,
+        )
+    )
+    if policy is None:
+        policy = CrawlPolicyRecord(
+            name=name,
+            version=version,
+            description=description or normalized_payload.get("description"),
+            payload=normalized_payload,
+        )
+        session.add(policy)
+    else:
+        policy.description = description or policy.description or normalized_payload.get("description")
+        policy.payload = normalized_payload
+        policy.updated_at = datetime.now(UTC)
+    session.flush()
+    return policy
+
+
+def list_crawl_policies(session: Session, *, limit: int = 100) -> list[CrawlPolicyRecord]:
+    return list(
+        session.scalars(
+            select(CrawlPolicyRecord).order_by(CrawlPolicyRecord.updated_at.desc(), CrawlPolicyRecord.id.desc()).limit(limit)
+        )
+    )
+
+
+def create_crawl_run(
+    session: Session,
+    *,
+    policy_id: int,
+    seed_urls: list[str],
+    max_pages: int = 250,
+    payload: dict[str, Any] | None = None,
+) -> CrawlRun:
+    policy = session.get(CrawlPolicyRecord, policy_id)
+    if policy is None:
+        raise LookupError("Crawl policy not found.")
+
+    run_payload = dict(payload or {})
+    run_payload.setdefault("task_contract_version", "crawl-task-v1")
+    run_payload.setdefault("worker_result_contract_version", "crawl-worker-result-v1")
+    run = CrawlRun(
+        policy_id=policy.id,
+        status="queued",
+        seed_urls=seed_urls,
+        max_pages=max_pages,
+        pages_queued=len(seed_urls),
+        payload=run_payload,
+    )
+    session.add(run)
+    session.flush()
+    return run
+
+
+def list_crawl_run_seed_tasks(session: Session, *, run_id: int) -> list[dict[str, Any]]:
+    run = session.get(CrawlRun, run_id)
+    if run is None:
+        raise LookupError("Crawl run not found.")
+    policy = session.get(CrawlPolicyRecord, run.policy_id)
+    if policy is None:
+        raise LookupError("Crawl policy not found.")
+    return [
+        task.model_dump(mode="json")
+        for task in build_seed_tasks(
+            crawl_run_id=run.id,
+            policy_id=policy.id,
+            seed_urls=run.seed_urls,
+            policy=policy.payload,
+        )
+    ]
 
 
 def list_sources(

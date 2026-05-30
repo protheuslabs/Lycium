@@ -10,13 +10,15 @@ Current foundation:
 
 - canonical indexed sources
 - source snapshots with manual or fetched text extraction
+- policy-driven crawl configuration records
+- queued crawl run records
 - source corpus runs
 - included/excluded source decisions
 - source relevance preflight for large submitted source sets
 
 Out of scope for this slice:
 
-- broad web crawling
+- executing broad web crawls
 - embeddings/vector search
 - claim extraction
 - authentication/multi-tenant deployment
@@ -45,6 +47,12 @@ GET  /health
 POST /v1/index/sources
 GET  /v1/index/sources
 GET  /v1/index/sources/{source_id}
+POST /v1/index/crawl-policies
+GET  /v1/index/crawl-policies
+GET  /v1/index/crawl-policies/{policy_id}
+POST /v1/index/crawl-runs
+GET  /v1/index/crawl-runs/{run_id}
+GET  /v1/index/crawl-runs/{run_id}/tasks
 POST /v1/index/sources/{source_id}/snapshots
 GET  /v1/index/sources/{source_id}/snapshots
 POST /v1/index/corpus-runs
@@ -66,3 +74,32 @@ SOURCE_INDEX_USER_AGENT=ProtheusSourceIndex/0.1
 ## Relationship to Lycium
 
 Lycium can keep using its internal adapter while this service matures. The long-term direction is for Lycium course generation and InfRing research tooling to write/read source evidence through this service instead of owning source-index state directly.
+
+## Extraction boundary
+
+This service is designed to be extractable into its own repository:
+
+- it must not import Lycium app, course, or UI modules
+- consumers should integrate through `/v1/index/*` APIs instead of database coupling
+- crawl behavior should be policy-driven, not hardcoded to Lycium
+- education-institution crawling is the first default policy, not the crawler's only possible mode
+- source snapshots, crawl policies, crawl runs, and corpus decisions are owned by this service
+
+## Worker boundary
+
+Crawler execution is intentionally split from the API/control plane.
+
+Stable contracts:
+
+- `crawl-task-v1`: a worker input message containing crawl run, policy, URL, depth, and trace data
+- `crawl-worker-result-v1`: a worker output message containing fetch result, extracted text, classification, discovered links, and acceptance status
+
+Current Python modules define these contracts in `source_index.crawl.contracts`. Future workers can be Python, Go, Rust, or another implementation as long as they read and write the same JSON contract.
+
+The API can expose initial seed tasks for a queued crawl run:
+
+```http
+GET /v1/index/crawl-runs/{run_id}/tasks
+```
+
+This endpoint is not a scheduler yet. It is the contract seam where future queue-backed workers can plug in without coupling worker code to Lycium or the API database internals.

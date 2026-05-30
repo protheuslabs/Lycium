@@ -52,6 +52,58 @@ class SourceSnapshotRead(BaseModel):
     snapshot_metadata: dict[str, Any]
 
 
+class CrawlPolicyCreate(BaseModel):
+    name: str = "education-institution-crawl-v1"
+    version: str = "v1"
+    description: str | None = None
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class CrawlPolicyRead(BaseModel):
+    id: int
+    name: str
+    version: str
+    description: str | None
+    payload: dict[str, Any]
+    created_at: datetime
+    updated_at: datetime
+
+
+class CrawlRunCreate(BaseModel):
+    policy_id: int
+    seed_urls: list[HttpUrl]
+    max_pages: int = Field(default=250, ge=1, le=5000)
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class CrawlRunRead(BaseModel):
+    id: int
+    policy_id: int
+    status: str
+    seed_urls: list[str]
+    max_pages: int
+    pages_queued: int
+    pages_fetched: int
+    pages_accepted: int
+    pages_rejected: int
+    started_at: datetime | None
+    finished_at: datetime | None
+    payload: dict[str, Any]
+    created_at: datetime
+    updated_at: datetime
+
+
+class CrawlTaskRead(BaseModel):
+    contract_version: str
+    crawl_run_id: int
+    policy_id: int
+    url: str
+    depth: int
+    parent_url: str | None
+    policy: dict[str, Any]
+    trace: dict[str, Any]
+
+
 class SourceDecisionRead(BaseModel):
     id: int
     corpus_run_id: int

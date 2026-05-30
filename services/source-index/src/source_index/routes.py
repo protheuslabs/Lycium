@@ -5,8 +5,13 @@ from httpx import HTTPError
 from sqlalchemy.orm import Session
 
 from source_index.db import get_session
-from source_index.models import IndexedSource, SourceCorpusRun
+from source_index.models import CrawlPolicyRecord, CrawlRun, IndexedSource, SourceCorpusRun
 from source_index.schemas import (
+    CrawlPolicyCreate,
+    CrawlPolicyRead,
+    CrawlRunCreate,
+    CrawlRunRead,
+    CrawlTaskRead,
     IndexedSourceCreate,
     IndexedSourceRead,
     SourceCorpusRunCreate,
@@ -17,7 +22,13 @@ from source_index.schemas import (
 from source_index.service import (
     corpus_run_payload,
     create_corpus_run,
+    create_crawl_policy,
+    create_crawl_run,
     create_source_snapshot,
+    crawl_policy_payload,
+    crawl_run_payload,
+    list_crawl_policies,
+    list_crawl_run_seed_tasks,
     list_source_snapshots,
     list_sources,
     snapshot_payload,
@@ -70,6 +81,63 @@ def register(app: FastAPI) -> None:
         if source is None:
             raise HTTPException(status_code=404, detail="Indexed source not found.")
         return source_payload(source)
+
+    @app.post("/v1/index/crawl-policies", response_model=CrawlPolicyRead, status_code=status.HTTP_201_CREATED)
+    def create_index_crawl_policy(payload: CrawlPolicyCreate, session: Session = Depends(get_session)) -> dict:
+        policy = create_crawl_policy(
+            session,
+            name=payload.name,
+            version=payload.version,
+            description=payload.description,
+            payload=payload.payload,
+        )
+        session.commit()
+        session.refresh(policy)
+        return crawl_policy_payload(policy)
+
+    @app.get("/v1/index/crawl-policies", response_model=list[CrawlPolicyRead])
+    def read_index_crawl_policies(
+        limit: int = Query(default=100, ge=1, le=500),
+        session: Session = Depends(get_session),
+    ) -> list[dict]:
+        return [crawl_policy_payload(policy) for policy in list_crawl_policies(session, limit=limit)]
+
+    @app.get("/v1/index/crawl-policies/{policy_id}", response_model=CrawlPolicyRead)
+    def read_index_crawl_policy(policy_id: int, session: Session = Depends(get_session)) -> dict:
+        policy = session.get(CrawlPolicyRecord, policy_id)
+        if policy is None:
+            raise HTTPException(status_code=404, detail="Crawl policy not found.")
+        return crawl_policy_payload(policy)
+
+    @app.post("/v1/index/crawl-runs", response_model=CrawlRunRead, status_code=status.HTTP_201_CREATED)
+    def create_index_crawl_run(payload: CrawlRunCreate, session: Session = Depends(get_session)) -> dict:
+        try:
+            run = create_crawl_run(
+                session,
+                policy_id=payload.policy_id,
+                seed_urls=[str(url) for url in payload.seed_urls],
+                max_pages=payload.max_pages,
+                payload=payload.payload,
+            )
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        session.commit()
+        session.refresh(run)
+        return crawl_run_payload(run)
+
+    @app.get("/v1/index/crawl-runs/{run_id}", response_model=CrawlRunRead)
+    def read_index_crawl_run(run_id: int, session: Session = Depends(get_session)) -> dict:
+        run = session.get(CrawlRun, run_id)
+        if run is None:
+            raise HTTPException(status_code=404, detail="Crawl run not found.")
+        return crawl_run_payload(run)
+
+    @app.get("/v1/index/crawl-runs/{run_id}/tasks", response_model=list[CrawlTaskRead])
+    def read_index_crawl_run_tasks(run_id: int, session: Session = Depends(get_session)) -> list[dict]:
+        try:
+            return list_crawl_run_seed_tasks(session, run_id=run_id)
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @app.post(
         "/v1/index/sources/{source_id}/snapshots",

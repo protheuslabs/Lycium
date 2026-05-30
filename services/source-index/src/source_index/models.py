@@ -53,6 +53,42 @@ class SourceSnapshot(Base):
     source: Mapped[IndexedSource] = relationship(back_populates="snapshots")
 
 
+class CrawlPolicyRecord(Base):
+    __tablename__ = "crawl_policies"
+    __table_args__ = (UniqueConstraint("name", "version", name="ux_crawl_policy_name_version"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(160), index=True)
+    version: Mapped[str] = mapped_column(String(80), default="v1", index=True)
+    description: Mapped[str | None] = mapped_column(Text)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    runs: Mapped[list["CrawlRun"]] = relationship(back_populates="policy", cascade="all, delete-orphan")
+
+
+class CrawlRun(Base):
+    __tablename__ = "crawl_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    policy_id: Mapped[int] = mapped_column(ForeignKey("crawl_policies.id"), index=True)
+    status: Mapped[str] = mapped_column(String(40), default="queued", index=True)
+    seed_urls: Mapped[list[str]] = mapped_column(JSON, default=list)
+    max_pages: Mapped[int] = mapped_column(Integer, default=250)
+    pages_queued: Mapped[int] = mapped_column(Integer, default=0)
+    pages_fetched: Mapped[int] = mapped_column(Integer, default=0)
+    pages_accepted: Mapped[int] = mapped_column(Integer, default=0)
+    pages_rejected: Mapped[int] = mapped_column(Integer, default=0)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    policy: Mapped[CrawlPolicyRecord] = relationship(back_populates="runs")
+
+
 class SourceCorpusRun(Base):
     __tablename__ = "source_corpus_runs"
     __table_args__ = (
