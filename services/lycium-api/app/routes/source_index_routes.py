@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.db import get_session
 from app.schemas import (
+    BulkSourceImportCreate,
+    BulkSourceImportRead,
     IndexedSourceCreate,
     IndexedSourceRead,
     SourceCorpusRunCreate,
@@ -15,6 +17,7 @@ from app.schemas import (
 from app.source_index_client import SourceIndexClientError
 from app.source_index import (
     create_indexed_source_response,
+    import_source_batch_response,
     create_source_packet_response,
     create_source_corpus_run_response,
     get_indexed_source_response,
@@ -66,6 +69,17 @@ def register(app: FastAPI) -> None:
         if source is None:
             raise HTTPException(status_code=404, detail="Indexed source not found.")
         return source
+
+    @app.post("/v1/index/source-imports", response_model=BulkSourceImportRead, status_code=status.HTTP_201_CREATED)
+    def import_sources(payload: BulkSourceImportCreate, session: Session = Depends(get_session)) -> dict:
+        try:
+            return import_source_batch_response(
+                session,
+                batch_id=payload.batch_id,
+                sources=[source.model_dump(mode="json") for source in payload.sources],
+            )
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
     @app.post("/v1/index/corpus-runs", response_model=SourceCorpusRunRead, status_code=status.HTTP_201_CREATED)
     def create_corpus_run(payload: SourceCorpusRunCreate, session: Session = Depends(get_session)) -> dict:

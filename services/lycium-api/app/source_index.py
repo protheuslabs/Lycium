@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlparse
@@ -16,6 +17,7 @@ from app.source_identity import stable_snapshot_public_id, stable_source_public_
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
 SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
+SOURCE_IMPORT_BATCH_CONTRACT_VERSION = "source-import-batch-v1"
 
 
 def _domain(url: str) -> str:
@@ -92,6 +94,131 @@ def create_indexed_source_response(
     session.commit()
     session.refresh(source)
     return source_payload(source)
+
+
+def snapshot_payload(snapshot: Snapshot, source: Source | None = None) -> dict[str, Any]:
+    source_public_id = source.public_id if source else None
+    snapshot_public_id = snapshot.public_id or stable_snapshot_public_id(
+        source_public_id or f"source-{snapshot.source_id}",
+        snapshot.content_hash,
+    )
+    metadata = snapshot.artifact_metadata if isinstance(snapshot.artifact_metadata, dict) else {}
+    return {
+        "id": snapshot.id,
+        "public_id": snapshot_public_id,
+        "source_id": snapshot.source_id,
+        "fetched_at": snapshot.fetched_at,
+        "status": snapshot.extraction_status,
+        "content_hash": snapshot.content_hash,
+        "content_type": metadata.get("content_type") or metadata.get("contentType") or "text/plain",
+        "title": metadata.get("title") or source.title if source else metadata.get("title"),
+        "text_digest": (snapshot.cleaned_text or snapshot.raw_text)[:1200],
+        "extracted_text": snapshot.cleaned_text or snapshot.raw_text,
+        "raw_storage_ref": metadata.get("raw_storage_ref"),
+        "snapshot_metadata": metadata,
+    }
+
+
+def _normalized_import_text(value: str) -> str:
+    return " ".join(value.split())
+
+
+def _create_import_snapshot(
+    session: Session,
+    *,
+    source: Source,
+    raw_text: str,
+    content_type: str,
+    title: str | None = None,
+    metadata: dict[str, Any] | None = None,
+    batch_id: str | None = None,
+) -> Snapshot:
+    cleaned_text = _normalized_import_text(raw_text)
+    content_hash = hashlib.sha256(cleaned_text.encode("utf-8")).hexdigest()
+    source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
+    snapshot_public_id = stable_snapshot_public_id(source_public_id, content_hash)
+    existing = session.scalar(select(Snapshot).where(Snapshot.public_id == snapshot_public_id))
+    if existing is not None:
+        return existing
+
+    snapshot = Snapshot(
+        public_id=snapshot_public_id,
+        source_id=source.id,
+        content_hash=content_hash,
+        extraction_status="provided",
+        raw_text=raw_text,
+        cleaned_text=cleaned_text,
+        artifact_metadata={
+            **(metadata or {}),
+            "content_type": content_type,
+            "title": title or source.title,
+            "source_import_batch": batch_id,
+        },
+    )
+    session.add(snapshot)
+    session.flush()
+    return snapshot
+
+
+def import_source_batch_response(
+    session: Session,
+    *,
+    batch_id: str | None = None,
+    sources: list[dict[str, Any]],
+) -> dict[str, Any]:
+    if source_index_client_configured():
+        return SourceIndexClient().import_source_batch(batch_id=batch_id, sources=sources)
+
+    resolved_batch_id = batch_id or f"manual-import-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+    rows: list[dict[str, Any]] = []
+    warnings: list[str] = []
+    for index, item in enumerate(sources, start=1):
+        row_warnings: list[str] = []
+        source = upsert_indexed_source(
+            session,
+            url=str(item.get("url") or ""),
+            title=item.get("title"),
+            source_type=item.get("source_type") or item.get("sourceType"),
+            license=str(item.get("license") or "unknown"),
+            is_free=bool(item.get("is_free", item.get("isFree", True))),
+        )
+        raw_text = str(item.get("raw_text") or item.get("rawText") or "").strip()
+        snapshot = None
+        if raw_text:
+            snapshot = _create_import_snapshot(
+                session,
+                source=source,
+                raw_text=raw_text,
+                content_type=str(item.get("content_type") or item.get("contentType") or "text/plain"),
+                title=item.get("title"),
+                metadata=item.get("metadata") if isinstance(item.get("metadata"), dict) else {},
+                batch_id=resolved_batch_id,
+            )
+        else:
+            row_warnings.append("No raw_text provided; source was indexed without a snapshot.")
+
+        rows.append(
+            {
+                "original_index": index,
+                "source": source_payload(source),
+                "snapshot": snapshot_payload(snapshot, source) if snapshot else None,
+                "created_snapshot": bool(snapshot),
+                "warnings": row_warnings,
+            }
+        )
+
+    if not sources:
+        warnings.append("Import batch contained no sources.")
+    session.commit()
+    return {
+        "contract_version": SOURCE_IMPORT_BATCH_CONTRACT_VERSION,
+        "batch_id": resolved_batch_id,
+        "submitted_count": len(sources),
+        "imported_count": len(rows),
+        "snapshot_count": len([row for row in rows if row["snapshot"]]),
+        "sources": rows,
+        "warnings": warnings,
+    }
 
 
 def list_indexed_source_responses(
@@ -245,7 +372,35 @@ def create_source_packet_response(
             continue
         source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
         document = documents_by_url.get(decision.original_url) or documents_by_url.get(source.canonical_url)
+        snapshots = []
+        if snapshot_limit > 0:
+            snapshots = list(
+                session.scalars(
+                    select(Snapshot)
+                    .where(Snapshot.source_id == source.id)
+                    .order_by(Snapshot.fetched_at.desc(), Snapshot.id.desc())
+                    .limit(snapshot_limit)
+                )
+            )
         source_document = None
+        snapshot_payloads = [snapshot_payload(snapshot, source) for snapshot in snapshots]
+        if snapshots:
+            snapshot = snapshots[0]
+            source_document = {
+                "url": source.canonical_url,
+                "contentType": snapshot_payloads[0].get("content_type") or "text/plain",
+                "text": snapshot.cleaned_text or snapshot.raw_text,
+                "sourceId": source_public_id,
+                "snapshotId": snapshot_payloads[0].get("public_id"),
+                "title": source.title or snapshot_payloads[0].get("title"),
+                "sourceIndexRef": {
+                    "service": "lycium-api-transitional-index",
+                    "sourcePublicId": source_public_id,
+                    "snapshotPublicId": snapshot_payloads[0].get("public_id"),
+                    "sourceLocalId": source.id,
+                    "snapshotLocalId": snapshot.id,
+                },
+            }
         if document and str(document.get("text") or document.get("rawText") or document.get("content") or "").strip():
             source_document = {
                 "url": source.canonical_url,
@@ -263,12 +418,14 @@ def create_source_packet_response(
                 },
             }
             packet_documents.append(source_document)
+        elif source_document is not None:
+            packet_documents.append(source_document)
         packet_sources.append(
             {
                 "source": source_payload(source),
                 "decision": source_decision_payload(decision),
-                "snapshots": [],
-                "evidence_refs": [source_public_id],
+                "snapshots": snapshot_payloads,
+                "evidence_refs": [source_public_id, *[str(snapshot.get("public_id")) for snapshot in snapshot_payloads if snapshot.get("public_id")]],
                 "source_document": source_document,
             }
         )

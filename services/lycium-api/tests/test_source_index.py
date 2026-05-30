@@ -120,6 +120,24 @@ REMOTE_SOURCE_PACKET = {
     "warnings": [],
 }
 
+REMOTE_IMPORT_REPORT = {
+    "contract_version": "source-import-batch-v1",
+    "batch_id": "remote-chem105",
+    "submitted_count": 1,
+    "imported_count": 1,
+    "snapshot_count": 1,
+    "sources": [
+        {
+            "original_index": 1,
+            "source": REMOTE_SOURCE,
+            "snapshot": REMOTE_SNAPSHOT,
+            "created_snapshot": True,
+            "warnings": [],
+        }
+    ],
+    "warnings": [],
+}
+
 
 def test_source_index_client_uses_http_contract_for_sources_and_snapshots() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
@@ -196,6 +214,29 @@ def test_source_index_client_uses_http_contract_for_source_packets() -> None:
     assert packet["source_documents"][0]["snapshotId"] == "snap_remote_chem105"
 
 
+def test_source_index_client_uses_http_contract_for_bulk_imports() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST" and request.url.path == "/v1/index/source-imports":
+            return httpx.Response(201, json=REMOTE_IMPORT_REPORT)
+        return httpx.Response(404, json={"detail": "not found"})
+
+    client = SourceIndexClient(base_url="http://source-index.test", transport=httpx.MockTransport(handler))
+
+    report = client.import_source_batch(
+        batch_id="remote-chem105",
+        sources=[
+            {
+                "url": "https://example.edu/catalog/chem105",
+                "title": "CHEM 105",
+                "raw_text": "CHEM 105 covers stoichiometry and bonding.",
+            }
+        ],
+    )
+
+    assert report["contract_version"] == "source-import-batch-v1"
+    assert report["snapshot_count"] == 1
+
+
 def test_index_source_upsert_canonicalizes_and_dedupes(client) -> None:
     first = client.post(
         "/v1/index/sources",
@@ -247,3 +288,50 @@ def test_index_corpus_run_persists_include_exclude_decisions(client) -> None:
     fetched = client.get(f"/v1/index/corpus-runs/{payload['id']}")
     assert fetched.status_code == 200, fetched.text
     assert fetched.json()["context_id"] == "test-chem-corpus"
+
+
+def test_index_bulk_import_feeds_generation_packet(client) -> None:
+    import_response = client.post(
+        "/v1/index/source-imports",
+        json={
+            "batch_id": "local-chem105-import",
+            "sources": [
+                {
+                    "url": "https://chem.example.edu/chemistry/stoichiometry",
+                    "title": "Stoichiometry Tutorial",
+                    "source_type": "open_courseware",
+                    "license": "cc-by",
+                    "raw_text": "Stoichiometry connects balanced equations, mole ratios, limiting reactants, and yields.",
+                },
+                {
+                    "url": "https://recipes.example.com/dinner/pasta",
+                    "title": "Pasta Dinner",
+                    "raw_text": "A pasta recipe with tomato sauce, basil, and garlic.",
+                },
+            ],
+        },
+    )
+    assert import_response.status_code == 201, import_response.text
+    import_report = import_response.json()
+
+    assert import_report["contract_version"] == "source-import-batch-v1"
+    assert import_report["snapshot_count"] == 2
+
+    packet_response = client.post(
+        "/v1/index/source-packets",
+        json={
+            "consumer": "lycium-course-generation",
+            "context_id": "local-chem105-import-eval",
+            "prompt": "CHEM 105 chemistry stoichiometry bonding acids bases",
+            "fetch_sources": False,
+            "source_urls": [row["source"]["canonical_url"] for row in import_report["sources"]],
+        },
+    )
+    assert packet_response.status_code == 201, packet_response.text
+    packet = packet_response.json()
+
+    assert packet["corpus_run"]["included_source_count"] == 1
+    assert packet["corpus_run"]["excluded_source_count"] == 1
+    assert len(packet["source_documents"]) == 1
+    assert packet["source_documents"][0]["snapshotId"]
+    assert "Stoichiometry" in packet["source_documents"][0]["text"]

@@ -50,6 +50,16 @@ class SourceIndexClient:
             },
         )
 
+    def import_source_batch(self, *, batch_id: str | None = None, sources: list[dict[str, Any]]) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/v1/index/source-imports",
+            json={
+                "batch_id": batch_id,
+                "sources": sources,
+            },
+        )
+
     def list_sources(
         self,
         *,

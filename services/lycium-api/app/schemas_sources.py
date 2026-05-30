@@ -80,6 +80,40 @@ class IndexedSourceRead(SourceRead):
     updated_at: datetime
 
 
+class BulkSourceImportItem(BaseModel):
+    url: HttpUrl
+    title: str | None = None
+    source_type: str | None = None
+    license: str = "unknown"
+    is_free: bool = True
+    raw_text: str | None = None
+    content_type: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class BulkSourceImportCreate(BaseModel):
+    batch_id: str | None = None
+    sources: list[BulkSourceImportItem]
+
+
+class BulkSourceImportRowRead(BaseModel):
+    original_index: int
+    source: dict[str, Any]
+    snapshot: dict[str, Any] | None = None
+    created_snapshot: bool
+    warnings: list[str]
+
+
+class BulkSourceImportRead(BaseModel):
+    contract_version: str
+    batch_id: str
+    submitted_count: int
+    imported_count: int
+    snapshot_count: int
+    sources: list[BulkSourceImportRowRead]
+    warnings: list[str]
+
+
 class SourceDecisionRead(BaseModel):
     id: int
     corpus_run_id: int
