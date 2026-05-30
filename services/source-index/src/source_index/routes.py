@@ -1,12 +1,29 @@
 from __future__ import annotations
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
+from httpx import HTTPError
 from sqlalchemy.orm import Session
 
 from source_index.db import get_session
 from source_index.models import IndexedSource, SourceCorpusRun
-from source_index.schemas import IndexedSourceCreate, IndexedSourceRead, SourceCorpusRunCreate, SourceCorpusRunRead
-from source_index.service import corpus_run_payload, create_corpus_run, list_sources, source_payload, upsert_source
+from source_index.schemas import (
+    IndexedSourceCreate,
+    IndexedSourceRead,
+    SourceCorpusRunCreate,
+    SourceCorpusRunRead,
+    SourceSnapshotCreate,
+    SourceSnapshotRead,
+)
+from source_index.service import (
+    corpus_run_payload,
+    create_corpus_run,
+    create_source_snapshot,
+    list_source_snapshots,
+    list_sources,
+    snapshot_payload,
+    source_payload,
+    upsert_source,
+)
 
 
 def register(app: FastAPI) -> None:
@@ -53,6 +70,48 @@ def register(app: FastAPI) -> None:
         if source is None:
             raise HTTPException(status_code=404, detail="Indexed source not found.")
         return source_payload(source)
+
+    @app.post(
+        "/v1/index/sources/{source_id}/snapshots",
+        response_model=SourceSnapshotRead,
+        status_code=status.HTTP_201_CREATED,
+    )
+    def create_indexed_source_snapshot(
+        source_id: int,
+        payload: SourceSnapshotCreate,
+        session: Session = Depends(get_session),
+    ) -> dict:
+        try:
+            snapshot = create_source_snapshot(
+                session,
+                source_id=source_id,
+                fetch=payload.fetch,
+                raw_text=payload.raw_text,
+                content_type=payload.content_type,
+                title=payload.title,
+                raw_storage_ref=payload.raw_storage_ref,
+                snapshot_metadata=payload.metadata,
+            )
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except HTTPError as exc:
+            raise HTTPException(status_code=502, detail=f"Source fetch failed: {exc}") from exc
+        session.commit()
+        session.refresh(snapshot)
+        return snapshot_payload(snapshot)
+
+    @app.get("/v1/index/sources/{source_id}/snapshots", response_model=list[SourceSnapshotRead])
+    def read_indexed_source_snapshots(
+        source_id: int,
+        limit: int = Query(default=50, ge=1, le=200),
+        session: Session = Depends(get_session),
+    ) -> list[dict]:
+        source = session.get(IndexedSource, source_id)
+        if source is None:
+            raise HTTPException(status_code=404, detail="Indexed source not found.")
+        return [snapshot_payload(snapshot) for snapshot in list_source_snapshots(session, source_id=source_id, limit=limit)]
 
     @app.post("/v1/index/corpus-runs", response_model=SourceCorpusRunRead, status_code=status.HTTP_201_CREATED)
     def create_index_corpus_run(payload: SourceCorpusRunCreate, session: Session = Depends(get_session)) -> dict:

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from source_index.config import SETTINGS
@@ -40,11 +40,26 @@ def configure_engine(database_url: str) -> None:
 
 def init_db() -> None:
     Base.metadata.create_all(bind=engine)
+    _run_light_migrations()
 
 
 def reset_db() -> None:
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+
+
+def _run_light_migrations() -> None:
+    if not str(engine.url).startswith("sqlite"):
+        return
+
+    inspector = inspect(engine)
+    if "source_snapshots" not in inspector.get_table_names():
+        return
+
+    snapshot_columns = {column["name"] for column in inspector.get_columns("source_snapshots")}
+    with engine.begin() as connection:
+        if "extracted_text" not in snapshot_columns:
+            connection.execute(text("ALTER TABLE source_snapshots ADD COLUMN extracted_text TEXT NOT NULL DEFAULT ''"))
 
 
 def get_session() -> Generator[Session, None, None]:

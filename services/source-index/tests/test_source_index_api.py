@@ -55,3 +55,49 @@ def test_corpus_run_persists_include_exclude_decisions(client) -> None:
     fetched = client.get(f"/v1/index/corpus-runs/{payload['id']}")
     assert fetched.status_code == 200, fetched.text
     assert fetched.json()["context_id"] == "test-chem-corpus"
+
+
+def test_source_snapshot_extracts_provided_html(client) -> None:
+    source_response = client.post(
+        "/v1/index/sources",
+        json={
+            "url": "https://example.edu/courses/chem105",
+            "title": "CHEM 105",
+            "source_type": "syllabus",
+        },
+    )
+    assert source_response.status_code == 201, source_response.text
+    source_id = source_response.json()["id"]
+
+    snapshot_response = client.post(
+        f"/v1/index/sources/{source_id}/snapshots",
+        json={
+            "fetch": False,
+            "content_type": "text/html",
+            "raw_text": """
+                <html>
+                    <head><title>General Chemistry I Syllabus</title></head>
+                    <body>
+                        <script>window.noise = true;</script>
+                        <h1>General Chemistry I</h1>
+                        <p>Stoichiometry, atomic structure, bonding, thermochemistry, and acids and bases.</p>
+                    </body>
+                </html>
+            """,
+            "metadata": {"submitted_by": "test"},
+        },
+    )
+    assert snapshot_response.status_code == 201, snapshot_response.text
+    snapshot = snapshot_response.json()
+
+    assert snapshot["status"] == "provided"
+    assert snapshot["content_hash"]
+    assert snapshot["title"] == "CHEM 105"
+    assert "Stoichiometry" in snapshot["extracted_text"]
+    assert "window.noise" not in snapshot["extracted_text"]
+    assert snapshot["snapshot_metadata"] == {"submitted_by": "test"}
+
+    snapshots = client.get(f"/v1/index/sources/{source_id}/snapshots")
+    assert snapshots.status_code == 200, snapshots.text
+    assert len(snapshots.json()) == 1
+    assert snapshots.json()[0]["content_hash"] == snapshot["content_hash"]

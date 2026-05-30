@@ -46,6 +46,7 @@ class SourceSnapshot(Base):
     content_type: Mapped[str | None] = mapped_column(String(120))
     title: Mapped[str | None] = mapped_column(String(512))
     text_digest: Mapped[str | None] = mapped_column(Text)
+    extracted_text: Mapped[str] = mapped_column(Text, default="")
     raw_storage_ref: Mapped[str | None] = mapped_column(String(2048))
     snapshot_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 

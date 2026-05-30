@@ -9,7 +9,7 @@ This service intentionally starts without a crawler. Its first job is to persist
 Current foundation:
 
 - canonical indexed sources
-- source snapshots as a future extraction/versioning boundary
+- source snapshots with manual or fetched text extraction
 - source corpus runs
 - included/excluded source decisions
 - source relevance preflight for large submitted source sets
@@ -45,9 +45,16 @@ GET  /health
 POST /v1/index/sources
 GET  /v1/index/sources
 GET  /v1/index/sources/{source_id}
+POST /v1/index/sources/{source_id}/snapshots
+GET  /v1/index/sources/{source_id}/snapshots
 POST /v1/index/corpus-runs
 GET  /v1/index/corpus-runs/{run_id}
 ```
+
+Snapshot creation supports two modes:
+
+- `fetch: true` fetches the source URL, extracts readable text, stores a hash, and records fetch metadata.
+- `fetch: false` accepts provided `raw_text` for manual imports, tests, PDFs converted elsewhere, or future worker pipelines.
 
 ## Environment
 

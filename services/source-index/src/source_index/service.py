@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Any
 
+import httpx
+from bs4 import BeautifulSoup
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from source_index.config import SETTINGS
 from source_index.corpus import compile_source_corpus_preflight
-from source_index.models import IndexedSource, SourceCorpusRun, SourceDecision
+from source_index.models import IndexedSource, SourceCorpusRun, SourceDecision, SourceSnapshot
 from source_index.url_utils import baseline_trust, canonicalize_url, infer_source_type, normalized_domain
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
@@ -27,6 +31,22 @@ def source_payload(source: IndexedSource) -> dict[str, Any]:
         "link_health": source.link_health,
         "created_at": source.created_at,
         "updated_at": source.updated_at,
+    }
+
+
+def snapshot_payload(snapshot: SourceSnapshot) -> dict[str, Any]:
+    return {
+        "id": snapshot.id,
+        "source_id": snapshot.source_id,
+        "fetched_at": snapshot.fetched_at,
+        "status": snapshot.status,
+        "content_hash": snapshot.content_hash,
+        "content_type": snapshot.content_type,
+        "title": snapshot.title,
+        "text_digest": snapshot.text_digest,
+        "extracted_text": snapshot.extracted_text,
+        "raw_storage_ref": snapshot.raw_storage_ref,
+        "snapshot_metadata": snapshot.snapshot_metadata,
     }
 
 
@@ -102,6 +122,102 @@ def upsert_source(
     source.is_free = is_free
     source.updated_at = datetime.now(UTC)
     return source
+
+
+def _normalize_text(value: str) -> str:
+    return " ".join(value.split())
+
+
+def _extract_title_and_text(raw_text: str, content_type: str | None, fallback_title: str | None = None) -> tuple[str | None, str]:
+    lowered_content_type = (content_type or "").lower()
+    looks_like_html = "html" in lowered_content_type or "<html" in raw_text[:1000].lower()
+    if not looks_like_html:
+        return fallback_title, _normalize_text(raw_text)
+
+    soup = BeautifulSoup(raw_text, "html.parser")
+    for tag in soup(["script", "style", "noscript"]):
+        tag.decompose()
+
+    title = fallback_title
+    if not title and soup.title and soup.title.string:
+        title = _normalize_text(soup.title.string)
+    return title, _normalize_text(soup.get_text(" "))
+
+
+def _fetch_source_text(source: IndexedSource) -> tuple[str, str | None, dict[str, Any]]:
+    response = httpx.get(
+        source.canonical_url,
+        follow_redirects=True,
+        timeout=20.0,
+        headers={"User-Agent": SETTINGS.user_agent},
+    )
+    response.raise_for_status()
+    return (
+        response.text,
+        response.headers.get("content-type"),
+        {"fetched_url": str(response.url), "status_code": response.status_code},
+    )
+
+
+def create_source_snapshot(
+    session: Session,
+    *,
+    source_id: int,
+    fetch: bool = True,
+    raw_text: str | None = None,
+    content_type: str | None = None,
+    title: str | None = None,
+    raw_storage_ref: str | None = None,
+    snapshot_metadata: dict[str, Any] | None = None,
+) -> SourceSnapshot:
+    source = session.get(IndexedSource, source_id)
+    if source is None:
+        raise LookupError("Indexed source not found.")
+
+    metadata = dict(snapshot_metadata or {})
+    status = "provided"
+    if fetch:
+        raw_text, fetched_content_type, fetch_metadata = _fetch_source_text(source)
+        content_type = content_type or fetched_content_type
+        metadata = {**metadata, **fetch_metadata}
+        status = "fetched"
+    elif not raw_text or not raw_text.strip():
+        raise ValueError("Snapshot requires raw_text when fetch is false.")
+
+    extracted_title, extracted_text = _extract_title_and_text(raw_text or "", content_type, title or source.title)
+    content_hash = hashlib.sha256(extracted_text.encode("utf-8")).hexdigest() if extracted_text else None
+    snapshot = SourceSnapshot(
+        source_id=source.id,
+        status=status,
+        content_hash=content_hash,
+        content_type=content_type,
+        title=extracted_title,
+        text_digest=extracted_text[:1200],
+        extracted_text=extracted_text,
+        raw_storage_ref=raw_storage_ref,
+        snapshot_metadata=metadata,
+    )
+    session.add(snapshot)
+
+    if extracted_title and not source.title:
+        source.title = extracted_title
+    if fetch:
+        source.link_health = "healthy"
+    source.updated_at = datetime.now(UTC)
+
+    session.flush()
+    return snapshot
+
+
+def list_source_snapshots(session: Session, *, source_id: int, limit: int = 50) -> list[SourceSnapshot]:
+    return list(
+        session.scalars(
+            select(SourceSnapshot)
+            .where(SourceSnapshot.source_id == source_id)
+            .order_by(SourceSnapshot.fetched_at.desc(), SourceSnapshot.id.desc())
+            .limit(limit)
+        )
+    )
 
 
 def list_sources(

@@ -29,6 +29,29 @@ class IndexedSourceRead(BaseModel):
     updated_at: datetime
 
 
+class SourceSnapshotCreate(BaseModel):
+    fetch: bool = True
+    raw_text: str | None = None
+    content_type: str | None = None
+    title: str | None = None
+    raw_storage_ref: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class SourceSnapshotRead(BaseModel):
+    id: int
+    source_id: int
+    fetched_at: datetime
+    status: str
+    content_hash: str | None
+    content_type: str | None
+    title: str | None
+    text_digest: str | None
+    extracted_text: str
+    raw_storage_ref: str | None
+    snapshot_metadata: dict[str, Any]
+
+
 class SourceDecisionRead(BaseModel):
     id: int
     corpus_run_id: int
