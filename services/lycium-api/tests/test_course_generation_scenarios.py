@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from app.course_generation_flagships import CHEM_105_FLAGSHIP_BLUEPRINT, chem_105_source_slots
@@ -8,6 +10,10 @@ from app.course_generation_scenarios import (
     evaluate_program_generation_scenario,
     list_generation_eval_scenarios,
 )
+from app.course_quality import assess_course_quality
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def _questions(topic: str) -> list[dict[str, Any]]:
@@ -127,6 +133,111 @@ def _course_for_scenario() -> dict[str, Any]:
     }
 
 
+def _teachable_publish_ready_course() -> dict[str, Any]:
+    source_records = [
+        {"id": "source-openstax-chemistry-2e", "type": "textbook", "title": "OpenStax Chemistry 2e", "url": "https://openstax.org/details/books/chemistry-2e"},
+        {"id": "source-chemcollective", "type": "virtual-lab", "title": "ChemCollective virtual labs", "url": "https://chemcollective.org/"},
+        {"id": "source-phet-chemistry", "type": "simulation", "title": "PhET chemistry simulations", "url": "https://phet.colorado.edu/en/simulations/filter?subjects=chemistry&type=html"},
+    ]
+    modules = []
+    for index, topic in enumerate(["measurement and matter", "stoichiometry", "bonding and molecular shape"], start=1):
+        section_id = f"chem-publish-{index}"
+        explanation = (
+            f"This lesson builds a foundation for {topic} by connecting prerequisite vocabulary, worked examples, "
+            "laboratory practice, and mastery evidence. Learners start from observable chemical systems, translate "
+            "the observations into quantitative or structural representations, and then use those representations to "
+            "make justified predictions. The advanced value of the lesson is not memorizing isolated facts; it is "
+            "learning how chemical constraints, measurement limits, and model assumptions shape the explanation. "
+            "A project-style practice task asks learners to document assumptions, compare alternatives, and explain "
+            "what evidence would change their conclusion. Mastery is assessed through quiz questions, a short rubric, "
+            "and a source-backed explanation that shows why the reasoning is valid."
+        )
+        modules.append(
+            {
+                "id": f"module-{index}",
+                "title": f"Week {index}: {topic.title()}",
+                "sourceIds": [source["id"] for source in source_records],
+                "sections": [
+                    {
+                        "id": section_id,
+                        "title": topic.title(),
+                        "pageType": "learn",
+                        "sectionType": "lesson",
+                        "sourceIds": [source["id"] for source in source_records],
+                        "content": [
+                            {"type": "text", "heading": "Explanation", "value": explanation, "sourceIds": ["source-openstax-chemistry-2e"]},
+                            {"type": "text", "heading": "Example", "value": f"Example: use {topic} to compare two chemical claims and state the evidence for each claim.", "sourceIds": ["source-openstax-chemistry-2e"]},
+                            {"type": "text", "heading": "Practice", "value": f"Practice: solve a {topic} problem, then write one sentence naming the assumption that matters most.", "sourceIds": ["source-chemcollective"]},
+                            {"type": "video", "title": f"{topic.title()} video", "url": "https://example.edu/chemistry-video", "sourceIds": ["source-phet-chemistry"]},
+                            {
+                                "type": "conceptCards",
+                                "title": "Concepts introduced",
+                                "sourceIds": ["source-openstax-chemistry-2e"],
+                                "concepts": [
+                                    {"name": topic.title(), "description": f"The core representation and reasoning pattern for {topic}.", "sourceSectionId": section_id},
+                                    {"name": "Mastery evidence", "description": "Observable work showing that a learner can apply a concept under constraints.", "sourceSectionId": section_id},
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "id": f"{section_id}-quiz",
+                        "title": f"Quiz: {topic.title()}",
+                        "pageType": "apply",
+                        "sectionType": "assessment",
+                        "sourceIds": ["source-openstax-chemistry-2e"],
+                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": ["source-openstax-chemistry-2e"]}],
+                    },
+                    {
+                        "id": f"{section_id}-summary",
+                        "title": f"Week {index} Summary",
+                        "pageType": "learn",
+                        "sectionType": "summary",
+                        "sourceIds": [source["id"] for source in source_records],
+                        "content": [
+                            {
+                                "type": "conceptCards",
+                                "title": "Week concepts",
+                                "sourceIds": ["source-openstax-chemistry-2e"],
+                                "concepts": [
+                                    {"name": topic.title(), "description": f"Review definition for {topic}.", "sourceSectionId": section_id},
+                                    {"name": "Mastery evidence", "description": "Review signal for source-backed capability.", "sourceSectionId": section_id},
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            }
+        )
+    return {
+        "title": "CHEM 105 Publish-Ready Mini Course",
+        "shortDescription": "A source-backed chemistry course slice with teachable lessons, quizzes, and concept summaries.",
+        "difficultyLevel": "undergrad",
+        "category": "natural-sciences-mathematics",
+        "department": "chemistry",
+        "tags": ["chemistry", "mastery", "laboratory practice"],
+        "sourceIds": [source["id"] for source in source_records],
+        "sourceRecords": source_records,
+        "metadata": {
+            "pacingLabel": "Week",
+            "requirementOrigins": [
+                {"requirementId": "req-measurement", "originType": "common_academic_requirement", "evidenceRefs": ["source-openstax-chemistry-2e"]},
+                {"requirementId": "req-stoichiometry", "originType": "common_academic_requirement", "evidenceRefs": ["source-openstax-chemistry-2e"]},
+            ],
+            "sourceSlots": [
+                {
+                    "requiredConceptId": "chem-measurement",
+                    "primarySourceId": "source-openstax-chemistry-2e",
+                    "fallbackSourceIds": ["source-chemcollective"],
+                    "replacementPolicy": "review_required",
+                }
+            ],
+        },
+        "prerequisites": [{"type": "course", "courseId": "high-school-chemistry", "title": "High School Chemistry"}],
+        "modules": modules,
+    }
+
+
 def _full_stack_program() -> dict[str, Any]:
     groups = [
         ("foundations", ["Computer basics", "Command line", "Git and GitHub"]),
@@ -230,3 +341,33 @@ def test_full_stack_program_scenario_accepts_requirement_based_path() -> None:
     assert report["metrics"]["failedCheckCount"] == 0
     coverage = next(check for check in report["checks"] if check["key"] == "requirement_coverage")
     assert coverage["metrics"]["coveredRequirementKeywordCount"] >= 9
+
+
+def test_flagship_full_stack_fixture_passes_program_generation_scenario() -> None:
+    fixture = json.loads((REPO_ROOT / "packages/contracts/fixtures/full-stack-engineer-program.json").read_text())
+    report = evaluate_program_generation_scenario(fixture, "full-stack-software-engineer-program")
+
+    assert report["status"] == "passed"
+    assert report["metrics"]["failedCheckCount"] == 0
+    assert report["score"] >= 0.9
+
+
+def test_publish_gate_accepts_teachable_source_backed_course() -> None:
+    report = assess_course_quality(_teachable_publish_ready_course(), gate="publish")
+
+    assert report["passed"] is True
+    assert report["score"] >= 0.85
+    assert report["metrics"]["quizSectionCount"] == 3
+    assert report["metrics"]["qualityEvalFailedDimensionCount"] == 0
+
+
+def test_publish_gate_blocks_placeholder_or_prompt_like_course() -> None:
+    course = _teachable_publish_ready_course()
+    course["modules"][0]["sections"][0]["content"][0]["value"] = "The model should generate instructional content here."
+    course["modules"][0]["sections"] = course["modules"][0]["sections"][:-1]
+
+    report = assess_course_quality(course, gate="publish")
+
+    assert report["passed"] is False
+    assert any("placeholder" in item.lower() or "prompt-like" in item.lower() for item in [*report["errors"], *report["warnings"]])
+    assert any("summary" in item.lower() for item in [*report["errors"], *report["warnings"]])

@@ -70,6 +70,15 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 - `quality_eval`: score course quality across structure, instructional substance, assessment, concept-card integrity, source grounding, media support, and course specificity.
 - `review_publish`: keep generated courses in draft/review until quality gates pass or a reviewer explicitly force-publishes with a reason.
 
+## Professional Eval Direction
+
+- Maintain a small fixed eval suite before expanding generation features. The current minimum scenarios are documented in `docs/course-generation-eval-scenarios.md`.
+- Treat eval scenarios as product contracts: a model/provider combination is not trusted for full course generation until it can pass the flagship scenarios with source evidence, benchmark evidence, valid contracts, assessments, summaries, and review/publish gates.
+- The flagship software engineering program should remain the primary program-quality fixture because it exercises requirement groups, prerequisite graphs, capstones, portfolio evidence, source parity, and course wrappers.
+- CHEM 105 should remain the primary full-course eval because it tests whether Lycium can generate a real undergraduate course from free reputable sources rather than a software-only demo.
+- Messy source-corpus evals must prove that irrelevant or weak sources are excluded before generation. The generator should not silently use excluded sources.
+- Review/publish evals must prove that weak generated courses remain drafts and expose gate evidence to reviewers.
+
 1. Determine course scope.
    Define the learner level, prerequisites, course outcome, expected duration, depth, assessment style, source expectations, what the course should explicitly not cover, and a short catalog description.
 

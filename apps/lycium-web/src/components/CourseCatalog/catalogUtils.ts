@@ -3,6 +3,7 @@ import { getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/c
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
 
 export type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
+export type CatalogActivityFilter = "all" | "not-started" | "in-progress" | "completed";
 
 export type CatalogVisibleCourse = {
   course: CourseEntry;
@@ -28,9 +29,16 @@ export const CATALOG_LEVEL_OPTIONS = [
 ];
 
 export const CATALOG_SORT_OPTIONS = [
-  { value: "college", label: "Type" },
-  { value: "completion-desc", label: "Completion highest to lowest" },
-  { value: "completion-asc", label: "Completion lowest to highest" },
+  { value: "college", label: "Sort by Type" },
+  { value: "completion-desc", label: "Sort by Completion ↑↓" },
+  { value: "completion-asc", label: "Sort by Completion ↓↑" },
+];
+
+export const CATALOG_ACTIVITY_OPTIONS = [
+  { value: "all", label: "Any progress" },
+  { value: "not-started", label: "Not started" },
+  { value: "in-progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
 ];
 
 export function getGeneratingCourseTitle(prompt: string): string {

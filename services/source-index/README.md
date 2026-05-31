@@ -1,127 +1,86 @@
-# Protheus Source Index
+# Lycium Source Index Service
 
-The Protheus Source Index is a standalone FastAPI service for building a reusable source reference index that can be consumed by Lycium, InfRing, and future Protheus AI systems.
+The source index is the durable boundary for public learning-source data. Lycium can run it inside this monorepo today, but it should remain extractable into an independent service that can later feed Lycium, InfRing, and other Protheus systems through the same API contracts.
 
-This service intentionally starts without a crawler. Its first job is to persist manually submitted or agent-submitted sources, source-corpus relevance decisions, and source metadata behind a neutral `/v1/index/*` API.
+## Responsibilities
 
-## Scope
+- Store canonical source records separately from course JSON.
+- Store snapshots and extracted text so course generation can use evidence, not loose links.
+- Record source-corpus preflight decisions before generation uses a submitted source list.
+- Emit `source-packet-v1` records that package source decisions, snapshots, source documents, warnings, and evidence refs.
+- Support narrow crawl policies for education-focused indexing without coupling the crawler to Lycium UI code.
 
-Current foundation:
+## Current API Surface
 
-- canonical indexed sources
-- source snapshots with manual or fetched text extraction
-- policy-driven crawl configuration records
-- queued crawl run records
-- source corpus runs
-- included/excluded source decisions
-- source relevance preflight for large submitted source sets
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Check service availability. |
+| `POST` | `/v1/index/sources` | Upsert one indexed source. |
+| `GET` | `/v1/index/sources` | Search/list indexed sources by query, domain, or source type. |
+| `GET` | `/v1/index/sources/{source_id}` | Read one indexed source. |
+| `POST` | `/v1/index/source-imports` | Import a manual source batch and optionally create snapshots. |
+| `POST` | `/v1/index/sources/{source_id}/snapshots` | Create a fetched or manually supplied snapshot. |
+| `GET` | `/v1/index/sources/{source_id}/snapshots` | List snapshots for a source. |
+| `POST` | `/v1/index/corpus-runs` | Run source-corpus preflight for a prompt and submitted URLs/documents. |
+| `GET` | `/v1/index/corpus-runs/{run_id}` | Read source-corpus preflight output. |
+| `POST` | `/v1/index/source-packets` | Create a generation-ready source packet. |
+| `GET` | `/v1/index/source-packets/{run_id}` | Read a source packet by corpus run ID. |
+| `POST` | `/v1/index/crawl-policies` | Save an education-focused crawl policy. |
+| `GET` | `/v1/index/crawl-policies` | List crawl policies. |
+| `POST` | `/v1/index/crawl-runs` | Create a crawl run and seed tasks. |
+| `GET` | `/v1/index/crawl-runs/{run_id}/tasks` | Inspect crawl seed tasks. |
 
-Out of scope for this slice:
+## Import Contract
 
-- executing broad web crawls
-- embeddings/vector search
-- claim extraction
-- authentication/multi-tenant deployment
-- crawler scheduling
+Manual imports should use `source-import-batch-v1`.
 
-## Run locally
-
-```bash
-cd services/source-index
-python3.13 -m venv .venv
-source .venv/bin/activate
-pip install -e '.[test]'
-source-index-api
+```json
+{
+  "batch_id": "manual-software-engineering-001",
+  "sources": [
+    {
+      "url": "https://example.edu/course/syllabus",
+      "title": "Example Syllabus",
+      "source_type": "syllabus",
+      "license": "unknown",
+      "is_free": true,
+      "raw_text": "Extracted or pasted source text..."
+    }
+  ]
+}
 ```
 
-Default URL:
+The service returns source IDs, snapshot IDs, row warnings, and batch-level warnings. Courses should reference returned evidence through source packets or benchmark records rather than copying untracked source text into course JSON.
 
-```text
-http://127.0.0.1:8100
+## Source Packet Contract
+
+Course generation should prefer `source-packet-v1`.
+
+```json
+{
+  "consumer": "lycium-course-generation",
+  "context_id": "chem-105-2026-05",
+  "prompt": "Create a first-semester general chemistry course.",
+  "source_urls": ["https://openstax.org/books/chemistry-2e/pages/1-introduction"],
+  "fetch_sources": true,
+  "snapshot_limit": 1
+}
 ```
 
-## API
+The response packages included source decisions, snapshots, evidence refs, source documents, synthesis, and warnings. Generation gates should fail or request review when a packet has no included sources, no source documents, or warnings that undermine source coverage.
 
-```http
-GET  /health
-POST /v1/index/sources
-GET  /v1/index/sources
-GET  /v1/index/sources/{source_id}
-POST /v1/index/crawl-policies
-GET  /v1/index/crawl-policies
-GET  /v1/index/crawl-policies/{policy_id}
-POST /v1/index/crawl-runs
-GET  /v1/index/crawl-runs/{run_id}
-GET  /v1/index/crawl-runs/{run_id}/tasks
-POST /v1/index/sources/{source_id}/snapshots
-GET  /v1/index/sources/{source_id}/snapshots
-POST /v1/index/corpus-runs
-GET  /v1/index/corpus-runs/{run_id}
-```
+## Benchmark Ingestion Role
 
-Snapshot creation supports two modes:
+Curriculum benchmark extraction should treat the source index as the upstream evidence provider:
 
-- `fetch: true` fetches the source URL, extracts readable text, stores a hash, and records fetch metadata.
-- `fetch: false` accepts provided `raw_text` for manual imports, tests, PDFs converted elsewhere, or future worker pipelines.
+1. Import or fetch source records.
+2. Create snapshots with extracted text.
+3. Create a source packet for a course/program prompt.
+4. Extract curriculum benchmarks from packet `source_documents`.
+5. Convert benchmark requirements into requirement origins, source slots, course parity, and program/course requirements.
 
-## Environment
+This keeps benchmark evidence reusable across courses and prevents generated courses from becoming isolated one-off artifacts.
 
-```text
-SOURCE_INDEX_DATABASE_URL=sqlite:///../.data/source-index.db
-SOURCE_INDEX_USER_AGENT=ProtheusSourceIndex/0.1
-```
+## Extraction Boundary
 
-## Relationship to Lycium
-
-Lycium can keep using its internal adapter while this service matures. The long-term direction is for Lycium course generation and InfRing research tooling to write/read source evidence through this service instead of owning source-index state directly.
-
-## Extraction boundary
-
-This service is designed to be extractable into its own repository:
-
-- it must not import Lycium app, course, or UI modules
-- consumers should integrate through `/v1/index/*` APIs instead of database coupling
-- crawl behavior should be policy-driven, not hardcoded to Lycium
-- education-institution crawling is the first default policy, not the crawler's only possible mode
-- source snapshots, crawl policies, crawl runs, and corpus decisions are owned by this service
-- `public_id` fields are stable cross-database references; consumers should prefer them over local integer IDs when storing durable evidence references
-
-## Permanent data boundary
-
-Source Index records should be safe to move from local SQLite to a standalone Postgres-backed service later.
-
-Durable references:
-
-- `IndexedSource.public_id` is derived from the canonical URL.
-- `SourceSnapshot.public_id` is derived from the source public ID and content hash.
-- API consumers may keep local integer IDs for short-lived requests, but generated courses, programs, benchmark evidence, and external systems should store `public_id` references.
-
-Large raw artifacts should eventually move to object storage while the database retains hashes, extracted text digests, metadata, and storage references.
-
-## Worker boundary
-
-Crawler execution is intentionally split from the API/control plane.
-
-Stable contracts:
-
-- `crawl-task-v1`: a worker input message containing crawl run, policy, URL, depth, and trace data
-- `crawl-worker-result-v1`: a worker output message containing fetch result, extracted text, classification, discovered links, and acceptance status
-
-Current Python modules define these contracts in `source_index.crawl.contracts`. Future workers can be Python, Go, Rust, or another implementation as long as they read and write the same JSON contract.
-
-The API can expose initial seed tasks for a queued crawl run:
-
-```http
-GET /v1/index/crawl-runs/{run_id}/tasks
-```
-
-This endpoint is not a scheduler yet. It is the contract seam where future queue-backed workers can plug in without coupling worker code to Lycium or the API database internals.
-
-The first Python worker implementation can execute a single task payload and emit a `crawl-worker-result-v1` JSON object:
-
-```bash
-source-index-crawl-task task.json
-cat task.json | source-index-crawl-task
-```
-
-This worker is intentionally stateless. It fetches one URL, extracts readable text, classifies the page against the crawl policy, discovers policy-accepted links, and prints the result contract. Persistence, queue leasing, retries, and scheduling remain outside this worker seam.
+The source index should not import Lycium course renderer code. It can know about source packets, snapshots, crawl policies, and generic corpus preflight. Lycium-specific course planning, module generation, quiz generation, and review/publish state should remain in Lycium services.

@@ -8,6 +8,7 @@ import { courseCategories, getCourseCategoryDepartments, getCourseCategoryLabel 
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
 import { estimateProgramTime, estimateRequirementGroupTime, formatTimeEstimate, timeEstimateSourceLabel } from "../../utils/curriculumTime";
 import CatalogCourseCard from "./CatalogCourseCard";
+import CatalogFilterPanel from "./CatalogFilterPanel";
 import CatalogPagination from "./CatalogPagination";
 import CourseInfoModal from "./CourseInfoModal";
 import CreateCourseModal from "./CreateCourseModal";
@@ -17,6 +18,7 @@ import {
   CATALOG_LEVEL_OPTIONS,
   CATALOG_MOBILE_ROWS_PER_PAGE,
   CATALOG_SORT_OPTIONS,
+  type CatalogActivityFilter,
   type CatalogSortMode,
   compareCatalogSort,
   getCollegeFilterLabel,
@@ -56,7 +58,6 @@ type CourseCatalogProps = {
 };
 
 type CatalogViewLevel = "programs" | "clusters" | "courses";
-type CatalogActivityFilter = "all" | "not-started" | "in-progress" | "completed";
 
 type CatalogPathProgress = {
   total: number;
@@ -71,13 +72,6 @@ const CATALOG_VIEW_LEVEL_OPTIONS = [
   { value: "programs", label: "Programs" },
   { value: "clusters", label: "Clusters" },
   { value: "courses", label: "Courses" },
-];
-
-const CATALOG_ACTIVITY_OPTIONS = [
-  { value: "all", label: "Any progress" },
-  { value: "not-started", label: "Not started" },
-  { value: "in-progress", label: "In progress" },
-  { value: "completed", label: "Completed" },
 ];
 
 function requirementCourseIds(requirement: LyciumRequirement): string[] {
@@ -191,7 +185,6 @@ export default function CourseCatalog({
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [activityFilter, setActivityFilter] = useState<CatalogActivityFilter>("all");
   const [showLockedCourses, setShowLockedCourses] = useState(true);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [createCollege, setCreateCollege] = useState("");
   const [createDepartment, setCreateDepartment] = useState("");
   const [sortMode, setSortMode] = useState<CatalogSortMode>("college");
@@ -536,92 +529,23 @@ export default function CourseCatalog({
                   />
                 </label>
                 <div className="catalog-dropdown-row">
-                  <div className="catalog-filter-shell">
-                    <button
-                      className={`catalog-filter-button ${isFilterOpen ? "catalog-filter-button--active" : ""}`}
-                      type="button"
-                      aria-expanded={isFilterOpen}
-                      aria-haspopup="dialog"
-                      onClick={() => setIsFilterOpen((current) => !current)}
-                    >
-                      <span>Filters</span>
-                      {activeFilterCount > 0 && <span className="catalog-filter-count">{activeFilterCount}</span>}
-                    </button>
-                    {isFilterOpen && (
-                      <div className="catalog-filter-panel" role="dialog" aria-label="Catalog filters">
-                        <section className="catalog-filter-section">
-                          <div>
-                            <h3>Availability</h3>
-                            <p>Control whether locked courses appear in the catalog.</p>
-                          </div>
-                          <label className="catalog-filter-checkbox">
-                            <input
-                              type="checkbox"
-                              checked={showLockedCourses}
-                              onChange={(event) => handleShowLockedCoursesChange(event.target.checked)}
-                            />
-                            <span>Show locked courses</span>
-                          </label>
-                        </section>
-                        <section className="catalog-filter-section">
-                          <div>
-                            <h3>College and department</h3>
-                            <p>Department filtering unlocks after selecting a college.</p>
-                          </div>
-                          <div className="catalog-filter-grid">
-                            <label className="catalog-dropdown-field">
-                              <Dropdown
-                                className="catalog-dropdown"
-                                value={collegeFilter}
-                                options={collegeFilterOptions}
-                                onChange={handleCollegeFilterChange}
-                                ariaLabel="Filter by college"
-                              />
-                            </label>
-                            <label className="catalog-dropdown-field">
-                              <Dropdown
-                                className="catalog-dropdown"
-                                value={departmentFilter}
-                                options={departmentFilterOptions}
-                                onChange={handleDepartmentFilterChange}
-                                ariaLabel="Filter by department"
-                                disabled={collegeFilter === "all"}
-                              />
-                            </label>
-                          </div>
-                        </section>
-                        <section className="catalog-filter-section">
-                          <div>
-                            <h3>Course state</h3>
-                            <p>Narrow by difficulty or how far along the learner is.</p>
-                          </div>
-                          <div className="catalog-filter-grid">
-                            <label className="catalog-dropdown-field">
-                              <Dropdown
-                                className="catalog-dropdown"
-                                value={difficultyFilter}
-                                options={difficultyFilterOptions}
-                                onChange={handleDifficultyFilterChange}
-                                ariaLabel="Filter by difficulty"
-                              />
-                            </label>
-                            <label className="catalog-dropdown-field">
-                              <Dropdown
-                                className="catalog-dropdown"
-                                value={activityFilter}
-                                options={CATALOG_ACTIVITY_OPTIONS}
-                                onChange={handleActivityFilterChange}
-                                ariaLabel="Filter by progress"
-                              />
-                            </label>
-                          </div>
-                        </section>
-                        <button className="catalog-filter-reset" type="button" onClick={handleResetCatalogFilters}>
-                          Reset filters
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <CatalogFilterPanel
+                    activeFilterCount={activeFilterCount}
+                    showLockedCourses={showLockedCourses}
+                    collegeFilter={collegeFilter}
+                    collegeFilterOptions={collegeFilterOptions}
+                    departmentFilter={departmentFilter}
+                    departmentFilterOptions={departmentFilterOptions}
+                    difficultyFilter={difficultyFilter}
+                    difficultyFilterOptions={difficultyFilterOptions}
+                    activityFilter={activityFilter}
+                    onShowLockedCoursesChange={handleShowLockedCoursesChange}
+                    onCollegeFilterChange={handleCollegeFilterChange}
+                    onDepartmentFilterChange={handleDepartmentFilterChange}
+                    onDifficultyFilterChange={handleDifficultyFilterChange}
+                    onActivityFilterChange={handleActivityFilterChange}
+                    onResetFilters={handleResetCatalogFilters}
+                  />
                   <label className="catalog-dropdown-field">
                     <Dropdown
                       className="catalog-dropdown catalog-sort-dropdown"
