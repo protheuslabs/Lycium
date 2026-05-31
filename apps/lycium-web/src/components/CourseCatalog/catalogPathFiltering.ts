@@ -1,7 +1,13 @@
 import type { LyciumProgram, LyciumRequirement, LyciumRequirementGroup } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
 import { estimateProgramTime, estimateRequirementGroupTime, type TimeEstimate } from "../../utils/curriculumTime";
-import { catalogPathProgress, groupCourseIds, programCourseIds, type CatalogPathProgress } from "./catalogProgramProgress";
+import {
+  catalogPathProgress,
+  groupCourseIds,
+  programCourseIds,
+  type CatalogPathProgress,
+  type CatalogProgressCache,
+} from "./catalogProgramProgress";
 import { type CatalogPathSortMode, normalizeSearchText } from "./catalogUtils";
 
 export type CatalogVisibleProgram = {
@@ -23,6 +29,7 @@ type VisibleProgramOptions = {
   programs: LyciumProgram[];
   courses: CourseEntry[];
   courseMap: Map<string, CourseEntry>;
+  progressCache?: CatalogProgressCache;
   searchQuery: string;
   sortMode: CatalogPathSortMode;
 };
@@ -30,6 +37,7 @@ type VisibleProgramOptions = {
 type VisibleClusterOptions = {
   program: LyciumProgram | null;
   courseMap: Map<string, CourseEntry>;
+  progressCache?: CatalogProgressCache;
   searchQuery: string;
   sortMode: CatalogPathSortMode;
 };
@@ -52,7 +60,7 @@ function optionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
-function requirementSearchText(requirement: LyciumRequirement): string[] {
+function requirementSearchText(requirement: LyciumRequirement): Array<string | undefined> {
   const requirementMeta = requirement as { title?: unknown; description?: unknown };
   const ownText = [
     requirement.id,
@@ -116,6 +124,7 @@ export function getVisibleCatalogPrograms({
   programs,
   courses,
   courseMap,
+  progressCache,
   searchQuery,
   sortMode,
 }: VisibleProgramOptions): CatalogVisibleProgram[] {
@@ -125,7 +134,7 @@ export function getVisibleCatalogPrograms({
     .map((program) => ({
       program,
       estimate: estimateProgramTime(program, courses),
-      progress: catalogPathProgress(programCourseIds(program), courseMap),
+      progress: catalogPathProgress(programCourseIds(program), courseMap, progressCache),
       searchScore: programSearchScore(program, query),
     }))
     .filter(({ searchScore }) => !query || searchScore > 0)
@@ -138,6 +147,7 @@ export function getVisibleCatalogPrograms({
 export function getVisibleCatalogClusters({
   program,
   courseMap,
+  progressCache,
   searchQuery,
   sortMode,
 }: VisibleClusterOptions): CatalogVisibleCluster[] {
@@ -151,7 +161,7 @@ export function getVisibleCatalogClusters({
         cluster,
         courseIds,
         estimate: estimateRequirementGroupTime(cluster, courseMap),
-        progress: catalogPathProgress(courseIds, courseMap),
+        progress: catalogPathProgress(courseIds, courseMap, progressCache),
         searchScore: clusterSearchScore(cluster, query),
       };
     })

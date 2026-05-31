@@ -1,6 +1,7 @@
 import type { CourseBookmarkRecord, CourseEntry, CourseSection, RouteInfo } from "../courseTypes";
 import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import { createBrowserStorageRepository } from "@lycium/data-access";
+import { getCoursePathSlug, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug } from "./routeSlugs";
 import {
   DEFAULT_PROGRESS,
   normalizeProgressRecord,
@@ -17,6 +18,7 @@ export const COURSE_CATALOG_PATH = buildLyciumPath("catalog");
 export const COURSE_CATALOG_PROGRAMS_PATH = buildLyciumPath("catalog", "programs");
 export const COURSE_CATALOG_COURSES_PATH = buildLyciumPath("catalog", "courses");
 export const SETTINGS_PATH = buildLyciumPath("settings");
+export { getCoursePathSlug, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug, slugifyCourseTitle } from "./routeSlugs";
 
 function buildLyciumPath(...segments: string[]): string {
   const suffix = segments
@@ -48,53 +50,12 @@ function normalizeRoutePath(pathname: string): string {
   return path || "/";
 }
 
-export function slugifyCourseTitle(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-export function getCoursePathSlug(course: CourseEntry): string {
-  const base = slugifyCourseTitle(course.title || "course");
-  return `${base}-${course.key}`;
-}
-
-export function getSectionPathSlug(section: CourseSection): string {
-  const base = slugifyCourseTitle(section.title || "unit");
-  const suffix = slugifyCourseTitle(section.id || "section");
-
-  if (!base) {
-    return suffix || "unit";
-  }
-
-  if (!suffix || base.endsWith(suffix)) {
-    return base;
-  }
-
-  return `${base}-${suffix}`;
-}
-
 export function getCourseSectionPath(course: CourseEntry, section: CourseSection): string {
   return buildLyciumPath("courses", getCoursePathSlug(course), "units", getSectionPathSlug(section));
 }
 
 export function getCoursePath(course: CourseEntry): string {
   return buildLyciumPath("courses", getCoursePathSlug(course));
-}
-
-export function getProgramPathSlug(program: Pick<LyciumProgram, "id" | "title">): string {
-  const base = slugifyCourseTitle(program.title || "program");
-  return `${base}-${program.id}`;
-}
-
-export function getProgramClusterPathSlug(cluster: Pick<LyciumRequirementGroup, "id" | "displayName">): string {
-  const base = slugifyCourseTitle(cluster.displayName || "cluster");
-  return `${base}-${cluster.id}`;
 }
 
 export function getCatalogProgramPath(program: Pick<LyciumProgram, "id" | "title">): string {

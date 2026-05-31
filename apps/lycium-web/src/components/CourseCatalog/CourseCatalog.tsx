@@ -3,28 +3,22 @@ import type { FormEvent, MouseEvent } from "react";
 import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
 import type { CourseEntry } from "../../courseTypes";
-import { courseCategories, getCourseCategoryDepartments, getCourseCategoryLabel } from "../../courseData/courseTaxonomy";
+import { courseCategories, getCourseCategoryDepartments } from "../../courseData/courseTaxonomy";
 import CatalogCourseGrid from "./CatalogCourseGrid";
 import CatalogPagination from "./CatalogPagination";
 import CatalogProgramShowcase from "./CatalogProgramShowcase";
 import CatalogToolbar from "./CatalogToolbar";
 import CourseInfoModal from "./CourseInfoModal";
 import CreateCourseModal from "./CreateCourseModal";
-import { getVisibleCatalogCourses } from "./catalogCourseFiltering";
-import { getVisibleCatalogClusters, getVisibleCatalogPrograms } from "./catalogPathFiltering";
-import { groupCourseIds } from "./catalogProgramProgress";
 import {
   CATALOG_COURSE_CARD_MIN_WIDTH,
   CATALOG_DESKTOP_ROWS_PER_PAGE,
   CATALOG_LEVEL_OPTIONS,
   CATALOG_MOBILE_ROWS_PER_PAGE,
-  type CatalogActivityFilter,
-  type CatalogPathSortMode,
-  type CatalogSortMode,
   type CatalogViewLevel,
-  getCollegeFilterLabel,
   getGeneratingCourseTitle,
 } from "./catalogUtils";
+import { useCatalogControls } from "./useCatalogControls";
 
 type CourseCatalogProps = {
   courses: CourseEntry[];
@@ -80,55 +74,20 @@ export default function CourseCatalog({
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sourceLinks, setSourceLinks] = useState([""]);
   const [infoCourse, setInfoCourse] = useState<CourseEntry | null>(null);
-  const [catalogViewLevel, setCatalogViewLevel] = useState<CatalogViewLevel>("courses");
-  const [selectedProgramId, setSelectedProgramId] = useState(programs[0]?.id ?? "");
-  const [selectedClusterId, setSelectedClusterId] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [collegeFilter, setCollegeFilter] = useState("all");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
-  const [difficultyFilter, setDifficultyFilter] = useState("all");
-  const [activityFilter, setActivityFilter] = useState<CatalogActivityFilter>("all");
-  const [showLockedCourses, setShowLockedCourses] = useState(true);
   const [createCollege, setCreateCollege] = useState("");
   const [createDepartment, setCreateDepartment] = useState("");
-  const [sortMode, setSortMode] = useState<CatalogSortMode>("college");
-  const [pathSortMode, setPathSortMode] = useState<CatalogPathSortMode>("name");
-  const [catalogPage, setCatalogPage] = useState(1);
   const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE - 1);
   const courseGridRef = useRef<HTMLDivElement | null>(null);
   const isGeneratingCourse = generateStatus === "loading";
   const generatingCourseTitle = getGeneratingCourseTitle(prompt);
-  const selectedProgram = useMemo(
-    () => programs.find((program) => program.id === selectedProgramId) ?? programs[0] ?? null,
-    [programs, selectedProgramId],
-  );
-  const selectedCluster = useMemo(
-    () => selectedProgram?.requirementGroups.find((group) => group.id === selectedClusterId) ?? null,
-    [selectedClusterId, selectedProgram],
-  );
-  const selectedClusterCourseIds = useMemo(
-    () => new Set(selectedCluster ? groupCourseIds(selectedCluster) : []),
-    [selectedCluster],
-  );
-  const catalogCourseMap = useMemo(() => new Map(courses.map((course) => [course.key, course])), [courses]);
-  const programOptions = useMemo(
-    () => programs.map((program) => ({ value: program.id, label: program.title })),
-    [programs],
-  );
-
-  useEffect(() => {
-    if (catalogProgramId) {
-      setSelectedProgramId(catalogProgramId);
-      setSelectedClusterId(catalogClusterId ?? "");
-      setCatalogViewLevel(catalogClusterId ? "courses" : "clusters");
-      setCatalogPage(1);
-      return;
-    }
-
-    setSelectedClusterId("");
-    setCatalogViewLevel(catalogView ?? "courses");
-    setCatalogPage(1);
-  }, [catalogClusterId, catalogProgramId, catalogView]);
+  const catalogControls = useCatalogControls({
+    courses,
+    programs,
+    catalogView,
+    catalogProgramId,
+    catalogClusterId,
+    onCatalogDrilldown,
+  });
   const createCollegeOptions = useMemo(
     () => courseCategories.map((category) => ({ value: category.id, label: category.label })),
     [],
@@ -138,119 +97,19 @@ export default function CourseCatalog({
     [createCollege],
   );
 
-  const collegeOptions = useMemo(() => {
-    const categories = new Map<string, string>();
-
-    for (const course of courses) {
-      if (course.data.category) {
-        categories.set(course.data.category, getCourseCategoryLabel(course.data.category));
-      }
-    }
-
-    return Array.from(categories, ([value, label]) => ({ value, label: getCollegeFilterLabel(label) })).sort((a, b) =>
-      a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
-    );
-  }, [courses]);
-
-  const collegeFilterOptions = useMemo(
-    () => [{ value: "all", label: "All colleges" }, ...collegeOptions],
-    [collegeOptions],
-  );
-
-  const departmentFilterOptions = useMemo(() => {
-    if (collegeFilter === "all") {
-      return [{ value: "all", label: "Select a college first", disabled: true }];
-    }
-
-    return [
-      { value: "all", label: "All departments" },
-      ...getCourseCategoryDepartments(collegeFilter).map((department) => ({
-        value: department.id,
-        label: department.label,
-      })),
-    ];
-  }, [collegeFilter]);
-
-  const difficultyFilterOptions = useMemo(() => {
-    const difficulties = Array.from(
-      new Set(courses.map((course) => course.data.difficultyLevel).filter((level): level is string => Boolean(level))),
-    ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-
-    return [{ value: "all", label: "Any difficulty" }, ...difficulties.map((difficulty) => ({ value: difficulty, label: difficulty }))];
-  }, [courses]);
-
-  const activeFilterCount = [
-    !showLockedCourses,
-    collegeFilter !== "all",
-    departmentFilter !== "all",
-    difficultyFilter !== "all",
-    activityFilter !== "all",
-  ].filter(Boolean).length;
-
-  const visibleCourses = useMemo(
-    () =>
-      getVisibleCatalogCourses({
-        activityFilter,
-        catalogCourseMap,
-        collegeFilter,
-        courses,
-        departmentFilter,
-        difficultyFilter,
-        isClusterScoped: Boolean(selectedCluster),
-        searchQuery,
-        selectedClusterCourseIds,
-        showLockedCourses,
-        sortMode,
-      }),
-    [
-      activityFilter,
-      catalogCourseMap,
-      collegeFilter,
-      courses,
-      departmentFilter,
-      difficultyFilter,
-      searchQuery,
-      selectedCluster,
-      selectedClusterCourseIds,
-      showLockedCourses,
-      sortMode,
-    ],
-  );
-  const visiblePrograms = useMemo(
-    () =>
-      getVisibleCatalogPrograms({
-        programs,
-        courses,
-        courseMap: catalogCourseMap,
-        searchQuery,
-        sortMode: pathSortMode,
-      }),
-    [catalogCourseMap, courses, pathSortMode, programs, searchQuery],
-  );
-  const visibleClusters = useMemo(
-    () =>
-      getVisibleCatalogClusters({
-        program: selectedProgram,
-        courseMap: catalogCourseMap,
-        searchQuery,
-        sortMode: pathSortMode,
-      }),
-    [catalogCourseMap, pathSortMode, searchQuery, selectedProgram],
-  );
-
-  const totalCatalogPages = Math.max(1, Math.ceil(visibleCourses.length / coursesPerPage));
-  const activeCatalogPage = Math.min(catalogPage, totalCatalogPages);
+  const totalCatalogPages = Math.max(1, Math.ceil(catalogControls.visibleCourses.length / coursesPerPage));
+  const activeCatalogPage = Math.min(catalogControls.catalogPage, totalCatalogPages);
   const catalogPageStartIndex = (activeCatalogPage - 1) * coursesPerPage;
-  const catalogPageCourses = visibleCourses.slice(
+  const catalogPageCourses = catalogControls.visibleCourses.slice(
     catalogPageStartIndex,
     catalogPageStartIndex + coursesPerPage,
   );
-  const firstVisibleResult = visibleCourses.length === 0 ? 0 : catalogPageStartIndex + 1;
-  const lastVisibleResult = Math.min(catalogPageStartIndex + coursesPerPage, visibleCourses.length);
-  const shouldShowCatalogPagination = visibleCourses.length > coursesPerPage;
+  const firstVisibleResult = catalogControls.visibleCourses.length === 0 ? 0 : catalogPageStartIndex + 1;
+  const lastVisibleResult = Math.min(catalogPageStartIndex + coursesPerPage, catalogControls.visibleCourses.length);
+  const shouldShowCatalogPagination = catalogControls.visibleCourses.length > coursesPerPage;
 
   useEffect(() => {
-    if (catalogViewLevel !== "courses") {
+    if (catalogControls.catalogViewLevel !== "courses") {
       return;
     }
     const grid = courseGridRef.current;
@@ -279,104 +138,11 @@ export default function CourseCatalog({
       observer.disconnect();
       window.removeEventListener("resize", updateCoursesPerPage);
     };
-  }, [catalogViewLevel, isGeneratingCourse]);
-
-  const handleSearchQueryChange = (value: string) => {
-    setSearchQuery(value);
-    setCatalogPage(1);
-  };
-
-  const handleCollegeFilterChange = (value: string) => {
-    setCollegeFilter(value);
-    setDepartmentFilter("all");
-    setCatalogPage(1);
-  };
-
-  const handleDepartmentFilterChange = (value: string) => {
-    setDepartmentFilter(value);
-    setCatalogPage(1);
-  };
-
-  const handleDifficultyFilterChange = (value: string) => {
-    setDifficultyFilter(value);
-    setCatalogPage(1);
-  };
-
-  const handleActivityFilterChange = (value: string) => {
-    setActivityFilter(value as CatalogActivityFilter);
-    setCatalogPage(1);
-  };
-
-  const handleShowLockedCoursesChange = (checked: boolean) => {
-    setShowLockedCourses(checked);
-    setCatalogPage(1);
-  };
-
-  const handleResetCatalogFilters = () => {
-    setShowLockedCourses(true);
-    setCollegeFilter("all");
-    setDepartmentFilter("all");
-    setDifficultyFilter("all");
-    setActivityFilter("all");
-    setCatalogPage(1);
-  };
-
-  const handleSortModeChange = (value: string) => {
-    setSortMode(value as CatalogSortMode);
-    setCatalogPage(1);
-  };
-
-  const handlePathSortModeChange = (value: string) => {
-    setPathSortMode(value as CatalogPathSortMode);
-    setCatalogPage(1);
-  };
-
-  const handleSelectedProgramChange = (value: string) => {
-    const program = programs.find((candidate) => candidate.id === value) ?? programs[0] ?? null;
-    setSelectedProgramId(program?.id ?? "");
-    setSelectedClusterId("");
-    setCatalogPage(1);
-    onCatalogDrilldown("clusters", program);
-  };
-
-  const handleCatalogViewLevelChange = (value: string) => {
-    const nextLevel = value as CatalogViewLevel;
-    setCatalogViewLevel(nextLevel);
-    setCatalogPage(1);
-    if (nextLevel === "programs") {
-      setSelectedClusterId("");
-      onCatalogDrilldown("programs");
-      return;
-    }
-    if (nextLevel === "clusters") {
-      const program = selectedProgram ?? programs[0] ?? null;
-      setSelectedProgramId(program?.id ?? "");
-      setSelectedClusterId("");
-      onCatalogDrilldown("clusters", program);
-      return;
-    }
-    setSelectedClusterId("");
-    onCatalogDrilldown("courses");
-  };
+  }, [catalogControls.catalogViewLevel, isGeneratingCourse]);
 
   const handleCreateCollegeChange = (value: string) => {
     setCreateCollege(value);
     setCreateDepartment("");
-  };
-
-  const handleProgramSelect = (program: LyciumProgram) => {
-    setSelectedProgramId(program.id);
-    setSelectedClusterId("");
-    setCatalogViewLevel("clusters");
-    setCatalogPage(1);
-    onCatalogDrilldown("clusters", program);
-  };
-
-  const handleClusterSelect = (cluster: LyciumRequirementGroup) => {
-    setSelectedClusterId(cluster.id);
-    setCatalogViewLevel("courses");
-    setCatalogPage(1);
-    onCatalogDrilldown("courses", selectedProgram, cluster);
   };
 
   const handleSourceLinkChange = (index: number, value: string) => {
@@ -402,52 +168,52 @@ export default function CourseCatalog({
       <main className="home-page">
         <section className="catalog-page">
           <CatalogToolbar
-            catalogViewLevel={catalogViewLevel}
-            selectedProgramId={selectedProgramId}
-            programOptions={programOptions}
-            searchQuery={searchQuery}
-            sortMode={sortMode}
-            pathSortMode={pathSortMode}
-            activeFilterCount={activeFilterCount}
-            showLockedCourses={showLockedCourses}
-            collegeFilter={collegeFilter}
-            collegeFilterOptions={collegeFilterOptions}
-            departmentFilter={departmentFilter}
-            departmentFilterOptions={departmentFilterOptions}
-            difficultyFilter={difficultyFilter}
-            difficultyFilterOptions={difficultyFilterOptions}
-            activityFilter={activityFilter}
-            onCatalogViewLevelChange={handleCatalogViewLevelChange}
-            onSearchQueryChange={handleSearchQueryChange}
-            onSortModeChange={handleSortModeChange}
-            onPathSortModeChange={handlePathSortModeChange}
-            onSelectedProgramChange={handleSelectedProgramChange}
-            onShowLockedCoursesChange={handleShowLockedCoursesChange}
-            onCollegeFilterChange={handleCollegeFilterChange}
-            onDepartmentFilterChange={handleDepartmentFilterChange}
-            onDifficultyFilterChange={handleDifficultyFilterChange}
-            onActivityFilterChange={handleActivityFilterChange}
-            onResetCatalogFilters={handleResetCatalogFilters}
+            catalogViewLevel={catalogControls.catalogViewLevel}
+            selectedProgramId={catalogControls.selectedProgramId}
+            programOptions={catalogControls.programOptions}
+            searchQuery={catalogControls.searchQuery}
+            sortMode={catalogControls.sortMode}
+            pathSortMode={catalogControls.pathSortMode}
+            activeFilterCount={catalogControls.activeFilterCount}
+            showLockedCourses={catalogControls.showLockedCourses}
+            collegeFilter={catalogControls.collegeFilter}
+            collegeFilterOptions={catalogControls.collegeFilterOptions}
+            departmentFilter={catalogControls.departmentFilter}
+            departmentFilterOptions={catalogControls.departmentFilterOptions}
+            difficultyFilter={catalogControls.difficultyFilter}
+            difficultyFilterOptions={catalogControls.difficultyFilterOptions}
+            activityFilter={catalogControls.activityFilter}
+            onCatalogViewLevelChange={catalogControls.handleCatalogViewLevelChange}
+            onSearchQueryChange={catalogControls.handleSearchQueryChange}
+            onSortModeChange={catalogControls.handleSortModeChange}
+            onPathSortModeChange={catalogControls.handlePathSortModeChange}
+            onSelectedProgramChange={catalogControls.handleSelectedProgramChange}
+            onShowLockedCoursesChange={catalogControls.handleShowLockedCoursesChange}
+            onCollegeFilterChange={catalogControls.handleCollegeFilterChange}
+            onDepartmentFilterChange={catalogControls.handleDepartmentFilterChange}
+            onDifficultyFilterChange={catalogControls.handleDifficultyFilterChange}
+            onActivityFilterChange={catalogControls.handleActivityFilterChange}
+            onResetCatalogFilters={catalogControls.handleResetCatalogFilters}
           />
 
-          {(catalogViewLevel === "programs" || catalogViewLevel === "clusters") && (
+          {(catalogControls.catalogViewLevel === "programs" || catalogControls.catalogViewLevel === "clusters") && (
             <CatalogProgramShowcase
-              viewLevel={catalogViewLevel}
-              programs={visiblePrograms}
-              clusters={visibleClusters}
-              selectedProgram={selectedProgram}
-              onProgramSelect={handleProgramSelect}
-              onClusterSelect={handleClusterSelect}
+              viewLevel={catalogControls.catalogViewLevel}
+              programs={catalogControls.visiblePrograms}
+              clusters={catalogControls.visibleClusters}
+              selectedProgram={catalogControls.selectedProgram}
+              onProgramSelect={catalogControls.handleProgramSelect}
+              onClusterSelect={catalogControls.handleClusterSelect}
               onOpenProgram={onOpenProgram}
             />
           )}
 
-          {catalogViewLevel === "courses" && (
+          {catalogControls.catalogViewLevel === "courses" && (
             <>
-              {selectedCluster && selectedProgram && (
+              {catalogControls.selectedCluster && catalogControls.selectedProgram && (
                 <div className="catalog-course-scope" aria-live="polite">
                   <span>
-                    Courses in {selectedProgram.title} / {selectedCluster.displayName}
+                    Courses in {catalogControls.selectedProgram.title} / {catalogControls.selectedCluster.displayName}
                   </span>
                   <button type="button" onClick={() => onCatalogDrilldown("courses")}>
                     Show all courses
@@ -459,7 +225,7 @@ export default function CourseCatalog({
                 isGeneratingCourse={isGeneratingCourse}
                 generatingCourseTitle={generatingCourseTitle}
                 generateMessage={generateMessage}
-                visibleCourses={visibleCourses}
+                visibleCourses={catalogControls.visibleCourses}
                 catalogPageCourses={catalogPageCourses}
                 publishingCourseKey={publishingCourseKey}
                 onCreateCourse={() => setIsCreateModalOpen(true)}
@@ -472,8 +238,8 @@ export default function CourseCatalog({
                   firstVisibleResult={firstVisibleResult}
                   lastVisibleResult={lastVisibleResult}
                   totalPages={totalCatalogPages}
-                  totalResults={visibleCourses.length}
-                  onPageChange={setCatalogPage}
+                  totalResults={catalogControls.visibleCourses.length}
+                  onPageChange={catalogControls.setCatalogPage}
                 />
               )}
             </>

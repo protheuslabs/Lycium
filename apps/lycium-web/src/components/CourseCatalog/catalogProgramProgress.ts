@@ -10,6 +10,7 @@ export type CatalogPathProgress = {
   viewedPercentage: number;
   hasProgress: boolean;
 };
+export type CatalogProgressCache = Map<string, ReturnType<typeof getCourseProgress>>;
 
 export function requirementCourseIds(requirement: LyciumRequirement): string[] {
   if (requirement.type === "complete_course") return [requirement.courseId];
@@ -22,7 +23,15 @@ export function groupCourseIds(group: LyciumRequirementGroup): string[] {
   return Array.from(new Set(group.requirements.flatMap(requirementCourseIds)));
 }
 
-export function catalogPathProgress(courseIds: string[], courseMap: Map<string, CourseEntry>): CatalogPathProgress {
+export function buildCatalogProgressCache(courseMap: Map<string, CourseEntry>): CatalogProgressCache {
+  return new Map(Array.from(courseMap.values(), (course) => [course.key, getCourseProgress(course)]));
+}
+
+export function catalogPathProgress(
+  courseIds: string[],
+  courseMap: Map<string, CourseEntry>,
+  progressCache?: CatalogProgressCache,
+): CatalogPathProgress {
   const uniqueCourseIds = Array.from(new Set(courseIds));
   const courses = uniqueCourseIds.map((courseId) => courseMap.get(courseId)).filter((course): course is CourseEntry => Boolean(course));
   const total = courses.length;
@@ -31,7 +40,7 @@ export function catalogPathProgress(courseIds: string[], courseMap: Map<string, 
     return { total: 0, completed: 0, viewed: 0, percentage: 0, viewedPercentage: 0, hasProgress: false };
   }
 
-  const summaries = courses.map(getCourseProgress);
+  const summaries = courses.map((course) => progressCache?.get(course.key) ?? getCourseProgress(course));
   const completed = summaries.filter((summary) => summary.percentage >= 100).length;
   const viewed = summaries.filter((summary) => summary.viewed > 0 || summary.completed > 0).length;
 
