@@ -317,6 +317,10 @@
   width: min(100%, 30rem);
 }
 
+.catalog-dropdown-row--path {
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+
 .catalog-control-label {
   color: #667085;
   font-size: 0.72rem;

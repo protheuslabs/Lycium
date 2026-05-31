@@ -1,10 +1,11 @@
-import type { LyciumProgram } from "@lycium/contracts";
 import Dropdown from "../Dropdown/Dropdown";
 import type { DropdownOption } from "../Dropdown/Dropdown";
 import CatalogFilterPanel from "./CatalogFilterPanel";
 import {
+  CATALOG_PATH_SORT_OPTIONS,
   CATALOG_SORT_OPTIONS,
   type CatalogActivityFilter,
+  type CatalogPathSortMode,
   type CatalogSortMode,
   type CatalogViewLevel,
 } from "./catalogUtils";
@@ -17,9 +18,11 @@ const CATALOG_VIEW_LEVEL_OPTIONS = [
 
 type CatalogToolbarProps = {
   catalogViewLevel: CatalogViewLevel;
-  selectedProgram: LyciumProgram | null;
+  selectedProgramId: string;
+  programOptions: DropdownOption[];
   searchQuery: string;
   sortMode: CatalogSortMode;
+  pathSortMode: CatalogPathSortMode;
   activeFilterCount: number;
   showLockedCourses: boolean;
   collegeFilter: string;
@@ -32,6 +35,8 @@ type CatalogToolbarProps = {
   onCatalogViewLevelChange: (value: string) => void;
   onSearchQueryChange: (value: string) => void;
   onSortModeChange: (value: string) => void;
+  onPathSortModeChange: (value: string) => void;
+  onSelectedProgramChange: (value: string) => void;
   onShowLockedCoursesChange: (checked: boolean) => void;
   onCollegeFilterChange: (value: string) => void;
   onDepartmentFilterChange: (value: string) => void;
@@ -42,9 +47,11 @@ type CatalogToolbarProps = {
 
 export default function CatalogToolbar({
   catalogViewLevel,
-  selectedProgram,
+  selectedProgramId,
+  programOptions,
   searchQuery,
   sortMode,
+  pathSortMode,
   activeFilterCount,
   showLockedCourses,
   collegeFilter,
@@ -57,6 +64,8 @@ export default function CatalogToolbar({
   onCatalogViewLevelChange,
   onSearchQueryChange,
   onSortModeChange,
+  onPathSortModeChange,
+  onSelectedProgramChange,
   onShowLockedCoursesChange,
   onCollegeFilterChange,
   onDepartmentFilterChange,
@@ -115,11 +124,38 @@ export default function CatalogToolbar({
           </div>
         </>
       ) : (
-        <div className="catalog-level-context">
-          {catalogViewLevel === "clusters" && selectedProgram
-            ? `Viewing clusters in ${selectedProgram.title}`
-            : "Choose a program to view its clusters"}
-        </div>
+        <>
+          <label className="catalog-search-field">
+            <input
+              type="search"
+              placeholder={catalogViewLevel === "programs" ? "Search programs" : "Search clusters"}
+              value={searchQuery}
+              onChange={(event) => onSearchQueryChange(event.target.value)}
+            />
+          </label>
+          <div className="catalog-dropdown-row catalog-dropdown-row--path">
+            {catalogViewLevel === "clusters" && (
+              <label className="catalog-dropdown-field">
+                <Dropdown
+                  className="catalog-dropdown"
+                  value={selectedProgramId}
+                  options={programOptions}
+                  onChange={onSelectedProgramChange}
+                  ariaLabel="Select program"
+                />
+              </label>
+            )}
+            <label className="catalog-dropdown-field">
+              <Dropdown
+                className="catalog-dropdown catalog-sort-dropdown"
+                value={pathSortMode}
+                options={CATALOG_PATH_SORT_OPTIONS}
+                onChange={onPathSortModeChange}
+                ariaLabel={`Sort ${catalogViewLevel}`}
+              />
+            </label>
+          </div>
+        </>
       )}
     </div>
   );

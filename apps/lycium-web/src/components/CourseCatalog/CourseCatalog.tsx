@@ -11,6 +11,7 @@ import CatalogToolbar from "./CatalogToolbar";
 import CourseInfoModal from "./CourseInfoModal";
 import CreateCourseModal from "./CreateCourseModal";
 import { getVisibleCatalogCourses } from "./catalogCourseFiltering";
+import { getVisibleCatalogClusters, getVisibleCatalogPrograms } from "./catalogPathFiltering";
 import { groupCourseIds } from "./catalogProgramProgress";
 import {
   CATALOG_COURSE_CARD_MIN_WIDTH,
@@ -18,6 +19,7 @@ import {
   CATALOG_LEVEL_OPTIONS,
   CATALOG_MOBILE_ROWS_PER_PAGE,
   type CatalogActivityFilter,
+  type CatalogPathSortMode,
   type CatalogSortMode,
   type CatalogViewLevel,
   getCollegeFilterLabel,
@@ -90,6 +92,7 @@ export default function CourseCatalog({
   const [createCollege, setCreateCollege] = useState("");
   const [createDepartment, setCreateDepartment] = useState("");
   const [sortMode, setSortMode] = useState<CatalogSortMode>("college");
+  const [pathSortMode, setPathSortMode] = useState<CatalogPathSortMode>("name");
   const [catalogPage, setCatalogPage] = useState(1);
   const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE - 1);
   const courseGridRef = useRef<HTMLDivElement | null>(null);
@@ -108,6 +111,10 @@ export default function CourseCatalog({
     [selectedCluster],
   );
   const catalogCourseMap = useMemo(() => new Map(courses.map((course) => [course.key, course])), [courses]);
+  const programOptions = useMemo(
+    () => programs.map((program) => ({ value: program.id, label: program.title })),
+    [programs],
+  );
 
   useEffect(() => {
     if (catalogProgramId) {
@@ -209,6 +216,27 @@ export default function CourseCatalog({
       sortMode,
     ],
   );
+  const visiblePrograms = useMemo(
+    () =>
+      getVisibleCatalogPrograms({
+        programs,
+        courses,
+        courseMap: catalogCourseMap,
+        searchQuery,
+        sortMode: pathSortMode,
+      }),
+    [catalogCourseMap, courses, pathSortMode, programs, searchQuery],
+  );
+  const visibleClusters = useMemo(
+    () =>
+      getVisibleCatalogClusters({
+        program: selectedProgram,
+        courseMap: catalogCourseMap,
+        searchQuery,
+        sortMode: pathSortMode,
+      }),
+    [catalogCourseMap, pathSortMode, searchQuery, selectedProgram],
+  );
 
   const totalCatalogPages = Math.max(1, Math.ceil(visibleCourses.length / coursesPerPage));
   const activeCatalogPage = Math.min(catalogPage, totalCatalogPages);
@@ -298,6 +326,19 @@ export default function CourseCatalog({
     setCatalogPage(1);
   };
 
+  const handlePathSortModeChange = (value: string) => {
+    setPathSortMode(value as CatalogPathSortMode);
+    setCatalogPage(1);
+  };
+
+  const handleSelectedProgramChange = (value: string) => {
+    const program = programs.find((candidate) => candidate.id === value) ?? programs[0] ?? null;
+    setSelectedProgramId(program?.id ?? "");
+    setSelectedClusterId("");
+    setCatalogPage(1);
+    onCatalogDrilldown("clusters", program);
+  };
+
   const handleCatalogViewLevelChange = (value: string) => {
     const nextLevel = value as CatalogViewLevel;
     setCatalogViewLevel(nextLevel);
@@ -362,9 +403,11 @@ export default function CourseCatalog({
         <section className="catalog-page">
           <CatalogToolbar
             catalogViewLevel={catalogViewLevel}
-            selectedProgram={selectedProgram}
+            selectedProgramId={selectedProgramId}
+            programOptions={programOptions}
             searchQuery={searchQuery}
             sortMode={sortMode}
+            pathSortMode={pathSortMode}
             activeFilterCount={activeFilterCount}
             showLockedCourses={showLockedCourses}
             collegeFilter={collegeFilter}
@@ -377,6 +420,8 @@ export default function CourseCatalog({
             onCatalogViewLevelChange={handleCatalogViewLevelChange}
             onSearchQueryChange={handleSearchQueryChange}
             onSortModeChange={handleSortModeChange}
+            onPathSortModeChange={handlePathSortModeChange}
+            onSelectedProgramChange={handleSelectedProgramChange}
             onShowLockedCoursesChange={handleShowLockedCoursesChange}
             onCollegeFilterChange={handleCollegeFilterChange}
             onDepartmentFilterChange={handleDepartmentFilterChange}
@@ -388,10 +433,9 @@ export default function CourseCatalog({
           {(catalogViewLevel === "programs" || catalogViewLevel === "clusters") && (
             <CatalogProgramShowcase
               viewLevel={catalogViewLevel}
-              programs={programs}
+              programs={visiblePrograms}
+              clusters={visibleClusters}
               selectedProgram={selectedProgram}
-              courses={courses}
-              courseMap={catalogCourseMap}
               onProgramSelect={handleProgramSelect}
               onClusterSelect={handleClusterSelect}
               onOpenProgram={onOpenProgram}

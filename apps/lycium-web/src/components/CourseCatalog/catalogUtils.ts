@@ -3,6 +3,7 @@ import { getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/c
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
 
 export type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
+export type CatalogPathSortMode = "name" | "completion-desc" | "completion-asc" | "time-desc" | "time-asc";
 export type CatalogActivityFilter = "all" | "not-started" | "in-progress" | "completed";
 export type CatalogViewLevel = "programs" | "clusters" | "courses";
 
@@ -33,6 +34,14 @@ export const CATALOG_SORT_OPTIONS = [
   { value: "college", label: "Sort by Type" },
   { value: "completion-desc", label: "Sort by Completion ↑↓" },
   { value: "completion-asc", label: "Sort by Completion ↓↑" },
+];
+
+export const CATALOG_PATH_SORT_OPTIONS = [
+  { value: "name", label: "Sort by Name" },
+  { value: "completion-desc", label: "Sort by Completion ↑↓" },
+  { value: "completion-asc", label: "Sort by Completion ↓↑" },
+  { value: "time-desc", label: "Sort by Time ↑↓" },
+  { value: "time-asc", label: "Sort by Time ↓↑" },
 ];
 
 export const CATALOG_ACTIVITY_OPTIONS = [

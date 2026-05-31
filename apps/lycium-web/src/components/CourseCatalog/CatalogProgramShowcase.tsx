@@ -1,15 +1,13 @@
 import type { KeyboardEvent } from "react";
 import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
-import type { CourseEntry } from "../../courseTypes";
-import { estimateProgramTime, estimateRequirementGroupTime, formatTimeEstimate, timeEstimateSourceLabel } from "../../utils/curriculumTime";
-import { catalogPathProgress, groupCourseIds, programCourseIds } from "./catalogProgramProgress";
+import { formatTimeEstimate, timeEstimateSourceLabel } from "../../utils/curriculumTime";
+import type { CatalogVisibleCluster, CatalogVisibleProgram } from "./catalogPathFiltering";
 
 type CatalogProgramShowcaseProps = {
   viewLevel: "programs" | "clusters";
-  programs: LyciumProgram[];
+  programs: CatalogVisibleProgram[];
+  clusters: CatalogVisibleCluster[];
   selectedProgram: LyciumProgram | null;
-  courses: CourseEntry[];
-  courseMap: Map<string, CourseEntry>;
   onProgramSelect: (program: LyciumProgram) => void;
   onClusterSelect: (cluster: LyciumRequirementGroup) => void;
   onOpenProgram: (program: LyciumProgram) => void;
@@ -25,9 +23,8 @@ function handleActivation(event: KeyboardEvent<HTMLElement>, action: () => void)
 export default function CatalogProgramShowcase({
   viewLevel,
   programs,
+  clusters,
   selectedProgram,
-  courses,
-  courseMap,
   onProgramSelect,
   onClusterSelect,
   onOpenProgram,
@@ -36,10 +33,7 @@ export default function CatalogProgramShowcase({
     return (
       <section className="program-showcase" aria-label="Learning programs">
         <div className="program-showcase-grid">
-          {programs.map((program) => {
-            const programEstimate = estimateProgramTime(program, courses);
-            const programProgress = catalogPathProgress(programCourseIds(program), courseMap);
-
+          {programs.map(({ program, estimate, progress }) => {
             return (
               <article
                 className="program-showcase-card"
@@ -56,18 +50,18 @@ export default function CatalogProgramShowcase({
                 </div>
                 <div className="program-showcase-meta">
                   <span>{program.requirementGroups.length} clusters</span>
-                  <span>{formatTimeEstimate(programEstimate)}</span>
-                  <span>{timeEstimateSourceLabel(programEstimate)}</span>
+                  <span>{formatTimeEstimate(estimate)}</span>
+                  <span>{timeEstimateSourceLabel(estimate)}</span>
                   <span>{program.reviewStatus}</span>
                 </div>
-                {programProgress.hasProgress && (
+                {progress.hasProgress && (
                   <div className="program-showcase-progress">
                     <div className="program-showcase-progress-bar">
-                      <div className="program-showcase-progress-viewed" style={{ width: `${programProgress.viewedPercentage}%` }} />
-                      <div className="program-showcase-progress-complete" style={{ width: `${programProgress.percentage}%` }} />
+                      <div className="program-showcase-progress-viewed" style={{ width: `${progress.viewedPercentage}%` }} />
+                      <div className="program-showcase-progress-complete" style={{ width: `${progress.percentage}%` }} />
                     </div>
                     <p>
-                      {Math.round(programProgress.percentage)}% complete &middot; {Math.round(programProgress.viewedPercentage)}% viewed
+                      {Math.round(progress.percentage)}% complete &middot; {Math.round(progress.viewedPercentage)}% viewed
                     </p>
                   </div>
                 )}
@@ -86,11 +80,7 @@ export default function CatalogProgramShowcase({
   return (
     <section className="program-showcase" aria-label={`Clusters in ${selectedProgram.title}`}>
       <div className="program-showcase-grid">
-        {selectedProgram.requirementGroups.map((cluster) => {
-          const courseIds = groupCourseIds(cluster);
-          const clusterEstimate = estimateRequirementGroupTime(cluster, courseMap);
-          const clusterProgress = catalogPathProgress(courseIds, courseMap);
-
+        {clusters.map(({ cluster, courseIds, estimate, progress }) => {
           return (
             <article
               className="program-showcase-card"
@@ -108,17 +98,17 @@ export default function CatalogProgramShowcase({
               <div className="program-showcase-meta">
                 <span>{cluster.requirements.length} requirements</span>
                 <span>{courseIds.length} courses</span>
-                <span>{formatTimeEstimate(clusterEstimate)}</span>
-                <span>{timeEstimateSourceLabel(clusterEstimate)}</span>
+                <span>{formatTimeEstimate(estimate)}</span>
+                <span>{timeEstimateSourceLabel(estimate)}</span>
               </div>
-              {clusterProgress.hasProgress && (
+              {progress.hasProgress && (
                 <div className="program-showcase-progress">
                   <div className="program-showcase-progress-bar">
-                    <div className="program-showcase-progress-viewed" style={{ width: `${clusterProgress.viewedPercentage}%` }} />
-                    <div className="program-showcase-progress-complete" style={{ width: `${clusterProgress.percentage}%` }} />
+                    <div className="program-showcase-progress-viewed" style={{ width: `${progress.viewedPercentage}%` }} />
+                    <div className="program-showcase-progress-complete" style={{ width: `${progress.percentage}%` }} />
                   </div>
                   <p>
-                    {Math.round(clusterProgress.percentage)}% complete &middot; {Math.round(clusterProgress.viewedPercentage)}% viewed
+                    {Math.round(progress.percentage)}% complete &middot; {Math.round(progress.viewedPercentage)}% viewed
                   </p>
                 </div>
               )}
