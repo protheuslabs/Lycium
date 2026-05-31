@@ -1,30 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { FormEvent, KeyboardEvent, MouseEvent } from "react";
-import type { LyciumProgram, LyciumRequirement, LyciumRequirementGroup } from "@lycium/contracts";
+import type { FormEvent, MouseEvent } from "react";
+import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
-import Dropdown from "../Dropdown/Dropdown";
 import type { CourseEntry } from "../../courseTypes";
 import { courseCategories, getCourseCategoryDepartments, getCourseCategoryLabel } from "../../courseData/courseTaxonomy";
-import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
-import { estimateProgramTime, estimateRequirementGroupTime, formatTimeEstimate, timeEstimateSourceLabel } from "../../utils/curriculumTime";
-import CatalogCourseCard from "./CatalogCourseCard";
-import CatalogFilterPanel from "./CatalogFilterPanel";
+import CatalogCourseGrid from "./CatalogCourseGrid";
 import CatalogPagination from "./CatalogPagination";
+import CatalogProgramShowcase from "./CatalogProgramShowcase";
+import CatalogToolbar from "./CatalogToolbar";
 import CourseInfoModal from "./CourseInfoModal";
 import CreateCourseModal from "./CreateCourseModal";
+import { getVisibleCatalogCourses } from "./catalogCourseFiltering";
+import { groupCourseIds } from "./catalogProgramProgress";
 import {
   CATALOG_COURSE_CARD_MIN_WIDTH,
   CATALOG_DESKTOP_ROWS_PER_PAGE,
   CATALOG_LEVEL_OPTIONS,
   CATALOG_MOBILE_ROWS_PER_PAGE,
-  CATALOG_SORT_OPTIONS,
   type CatalogActivityFilter,
   type CatalogSortMode,
-  compareCatalogSort,
+  type CatalogViewLevel,
   getCollegeFilterLabel,
-  getCourseSearchScore,
   getGeneratingCourseTitle,
-  normalizeSearchText,
 } from "./catalogUtils";
 
 type CourseCatalogProps = {
@@ -56,101 +53,6 @@ type CourseCatalogProps = {
   publishingCourseKey: string | null;
   onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
-
-type CatalogViewLevel = "programs" | "clusters" | "courses";
-
-type CatalogPathProgress = {
-  total: number;
-  completed: number;
-  viewed: number;
-  percentage: number;
-  viewedPercentage: number;
-  hasProgress: boolean;
-};
-
-const CATALOG_VIEW_LEVEL_OPTIONS = [
-  { value: "programs", label: "Programs" },
-  { value: "clusters", label: "Clusters" },
-  { value: "courses", label: "Courses" },
-];
-
-function requirementCourseIds(requirement: LyciumRequirement): string[] {
-  if (requirement.type === "complete_course") return [requirement.courseId];
-  if (requirement.type === "complete_n_of_courses") return requirement.courseIds;
-  if (requirement.type === "requirement_set") return requirement.requirements.flatMap(requirementCourseIds);
-  return [];
-}
-
-function groupCourseIds(group: LyciumRequirementGroup): string[] {
-  return Array.from(new Set(group.requirements.flatMap(requirementCourseIds)));
-}
-
-function catalogPathProgress(courseIds: string[], courseMap: Map<string, CourseEntry>): CatalogPathProgress {
-  const uniqueCourseIds = Array.from(new Set(courseIds));
-  const courses = uniqueCourseIds.map((courseId) => courseMap.get(courseId)).filter((course): course is CourseEntry => Boolean(course));
-  const total = courses.length;
-
-  if (total === 0) {
-    return { total: 0, completed: 0, viewed: 0, percentage: 0, viewedPercentage: 0, hasProgress: false };
-  }
-
-  const summaries = courses.map(getCourseProgress);
-  const completed = summaries.filter((summary) => summary.percentage >= 100).length;
-  const viewed = summaries.filter((summary) => summary.viewed > 0 || summary.completed > 0).length;
-
-  return {
-    total,
-    completed,
-    viewed,
-    percentage: (completed / total) * 100,
-    viewedPercentage: (viewed / total) * 100,
-    hasProgress: viewed > 0 || completed > 0,
-  };
-}
-
-function programCourseIds(program: LyciumProgram): string[] {
-  return Array.from(new Set(program.requirementGroups.flatMap(groupCourseIds)));
-}
-
-type CoursePrerequisiteLike = NonNullable<CourseEntry["data"]["prerequisites"]>[number] | string;
-
-function getPrerequisiteCourseId(prerequisite: CoursePrerequisiteLike): string | null {
-  if (typeof prerequisite === "string") {
-    return prerequisite;
-  }
-
-  if (prerequisite.type !== "course") {
-    return null;
-  }
-
-  return prerequisite.courseId ?? prerequisite.id ?? null;
-}
-
-function getPrerequisiteTitle(prerequisite: CoursePrerequisiteLike, prerequisiteCourse: CourseEntry | undefined): string {
-  if (typeof prerequisite === "string") {
-    return prerequisiteCourse?.title ?? prerequisite;
-  }
-
-  return prerequisite.title ?? prerequisiteCourse?.title ?? prerequisite.courseId ?? prerequisite.id ?? "required course";
-}
-
-function getUnmetCoursePrerequisites(course: CourseEntry, courseMap: Map<string, CourseEntry>): string[] {
-  return (course.data.prerequisites ?? [])
-    .map((prerequisite) => {
-      const prerequisiteCourseId = getPrerequisiteCourseId(prerequisite);
-
-      if (!prerequisiteCourseId) {
-        return null;
-      }
-
-      const prerequisiteCourse = courseMap.get(prerequisiteCourseId);
-      const prerequisiteProgress = prerequisiteCourse ? getCourseProgress(prerequisiteCourse) : null;
-      const isMet = Boolean(prerequisiteProgress && prerequisiteProgress.percentage >= 100);
-
-      return isMet ? null : getPrerequisiteTitle(prerequisite, prerequisiteCourse);
-    })
-    .filter((title): title is string => Boolean(title));
-}
 
 export default function CourseCatalog({
   courses,
@@ -278,64 +180,35 @@ export default function CourseCatalog({
     activityFilter !== "all",
   ].filter(Boolean).length;
 
-  const visibleCourses = useMemo(() => {
-    const query = normalizeSearchText(searchQuery);
-
-    return courses
-      .map((course) => {
-        const courseProgress = getCourseProgress(course);
-        const bookmarkedSection = getBookmarkedModuleSection(course);
-        const hasActiveCoursePage = Boolean(bookmarkedSection);
-        const hasCourseActivity = hasActiveCoursePage || courseProgress.viewed > 0 || courseProgress.completed > 0;
-        const unmetPrerequisites = getUnmetCoursePrerequisites(course, catalogCourseMap);
-        const isLocked = !hasCourseActivity && unmetPrerequisites.length > 0;
-
-        return {
-          course,
-          courseProgress,
-          bookmarkedSection,
-          hasCourseActivity,
-          isLocked,
-          unmetPrerequisites,
-          collegeLabel: getCourseCategoryLabel(course.data.category),
-          searchScore: getCourseSearchScore(course, query),
-        };
-      })
-      .filter(({ course, courseProgress, hasCourseActivity, isLocked, searchScore }) => {
-        const matchesCollege = collegeFilter === "all" || course.data.category === collegeFilter;
-        const matchesDepartment = departmentFilter === "all" || course.data.department === departmentFilter;
-        const matchesDifficulty = difficultyFilter === "all" || course.data.difficultyLevel === difficultyFilter;
-        const matchesCluster = !selectedCluster || selectedClusterCourseIds.has(course.key);
-        const matchesSearch = !query || searchScore > 0;
-        const matchesAvailability = showLockedCourses || !isLocked;
-        const matchesActivity =
-          activityFilter === "all" ||
-          (activityFilter === "not-started" && !hasCourseActivity) ||
-          (activityFilter === "in-progress" && hasCourseActivity && courseProgress.percentage < 100) ||
-          (activityFilter === "completed" && courseProgress.percentage >= 100);
-
-        return matchesCollege && matchesDepartment && matchesDifficulty && matchesCluster && matchesSearch && matchesAvailability && matchesActivity;
-      })
-      .sort((a, b) => {
-        if (query) {
-          return b.searchScore - a.searchScore || compareCatalogSort(a, b, sortMode);
-        }
-
-        return compareCatalogSort(a, b, sortMode);
-      });
-  }, [
-    activityFilter,
-    catalogCourseMap,
-    collegeFilter,
-    courses,
-    departmentFilter,
-    difficultyFilter,
-    searchQuery,
-    selectedCluster,
-    selectedClusterCourseIds,
-    showLockedCourses,
-    sortMode,
-  ]);
+  const visibleCourses = useMemo(
+    () =>
+      getVisibleCatalogCourses({
+        activityFilter,
+        catalogCourseMap,
+        collegeFilter,
+        courses,
+        departmentFilter,
+        difficultyFilter,
+        isClusterScoped: Boolean(selectedCluster),
+        searchQuery,
+        selectedClusterCourseIds,
+        showLockedCourses,
+        sortMode,
+      }),
+    [
+      activityFilter,
+      catalogCourseMap,
+      collegeFilter,
+      courses,
+      departmentFilter,
+      difficultyFilter,
+      searchQuery,
+      selectedCluster,
+      selectedClusterCourseIds,
+      showLockedCourses,
+      sortMode,
+    ],
+  );
 
   const totalCatalogPages = Math.max(1, Math.ceil(visibleCourses.length / coursesPerPage));
   const activeCatalogPage = Math.min(catalogPage, totalCatalogPages);
@@ -465,27 +338,6 @@ export default function CourseCatalog({
     onCatalogDrilldown("courses", selectedProgram, cluster);
   };
 
-  const handleCreateCardKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      setIsCreateModalOpen(true);
-    }
-  };
-
-  const handleProgramCardKeyDown = (event: KeyboardEvent<HTMLElement>, program: LyciumProgram) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleProgramSelect(program);
-    }
-  };
-
-  const handleClusterCardKeyDown = (event: KeyboardEvent<HTMLElement>, cluster: LyciumRequirementGroup) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleClusterSelect(cluster);
-    }
-  };
-
   const handleSourceLinkChange = (index: number, value: string) => {
     setSourceLinks((currentLinks) => currentLinks.map((link, linkIndex) => (linkIndex === index ? value : link)));
   };
@@ -508,156 +360,42 @@ export default function CourseCatalog({
     <div className="catalog-shell">
       <main className="home-page">
         <section className="catalog-page">
-          <div className="catalog-toolbar">
-            <label className="catalog-view-field">
-              <Dropdown
-                className="catalog-view-dropdown"
-                value={catalogViewLevel}
-                options={CATALOG_VIEW_LEVEL_OPTIONS}
-                onChange={handleCatalogViewLevelChange}
-                ariaLabel="Select catalog view level"
-              />
-            </label>
-            {catalogViewLevel === "courses" ? (
-              <>
-                <label className="catalog-search-field">
-                  <input
-                    type="search"
-                    placeholder="Search names, tags, and departments"
-                    value={searchQuery}
-                    onChange={(event) => handleSearchQueryChange(event.target.value)}
-                  />
-                </label>
-                <div className="catalog-dropdown-row">
-                  <CatalogFilterPanel
-                    activeFilterCount={activeFilterCount}
-                    showLockedCourses={showLockedCourses}
-                    collegeFilter={collegeFilter}
-                    collegeFilterOptions={collegeFilterOptions}
-                    departmentFilter={departmentFilter}
-                    departmentFilterOptions={departmentFilterOptions}
-                    difficultyFilter={difficultyFilter}
-                    difficultyFilterOptions={difficultyFilterOptions}
-                    activityFilter={activityFilter}
-                    onShowLockedCoursesChange={handleShowLockedCoursesChange}
-                    onCollegeFilterChange={handleCollegeFilterChange}
-                    onDepartmentFilterChange={handleDepartmentFilterChange}
-                    onDifficultyFilterChange={handleDifficultyFilterChange}
-                    onActivityFilterChange={handleActivityFilterChange}
-                    onResetFilters={handleResetCatalogFilters}
-                  />
-                  <label className="catalog-dropdown-field">
-                    <Dropdown
-                      className="catalog-dropdown catalog-sort-dropdown"
-                      value={sortMode}
-                      options={CATALOG_SORT_OPTIONS}
-                      onChange={handleSortModeChange}
-                      ariaLabel="Sort courses"
-                    />
-                  </label>
-                </div>
-              </>
-            ) : (
-              <div className="catalog-level-context">
-                {catalogViewLevel === "clusters" && selectedProgram
-                  ? `Viewing clusters in ${selectedProgram.title}`
-                  : "Choose a program to view its clusters"}
-              </div>
-            )}
-          </div>
+          <CatalogToolbar
+            catalogViewLevel={catalogViewLevel}
+            selectedProgram={selectedProgram}
+            searchQuery={searchQuery}
+            sortMode={sortMode}
+            activeFilterCount={activeFilterCount}
+            showLockedCourses={showLockedCourses}
+            collegeFilter={collegeFilter}
+            collegeFilterOptions={collegeFilterOptions}
+            departmentFilter={departmentFilter}
+            departmentFilterOptions={departmentFilterOptions}
+            difficultyFilter={difficultyFilter}
+            difficultyFilterOptions={difficultyFilterOptions}
+            activityFilter={activityFilter}
+            onCatalogViewLevelChange={handleCatalogViewLevelChange}
+            onSearchQueryChange={handleSearchQueryChange}
+            onSortModeChange={handleSortModeChange}
+            onShowLockedCoursesChange={handleShowLockedCoursesChange}
+            onCollegeFilterChange={handleCollegeFilterChange}
+            onDepartmentFilterChange={handleDepartmentFilterChange}
+            onDifficultyFilterChange={handleDifficultyFilterChange}
+            onActivityFilterChange={handleActivityFilterChange}
+            onResetCatalogFilters={handleResetCatalogFilters}
+          />
 
-          {catalogViewLevel === "programs" && programs.length > 0 && (
-            <section className="program-showcase" aria-label="Learning programs">
-              <div className="program-showcase-grid">
-                {programs.map((program) => (
-                  (() => {
-                    const programEstimate = estimateProgramTime(program, courses);
-                    const programProgress = catalogPathProgress(programCourseIds(program), catalogCourseMap);
-                    return (
-                      <article
-                        className="program-showcase-card"
-                        key={program.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleProgramSelect(program)}
-                        onKeyDown={(event) => handleProgramCardKeyDown(event, program)}
-                      >
-                        <div>
-                          <p className="program-showcase-kicker">{program.programType.replace(/_/g, " ")}</p>
-                          <h3>{program.title}</h3>
-                          <p>{program.description}</p>
-                        </div>
-                        <div className="program-showcase-meta">
-                          <span>{program.requirementGroups.length} clusters</span>
-                          <span>{formatTimeEstimate(programEstimate)}</span>
-                          <span>{timeEstimateSourceLabel(programEstimate)}</span>
-                          <span>{program.reviewStatus}</span>
-                        </div>
-                        {programProgress.hasProgress && (
-                          <div className="program-showcase-progress">
-                            <div className="program-showcase-progress-bar">
-                              <div className="program-showcase-progress-viewed" style={{ width: `${programProgress.viewedPercentage}%` }} />
-                              <div className="program-showcase-progress-complete" style={{ width: `${programProgress.percentage}%` }} />
-                            </div>
-                            <p>
-                              {Math.round(programProgress.percentage)}% complete &middot; {Math.round(programProgress.viewedPercentage)}% viewed
-                            </p>
-                          </div>
-                        )}
-                      </article>
-                    );
-                  })()
-                ))}
-              </div>
-            </section>
-          )}
-
-          {catalogViewLevel === "clusters" && selectedProgram && (
-            <section className="program-showcase" aria-label={`Clusters in ${selectedProgram.title}`}>
-              <div className="program-showcase-grid">
-                {selectedProgram.requirementGroups.map((cluster) => {
-                  const courseCount = groupCourseIds(cluster).length;
-                  const clusterEstimate = estimateRequirementGroupTime(cluster, catalogCourseMap);
-                  const clusterProgress = catalogPathProgress(groupCourseIds(cluster), catalogCourseMap);
-                  return (
-                    <article
-                      className="program-showcase-card"
-                      key={cluster.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => handleClusterSelect(cluster)}
-                      onKeyDown={(event) => handleClusterCardKeyDown(event, cluster)}
-                    >
-                      <div>
-                        <p className="program-showcase-kicker">{cluster.groupKind.replace(/_/g, " ")}</p>
-                        <h3>{cluster.displayName}</h3>
-                        <p>{cluster.purpose}</p>
-                      </div>
-                      <div className="program-showcase-meta">
-                        <span>{cluster.requirements.length} requirements</span>
-                        <span>{courseCount} courses</span>
-                        <span>{formatTimeEstimate(clusterEstimate)}</span>
-                        <span>{timeEstimateSourceLabel(clusterEstimate)}</span>
-                      </div>
-                      {clusterProgress.hasProgress && (
-                        <div className="program-showcase-progress">
-                          <div className="program-showcase-progress-bar">
-                            <div className="program-showcase-progress-viewed" style={{ width: `${clusterProgress.viewedPercentage}%` }} />
-                            <div className="program-showcase-progress-complete" style={{ width: `${clusterProgress.percentage}%` }} />
-                          </div>
-                          <p>
-                            {Math.round(clusterProgress.percentage)}% complete &middot; {Math.round(clusterProgress.viewedPercentage)}% viewed
-                          </p>
-                        </div>
-                      )}
-                    </article>
-                  );
-                })}
-              </div>
-              <button className="program-open-detail-button" type="button" onClick={() => onOpenProgram(selectedProgram)}>
-                Open full program detail
-              </button>
-            </section>
+          {(catalogViewLevel === "programs" || catalogViewLevel === "clusters") && (
+            <CatalogProgramShowcase
+              viewLevel={catalogViewLevel}
+              programs={programs}
+              selectedProgram={selectedProgram}
+              courses={courses}
+              courseMap={catalogCourseMap}
+              onProgramSelect={handleProgramSelect}
+              onClusterSelect={handleClusterSelect}
+              onOpenProgram={onOpenProgram}
+            />
           )}
 
           {catalogViewLevel === "courses" && (
@@ -672,44 +410,18 @@ export default function CourseCatalog({
                   </button>
                 </div>
               )}
-              <div className="course-grid" ref={courseGridRef}>
-                <article
-                  className="course-card create-course-card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setIsCreateModalOpen(true)}
-                  onKeyDown={handleCreateCardKeyDown}
-                >
-                  <div className="create-course-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" focusable="false">
-                      <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
-                    </svg>
-                  </div>
-                  <h3>Create Course</h3>
-                </article>
-                {isGeneratingCourse && (
-                  <article className="course-card course-card--generating" aria-live="polite" aria-busy="true">
-                    <h3>{generatingCourseTitle}</h3>
-                    <div className="generating-course-spinner" aria-hidden="true" />
-                    <p className="course-generating-status">{generateMessage || "Course Generating"}</p>
-                  </article>
-                )}
-                {visibleCourses.length === 0 && (
-                  <article className="course-card course-card--empty" aria-live="polite">
-                    <h3>No matching courses</h3>
-                    <p className="course-short-description">Try a different search term, college, or sort option.</p>
-                  </article>
-                )}
-                {catalogPageCourses.map((visibleCourse) => (
-                  <CatalogCourseCard
-                    key={visibleCourse.course.key}
-                    visibleCourse={visibleCourse}
-                    onOpenCourse={onOpenCourse}
-                    onOpenInfo={setInfoCourse}
-                    isPublishing={publishingCourseKey === visibleCourse.course.key}
-                  />
-                ))}
-              </div>
+              <CatalogCourseGrid
+                courseGridRef={courseGridRef}
+                isGeneratingCourse={isGeneratingCourse}
+                generatingCourseTitle={generatingCourseTitle}
+                generateMessage={generateMessage}
+                visibleCourses={visibleCourses}
+                catalogPageCourses={catalogPageCourses}
+                publishingCourseKey={publishingCourseKey}
+                onCreateCourse={() => setIsCreateModalOpen(true)}
+                onOpenCourse={onOpenCourse}
+                onOpenInfo={setInfoCourse}
+              />
               {shouldShowCatalogPagination && (
                 <CatalogPagination
                   activePage={activeCatalogPage}

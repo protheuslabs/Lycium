@@ -45,12 +45,6 @@ type ProgramViewProps = {
   onOpenCatalog: () => void;
 };
 
-function flattenRequirements(requirements: LyciumRequirement[]): LyciumRequirement[] {
-  return requirements.flatMap((requirement) =>
-    requirement.type === "requirement_set" ? [requirement, ...flattenRequirements(requirement.requirements)] : [requirement],
-  );
-}
-
 function leafRequirements(requirements: LyciumRequirement[]): LyciumRequirement[] {
   return requirements.flatMap((requirement) =>
     requirement.type === "requirement_set" ? leafRequirements(requirement.requirements) : [requirement],

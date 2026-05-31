@@ -1,0 +1,255 @@
+.course-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  align-items: stretch;
+}
+
+.course-card {
+  position: relative;
+  border: 1px solid #d8deea;
+  border-radius: 10px;
+  padding: 0.9rem;
+  display: grid;
+  grid-template-rows: minmax(3.15rem, auto) auto minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  min-height: 14.5rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background-color 180ms ease, background 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.course-card:hover {
+  box-shadow: 0 18px 34px rgba(74, 108, 247, 0.14);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.course-card:focus,
+.course-card:focus-visible,
+.course-card:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.course-card--empty {
+  cursor: default;
+}
+
+.course-card--empty:hover {
+  border-color: #d8deea;
+  box-shadow: none;
+  transform: none;
+}
+
+.course-card--generating {
+  grid-template-rows: minmax(3.15rem, auto) minmax(0, 1fr) auto;
+  cursor: progress;
+}
+
+.course-card--generating:hover {
+  border-color: #d8deea;
+  box-shadow: none;
+  transform: none;
+}
+
+.generating-course-spinner {
+  grid-row: 2;
+  align-self: center;
+  justify-self: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  border: 0.32rem solid rgba(74, 108, 247, 0.18);
+  border-top-color: #4a6cf7;
+  border-radius: 999px;
+  animation: generating-course-spin 850ms linear infinite;
+}
+
+.course-generating-status {
+  grid-row: 3;
+  align-self: end;
+  margin: 0;
+  color: #555;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+@keyframes generating-course-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.course-card h3 {
+  grid-row: 1;
+  margin: 0;
+  line-height: 1.25;
+  min-height: 3.15rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.course-review-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0.32rem 0 0;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  color: #2b4a14;
+  background: #e7f5d8;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.course-active-subheader {
+  grid-row: 2;
+  margin: 0;
+  display: grid;
+  align-content: start;
+  gap: 0.12rem;
+  color: #4f5d76;
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.course-short-description {
+  grid-row: 3;
+  align-self: stretch;
+  margin: 0;
+  min-height: 0;
+  display: block;
+  color: #4f5d76;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  overflow: hidden;
+}
+
+.course-active-subheader span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.course-active-subheader span:first-child {
+  color: #26324a;
+  font-weight: 750;
+}
+
+.course-active-subheader span:last-child {
+  color: #4f5d76;
+}
+
+.course-progress {
+  grid-row: 4;
+  align-self: end;
+  width: 100%;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.course-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 8px;
+  background: #e6e6e6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.course-progress-viewed-fill,
+.course-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+
+.course-progress-viewed-fill {
+  z-index: 1;
+  background: rgba(74, 108, 247, 0.24);
+}
+
+.course-progress-fill {
+  z-index: 2;
+  background: #4a6cf7;
+}
+
+.course-progress-percentage {
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: center;
+  color: #555;
+}
+
+.course-progress-empty {
+  align-self: end;
+  color: #6b7280;
+  grid-row: 4;
+}
+
+.course-progress-required {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  line-height: 1.25;
+}
+
+.course-card--locked {
+  cursor: not-allowed;
+}
+
+.course-card--locked:hover {
+  box-shadow: none;
+  transform: none;
+}
+
+.course-card--locked .course-info-button {
+  cursor: pointer;
+}
+
+.course-card--locked :is(h3, .course-active-subheader, .course-short-description) {
+  opacity: 0.58;
+}
+
+.course-card--locked .course-progress-required {
+  opacity: 1;
+}
+
+.course-card-lock-icon {
+  flex: 0 0 auto;
+  display: inline-block;
+}
+
+.course-publish-button {
+  grid-row: 5;
+  align-self: end;
+  justify-self: stretch;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;
+  color: #ffffff;
+  background: #27324a;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 160ms ease, background-color 160ms ease;
+}
+
+.course-publish-button:hover:not(:disabled),
+.course-publish-button:focus-visible:not(:disabled) {
+  outline: none;
+  transform: translateY(-1px);
+  background: #35507c;
+}
+
+.course-publish-button:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}

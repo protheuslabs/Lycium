@@ -1,0 +1,168 @@
+@media (prefers-color-scheme: dark) {
+  .program-view-shell {
+    background: #0b0b0c;
+    color: #e5e7eb;
+  }
+
+  .program-hero-panel,
+  .program-quality-panel,
+  .program-benchmark-panel,
+  .program-cluster-card {
+    border-color: #303033;
+    background: #171717;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+  }
+
+  .program-hero-panel h1,
+  .program-cluster-header h2,
+  .program-benchmark-card h3,
+  .program-requirement h4,
+  .program-benchmark-panel h2 {
+    color: #f8fafc;
+  }
+
+  .program-description,
+  .program-cluster-header p,
+  .program-benchmark-card p,
+  .program-requirement p {
+    color: #cbd5e1;
+  }
+
+  .program-kicker,
+  .program-progress-card span,
+  .program-progress-card small,
+  .program-cluster-progress span,
+  .program-quality-panel span:last-child {
+    color: #a1a1aa;
+  }
+
+  .program-progress-card,
+  .program-quality-panel > div,
+  .program-benchmark-card,
+  .program-requirement {
+    background: #111112;
+  }
+
+  .program-cluster-header {
+    background: linear-gradient(135deg, #171717, #111112);
+  }
+
+  .program-progress-bar {
+    background: #262626;
+  }
+
+  .program-meta-row span,
+  .program-benchmark-topics span,
+  .program-evidence-chip {
+    color: #dbeafe;
+    background: #222734;
+  }
+
+  .program-requirement-eyebrow span {
+    color: #cbd5e1;
+    background: #262626;
+  }
+
+  .program-requirement + .program-requirement {
+    border-top-color: #262626;
+  }
+
+  .program-status-pill {
+    color: #f8e5a3;
+    background: #3c3318;
+  }
+
+  .program-requirement-status-complete .program-status-pill {
+    color: #a7f3d0;
+    background: #123626;
+  }
+
+  .program-requirement-status-in_progress .program-status-pill {
+    color: #bfdbfe;
+    background: #172554;
+  }
+
+  .program-requirement-status-missing .program-status-pill,
+  .program-evidence-chip-warning {
+    color: #fecaca;
+    background: #4b1717;
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-view-shell {
+  background: #0b0b0c;
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-hero-panel,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-quality-panel,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-panel,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-cluster-card {
+  border-color: #303033;
+  background: #171717;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-hero-panel h1,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-cluster-header h2,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-card h3,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-requirement h4,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-panel h2 {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-description,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-cluster-header p,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-card p,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-requirement p {
+  color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-progress-card,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-quality-panel > div,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-card,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-requirement {
+  background: #111112;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-cluster-header {
+  background: linear-gradient(135deg, #171717, #111112);
+}
+
+html[data-theme="light"] .program-view-shell {
+  background: #ffffff;
+  color: #171717;
+}
+
+@media (max-width: 920px) {
+  .program-hero-panel {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .program-quality-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .program-cluster-header {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .program-view-shell {
+    padding: 0.65rem;
+  }
+
+  .program-quality-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .program-requirement-main {
+    grid-template-columns: 1fr;
+  }
+
+  .program-status-pill {
+    width: fit-content;
+  }
+}

@@ -1,0 +1,122 @@
+.catalog-filter-shell {
+  position: relative;
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.catalog-filter-button {
+  width: 100%;
+  min-height: 2.55rem;
+  border: 1px solid #d8deea;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  padding: 0 0.82rem;
+  color: #27324a;
+  background: rgba(255, 255, 255, 0.94);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 850;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+.catalog-filter-button:focus,
+.catalog-filter-button:focus-visible,
+.catalog-filter-button:active {
+  outline: none;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+.catalog-filter-count {
+  min-width: 1.35rem;
+  min-height: 1.35rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #27324a;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.catalog-filter-panel {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  z-index: 40;
+  width: min(92vw, 31rem);
+  border: 1px solid #d8deea;
+  border-radius: 1.1rem;
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.85rem;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
+}
+
+.catalog-filter-section {
+  display: grid;
+  gap: 0.65rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid rgba(216, 222, 234, 0.9);
+}
+
+.catalog-filter-section h3 {
+  margin: 0 0 0.2rem;
+  color: #172033;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.catalog-filter-section p {
+  margin: 0;
+  color: #667085;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.catalog-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.catalog-filter-checkbox {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #27324a;
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.catalog-filter-checkbox input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #27324a;
+}
+
+.catalog-filter-reset {
+  justify-self: end;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  color: #ffffff;
+  background: #27324a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.catalog-filter-reset:hover,
+.catalog-filter-reset:focus-visible {
+  outline: none;
+  background: #35507c;
+}

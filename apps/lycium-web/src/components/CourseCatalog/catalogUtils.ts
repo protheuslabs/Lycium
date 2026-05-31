@@ -4,6 +4,7 @@ import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/cours
 
 export type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
 export type CatalogActivityFilter = "all" | "not-started" | "in-progress" | "completed";
+export type CatalogViewLevel = "programs" | "clusters" | "courses";
 
 export type CatalogVisibleCourse = {
   course: CourseEntry;
