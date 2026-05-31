@@ -158,6 +158,8 @@ export type LyciumCourseSection = {
   sourceIds?: string[];
   pageType?: LyciumPageType;
   sectionType?: LyciumSectionType;
+  estimatedMinutes?: number;
+  estimatedHours?: number;
 };
 
 export type LyciumCourseModule = {
@@ -165,6 +167,8 @@ export type LyciumCourseModule = {
   title: string;
   sections: LyciumCourseSection[];
   sourceIds?: string[];
+  estimatedMinutes?: number;
+  estimatedHours?: number;
 };
 
 export type LyciumCourseData = {
@@ -175,6 +179,8 @@ export type LyciumCourseData = {
   department?: string;
   tags?: string[];
   learningTypes?: string[];
+  estimatedMinutes?: number;
+  estimatedHours?: number;
   courseEquivalencies?: LyciumCourseEquivalency[];
   orderMandatory?: boolean;
   prerequisites?: LyciumCoursePrerequisite[];

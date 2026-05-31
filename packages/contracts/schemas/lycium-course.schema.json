@@ -13,6 +13,8 @@
     "department": { "type": "string" },
     "tags": { "type": "array", "items": { "type": "string" } },
     "learningTypes": { "type": "array", "items": { "type": "string" } },
+    "estimatedMinutes": { "type": "number", "minimum": 0 },
+    "estimatedHours": { "type": "number", "minimum": 0 },
     "orderMandatory": { "type": "boolean" },
     "sourceIds": { "type": "array", "items": { "type": "string" } },
     "sourceRecords": {
@@ -39,6 +41,8 @@
           "id": { "type": "string", "minLength": 1 },
           "title": { "type": "string", "minLength": 1 },
           "sourceIds": { "type": "array", "items": { "type": "string" } },
+          "estimatedMinutes": { "type": "number", "minimum": 0 },
+          "estimatedHours": { "type": "number", "minimum": 0 },
           "sections": {
             "type": "array",
             "minItems": 1,
@@ -52,6 +56,8 @@
                 "pageType": { "enum": ["learn", "apply"] },
                 "sectionType": { "type": "string" },
                 "sourceIds": { "type": "array", "items": { "type": "string" } },
+                "estimatedMinutes": { "type": "number", "minimum": 0 },
+                "estimatedHours": { "type": "number", "minimum": 0 },
                 "content": {
                   "type": "array",
                   "minItems": 1,

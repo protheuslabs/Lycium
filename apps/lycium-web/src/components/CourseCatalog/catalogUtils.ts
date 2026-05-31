@@ -9,6 +9,8 @@ export type CatalogVisibleCourse = {
   courseProgress: ReturnType<typeof getCourseProgress>;
   bookmarkedSection: ReturnType<typeof getBookmarkedModuleSection>;
   hasCourseActivity: boolean;
+  isLocked: boolean;
+  unmetPrerequisites: string[];
   collegeLabel: string;
   searchScore: number;
 };

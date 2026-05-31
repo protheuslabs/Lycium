@@ -237,6 +237,7 @@ function course(input: WrapperInput): CourseEntry {
     department: classification.department,
     tags: ["software engineering", ...input.tags],
     learningTypes: [],
+    estimatedHours: input.estimatedHours,
     orderMandatory: false,
     sourceIds,
     courseEquivalencies: courseEquivalency

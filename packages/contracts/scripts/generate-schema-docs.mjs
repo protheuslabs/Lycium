@@ -14,6 +14,8 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
 const fixtureBySchema = new Map([
   ["lycium-course.schema.json", "valid-course.json"],
   ["lycium-source-record.schema.json", null],
+  ["lycium-source-import-batch.schema.json", "valid-source-import-batch.json"],
+  ["lycium-source-packet.schema.json", "valid-source-packet.json"],
   ["lycium-progress.schema.json", "valid-progress.json"],
   ["lycium-quiz-progress.schema.json", "valid-quiz-progress.json"],
   ["lycium-course-quality-report.schema.json", "valid-course-quality-report.json"],

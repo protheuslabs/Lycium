@@ -23,16 +23,15 @@ from source_index.schemas import (
     SourceSnapshotCreate,
     SourceSnapshotRead,
 )
+from source_index.packet_service import create_source_packet, import_source_batch, source_packet_payload
 from source_index.service import (
     corpus_run_payload,
     create_corpus_run,
     create_crawl_policy,
     create_crawl_run,
-    create_source_packet,
     create_source_snapshot,
     crawl_policy_payload,
     crawl_run_payload,
-    import_source_batch,
     list_crawl_policies,
     list_crawl_run_seed_tasks,
     list_source_snapshots,
@@ -233,3 +232,10 @@ def register(app: FastAPI) -> None:
         )
         session.commit()
         return packet
+
+    @app.get("/v1/index/source-packets/{run_id}", response_model=SourcePacketRead)
+    def read_index_source_packet(run_id: int, session: Session = Depends(get_session)) -> dict:
+        run = session.get(SourceCorpusRun, run_id)
+        if run is None:
+            raise HTTPException(status_code=404, detail="Source packet corpus run not found.")
+        return source_packet_payload(session, run=run)

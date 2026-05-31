@@ -2,13 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
+import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import { usePathname, useRouter } from "next/navigation";
 import ContentView from "./components/ContentView/ContentView";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
+import ProgramView from "./components/ProgramView/ProgramView";
 import SettingsModal from "./components/SettingsModal/SettingsModal";
 import Sidebar from "./components/Sidebar/Sidebar";
 import TopBar from "./components/TopBar/TopBar";
 import { localCourses } from "./courseData/localCourses";
+import { localPrograms, programBenchmarks } from "./courseData/programs";
 import sourceRecordsData from "./courseData/sourceRecords";
 import type { CourseEntry, CourseSection } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
@@ -19,14 +22,21 @@ import { formatCourseValidationErrors, validateCourseEntry } from "./utils/cours
 import { summarizeCourseProgress } from "./utils/courseProgress";
 import {
   COURSE_CATALOG_PATH,
+  COURSE_CATALOG_COURSES_PATH,
+  COURSE_CATALOG_PROGRAMS_PATH,
   LYCIUM_ROUTE_ROOT,
   SETTINGS_PATH,
   findBookmarkedSection,
+  getCatalogClusterPath,
+  getCatalogProgramPath,
   getCoursePath,
   getCoursePathSlug,
   getCourseSectionIndex,
   getCourseSectionPath,
   getFirstCourseSection,
+  getProgramClusterPathSlug,
+  getProgramPath,
+  getProgramPathSlug,
   getSectionPathSlug,
   parseCourseRoute,
 } from "./utils/courseRouting";
@@ -64,6 +74,14 @@ function App() {
     return map;
   }, [courses]);
 
+  const programsByPathSlug = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const program of localPrograms) {
+      map.set(getProgramPathSlug(program), program.id);
+    }
+    return map;
+  }, []);
+
   const resolveCourseKeyFromPath = useCallback(
     (courseSlug: string | null): string | null => (courseSlug ? coursesByPathSlug.get(courseSlug) ?? null : null),
     [coursesByPathSlug],
@@ -81,6 +99,33 @@ function App() {
     const match = selectedCourseFromPath ?? courses.find((course) => course.key === currentCourseKey);
     return match ?? courses[0];
   }, [courses, currentCourseKey, selectedCourseFromPath]);
+
+  const selectedProgram = useMemo(() => {
+    if (viewRoute.kind !== "program" || !viewRoute.programSlug) {
+      return null;
+    }
+    const programId = programsByPathSlug.get(viewRoute.programSlug);
+    return programId ? localPrograms.find((program) => program.id === programId) ?? null : null;
+  }, [programsByPathSlug, viewRoute.kind, viewRoute.programSlug]);
+
+  const selectedCatalogProgram = useMemo(() => {
+    if (viewRoute.kind !== "home" || !viewRoute.programSlug) {
+      return null;
+    }
+    const programId = programsByPathSlug.get(viewRoute.programSlug);
+    return programId ? localPrograms.find((program) => program.id === programId) ?? null : null;
+  }, [programsByPathSlug, viewRoute.kind, viewRoute.programSlug]);
+
+  const selectedCatalogCluster = useMemo(() => {
+    if (!selectedCatalogProgram || !viewRoute.clusterSlug) {
+      return null;
+    }
+    return (
+      selectedCatalogProgram.requirementGroups.find(
+        (cluster) => getProgramClusterPathSlug(cluster) === viewRoute.clusterSlug,
+      ) ?? null
+    );
+  }, [selectedCatalogProgram, viewRoute.clusterSlug]);
 
   const sections = useMemo(
     () =>
@@ -137,6 +182,40 @@ function App() {
     currentPathRef.current = COURSE_CATALOG_PATH;
     setCurrentPath(COURSE_CATALOG_PATH);
   }, [currentPath, router]);
+
+  const routeToCatalogDrilldown = useCallback(
+    (
+      viewLevel: "programs" | "courses" | "clusters",
+      program: LyciumProgram | null = null,
+      cluster: LyciumRequirementGroup | null = null,
+    ) => {
+      const nextPath = cluster && program
+        ? getCatalogClusterPath(program, cluster)
+        : program
+          ? getCatalogProgramPath(program)
+          : viewLevel === "programs"
+            ? COURSE_CATALOG_PROGRAMS_PATH
+            : COURSE_CATALOG_COURSES_PATH;
+      if (currentPathRef.current !== nextPath) {
+        router.push(nextPath);
+      }
+      currentPathRef.current = nextPath;
+      setCurrentPath(nextPath);
+      scrollCoursePageToTop();
+    },
+    [router],
+  );
+
+  const openProgramByEntry = useCallback(
+    (program: (typeof localPrograms)[number]) => {
+      const nextPath = getProgramPath(program);
+      router.push(nextPath);
+      currentPathRef.current = nextPath;
+      setCurrentPath(nextPath);
+      scrollCoursePageToTop();
+    },
+    [router],
+  );
 
   const routeToSettings = useCallback(
     (event?: MouseEvent<HTMLAnchorElement>) => {
@@ -282,6 +361,14 @@ const {
   }, [currentPath, router]);
 
   useEffect(() => {
+    if (route.kind !== "program") return;
+    if (route.programSlug && programsByPathSlug.has(route.programSlug)) return;
+    router.replace(COURSE_CATALOG_PATH);
+    currentPathRef.current = COURSE_CATALOG_PATH;
+    setCurrentPath(COURSE_CATALOG_PATH);
+  }, [programsByPathSlug, route.kind, route.programSlug, router]);
+
+  useEffect(() => {
     if (route.kind !== "course" || !route.courseSlug) return;
     const resolvedKey = resolveCourseKeyFromPath(route.courseSlug);
     const routeCourse = resolvedKey ? courses.find((course) => course.key === resolvedKey) ?? null : null;
@@ -408,6 +495,10 @@ const {
       {viewRoute.kind === "home" ? (
         <CourseCatalog
           courses={courses}
+          programs={localPrograms}
+          catalogView={viewRoute.kind === "home" ? viewRoute.catalogView ?? null : null}
+          catalogProgramId={selectedCatalogProgram?.id ?? null}
+          catalogClusterId={selectedCatalogCluster?.id ?? null}
           prompt={prompt}
           level={level}
           canCreateCourse={activeAiReady}
@@ -417,9 +508,20 @@ const {
           onLevelChange={setLevel}
           onGenerateCourse={handleGenerateCourse}
           onOpenCourse={openCourseByEntry}
+          onOpenProgram={openProgramByEntry}
+          onCatalogDrilldown={routeToCatalogDrilldown}
           onPublishCourse={handlePublishCourse}
           publishingCourseKey={publishingCourseKey}
           onOpenSettings={routeToSettings}
+        />
+      ) : viewRoute.kind === "program" && selectedProgram ? (
+        <ProgramView
+          program={selectedProgram}
+          courses={courses}
+          benchmarks={programBenchmarks[selectedProgram.id as keyof typeof programBenchmarks] ?? []}
+          sources={sourceRecordsData.sources}
+          onOpenCourse={openCourseByEntry}
+          onOpenCatalog={routeToHome}
         />
       ) : (
         <div className="main-layout">

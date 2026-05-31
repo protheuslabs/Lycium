@@ -38,6 +38,8 @@ def generate_course_with_agent(
     expected_duration_minutes: int,
     model: str | None = None,
     source_urls: list[str] | None = None,
+    source_packet_id: int | str | None = None,
+    source_packet: dict | None = None,
     category: str | None = None,
     department: str | None = None,
     enforce_contract: bool = True,
@@ -50,6 +52,8 @@ def generate_course_with_agent(
         prompt=prompt,
         source_urls=source_urls,
         fetch_sources=True,
+        source_packet_id=source_packet_id,
+        source_packet=source_packet,
     )
     effective_source_urls = source_corpus.source_urls
     benchmark_context = compile_curriculum_benchmark_context(
@@ -90,6 +94,8 @@ def generate_course_with_agent(
     base_trace["curriculum_benchmark_context"] = benchmark_context
     base_trace["source_corpus_synthesis"] = source_corpus.synthesis
     base_trace["effective_source_urls"] = effective_source_urls
+    base_trace["source_packet_id"] = source_packet_id
+    base_trace["source_packet_contract"] = source_packet.get("contract_version") if isinstance(source_packet, dict) else None
     try:
         response = call_agent_model(provider, api_key, messages, selected_model)
     except CourseAgentError as exc:

@@ -118,6 +118,9 @@ class SourceIndexClient:
     def get_corpus_run(self, run_id: int) -> dict[str, Any]:
         return self._request("GET", f"/v1/index/corpus-runs/{run_id}")
 
+    def get_source_packet(self, packet_id: int | str) -> dict[str, Any]:
+        return self._request("GET", f"/v1/index/source-packets/{packet_id}")
+
     def create_source_packet(
         self,
         *,

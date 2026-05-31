@@ -8,6 +8,17 @@ curated source batch -> source import -> source packet -> downstream consumer
 
 The source batch is not course-specific. A downstream consumer supplies the prompt, context id, and threshold expectations.
 
+The formal portable contracts are:
+
+- `@lycium/contracts/schemas/lycium-source-import-batch.schema.json`
+- `@lycium/contracts/schemas/lycium-source-packet.schema.json`
+
+Course generation should prefer source packets over loose URL lists when packet evidence is available. Loose URLs remain a fallback for quick experiments and legacy callers.
+
+## Developer UI
+
+When the web app is pointed at a local API, `/source-index` opens a small developer panel for pasting a generic batch, entering a prompt, importing sources, and generating a source packet.
+
 ## Smoke a batch
 
 Run Lycium API or the standalone Source Index service, then run:

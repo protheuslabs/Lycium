@@ -51,6 +51,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 
 - `intake`: parse the prompt, links, files, level, goals, constraints, and intended course type.
 - `source_corpus_preflight`: score submitted sources against the course prompt, keep relevant sources, and exclude unrelated sources before benchmark extraction or course planning.
+  Prefer `source-packet-v1` inputs when available because they preserve import decisions, snapshots, source documents, and evidence refs. Loose URL lists are fallback input, not the ideal generation evidence contract.
 - `benchmark_intake`: identify university catalogs, syllabi, certification outlines, employer profiles, or expert references that can anchor the curriculum.
 - `requirement_extraction`: extract benchmark requirements, topics, outcomes, prerequisites, and course-parity metadata.
 - `commonality_analysis`: compare comparable benchmarks to separate required material from recommended, optional, remedial, alternate, or enrichment material.
@@ -120,6 +121,9 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 
 - `metadata.scope`: audience, prerequisites, target outcome, duration, level, and exclusions.
 - `shortDescription`: a concise one-sentence course summary used on catalog cards, ideally 80-160 characters.
+- `estimatedMinutes` or `estimatedHours`: optional learning-time estimates on courses, modules, and sections. Prefer section-level `estimatedMinutes` when enough detail is known.
+- Program and cluster `estimatedHours` values are authored fallbacks. If every child section, course, or requirement has usable time data, renderers should derive the parent estimate from those children.
+- If child time data is incomplete, use the closest authored parent estimate and label the estimate source as authored or mixed rather than pretending it was fully derived.
 - `difficultyLevel`: a learner-facing difficulty label used in course info modals.
 - `category`: one broad university-style college or school category.
 - `department`: selected department classification nested under the selected college; generated courses should preserve the chosen department exactly and catalog search should include it. A department should not be used unless it belongs to the selected `category`.
@@ -132,6 +136,7 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `metadata.courseParityProfile`: optional summary of benchmark coverage, required topics, optional topics, and parity status.
 - `metadata.sourceSlots`: optional primary/fallback source mappings for required concepts.
 - `metadata.sourceCorpusSynthesis`: optional source corpus preflight evidence showing included sources, excluded sources, common themes, relevance scores, and source-count metrics.
+  When a source packet is used, this should include `sourcePacket.contractVersion`, packet context, packet warnings, source-document count, and included/excluded source metrics.
 - `prerequisites`: optional course, competency, assessment, program, or external prerequisites.
 - `metadata.prerequisiteCourseIds`: optional fast-reference list for planned/wrapper courses.
 - `metadata.pacingLabel`: exactly `Module` or `Week`, used consistently in learner-facing titles.
@@ -218,6 +223,7 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Use source IDs at the most helpful levels: course, module, section, and block.
 - If a block fetches or embeds material from a link, it must reference the source record for that link.
 - Generated courses must either reference existing central source records or include course-level `sourceRecords` for generated/local-only records.
+- Course generation should accept source packets as the preferred source handoff. A source packet records the corpus run, inclusion/exclusion decisions, source documents, snapshots, and evidence refs that explain why a source was used.
 - Do not let a generated course enter the catalog with unresolved `sourceIds`.
 
 ## MVP Validation Gate

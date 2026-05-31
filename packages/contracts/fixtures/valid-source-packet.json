@@ -1,0 +1,129 @@
+{
+  "contract_version": "source-packet-v1",
+  "consumer": "lycium-source-index-smoke",
+  "context_id": "primitive-source-index-smoke",
+  "prompt": "distributed systems reliability observability latency replication",
+  "source_urls": [
+    "https://example.edu/learning/distributed-systems-reliability"
+  ],
+  "corpus_run": {
+    "id": 1,
+    "consumer": "lycium-source-index-smoke",
+    "context_id": "primitive-source-index-smoke",
+    "prompt": "distributed systems reliability observability latency replication",
+    "workflow_version": "source-corpus-preflight-v1",
+    "submitted_source_count": 1,
+    "included_source_count": 1,
+    "excluded_source_count": 0,
+    "common_themes": [],
+    "payload": {
+      "workflowGate": "source_corpus_preflight"
+    },
+    "decisions": [
+      {
+        "id": 1,
+        "corpus_run_id": 1,
+        "source_id": 1,
+        "consumer": "lycium-source-index-smoke",
+        "context_id": "primitive-source-index-smoke",
+        "original_url": "https://example.edu/learning/distributed-systems-reliability",
+        "decision": "included",
+        "relevance_score": 0.75,
+        "matched_terms": ["distributed", "reliability"],
+        "reason": "Source matched the prompt.",
+        "payload": {},
+        "created_at": "2026-05-30T00:00:00Z"
+      }
+    ],
+    "created_at": "2026-05-30T00:00:00Z",
+    "updated_at": "2026-05-30T00:00:00Z"
+  },
+  "sources": [
+    {
+      "source": {
+        "id": 1,
+        "public_id": "src_example",
+        "canonical_url": "https://example.edu/learning/distributed-systems-reliability",
+        "normalized_domain": "example.edu",
+        "submitted_urls": [
+          "https://example.edu/learning/distributed-systems-reliability"
+        ],
+        "title": "Distributed Systems Reliability Notes",
+        "source_type": "open_courseware",
+        "license": "cc-by",
+        "is_free": true,
+        "trust_baseline": 0.75,
+        "link_health": "healthy",
+        "created_at": "2026-05-30T00:00:00Z",
+        "updated_at": "2026-05-30T00:00:00Z"
+      },
+      "decision": {
+        "id": 1,
+        "corpus_run_id": 1,
+        "source_id": 1,
+        "consumer": "lycium-source-index-smoke",
+        "context_id": "primitive-source-index-smoke",
+        "original_url": "https://example.edu/learning/distributed-systems-reliability",
+        "decision": "included",
+        "relevance_score": 0.75,
+        "matched_terms": ["distributed", "reliability"],
+        "reason": "Source matched the prompt.",
+        "payload": {},
+        "created_at": "2026-05-30T00:00:00Z"
+      },
+      "snapshots": [
+        {
+          "id": 1,
+          "public_id": "snap_example",
+          "source_id": 1,
+          "fetched_at": "2026-05-30T00:00:00Z",
+          "status": "provided",
+          "content_hash": "abc123",
+          "content_type": "text/plain",
+          "title": "Distributed Systems Reliability Notes",
+          "text_digest": "Distributed systems reliability depends on replication.",
+          "extracted_text": "Distributed systems reliability depends on replication, fault tolerance, latency budgets, consistency models, failure detection, and recovery planning.",
+          "raw_storage_ref": null,
+          "snapshot_metadata": {}
+        }
+      ],
+      "evidence_refs": ["src_example", "snap_example"],
+      "source_document": {
+        "url": "https://example.edu/learning/distributed-systems-reliability",
+        "contentType": "text/plain",
+        "text": "Distributed systems reliability depends on replication, fault tolerance, latency budgets, consistency models, failure detection, and recovery planning.",
+        "sourceId": "src_example",
+        "snapshotId": "snap_example",
+        "title": "Distributed Systems Reliability Notes",
+        "sourceIndexRef": {
+          "service": "source-index",
+          "sourcePublicId": "src_example",
+          "snapshotPublicId": "snap_example",
+          "sourceRemoteId": 1,
+          "snapshotRemoteId": 1
+        }
+      }
+    }
+  ],
+  "source_documents": [
+    {
+      "url": "https://example.edu/learning/distributed-systems-reliability",
+      "contentType": "text/plain",
+      "text": "Distributed systems reliability depends on replication, fault tolerance, latency budgets, consistency models, failure detection, and recovery planning.",
+      "sourceId": "src_example",
+      "snapshotId": "snap_example",
+      "title": "Distributed Systems Reliability Notes",
+      "sourceIndexRef": {
+        "service": "source-index",
+        "sourcePublicId": "src_example",
+        "snapshotPublicId": "snap_example",
+        "sourceRemoteId": 1,
+        "snapshotRemoteId": 1
+      }
+    }
+  ],
+  "synthesis": {
+    "workflowGate": "source_corpus_preflight"
+  },
+  "warnings": []
+}

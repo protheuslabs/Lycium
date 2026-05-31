@@ -81,6 +81,8 @@ class GenerateCourseRequest(BaseModel):
     desired_module_count: int = Field(default=3, ge=1, le=20)
     expected_duration_minutes: int = Field(default=180, ge=30, le=4000)
     source_urls: list[HttpUrl] = Field(default_factory=list)
+    source_packet_id: int | str | None = None
+    source_packet: dict[str, Any] | None = None
 
 
 class GenerateCourseFromOutlineRequest(BaseModel):

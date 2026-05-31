@@ -118,6 +118,14 @@ from app.schemas import (
 )
 
 
+def _generation_source_urls(payload: GenerateCourseRequest) -> list[str]:
+    urls = [str(url) for url in payload.source_urls]
+    packet_urls = payload.source_packet.get("source_urls") if isinstance(payload.source_packet, dict) else None
+    if not urls and isinstance(packet_urls, list):
+        urls = [str(url) for url in packet_urls if str(url).strip()]
+    return urls
+
+
 def register(app: FastAPI) -> None:
     @app.post("/v1/courses/outlines", response_model=CourseDraftRead, status_code=status.HTTP_201_CREATED)
     def create_outline(payload: GenerateOutlineRequest, session: Session = Depends(get_session)) -> CourseDraft:
@@ -237,7 +245,7 @@ def register(app: FastAPI) -> None:
                 trust_min=payload.trust_min,
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
-                source_urls=[str(url) for url in payload.source_urls],
+                source_urls=_generation_source_urls(payload),
             )
             session.commit()
             session.refresh(snapshot)
@@ -273,7 +281,9 @@ def register(app: FastAPI) -> None:
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
                 model=payload.model or agent_profile.get("model"),
-                source_urls=[str(url) for url in payload.source_urls],
+                source_urls=_generation_source_urls(payload),
+                source_packet_id=payload.source_packet_id,
+                source_packet=payload.source_packet,
             )
             quality_report = assess_agent_generation_result(generated, gate="review")
             if not quality_report["passed"]:
@@ -323,7 +333,9 @@ def register(app: FastAPI) -> None:
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
                 model=payload.model or agent_profile.get("model"),
-                source_urls=[str(url) for url in payload.source_urls],
+                source_urls=_generation_source_urls(payload),
+                source_packet_id=payload.source_packet_id,
+                source_packet=payload.source_packet,
                 enforce_contract=False,
             )
             quality_report = assess_course_quality(generated.course, gate="generation")
@@ -359,7 +371,9 @@ def register(app: FastAPI) -> None:
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
                 model=payload.model or agent_profile.get("model"),
-                source_urls=[str(url) for url in payload.source_urls],
+                source_urls=_generation_source_urls(payload),
+                source_packet_id=payload.source_packet_id,
+                source_packet=payload.source_packet,
                 enforce_contract=False,
             )
             quality_report = assess_course_quality(generated.course, gate="generation")
@@ -404,7 +418,9 @@ def register(app: FastAPI) -> None:
                 "department": payload.department,
                 "desired_module_count": payload.desired_module_count,
                 "expected_duration_minutes": payload.expected_duration_minutes,
-                "source_urls": [str(url) for url in payload.source_urls],
+                "source_urls": _generation_source_urls(payload),
+                "source_packet_id": payload.source_packet_id,
+                "source_packet": payload.source_packet,
             },
         )
         session.commit()

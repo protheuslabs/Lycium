@@ -1,4 +1,5 @@
 import type { CourseBookmarkRecord, CourseEntry, CourseSection, RouteInfo } from "../courseTypes";
+import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import { createBrowserStorageRepository } from "@lycium/data-access";
 import {
   DEFAULT_PROGRESS,
@@ -13,6 +14,8 @@ export const LYCIUM_SITE_ROOT = "https://protheuslabs.github.io/Lycium/";
 export const LYCIUM_DEPLOY_BASE_PATH = "/Lycium";
 export const LYCIUM_ROUTE_ROOT = "/";
 export const COURSE_CATALOG_PATH = buildLyciumPath("catalog");
+export const COURSE_CATALOG_PROGRAMS_PATH = buildLyciumPath("catalog", "programs");
+export const COURSE_CATALOG_COURSES_PATH = buildLyciumPath("catalog", "courses");
 export const SETTINGS_PATH = buildLyciumPath("settings");
 
 function buildLyciumPath(...segments: string[]): string {
@@ -82,6 +85,31 @@ export function getCourseSectionPath(course: CourseEntry, section: CourseSection
 
 export function getCoursePath(course: CourseEntry): string {
   return buildLyciumPath("courses", getCoursePathSlug(course));
+}
+
+export function getProgramPathSlug(program: Pick<LyciumProgram, "id" | "title">): string {
+  const base = slugifyCourseTitle(program.title || "program");
+  return `${base}-${program.id}`;
+}
+
+export function getProgramClusterPathSlug(cluster: Pick<LyciumRequirementGroup, "id" | "displayName">): string {
+  const base = slugifyCourseTitle(cluster.displayName || "cluster");
+  return `${base}-${cluster.id}`;
+}
+
+export function getCatalogProgramPath(program: Pick<LyciumProgram, "id" | "title">): string {
+  return buildLyciumPath("catalog", getProgramPathSlug(program));
+}
+
+export function getCatalogClusterPath(
+  program: Pick<LyciumProgram, "id" | "title">,
+  cluster: Pick<LyciumRequirementGroup, "id" | "displayName">,
+): string {
+  return buildLyciumPath("catalog", getProgramPathSlug(program), getProgramClusterPathSlug(cluster));
+}
+
+export function getProgramPath(program: Pick<LyciumProgram, "id" | "title">): string {
+  return buildLyciumPath("programs", getProgramPathSlug(program));
 }
 
 export function getCourseSectionUrl(course: CourseEntry, section: CourseSection): string {
@@ -178,8 +206,33 @@ export function parseCourseRoute(pathname: string): RouteInfo {
     return { kind: "home", courseSlug: null, unitSlug: null };
   }
 
+  if (pathWithoutQuery === "/catalog/programs") {
+    return { kind: "home", courseSlug: null, unitSlug: null, catalogView: "programs" };
+  }
+
+  if (pathWithoutQuery === "/catalog/courses") {
+    return { kind: "home", courseSlug: null, unitSlug: null, catalogView: "courses" };
+  }
+
+  if (pathWithoutQuery.startsWith("/catalog/")) {
+    const segments = pathWithoutQuery.split("/").filter(Boolean);
+    const programSlug = decodeURIComponent(segments[1] ?? "").toLowerCase();
+    const clusterSlug = segments[2] ? decodeURIComponent(segments[2]).toLowerCase() : null;
+    return programSlug
+      ? { kind: "home", courseSlug: null, unitSlug: null, programSlug, clusterSlug }
+      : { kind: "home", courseSlug: null, unitSlug: null };
+  }
+
   if (pathWithoutQuery === "/settings") {
     return { kind: "settings", courseSlug: null, unitSlug: null };
+  }
+
+  if (pathWithoutQuery.startsWith("/programs/")) {
+    const segments = pathWithoutQuery.split("/").filter(Boolean);
+    const programSlug = decodeURIComponent(segments[1] ?? "").toLowerCase();
+    return programSlug
+      ? { kind: "program", courseSlug: null, unitSlug: null, programSlug }
+      : { kind: "home", courseSlug: null, unitSlug: null };
   }
 
   if (pathWithoutQuery.startsWith("/courses/")) {

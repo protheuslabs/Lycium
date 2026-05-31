@@ -112,6 +112,11 @@ def test_source_packet_builds_generation_ready_evidence_from_documents(client) -
     assert packet["source_documents"][0]["sourceIndexRef"]["snapshotPublicId"]
     assert "Stoichiometry" in packet["source_documents"][0]["text"]
 
+    fetched = client.get(f"/v1/index/source-packets/{packet['corpus_run']['id']}")
+    assert fetched.status_code == 200, fetched.text
+    assert fetched.json()["contract_version"] == "source-packet-v1"
+    assert fetched.json()["source_documents"][0]["snapshotId"]
+
 
 def test_bulk_source_import_feeds_generation_packet_eval(client) -> None:
     import_response = client.post(

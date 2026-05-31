@@ -27,6 +27,8 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 - `@lycium/contracts/schemas/lycium-progress.schema.json`
 - `@lycium/contracts/schemas/lycium-provider-settings.schema.json`
 - `@lycium/contracts/schemas/lycium-quiz-progress.schema.json`
+- `@lycium/contracts/schemas/lycium-source-import-batch.schema.json`
+- `@lycium/contracts/schemas/lycium-source-packet.schema.json`
 - `@lycium/contracts/schemas/lycium-source-record.schema.json`
 
 ## Lycium Course Lifecycle
@@ -89,6 +91,8 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 | `category` | string | optional |
 | `department` | string | optional |
 | `difficultyLevel` | string | optional |
+| `estimatedHours` | number | optional |
+| `estimatedMinutes` | number | optional |
 | `learningTypes` | array | optional |
 | `metadata` | object | optional |
 | `modules` | array | required |
@@ -236,6 +240,46 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 | `startedAt` | string | optional |
 | `submitted` | boolean | optional |
 | `submittedAt` | string | optional |
+
+## Lycium Source Import Batch
+
+- Schema file: `packages/contracts/schemas/lycium-source-import-batch.schema.json`
+- Public export: Yes
+- JSON Schema ID: `https://protheuslabs.github.io/Lycium/schemas/lycium-source-import-batch.schema.json`
+- Root type: `object`
+- Required root fields: `sources`
+- Example fixture: `packages/contracts/fixtures/valid-source-import-batch.json`
+
+### Top-level properties
+
+| Property | Type | Required |
+| --- | --- | --- |
+| `batch_id` | string | optional |
+| `sources` | array | required |
+
+## Lycium Source Packet
+
+- Schema file: `packages/contracts/schemas/lycium-source-packet.schema.json`
+- Public export: Yes
+- JSON Schema ID: `https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json`
+- Root type: `object`
+- Required root fields: `contract_version`, `consumer`, `context_id`, `prompt`, `source_urls`, `corpus_run`, `sources`, `source_documents`, `synthesis`, `warnings`
+- Example fixture: `packages/contracts/fixtures/valid-source-packet.json`
+
+### Top-level properties
+
+| Property | Type | Required |
+| --- | --- | --- |
+| `consumer` | string | required |
+| `context_id` | string | required |
+| `contract_version` | unspecified | required |
+| `corpus_run` | #/$defs/corpusRun | required |
+| `prompt` | string | required |
+| `source_documents` | array | required |
+| `source_urls` | array | required |
+| `sources` | array | required |
+| `synthesis` | object | required |
+| `warnings` | array | required |
 
 ## Lycium Source Record
 

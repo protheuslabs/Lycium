@@ -1,0 +1,129 @@
+.source-index-admin-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  padding: 5rem 1.25rem;
+  color: var(--lycium-color-text);
+  background:
+    radial-gradient(circle at 15% 12%, rgba(37, 99, 235, 0.16), transparent 28rem),
+    radial-gradient(circle at 85% 20%, rgba(122, 53, 255, 0.12), transparent 24rem),
+    var(--lycium-color-canvas);
+}
+
+.source-index-admin-panel {
+  width: min(100%, 58rem);
+  box-sizing: border-box;
+  border: 1px solid var(--lycium-color-border);
+  border-radius: var(--lycium-radius-modal);
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--lycium-color-surface-raised);
+  box-shadow: var(--lycium-shadow-raised);
+}
+
+.source-index-admin-eyebrow,
+.source-index-admin-copy,
+.source-index-admin-field span,
+.source-index-admin-status,
+.source-index-admin-summary span {
+  color: var(--lycium-color-text-muted);
+}
+
+.source-index-admin-eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.source-index-admin-panel h1 {
+  margin: 0;
+  color: var(--lycium-color-text);
+  font-size: clamp(2rem, 6vw, 4rem);
+  letter-spacing: -0.06em;
+}
+
+.source-index-admin-copy {
+  max-width: 45rem;
+  margin: 0;
+}
+
+.source-index-admin-field {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.source-index-admin-field span {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.source-index-admin-field input,
+.source-index-admin-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--lycium-color-border);
+  border-radius: 1rem;
+  padding: 0.8rem 0.95rem;
+  color: var(--lycium-color-text);
+  background: var(--lycium-color-control-surface);
+  font: inherit;
+  outline: none;
+}
+
+.source-index-admin-field textarea {
+  min-height: 18rem;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.source-index-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.source-index-admin-status-error {
+  color: var(--lycium-danger);
+}
+
+.source-index-admin-status-success {
+  color: var(--lycium-success);
+}
+
+.source-index-admin-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.source-index-admin-summary div {
+  border-radius: 1rem;
+  padding: 0.85rem;
+  background: var(--lycium-color-surface);
+}
+
+.source-index-admin-summary span,
+.source-index-admin-summary strong {
+  display: block;
+}
+
+.source-index-admin-summary strong {
+  margin-top: 0.2rem;
+  color: var(--lycium-color-text);
+  font-size: 1.45rem;
+}
+
+@media (max-width: 720px) {
+  .source-index-admin-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

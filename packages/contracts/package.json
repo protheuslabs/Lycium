@@ -12,6 +12,8 @@
     ".": "./src/index.ts",
     "./schemas/lycium-course.schema.json": "./schemas/lycium-course.schema.json",
     "./schemas/lycium-source-record.schema.json": "./schemas/lycium-source-record.schema.json",
+    "./schemas/lycium-source-import-batch.schema.json": "./schemas/lycium-source-import-batch.schema.json",
+    "./schemas/lycium-source-packet.schema.json": "./schemas/lycium-source-packet.schema.json",
     "./schemas/lycium-progress.schema.json": "./schemas/lycium-progress.schema.json",
     "./schemas/lycium-quiz-progress.schema.json": "./schemas/lycium-quiz-progress.schema.json",
     "./schemas/lycium-course-quality-report.schema.json": "./schemas/lycium-course-quality-report.schema.json",

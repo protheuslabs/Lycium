@@ -9,28 +9,48 @@ type CatalogCourseCardProps = {
   isPublishing: boolean;
 };
 
+function formatPrerequisiteTitles(titles: string[]): string {
+  if (titles.length <= 1) {
+    return titles[0] ?? "required course";
+  }
+
+  if (titles.length === 2) {
+    return `${titles[0]} and ${titles[1]}`;
+  }
+
+  return `${titles.slice(0, -1).join(", ")}, and ${titles[titles.length - 1]}`;
+}
+
 export default function CatalogCourseCard({
   visibleCourse,
   onOpenCourse,
   onOpenInfo,
   isPublishing,
 }: CatalogCourseCardProps) {
-  const { course, courseProgress, bookmarkedSection, hasCourseActivity } = visibleCourse;
+  const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites } = visibleCourse;
   const isReadyForReview = course.status === "ready_for_review";
+  const requiresPrerequisites = !hasCourseActivity && unmetPrerequisites.length > 0;
+
+  const handleCourseOpen = () => {
+    if (!requiresPrerequisites) {
+      onOpenCourse(course);
+    }
+  };
 
   const handleCourseKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      onOpenCourse(course);
+      handleCourseOpen();
     }
   };
 
   return (
     <article
-      className="course-card"
+      className={`course-card ${requiresPrerequisites ? "course-card--locked" : ""}`}
       role="button"
       tabIndex={0}
-      onClick={() => onOpenCourse(course)}
+      aria-disabled={requiresPrerequisites}
+      onClick={handleCourseOpen}
       onKeyDown={handleCourseKeyDown}
     >
       <button
@@ -57,7 +77,16 @@ export default function CatalogCourseCard({
       )}
       {course.data.shortDescription && <p className="course-short-description">{course.data.shortDescription}</p>}
       {!hasCourseActivity ? (
-        <p className="course-progress-percentage course-progress-empty">Course not started</p>
+        <p className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}>
+          {requiresPrerequisites ? (
+            <>
+              <span className="sidebar-lock-icon course-card-lock-icon" aria-hidden="true" />
+              <span>Required: {formatPrerequisiteTitles(unmetPrerequisites)}</span>
+            </>
+          ) : (
+            "Course not started"
+          )}
+        </p>
       ) : (
         <div className="course-progress">
           <div className="course-progress-bar">

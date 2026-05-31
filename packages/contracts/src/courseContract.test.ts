@@ -20,6 +20,8 @@ ajv.addSchema(sourceRecordSchema, "lycium-source-record.schema.json");
 
 const schemas = {
   course: readSchema("lycium-course.schema.json"),
+  sourceImportBatch: readSchema("lycium-source-import-batch.schema.json"),
+  sourcePacket: readSchema("lycium-source-packet.schema.json"),
   progress: readSchema("lycium-progress.schema.json"),
   quizProgress: readSchema("lycium-quiz-progress.schema.json"),
   qualityReport: readSchema("lycium-course-quality-report.schema.json"),
@@ -30,6 +32,7 @@ const schemas = {
 };
 
 ajv.addSchema(schemas.qualityReport, "lycium-course-quality-report.schema.json");
+ajv.addSchema(schemas.sourcePacket, "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json");
 
 describe("Lycium contract fixtures", () => {
   it("accepts a valid source-backed course with separated learn/apply sections", () => {
@@ -82,6 +85,8 @@ describe("Lycium contract fixtures", () => {
   });
 
   it.each([
+    ["source import batch", "lycium-source-import-batch.schema.json", "valid-source-import-batch.json"],
+    ["source packet", "lycium-source-packet.schema.json", "valid-source-packet.json"],
     ["progress", "lycium-progress.schema.json", "valid-progress.json"],
     ["quiz progress", "lycium-quiz-progress.schema.json", "valid-quiz-progress.json"],
     ["course quality report", "lycium-course-quality-report.schema.json", "valid-course-quality-report.json"],
@@ -89,7 +94,9 @@ describe("Lycium contract fixtures", () => {
     ["generation job", "lycium-generation-job.schema.json", "valid-generation-job.json"],
     ["provider settings", "lycium-provider-settings.schema.json", "valid-provider-settings.json"],
   ])("accepts valid %s fixtures", (_, schemaName, fixtureName) => {
-    const validateSchema = ajv.getSchema(schemaName) ?? ajv.compile(readSchema(schemaName));
+    const schema = readSchema(schemaName);
+    const schemaId = typeof schema.$id === "string" ? schema.$id : "";
+    const validateSchema = ajv.getSchema(schemaName) ?? ajv.getSchema(schemaId) ?? ajv.compile(schema);
     const fixture = readFixture<unknown>(fixtureName);
 
     expect(validateSchema(fixture), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);

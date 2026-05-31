@@ -1,4 +1,5 @@
 import { validateLyciumProgram } from "@lycium/contracts";
+import fullStackEngineerBenchmarks from "./fullStackEngineerBenchmarks";
 import fullStackEngineerProgram from "./fullStackEngineerProgram";
 import softwareEngineeringProgram from "./softwareEngineeringProgram";
 import { softwareEngineeringCourseWrapperIds, softwareEngineeringCourseWrappers } from "./softwareEngineeringCourseWrappers";
@@ -12,6 +13,9 @@ export const existingLocalCourseIds = [
 ];
 
 export const localPrograms = [softwareEngineeringProgram, fullStackEngineerProgram];
+export const programBenchmarks = {
+  [fullStackEngineerProgram.id]: fullStackEngineerBenchmarks,
+};
 export { softwareEngineeringCourseWrapperIds, softwareEngineeringCourseWrappers };
 
 export function validateLocalPrograms() {

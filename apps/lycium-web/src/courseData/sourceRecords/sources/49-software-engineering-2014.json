@@ -5,9 +5,11 @@
   "publisher": "ACM and IEEE Computer Society",
   "url": "https://www.acm.org/binaries/content/assets/education/se2014.pdf",
   "usedByCourseIds": [
-    "program-software-engineering"
+    "program-software-engineering",
+    "program-full-stack-engineer"
   ],
   "usedByCourseTitles": [
-    "Software Engineering Program course wrappers"
+    "Software Engineering Program course wrappers",
+    "Full-Stack Engineer Program"
   ]
 }

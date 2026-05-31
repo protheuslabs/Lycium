@@ -31,7 +31,10 @@ export type SectionStatus = LyciumSectionStatus;
 export type CourseProgressRecord = LyciumProgressRecord;
 
 export type RouteInfo = {
-  kind: "home" | "course" | "settings";
+  kind: "home" | "course" | "settings" | "program";
   courseSlug: string | null;
   unitSlug: string | null;
+  catalogView?: "programs" | "courses" | null;
+  programSlug?: string | null;
+  clusterSlug?: string | null;
 };

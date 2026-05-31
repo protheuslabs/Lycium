@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://protheuslabs.github.io/Lycium/schemas/lycium-source-import-batch.schema.json",
+  "title": "Lycium Source Import Batch",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sources"],
+  "properties": {
+    "batch_id": { "type": "string", "minLength": 1 },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/importSource" }
+    }
+  },
+  "$defs": {
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "importSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "title": { "type": "string" },
+        "source_type": { "type": "string" },
+        "sourceType": { "type": "string" },
+        "license": { "type": "string" },
+        "is_free": { "type": "boolean" },
+        "isFree": { "type": "boolean" },
+        "raw_text": { "type": "string" },
+        "rawText": { "type": "string" },
+        "content_type": { "type": "string" },
+        "contentType": { "type": "string" },
+        "metadata": { "$ref": "#/$defs/metadata" }
+      }
+    }
+  }
+}

@@ -77,6 +77,34 @@ jobs:
       - name: Run API tests
         run: cd services/lycium-api && pytest -q
 
+      - name: Run source index primitive smoke
+        run: |
+          cd services/lycium-api
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8765 &
+          API_PID=$!
+          trap 'kill "$API_PID" || true' EXIT
+          python - <<'PY'
+          import socket
+          import time
+
+          deadline = time.time() + 20
+          while time.time() < deadline:
+              try:
+                  with socket.create_connection(("127.0.0.1", 8765), timeout=1):
+                      raise SystemExit(0)
+              except OSError:
+                  time.sleep(0.25)
+          raise SystemExit("Timed out waiting for Lycium API on 127.0.0.1:8765")
+          PY
+          cd ../..
+          python scripts/source-index-smoke.py \
+            fixtures/source-index/primitive-source-batch.json \
+            --api-url http://127.0.0.1:8765 \
+            --prompt "distributed systems reliability observability latency replication" \
+            --batch-id primitive-source-index-ci \
+            --context-id primitive-source-index-ci \
+            --require-excluded
+
   source-index:
     runs-on: ubuntu-latest
     steps:

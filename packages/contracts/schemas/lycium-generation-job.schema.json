@@ -24,6 +24,15 @@
         "source_urls": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "source_packet_id": {
+          "oneOf": [{ "type": "number" }, { "type": "string" }, { "type": "null" }]
+        },
+        "source_packet": {
+          "oneOf": [
+            { "$ref": "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json" },
+            { "type": "null" }
+          ]
         }
       }
     },

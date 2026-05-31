@@ -45,6 +45,8 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record benchmark-derived requirements and their origins in program/course metadata when applicable
    - record benchmark evidence in `metadata.curriculumBenchmarks`, `metadata.requirementOrigins`, `metadata.courseParityProfile`, and `metadata.sourceSlots` when applicable
    - record module, unit, idea, and source planning in `metadata.generationPlan`
+   - record estimated learning time at the most specific reliable level available: prefer section-level `estimatedMinutes`, then course-level `estimatedMinutes` or `estimatedHours`, then requirement, cluster, and program `estimatedHours`
+   - treat parent-level time estimates as authored fallbacks; when every child has an estimate, roll parent time up from children instead of manually duplicating totals
    - update progress markers as the plan becomes content
    - align progress markers with the backend gate names in `services/lycium-api/app/course_generation_gates.py`: `intake`, `source_corpus_preflight`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`
    - inspect `quality_report.evals` after backend LLM generation experiments to tune prompts, source coverage, and course structure before review or publish
@@ -81,6 +83,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
    - use `sourceIds` in course, module, section, and block records
    - when many sources are submitted, run source corpus preflight and use only included sources as course evidence unless a reviewer restores an excluded source
+   - when source packets are available, prefer `source-packet-v1` evidence over loose URL lists so generation uses imported snapshots, source decisions, and evidence refs
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
    - for required concepts, prefer source slots with a primary source, fallback sources, and a replacement policy

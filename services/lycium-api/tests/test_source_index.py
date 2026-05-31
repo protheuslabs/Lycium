@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import httpx
 
+from app.source_corpus import compile_generation_source_corpus
 from app.source_index_client import SourceIndexClient, normalize_remote_source_payload
 
 
@@ -192,6 +193,8 @@ def test_source_index_client_uses_http_contract_for_source_packets() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "POST" and request.url.path == "/v1/index/source-packets":
             return httpx.Response(201, json=REMOTE_SOURCE_PACKET)
+        if request.method == "GET" and request.url.path == "/v1/index/source-packets/3":
+            return httpx.Response(200, json=REMOTE_SOURCE_PACKET)
         return httpx.Response(404, json={"detail": "not found"})
 
     client = SourceIndexClient(base_url="http://source-index.test", transport=httpx.MockTransport(handler))
@@ -212,6 +215,7 @@ def test_source_index_client_uses_http_contract_for_source_packets() -> None:
 
     assert packet["contract_version"] == "source-packet-v1"
     assert packet["source_documents"][0]["snapshotId"] == "snap_remote_chem105"
+    assert client.get_source_packet(3)["contract_version"] == "source-packet-v1"
 
 
 def test_source_index_client_uses_http_contract_for_bulk_imports() -> None:
@@ -235,6 +239,18 @@ def test_source_index_client_uses_http_contract_for_bulk_imports() -> None:
 
     assert report["contract_version"] == "source-import-batch-v1"
     assert report["snapshot_count"] == 1
+
+
+def test_generation_source_corpus_accepts_source_packet_payload() -> None:
+    preflight = compile_generation_source_corpus(
+        prompt="CHEM 105 general chemistry",
+        source_urls=[],
+        source_packet=REMOTE_SOURCE_PACKET,
+    )
+
+    assert preflight.source_urls == ["https://example.edu/catalog/chem105"]
+    assert preflight.source_documents[0]["snapshotId"] == "snap_remote_chem105"
+    assert preflight.synthesis["sourcePacket"]["contractVersion"] == "source-packet-v1"
 
 
 def test_index_source_upsert_canonicalizes_and_dedupes(client) -> None:
@@ -335,3 +351,7 @@ def test_index_bulk_import_feeds_generation_packet(client) -> None:
     assert len(packet["source_documents"]) == 1
     assert packet["source_documents"][0]["snapshotId"]
     assert "Stoichiometry" in packet["source_documents"][0]["text"]
+
+    fetched_packet = client.get(f"/v1/index/source-packets/{packet['corpus_run']['id']}")
+    assert fetched_packet.status_code == 200, fetched_packet.text
+    assert fetched_packet.json()["contract_version"] == "source-packet-v1"

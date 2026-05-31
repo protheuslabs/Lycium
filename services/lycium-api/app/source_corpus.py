@@ -398,8 +398,36 @@ def compile_generation_source_corpus(
     fetch_sources: bool = True,
     source_documents: list[dict[str, Any]] | None = None,
     context_id: str | None = None,
+    source_packet_id: int | str | None = None,
+    source_packet: dict[str, Any] | None = None,
 ) -> SourceCorpusPreflight:
+    if isinstance(source_packet, dict) and source_packet.get("contract_version") == SOURCE_PACKET_CONTRACT_VERSION:
+        return _source_packet_to_preflight(source_packet)
+
     normalized_urls = [str(url) for url in source_urls or [] if str(url).strip()]
+    if source_index_client_configured() and source_packet_id is not None:
+        try:
+            return _source_packet_to_preflight(SourceIndexClient().get_source_packet(source_packet_id))
+        except SourceIndexClientError as exc:
+            fallback = compile_source_corpus_preflight(
+                prompt=prompt,
+                source_urls=normalized_urls,
+                fetch_sources=fetch_sources,
+                source_documents=source_documents,
+            )
+            synthesis = dict(fallback.synthesis)
+            synthesis["sourcePacket"] = {
+                "contractVersion": SOURCE_PACKET_CONTRACT_VERSION,
+                "status": "fallback",
+                "sourcePacketId": source_packet_id,
+                "error": str(exc)[:300],
+            }
+            return SourceCorpusPreflight(
+                synthesis=synthesis,
+                source_urls=fallback.source_urls,
+                source_documents=fallback.source_documents,
+            )
+
     if source_index_client_configured() and normalized_urls:
         try:
             packet = SourceIndexClient().create_source_packet(

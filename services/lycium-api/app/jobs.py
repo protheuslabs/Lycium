@@ -242,6 +242,8 @@ def run_agent_course_generation_job(job_id: int) -> None:
             expected_duration_minutes=int(payload.get("expected_duration_minutes") or 180),
             model=payload.get("model") or agent_profile.get("model"),
             source_urls=[str(url) for url in payload.get("source_urls") or []],
+            source_packet_id=payload.get("source_packet_id"),
+            source_packet=payload.get("source_packet") if isinstance(payload.get("source_packet"), dict) else None,
             enforce_contract=False,
             on_checkpoint=checkpoint,
             resume_course=resume_course,

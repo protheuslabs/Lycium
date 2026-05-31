@@ -17,13 +17,12 @@ from app.schemas import (
 from app.source_index_client import SourceIndexClientError
 from app.source_index import (
     create_indexed_source_response,
-    import_source_batch_response,
-    create_source_packet_response,
     create_source_corpus_run_response,
     get_indexed_source_response,
     get_source_corpus_run_response,
     list_indexed_source_responses,
 )
+from app.source_index_packets import create_source_packet_response, get_source_packet_response, import_source_batch_response
 
 
 def register(app: FastAPI) -> None:
@@ -121,3 +120,13 @@ def register(app: FastAPI) -> None:
             )
         except SourceIndexClientError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    @app.get("/v1/index/source-packets/{packet_id}", response_model=SourcePacketRead)
+    def get_source_packet(packet_id: int, session: Session = Depends(get_session)) -> dict:
+        try:
+            packet = get_source_packet_response(session, packet_id=packet_id)
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+        if packet is None:
+            raise HTTPException(status_code=404, detail="Source packet not found.")
+        return packet
