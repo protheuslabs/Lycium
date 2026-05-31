@@ -1,6 +1,6 @@
-import type { LyciumSourceRecord } from "@lycium/contracts";
 import type { CourseEntry, CourseSection, SectionStatus } from "../../courseTypes";
 import ContentView from "../ContentView/ContentView";
+import type { SourceRecord } from "../ContentView/ContentView";
 import Sidebar from "../Sidebar/Sidebar";
 
 type DisplaySection = CourseSection & {
@@ -24,7 +24,7 @@ type CourseLearningLayoutProps = {
   resolvedSectionStatuses: Record<string, SectionStatus>;
   completedSectionIds: Set<string>;
   orderMandatory: boolean;
-  sources: LyciumSourceRecord[];
+  sources: SourceRecord[];
   onSectionSelect: (index: number) => void;
   onCompleteSection: (sectionId: string) => void;
   onSectionTimedStatusChange: (sectionId: string, hasTimedQuizInProgress: boolean) => void;

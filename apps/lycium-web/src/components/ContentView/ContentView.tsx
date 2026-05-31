@@ -77,7 +77,7 @@ type Section = {
   sourceIds?: string[];
 };
 
-type SourceRecord = {
+export type SourceRecord = {
   id: string;
   type: string;
   title: string;
