@@ -10,6 +10,19 @@ ScenarioStatus = Literal["passed", "needs_review", "failed"]
 FindingSeverity = Literal["warning", "error"]
 
 SCENARIO_EVAL_VERSION = "course-generation-scenarios-v1"
+SCENARIO_PROMPT_FILLER_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in [
+        r"\bthe model should\b",
+        r"\bthe agent should\b",
+        r"\bwrite (?:a|the) lesson\b",
+        r"\bgenerate (?:instructional )?content\b",
+        r"\bcontent goes here\b",
+        r"\btodo\b",
+        r"\bthis lesson supports the module objective\b",
+        r"\bworking model studies\b",
+    ]
+]
 
 
 def list_generation_eval_scenarios() -> dict[str, list[dict[str, str]]]:
@@ -151,6 +164,23 @@ def _coverage_check(text_blob: str, required_keywords: list[str], min_coverage: 
     )
 
 
+def _specificity_check(text_blob: str) -> dict[str, Any]:
+    hits = []
+    for pattern in SCENARIO_PROMPT_FILLER_PATTERNS:
+        if pattern.search(text_blob):
+            hits.append(pattern.pattern)
+    return _check(
+        key="specificity",
+        label="No prompt-like filler",
+        score=1.0 - min(1.0, len(hits) * 0.25),
+        findings=[
+            _finding("error", f"Prompt-like or placeholder prose detected: {pattern}.")
+            for pattern in hits[:6]
+        ],
+        metrics={"placeholderPatternHitCount": len(hits)},
+    )
+
+
 def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str) -> dict[str, Any]:
     if scenario_id not in COURSE_SCENARIOS:
         raise ValueError(f"Unknown course generation scenario '{scenario_id}'")
@@ -174,9 +204,12 @@ def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str
         _check(
             key="course_structure",
             label="College-course structure",
-            score=min(1.0, metrics["moduleCount"] / spec["minModules"]) * 0.55 + metrics["moduleSummaryCoverage"] * 0.45,
+            score=min(1.0, metrics["moduleCount"] / spec["minModules"]) * 0.4
+            + min(1.0, metrics["learnSectionCount"] / spec["minLearnSections"]) * 0.2
+            + metrics["moduleSummaryCoverage"] * 0.4,
             findings=[
                 *([] if metrics["moduleCount"] >= spec["minModules"] else [_finding("error", f"Expected at least {spec['minModules']} modules/weeks.", "modules")]),
+                *([] if metrics["learnSectionCount"] >= spec["minLearnSections"] else [_finding("error", f"Expected at least {spec['minLearnSections']} Learn sections.")]),
                 *([] if metrics["moduleSummaryCoverage"] >= 1 else [_finding("error", "Every module should end with a summary/concept review.")]),
             ],
             metrics={key: metrics[key] for key in ("moduleCount", "learnSectionCount", "moduleSummaryCoverage")},
@@ -205,6 +238,7 @@ def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str
             ],
             metrics={key: metrics[key] for key in ("sourceRecordCount", "moduleVideoCoverage", "benchmarkCount", "requirementOriginCount")},
         ),
+        _specificity_check(metrics["textBlob"]),
     ]
     return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course", checks=checks)
 

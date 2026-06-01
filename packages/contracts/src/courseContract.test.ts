@@ -5,6 +5,7 @@ import { validateCourseEntry, validateCourseTaxonomy } from "./course";
 import type { LyciumCourseData, LyciumCourseEntry } from "./course";
 import { calculateProgramProgress, validateLyciumProgram } from "./program";
 import type { LyciumProgram, LyciumRequirement } from "./program";
+import { migrateSourcePacketV1 } from "./sourceIndexMigrations";
 
 function readFixture<T>(name: string): T {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}`, import.meta.url), "utf8")) as T;
@@ -100,6 +101,18 @@ describe("Lycium contract fixtures", () => {
     const fixture = readFixture<unknown>(fixtureName);
 
     expect(validateSchema(fixture), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);
+  });
+
+  it("migrates legacy source-packet fixtures by deriving packet quality evidence", () => {
+    const validateSchema = ajv.compile(schemas.sourcePacket);
+    const fixture = readFixture<Record<string, unknown>>("valid-source-packet.json");
+    const staleFixture = { ...fixture };
+    delete staleFixture.quality;
+    const migrated = migrateSourcePacketV1(staleFixture);
+
+    expect(validateSchema(staleFixture)).toBe(false);
+    expect(validateSchema(migrated), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);
+    expect((migrated.quality as { status: string }).status).toBe("usable");
   });
 });
 

@@ -192,6 +192,16 @@ class SourcePacketSourceRead(BaseModel):
     source_document: dict[str, Any] | None = None
 
 
+class SourcePacketQualityRead(BaseModel):
+    status: str
+    includedSourceCount: int
+    sourceDocumentCount: int
+    snapshotCoverageRatio: float
+    documentCoverageRatio: float
+    evidenceCoverageRatio: float
+    warningCount: int
+
+
 class SourcePacketRead(BaseModel):
     contract_version: str
     consumer: str
@@ -203,3 +213,4 @@ class SourcePacketRead(BaseModel):
     source_documents: list[dict[str, Any]]
     synthesis: dict[str, Any]
     warnings: list[str]
+    quality: SourcePacketQualityRead

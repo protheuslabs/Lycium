@@ -102,6 +102,31 @@ def _latest_source_snapshots(session: Session, source_id: int, *, limit: int) ->
     return list_source_snapshots(session, source_id=source_id, limit=limit)
 
 
+def _packet_quality(packet_sources: list[dict[str, Any]], packet_documents: list[dict[str, Any]], warnings: list[str]) -> dict[str, Any]:
+    source_count = len(packet_sources)
+    document_count = len(packet_documents)
+    snapshot_count = sum(1 for source in packet_sources if source.get("snapshots"))
+    evidence_count = sum(1 for source in packet_sources if source.get("evidence_refs"))
+    document_coverage = document_count / source_count if source_count else 0
+    snapshot_coverage = snapshot_count / source_count if source_count else 0
+    evidence_coverage = evidence_count / source_count if source_count else 0
+    if not source_count:
+        status = "empty"
+    elif document_coverage >= 1 and evidence_coverage >= 1:
+        status = "usable"
+    else:
+        status = "needs_review"
+    return {
+        "status": status,
+        "includedSourceCount": source_count,
+        "sourceDocumentCount": document_count,
+        "snapshotCoverageRatio": round(snapshot_coverage, 3),
+        "documentCoverageRatio": round(document_coverage, 3),
+        "evidenceCoverageRatio": round(evidence_coverage, 3),
+        "warningCount": len(warnings),
+    }
+
+
 def _snapshot_document(source: IndexedSource, snapshot: SourceSnapshot, *, service_name: str) -> dict[str, Any]:
     source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
     snapshot_public_id = snapshot.public_id or stable_snapshot_public_id(source_public_id, snapshot.content_hash or "")
@@ -198,6 +223,9 @@ def source_packet_payload(
         warnings.append("Corpus run included sources, but no packet source records could be assembled.")
     if packet_sources and not packet_documents:
         warnings.append("Packet has included sources but no extracted source documents.")
+    if packet_sources and len(packet_documents) < len(packet_sources):
+        warnings.append("Packet is missing extracted documents for one or more included sources.")
+    quality = _packet_quality(packet_sources, packet_documents, warnings)
 
     return {
         "contract_version": SOURCE_PACKET_CONTRACT_VERSION,
@@ -210,6 +238,7 @@ def source_packet_payload(
         "source_documents": packet_documents,
         "synthesis": synthesis,
         "warnings": warnings,
+        "quality": quality,
     }
 
 

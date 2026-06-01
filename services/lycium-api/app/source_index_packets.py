@@ -51,6 +51,31 @@ def _normalized_import_text(value: str) -> str:
     return " ".join(value.split())
 
 
+def _packet_quality(packet_sources: list[dict[str, Any]], packet_documents: list[dict[str, Any]], warnings: list[str]) -> dict[str, Any]:
+    source_count = len(packet_sources)
+    document_count = len(packet_documents)
+    snapshot_count = sum(1 for source in packet_sources if source.get("snapshots"))
+    evidence_count = sum(1 for source in packet_sources if source.get("evidence_refs"))
+    document_coverage = document_count / source_count if source_count else 0
+    snapshot_coverage = snapshot_count / source_count if source_count else 0
+    evidence_coverage = evidence_count / source_count if source_count else 0
+    if not source_count:
+        status = "empty"
+    elif document_coverage >= 1 and evidence_coverage >= 1:
+        status = "usable"
+    else:
+        status = "needs_review"
+    return {
+        "status": status,
+        "includedSourceCount": source_count,
+        "sourceDocumentCount": document_count,
+        "snapshotCoverageRatio": round(snapshot_coverage, 3),
+        "documentCoverageRatio": round(document_coverage, 3),
+        "evidenceCoverageRatio": round(evidence_coverage, 3),
+        "warningCount": len(warnings),
+    }
+
+
 def _create_import_snapshot(
     session: Session,
     *,
@@ -326,6 +351,9 @@ def create_source_packet_response(
     warnings = []
     if packet_sources and not packet_documents:
         warnings.append("Packet has included sources but no extracted source documents.")
+    if packet_sources and len(packet_documents) < len(packet_sources):
+        warnings.append("Packet is missing extracted documents for one or more included sources.")
+    quality = _packet_quality(packet_sources, packet_documents, warnings)
     return {
         "contract_version": SOURCE_PACKET_CONTRACT_VERSION,
         "consumer": run.consumer,
@@ -337,6 +365,7 @@ def create_source_packet_response(
         "source_documents": packet_documents,
         "synthesis": preflight.synthesis,
         "warnings": warnings,
+        "quality": quality,
     }
 
 

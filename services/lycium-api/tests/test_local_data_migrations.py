@@ -8,6 +8,7 @@ import pytest
 
 from app.config import SETTINGS
 from app.local_store import ensure_local_data_dirs, local_data_migration_status
+from app.local_store_core import LocalDataMigrationError, run_local_data_migrations
 
 
 @pytest.fixture()
@@ -65,3 +66,18 @@ def test_local_data_migration_status_endpoint(client, isolated_local_data: Path)
     assert payload["schema_version"] == 2
     assert payload["target_schema_version"] == 2
     assert payload["pending_migrations"] == []
+
+
+def test_local_data_migration_fails_clearly_for_future_schema(isolated_local_data: Path) -> None:
+    isolated_local_data.mkdir(parents=True)
+    (isolated_local_data / "manifest.json").write_text(
+        json.dumps({"schema_version": 999, "migrations": []}),
+        encoding="utf-8",
+    )
+
+    status = local_data_migration_status()
+
+    assert status["unsupported_schema_version"] is True
+    assert "newer than supported" in status["error"]
+    with pytest.raises(LocalDataMigrationError, match="newer than supported"):
+        run_local_data_migrations()

@@ -125,5 +125,14 @@
   "synthesis": {
     "workflowGate": "source_corpus_preflight"
   },
-  "warnings": []
+  "warnings": [],
+  "quality": {
+    "status": "usable",
+    "includedSourceCount": 1,
+    "sourceDocumentCount": 1,
+    "snapshotCoverageRatio": 1,
+    "documentCoverageRatio": 1,
+    "evidenceCoverageRatio": 1,
+    "warningCount": 0
+  }
 }

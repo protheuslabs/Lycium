@@ -36,6 +36,74 @@ def _event_payload(*, progress: float | None = None, trace: dict[str, Any] | Non
     return payload
 
 
+def _input_summary(payload: dict[str, Any]) -> dict[str, Any]:
+    source_urls = payload.get("source_urls")
+    return {
+        "promptLength": len(str(payload.get("prompt") or "")),
+        "level": payload.get("level"),
+        "language": payload.get("language"),
+        "sourcePolicy": payload.get("source_policy"),
+        "sourceUrlCount": len(source_urls) if isinstance(source_urls, list) else 0,
+        "sourcePacketId": payload.get("source_packet_id"),
+        "desiredModuleCount": payload.get("desired_module_count"),
+        "expectedDurationMinutes": payload.get("expected_duration_minutes"),
+    }
+
+
+def _source_corpus_summary(trace: dict[str, Any]) -> dict[str, Any]:
+    candidates = (
+        trace.get("source_corpus_preflight"),
+        trace.get("sourceCorpusPreflight"),
+        trace.get("source_corpus"),
+        trace.get("sourceCorpus"),
+    )
+    preflight = next((candidate for candidate in candidates if isinstance(candidate, dict)), {})
+    included = preflight.get("includedSources") or preflight.get("included") or preflight.get("acceptedSources") or []
+    excluded = preflight.get("excludedSources") or preflight.get("excluded") or preflight.get("rejectedSources") or []
+    failures = preflight.get("fetchFailures") or preflight.get("fetch_failures") or preflight.get("failures") or []
+    themes = preflight.get("commonThemes") or preflight.get("common_themes") or preflight.get("themes") or []
+    return {
+        "includedSourceCount": len(included) if isinstance(included, list) else 0,
+        "excludedSourceCount": len(excluded) if isinstance(excluded, list) else 0,
+        "fetchFailureCount": len(failures) if isinstance(failures, list) else 0,
+        "commonThemes": themes[:8] if isinstance(themes, list) else [],
+    }
+
+
+def _quality_gate_summary(quality_report: dict[str, Any], trace: dict[str, Any]) -> dict[str, Any]:
+    gates = quality_report.get("gates")
+    if not isinstance(gates, list):
+        trace_quality = trace.get("quality_report")
+        gates = trace_quality.get("gates") if isinstance(trace_quality, dict) else []
+    passed = [
+        str(gate.get("gate") or gate.get("name"))
+        for gate in gates
+        if isinstance(gate, dict) and str(gate.get("status") or "").lower() in {"passed", "pass", "ok"}
+    ]
+    failed = [
+        str(gate.get("gate") or gate.get("name"))
+        for gate in gates
+        if isinstance(gate, dict) and str(gate.get("status") or "").lower() in {"failed", "fail", "blocked"}
+    ]
+    return {
+        "passedGateCount": len([gate for gate in passed if gate]),
+        "failedGateCount": len([gate for gate in failed if gate]),
+        "passedGates": [gate for gate in passed if gate],
+        "failedGates": [gate for gate in failed if gate],
+    }
+
+
+def _usage_summary(trace: dict[str, Any]) -> dict[str, Any]:
+    usage = trace.get("usage") or trace.get("token_usage") or trace.get("tokenUsage") or {}
+    costs = trace.get("cost") or trace.get("costs") or trace.get("costEstimate") or {}
+    return {
+        "promptTokens": usage.get("prompt_tokens") or usage.get("promptTokens") if isinstance(usage, dict) else None,
+        "completionTokens": usage.get("completion_tokens") or usage.get("completionTokens") if isinstance(usage, dict) else None,
+        "totalTokens": usage.get("total_tokens") or usage.get("totalTokens") if isinstance(usage, dict) else None,
+        "estimatedCostUsd": costs.get("estimated_cost_usd") or costs.get("estimatedCostUsd") if isinstance(costs, dict) else None,
+    }
+
+
 def _event_read(event: GenerationRunEvent) -> dict[str, Any]:
     return {
         "id": event.id,
@@ -133,7 +201,16 @@ def start_generation_run(session: Session, job: Job, *, message: str, progress: 
         stage="course_plan",
         status="running",
         message=message,
-        payload=redact_sensitive_payload(_event_payload(progress=progress)),
+        payload=redact_sensitive_payload(
+            _event_payload(
+                progress=progress,
+                extra={
+                    "inputs": _input_summary(payload),
+                    "providerId": run.provider_id,
+                    "model": run.model,
+                },
+            )
+        ),
     )
     return run
 
@@ -183,8 +260,15 @@ def complete_generation_run(
     run.message = message
     run.course_snapshot_id = course_snapshot_id
     run.trace = _safe_trace(trace)
+    usage_summary = _usage_summary(run.trace)
     run.result_summary = {
         "accepted": accepted,
+        "providerId": run.provider_id,
+        "model": run.model,
+        "inputs": _input_summary(_as_dict(run.request_payload)),
+        "sourceCorpus": _source_corpus_summary(run.trace),
+        "gateSummary": _quality_gate_summary(quality_report, run.trace),
+        "usage": {key: value for key, value in usage_summary.items() if value is not None},
         "qualityScore": quality_report.get("score"),
         "qualityPassed": quality_report.get("passed"),
         "errorCount": len(quality_report.get("errors") or []),

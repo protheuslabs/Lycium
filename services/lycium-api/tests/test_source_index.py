@@ -119,6 +119,15 @@ REMOTE_SOURCE_PACKET = {
     ],
     "synthesis": {"workflowGate": "source_corpus_preflight"},
     "warnings": [],
+    "quality": {
+        "status": "usable",
+        "includedSourceCount": 1,
+        "sourceDocumentCount": 1,
+        "snapshotCoverageRatio": 1,
+        "documentCoverageRatio": 1,
+        "evidenceCoverageRatio": 1,
+        "warningCount": 0,
+    },
 }
 
 REMOTE_IMPORT_REPORT = {
@@ -215,6 +224,7 @@ def test_source_index_client_uses_http_contract_for_source_packets() -> None:
 
     assert packet["contract_version"] == "source-packet-v1"
     assert packet["source_documents"][0]["snapshotId"] == "snap_remote_chem105"
+    assert packet["quality"]["status"] == "usable"
     assert client.get_source_packet(3)["contract_version"] == "source-packet-v1"
 
 
@@ -251,6 +261,7 @@ def test_generation_source_corpus_accepts_source_packet_payload() -> None:
     assert preflight.source_urls == ["https://example.edu/catalog/chem105"]
     assert preflight.source_documents[0]["snapshotId"] == "snap_remote_chem105"
     assert preflight.synthesis["sourcePacket"]["contractVersion"] == "source-packet-v1"
+    assert preflight.synthesis["sourcePacket"]["quality"]["status"] == "usable"
 
 
 def test_index_source_upsert_canonicalizes_and_dedupes(client) -> None:
@@ -349,6 +360,8 @@ def test_index_bulk_import_feeds_generation_packet(client) -> None:
     assert packet["corpus_run"]["included_source_count"] == 1
     assert packet["corpus_run"]["excluded_source_count"] == 1
     assert len(packet["source_documents"]) == 1
+    assert packet["quality"]["status"] == "usable"
+    assert packet["quality"]["documentCoverageRatio"] == 1
     assert packet["source_documents"][0]["snapshotId"]
     assert "Stoichiometry" in packet["source_documents"][0]["text"]
 

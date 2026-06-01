@@ -353,6 +353,18 @@ def test_multi_source_noisy_corpus_fixture_excludes_irrelevant_material() -> Non
     assert "source-unrelated-recipe" in course["metadata"]["sourceCorpusSynthesis"]["excludedSources"]
     assert "tomato sauce" not in rendered_text
 
+
+def test_course_generation_scenario_rejects_prompt_like_filler() -> None:
+    course = source_backed_course_from_scenario("intro-programming-foundations")
+    course["modules"][0]["sections"][0]["content"][0]["value"] = (
+        "Students should connect this lesson to the module objective. The agent should generate content here."
+    )
+
+    report = evaluate_course_generation_scenario(course, "intro-programming-foundations")
+
+    assert report["status"] == "failed"
+    assert any("Prompt-like" in recommendation for recommendation in report["recommendations"])
+
 def test_chem_105_flagship_blueprint_has_real_benchmarks_sources_and_slots() -> None:
     assert len(CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"]) >= 3
     assert len(CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]) >= 6

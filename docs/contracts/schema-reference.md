@@ -263,7 +263,7 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 - Public export: Yes
 - JSON Schema ID: `https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json`
 - Root type: `object`
-- Required root fields: `contract_version`, `consumer`, `context_id`, `prompt`, `source_urls`, `corpus_run`, `sources`, `source_documents`, `synthesis`, `warnings`
+- Required root fields: `contract_version`, `consumer`, `context_id`, `prompt`, `source_urls`, `corpus_run`, `sources`, `source_documents`, `synthesis`, `warnings`, `quality`
 - Example fixture: `packages/contracts/fixtures/valid-source-packet.json`
 
 ### Top-level properties
@@ -275,6 +275,7 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 | `contract_version` | unspecified | required |
 | `corpus_run` | #/$defs/corpusRun | required |
 | `prompt` | string | required |
+| `quality` | #/$defs/packetQuality | required |
 | `source_documents` | array | required |
 | `source_urls` | array | required |
 | `sources` | array | required |

@@ -14,7 +14,8 @@
     "sources",
     "source_documents",
     "synthesis",
-    "warnings"
+    "warnings",
+    "quality"
   ],
   "properties": {
     "contract_version": { "const": "source-packet-v1" },
@@ -41,7 +42,8 @@
     "warnings": {
       "type": "array",
       "items": { "type": "string" }
-    }
+    },
+    "quality": { "$ref": "#/$defs/packetQuality" }
   },
   "$defs": {
     "id": {
@@ -183,6 +185,28 @@
         "source_document": {
           "oneOf": [{ "$ref": "#/$defs/sourceDocument" }, { "type": "null" }]
         }
+      }
+    },
+    "packetQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "includedSourceCount",
+        "sourceDocumentCount",
+        "snapshotCoverageRatio",
+        "documentCoverageRatio",
+        "evidenceCoverageRatio",
+        "warningCount"
+      ],
+      "properties": {
+        "status": { "enum": ["usable", "needs_review", "empty"] },
+        "includedSourceCount": { "type": "number", "minimum": 0 },
+        "sourceDocumentCount": { "type": "number", "minimum": 0 },
+        "snapshotCoverageRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "documentCoverageRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "evidenceCoverageRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "warningCount": { "type": "number", "minimum": 0 }
       }
     }
   }

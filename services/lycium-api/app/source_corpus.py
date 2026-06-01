@@ -387,6 +387,7 @@ def _source_packet_to_preflight(packet: dict[str, Any]) -> SourceCorpusPreflight
         "sourceCount": len(packet.get("sources", []) if isinstance(packet.get("sources"), list) else []),
         "sourceDocumentCount": len(source_documents),
         "warnings": packet.get("warnings") if isinstance(packet.get("warnings"), list) else [],
+        "quality": packet.get("quality") if isinstance(packet.get("quality"), dict) else {},
     }
     return SourceCorpusPreflight(synthesis=synthesis, source_urls=source_urls, source_documents=source_documents)
 

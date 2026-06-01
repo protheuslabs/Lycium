@@ -138,4 +138,13 @@ export type LyciumSourcePacket = {
   source_documents: LyciumSourceDocument[];
   synthesis: Record<string, unknown>;
   warnings: string[];
+  quality: {
+    status: "usable" | "needs_review" | "empty" | string;
+    includedSourceCount: number;
+    sourceDocumentCount: number;
+    snapshotCoverageRatio: number;
+    documentCoverageRatio: number;
+    evidenceCoverageRatio: number;
+    warningCount: number;
+  };
 };

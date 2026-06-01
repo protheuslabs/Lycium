@@ -34,6 +34,10 @@ LOCAL_DATA_MIGRATIONS = (
 )
 
 
+class LocalDataMigrationError(RuntimeError):
+    """Raised when local data cannot be safely migrated by this Lycium version."""
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -223,6 +227,10 @@ def run_local_data_migrations(root: Path | None = None) -> dict[str, Any]:
 
     manifest_path = local_root / "manifest.json"
     manifest = _base_manifest(_read_json(manifest_path, {}))
+    if int(manifest.get("schema_version") or 0) > LOCAL_DATA_SCHEMA_VERSION:
+        raise LocalDataMigrationError(
+            f"Local data schema version {manifest['schema_version']} is newer than supported version {LOCAL_DATA_SCHEMA_VERSION}."
+        )
     for migration in LOCAL_DATA_MIGRATIONS:
         if _migration_applied(manifest, migration["id"]):
             continue
@@ -240,6 +248,8 @@ def run_local_data_migrations(root: Path | None = None) -> dict[str, Any]:
 def local_data_migration_status(root: Path | None = None) -> dict[str, Any]:
     local_root = root or SETTINGS.local_data_dir
     manifest = _base_manifest(_read_json(local_root / "manifest.json", {}))
+    schema_version = int(manifest.get("schema_version") or 0)
+    unsupported_schema_version = schema_version > LOCAL_DATA_SCHEMA_VERSION
     applied_ids = {
         row.get("id")
         for row in manifest.get("migrations", [])
@@ -248,8 +258,14 @@ def local_data_migration_status(root: Path | None = None) -> dict[str, Any]:
     pending = [migration for migration in LOCAL_DATA_MIGRATIONS if migration["id"] not in applied_ids]
     return {
         "local_data_dir": str(local_root),
-        "schema_version": int(manifest.get("schema_version") or 0),
+        "schema_version": schema_version,
         "target_schema_version": LOCAL_DATA_SCHEMA_VERSION,
+        "unsupported_schema_version": unsupported_schema_version,
+        "error": (
+            f"Local data schema version {schema_version} is newer than supported version {LOCAL_DATA_SCHEMA_VERSION}."
+            if unsupported_schema_version
+            else None
+        ),
         "pending_migrations": pending,
         "migrations": manifest.get("migrations", []),
         "updated_at": manifest.get("updated_at"),
