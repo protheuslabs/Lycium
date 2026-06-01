@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
 import type { CourseEntry } from "../../courseTypes";
-import { courseCategories, getCourseCategoryDepartments } from "../../courseData/courseTaxonomy";
 import CatalogCourseGrid from "./CatalogCourseGrid";
 import CatalogPagination from "./CatalogPagination";
 import CatalogProgramShowcase from "./CatalogProgramShowcase";
@@ -19,6 +18,7 @@ import {
   getGeneratingCourseTitle,
 } from "./catalogUtils";
 import { useCatalogControls } from "./useCatalogControls";
+import { useCreateCourseModal } from "./useCreateCourseModal";
 
 type CourseCatalogProps = {
   courses: CourseEntry[];
@@ -71,11 +71,7 @@ export default function CourseCatalog({
   publishingCourseKey,
   onOpenSettings,
 }: CourseCatalogProps) {
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [sourceLinks, setSourceLinks] = useState([""]);
   const [infoCourse, setInfoCourse] = useState<CourseEntry | null>(null);
-  const [createCollege, setCreateCollege] = useState("");
-  const [createDepartment, setCreateDepartment] = useState("");
   const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE - 1);
   const courseGridRef = useRef<HTMLDivElement | null>(null);
   const isGeneratingCourse = generateStatus === "loading";
@@ -88,14 +84,7 @@ export default function CourseCatalog({
     catalogClusterId,
     onCatalogDrilldown,
   });
-  const createCollegeOptions = useMemo(
-    () => courseCategories.map((category) => ({ value: category.id, label: category.label })),
-    [],
-  );
-  const createDepartmentOptions = useMemo(
-    () => getCourseCategoryDepartments(createCollege).map((department) => ({ value: department.id, label: department.label })),
-    [createCollege],
-  );
+  const createCourseModal = useCreateCourseModal({ canCreateCourse, onGenerateCourse });
 
   const totalCatalogPages = Math.max(1, Math.ceil(catalogControls.visibleCourses.length / coursesPerPage));
   const activeCatalogPage = Math.min(catalogControls.catalogPage, totalCatalogPages);
@@ -139,29 +128,6 @@ export default function CourseCatalog({
       window.removeEventListener("resize", updateCoursesPerPage);
     };
   }, [catalogControls.catalogViewLevel, isGeneratingCourse]);
-
-  const handleCreateCollegeChange = (value: string) => {
-    setCreateCollege(value);
-    setCreateDepartment("");
-  };
-
-  const handleSourceLinkChange = (index: number, value: string) => {
-    setSourceLinks((currentLinks) => currentLinks.map((link, linkIndex) => (linkIndex === index ? value : link)));
-  };
-
-  const handleCreateSubmit = (event: FormEvent<HTMLFormElement>) => {
-    if (!canCreateCourse || !createCollege || !createDepartment) {
-      event.preventDefault();
-      return;
-    }
-
-    onGenerateCourse(
-      event,
-      sourceLinks.map((link) => link.trim()).filter(Boolean),
-      { category: createCollege, department: createDepartment },
-    );
-    setIsCreateModalOpen(false);
-  };
 
   return (
     <div className="catalog-shell">
@@ -228,7 +194,7 @@ export default function CourseCatalog({
                 visibleCourses={catalogControls.visibleCourses}
                 catalogPageCourses={catalogPageCourses}
                 publishingCourseKey={publishingCourseKey}
-                onCreateCourse={() => setIsCreateModalOpen(true)}
+                onCreateCourse={() => createCourseModal.setIsOpen(true)}
                 onOpenCourse={onOpenCourse}
                 onOpenInfo={setInfoCourse}
               />
@@ -247,31 +213,31 @@ export default function CourseCatalog({
         </section>
       </main>
 
-      {isCreateModalOpen && (
+      {createCourseModal.isOpen && (
         <CreateCourseModal
           prompt={prompt}
           level={level}
-          sourceLinks={sourceLinks}
+          sourceLinks={createCourseModal.sourceLinks}
           canCreateCourse={canCreateCourse}
           generateStatus={generateStatus}
           generateMessage={generateMessage}
           levelOptions={CATALOG_LEVEL_OPTIONS}
-          college={createCollege}
-          department={createDepartment}
-          collegeOptions={createCollegeOptions}
-          departmentOptions={createDepartmentOptions}
+          college={createCourseModal.college}
+          department={createCourseModal.department}
+          collegeOptions={createCourseModal.collegeOptions}
+          departmentOptions={createCourseModal.departmentOptions}
           onPromptChange={onPromptChange}
           onLevelChange={onLevelChange}
-          onCollegeChange={handleCreateCollegeChange}
-          onDepartmentChange={setCreateDepartment}
-          onSourceLinkChange={handleSourceLinkChange}
-          onAddSourceLink={() => setSourceLinks((currentLinks) => [...currentLinks, ""])}
-          onSubmit={handleCreateSubmit}
+          onCollegeChange={createCourseModal.handleCollegeChange}
+          onDepartmentChange={createCourseModal.setDepartment}
+          onSourceLinkChange={createCourseModal.handleSourceLinkChange}
+          onAddSourceLink={createCourseModal.addSourceLink}
+          onSubmit={createCourseModal.handleSubmit}
           onOpenSettings={(event) => {
             onOpenSettings(event);
-            setIsCreateModalOpen(false);
+            createCourseModal.setIsOpen(false);
           }}
-          onClose={() => setIsCreateModalOpen(false)}
+          onClose={() => createCourseModal.setIsOpen(false)}
         />
       )}
 

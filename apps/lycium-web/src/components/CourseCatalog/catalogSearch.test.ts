@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { CourseEntry } from "../../courseTypes";
+import { localCourses } from "../../courseData/localCourses";
+import { softwareEngineeringProgram } from "../../courseData/programs/softwareEngineeringProgram";
+import { getVisibleCatalogCourses } from "./catalogCourseFiltering";
+import { getVisibleCatalogClusters, getVisibleCatalogPrograms } from "./catalogPathFiltering";
 import { getCourseSearchScore, normalizeSearchText } from "./catalogUtils";
 
 const baseCourse: CourseEntry = {
@@ -44,5 +48,62 @@ describe("catalog search scoring", () => {
 
   it("includes tags in ranking signals", () => {
     expect(getCourseSearchScore(baseCourse, normalizeSearchText("testing"))).toBeGreaterThan(0);
+  });
+
+  it("can hide locked courses whose prerequisites are unmet", () => {
+    const prerequisite: CourseEntry = {
+      ...baseCourse,
+      key: "local-prerequisite",
+      title: "Prerequisite Course",
+      data: { ...baseCourse.data, title: "Prerequisite Course", prerequisites: [] },
+    };
+    const lockedCourse: CourseEntry = {
+      ...baseCourse,
+      key: "local-locked-course",
+      title: "Locked Course",
+      data: {
+        ...baseCourse.data,
+        title: "Locked Course",
+        prerequisites: [{ type: "course", courseId: prerequisite.key, title: prerequisite.title }],
+      },
+    };
+    const courses = [prerequisite, lockedCourse];
+    const catalogCourseMap = new Map(courses.map((course) => [course.key, course]));
+    const visible = getVisibleCatalogCourses({
+      activityFilter: "all",
+      catalogCourseMap,
+      collegeFilter: "all",
+      courses,
+      departmentFilter: "all",
+      difficultyFilter: "all",
+      isClusterScoped: false,
+      searchQuery: "",
+      selectedClusterCourseIds: new Set(),
+      showLockedCourses: false,
+      sortMode: "college",
+    });
+
+    expect(visible.map(({ course }) => course.key)).not.toContain(lockedCourse.key);
+  });
+
+  it("sorts programs and clusters through shared path sort rules", () => {
+    const courseMap = new Map(localCourses.map((course) => [course.key, course]));
+    const programs = getVisibleCatalogPrograms({
+      programs: [softwareEngineeringProgram],
+      courses: localCourses,
+      courseMap,
+      searchQuery: "",
+      sortMode: "name",
+    });
+    const clusters = getVisibleCatalogClusters({
+      program: softwareEngineeringProgram,
+      courseMap,
+      searchQuery: "",
+      sortMode: "time-asc",
+    });
+    const clusterMinutes = clusters.map(({ estimate }) => estimate.minutes ?? Number.MAX_SAFE_INTEGER);
+
+    expect(programs[0]?.program.id).toBe(softwareEngineeringProgram.id);
+    expect(clusterMinutes).toEqual([...clusterMinutes].sort((a, b) => a - b));
   });
 });

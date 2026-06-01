@@ -80,8 +80,7 @@ export default function CatalogCourseCard({
         </p>
       ) : (
         <CatalogProgressMeter
-          percentage={courseProgress.percentage}
-          viewedPercentage={courseProgress.viewedPercentage}
+          progress={courseProgress}
           variant="course"
         />
       )}

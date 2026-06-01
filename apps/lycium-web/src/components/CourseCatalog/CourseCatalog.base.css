@@ -1,4 +1,6 @@
 @import "./CourseCatalog.pagination.css";
 @import "./CourseCatalog.layout.css";
+@import "./CourseCatalog.programs.css";
+@import "./CourseCatalog.controls.css";
 @import "./CourseCatalog.filters.css";
 @import "./CourseCatalog.cards.css";

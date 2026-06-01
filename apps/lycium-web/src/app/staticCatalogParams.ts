@@ -1,17 +1,9 @@
-import { localPrograms } from "../courseData/programs";
-import { getProgramClusterPathSlug, getProgramPathSlug } from "../utils/routeSlugs";
+import { getCatalogClusterRouteEntries, getCatalogProgramRouteEntries } from "./catalogRouteRegistry";
 
 export function getStaticCatalogProgramParams() {
-  return localPrograms.map((program) => ({
-    programSlug: getProgramPathSlug(program),
-  }));
+  return getCatalogProgramRouteEntries().map(({ programSlug }) => ({ programSlug }));
 }
 
 export function getStaticCatalogClusterParams() {
-  return localPrograms.flatMap((program) =>
-    program.requirementGroups.map((cluster) => ({
-      programSlug: getProgramPathSlug(program),
-      clusterSlug: getProgramClusterPathSlug(cluster),
-    })),
-  );
+  return getCatalogClusterRouteEntries().map(({ programSlug, clusterSlug }) => ({ programSlug, clusterSlug }));
 }

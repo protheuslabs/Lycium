@@ -1,0 +1,107 @@
+.catalog-toolbar {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) minmax(16rem, 1fr) minmax(0, 30rem);
+  align-items: end;
+  gap: 0.9rem;
+  margin-bottom: 0.95rem;
+  min-width: 0;
+}
+
+.catalog-toolbar h2 {
+  margin: 0;
+  justify-self: start;
+}
+
+.catalog-search-field,
+.catalog-dropdown-field,
+.catalog-view-field {
+  display: grid;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.catalog-view-field {
+  width: min(100%, 13.5rem);
+}
+
+.catalog-search-field {
+  width: min(100%, 32rem);
+  justify-self: center;
+}
+
+.catalog-dropdown-row {
+  justify-self: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.16fr);
+  align-items: end;
+  gap: 0.55rem;
+  min-width: 0;
+  width: min(100%, 30rem);
+}
+
+.catalog-dropdown-row--path {
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+}
+
+.catalog-control-label {
+  color: #667085;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.catalog-search-field input {
+  width: 100%;
+  height: 2.55rem;
+  box-sizing: border-box;
+  border: 1px solid #d8deea;
+  border-radius: 999px;
+  padding: 0 1rem;
+  color: #171717;
+  background: rgba(255, 255, 255, 0.94);
+  font: inherit;
+  font-size: 0.9rem;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+.catalog-dropdown,
+.catalog-view-dropdown,
+.catalog-sort-dropdown {
+  min-width: 0;
+  width: 100%;
+}
+
+.catalog-dropdown,
+.catalog-view-dropdown {
+  max-width: 13.5rem;
+}
+
+.catalog-sort-dropdown {
+  max-width: 15.75rem;
+}
+
+.catalog-dropdown-field .dropdown {
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.catalog-dropdown-field .dropdown-trigger {
+  min-width: 0;
+}
+
+.create-course-dropdown {
+  width: 100%;
+  min-width: 0;
+}
+
+.catalog-search-field input:focus {
+  border-color: rgba(74, 108, 247, 0.55);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.12), 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+.catalog-search-field input::placeholder {
+  color: #8a94a6;
+}
