@@ -4,7 +4,7 @@
 
 This Software Requirements Specification (SRS) defines the target product direction for Lycium.
 
-Lycium currently exists as a lightweight React application that renders course content from local JSON files. This SRS extends that baseline by assimilating the concept demonstrated in the linked OpenMAIC video and by benchmarking major online course platforms. The target product is a prompt-driven, reliability-aware learning system that can catalog internet knowledge, assemble structured courses and programs, and deliver agent-led, adaptive instruction instead of only static content pages.
+Lycium currently exists as a Next.js learner application that renders course content from structured JSON files and coordinates with local FastAPI services for generation, source records, and learner-owned state. This SRS extends that baseline by assimilating the concept demonstrated in the linked OpenMAIC video and by benchmarking major online course platforms. The target product is a prompt-driven, reliability-aware learning system that can catalog internet knowledge, assemble structured courses and programs, and deliver agent-led, adaptive instruction instead of only static content pages.
 
 This document is intentionally written as an adaptation for Lycium, not as a direct clone of OpenMAIC. The goal is to preserve Lycium's strongest architectural trait, structured content rendered from JSON, while evolving the product into an AI-assisted learning platform.
 
@@ -74,20 +74,20 @@ At the time of writing, Lycium provides:
 - Module and section navigation via an independently scrolling sidebar
 - Text, video, quiz, concept-card, source-reference, and simple game content blocks
 - Local progress tracking for completed, viewed, quiz-attempt, and bookmark state
-- Course cards with search, pagination, sorting, college filters, active module/unit context, progress bars, and metadata modals
+- Course cards with search, pagination, sorting, college and department filters, active module/unit context, progress bars, and metadata modals
 - A settings modal for AI provider keys, model selection, and light/dark/auto display mode
 - A create-course modal that stays locked until an active AI model is connected
 - A FastAPI local control plane for course generation, local settings, source records, progress mirroring, quality reports, and publish/review lifecycle endpoints
 
 Current limitations relative to the target concept:
 
-- Prompt-based generation exists but still needs the complete generate -> validate -> review -> publish workflow in the learner UI
+- Prompt-based generation exists with quality gates and review/publish surfaces, but still needs safer generated-section editing and a fuller review workflow in the learner UI
 - No AI tutor or conversational layer
 - No agent roles or classroom simulation
 - No adaptive sequencing
 - Source file upload is not connected yet
 - Retrieval is still prototype-level and not yet true hybrid vector/lexical/graph retrieval
-- Review/edit/lock workflow UI is incomplete even though backend endpoints exist
+- Review/edit/lock workflow UI is still incomplete even though review/publish surfaces and backend endpoints exist
 
 ## 5. Users and Roles
 

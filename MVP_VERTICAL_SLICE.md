@@ -47,18 +47,18 @@ Everything outside that loop is secondary until the loop is dependable.
 ## Current Implementation Status
 
 - Course rendering, catalog routing, progress persistence, quiz attempts, settings, and local source records exist.
-- The catalog supports search, pagination, sorting, college filters, course metadata modals, and an internal college/department taxonomy.
+- The catalog supports search, pagination, sorting, college and department filters, course metadata modals, and an internal college/department taxonomy.
 - The backend LLM agent harness has a behavioral contract and rejects invalid agent output before persistence.
 - The web app now validates generated and remote catalog intake before adding courses to the catalog.
 - The API now exposes quality-report, submit-review, publish, and section-lock endpoints.
 - The create-course modal passes submitted source links into generation requests.
 - Software engineering program wrappers are populated with scaffolded modules, Learn pages, quiz-only Apply pages, concept summaries, prerequisites, and college-course parity metadata.
-- File upload wiring, full review UI, and richer retrieval are still incomplete.
+- File upload wiring, deeper generated-section editing, and richer retrieval are still incomplete.
 
 ## Immediate Next Work
 
 1. Persist uploaded files as source records before generation.
-2. Add a review screen for generated course JSON before catalog acceptance.
+2. Deepen the generated-course review screen with safer edit and lock workflows before catalog acceptance.
 3. Add a section edit workflow that respects locked sections.
 4. Add deeper tests for generation rejection and publication failure paths.
 5. Replace heuristic retrieval with hybrid lexical/vector retrieval only after the source-backed loop is reliable.

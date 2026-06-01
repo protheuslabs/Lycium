@@ -137,7 +137,7 @@ Responsibilities:
 - authentication and learner accounts
 - learner profile and preferences
 - course browsing and discovery
-- catalog search, sorting, college filters, and internal college/department taxonomy
+- catalog search, sorting, college and department filters, and internal college/department taxonomy
 - course player and AI classroom UI
 - progress, portfolio, transcripts, and credentials
 - local settings for provider keys, model selection, and display mode
@@ -145,7 +145,7 @@ Responsibilities:
 
 This app should talk to platform APIs rather than reaching directly into ingestion or graph internals.
 
-Course categories currently use university-style colleges and schools. Nested department metadata lives with the catalog taxonomy for future classification, but the learner-facing catalog filter stays at the college/school level for now.
+Course categories currently use university-style colleges and schools. Nested department metadata lives with the catalog taxonomy, and the learner-facing catalog filter exposes department options after a college/school is selected.
 
 ### 2. Lycium API
 

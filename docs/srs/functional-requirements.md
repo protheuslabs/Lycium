@@ -137,8 +137,8 @@
 - FR-81: The system shall support completion evidence including badges, certificates, transcripts, and skill records.
 - FR-82: The system shall allow course and program outcomes to map to explicit competencies or skills.
 - FR-83: The system shall provide a searchable catalog of courses, programs, and knowledge objects.
-- FR-84: The catalog shall support search over course names, tags, and descriptions; filtering by top-level college or school; sorting by type and progress; and later filtering by domain, job role, degree target, modality, level, duration, language, cost, and trust rating.
-- FR-84a: The catalog shall maintain a university-style college taxonomy and nested department taxonomy so courses can be classified first by college/school and later by department.
+- FR-84: The catalog shall support search over course names, tags, descriptions, and departments; filtering by top-level college or school and nested department; sorting by type and progress; and later filtering by domain, job role, degree target, modality, level, duration, language, cost, and trust rating.
+- FR-84a: The catalog shall maintain a university-style college taxonomy and nested department taxonomy so courses can be classified first by college/school and then by department.
 - FR-85: The system shall support open or free filters and cost-aware path planning.
 - FR-86: The system shall support role-based, career-based, and credential-based learning paths.
 - FR-87: The system should support saved lists, bookmarks, and learning queues.

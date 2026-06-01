@@ -30,7 +30,7 @@ Private learner data is a separate trust zone. Progress, quiz attempts, goals, n
 - Collapsible course sidebar with independent scrolling and section status indicators
 - Persistent progress tracking for completion and viewed/interacted percentages
 - Course cards with progress layers, active module/unit context, metadata modals, categories, and tags
-- Catalog search, pagination, sorting, college filters, and an internal college-to-department taxonomy for future course classification
+- Catalog search, pagination, sorting, college and department filters, and an internal college-to-department taxonomy for course classification
 - Quiz attempts with shuffled question/answer order, timers, pass percentages, max attempts, review flags, and attempt history
 - Settings modal for local AI provider keys, model selection, and light/dark/auto display preferences
 - Course creation modal that stays locked until a valid active AI provider key and model are connected
@@ -40,7 +40,7 @@ Private learner data is a separate trust zone. Progress, quiz attempts, goals, n
 - Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
 - Retrieval quality reports for source-backed search and learning-packet assembly
 - Professional readiness guardrails for review/publish, benchmarks, extraction, evals, providers, observability, contracts, migrations, secrets, and deployment
-- Playwright E2E smoke coverage for the catalog and course-opening flow
+- Playwright E2E coverage for catalog views, program/cluster navigation, search/filter/sort behavior, locked courses, settings, and course-opening flow
 
 ## Repository structure
 
@@ -203,7 +203,7 @@ Important conventions:
 - Concept cards should list real, raw concepts introduced on the page, with concise descriptions.
 - Module summary pages should gather concept cards introduced by the module rather than invent broad interpretive summaries.
 - Sources should be recorded centrally and referenced by course/module/section/content IDs.
-- Catalog categories are university-style colleges/schools. Department data lives under each college in `courseTaxonomy.ts` for later course classification, but departments are not currently shown as catalog filter options.
+- Catalog categories are university-style colleges/schools. Department data lives under each college in `courseTaxonomy.ts`, and the catalog filter panel exposes department filtering after a college is selected.
 
 Local course data currently lives under:
 
@@ -259,7 +259,7 @@ The next phase is intentionally constrained by the [MVP vertical slice](./MVP_VE
 - Connect catalog source links and files to source-record creation
 - Generate courses from source records, not prompt text alone
 - Reject invalid generated course JSON before catalog insertion
-- Add review, edit, and lock workflows for generated sections
-- Add focused validation and generation-rejection tests
-- Expand E2E coverage beyond the catalog smoke flow
+- Deepen review, edit, and lock workflows for generated sections
+- Add focused validation, source-ingestion, and generation-rejection tests
+- Expand E2E coverage into generated-course review and source-index flows
 - Improve retrieval quality after the source-backed loop is reliable
