@@ -6,6 +6,8 @@
 
   .program-hero-panel,
   .program-quality-panel,
+  .program-pathway-panel,
+  .program-capstone-panel,
   .program-benchmark-panel,
   .program-cluster-card {
     border-color: #303033;
@@ -15,6 +17,8 @@
 
   .program-hero-panel h1,
   .program-cluster-header h2,
+  .program-pathway-panel h2,
+  .program-capstone-panel h2,
   .program-benchmark-card h3,
   .program-requirement h4,
   .program-benchmark-panel h2 {
@@ -23,6 +27,9 @@
 
   .program-description,
   .program-cluster-header p,
+  .program-pathway-panel p,
+  .program-pathway-panel ul,
+  .program-capstone-panel p,
   .program-benchmark-card p,
   .program-requirement p {
     color: #cbd5e1;
@@ -38,6 +45,8 @@
 
   .program-progress-card,
   .program-quality-panel > div,
+  .program-pathway-panel article,
+  .program-capstone-panel,
   .program-benchmark-card,
   .program-requirement {
     background: #111112;
@@ -53,7 +62,8 @@
 
   .program-meta-row span,
   .program-benchmark-topics span,
-  .program-evidence-chip {
+  .program-evidence-chip,
+  .program-action-chip {
     color: #dbeafe;
     background: #222734;
   }
@@ -82,6 +92,13 @@
     background: #172554;
   }
 
+  .program-requirement-status-blocked .program-status-pill,
+  .program-action-chip-placeholder,
+  .program-blocker-row span {
+    color: #fde68a;
+    background: #3c3318;
+  }
+
   .program-requirement-status-missing .program-status-pill,
   .program-evidence-chip-warning {
     color: #fecaca;
@@ -96,6 +113,8 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-hero-panel,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-quality-panel,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-pathway-panel,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-capstone-panel,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-panel,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-cluster-card {
   border-color: #303033;
@@ -105,6 +124,8 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-hero-panel h1,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-cluster-header h2,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-pathway-panel h2,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-capstone-panel h2,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-card h3,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-requirement h4,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-panel h2 {
@@ -113,6 +134,9 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-description,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-cluster-header p,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-pathway-panel p,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-pathway-panel ul,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-capstone-panel p,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-card p,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-requirement p {
   color: #cbd5e1;
@@ -120,6 +144,8 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-progress-card,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-quality-panel > div,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-pathway-panel article,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-capstone-panel,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-benchmark-card,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-requirement {
   background: #111112;
@@ -144,8 +170,20 @@ html[data-theme="light"] .program-view-shell {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .program-pathway-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .program-cluster-header {
     grid-template-columns: 1fr;
+  }
+
+  .program-capstone-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .program-capstone-list {
+    justify-content: flex-start;
   }
 }
 
@@ -155,6 +193,10 @@ html[data-theme="light"] .program-view-shell {
   }
 
   .program-quality-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .program-pathway-panel {
     grid-template-columns: 1fr;
   }
 

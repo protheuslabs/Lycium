@@ -1,5 +1,7 @@
 import type {
+  LyciumCompletionRule,
   LyciumCurriculumBenchmark,
+  LyciumDependencyEdge,
   LyciumProgram,
   LyciumRequirement,
   LyciumRequirementGroup,
@@ -24,7 +26,7 @@ type SourceRecord = {
   publisher?: string;
 };
 
-type RequirementStatus = "complete" | "in_progress" | "pending" | "missing";
+type RequirementStatus = "complete" | "in_progress" | "blocked" | "pending" | "missing";
 
 type RequirementEvaluation = {
   status: RequirementStatus;
@@ -48,6 +50,12 @@ type ProgramViewProps = {
 function leafRequirements(requirements: LyciumRequirement[]): LyciumRequirement[] {
   return requirements.flatMap((requirement) =>
     requirement.type === "requirement_set" ? leafRequirements(requirement.requirements) : [requirement],
+  );
+}
+
+function allRequirementNodes(requirements: LyciumRequirement[]): LyciumRequirement[] {
+  return requirements.flatMap((requirement) =>
+    requirement.type === "requirement_set" ? [requirement, ...allRequirementNodes(requirement.requirements)] : [requirement],
   );
 }
 
@@ -131,6 +139,7 @@ function evaluateRequirement(requirement: LyciumRequirement, courseMap: Map<stri
 function statusLabel(status: RequirementStatus): string {
   if (status === "complete") return "Complete";
   if (status === "in_progress") return "In progress";
+  if (status === "blocked") return "Blocked";
   if (status === "missing") return "Missing course";
   return "Pending";
 }
@@ -143,6 +152,40 @@ function requirementTypeLabel(requirement: LyciumRequirement): string {
   if (requirement.type === "demonstrate_competency") return "Competency";
   if (requirement.type === "earn_hours") return "Hours";
   return requirement.operator === "n_of" ? `Set: ${requirement.count ?? 1} of ${requirement.requirements.length}` : `Set: ${requirement.operator}`;
+}
+
+function completionRuleLabel(rule: LyciumCompletionRule): string {
+  if (rule.type === "complete_all") return "Complete all requirements";
+  if (rule.type === "complete_n_of") return `Complete ${rule.count} requirements`;
+  if (rule.type === "earn_minimum_hours") return `Earn ${rule.hours} learning hours`;
+  if (rule.type === "pass_assessment") return `Pass assessment ${rule.assessmentId}${rule.minScore ? ` at ${rule.minScore}%+` : ""}`;
+  if (rule.type === "submit_project") return `Submit project ${rule.projectId}`;
+  return `Custom rule: ${rule.ruleId}`;
+}
+
+function requirementActionLabel(requirement: LyciumRequirement): string | null {
+  if (requirement.type === "pass_assessment") return `Assessment: ${requirement.assessmentId} (${requirement.minScore}%+)`;
+  if (requirement.type === "submit_project") return `Project: ${requirement.projectId}`;
+  if (requirement.type === "demonstrate_competency") return `Competency: ${requirement.competencyId}`;
+  if (requirement.type === "earn_hours") return `${requirement.minimumHours} required learning hours`;
+  return null;
+}
+
+function dependencyBlockers(
+  requirement: LyciumRequirement,
+  dependencyEdges: LyciumDependencyEdge[],
+  evaluationMap: Map<string, RequirementEvaluation>,
+  requirementTitleMap: Map<string, string>,
+) {
+  return dependencyEdges
+    .filter((edge) => edge.toNodeId === requirement.id && edge.type === "required")
+    .map((edge) => ({
+      id: edge.fromNodeId,
+      title: requirementTitleMap.get(edge.fromNodeId) ?? edge.fromNodeId,
+      status: evaluationMap.get(edge.fromNodeId)?.status ?? "pending",
+      rationale: edge.rationale,
+    }))
+    .filter((blocker) => blocker.status !== "complete");
 }
 
 function groupProgress(group: LyciumRequirementGroup, courseMap: Map<string, CourseEntry>) {
@@ -174,6 +217,9 @@ function RequirementRow({
   courseMap,
   sourceMap,
   benchmarkMap,
+  evaluationMap,
+  requirementTitleMap,
+  dependencyEdges,
   onOpenCourse,
   depth = 0,
 }: {
@@ -181,12 +227,21 @@ function RequirementRow({
   courseMap: Map<string, CourseEntry>;
   sourceMap: Map<string, SourceRecord>;
   benchmarkMap: Map<string, LyciumCurriculumBenchmark>;
+  evaluationMap: Map<string, RequirementEvaluation>;
+  requirementTitleMap: Map<string, string>;
+  dependencyEdges: LyciumDependencyEdge[];
   onOpenCourse: (course: CourseEntry) => void;
   depth?: number;
 }) {
-  const evaluation = evaluateRequirement(requirement, courseMap);
+  const baseEvaluation = evaluationMap.get(requirement.id) ?? evaluateRequirement(requirement, courseMap);
+  const blockers = dependencyBlockers(requirement, dependencyEdges, evaluationMap, requirementTitleMap);
+  const evaluation =
+    blockers.length > 0 && baseEvaluation.status !== "complete" && baseEvaluation.status !== "missing"
+      ? { ...baseEvaluation, status: "blocked" as const }
+      : baseEvaluation;
   const timeEstimate = estimateRequirementTime(requirement, courseMap);
   const courseIds = courseIdsForRequirement(requirement);
+  const actionLabel = requirementActionLabel(requirement);
   const title = requirement.title ?? requirement.id;
 
   return (
@@ -225,6 +280,24 @@ function RequirementRow({
         </div>
       )}
 
+      {actionLabel && (
+        <div className="program-action-chip-row">
+          <span className="program-action-chip">{actionLabel}</span>
+          <span className="program-action-chip program-action-chip-placeholder">Evidence submission UI not connected yet</span>
+        </div>
+      )}
+
+      {blockers.length > 0 && (
+        <div className="program-blocker-row" aria-label={`${title} blockers`}>
+          <strong>Required first:</strong>
+          {blockers.map((blocker) => (
+            <span key={blocker.id} title={blocker.rationale}>
+              {blocker.title}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="program-evidence-row">
         {evaluation.evidenceIds.length > 0 ? (
           evaluation.evidenceIds.slice(0, 4).map((sourceId) => (
@@ -249,11 +322,14 @@ function RequirementRow({
               key={nested.id}
               requirement={nested}
               courseMap={courseMap}
-              sourceMap={sourceMap}
-              benchmarkMap={benchmarkMap}
-              onOpenCourse={onOpenCourse}
-              depth={depth + 1}
-            />
+                  sourceMap={sourceMap}
+                  benchmarkMap={benchmarkMap}
+                  evaluationMap={evaluationMap}
+                  requirementTitleMap={requirementTitleMap}
+                  dependencyEdges={dependencyEdges}
+                  onOpenCourse={onOpenCourse}
+                  depth={depth + 1}
+                />
           ))}
         </div>
       )}
@@ -266,6 +342,13 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
   const programTimeEstimate = estimateProgramTime(program, courses);
   const sourceMap = new Map(sources.map((source) => [source.id, source]));
   const benchmarkMap = new Map(benchmarks.map((benchmark) => [benchmark.id, benchmark]));
+  const dependencyEdges = program.dependencyGraph?.edges ?? [];
+  const requirementNodes = [
+    ...allRequirementNodes(program.entryRequirements),
+    ...program.requirementGroups.flatMap((group) => allRequirementNodes(group.requirements)),
+  ];
+  const requirementTitleMap = new Map(requirementNodes.map((requirement) => [requirement.id, requirement.title ?? requirement.id]));
+  const evaluationMap = new Map(requirementNodes.map((requirement) => [requirement.id, evaluateRequirement(requirement, courseMap)]));
   const allRequirements = program.requirementGroups.flatMap((group) => leafRequirements(group.requirements));
   const requiredRequirements = allRequirements.filter((requirement) => requirement.required !== false);
   const evaluations = requiredRequirements.map((requirement) => evaluateRequirement(requirement, courseMap));
@@ -274,6 +357,7 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
   const missingCourseRefs = unique(evaluations.flatMap((evaluation) => evaluation.missingCourseIds));
   const sourceCoveredCount = evaluations.filter((evaluation) => evaluation.evidenceIds.length > 0).length;
   const assessmentOrProjectCount = requiredRequirements.filter((requirement) => requirement.type === "pass_assessment" || requirement.type === "submit_project").length;
+  const capstoneRequirements = requiredRequirements.filter((requirement) => requirement.type === "submit_project");
   const completePercentage = Math.round((completed / Math.max(1, requiredRequirements.length)) * 100);
   const activePercentage = Math.round((active / Math.max(1, requiredRequirements.length)) * 100);
 
@@ -325,6 +409,60 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
         </div>
       </section>
 
+      <section className="program-pathway-panel" aria-label="Program outcome and policies">
+        <article>
+          <p className="program-kicker">Target outcome</p>
+          <h2>{program.targetOutcome}</h2>
+          <p>{program.learningOutcomes.map((outcome) => outcome.statement).join(" ")}</p>
+        </article>
+        <article>
+          <p className="program-kicker">Entry requirements</p>
+          {program.entryRequirements.length > 0 ? (
+            <ul>
+              {program.entryRequirements.map((requirement) => (
+                <li key={requirement.id}>{requirement.title ?? requirement.id}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No formal entry requirements recorded.</p>
+          )}
+        </article>
+        <article>
+          <p className="program-kicker">Mastery policy</p>
+          <ul>
+            <li>{program.masteryPolicy.minimumMasteryPercent ?? 100}% mastery target</li>
+            {program.masteryPolicy.minimumAssessmentPercent && <li>{program.masteryPolicy.minimumAssessmentPercent}% assessment target</li>}
+            <li>Capstone {program.masteryPolicy.requiresCapstone ? "required" : "not required"}</li>
+            {program.masteryPolicy.remediationPolicy && <li>Remediation: {program.masteryPolicy.remediationPolicy}</li>}
+          </ul>
+        </article>
+        <article>
+          <p className="program-kicker">Credential evidence</p>
+          <ul>
+            <li>{program.credentialPolicy?.title ?? "No credential title recorded"}</li>
+            <li>{program.credentialPolicy?.credentialType?.replace(/_/g, " ") ?? "No credential type recorded"}</li>
+            <li>Human review {program.credentialPolicy?.requiresHumanReview ? "required" : "not required"}</li>
+          </ul>
+        </article>
+      </section>
+
+      {capstoneRequirements.length > 0 && (
+        <section className="program-capstone-panel" aria-label="Program capstone evidence">
+          <div>
+            <p className="program-kicker">Portfolio evidence</p>
+            <h2>Capstone and proof of work</h2>
+            <p>Career-path programs should end in reviewable artifacts, not only course completion.</p>
+          </div>
+          <div className="program-capstone-list">
+            {capstoneRequirements.map((requirement) => (
+              <span className="program-action-chip" key={requirement.id}>
+                {requirement.title ?? requirement.projectId}
+              </span>
+            ))}
+          </div>
+        </section>
+      )}
+
       {benchmarks.length > 0 && (
         <section className="program-benchmark-panel">
           <h2>Benchmark context</h2>
@@ -353,6 +491,16 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
                   <p className="program-kicker">{group.groupKind.replace(/_/g, " ")}</p>
                   <h2>{group.displayName}</h2>
                   <p>{group.purpose}</p>
+                  <p className="program-completion-rule">{completionRuleLabel(group.completionRule)}</p>
+                  {group.prerequisites && group.prerequisites.length > 0 && (
+                    <div className="program-blocker-row" aria-label={`${group.displayName} prerequisites`}>
+                      <strong>Prerequisites:</strong>
+                      {group.prerequisites.map((prerequisite) => {
+                        const nodeId = typeof prerequisite === "string" ? prerequisite : prerequisite.nodeId;
+                        return <span key={nodeId}>{requirementTitleMap.get(nodeId) ?? nodeId}</span>;
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div className="program-cluster-progress">
                   <strong>{progress.percentage}%</strong>
@@ -371,11 +519,14 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
                     key={requirement.id}
                     requirement={requirement}
                     courseMap={courseMap}
-                    sourceMap={sourceMap}
-                    benchmarkMap={benchmarkMap}
-                    onOpenCourse={onOpenCourse}
-                  />
-                ))}
+                  sourceMap={sourceMap}
+                  benchmarkMap={benchmarkMap}
+                  evaluationMap={evaluationMap}
+                  requirementTitleMap={requirementTitleMap}
+                  dependencyEdges={dependencyEdges}
+                  onOpenCourse={onOpenCourse}
+                />
+              ))}
               </div>
             </article>
           );

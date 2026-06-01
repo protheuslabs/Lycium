@@ -12,6 +12,8 @@
 
 .program-hero-panel,
 .program-quality-panel,
+.program-pathway-panel,
+.program-capstone-panel,
 .program-benchmark-panel,
 .program-cluster-card {
   border: 1px solid #d8deea;
@@ -175,6 +177,72 @@
   background: #f8fafc;
 }
 
+.program-pathway-panel,
+.program-capstone-panel {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.8rem;
+  border-radius: 1.2rem;
+  padding: 1rem;
+}
+
+.program-pathway-panel {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.program-pathway-panel article,
+.program-capstone-panel {
+  background: #f8fafc;
+}
+
+.program-pathway-panel article {
+  display: grid;
+  align-content: start;
+  gap: 0.45rem;
+  min-width: 0;
+  border-radius: 1rem;
+  padding: 0.85rem;
+}
+
+.program-pathway-panel h2,
+.program-capstone-panel h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1rem;
+}
+
+.program-pathway-panel p,
+.program-pathway-panel ul,
+.program-capstone-panel p {
+  margin: 0;
+  color: #4f5d76;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.program-pathway-panel ul {
+  display: grid;
+  gap: 0.32rem;
+  padding-left: 1rem;
+}
+
+.program-capstone-panel {
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 28rem);
+  align-items: center;
+}
+
+.program-capstone-list,
+.program-action-chip-row,
+.program-blocker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.program-capstone-list {
+  justify-content: flex-end;
+}
+
 .program-benchmark-panel {
   margin-top: 0.8rem;
   border-radius: 1.2rem;
@@ -219,6 +287,11 @@
 .program-cluster-header p {
   margin: 0.45rem 0 0;
   line-height: 1.5;
+}
+
+.program-cluster-header .program-completion-rule {
+  color: #30405d;
+  font-weight: 850;
 }
 
 .program-requirement-list {
@@ -279,6 +352,11 @@
   background: #e4ebff;
 }
 
+.program-requirement-status-blocked .program-status-pill {
+  color: #855f00;
+  background: #fff4cc;
+}
+
 .program-requirement-status-missing .program-status-pill,
 .program-evidence-chip-warning {
   color: #8f1d1d;
@@ -321,6 +399,33 @@
   cursor: default;
   color: #8f1d1d;
   background: #ffe4e4;
+}
+
+.program-action-chip,
+.program-blocker-row span {
+  border-radius: 999px;
+  padding: 0.32rem 0.6rem;
+  color: #30405d;
+  background: #eef3ff;
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.program-action-chip-placeholder,
+.program-blocker-row span {
+  color: #855f00;
+  background: #fff4cc;
+}
+
+.program-blocker-row {
+  align-items: center;
+  color: #855f00;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.program-blocker-row strong {
+  color: inherit;
 }
 
 .program-evidence-chip {
