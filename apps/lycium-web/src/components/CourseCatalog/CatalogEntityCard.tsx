@@ -22,7 +22,7 @@ export default function CatalogEntityCard({
 }: CatalogEntityCardProps) {
   return (
     <CatalogActionCard className={className} onActivate={onActivate}>
-      <div>
+      <div className="program-showcase-copy">
         <p className="program-showcase-kicker">{kicker}</p>
         <h3>{title}</h3>
         {description && <p>{description}</p>}
