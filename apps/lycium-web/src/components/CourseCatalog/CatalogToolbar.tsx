@@ -18,8 +18,6 @@ const CATALOG_VIEW_LEVEL_OPTIONS = [
 
 type CatalogToolbarProps = {
   catalogViewLevel: CatalogViewLevel;
-  selectedProgramId: string;
-  programOptions: DropdownOption[];
   searchQuery: string;
   sortMode: CatalogSortMode;
   pathSortMode: CatalogPathSortMode;
@@ -36,7 +34,6 @@ type CatalogToolbarProps = {
   onSearchQueryChange: (value: string) => void;
   onSortModeChange: (value: string) => void;
   onPathSortModeChange: (value: string) => void;
-  onSelectedProgramChange: (value: string) => void;
   onShowLockedCoursesChange: (checked: boolean) => void;
   onCollegeFilterChange: (value: string) => void;
   onDepartmentFilterChange: (value: string) => void;
@@ -47,8 +44,6 @@ type CatalogToolbarProps = {
 
 export default function CatalogToolbar({
   catalogViewLevel,
-  selectedProgramId,
-  programOptions,
   searchQuery,
   sortMode,
   pathSortMode,
@@ -65,7 +60,6 @@ export default function CatalogToolbar({
   onSearchQueryChange,
   onSortModeChange,
   onPathSortModeChange,
-  onSelectedProgramChange,
   onShowLockedCoursesChange,
   onCollegeFilterChange,
   onDepartmentFilterChange,
@@ -121,17 +115,6 @@ export default function CatalogToolbar({
           onActivityFilterChange={onActivityFilterChange}
           onResetFilters={onResetCatalogFilters}
         />
-        {catalogViewLevel === "clusters" && (
-          <label className="catalog-dropdown-field">
-            <Dropdown
-              className="catalog-dropdown"
-              value={selectedProgramId}
-              options={programOptions}
-              onChange={onSelectedProgramChange}
-              ariaLabel="Select program"
-            />
-          </label>
-        )}
         <label className="catalog-dropdown-field">
           <Dropdown
             className="catalog-dropdown catalog-sort-dropdown"

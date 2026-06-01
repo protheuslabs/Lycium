@@ -135,8 +135,6 @@ export default function CourseCatalog({
         <section className="catalog-page">
           <CatalogToolbar
             catalogViewLevel={catalogControls.catalogViewLevel}
-            selectedProgramId={catalogControls.selectedProgramId}
-            programOptions={catalogControls.programOptions}
             searchQuery={catalogControls.searchQuery}
             sortMode={catalogControls.sortMode}
             pathSortMode={catalogControls.pathSortMode}
@@ -153,7 +151,6 @@ export default function CourseCatalog({
             onSearchQueryChange={catalogControls.handleSearchQueryChange}
             onSortModeChange={catalogControls.handleSortModeChange}
             onPathSortModeChange={catalogControls.handlePathSortModeChange}
-            onSelectedProgramChange={catalogControls.handleSelectedProgramChange}
             onShowLockedCoursesChange={catalogControls.handleShowLockedCoursesChange}
             onCollegeFilterChange={catalogControls.handleCollegeFilterChange}
             onDepartmentFilterChange={catalogControls.handleDepartmentFilterChange}
