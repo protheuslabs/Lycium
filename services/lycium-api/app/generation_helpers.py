@@ -17,7 +17,10 @@ COURSE_GENERATION_RULES = (
     "in module titles, summary titles, or summary concept-card titles. "
     "Do not use interpretive prose categories as concept cards. Quiz blocks may include maxAttempts "
     "and timeLimitSeconds; omitted or blank values mean unlimited. showAnswers defaults to false, "
-    "but answers are shown after submission on the final allowed attempt."
+    "but answers are shown after submission on the final allowed attempt. If source coverage is below "
+    "the course source policy, create or preserve a needs_sources draft with metadata.sourceGaps instead "
+    "of generating hollow course pages. Source IDs and citations must be scoped to the concepts actually "
+    "taught or assessed in that section; do not blanket-cite the full course source list on every page."
 )
 
 

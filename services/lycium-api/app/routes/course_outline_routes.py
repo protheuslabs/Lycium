@@ -28,6 +28,7 @@ from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
 from app.generation import (
     ask_instructor,
+    create_needs_sources_course_snapshot,
     create_draft,
     fork_course,
     generate_course_direct,
@@ -35,6 +36,7 @@ from app.generation import (
     generate_program,
     refresh_course,
     regenerate_section,
+    source_count_meets_minimum,
     validate_learner_exists,
 )
 from app.generation_observability import generation_run_payload, get_generation_run, list_generation_runs
@@ -234,6 +236,9 @@ def register(app: FastAPI) -> None:
     def generate_course(payload: GenerateCourseRequest, session: Session = Depends(get_session)) -> CourseSnapshot:
         try:
             validate_learner_exists(session, payload.learner_id)
+            taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
+            if taxonomy_errors:
+                raise ValueError("; ".join(taxonomy_errors))
             snapshot = generate_course_direct(
                 session,
                 prompt=payload.prompt,
@@ -246,6 +251,8 @@ def register(app: FastAPI) -> None:
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
                 source_urls=_generation_source_urls(payload),
+                category=payload.category,
+                department=payload.department,
             )
             session.commit()
             session.refresh(snapshot)
@@ -267,6 +274,25 @@ def register(app: FastAPI) -> None:
             taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
             if taxonomy_errors:
                 raise ValueError("; ".join(taxonomy_errors))
+            source_urls = _generation_source_urls(payload)
+            if not source_count_meets_minimum(source_urls):
+                snapshot = create_needs_sources_course_snapshot(
+                    session,
+                    prompt=payload.prompt,
+                    learner_id=payload.learner_id,
+                    level=payload.level,
+                    language=payload.language,
+                    source_policy=payload.source_policy,
+                    desired_module_count=payload.desired_module_count,
+                    expected_duration_minutes=payload.expected_duration_minutes,
+                    source_urls=source_urls,
+                    category=payload.category,
+                    department=payload.department,
+                )
+                session.commit()
+                session.refresh(snapshot)
+                save_course_snapshot(snapshot)
+                return snapshot
             agent_profile = require_verified_active_agent_profile()
 
             generated = generate_course_with_agent_staged(
@@ -281,7 +307,7 @@ def register(app: FastAPI) -> None:
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
                 model=payload.model or agent_profile.get("model"),
-                source_urls=_generation_source_urls(payload),
+                source_urls=source_urls,
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
             )
@@ -399,6 +425,62 @@ def register(app: FastAPI) -> None:
             taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
             if taxonomy_errors:
                 raise ValueError("; ".join(taxonomy_errors))
+            source_urls = _generation_source_urls(payload)
+            if not source_count_meets_minimum(source_urls):
+                job = enqueue_job(
+                    session,
+                    job_type="agent_generate_course_staged",
+                    payload={
+                        "prompt": payload.prompt,
+                        "learner_id": payload.learner_id,
+                        "level": payload.level,
+                        "language": payload.language,
+                        "model": payload.model,
+                        "source_policy": payload.source_policy,
+                        "free_only": payload.free_only,
+                        "trust_min": payload.trust_min,
+                        "category": payload.category,
+                        "department": payload.department,
+                        "desired_module_count": payload.desired_module_count,
+                        "expected_duration_minutes": payload.expected_duration_minutes,
+                        "source_urls": source_urls,
+                        "source_packet_id": payload.source_packet_id,
+                        "source_packet": payload.source_packet,
+                    },
+                )
+                snapshot = create_needs_sources_course_snapshot(
+                    session,
+                    prompt=payload.prompt,
+                    learner_id=payload.learner_id,
+                    level=payload.level,
+                    language=payload.language,
+                    source_policy=payload.source_policy,
+                    desired_module_count=payload.desired_module_count,
+                    expected_duration_minutes=payload.expected_duration_minutes,
+                    source_urls=source_urls,
+                    category=payload.category,
+                    department=payload.department,
+                )
+                save_course_snapshot(snapshot)
+                job.status = "completed"
+                job.result = {
+                    "request": job.payload,
+                    "accepted": False,
+                    "progress": 1.0,
+                    "current_stage": "source_coverage",
+                    "message": "Course draft needs more sources before full generation.",
+                    "course": snapshot.structure,
+                    "trace": snapshot.generation_trace,
+                    "course_snapshot": {
+                        "id": snapshot.id,
+                        "title": snapshot.title,
+                        "status": snapshot.status,
+                        "version": snapshot.version,
+                    },
+                }
+                session.commit()
+                session.refresh(job)
+                return course_generation_job_response(job)
             agent_profile = require_verified_active_agent_profile()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -418,7 +500,7 @@ def register(app: FastAPI) -> None:
                 "department": payload.department,
                 "desired_module_count": payload.desired_module_count,
                 "expected_duration_minutes": payload.expected_duration_minutes,
-                "source_urls": _generation_source_urls(payload),
+                "source_urls": source_urls,
                 "source_packet_id": payload.source_packet_id,
                 "source_packet": payload.source_packet,
             },

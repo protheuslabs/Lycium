@@ -146,10 +146,19 @@ def _primitive_course() -> dict[str, Any]:
                 {
                     "requiredConceptId": f"req-{index}",
                     "primarySourceId": "source-primitive-text",
-                    "fallbackSourceIds": ["source-primitive-practice"],
+                    "fallbackSourceIds": ["source-primitive-practice", "source-primitive-video"],
                     "replacementPolicy": "review_required",
                 }
                 for index, _topic in enumerate(topics, start=1)
+            ]
+            + [
+                {
+                    "requiredConceptId": "mastery-evidence",
+                    "title": "Mastery evidence",
+                    "primarySourceId": "source-primitive-text",
+                    "fallbackSourceIds": ["source-primitive-practice", "source-primitive-video"],
+                    "replacementPolicy": "review_required",
+                }
             ],
         },
         "modules": modules,

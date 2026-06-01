@@ -1,0 +1,263 @@
+from __future__ import annotations
+
+import re
+from typing import Any
+
+from app.course_structure import content_blocks, modules, sections, source_ids
+
+LABEL_STOP_TOKENS = {"quiz", "summary", "module", "week", "lesson", "review"}
+
+
+def _items(value: Any) -> list[dict[str, Any]]:
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+
+
+def _tokens(value: Any) -> set[str]:
+    return {
+        token
+        for token in re.findall(r"[a-z0-9]+", str(value or "").lower())
+        if len(token) > 2 and token not in LABEL_STOP_TOKENS
+    }
+
+
+def _source_record_ids(course: dict[str, Any]) -> set[str]:
+    records = course.get("sourceRecords")
+    if isinstance(records, dict):
+        return {str(source_id) for source_id in records if source_id}
+    if isinstance(records, list):
+        return {str(record.get("id")) for record in records if isinstance(record, dict) and record.get("id")}
+    return set()
+
+
+def _requirement_key(value: Any) -> str:
+    return str(value or "").strip()
+
+
+def _requirement_origin_context(metadata: dict[str, Any]) -> dict[str, dict[str, set[str]]]:
+    context: dict[str, dict[str, set[str]]] = {}
+    for origin in _items(metadata.get("requirementOrigins")):
+        key = _requirement_key(origin.get("requirementId") or origin.get("id"))
+        if not key:
+            continue
+        evidence_refs = origin.get("evidenceRefs")
+        context[key] = {
+            "tokens": _tokens(origin.get("title")) | _tokens(origin.get("description")) | _tokens(origin.get("requirementId")),
+            "sources": {source_id for source_id in evidence_refs if isinstance(source_id, str) and source_id.strip()} if isinstance(evidence_refs, list) else set(),
+        }
+    return context
+
+
+def _slot_requirement_key(slot: dict[str, Any]) -> str:
+    return _requirement_key(slot.get("requiredConceptId") or slot.get("conceptId") or slot.get("requirementId") or slot.get("id"))
+
+
+def _slot_sources(slot: dict[str, Any], requirement_context: dict[str, dict[str, set[str]]]) -> set[str]:
+    sources: set[str] = set()
+    primary = slot.get("primarySourceId")
+    if isinstance(primary, str) and primary.strip():
+        sources.add(primary)
+    fallback = slot.get("fallbackSourceIds")
+    if isinstance(fallback, list):
+        sources.update(source_id for source_id in fallback if isinstance(source_id, str) and source_id.strip())
+    sources.update(source_ids(slot))
+    context = requirement_context.get(_slot_requirement_key(slot))
+    if context:
+        sources.update(context["sources"])
+    return sources
+
+
+def _slot_tokens(slot: dict[str, Any], requirement_context: dict[str, dict[str, set[str]]]) -> set[str]:
+    values = [
+        slot.get("requiredConceptId"),
+        slot.get("conceptId"),
+        slot.get("requirementId"),
+        slot.get("title"),
+        slot.get("name"),
+        slot.get("concept"),
+    ]
+    token_set: set[str] = set()
+    for value in values:
+        token_set.update(_tokens(value))
+    context = requirement_context.get(_slot_requirement_key(slot))
+    if context:
+        token_set.update(context["tokens"])
+    return token_set
+
+
+def _source_slots(course: dict[str, Any]) -> list[dict[str, Any]]:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    return _items(metadata.get("sourceSlots"))
+
+
+def _matching_slot_sources(slots: list[dict[str, Any]], requirement_context: dict[str, dict[str, set[str]]], *labels: Any) -> set[str]:
+    label_token_sets = [tokens for tokens in (_tokens(label) for label in labels) if tokens]
+    if not label_token_sets:
+        return set()
+    matched: set[str] = set()
+    for slot in slots:
+        slot_tokens = _slot_tokens(slot, requirement_context)
+        if not slot_tokens:
+            continue
+        if any(label_tokens.issubset(slot_tokens) or slot_tokens.issubset(label_tokens) for label_tokens in label_token_sets):
+            matched.update(_slot_sources(slot, requirement_context))
+    return matched
+
+
+def _concepts_from_block(block: dict[str, Any]) -> list[dict[str, Any]]:
+    concepts: list[dict[str, Any]] = []
+    for concept in _items(block.get("concepts")):
+        concepts.append(concept)
+    questions = block.get("questions") or block.get("questionBank") or block.get("question_bank")
+    for question in _items(questions):
+        for key in ("concept", "conceptId", "topic"):
+            value = question.get(key)
+            if isinstance(value, str) and value.strip():
+                concepts.append({"name": value})
+        concept_ids = question.get("conceptIds")
+        if isinstance(concept_ids, list):
+            concepts.extend({"name": concept_id} for concept_id in concept_ids if isinstance(concept_id, str))
+        concepts.extend(_items(question.get("concepts")))
+    return concepts
+
+
+def _concept_name(concept: dict[str, Any]) -> str:
+    for key in ("id", "name", "title", "conceptId"):
+        value = concept.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+    return ""
+
+
+def _citation_source_ids(section: dict[str, Any]) -> set[str]:
+    citations = section.get("citations")
+    ids: set[str] = set()
+    for citation in _items(citations):
+        for key in ("sourceId", "source_id", "id"):
+            source_id = citation.get(key)
+            if isinstance(source_id, str) and source_id.strip():
+                ids.add(source_id)
+            elif isinstance(source_id, int):
+                ids.add(f"source-{source_id}")
+        ids.update(source_ids(citation))
+    return ids
+
+
+def _section_source_ids(section: dict[str, Any]) -> set[str]:
+    ids = set(source_ids(section))
+    for block in content_blocks(section):
+        ids.update(source_ids(block))
+    ids.update(_citation_source_ids(section))
+    return ids
+
+
+def _section_location(module_index: int, section_index: int) -> str:
+    return f"modules[{module_index}].sections[{section_index}]"
+
+
+def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
+    slots = _source_slots(course)
+    course_sources = set(source_ids(course)) or _source_record_ids(course)
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    requirement_context = _requirement_origin_context(metadata)
+    raw_policy = metadata.get("sourceCoveragePolicy")
+    policy = raw_policy if isinstance(raw_policy, dict) else {}
+    min_concept_coverage = float((policy or {}).get("minimumRequiredConceptCoveragePercent") or 70)
+    issues: list[dict[str, str]] = []
+    section_allowed: dict[str, set[str]] = {}
+    concept_count = 0
+    covered_concept_count = 0
+    section_count = 0
+    blanket_section_count = 0
+    citation_issue_count = 0
+
+    for module_index, module in enumerate(modules(course), start=1):
+        module_sources = set(source_ids(module))
+        for section_index, section in enumerate(sections(module), start=1):
+            section_count += 1
+            location = _section_location(module_index, section_index)
+            concepts = [concept for block in content_blocks(section) for concept in _concepts_from_block(block)]
+            label_sources = _matching_slot_sources(slots, requirement_context, section.get("title"), section.get("id"))
+            inherited_sources: set[str] = set()
+            for concept in concepts:
+                origin_section_id = concept.get("sourceSectionId")
+                if isinstance(origin_section_id, str):
+                    inherited_sources.update(section_allowed.get(origin_section_id, set()))
+            direct_concept_sources = set().union(
+                *(_matching_slot_sources(slots, requirement_context, _concept_name(concept), concept.get("sourceSectionId")) for concept in concepts)
+            ) if concepts else set()
+            allowed = label_sources | inherited_sources | direct_concept_sources
+            if not slots and not allowed:
+                allowed = set(source_ids(section)) or module_sources
+            section_id = section.get("id")
+            if isinstance(section_id, str):
+                section_allowed[section_id] = allowed
+
+            used = _section_source_ids(section)
+            if course_sources and used == course_sources and len(course_sources) >= 4:
+                blanket_section_count += 1
+                issues.append({
+                    "severity": "error",
+                    "message": "Section appears to cite every course source instead of sources mapped to its concepts.",
+                    "location": location,
+                })
+            if allowed:
+                extra = sorted(used - allowed)
+                if extra:
+                    citation_issue_count += len(extra)
+                    issues.append({
+                        "severity": "error",
+                        "message": f"Section references sources not mapped to its concepts: {', '.join(extra[:6])}.",
+                        "location": location,
+                    })
+            elif used and slots:
+                citation_issue_count += len(used)
+                issues.append({
+                    "severity": "error",
+                    "message": "Section has source references but no matching concept source slot.",
+                    "location": location,
+                })
+
+            for concept in concepts:
+                concept_count += 1
+                concept_sources = (
+                    set(source_ids(concept))
+                    | _matching_slot_sources(slots, requirement_context, _concept_name(concept), concept.get("sourceSectionId"))
+                    | inherited_sources
+                    | label_sources
+                )
+                if not slots:
+                    concept_sources.update(source_ids(section))
+                if concept_sources:
+                    covered_concept_count += 1
+                elif slots:
+                    issues.append({
+                        "severity": "error",
+                        "message": f"Concept has no accepted source mapping: {_concept_name(concept) or 'unnamed concept'}.",
+                        "location": location,
+                    })
+
+    if not slots and concept_count:
+        issues.append({
+            "severity": "warning",
+            "message": "Course has concepts but no metadata.sourceSlots; concept-level source support cannot be fully verified.",
+            "location": "metadata.sourceSlots",
+        })
+    coverage_percent = round((covered_concept_count / concept_count) * 100, 2) if concept_count else 100.0
+    if concept_count and coverage_percent < min_concept_coverage:
+        issues.append({
+            "severity": "error",
+            "message": f"Required concept source coverage is {coverage_percent}%, below policy minimum {min_concept_coverage}%.",
+            "location": "metadata.sourceCoveragePolicy.minimumRequiredConceptCoveragePercent",
+        })
+    return {
+        "issues": issues,
+        "metrics": {
+            "conceptCount": concept_count,
+            "coveredConceptCount": covered_concept_count,
+            "conceptSourceCoveragePercent": coverage_percent,
+            "sourceSlotCount": len(slots),
+            "sectionCount": section_count,
+            "blanketSourceSectionCount": blanket_section_count,
+            "citationIssueCount": citation_issue_count,
+        },
+    }

@@ -55,8 +55,9 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 - `benchmark_intake`: identify university catalogs, syllabi, certification outlines, employer profiles, or expert references that can anchor the curriculum.
 - `requirement_extraction`: extract benchmark requirements, topics, outcomes, prerequisites, and course-parity metadata.
 - `commonality_analysis`: compare comparable benchmarks to separate required material from recommended, optional, remedial, alternate, or enrichment material.
-- `source_analysis`: inspect provided sources and extract topics, claims, examples, media, exercises, prerequisites, and source metadata.
+- `source_analysis`: inspect provided sources, extract topics, claims, examples, media, exercises, prerequisites, and source metadata, then verify concept-level source coverage and section citation integrity.
 - `source_enrichment`: add reputable supplemental sources when coverage is weak.
+- `source_coverage_gate`: allow planning with sparse sources, but block full learner-facing generation or publication when required concept coverage is below policy. Emit structured `metadata.sourceGaps` and set lifecycle status `needs_sources` instead of drafting hollow modules.
 - `classification`: assign college/school category, selected department metadata, tags, difficulty, parity metadata, and prerequisites.
   Select the college/category first, then select the department only from the departments nested under that college/category. Classify by the course's primary learning domain, learner purpose, and program role. Do not mechanically map `courseEquivalencies[].department` into top-level `category` or `department`; parity records are reference metadata and may describe a service department, cross-listed analogue, or catalog source rather than the best Lycium catalog home.
 - `scope`: define audience, outcomes, duration, exclusions, workload, assessment model, and `Module` vs `Week` pacing.
@@ -98,6 +99,8 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
    Use reputable sources, record them centrally, and map every sourced idea to source IDs before writing final content.
    If benchmark curricula are available, map sources to benchmark-derived requirements rather than letting the source list define the curriculum.
    When many sources are submitted, run source corpus preflight first and do not use excluded sources as course evidence unless a reviewer restores them.
+   If submitted sources do not meet the course's source coverage policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps` rather than generating placeholder course pages.
+   Source IDs should narrow as the course narrows: course-level `sourceIds` are the full accepted inventory, module-level `sourceIds` support the module, and section/block `sourceIds` plus section citations must only reference sources that support concepts in that section.
 
 7. Generate instructional content for each idea.
    Teach the concept, connect it to prior units, include examples or practice where useful, and keep the pacing coherent.
@@ -114,6 +117,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 
 11. Gate catalog intake.
    A generated course must pass structural and source-reference validation before it can be added to the catalog. Invalid generated JSON should produce a visible generation error and remain outside learner-facing course lists.
+   Source-gapped planning drafts may appear in the catalog only as incomplete `needs_sources` artifacts; clicking them should collect sources for the gaps instead of opening the learner course player.
 
 12. Publish only after a quality report.
    The generation pipeline should produce a `quality_report` in the snapshot trace. A course can move to `published` only when the quality report passes the publish gate or an explicit force-publish review action records why the gate was overridden.
@@ -146,6 +150,9 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `metadata.sourceSlots`: optional primary/fallback source mappings for required concepts.
 - `metadata.sourceCorpusSynthesis`: optional source corpus preflight evidence showing included sources, excluded sources, common themes, relevance scores, and source-count metrics.
   When a source packet is used, this should include `sourcePacket.contractVersion`, packet context, packet warnings, source-document count, and included/excluded source metrics.
+- `metadata.sourceCoveragePolicy`: optional minimum source policy for full course generation, including minimum course sources, per-module coverage, concept coverage percentage, benchmark evidence, and assessment coverage.
+- `metadata.sourceGaps`: optional structured source requests attached to course, module, section, requirement, or assessment scopes. Blocking gaps should prevent full learner-facing generation and publication.
+- `metadata.sourceGapSuggestions`: optional source URLs queued against `metadata.sourceGaps` for review before generation resumes.
 - `prerequisites`: optional course, competency, assessment, program, or external prerequisites.
 - `metadata.prerequisiteCourseIds`: optional fast-reference list for planned/wrapper courses.
 - `metadata.pacingLabel`: exactly `Module` or `Week`, used consistently in learner-facing titles.
@@ -172,6 +179,7 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Catalog-visible courses must contain actual learner-facing explanations, examples, activities, concept cards, summaries, and assessment sections. They must not read like placeholders or model instructions.
 - Prefer deeper coverage of fewer ideas over shallow lists of loosely related topics.
 - Cite sources for claims, readings, videos, examples, and imported content.
+- Do not blanket-cite the same full course source list on every section. Section citations should be derived from that section's concept-source mapping.
 - Do not let source availability alone dictate course structure; structure the course pedagogically, then find or create appropriate sourced content for each idea.
 
 ## Assessment Rules

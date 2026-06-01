@@ -4,6 +4,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.course_quiz_blocks import normalize_quiz_block
+from app.course_source_gaps import create_needs_sources_course_snapshot, source_count_meets_minimum
 from app.course_quality import assess_course_quality
 from app.generation_helpers import COURSE_GENERATION_RULES, _build_instructional_blocks, _build_module_summary_section, _build_quiz_for_section, _catalog_metadata_from_prompt, _ensure_minimum_outline_modules, _stable_id, _youtube_embed
 from app.generation_outline import create_draft
@@ -76,37 +78,6 @@ def _with_source_ids(blocks: list[dict[str, Any]], source_ids: list[str]) -> lis
         else:
             next_blocks.append(block)
     return next_blocks
-
-
-def _normalize_quiz_block(block: dict[str, Any]) -> dict[str, Any]:
-    questions = block.get("questions") or block.get("questionBank") or []
-    if not questions and block.get("question"):
-        answer = block.get("answer")
-        answers = block.get("answers")
-        questions = [
-            {
-                "question": block.get("question"),
-                "options": block.get("options", []),
-                "answers": answers if isinstance(answers, list) else ([answer] if isinstance(answer, int) else []),
-                "timed": block.get("timed", False),
-            }
-        ]
-        block = {key: value for key, value in block.items() if key not in {"question", "options", "answer", "answers"}}
-        block["questions"] = questions
-    if isinstance(questions, list):
-        normalized_questions = []
-        for question in questions:
-            if not isinstance(question, dict):
-                normalized_questions.append(question)
-                continue
-            if "answers" not in question and "answer" in question:
-                question = {**question, "answers": [question["answer"]]}
-            normalized_questions.append(question)
-        if "questions" in block:
-            block = {**block, "questions": normalized_questions}
-        elif "questionBank" in block:
-            block = {**block, "questionBank": normalized_questions}
-    return block
 
 
 def _build_section_content(
@@ -229,7 +200,7 @@ def generate_course_from_draft(
 
             concept_tokens = [token for token in tokenize(section["title"]) if len(token) > 3][:3]
             quiz_section_id = _stable_id("q", section_id, section["title"])
-            quiz_block = _normalize_quiz_block(_build_quiz_for_section(section["title"], concept_tokens))
+            quiz_block = normalize_quiz_block(_build_quiz_for_section(section["title"], concept_tokens))
             if source_ids:
                 quiz_block["sourceIds"] = source_ids
             section_rows.append(
@@ -283,12 +254,14 @@ def generate_course_from_draft(
     source_records = list(source_records_by_id.values())
     course_source_ids = [source["id"] for source in source_records]
     catalog_metadata = _catalog_metadata_from_prompt(draft.prompt)
+    requested_category = draft.constraints.get("category")
+    requested_department = draft.constraints.get("department")
     structure = {
         "title": draft.title,
         "shortDescription": outline.get("shortDescription") or outline.get("summary") or f"A generated Lycium course for {draft.title}.",
         "difficultyLevel": draft.difficulty or "beginner",
-        "category": catalog_metadata["category"],
-        "department": catalog_metadata["department"],
+        "category": requested_category if isinstance(requested_category, str) and requested_category else catalog_metadata["category"],
+        "department": requested_department if isinstance(requested_department, str) and requested_department else catalog_metadata["department"],
         "tags": catalog_metadata["tags"],
         "learningTypes": [],
         "orderMandatory": bool(draft.constraints.get("order_mandatory", False)),
@@ -367,7 +340,24 @@ def generate_course_direct(
     desired_module_count: int,
     expected_duration_minutes: int,
     source_urls: list[str] | None = None,
+    category: str | None = None,
+    department: str | None = None,
 ) -> CourseSnapshot:
+    if not source_count_meets_minimum(source_urls):
+        return create_needs_sources_course_snapshot(
+            session,
+            prompt=prompt,
+            learner_id=learner_id,
+            level=level,
+            language=language,
+            source_policy=source_policy,
+            desired_module_count=desired_module_count,
+            expected_duration_minutes=expected_duration_minutes,
+            source_urls=source_urls,
+            category=category,
+            department=department,
+        )
+
     draft = create_draft(
         session,
         prompt=prompt,
@@ -382,6 +372,8 @@ def generate_course_direct(
             "free_only": free_only,
             "trust_min": trust_min,
             "source_urls": source_urls or [],
+            "category": category,
+            "department": department,
         },
         desired_module_count=desired_module_count,
         free_only=free_only,

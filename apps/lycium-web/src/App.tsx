@@ -19,6 +19,7 @@ import { useCourseGenerationActions } from "./hooks/useCourseGenerationActions";
 import { useCourseProgressState } from "./hooks/useCourseProgressState";
 import { API_BASE, browserStorage, localApiSyncEnabled, lyciumApi, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { summarizeCourseProgress } from "./utils/courseProgress";
+import { queueCourseSourceGapSuggestion } from "./utils/courseSourceGaps";
 import {
   COURSE_CATALOG_PATH,
   COURSE_CATALOG_COURSES_PATH,
@@ -220,6 +221,16 @@ function App() {
     },
     [router],
   );
+
+  const queueCourseSourceGap = useCallback((course: CourseEntry, gapId: string, url: string, description: string) => {
+    setCourses((currentCourses) =>
+      currentCourses.map((currentCourse) =>
+        currentCourse.key === course.key
+          ? queueCourseSourceGapSuggestion(currentCourse, { gapId, url, description })
+          : currentCourse,
+      ),
+    );
+  }, []);
 
   const routeToSettings = useCallback(
     (event?: MouseEvent<HTMLAnchorElement>) => {
@@ -434,6 +445,7 @@ const {
           onGenerateCourse={handleGenerateCourse}
           onOpenCourse={openCourseByEntry}
           onOpenProgram={openProgramByEntry}
+          onQueueCourseSourceGap={queueCourseSourceGap}
           onCatalogDrilldown={routeToCatalogDrilldown}
           onPublishCourse={handlePublishCourse}
           publishingCourseKey={publishingCourseKey}

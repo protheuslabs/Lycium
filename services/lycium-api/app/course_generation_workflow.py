@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.course_agent_contract import validate_course_contract
 from app.course_generation_gates import COURSE_GENERATION_GATE_NAMES
+from app.course_source_integrity import assess_course_source_integrity
 from app.course_taxonomy import validate_course_taxonomy
 from app.course_quality_evals import run_course_quality_evals
 from app.course_structure import (
@@ -201,11 +202,24 @@ def _gate_source_analysis(course: dict[str, Any]) -> GateResult:
         issues.append(_issue("warning", "Course does not reference any sourceIds."))
     if _source_record_count(course) == 0 and referenced:
         issues.append(_issue("warning", "Course references sourceIds but does not include course-level sourceRecords."))
+    integrity = assess_course_source_integrity(course)
+    for integrity_issue in integrity["issues"]:
+        issues.append(
+            _issue(
+                "error" if integrity_issue["severity"] == "error" else "warning",
+                integrity_issue["message"],
+                integrity_issue.get("location"),
+            )
+        )
     return _gate(
         "source_analysis",
-        "Source references and course-level source records were inspected.",
+        "Source references, concept coverage, and section citation integrity were inspected.",
         issues,
-        {"referencedSourceIdCount": len(referenced), "sourceRecordCount": _source_record_count(course)},
+        {
+            "referencedSourceIdCount": len(referenced),
+            "sourceRecordCount": _source_record_count(course),
+            **integrity["metrics"],
+        },
     )
 
 

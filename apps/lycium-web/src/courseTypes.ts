@@ -2,6 +2,9 @@ import type {
   LyciumCourseBlock,
   LyciumCourseData,
   LyciumCourseEntry,
+  LyciumCourseSourceCoveragePolicy,
+  LyciumCourseSourceGap,
+  LyciumCourseSourceGapSuggestion,
   LyciumCourseModule,
   LyciumCourseSection,
   LyciumAgentKeyRecord,
@@ -17,6 +20,7 @@ export type CourseBlock = LyciumCourseBlock;
 export type CourseSection = LyciumCourseSection;
 export type CourseModule = LyciumCourseModule;
 export type CourseData = LyciumCourseData;
+export type { LyciumCourseSourceCoveragePolicy, LyciumCourseSourceGap, LyciumCourseSourceGapSuggestion };
 
 export type CourseEntry = Omit<LyciumCourseEntry, "source"> & {
   source: "local" | "remote";

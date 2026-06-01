@@ -56,6 +56,21 @@
                 "pageType": { "enum": ["learn", "apply"] },
                 "sectionType": { "type": "string" },
                 "sourceIds": { "type": "array", "items": { "type": "string" } },
+                "citations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "properties": {
+                      "id": { "type": "string" },
+                      "sourceId": { "type": "string" },
+                      "source_id": { "type": ["string", "number"] },
+                      "title": { "type": "string" },
+                      "url": { "type": "string" },
+                      "sourceIds": { "type": "array", "items": { "type": "string" } }
+                    }
+                  }
+                },
                 "estimatedMinutes": { "type": "number", "minimum": 0 },
                 "estimatedHours": { "type": "number", "minimum": 0 },
                 "content": {

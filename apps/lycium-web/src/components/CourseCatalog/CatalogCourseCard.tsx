@@ -2,11 +2,13 @@ import type { CourseEntry } from "../../courseTypes";
 import CatalogActionCard from "./CatalogActionCard";
 import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogVisibleCourse } from "./catalogUtils";
+import { hasBlockingSourceGaps, sourceGapSummary } from "../../utils/courseSourceGaps";
 
 type CatalogCourseCardProps = {
   visibleCourse: CatalogVisibleCourse;
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
+  onOpenSourceGaps: (course: CourseEntry) => void;
   isPublishing: boolean;
 };
 
@@ -26,13 +28,20 @@ export default function CatalogCourseCard({
   visibleCourse,
   onOpenCourse,
   onOpenInfo,
+  onOpenSourceGaps,
   isPublishing,
 }: CatalogCourseCardProps) {
   const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites } = visibleCourse;
   const isReadyForReview = course.status === "ready_for_review";
+  const needsSources = hasBlockingSourceGaps(course);
+  const sourceSummary = sourceGapSummary(course);
   const requiresPrerequisites = !hasCourseActivity && unmetPrerequisites.length > 0;
 
   const handleCourseOpen = () => {
+    if (needsSources) {
+      onOpenSourceGaps(course);
+      return;
+    }
     if (!requiresPrerequisites) {
       onOpenCourse(course);
     }
@@ -40,8 +49,8 @@ export default function CatalogCourseCard({
 
   return (
     <CatalogActionCard
-      className={`course-card ${requiresPrerequisites ? "course-card--locked" : ""}`}
-      disabled={requiresPrerequisites}
+      className={`course-card ${requiresPrerequisites ? "course-card--locked" : ""} ${needsSources ? "course-card--needs-sources" : ""}`}
+      disabled={requiresPrerequisites && !needsSources}
       onActivate={handleCourseOpen}
     >
       <button
@@ -59,6 +68,7 @@ export default function CatalogCourseCard({
       <h3>
         {course.title}
         {isReadyForReview && <span className="course-review-badge">Ready for review</span>}
+        {needsSources && <span className="course-source-gap-badge">Needs sources</span>}
       </h3>
       {bookmarkedSection && (
         <p className="course-active-subheader">
@@ -67,7 +77,11 @@ export default function CatalogCourseCard({
         </p>
       )}
       {course.data.shortDescription && <p className="course-short-description">{course.data.shortDescription}</p>}
-      {!hasCourseActivity ? (
+      {needsSources ? (
+        <p className="course-progress-percentage course-progress-empty course-progress-required course-progress-needs-sources">
+          <span>Needs sources: {sourceSummary.blockingGaps.length} blocking gap{sourceSummary.blockingGaps.length === 1 ? "" : "s"}</span>
+        </p>
+      ) : !hasCourseActivity ? (
         <p className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}>
           {requiresPrerequisites ? (
             <>

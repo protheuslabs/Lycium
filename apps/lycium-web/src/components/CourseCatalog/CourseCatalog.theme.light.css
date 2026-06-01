@@ -16,6 +16,10 @@ html[data-theme="light"] .course-card:hover {
   background: #f0f4ff;
 }
 
+html[data-theme="light"] .course-card--needs-sources:hover {
+  background: #fff9e8;
+}
+
 html[data-theme="light"] .generator-bar {
   border-bottom-color: #e2e4ea;
   background: #f5f6fa;
@@ -140,6 +144,15 @@ html[data-theme="light"] .course-progress-viewed-fill {
 html[data-theme="light"] .course-review-badge {
   color: #2b4a14;
   background: #e7f5d8;
+}
+
+html[data-theme="light"] .course-source-gap-badge {
+  color: #855f00;
+  background: #fff4cc;
+}
+
+html[data-theme="light"] .course-progress-needs-sources {
+  color: #855f00;
 }
 
 html[data-theme="light"] .course-publish-button {

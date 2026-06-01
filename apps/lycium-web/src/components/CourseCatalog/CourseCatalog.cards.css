@@ -105,6 +105,19 @@
   letter-spacing: 0.02em;
 }
 
+.course-source-gap-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0.32rem 0 0;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  color: #855f00;
+  background: #fff4cc;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 .course-active-subheader {
   grid-row: 2;
   margin: 0;
@@ -200,6 +213,18 @@
   justify-content: center;
   gap: 0.35rem;
   line-height: 1.25;
+}
+
+.course-progress-needs-sources {
+  color: #855f00;
+}
+
+.course-card--needs-sources {
+  border-style: dashed;
+}
+
+.course-card--needs-sources:hover {
+  background: #fff9e8;
 }
 
 .course-card--locked {

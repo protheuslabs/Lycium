@@ -145,7 +145,8 @@ def _teachable_publish_ready_course() -> dict[str, Any]:
         {"id": "source-phet-chemistry", "type": "simulation", "title": "PhET chemistry simulations", "url": "https://phet.colorado.edu/en/simulations/filter?subjects=chemistry&type=html"},
     ]
     modules = []
-    for index, topic in enumerate(["measurement and matter", "stoichiometry", "bonding and molecular shape"], start=1):
+    topics = ["measurement and matter", "stoichiometry", "bonding and molecular shape"]
+    for index, topic in enumerate(topics, start=1):
         section_id = f"chem-publish-{index}"
         explanation = (
             f"This lesson builds a foundation for {topic} by connecting prerequisite vocabulary, worked examples, "
@@ -231,9 +232,20 @@ def _teachable_publish_ready_course() -> dict[str, Any]:
             ],
             "sourceSlots": [
                 {
-                    "requiredConceptId": "chem-measurement",
+                    "requiredConceptId": f"chem-{topic.replace(' ', '-')}",
+                    "title": topic.title(),
                     "primarySourceId": "source-openstax-chemistry-2e",
-                    "fallbackSourceIds": ["source-chemcollective"],
+                    "fallbackSourceIds": ["source-chemcollective", "source-phet-chemistry"],
+                    "replacementPolicy": "review_required",
+                }
+                for topic in topics
+            ]
+            + [
+                {
+                    "requiredConceptId": "mastery-evidence",
+                    "title": "Mastery evidence",
+                    "primarySourceId": "source-openstax-chemistry-2e",
+                    "fallbackSourceIds": ["source-chemcollective", "source-phet-chemistry"],
                     "replacementPolicy": "review_required",
                 }
             ],

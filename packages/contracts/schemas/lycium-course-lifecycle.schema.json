@@ -8,7 +8,7 @@
   "properties": {
     "courseId": { "type": ["string", "number"] },
     "status": {
-      "enum": ["draft", "generated", "validating", "needs_revision", "ready_for_review", "published", "archived", "failed"]
+      "enum": ["draft", "generated", "validating", "needs_sources", "needs_revision", "ready_for_review", "published", "archived", "failed"]
     },
     "reviewedBy": { "type": ["string", "null"] },
     "reviewNotes": { "type": ["string", "null"] },

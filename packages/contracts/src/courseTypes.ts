@@ -98,6 +98,49 @@ export type LyciumCourseEquivalency = {
   notes?: string;
 };
 
+export type LyciumCourseSourceGapScopeType = "course" | "module" | "section" | "requirement" | "assessment";
+export type LyciumCourseSourceGapSeverity = "blocking" | "recommended" | "optional";
+export type LyciumCourseSourceTypeHint =
+  | "textbook"
+  | "syllabus"
+  | "catalog"
+  | "lecture"
+  | "documentation"
+  | "paper"
+  | "exercise"
+  | "video"
+  | "open_courseware"
+  | "other";
+
+export type LyciumCourseSourceGap = {
+  id: string;
+  scopeType: LyciumCourseSourceGapScopeType;
+  scopeId: string;
+  title: string;
+  neededFor: string;
+  requiredConcepts?: string[];
+  recommendedSourceTypes?: LyciumCourseSourceTypeHint[];
+  minimumUsefulSources: number;
+  currentSourceCount: number;
+  severity: LyciumCourseSourceGapSeverity;
+};
+
+export type LyciumCourseSourceCoveragePolicy = {
+  minimumCourseSources?: number;
+  minimumSourcesPerModule?: number;
+  minimumRequiredConceptCoveragePercent?: number;
+  requireBenchmarkEvidence?: boolean;
+  requireAssessmentCoverage?: boolean;
+};
+
+export type LyciumCourseSourceGapSuggestion = {
+  id?: string;
+  gapId: string;
+  url: string;
+  description?: string | null;
+  createdAt?: string;
+};
+
 export type LyciumConcept = {
   name?: string;
   description?: string;
@@ -151,11 +194,22 @@ export type LyciumCourseBlock = {
   show_correct_answers?: boolean | string;
 };
 
+export type LyciumCourseCitation = {
+  id?: string;
+  sourceId?: string;
+  source_id?: string | number;
+  title?: string;
+  url?: string;
+  sourceIds?: string[];
+  [key: string]: unknown;
+};
+
 export type LyciumCourseSection = {
   id: string;
   title: string;
   content: LyciumCourseBlock[];
   sourceIds?: string[];
+  citations?: LyciumCourseCitation[];
   pageType?: LyciumPageType;
   sectionType?: LyciumSectionType;
   estimatedMinutes?: number;
@@ -188,6 +242,9 @@ export type LyciumCourseData = {
   sourceRecords?: LyciumSourceRecord[] | Record<string, LyciumSourceRecord | Record<string, unknown>>;
   metadata?: {
     pacingLabel?: "Module" | "Week" | string;
+    sourceGaps?: LyciumCourseSourceGap[];
+    sourceCoveragePolicy?: LyciumCourseSourceCoveragePolicy;
+    sourceGapSuggestions?: LyciumCourseSourceGapSuggestion[];
     [key: string]: unknown;
   };
   modules: LyciumCourseModule[];
@@ -208,6 +265,7 @@ export type LyciumCourseLifecycleStatus =
   | "draft"
   | "generated"
   | "validating"
+  | "needs_sources"
   | "needs_revision"
   | "ready_for_review"
   | "published"

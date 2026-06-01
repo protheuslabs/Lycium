@@ -234,6 +234,131 @@
   text-decoration: underline;
 }
 
+.course-source-gap-intro {
+  margin: 0.85rem 0 0;
+  color: #4f5d76;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.course-source-gap-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.course-source-gap-summary article,
+.course-source-gap-card {
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.course-source-gap-summary article {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.85rem;
+}
+
+.course-source-gap-summary strong {
+  color: #855f00;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.course-source-gap-summary span {
+  color: #667085;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.course-source-gap-list,
+.course-source-gap-form {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.course-source-gap-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem;
+}
+
+.course-source-gap-card div:first-child {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.course-source-gap-card h3,
+.course-source-gap-card p {
+  margin: 0;
+}
+
+.course-source-gap-card h3 {
+  color: #253049;
+  font-size: 0.96rem;
+}
+
+.course-source-gap-card p {
+  color: #4f5d76;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.course-source-gap-card div:first-child span,
+.course-source-gap-meta span,
+.course-source-gap-concepts span {
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  color: #30405d;
+  background: #eef3ff;
+  font-size: 0.73rem;
+  font-weight: 850;
+}
+
+.course-source-gap-card-blocking div:first-child span {
+  color: #855f00;
+  background: #fff4cc;
+}
+
+.course-source-gap-meta,
+.course-source-gap-concepts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.course-source-gap-form input,
+.course-source-gap-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d8deea;
+  border-radius: 16px;
+  padding: 0.75rem 0.85rem;
+  color: #171717;
+  background: #ffffff;
+  font: inherit;
+}
+
+.course-source-gap-form button {
+  justify-self: end;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.62rem 1rem;
+  color: #ffffff;
+  background: #27324a;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.course-source-gap-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
 @media (max-width: 620px) {
   .course-info-facts {
     grid-template-columns: 1fr;
@@ -241,6 +366,10 @@
 
   .course-review-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .course-source-gap-summary {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -250,6 +379,8 @@
   .course-info-chip,
   .course-info-facts article,
   .course-equivalency-card,
+  .course-source-gap-summary article,
+  .course-source-gap-card,
   .course-review-summary-grid article,
   .course-review-gate,
   .course-review-row {
@@ -270,6 +401,10 @@
     color: #f8fafc;
   }
 
+  .course-source-gap-card h3 {
+    color: #f8fafc;
+  }
+
   .course-info-modal {
     border-color: #303033;
     background: linear-gradient(145deg, #171717, #111112);
@@ -278,9 +413,11 @@
   }
 
   .course-info-description,
+  .course-source-gap-intro,
   .course-info-muted,
   .course-equivalency-card span,
   .course-equivalency-card p,
+  .course-source-gap-card p,
   .course-review-summary-grid span,
   .course-review-gate span,
   .course-review-gate p,
@@ -291,6 +428,25 @@
   .course-info-facts span {
     color: #a1a1aa;
   }
+
+  .course-source-gap-form input,
+  .course-source-gap-form textarea {
+    border-color: #303033;
+    color: #f8fafc;
+    background: #171717;
+  }
+
+  .course-source-gap-card div:first-child span,
+  .course-source-gap-meta span,
+  .course-source-gap-concepts span {
+    color: #dbeafe;
+    background: #222734;
+  }
+
+  .course-source-gap-card-blocking div:first-child span,
+  .course-source-gap-summary strong {
+    color: #fde68a;
+  }
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button,
@@ -298,6 +454,8 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts article,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-summary article,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-card,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-summary-grid article,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-gate,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-row {
@@ -318,6 +476,10 @@
   color: #f8fafc;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-card h3 {
+  color: #f8fafc;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-modal {
   border-color: #303033;
   background: linear-gradient(145deg, #171717, #111112);
@@ -326,9 +488,11 @@
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-description,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-intro,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-muted,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-equivalency-card p,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-card p,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-summary-grid span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-gate span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-gate p,
@@ -340,11 +504,32 @@
   color: #a1a1aa;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-form input,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-form textarea {
+  border-color: #303033;
+  color: #f8fafc;
+  background: #171717;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-card div:first-child span,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-meta span,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-concepts span {
+  color: #dbeafe;
+  background: #222734;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-card-blocking div:first-child span,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-summary strong {
+  color: #fde68a;
+}
+
 html[data-theme="light"] .course-info-button,
 html[data-theme="light"] .course-info-close,
 html[data-theme="light"] .course-info-chip,
 html[data-theme="light"] .course-info-facts article,
 html[data-theme="light"] .course-equivalency-card,
+html[data-theme="light"] .course-source-gap-summary article,
+html[data-theme="light"] .course-source-gap-card,
 html[data-theme="light"] .course-review-summary-grid article,
 html[data-theme="light"] .course-review-gate,
 html[data-theme="light"] .course-review-row {
@@ -365,6 +550,10 @@ html[data-theme="light"] .course-info-header h2 {
   color: #253049;
 }
 
+html[data-theme="light"] .course-source-gap-card h3 {
+  color: #253049;
+}
+
 html[data-theme="light"] .course-info-modal {
   border-color: #d9def5;
   background: rgba(255, 255, 255, 0.96);
@@ -373,6 +562,11 @@ html[data-theme="light"] .course-info-modal {
 }
 
 html[data-theme="light"] .course-info-description {
+  color: #4f5d76;
+}
+
+html[data-theme="light"] .course-source-gap-intro,
+html[data-theme="light"] .course-source-gap-card p {
   color: #4f5d76;
 }
 

@@ -85,13 +85,18 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - when many sources are submitted, run source corpus preflight and use only included sources as course evidence unless a reviewer restores an excluded source
    - when source packets are available, prefer `source-packet-v1` evidence over loose URL lists so generation uses imported snapshots, source decisions, and evidence refs
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
+   - if source coverage is below policy, create or preserve a `needs_sources` draft with `metadata.sourceGaps` instead of drafting hollow learner-facing modules
+   - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
+   - scope `sourceIds` and citations locally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, section/block `sourceIds` support only concepts taught or assessed there, and section citations must not blanket-repeat unrelated course sources
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
    - for required concepts, prefer source slots with a primary source, fallback sources, and a replacement policy
 12. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
 13. Validate structure and coherence before finishing.
 14. Treat validation as a catalog gate:
    - generated courses must not enter the catalog until structural validation passes
+   - sparse-source drafts may appear only as incomplete `needs_sources` artifacts that collect missing sources before full generation resumes
    - every referenced `sourceId` must resolve to a central or course-level source record
+   - every section citation must point to a source that supports at least one concept taught or assessed in that section
    - validation failures should be reported as generation errors, not silently repaired after rendering
 15. Treat publication as a separate lifecycle gate:
    - generated snapshots should start as reviewable artifacts, not automatically trusted catalog entries

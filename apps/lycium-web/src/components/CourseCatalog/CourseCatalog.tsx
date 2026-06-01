@@ -9,6 +9,7 @@ import CatalogProgramShowcase from "./CatalogProgramShowcase";
 import CatalogToolbar from "./CatalogToolbar";
 import CourseInfoModal from "./CourseInfoModal";
 import CreateCourseModal from "./CreateCourseModal";
+import CourseSourceGapModal from "./CourseSourceGapModal";
 import {
   CATALOG_COURSE_CARD_MIN_WIDTH,
   CATALOG_DESKTOP_ROWS_PER_PAGE,
@@ -40,6 +41,7 @@ type CourseCatalogProps = {
   ) => void;
   onOpenCourse: (course: CourseEntry) => void;
   onOpenProgram: (program: LyciumProgram) => void;
+  onQueueCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
   onCatalogDrilldown: (
     viewLevel: CatalogViewLevel,
     program?: LyciumProgram | null,
@@ -66,12 +68,14 @@ export default function CourseCatalog({
   onGenerateCourse,
   onOpenCourse,
   onOpenProgram,
+  onQueueCourseSourceGap,
   onCatalogDrilldown,
   onPublishCourse,
   publishingCourseKey,
   onOpenSettings,
 }: CourseCatalogProps) {
   const [infoCourse, setInfoCourse] = useState<CourseEntry | null>(null);
+  const [sourceGapCourse, setSourceGapCourse] = useState<CourseEntry | null>(null);
   const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE - 1);
   const courseGridRef = useRef<HTMLDivElement | null>(null);
   const isGeneratingCourse = generateStatus === "loading";
@@ -194,6 +198,7 @@ export default function CourseCatalog({
                 onCreateCourse={() => createCourseModal.setIsOpen(true)}
                 onOpenCourse={onOpenCourse}
                 onOpenInfo={setInfoCourse}
+                onOpenSourceGaps={setSourceGapCourse}
               />
               {shouldShowCatalogPagination && (
                 <CatalogPagination
@@ -247,6 +252,16 @@ export default function CourseCatalog({
             setInfoCourse(null);
           }}
           onClose={() => setInfoCourse(null)}
+        />
+      )}
+
+      {sourceGapCourse && (
+        <CourseSourceGapModal
+          course={sourceGapCourse}
+          onQueueSource={(course, gapId, url, description) => {
+            onQueueCourseSourceGap(course, gapId, url, description);
+          }}
+          onClose={() => setSourceGapCourse(null)}
         />
       )}
 

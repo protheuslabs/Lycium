@@ -42,6 +42,8 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 6. Source each idea.
    Find reputable sources for the idea level, not only the course level. Prefer primary docs, textbooks, academic sources, standards bodies, established university material, and reputable technical talks.
    When many sources are submitted, first run source corpus preflight. Use included sources as the course corpus and exclude irrelevant sources from requirements, lessons, quizzes, and citations unless a reviewer restores them.
+   If submitted sources do not satisfy the course's source coverage policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps` instead of generating learner-facing placeholder modules.
+   Map accepted sources to required concepts before drafting. Course-level source records are the full inventory, but section and block `sourceIds` should only include sources supporting concepts taught or assessed on that page.
 
 7. Draft instruction.
    Turn sub-units into teachable content blocks with examples, transitions, practice prompts, and source references.
@@ -58,6 +60,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 
 11. Gate catalog intake.
    Generated courses must pass structural validation and source-reference validation before appearing in the learner catalog.
+   Source-gapped planning drafts may appear only as incomplete `needs_sources` artifacts; learner clicks should collect sources for the gaps instead of opening the course player.
 
 12. Use quality evals before review.
    LLM-generated drafts should be inspected through `quality_report.evals`; rejected drafts should remain available for prompt/source/gate tuning rather than being silently discarded.
@@ -235,6 +238,8 @@ Canonical module/week-summary concept-card block:
   - `usedByCourseTitles`
 - Course records should reference sources using `sourceIds`.
 - Use source IDs at the most helpful levels: course, module, section, and block.
+- Narrow source IDs as the content narrows. Course-level source IDs are the full accepted inventory, module-level source IDs support that module, and section/block source IDs plus section citations must only reference sources connected to concepts in that section.
+- Do not blanket-cite the same full course source list on every page.
 - If a block fetches or embeds material from a link, it must reference the source record for that link.
 - Generated courses must include course-level `sourceRecords` for generated/local-only sources or reference existing central source records.
 - Do not accept unresolved `sourceIds` in generated courses.
@@ -272,6 +277,8 @@ Canonical module/week-summary concept-card block:
 - Summary sections contain no quiz blocks.
 - Every source ID referenced by a course exists in `sourceRecords/`.
 - Generated and remote course entries are rejected before catalog insertion if referenced source IDs do not resolve.
+- Sparse-source drafts use `metadata.sourceCoveragePolicy`, `metadata.sourceGaps`, optional `metadata.sourceGapSuggestions`, and lifecycle status `needs_sources`.
+- Blocking source gaps prevent full learner-facing generation and publication.
 - Every quiz has the intended number of questions.
 - Assessments test only previously taught or sourced material.
 - The frontend build passes after TypeScript or JSON import changes.

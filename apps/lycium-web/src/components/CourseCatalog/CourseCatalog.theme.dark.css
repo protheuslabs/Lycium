@@ -23,6 +23,10 @@
   background: #1f1f20;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card--needs-sources:hover {
+  background: #241f14;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-page h2,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-card h3,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card h3 {
@@ -130,6 +134,15 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-badge {
   color: #d8f7bc;
   background: rgba(95, 139, 42, 0.28);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-badge {
+  color: #fde68a;
+  background: rgba(133, 95, 0, 0.22);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-progress-needs-sources {
+  color: #fde68a;
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-publish-button {

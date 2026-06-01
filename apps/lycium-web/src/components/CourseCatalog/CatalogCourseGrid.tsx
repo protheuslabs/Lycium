@@ -15,6 +15,7 @@ type CatalogCourseGridProps = {
   onCreateCourse: () => void;
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
+  onOpenSourceGaps: (course: CourseEntry) => void;
 };
 
 export default function CatalogCourseGrid({
@@ -28,6 +29,7 @@ export default function CatalogCourseGrid({
   onCreateCourse,
   onOpenCourse,
   onOpenInfo,
+  onOpenSourceGaps,
 }: CatalogCourseGridProps) {
   return (
     <div className="course-grid" ref={courseGridRef}>
@@ -61,6 +63,7 @@ export default function CatalogCourseGrid({
           visibleCourse={visibleCourse}
           onOpenCourse={onOpenCourse}
           onOpenInfo={onOpenInfo}
+          onOpenSourceGaps={onOpenSourceGaps}
           isPublishing={publishingCourseKey === visibleCourse.course.key}
         />
       ))}

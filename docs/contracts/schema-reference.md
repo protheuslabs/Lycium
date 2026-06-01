@@ -48,7 +48,7 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 | `qualityReport` | lycium-course-quality-report.schema.json | optional |
 | `reviewedBy` | string | null | optional |
 | `reviewNotes` | string | null | optional |
-| `status` | enum(draft, generated, validating, needs_revision, ready_for_review, published, archived, failed) | required |
+| `status` | enum(draft, generated, validating, needs_sources, needs_revision, ready_for_review, published, archived, failed) | required |
 | `updatedAt` | string | required |
 
 ## Lycium Course Quality Report
@@ -102,6 +102,8 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 | `sourceRecords` | oneOf | optional |
 | `tags` | array | optional |
 | `title` | string | required |
+
+Nested section records may include optional `citations`. Citation source IDs must be scoped to sources that support concepts taught or assessed in that section, not blanket copies of the course source inventory.
 
 ## LyciumCurriculumBenchmark
 
