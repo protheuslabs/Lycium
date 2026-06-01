@@ -10,6 +10,7 @@ from app.course_generation_scenarios import (
     evaluate_program_generation_scenario,
     list_generation_eval_scenarios,
 )
+from app.course_generation_scenario_specs import COURSE_SCENARIOS
 from app.course_quality import assess_course_quality
 
 
@@ -27,6 +28,10 @@ def _questions(topic: str) -> list[dict[str, Any]]:
         for index in range(1, 11)
     ]
 
+
+
+
+from tests.course_generation_fixture_builders import source_backed_course_from_scenario
 
 def _course_for_scenario() -> dict[str, Any]:
     topics = [
@@ -310,6 +315,43 @@ def test_chem_105_scenario_accepts_complete_college_course_shape() -> None:
     coverage = next(check for check in report["checks"] if check["key"] == "required_topic_coverage")
     assert coverage["metrics"]["coveredRequiredKeywordCount"] >= 14
 
+
+
+
+def test_intro_programming_scenario_accepts_source_backed_course_shape() -> None:
+    report = evaluate_course_generation_scenario(
+        source_backed_course_from_scenario("intro-programming-foundations"),
+        "intro-programming-foundations",
+    )
+
+    assert report["status"] == "passed"
+    assert report["metrics"]["failedCheckCount"] == 0
+
+
+def test_software_engineering_scenario_accepts_source_backed_course_shape() -> None:
+    report = evaluate_course_generation_scenario(
+        source_backed_course_from_scenario("software-engineering-methods"),
+        "software-engineering-methods",
+    )
+
+    assert report["status"] == "passed"
+    assert report["metrics"]["failedCheckCount"] == 0
+
+
+def test_multi_source_noisy_corpus_fixture_excludes_irrelevant_material() -> None:
+    course = source_backed_course_from_scenario("intro-programming-foundations")
+    course["metadata"]["sourceCorpusSynthesis"] = {
+        "includedSources": ["source-primary", "source-video"],
+        "excludedSources": ["source-unrelated-recipe"],
+        "commonThemes": ["variables", "functions", "testing"],
+    }
+    rendered_text = json.dumps(course).lower()
+
+    report = evaluate_course_generation_scenario(course, "intro-programming-foundations")
+
+    assert report["status"] == "passed"
+    assert "source-unrelated-recipe" in course["metadata"]["sourceCorpusSynthesis"]["excludedSources"]
+    assert "tomato sauce" not in rendered_text
 
 def test_chem_105_flagship_blueprint_has_real_benchmarks_sources_and_slots() -> None:
     assert len(CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"]) >= 3

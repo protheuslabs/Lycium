@@ -1,0 +1,60 @@
+{
+  "version": "lycium-data-boundaries-v1",
+  "boundaries": [
+    {
+      "id": "web-app-code",
+      "description": "Next.js application code and reusable UI/runtime logic.",
+      "roots": [
+        "apps/lycium-web/src/app",
+        "apps/lycium-web/src/components",
+        "apps/lycium-web/src/hooks",
+        "apps/lycium-web/src/runtime",
+        "apps/lycium-web/src/utils"
+      ],
+      "mayImportSeedContentFrom": [
+        "apps/lycium-web/src/App.tsx",
+        "apps/lycium-web/src/app/catalogRouteRegistry.ts",
+        "apps/lycium-web/src/app/courses/[courseSlug]/page.tsx",
+        "apps/lycium-web/src/app/courses/[courseSlug]/units/[unitSlug]/page.tsx",
+        "apps/lycium-web/src/app/staticCatalogParams.ts",
+        "apps/lycium-web/src/components/CourseCatalog/CourseInfoModal.tsx",
+        "apps/lycium-web/src/components/CourseCatalog/catalogCourseFiltering.ts",
+        "apps/lycium-web/src/components/CourseCatalog/catalogSearch.test.ts",
+        "apps/lycium-web/src/components/CourseCatalog/catalogUtils.ts",
+        "apps/lycium-web/src/components/CourseCatalog/useCatalogControls.ts",
+        "apps/lycium-web/src/components/CourseCatalog/useCreateCourseModal.ts",
+        "apps/lycium-web/src/hooks/useConfiguredCourses.ts",
+        "apps/lycium-web/src/hooks/useCourseGenerationActions.ts",
+        "apps/lycium-web/src/runtime/appRuntime.ts"
+      ]
+    },
+    {
+      "id": "local-seed-content",
+      "description": "Portable local seed courses, programs, taxonomies, and source records used by the static app.",
+      "roots": [
+        "apps/lycium-web/src/courseData",
+        "packages/contracts/fixtures",
+        "fixtures/source-index"
+      ]
+    },
+    {
+      "id": "source-index-service",
+      "description": "Detachable source-index service that must not import Lycium app modules.",
+      "roots": [
+        "services/source-index/src/source_index"
+      ]
+    },
+    {
+      "id": "local-user-data",
+      "description": "Runtime-owned learner, secret, completion, link, source-index, and generated-course data. These roots are not seed content.",
+      "roots": [
+        ".lycium-data",
+        "services/lycium-api/.data",
+        "services/source-index/.data",
+        "apps/lycium-web/.data"
+      ],
+      "optional": true,
+      "runtimeOnly": true
+    }
+  ]
+}

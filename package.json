@@ -24,9 +24,11 @@
     "test:workers": "cd services/lycium-workers && PYTHONPATH=src pytest -q",
     "test:e2e": "corepack pnpm --filter @lycium/web e2e",
     "check:loc": "node scripts/check-loc.mjs",
-    "validate": "corepack pnpm check:loc && corepack pnpm check:boundaries && corepack pnpm check:readiness && corepack pnpm test:contracts && corepack pnpm --filter @lycium/web typecheck && corepack pnpm --filter @lycium/web build",
+    "validate": "corepack pnpm check:loc && corepack pnpm check:boundaries && corepack pnpm check:data-boundaries && corepack pnpm check:readiness && corepack pnpm test:contracts && corepack pnpm --filter @lycium/web typecheck && corepack pnpm --filter @lycium/web build",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "report:web-export": "node scripts/report-web-export.mjs",
+    "check:data-boundaries": "node scripts/check-data-boundaries.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

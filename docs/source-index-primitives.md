@@ -54,3 +54,24 @@ The smoke command imports the batch, builds a source packet, and exits non-zero 
 ```
 
 Use `raw_text` when manually seeding the index. Without `raw_text`, the source is still indexed, but no snapshot-backed generation document is created unless a later fetch or snapshot step fills it in.
+
+## Standalone CLI surface
+
+The service exposes local CLI entry points so Source Index can be exercised without the Lycium web app:
+
+```bash
+source-index-import-batch fixtures/source-index/primitive-source-batch.json \
+  --output /tmp/source-import-report.json
+
+source-index-build-packet \
+  --consumer lycium-course-generation \
+  --context-id primitive-source-index-smoke \
+  --prompt "distributed systems reliability observability latency replication" \
+  --source-url https://example.edu/reliability \
+  --no-fetch \
+  --output /tmp/source-packet.json
+
+source-index-openapi --output /tmp/source-index-openapi.json
+```
+
+These commands intentionally speak stable JSON contracts instead of Lycium UI concepts. That keeps the index detachable for InfRing and future Protheus systems.

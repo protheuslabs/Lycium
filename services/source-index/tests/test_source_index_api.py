@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import httpx
@@ -393,3 +394,65 @@ def test_source_index_does_not_import_lycium_modules() -> None:
             stripped = line.strip().lower()
             if stripped.startswith(("import ", "from ")):
                 assert "lycium" not in stripped
+
+
+def test_source_index_cli_import_packet_and_openapi_exports(tmp_path: Path) -> None:
+    from source_index.cli import build_packet_cli, import_batch_cli
+    from source_index.openapi import export_cli
+
+    batch_path = tmp_path / "batch.json"
+    import_report_path = tmp_path / "import-report.json"
+    packet_path = tmp_path / "packet.json"
+    openapi_path = tmp_path / "openapi.json"
+    batch_path.write_text(
+        """
+        {
+          "batch_id": "cli-smoke-batch",
+          "sources": [
+            {
+              "url": "https://example.edu/programming/variables-functions-testing",
+              "title": "Course One",
+              "source_type": "catalog",
+              "raw_text": "Course One teaches variables, functions, testing, and programming practice."
+            },
+            {
+              "url": "https://example.com/irrelevant",
+              "title": "Irrelevant",
+              "raw_text": "This page is about unrelated cooking notes."
+            }
+          ]
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    import_batch_cli([str(batch_path), "--output", str(import_report_path)])
+    build_packet_cli(
+        [
+            "--consumer",
+            "cli-smoke",
+            "--context-id",
+            "cli-smoke-context",
+            "--prompt",
+            "programming variables functions testing",
+            "--source-url",
+            "https://example.edu/programming/variables-functions-testing",
+            "--source-url",
+            "https://example.com/irrelevant",
+            "--no-fetch",
+            "--output",
+            str(packet_path),
+        ]
+    )
+    export_cli(["--output", str(openapi_path)])
+
+    import_report = json.loads(import_report_path.read_text(encoding="utf-8"))
+    packet = json.loads(packet_path.read_text(encoding="utf-8"))
+    openapi = json.loads(openapi_path.read_text(encoding="utf-8"))
+
+    assert import_report["contract_version"] == "source-import-batch-v1"
+    assert packet["contract_version"] == "source-packet-v1"
+    assert packet["corpus_run"]["included_source_count"] == 1
+    assert packet["corpus_run"]["excluded_source_count"] == 1
+    assert openapi["info"]["title"] == "Protheus Source Index API"
+    assert "/v1/index/source-packets" in openapi["paths"]

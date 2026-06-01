@@ -33,6 +33,17 @@ Lycium may keep transitional source tables while the service boundary matures, b
 
 When `LYCIUM_SOURCE_INDEX_API_URL` is configured, Lycium should route source-index API calls through the standalone Source Index service. When it is not configured, the transitional internal source tables remain available for local development and offline tests.
 
+
+## Enforced boundary manifest
+
+`data-boundaries.manifest.json` is the machine-readable version of this document. CI runs `pnpm check:data-boundaries` to keep the separation enforceable:
+
+- web app code may only import seed content through approved adapter/root files
+- Source Index code must not import Lycium app packages or modules
+- runtime-only local data roots must not become committed seed content
+
+When a new storage root is added, update the manifest first, then route code through the correct adapter.
+
 ## Stable IDs
 
 Stable IDs are the migration seam for future real-server deployments:

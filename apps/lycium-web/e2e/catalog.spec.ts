@@ -6,14 +6,53 @@ async function chooseDropdownOption(page: Page, label: string, optionName: strin
   if (typeof optionName === "string" && currentText.includes(optionName)) {
     return;
   }
-  await trigger.click();
-  await page.getByRole("listbox", { name: label }).getByRole("option", { name: optionName }).first().click({ force: true });
+  await trigger.focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("option", { name: optionName }).first().click({ force: true });
 }
 
 function firstUsableCourseCard(page: Page) {
   return page
     .locator(".course-card:not(.create-course-card):not(.course-card--empty):not(.course-card--generating):not(.course-card--locked)")
     .first();
+}
+
+async function mockVerifiedAiConnection(page: Page) {
+  await page.route("**/v1/local/ai/providers", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: "local-model",
+          label: "Ollama Local",
+          default_model: "test-model",
+          model_fetch_supported: true,
+          local_provider: true,
+          credential_label: "local path",
+          credential_placeholder: "Local Path",
+        },
+      ]),
+    });
+  });
+  await page.route("**/v1/local/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        agent_keys: [
+          {
+            id: "test-local-key",
+            provider_id: "local-model",
+            provider_label: "Ollama Local",
+            key_preview: "http://localhost:11434",
+            model: "test-model",
+            models: ["test-model"],
+            is_active: true,
+            connection_status: "verified",
+          },
+        ],
+      }),
+    });
+  });
 }
 
 test.beforeEach(async ({ page }) => {
@@ -41,9 +80,9 @@ test("catalog loads, exposes create flow, and opens a course", async ({ page }) 
 });
 
 test("catalog program and cluster navigation is data-driven", async ({ page }) => {
-  await page.goto("/Lycium/catalog");
+  await page.goto("/Lycium/catalog/programs");
+  await expect(page.getByLabel("Select catalog view level")).toContainText("Programs");
 
-  await chooseDropdownOption(page, "Select catalog view level", "Programs");
   const firstProgram = page.locator(".program-showcase-card").first();
   await expect(firstProgram).toBeVisible();
   const programTitle = (await firstProgram.locator("h3").innerText()).trim();
@@ -91,6 +130,54 @@ test("catalog search, filters, sort, and locked card behavior are generic", asyn
     await lockedCourse.click();
     await expect(page).toHaveURL(currentUrl);
   }
+});
+
+
+test("create-course modal reflects locked and unlocked AI states", async ({ page }) => {
+  await page.goto("/Lycium/catalog");
+
+  await page.getByRole("button", { name: /create course/i }).click();
+  await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();
+  await expect(page.getByText(/To unlock course creation/)).toBeVisible();
+  await expect(page.getByPlaceholder("Describe the course you want to build...")).toBeDisabled();
+  await expect(page.getByRole("button", { name: /add another link/i })).toBeDisabled();
+  const lockedDialog = page.getByRole("dialog", { name: "Create Course" });
+  await expect(lockedDialog.getByRole("button", { name: /^Create course$/i })).toBeDisabled();
+  await page.getByRole("button", { name: /close create course/i }).click();
+
+  await mockVerifiedAiConnection(page);
+  await page.reload();
+  await page.getByLabel("Settings").click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+  await page.getByRole("button", { name: /close settings/i }).click();
+  await page.getByRole("button", { name: /create course/i }).click();
+  await expect(page.getByText(/To unlock course creation/)).toHaveCount(0);
+
+  const description = page.getByPlaceholder("Describe the course you want to build...");
+  await expect(description).toBeEnabled();
+  await description.fill("Create a source-backed course from the supplied material.");
+  await expect(page.getByRole("button", { name: /add another link/i })).toBeEnabled();
+  await chooseDropdownOption(page, "College", /.+/);
+  await chooseDropdownOption(page, "Department", /.+/);
+  const unlockedDialog = page.getByRole("dialog", { name: "Create Course" });
+  await expect(unlockedDialog.getByRole("button", { name: /^Create course$/i })).toBeEnabled();
+});
+
+test("catalog controls support keyboard navigation and modal focus", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/Lycium/catalog");
+
+  await page.getByLabel("Select catalog view level").focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("listbox", { name: "Select catalog view level" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("listbox", { name: "Select catalog view level" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: /create course/i }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Create Course" })).toHaveCount(0);
 });
 
 test("settings modal and course shell survive route changes", async ({ page }) => {

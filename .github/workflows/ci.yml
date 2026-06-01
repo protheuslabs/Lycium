@@ -32,6 +32,9 @@ jobs:
       - name: Check import boundaries
         run: pnpm check:boundaries
 
+      - name: Check data boundaries
+        run: pnpm check:data-boundaries
+
       - name: Check professional readiness
         run: pnpm check:readiness
 
@@ -53,6 +56,9 @@ jobs:
           NEXT_PUBLIC_LYCIUM_BASE_PATH: /Lycium
           NEXT_PUBLIC_LYCIUM_RUNTIME: static
         run: pnpm --filter @lycium/web build
+
+      - name: Report web export size
+        run: pnpm report:web-export
 
       - name: Verify GitHub Pages export
         run: pnpm verify:pages-export

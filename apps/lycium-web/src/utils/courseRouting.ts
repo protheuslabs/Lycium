@@ -20,6 +20,19 @@ export const COURSE_CATALOG_COURSES_PATH = buildLyciumPath("catalog", "courses")
 export const SETTINGS_PATH = buildLyciumPath("settings");
 export { getCoursePathSlug, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug, slugifyCourseTitle } from "./routeSlugs";
 
+export function browserPathForRoute(routePath: string): string {
+  if (typeof window === "undefined") {
+    return routePath;
+  }
+
+  const normalizedRoutePath = routePath.startsWith("/") ? routePath : `/${routePath}`;
+  const isBasePathRoute =
+    window.location.pathname === LYCIUM_DEPLOY_BASE_PATH ||
+    window.location.pathname.startsWith(`${LYCIUM_DEPLOY_BASE_PATH}/`);
+
+  return isBasePathRoute ? `${LYCIUM_DEPLOY_BASE_PATH}${normalizedRoutePath}` : normalizedRoutePath;
+}
+
 function buildLyciumPath(...segments: string[]): string {
   const suffix = segments
     .map((segment) => segment.replace(/^\/+|\/+$/g, ""))
