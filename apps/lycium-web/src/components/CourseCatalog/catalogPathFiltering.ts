@@ -8,8 +8,9 @@ import {
   type CatalogPathProgress,
   type CatalogProgressCache,
 } from "./catalogProgramProgress";
-import { type CatalogPathSortMode, normalizeSearchText } from "./catalogUtils";
+import { type CatalogActivityFilter, type CatalogPathSortMode, normalizeSearchText } from "./catalogUtils";
 import { scoreWeightedSearch } from "../../utils/weightedSearch";
+import { getUnmetCoursePrerequisites } from "./catalogPrerequisites";
 
 export type CatalogVisibleProgram = {
   program: LyciumProgram;
@@ -31,7 +32,12 @@ type VisibleProgramOptions = {
   courses: CourseEntry[];
   courseMap: Map<string, CourseEntry>;
   progressCache?: CatalogProgressCache;
+  activityFilter: CatalogActivityFilter;
+  collegeFilter: string;
+  departmentFilter: string;
+  difficultyFilter: string;
   searchQuery: string;
+  showLockedCourses: boolean;
   sortMode: CatalogPathSortMode;
 };
 
@@ -39,7 +45,12 @@ type VisibleClusterOptions = {
   program: LyciumProgram | null;
   courseMap: Map<string, CourseEntry>;
   progressCache?: CatalogProgressCache;
+  activityFilter: CatalogActivityFilter;
+  collegeFilter: string;
+  departmentFilter: string;
+  difficultyFilter: string;
   searchQuery: string;
+  showLockedCourses: boolean;
   sortMode: CatalogPathSortMode;
 };
 
@@ -111,24 +122,94 @@ function compareByPathSort(
   return compareTitles(a.title, b.title);
 }
 
+function pathCourses(courseIds: string[], courseMap: Map<string, CourseEntry>): CourseEntry[] {
+  return Array.from(new Set(courseIds))
+    .map((courseId) => courseMap.get(courseId))
+    .filter((course): course is CourseEntry => Boolean(course));
+}
+
+function courseHasActivity(course: CourseEntry, progressCache?: CatalogProgressCache): boolean {
+  const progress = progressCache?.get(course.key);
+  return Boolean(progress && (progress.viewed > 0 || progress.completed > 0));
+}
+
+function courseIsLocked(course: CourseEntry, courseMap: Map<string, CourseEntry>, progressCache?: CatalogProgressCache): boolean {
+  return !courseHasActivity(course, progressCache) && getUnmetCoursePrerequisites(course, courseMap).length > 0;
+}
+
+function pathMatchesFilters(
+  courses: CourseEntry[],
+  progress: CatalogPathProgress,
+  {
+    activityFilter,
+    collegeFilter,
+    courseMap,
+    departmentFilter,
+    difficultyFilter,
+    progressCache,
+    showLockedCourses,
+  }: {
+    activityFilter: CatalogActivityFilter;
+    collegeFilter: string;
+    courseMap: Map<string, CourseEntry>;
+    departmentFilter: string;
+    difficultyFilter: string;
+    progressCache?: CatalogProgressCache;
+    showLockedCourses: boolean;
+  },
+): boolean {
+  const matchesCollege = collegeFilter === "all" || courses.some((course) => course.data.category === collegeFilter);
+  const matchesDepartment = departmentFilter === "all" || courses.some((course) => course.data.department === departmentFilter);
+  const matchesDifficulty = difficultyFilter === "all" || courses.some((course) => course.data.difficultyLevel === difficultyFilter);
+  const matchesAvailability = showLockedCourses || courses.some((course) => !courseIsLocked(course, courseMap, progressCache));
+  const matchesActivity =
+    activityFilter === "all" ||
+    (activityFilter === "not-started" && !progress.hasProgress) ||
+    (activityFilter === "in-progress" && progress.hasProgress && progress.percentage < 100) ||
+    (activityFilter === "completed" && progress.percentage >= 100);
+
+  return matchesCollege && matchesDepartment && matchesDifficulty && matchesAvailability && matchesActivity;
+}
+
 export function getVisibleCatalogPrograms({
   programs,
   courses,
   courseMap,
   progressCache,
+  activityFilter,
+  collegeFilter,
+  departmentFilter,
+  difficultyFilter,
   searchQuery,
+  showLockedCourses,
   sortMode,
 }: VisibleProgramOptions): CatalogVisibleProgram[] {
   const query = normalizeSearchText(searchQuery);
 
   return programs
-    .map((program) => ({
-      program,
-      estimate: estimateProgramTime(program, courses),
-      progress: catalogPathProgress(programCourseIds(program), courseMap, progressCache),
-      searchScore: programSearchScore(program, query),
-    }))
-    .filter(({ searchScore }) => !query || searchScore > 0)
+    .map((program) => {
+      const courseIds = programCourseIds(program);
+      const progress = catalogPathProgress(courseIds, courseMap, progressCache);
+      return {
+        program,
+        estimate: estimateProgramTime(program, courses),
+        progress,
+        searchScore: programSearchScore(program, query),
+        pathCourses: pathCourses(courseIds, courseMap),
+      };
+    })
+    .filter(({ pathCourses, progress, searchScore }) => {
+      const matchesSearch = !query || searchScore > 0;
+      return matchesSearch && pathMatchesFilters(pathCourses, progress, {
+        activityFilter,
+        collegeFilter,
+        courseMap,
+        departmentFilter,
+        difficultyFilter,
+        progressCache,
+        showLockedCourses,
+      });
+    })
     .sort((a, b) => {
       if (query) return b.searchScore - a.searchScore || compareByPathSort({ title: a.program.title, ...a }, { title: b.program.title, ...b }, sortMode);
       return compareByPathSort({ title: a.program.title, ...a }, { title: b.program.title, ...b }, sortMode);
@@ -139,7 +220,12 @@ export function getVisibleCatalogClusters({
   program,
   courseMap,
   progressCache,
+  activityFilter,
+  collegeFilter,
+  departmentFilter,
+  difficultyFilter,
   searchQuery,
+  showLockedCourses,
   sortMode,
 }: VisibleClusterOptions): CatalogVisibleCluster[] {
   const query = normalizeSearchText(searchQuery);
@@ -154,9 +240,21 @@ export function getVisibleCatalogClusters({
         estimate: estimateRequirementGroupTime(cluster, courseMap),
         progress: catalogPathProgress(courseIds, courseMap, progressCache),
         searchScore: clusterSearchScore(cluster, query),
+        pathCourses: pathCourses(courseIds, courseMap),
       };
     })
-    .filter(({ searchScore }) => !query || searchScore > 0)
+    .filter(({ pathCourses, progress, searchScore }) => {
+      const matchesSearch = !query || searchScore > 0;
+      return matchesSearch && pathMatchesFilters(pathCourses, progress, {
+        activityFilter,
+        collegeFilter,
+        courseMap,
+        departmentFilter,
+        difficultyFilter,
+        progressCache,
+        showLockedCourses,
+      });
+    })
     .sort((a, b) => {
       if (query) return b.searchScore - a.searchScore || compareByPathSort({ title: a.cluster.displayName, ...a }, { title: b.cluster.displayName, ...b }, sortMode);
       return compareByPathSort({ title: a.cluster.displayName, ...a }, { title: b.cluster.displayName, ...b }, sortMode);

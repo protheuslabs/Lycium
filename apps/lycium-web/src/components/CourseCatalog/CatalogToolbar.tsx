@@ -73,6 +73,17 @@ export default function CatalogToolbar({
   onActivityFilterChange,
   onResetCatalogFilters,
 }: CatalogToolbarProps) {
+  const isCourseView = catalogViewLevel === "courses";
+  const searchPlaceholder = isCourseView
+    ? "Search names, tags, and departments"
+    : catalogViewLevel === "programs"
+      ? "Search programs"
+      : "Search clusters";
+  const sortValue = isCourseView ? sortMode : pathSortMode;
+  const sortOptions = isCourseView ? CATALOG_SORT_OPTIONS : CATALOG_PATH_SORT_OPTIONS;
+  const sortLabel = isCourseView ? "Sort courses" : `Sort ${catalogViewLevel}`;
+  const handleSortChange = isCourseView ? onSortModeChange : onPathSortModeChange;
+
   return (
     <div className="catalog-toolbar">
       <label className="catalog-view-field">
@@ -84,79 +95,53 @@ export default function CatalogToolbar({
           ariaLabel="Select catalog view level"
         />
       </label>
-      {catalogViewLevel === "courses" ? (
-        <>
-          <label className="catalog-search-field">
-            <input
-              type="search"
-              placeholder="Search names, tags, and departments"
-              value={searchQuery}
-              onChange={(event) => onSearchQueryChange(event.target.value)}
+      <label className="catalog-search-field">
+        <input
+          type="search"
+          placeholder={searchPlaceholder}
+          value={searchQuery}
+          onChange={(event) => onSearchQueryChange(event.target.value)}
+        />
+      </label>
+      <div className="catalog-dropdown-row">
+        <CatalogFilterPanel
+          activeFilterCount={activeFilterCount}
+          showLockedCourses={showLockedCourses}
+          collegeFilter={collegeFilter}
+          collegeFilterOptions={collegeFilterOptions}
+          departmentFilter={departmentFilter}
+          departmentFilterOptions={departmentFilterOptions}
+          difficultyFilter={difficultyFilter}
+          difficultyFilterOptions={difficultyFilterOptions}
+          activityFilter={activityFilter}
+          onShowLockedCoursesChange={onShowLockedCoursesChange}
+          onCollegeFilterChange={onCollegeFilterChange}
+          onDepartmentFilterChange={onDepartmentFilterChange}
+          onDifficultyFilterChange={onDifficultyFilterChange}
+          onActivityFilterChange={onActivityFilterChange}
+          onResetFilters={onResetCatalogFilters}
+        />
+        {catalogViewLevel === "clusters" && (
+          <label className="catalog-dropdown-field">
+            <Dropdown
+              className="catalog-dropdown"
+              value={selectedProgramId}
+              options={programOptions}
+              onChange={onSelectedProgramChange}
+              ariaLabel="Select program"
             />
           </label>
-          <div className="catalog-dropdown-row">
-            <CatalogFilterPanel
-              activeFilterCount={activeFilterCount}
-              showLockedCourses={showLockedCourses}
-              collegeFilter={collegeFilter}
-              collegeFilterOptions={collegeFilterOptions}
-              departmentFilter={departmentFilter}
-              departmentFilterOptions={departmentFilterOptions}
-              difficultyFilter={difficultyFilter}
-              difficultyFilterOptions={difficultyFilterOptions}
-              activityFilter={activityFilter}
-              onShowLockedCoursesChange={onShowLockedCoursesChange}
-              onCollegeFilterChange={onCollegeFilterChange}
-              onDepartmentFilterChange={onDepartmentFilterChange}
-              onDifficultyFilterChange={onDifficultyFilterChange}
-              onActivityFilterChange={onActivityFilterChange}
-              onResetFilters={onResetCatalogFilters}
-            />
-            <label className="catalog-dropdown-field">
-              <Dropdown
-                className="catalog-dropdown catalog-sort-dropdown"
-                value={sortMode}
-                options={CATALOG_SORT_OPTIONS}
-                onChange={onSortModeChange}
-                ariaLabel="Sort courses"
-              />
-            </label>
-          </div>
-        </>
-      ) : (
-        <>
-          <label className="catalog-search-field">
-            <input
-              type="search"
-              placeholder={catalogViewLevel === "programs" ? "Search programs" : "Search clusters"}
-              value={searchQuery}
-              onChange={(event) => onSearchQueryChange(event.target.value)}
-            />
-          </label>
-          <div className="catalog-dropdown-row catalog-dropdown-row--path">
-            {catalogViewLevel === "clusters" && (
-              <label className="catalog-dropdown-field">
-                <Dropdown
-                  className="catalog-dropdown"
-                  value={selectedProgramId}
-                  options={programOptions}
-                  onChange={onSelectedProgramChange}
-                  ariaLabel="Select program"
-                />
-              </label>
-            )}
-            <label className="catalog-dropdown-field">
-              <Dropdown
-                className="catalog-dropdown catalog-sort-dropdown"
-                value={pathSortMode}
-                options={CATALOG_PATH_SORT_OPTIONS}
-                onChange={onPathSortModeChange}
-                ariaLabel={`Sort ${catalogViewLevel}`}
-              />
-            </label>
-          </div>
-        </>
-      )}
+        )}
+        <label className="catalog-dropdown-field">
+          <Dropdown
+            className="catalog-dropdown catalog-sort-dropdown"
+            value={sortValue}
+            options={sortOptions}
+            onChange={handleSortChange}
+            ariaLabel={sortLabel}
+          />
+        </label>
+      </div>
     </div>
   );
 }

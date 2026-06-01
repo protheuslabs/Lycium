@@ -163,10 +163,15 @@ export function useCatalogControls({
         courses,
         courseMap: catalogCourseMap,
         progressCache: catalogProgressCache,
+        activityFilter,
+        collegeFilter,
+        departmentFilter,
+        difficultyFilter,
         searchQuery,
+        showLockedCourses,
         sortMode: pathSortMode,
       }),
-    [catalogCourseMap, catalogProgressCache, courses, pathSortMode, programs, searchQuery],
+    [activityFilter, catalogCourseMap, catalogProgressCache, collegeFilter, courses, departmentFilter, difficultyFilter, pathSortMode, programs, searchQuery, showLockedCourses],
   );
   const visibleClusters = useMemo(
     () =>
@@ -174,10 +179,15 @@ export function useCatalogControls({
         program: selectedProgram,
         courseMap: catalogCourseMap,
         progressCache: catalogProgressCache,
+        activityFilter,
+        collegeFilter,
+        departmentFilter,
+        difficultyFilter,
         searchQuery,
+        showLockedCourses,
         sortMode: pathSortMode,
       }),
-    [catalogCourseMap, catalogProgressCache, pathSortMode, searchQuery, selectedProgram],
+    [activityFilter, catalogCourseMap, catalogProgressCache, collegeFilter, departmentFilter, difficultyFilter, pathSortMode, searchQuery, selectedProgram, showLockedCourses],
   );
 
   const resetCatalogPage = () => setCatalogPage(1);

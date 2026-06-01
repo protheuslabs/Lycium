@@ -216,8 +216,8 @@ html[data-theme="light"] .catalog-pagination-page {
   }
 
   .catalog-dropdown-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-width: 34rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+    max-width: 38rem;
   }
 
   .catalog-dropdown-field {
@@ -260,7 +260,7 @@ html[data-theme="light"] .catalog-pagination-page {
     grid-column: 2;
     grid-row: 1;
     justify-self: end;
-    width: min(100%, 30rem);
+    width: min(100%, 38rem);
   }
 }
 

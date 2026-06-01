@@ -92,13 +92,23 @@ describe("catalog search scoring", () => {
       programs: [softwareEngineeringProgram],
       courses: localCourses,
       courseMap,
+      activityFilter: "all",
+      collegeFilter: "all",
+      departmentFilter: "all",
+      difficultyFilter: "all",
       searchQuery: "",
+      showLockedCourses: true,
       sortMode: "name",
     });
     const clusters = getVisibleCatalogClusters({
       program: softwareEngineeringProgram,
       courseMap,
+      activityFilter: "all",
+      collegeFilter: "all",
+      departmentFilter: "all",
+      difficultyFilter: "all",
       searchQuery: "",
+      showLockedCourses: true,
       sortMode: "time-asc",
     });
     const clusterMinutes = clusters.map(({ estimate }) => estimate.minutes ?? Number.MAX_SAFE_INTEGER);

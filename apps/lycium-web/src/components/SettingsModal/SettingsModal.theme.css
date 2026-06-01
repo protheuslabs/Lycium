@@ -16,6 +16,12 @@
   box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-entry-row {
+  color: #e5e7eb;
+  background: #1a1a1c;
+  box-shadow: inset 0 0 0 1px rgba(82, 82, 91, 0.34), 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-input,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-select,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-key-preview,
