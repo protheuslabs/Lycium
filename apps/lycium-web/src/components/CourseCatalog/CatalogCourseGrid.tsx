@@ -1,5 +1,6 @@
-import type { KeyboardEvent, RefObject } from "react";
+import type { RefObject } from "react";
 import type { CourseEntry } from "../../courseTypes";
+import CatalogActionCard from "./CatalogActionCard";
 import CatalogCourseCard from "./CatalogCourseCard";
 import type { CatalogVisibleCourse } from "./catalogUtils";
 
@@ -28,21 +29,11 @@ export default function CatalogCourseGrid({
   onOpenCourse,
   onOpenInfo,
 }: CatalogCourseGridProps) {
-  const handleCreateCardKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onCreateCourse();
-    }
-  };
-
   return (
     <div className="course-grid" ref={courseGridRef}>
-      <article
+      <CatalogActionCard
         className="course-card create-course-card"
-        role="button"
-        tabIndex={0}
-        onClick={onCreateCourse}
-        onKeyDown={handleCreateCardKeyDown}
+        onActivate={onCreateCourse}
       >
         <div className="create-course-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" focusable="false">
@@ -50,7 +41,7 @@ export default function CatalogCourseGrid({
           </svg>
         </div>
         <h3>Create Course</h3>
-      </article>
+      </CatalogActionCard>
       {isGeneratingCourse && (
         <article className="course-card course-card--generating" aria-live="polite" aria-busy="true">
           <h3>{generatingCourseTitle}</h3>

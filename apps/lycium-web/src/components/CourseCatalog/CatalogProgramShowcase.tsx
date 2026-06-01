@@ -1,6 +1,7 @@
-import type { KeyboardEvent } from "react";
 import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import { formatTimeEstimate, timeEstimateSourceLabel } from "../../utils/curriculumTime";
+import CatalogActionCard from "./CatalogActionCard";
+import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogVisibleCluster, CatalogVisibleProgram } from "./catalogPathFiltering";
 
 type CatalogProgramShowcaseProps = {
@@ -12,13 +13,6 @@ type CatalogProgramShowcaseProps = {
   onClusterSelect: (cluster: LyciumRequirementGroup) => void;
   onOpenProgram: (program: LyciumProgram) => void;
 };
-
-function handleActivation(event: KeyboardEvent<HTMLElement>, action: () => void) {
-  if (event.key === "Enter" || event.key === " ") {
-    event.preventDefault();
-    action();
-  }
-}
 
 export default function CatalogProgramShowcase({
   viewLevel,
@@ -35,13 +29,10 @@ export default function CatalogProgramShowcase({
         <div className="program-showcase-grid">
           {programs.map(({ program, estimate, progress }) => {
             return (
-              <article
+              <CatalogActionCard
                 className="program-showcase-card"
                 key={program.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => onProgramSelect(program)}
-                onKeyDown={(event) => handleActivation(event, () => onProgramSelect(program))}
+                onActivate={() => onProgramSelect(program)}
               >
                 <div>
                   <p className="program-showcase-kicker">{program.programType.replace(/_/g, " ")}</p>
@@ -55,17 +46,13 @@ export default function CatalogProgramShowcase({
                   <span>{program.reviewStatus}</span>
                 </div>
                 {progress.hasProgress && (
-                  <div className="program-showcase-progress">
-                    <div className="program-showcase-progress-bar">
-                      <div className="program-showcase-progress-viewed" style={{ width: `${progress.viewedPercentage}%` }} />
-                      <div className="program-showcase-progress-complete" style={{ width: `${progress.percentage}%` }} />
-                    </div>
-                    <p>
-                      {Math.round(progress.percentage)}% complete &middot; {Math.round(progress.viewedPercentage)}% viewed
-                    </p>
-                  </div>
+                  <CatalogProgressMeter
+                    percentage={progress.percentage}
+                    viewedPercentage={progress.viewedPercentage}
+                    variant="path"
+                  />
                 )}
-              </article>
+              </CatalogActionCard>
             );
           })}
         </div>
@@ -82,13 +69,10 @@ export default function CatalogProgramShowcase({
       <div className="program-showcase-grid">
         {clusters.map(({ cluster, courseIds, estimate, progress }) => {
           return (
-            <article
+            <CatalogActionCard
               className="program-showcase-card"
               key={cluster.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => onClusterSelect(cluster)}
-              onKeyDown={(event) => handleActivation(event, () => onClusterSelect(cluster))}
+              onActivate={() => onClusterSelect(cluster)}
             >
               <div>
                 <p className="program-showcase-kicker">{cluster.groupKind.replace(/_/g, " ")}</p>
@@ -102,17 +86,13 @@ export default function CatalogProgramShowcase({
                 <span>{timeEstimateSourceLabel(estimate)}</span>
               </div>
               {progress.hasProgress && (
-                <div className="program-showcase-progress">
-                  <div className="program-showcase-progress-bar">
-                    <div className="program-showcase-progress-viewed" style={{ width: `${progress.viewedPercentage}%` }} />
-                    <div className="program-showcase-progress-complete" style={{ width: `${progress.percentage}%` }} />
-                  </div>
-                  <p>
-                    {Math.round(progress.percentage)}% complete &middot; {Math.round(progress.viewedPercentage)}% viewed
-                  </p>
-                </div>
+                <CatalogProgressMeter
+                  percentage={progress.percentage}
+                  viewedPercentage={progress.viewedPercentage}
+                  variant="path"
+                />
               )}
-            </article>
+            </CatalogActionCard>
           );
         })}
       </div>

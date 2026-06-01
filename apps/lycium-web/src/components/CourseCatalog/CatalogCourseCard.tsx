@@ -1,5 +1,6 @@
-import type { KeyboardEvent } from "react";
 import type { CourseEntry } from "../../courseTypes";
+import CatalogActionCard from "./CatalogActionCard";
+import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogVisibleCourse } from "./catalogUtils";
 
 type CatalogCourseCardProps = {
@@ -37,21 +38,11 @@ export default function CatalogCourseCard({
     }
   };
 
-  const handleCourseKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleCourseOpen();
-    }
-  };
-
   return (
-    <article
+    <CatalogActionCard
       className={`course-card ${requiresPrerequisites ? "course-card--locked" : ""}`}
-      role="button"
-      tabIndex={0}
-      aria-disabled={requiresPrerequisites}
-      onClick={handleCourseOpen}
-      onKeyDown={handleCourseKeyDown}
+      disabled={requiresPrerequisites}
+      onActivate={handleCourseOpen}
     >
       <button
         className="course-info-button"
@@ -88,15 +79,11 @@ export default function CatalogCourseCard({
           )}
         </p>
       ) : (
-        <div className="course-progress">
-          <div className="course-progress-bar">
-            <div className="course-progress-viewed-fill" style={{ width: `${courseProgress.viewedPercentage}%` }} />
-            <div className="course-progress-fill" style={{ width: `${courseProgress.percentage}%` }} />
-          </div>
-          <p className="course-progress-percentage">
-            {Math.round(courseProgress.percentage)}% complete &middot; {Math.round(courseProgress.viewedPercentage)}% viewed
-          </p>
-        </div>
+        <CatalogProgressMeter
+          percentage={courseProgress.percentage}
+          viewedPercentage={courseProgress.viewedPercentage}
+          variant="course"
+        />
       )}
       {isReadyForReview && (
         <button
@@ -112,6 +99,6 @@ export default function CatalogCourseCard({
           {isPublishing ? "Publishing..." : "Review"}
         </button>
       )}
-    </article>
+    </CatalogActionCard>
   );
 }
