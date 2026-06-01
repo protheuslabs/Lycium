@@ -55,6 +55,21 @@ async function mockVerifiedAiConnection(page: Page) {
   });
 }
 
+async function mockEmptyAiConnection(page: Page) {
+  await page.route("**/v1/local/ai/providers", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([]),
+    });
+  });
+  await page.route("**/v1/local/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({ agent_keys: [] }),
+    });
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.clear();
@@ -149,6 +164,7 @@ test("create-course modal reflects locked and unlocked AI states", async ({ page
   await page.reload();
   await page.getByLabel("Settings").click();
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+  await expect(page.getByText("http://localhost:11434")).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await page.getByRole("button", { name: /create course/i }).click();
   await expect(page.getByText(/To unlock course creation/)).toHaveCount(0);
@@ -181,6 +197,7 @@ test("catalog controls support keyboard navigation and modal focus", async ({ pa
 });
 
 test("settings modal and course shell survive route changes", async ({ page }) => {
+  await mockEmptyAiConnection(page);
   await page.goto("/Lycium/catalog");
 
   await page.getByLabel("Settings").click();
