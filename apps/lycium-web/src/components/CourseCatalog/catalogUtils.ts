@@ -1,6 +1,8 @@
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
+import { scoreWeightedSearch } from "../../utils/weightedSearch";
+export { normalizeSearchText } from "../../utils/weightedSearch";
 
 export type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
 export type CatalogPathSortMode = "name" | "completion-desc" | "completion-asc" | "time-desc" | "time-asc";
@@ -64,57 +66,30 @@ export function getGeneratingCourseTitle(prompt: string): string {
   return title.length > 72 ? `${title.slice(0, 69)}...` : title;
 }
 
-export function normalizeSearchText(value: string): string {
-  return value.trim().toLowerCase();
-}
-
 export function getCollegeFilterLabel(label: string): string {
   return label.replace(/^College of\s+/i, "");
 }
 
-function scoreSearchField(fieldValue: string | undefined, query: string, weight: number): number {
-  const value = fieldValue?.toLowerCase() ?? "";
-
-  if (!query || !value) {
-    return 0;
-  }
-
-  if (value === query) {
-    return weight * 4;
-  }
-
-  if (value.startsWith(query)) {
-    return weight * 3;
-  }
-
-  if (value.includes(query)) {
-    return weight * 2;
-  }
-
-  return 0;
-}
-
 export function getCourseSearchScore(course: CourseEntry, query: string): number {
-  if (!query) {
-    return 0;
-  }
-
-  const tagScore = [...(course.data.tags ?? []), ...getCourseTagLabels(course.data.tags)].reduce(
-    (total, tag) => total + scoreSearchField(tag, query, 6),
-    0,
+  return scoreWeightedSearch(
+    [
+      { values: [course.title, course.data.title], weight: 10 },
+      { values: [...(course.data.tags ?? []), ...getCourseTagLabels(course.data.tags)], weight: 6 },
+      {
+        values: [
+          course.data.department,
+          course.data.department ? getCourseDepartmentLabel(course.data.category, course.data.department) : undefined,
+          ...(course.data.courseEquivalencies ?? []).flatMap((equivalency) => [
+            equivalency.department,
+            equivalency.courseCode,
+          ]),
+        ],
+        weight: 6,
+      },
+      { values: [course.data.shortDescription], weight: 2 },
+    ],
+    query,
   );
-  const departmentScore = [
-    course.data.department,
-    course.data.department ? getCourseDepartmentLabel(course.data.category, course.data.department) : undefined,
-    ...(course.data.courseEquivalencies ?? []).flatMap((equivalency) => [
-      equivalency.department,
-      equivalency.courseCode,
-    ]),
-  ].reduce((total, field) => total + scoreSearchField(field, query, 6), 0);
-  const titleScore = scoreSearchField(course.title, query, 10) + scoreSearchField(course.data.title, query, 10);
-  const descriptionScore = scoreSearchField(course.data.shortDescription, query, 2);
-
-  return titleScore + tagScore + departmentScore + descriptionScore;
 }
 
 function compareCourseTitles(a: CourseEntry, b: CourseEntry): number {

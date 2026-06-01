@@ -9,6 +9,7 @@ import {
   type CatalogProgressCache,
 } from "./catalogProgramProgress";
 import { type CatalogPathSortMode, normalizeSearchText } from "./catalogUtils";
+import { scoreWeightedSearch } from "../../utils/weightedSearch";
 
 export type CatalogVisibleProgram = {
   program: LyciumProgram;
@@ -42,20 +43,6 @@ type VisibleClusterOptions = {
   sortMode: CatalogPathSortMode;
 };
 
-function scoreText(value: string | undefined, query: string, weight: number): number {
-  const searchable = value?.toLowerCase() ?? "";
-
-  if (!query || !searchable) return 0;
-  if (searchable === query) return weight * 4;
-  if (searchable.startsWith(query)) return weight * 3;
-  if (searchable.includes(query)) return weight * 2;
-  return 0;
-}
-
-function scoreTextList(values: Array<string | undefined>, query: string, weight: number): number {
-  return values.reduce((total, value) => total + scoreText(value, query, weight), 0);
-}
-
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
@@ -79,15 +66,16 @@ function programSearchScore(program: LyciumProgram, query: string): number {
   const outcomeText = program.learningOutcomes.map((outcome) => outcome.statement);
   const groupText = program.requirementGroups.flatMap((group) => [group.displayName, group.purpose, group.groupKind]);
 
-  return (
-    scoreText(program.title, query, 10) +
-    scoreText(program.field, query, 8) +
-    scoreText(program.programType, query, 6) +
-    scoreText(program.level, query, 5) +
-    scoreText(program.description, query, 3) +
-    scoreText(program.targetOutcome, query, 3) +
-    scoreTextList(outcomeText, query, 3) +
-    scoreTextList(groupText, query, 2)
+  return scoreWeightedSearch(
+    [
+      { values: [program.title], weight: 10 },
+      { values: [program.field], weight: 8 },
+      { values: [program.programType], weight: 6 },
+      { values: [program.level], weight: 5 },
+      { values: [program.description, program.targetOutcome, ...outcomeText], weight: 3 },
+      { values: groupText, weight: 2 },
+    ],
+    query,
   );
 }
 
@@ -95,12 +83,15 @@ function clusterSearchScore(cluster: LyciumRequirementGroup, query: string): num
   const outcomeText = cluster.learningOutcomes.map((outcome) => outcome.statement);
   const requirementText = cluster.requirements.flatMap(requirementSearchText);
 
-  return (
-    scoreText(cluster.displayName, query, 10) +
-    scoreText(cluster.groupKind, query, 6) +
-    scoreText(cluster.purpose, query, 4) +
-    scoreTextList(outcomeText, query, 3) +
-    scoreTextList(requirementText, query, 2)
+  return scoreWeightedSearch(
+    [
+      { values: [cluster.displayName], weight: 10 },
+      { values: [cluster.groupKind], weight: 6 },
+      { values: [cluster.purpose], weight: 4 },
+      { values: outcomeText, weight: 3 },
+      { values: requirementText, weight: 2 },
+    ],
+    query,
   );
 }
 
