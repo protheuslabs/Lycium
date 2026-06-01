@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.generation_helpers import _extract_goals, _stable_id, _title_from_prompt
 from app.models import CourseDraft, KnowledgeObject
-from app.retrieval import assemble_learning_packet, tokenize
+from app.retrieval import assemble_learning_packet, intent_relevance_score, rank_by_intent, tokenize
 
 
 def _select_objects_for_outline(
@@ -29,10 +29,19 @@ def _select_objects_for_outline(
         trust_min=trust_min,
         level=level,
     )
+    if not packet["object_ids"] and level:
+        packet = assemble_learning_packet(
+            session,
+            query=prompt,
+            top_k=max(desired_module_count * 4, 12),
+            free_only=free_only,
+            trust_min=trust_min,
+            level=None,
+        )
     if not packet["object_ids"]:
         return []
     objects = list(session.scalars(select(KnowledgeObject).where(KnowledgeObject.id.in_(packet["object_ids"]))))
-    return sorted(objects, key=lambda obj: (obj.topic, -obj.trust_score, obj.id))
+    return rank_by_intent(objects, query=prompt)
 
 
 def _fallback_outline(prompt: str, module_count: int, goals: list[str]) -> dict[str, Any]:
@@ -101,12 +110,17 @@ def build_outline(
 
     sorted_topics = sorted(
         topics.items(),
-        key=lambda item: mean(node.trust_score for node in item[1]),
+        key=lambda item: (
+            mean(intent_relevance_score(node, query=prompt) for node in item[1]),
+            len({node.source_id for node in item[1]}),
+            mean(node.trust_score for node in item[1]),
+        ),
         reverse=True,
     )[:desired_module_count]
 
     modules: list[dict[str, Any]] = []
     for module_idx, (topic, topic_objects) in enumerate(sorted_topics, start=1):
+        topic_objects = rank_by_intent(topic_objects, query=prompt, context=topic)
         module_id = _stable_id("m", title, topic, str(module_idx))
         module_title = f"Module {module_idx}: {topic}"
         module_objectives = list(

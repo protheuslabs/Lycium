@@ -12,10 +12,34 @@ from app.models import GraphEdge, KnowledgeObject, Source
 
 
 TOKEN_PATTERN = re.compile(r"[a-z0-9]+", re.IGNORECASE)
+INTENT_STOPWORDS = {
+    "a",
+    "and",
+    "are",
+    "build",
+    "course",
+    "for",
+    "from",
+    "into",
+    "intro",
+    "introduction",
+    "learn",
+    "learning",
+    "module",
+    "of",
+    "on",
+    "the",
+    "to",
+    "with",
+}
 
 
 def tokenize(text: str) -> list[str]:
     return TOKEN_PATTERN.findall(text.lower())
+
+
+def intent_tokens(text: str) -> set[str]:
+    return {token for token in tokenize(text) if len(token) > 2 and token not in INTENT_STOPWORDS}
 
 
 def lexical_similarity(query: str, text: str) -> float:
@@ -26,6 +50,68 @@ def lexical_similarity(query: str, text: str) -> float:
     intersection = len(q_tokens & t_tokens)
     union = len(q_tokens | t_tokens)
     return round(intersection / max(union, 1), 4)
+
+
+def intent_overlap_score(query: str, text: str) -> float:
+    query_tokens = intent_tokens(query)
+    text_tokens = intent_tokens(text)
+    if not query_tokens or not text_tokens:
+        return 0.0
+    return round(len(query_tokens & text_tokens) / len(query_tokens), 4)
+
+
+def _object_search_text(obj: KnowledgeObject) -> str:
+    source = getattr(obj, "source", None)
+    source_text = ""
+    if source is not None:
+        source_text = f"{source.title or ''} {source.canonical_url or ''}"
+    return f"{obj.title} {obj.topic} {source_text} {obj.content[:1600]}"
+
+
+def intent_relevance_score(obj: KnowledgeObject, *, query: str, context: str = "") -> float:
+    combined_query = f"{query} {context}".strip()
+    search_text = _object_search_text(obj)
+    title_topic = f"{obj.title} {obj.topic}"
+    return round(
+        intent_overlap_score(combined_query, title_topic) * 0.46
+        + intent_overlap_score(combined_query, search_text) * 0.26
+        + lexical_similarity(combined_query, search_text) * 0.18
+        + obj.trust_score * 0.1,
+        4,
+    )
+
+
+def rank_by_intent(objects: list[KnowledgeObject], *, query: str, context: str = "") -> list[KnowledgeObject]:
+    return sorted(
+        objects,
+        key=lambda obj: (intent_relevance_score(obj, query=query, context=context), obj.trust_score, -obj.id),
+        reverse=True,
+    )
+
+
+def diversify_by_source(objects: list[KnowledgeObject], *, limit: int) -> list[KnowledgeObject]:
+    selected: list[KnowledgeObject] = []
+    selected_ids: set[int] = set()
+    used_sources: set[int] = set()
+
+    for obj in objects:
+        if len(selected) >= limit:
+            break
+        if obj.id in selected_ids or obj.source_id in used_sources:
+            continue
+        selected.append(obj)
+        selected_ids.add(obj.id)
+        used_sources.add(obj.source_id)
+
+    for obj in objects:
+        if len(selected) >= limit:
+            break
+        if obj.id in selected_ids:
+            continue
+        selected.append(obj)
+        selected_ids.add(obj.id)
+
+    return selected
 
 
 def _role_for_object(object_type: str, modality: str) -> str:

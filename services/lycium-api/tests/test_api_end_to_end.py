@@ -209,6 +209,11 @@ def test_outline_generation_course_delivery_and_analytics(client, monkeypatch) -
 
 
 def test_program_portfolio_credentials_and_catalog(client, monkeypatch) -> None:
+    source_urls = [
+        "https://open.example.com/data-science",
+        "https://open.example.com/statistics",
+        "https://open.example.com/projects",
+    ]
     _install_fetch_mock(
         monkeypatch,
         {
@@ -216,13 +221,22 @@ def test_program_portfolio_credentials_and_catalog(client, monkeypatch) -> None:
                 "Data Science Basics",
                 "Data science combines statistics, programming, and domain expertise.",
             ),
+            "https://open.example.com/statistics": _sample_html(
+                "Statistics for Data Science",
+                "Statistics supports inference, uncertainty, data summaries, and model evaluation.",
+            ),
+            "https://open.example.com/projects": _sample_html(
+                "Data Science Projects",
+                "Projects use datasets, analysis notebooks, visualization, and communication of findings.",
+            ),
         },
     )
-    ingested = client.post(
-        "/v1/sources/ingest",
-        json={"url": "https://open.example.com/data-science", "source_type": "article", "license": "cc-by", "is_free": True},
-    )
-    assert ingested.status_code == 201, ingested.text
+    for source_url in source_urls:
+        ingested = client.post(
+            "/v1/sources/ingest",
+            json={"url": source_url, "source_type": "article", "license": "cc-by", "is_free": True},
+        )
+        assert ingested.status_code == 201, ingested.text
 
     learner = _create_learner(client, name="Jordan Pathbuilder")
     learner_id = learner["id"]
@@ -235,6 +249,7 @@ def test_program_portfolio_credentials_and_catalog(client, monkeypatch) -> None:
             "source_policy": "balanced",
             "desired_module_count": 2,
             "expected_duration_minutes": 120,
+            "source_urls": source_urls,
         },
     )
     assert generated_course.status_code == 201, generated_course.text
