@@ -23,6 +23,7 @@ import {
   COURSE_CATALOG_PATH,
   COURSE_CATALOG_COURSES_PATH,
   COURSE_CATALOG_PROGRAMS_PATH,
+  LYCIUM_DEPLOY_BASE_PATH,
   LYCIUM_ROUTE_ROOT,
   SETTINGS_PATH,
   findBookmarkedSection,
@@ -40,6 +41,19 @@ import {
   parseCourseRoute,
 } from "./utils/courseRouting";
 import { readSettingsBackdropPath, writeSettingsBackdropPath } from "./utils/settingsRouteState";
+
+function browserPathForRoute(routePath: string): string {
+  if (typeof window === "undefined") {
+    return routePath;
+  }
+
+  const normalizedRoutePath = routePath.startsWith("/") ? routePath : `/${routePath}`;
+  const isBasePathRoute =
+    window.location.pathname === LYCIUM_DEPLOY_BASE_PATH ||
+    window.location.pathname.startsWith(`${LYCIUM_DEPLOY_BASE_PATH}/`);
+
+  return isBasePathRoute ? `${LYCIUM_DEPLOY_BASE_PATH}${normalizedRoutePath}` : normalizedRoutePath;
+}
 
 function App() {
   const router = useRouter();
@@ -197,6 +211,12 @@ function App() {
             : COURSE_CATALOG_COURSES_PATH;
       if (currentPathRef.current !== nextPath) {
         router.push(nextPath);
+      }
+      if (typeof window !== "undefined") {
+        const browserPath = browserPathForRoute(nextPath);
+        if (window.location.pathname !== browserPath) {
+          window.history.pushState(null, "", browserPath);
+        }
       }
       currentPathRef.current = nextPath;
       setCurrentPath(nextPath);
