@@ -42,6 +42,7 @@ type CourseCatalogProps = {
   onOpenCourse: (course: CourseEntry) => void;
   onOpenProgram: (program: LyciumProgram) => void;
   onQueueCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
+  onResumeCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
   onCatalogDrilldown: (
     viewLevel: CatalogViewLevel,
     program?: LyciumProgram | null,
@@ -69,6 +70,7 @@ export default function CourseCatalog({
   onOpenCourse,
   onOpenProgram,
   onQueueCourseSourceGap,
+  onResumeCourseSourceGap,
   onCatalogDrilldown,
   onPublishCourse,
   publishingCourseKey,
@@ -258,7 +260,11 @@ export default function CourseCatalog({
       {sourceGapCourse && (
         <CourseSourceGapModal
           course={sourceGapCourse}
-          onQueueSource={(course, gapId, url, description) => {
+          onQueueSource={async (course, gapId, url, description) => {
+            if (course.snapshotId) {
+              await onResumeCourseSourceGap(course, gapId, url, description);
+              return;
+            }
             onQueueCourseSourceGap(course, gapId, url, description);
           }}
           onClose={() => setSourceGapCourse(null)}

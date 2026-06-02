@@ -343,6 +343,7 @@ const {
   publishingCourseKey,
   handleGenerateCourse,
   handlePublishCourse,
+  handleResumeCourseSourceGap,
 } = useCourseGenerationActions({
   prompt,
   level,
@@ -446,6 +447,7 @@ const {
           onOpenCourse={openCourseByEntry}
           onOpenProgram={openProgramByEntry}
           onQueueCourseSourceGap={queueCourseSourceGap}
+          onResumeCourseSourceGap={handleResumeCourseSourceGap}
           onCatalogDrilldown={routeToCatalogDrilldown}
           onPublishCourse={handlePublishCourse}
           publishingCourseKey={publishingCourseKey}

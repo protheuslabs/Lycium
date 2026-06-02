@@ -7,7 +7,7 @@ import { getCourseSourceGapSuggestions, sourceGapSummary } from "../../utils/cou
 type CourseSourceGapModalProps = {
   course: CourseEntry;
   onClose: () => void;
-  onQueueSource: (course: CourseEntry, gapId: string, url: string, description: string) => void;
+  onQueueSource: (course: CourseEntry, gapId: string, url: string, description: string) => void | Promise<void>;
 };
 
 export default function CourseSourceGapModal({ course, onClose, onQueueSource }: CourseSourceGapModalProps) {
@@ -18,20 +18,30 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
   const [sourceUrl, setSourceUrl] = useState("");
   const [description, setDescription] = useState("");
   const [queuedCount, setQueuedCount] = useState(0);
+  const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const selectedGap = summary.gaps.find((gap) => gap.id === selectedGapId) ?? summary.gaps[0];
   const gapOptions = useMemo(
     () => summary.gaps.map((gap) => ({ value: gap.id, label: gap.title })),
     [summary.gaps],
   );
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedUrl = sourceUrl.trim();
     if (!selectedGap || !trimmedUrl) return;
-    onQueueSource(course, selectedGap.id, trimmedUrl, description);
-    setSourceUrl("");
-    setDescription("");
-    setQueuedCount((count) => count + 1);
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      await onQueueSource(course, selectedGap.id, trimmedUrl, description);
+      setSourceUrl("");
+      setDescription("");
+      setQueuedCount((count) => count + 1);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Could not add source.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -96,20 +106,23 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
         <input
           type="url"
           value={sourceUrl}
+          disabled={isSubmitting}
           onChange={(event) => setSourceUrl(event.target.value)}
           placeholder="https://example.edu/source"
           aria-label="Source URL"
         />
         <textarea
           value={description}
+          disabled={isSubmitting}
           onChange={(event) => setDescription(event.target.value)}
           placeholder="Optional note about how this source fits"
           aria-label="Source fit note"
           rows={3}
         />
-        <button type="submit" disabled={!selectedGap || !sourceUrl.trim()}>
-          Queue source
+        <button type="submit" disabled={isSubmitting || !selectedGap || !sourceUrl.trim()}>
+          {isSubmitting ? "Adding..." : course.snapshotId ? "Add source and resume" : "Queue source"}
         </button>
+        {submitError && <p className="course-source-gap-error">{submitError}</p>}
       </form>
     </Modal>
   );

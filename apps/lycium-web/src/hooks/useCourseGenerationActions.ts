@@ -5,11 +5,13 @@ import { useCallback, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import sourceRecordsData from "../courseData/sourceRecords";
 import type { CourseEntry } from "../courseTypes";
+import type { LyciumCourseGenerationJob, LyciumGeneratedCourseRecord } from "@lycium/contracts";
 import { lyciumApi } from "../runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "../utils/courseValidation";
 import {
   DEFAULT_SOURCE_COVERAGE_POLICY,
   createSourceGapDraftCourse,
+  queueCourseSourceGapSuggestion,
   sourceCountMeetsMinimum,
   submittedSourceCount,
 } from "../utils/courseSourceGaps";
@@ -41,6 +43,29 @@ export function useCourseGenerationActions({
   const [generateStatus, setGenerateStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [generateMessage, setGenerateMessage] = useState("");
   const [publishingCourseKey, setPublishingCourseKey] = useState<string | null>(null);
+
+  const entryFromGeneratedRecord = useCallback((record: LyciumGeneratedCourseRecord): CourseEntry => ({
+    key: `remote-${record.id}`,
+    title: record.title,
+    data: record.structure,
+    snapshotId: Number(record.id),
+    source: "remote",
+    status: record.status,
+    generation_trace: record.generation_trace,
+    qualityReport: record.qualityReport,
+  }), []);
+
+  const replaceCourseFromJob = useCallback((course: CourseEntry, job: LyciumCourseGenerationJob) => {
+    const snapshot = job.course_snapshot;
+    if (!snapshot?.structure) {
+      return course;
+    }
+    return entryFromGeneratedRecord({
+      ...snapshot,
+      generation_trace: snapshot.generation_trace ?? job.trace,
+      qualityReport: snapshot.qualityReport ?? job.quality_report ?? undefined,
+    });
+  }, [entryFromGeneratedRecord]);
 
   const handleGenerateCourse = async (
     evt: FormEvent<HTMLFormElement>,
@@ -95,16 +120,7 @@ export function useCourseGenerationActions({
         throw new Error("Course generation finished without a ready course snapshot.");
       }
 
-      const entry: CourseEntry = {
-        key: `remote-${generatedSnapshot.id}`,
-        title: generatedSnapshot.title,
-        data: generatedSnapshot.structure,
-        snapshotId: Number(generatedSnapshot.id),
-        source: "remote",
-        status: generatedSnapshot.status,
-        generation_trace: generatedSnapshot.generation_trace,
-        qualityReport: generatedSnapshot.qualityReport,
-      };
+      const entry = entryFromGeneratedRecord(generatedSnapshot);
       const validation = validateCourseEntry(entry, {
         centralSourceRecords: sourceRecordsData.sources,
         requireSources: true,
@@ -156,7 +172,43 @@ export function useCourseGenerationActions({
         setPublishingCourseKey(null);
       }
     },
-    [setCourses],
+    [entryFromGeneratedRecord, setCourses],
+  );
+
+  const handleResumeCourseSourceGap = useCallback(
+    async (course: CourseEntry, gapId: string, url: string, description: string) => {
+      const queuedCourse = queueCourseSourceGapSuggestion(course, { gapId, url, description });
+      setCourses((prev) => prev.map((current) => (current.key === course.key ? queuedCourse : current)));
+      if (!course.snapshotId) {
+        setGenerateStatus("success");
+        setGenerateMessage("Source suggestion queued locally. API resume is available once the draft is backed by a local snapshot.");
+        return;
+      }
+
+      setGenerateStatus("loading");
+      setGenerateMessage("Adding source and checking whether generation can resume...");
+      try {
+        const job = await lyciumApi.resumeCourseSourceGaps(course.snapshotId, { source_urls: [url] });
+        const updatedCourse = replaceCourseFromJob(queuedCourse, job);
+        setCourses((prev) => prev.map((current) => (current.key === course.key ? updatedCourse : current)));
+        if (job.status === "queued" || job.status === "running") {
+          setGenerateStatus("success");
+          setGenerateMessage("Source coverage is sufficient. Course generation has resumed.");
+          return;
+        }
+        if (job.status === "failed") {
+          throw new Error(job.error || job.message || "Source-gap resume failed.");
+        }
+        setGenerateStatus("success");
+        setGenerateMessage(job.message || "Source added. More source coverage is still needed.");
+      } catch (err) {
+        console.warn("Course source-gap resume failed:", err);
+        setGenerateStatus("error");
+        setGenerateMessage(err instanceof Error ? err.message : "Source-gap resume failed. Is the API running?");
+        throw err;
+      }
+    },
+    [replaceCourseFromJob, setCourses],
   );
 
   return {
@@ -165,5 +217,6 @@ export function useCourseGenerationActions({
     publishingCourseKey,
     handleGenerateCourse,
     handlePublishCourse,
+    handleResumeCourseSourceGap,
   };
 }
