@@ -41,7 +41,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
    - Goal: modules and sections are built from extracted requirements instead of prompt/topic tokens alone.
 
 9. Concept-to-source coverage map
-   - Status: pending
+   - Status: done
    - Goal: every required concept has primary/fallback sources, confidence, section mapping, and weak/missing status.
 
 10. Section citation enforcement

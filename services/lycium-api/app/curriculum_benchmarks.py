@@ -327,6 +327,155 @@ def _source_corpus_requirement_origins(source_corpus_synthesis: dict[str, Any] |
     return origins
 
 
+def _evidence_refs(row: dict[str, Any]) -> list[str]:
+    refs = row.get("evidenceRefs")
+    return [str(ref) for ref in refs if isinstance(ref, str) and ref.strip()] if isinstance(refs, list) else []
+
+
+def _origin_confidence(row: dict[str, Any]) -> float:
+    for key in ("score", "sourceConfidence", "frequency"):
+        value = row.get(key)
+        if isinstance(value, int | float):
+            return _clamped_score(float(value))
+    return 0.0
+
+
+def _coverage_status(primary_source_id: str | None, confidence: float, section_ids: list[str] | None = None) -> str:
+    if not primary_source_id:
+        return "missing"
+    if confidence < 0.55:
+        return "weak"
+    if section_ids is not None and not section_ids:
+        return "weak"
+    return "covered"
+
+
+def _concept_coverage_row(row: dict[str, Any]) -> dict[str, Any]:
+    refs = _evidence_refs(row)
+    primary = refs[0] if refs else None
+    confidence = _origin_confidence(row)
+    concept_id = str(row.get("requirementId") or row.get("id") or f"req-{_slug(str(row.get('title') or 'concept'))}")
+    return {
+        "conceptId": concept_id,
+        "requirementOriginId": concept_id,
+        "title": str(row.get("title") or _title(concept_id)),
+        "importance": str(row.get("importance") or "recommended"),
+        "primarySourceId": primary,
+        "fallbackSourceIds": refs[1:],
+        "evidenceRefs": refs,
+        "confidence": confidence,
+        "status": _coverage_status(primary, confidence),
+        "sectionIds": [],
+    }
+
+
+def _concept_source_coverage_map(requirement_origins: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        _concept_coverage_row(row)
+        for row in requirement_origins
+        if str(row.get("importance") or "") == "required"
+    ]
+
+
+def _source_ids_from_value(value: Any) -> set[str]:
+    if not isinstance(value, dict):
+        return set()
+    source_ids = value.get("sourceIds")
+    return {str(source_id) for source_id in source_ids if isinstance(source_id, str) and source_id.strip()} if isinstance(source_ids, list) else set()
+
+
+def _section_signal(section: dict[str, Any]) -> tuple[set[str], set[str]]:
+    sources = _source_ids_from_value(section)
+    text_parts = [section.get("id"), section.get("title")]
+    content = section.get("content")
+    if isinstance(content, list):
+        for block in content:
+            if not isinstance(block, dict):
+                continue
+            sources.update(_source_ids_from_value(block))
+            text_parts.extend([block.get("title"), block.get("heading"), block.get("value"), block.get("question")])
+            concepts = block.get("concepts")
+            if isinstance(concepts, list):
+                for concept in concepts:
+                    if isinstance(concept, dict):
+                        text_parts.extend([concept.get("name"), concept.get("title"), concept.get("description")])
+            questions = block.get("questions") or block.get("questionBank") or block.get("question_bank")
+            if isinstance(questions, list):
+                for question in questions:
+                    if isinstance(question, dict):
+                        text_parts.extend([question.get("question"), question.get("concept"), question.get("topic")])
+    return sources, set(_keywords(" ".join(str(part) for part in text_parts if part), None, limit=24))
+
+
+def _section_ids_for_concept(course: dict[str, Any], coverage: dict[str, Any]) -> list[str]:
+    concept_tokens = _keywords(
+        " ".join(str(value) for value in (coverage.get("title"), coverage.get("conceptId")) if value),
+        None,
+        limit=12,
+    )
+    evidence_sources = {
+        str(source_id)
+        for source_id in [coverage.get("primarySourceId"), *(coverage.get("fallbackSourceIds") or [])]
+        if isinstance(source_id, str) and source_id.strip()
+    }
+    matched: list[str] = []
+    course_modules = course.get("modules")
+    if not isinstance(course_modules, list):
+        return matched
+    for module in course_modules:
+        if not isinstance(module, dict):
+            continue
+        for section in module.get("sections", []):
+            if not isinstance(section, dict):
+                continue
+            section_id = str(section.get("id") or "").strip()
+            if not section_id:
+                continue
+            section_sources, section_tokens = _section_signal(section)
+            source_match = bool(evidence_sources & section_sources)
+            token_match = bool(set(concept_tokens) & section_tokens)
+            if source_match or token_match:
+                matched.append(section_id)
+    return list(dict.fromkeys(matched))
+
+
+def _coverage_map_with_section_mapping(course: dict[str, Any], coverage_map: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    mapped: list[dict[str, Any]] = []
+    for row in coverage_map:
+        if not isinstance(row, dict):
+            continue
+        section_ids = _section_ids_for_concept(course, row)
+        primary = row.get("primarySourceId") if isinstance(row.get("primarySourceId"), str) else None
+        confidence = _origin_confidence(row)
+        mapped.append(
+            {
+                **row,
+                "sectionIds": section_ids,
+                "status": _coverage_status(primary, confidence, section_ids),
+            }
+        )
+    return mapped
+
+
+def _source_slots_with_coverage(source_slots: list[dict[str, Any]], coverage_map: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    coverage_by_id = {str(row.get("conceptId") or row.get("requirementOriginId") or ""): row for row in coverage_map if isinstance(row, dict)}
+    enriched: list[dict[str, Any]] = []
+    for slot in source_slots:
+        concept_id = str(slot.get("requiredConceptId") or "")
+        coverage = coverage_by_id.get(concept_id, {})
+        enriched.append(
+            {
+                **slot,
+                "title": slot.get("title") or coverage.get("title"),
+                "evidenceRefs": coverage.get("evidenceRefs", slot.get("evidenceRefs", [])),
+                "confidence": coverage.get("confidence", slot.get("confidence", 0)),
+                "coverageStatus": coverage.get("status", slot.get("coverageStatus", "missing")),
+                "sectionIds": coverage.get("sectionIds", slot.get("sectionIds", [])),
+            }
+        )
+    return enriched
+
+
 def compile_curriculum_benchmark_context(
     *,
     prompt: str,
@@ -374,13 +523,22 @@ def compile_curriculum_benchmark_context(
     source_slots = [
         {
             "requiredConceptId": row["requirementId"],
+            "title": row["title"],
             "primarySourceId": row["evidenceRefs"][0] if row["evidenceRefs"] else primary_source,
             "fallbackSourceIds": row["evidenceRefs"][1:] if len(row["evidenceRefs"]) > 1 else [],
             "replacementPolicy": "review_required",
+            "evidenceRefs": row["evidenceRefs"],
+            "confidence": row.get("score", row.get("sourceConfidence", row.get("frequency", 0))),
+            "coverageStatus": _coverage_status(
+                row["evidenceRefs"][0] if row["evidenceRefs"] else primary_source,
+                _origin_confidence(row),
+            ),
+            "sectionIds": [],
         }
         for row in requirement_origins
         if row["importance"] == "required"
     ]
+    concept_source_coverage_map = _concept_source_coverage_map(requirement_origins)
 
     context = {
         "workflowGates": ["benchmark_intake", "requirement_extraction", "commonality_analysis"],
@@ -404,6 +562,7 @@ def compile_curriculum_benchmark_context(
             "parityStatus": "strong" if len(benchmarks) >= 3 else "partial" if source_urls else "weak",
         },
         "sourceSlots": source_slots,
+        "conceptSourceCoverageMap": concept_source_coverage_map,
     }
     if source_corpus_synthesis:
         context["sourceCorpusSynthesis"] = source_corpus_synthesis
@@ -418,7 +577,19 @@ def attach_curriculum_context(course: dict[str, Any], context: dict[str, Any]) -
     metadata["curriculumBenchmarks"] = context.get("curriculumBenchmarks", [])
     metadata["requirementOrigins"] = context.get("requirementOrigins", [])
     metadata["courseParityProfile"] = context.get("courseParityProfile", {})
-    metadata["sourceSlots"] = context.get("sourceSlots", [])
+    concept_source_coverage_map = _coverage_map_with_section_mapping(
+        course,
+        [row for row in context.get("conceptSourceCoverageMap", []) if isinstance(row, dict)]
+        if isinstance(context.get("conceptSourceCoverageMap"), list)
+        else [],
+    )
+    metadata["conceptSourceCoverageMap"] = concept_source_coverage_map
+    metadata["sourceSlots"] = _source_slots_with_coverage(
+        [row for row in context.get("sourceSlots", []) if isinstance(row, dict)]
+        if isinstance(context.get("sourceSlots"), list)
+        else [],
+        concept_source_coverage_map,
+    )
     if context.get("sourceCorpusSynthesis"):
         metadata["sourceCorpusSynthesis"] = context["sourceCorpusSynthesis"]
     generation_plan = dict(metadata.get("generationPlan") if isinstance(metadata.get("generationPlan"), dict) else {})

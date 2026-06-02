@@ -174,6 +174,7 @@ def _gate_commonality_analysis(course: dict[str, Any]) -> GateResult:
     metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
     parity = metadata.get("courseParityProfile") if isinstance(metadata.get("courseParityProfile"), dict) else {}
     source_slots = metadata.get("sourceSlots") if isinstance(metadata.get("sourceSlots"), list) else []
+    concept_coverage = metadata.get("conceptSourceCoverageMap") if isinstance(metadata.get("conceptSourceCoverageMap"), list) else []
     required_topics = parity.get("commonRequiredTopics") if isinstance(parity.get("commonRequiredTopics"), list) else []
     issues: list[GateIssue] = []
     if not required_topics:
@@ -184,7 +185,7 @@ def _gate_commonality_analysis(course: dict[str, Any]) -> GateResult:
         "commonality_analysis",
         "Required, optional, and fallback-source coverage were checked.",
         issues,
-        {"requiredTopicCount": len(required_topics), "sourceSlotCount": len(source_slots)},
+        {"requiredTopicCount": len(required_topics), "sourceSlotCount": len(source_slots), "conceptCoverageCount": len(concept_coverage)},
     )
 
 

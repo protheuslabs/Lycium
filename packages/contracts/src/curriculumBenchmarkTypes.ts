@@ -122,9 +122,27 @@ export type LyciumCourseEquivalenceGroup = {
 
 export type LyciumSourceSlot = {
   requiredConceptId: string;
+  title?: string;
   primarySourceId: string;
   fallbackSourceIds: string[];
   replacementPolicy: "auto_replace_if_broken" | "review_required";
+  evidenceRefs?: string[];
+  confidence?: number;
+  coverageStatus?: "covered" | "weak" | "missing";
+  sectionIds?: string[];
+};
+
+export type LyciumConceptSourceCoverage = {
+  conceptId: string;
+  title: string;
+  importance?: LyciumRequirementImportance;
+  primarySourceId?: string | null;
+  fallbackSourceIds: string[];
+  evidenceRefs: string[];
+  confidence: number;
+  status: "covered" | "weak" | "missing";
+  sectionIds: string[];
+  requirementOriginId?: string;
 };
 
 export type LyciumPortfolioArtifactRequirement = {

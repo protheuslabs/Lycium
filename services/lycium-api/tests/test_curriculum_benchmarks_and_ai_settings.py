@@ -61,6 +61,8 @@ def test_curriculum_context_derives_requirements_origins_and_source_slots() -> N
     assert all("sourceConfidence" in origin for origin in context["requirementOrigins"])
     assert context["courseParityProfile"]["commonRequiredTopics"]
     assert context["sourceSlots"]
+    assert context["conceptSourceCoverageMap"]
+    assert all("confidence" in row for row in context["conceptSourceCoverageMap"])
     assert "benchmark_intake" in context["workflowGates"]
 
 
@@ -168,6 +170,66 @@ def test_course_module_outlines_are_built_from_requirement_origins() -> None:
     assert modules[0]["requirementOrigins"]
     assert modules[0]["lessonTitles"]
     assert "Model invented module" not in [module["title"] for module in modules]
+
+
+def test_curriculum_context_maps_required_concepts_to_course_sections() -> None:
+    context = compile_curriculum_benchmark_context(
+        prompt="CHEM 105 General Chemistry I",
+        source_urls=["https://catalog.example.edu/courses/chem105"],
+        source_documents=[
+            {
+                "url": "https://catalog.example.edu/courses/chem105",
+                "contentType": "text/plain",
+                "text": """
+                CHEM 105 General Chemistry I
+                Learning Outcomes
+                1. Calculate stoichiometry quantities in chemical reactions.
+                2. Explain atomic structure and periodic trends.
+                """,
+            }
+        ],
+        category="natural-sciences-mathematics",
+        department="chemistry",
+    )
+    course = {
+        "title": "CHEM 105",
+        "shortDescription": "General chemistry.",
+        "difficultyLevel": "undergrad",
+        "category": "natural-sciences-mathematics",
+        "department": "chemistry",
+        "sourceIds": ["input-source-1"],
+        "sourceRecords": [{"id": "input-source-1", "type": "catalog", "url": "https://catalog.example.edu/courses/chem105"}],
+        "metadata": {},
+        "modules": [
+            {
+                "id": "module-1",
+                "title": "Module 1: Stoichiometry",
+                "sourceIds": ["input-source-1"],
+                "sections": [
+                    {
+                        "id": "section-stoichiometry",
+                        "title": "Stoichiometry quantities",
+                        "pageType": "learn",
+                        "sectionType": "lesson",
+                        "sourceIds": ["input-source-1"],
+                        "content": [
+                            {
+                                "type": "conceptCards",
+                                "concepts": [{"name": "Stoichiometry", "description": "Quantities in reactions."}],
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    attached = attach_curriculum_context(course, context)
+    coverage = attached["metadata"]["conceptSourceCoverageMap"]
+
+    assert coverage
+    assert any("section-stoichiometry" in row["sectionIds"] for row in coverage)
+    assert all(row["status"] in {"covered", "weak", "missing"} for row in coverage)
+    assert attached["metadata"]["sourceSlots"][0]["coverageStatus"] in {"covered", "weak", "missing"}
 
 
 def test_source_index_snapshots_feed_curriculum_benchmark_extraction(client, monkeypatch) -> None:
