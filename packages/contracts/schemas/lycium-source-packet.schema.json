@@ -6,6 +6,9 @@
   "additionalProperties": false,
   "required": [
     "contract_version",
+    "packet_id",
+    "generated_at",
+    "producer",
     "consumer",
     "context_id",
     "prompt",
@@ -19,6 +22,9 @@
   ],
   "properties": {
     "contract_version": { "const": "source-packet-v1" },
+    "packet_id": { "type": "string", "minLength": 1 },
+    "generated_at": { "type": "string", "minLength": 1 },
+    "producer": { "$ref": "#/$defs/packetProducer" },
     "consumer": { "type": "string" },
     "context_id": { "type": "string" },
     "prompt": { "type": "string" },
@@ -52,6 +58,16 @@
     "metadata": {
       "type": "object",
       "additionalProperties": true
+    },
+    "packetProducer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "version", "schema_id"],
+      "properties": {
+        "service": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "schema_id": { "type": "string", "minLength": 1 }
+      }
     },
     "indexedSource": {
       "type": "object",

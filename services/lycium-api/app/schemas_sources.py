@@ -178,6 +178,9 @@ class SourcePacketQualityRead(BaseModel):
 
 class SourcePacketRead(BaseModel):
     contract_version: str
+    packet_id: str
+    generated_at: str
+    producer: dict[str, Any]
     consumer: str
     context_id: str
     prompt: str

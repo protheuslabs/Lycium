@@ -17,6 +17,14 @@ Course generation should prefer source packets over loose URL lists when packet 
 
 Each source packet includes a `quality` summary. Downstream generators should treat packets with `quality.status: "usable"` as generation-ready evidence. Packets marked `needs_review` or `empty` should stay inspectable, but should not be used as the only grounding evidence for a publishable course without reviewer approval.
 
+Every `source-packet-v1` has a portable root envelope:
+
+- `packet_id`: a stable packet identifier derived from consumer, context, prompt, and included source URLs.
+- `generated_at`: the timestamp when this packet payload was assembled.
+- `producer`: service metadata containing the emitting service, contract version, and public schema id.
+
+Downstream tools should use `packet_id` for logs, generation traces, and handoff records instead of relying on Source Index database IDs.
+
 ## Developer UI
 
 When the web app is pointed at a local API, `/source-index` opens a small developer panel for pasting a generic batch, entering a prompt, importing sources, and generating a source packet.

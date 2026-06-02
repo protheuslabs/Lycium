@@ -103,15 +103,21 @@ describe("Lycium contract fixtures", () => {
     expect(validateSchema(fixture), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);
   });
 
-  it("migrates legacy source-packet fixtures by deriving packet quality evidence", () => {
+  it("migrates legacy source-packet fixtures by deriving packet envelope and quality evidence", () => {
     const validateSchema = ajv.compile(schemas.sourcePacket);
     const fixture = readFixture<Record<string, unknown>>("valid-source-packet.json");
     const staleFixture = { ...fixture };
+    delete staleFixture.packet_id;
+    delete staleFixture.generated_at;
+    delete staleFixture.producer;
     delete staleFixture.quality;
     const migrated = migrateSourcePacketV1(staleFixture);
 
     expect(validateSchema(staleFixture)).toBe(false);
     expect(validateSchema(migrated), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);
+    expect(typeof migrated.packet_id).toBe("string");
+    expect(typeof migrated.generated_at).toBe("string");
+    expect((migrated.producer as { schema_id: string }).schema_id).toContain("lycium-source-packet");
     expect((migrated.quality as { status: string }).status).toBe("usable");
   });
 });

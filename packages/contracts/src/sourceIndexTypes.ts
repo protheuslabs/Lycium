@@ -1,3 +1,12 @@
+export const LYCIUM_SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1" as const;
+export const LYCIUM_SOURCE_PACKET_SCHEMA_ID = "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json";
+
+export type LyciumSourcePacketProducer = {
+  service: string;
+  version: string;
+  schema_id: string;
+};
+
 export type LyciumSourceIndexRef = {
   service: string;
   sourcePublicId?: string | null;
@@ -122,7 +131,10 @@ export type LyciumSourceCorpusRun = {
 };
 
 export type LyciumSourcePacket = {
-  contract_version: "source-packet-v1";
+  contract_version: typeof LYCIUM_SOURCE_PACKET_CONTRACT_VERSION;
+  packet_id: string;
+  generated_at: string;
+  producer: LyciumSourcePacketProducer;
   consumer: string;
   context_id: string;
   prompt: string;

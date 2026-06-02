@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import UTC, datetime
 from typing import Any
 
@@ -22,6 +23,7 @@ from source_index.service import (
 
 SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
 SOURCE_IMPORT_BATCH_CONTRACT_VERSION = "source-import-batch-v1"
+SOURCE_PACKET_SCHEMA_ID = "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json"
 
 def import_source_batch(
     session: Session,
@@ -127,6 +129,20 @@ def _packet_quality(packet_sources: list[dict[str, Any]], packet_documents: list
     }
 
 
+def _source_packet_id(*, consumer: str, context_id: str, prompt: str, source_urls: list[str]) -> str:
+    seed = "\n".join([consumer, context_id, prompt, *sorted(source_urls)])
+    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
+    return f"source-packet-{digest}"
+
+
+def _source_packet_producer(service_name: str) -> dict[str, str]:
+    return {
+        "service": service_name,
+        "version": SOURCE_PACKET_CONTRACT_VERSION,
+        "schema_id": SOURCE_PACKET_SCHEMA_ID,
+    }
+
+
 def _snapshot_document(source: IndexedSource, snapshot: SourceSnapshot, *, service_name: str) -> dict[str, Any]:
     source_public_id = source.public_id or stable_source_public_id(source.canonical_url)
     snapshot_public_id = snapshot.public_id or stable_snapshot_public_id(source_public_id, snapshot.content_hash or "")
@@ -229,6 +245,14 @@ def source_packet_payload(
 
     return {
         "contract_version": SOURCE_PACKET_CONTRACT_VERSION,
+        "packet_id": _source_packet_id(
+            consumer=run.consumer,
+            context_id=run.context_id,
+            prompt=run.prompt,
+            source_urls=[str(source.get("source", {}).get("canonical_url") or "") for source in packet_sources],
+        ),
+        "generated_at": (run.created_at or datetime.now(UTC)).isoformat(),
+        "producer": _source_packet_producer(service_name),
         "consumer": run.consumer,
         "context_id": run.context_id,
         "prompt": run.prompt,

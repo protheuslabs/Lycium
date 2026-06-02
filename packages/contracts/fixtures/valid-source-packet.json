@@ -1,5 +1,12 @@
 {
   "contract_version": "source-packet-v1",
+  "packet_id": "source-packet-fixture-distributed-systems",
+  "generated_at": "2026-05-30T00:00:00Z",
+  "producer": {
+    "service": "source-index",
+    "version": "source-packet-v1",
+    "schema_id": "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json"
+  },
   "consumer": "lycium-source-index-smoke",
   "context_id": "primitive-source-index-smoke",
   "prompt": "distributed systems reliability observability latency replication",

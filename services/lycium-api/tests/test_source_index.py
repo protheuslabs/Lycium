@@ -74,6 +74,13 @@ REMOTE_CORPUS_RUN = {
 
 REMOTE_SOURCE_PACKET = {
     "contract_version": "source-packet-v1",
+    "packet_id": "source-packet-remote-chem105",
+    "generated_at": "2026-05-30T00:00:00Z",
+    "producer": {
+        "service": "source-index",
+        "version": "source-packet-v1",
+        "schema_id": "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json",
+    },
     "consumer": "lycium-course-generation",
     "context_id": "chem105",
     "prompt": "CHEM 105 general chemistry",

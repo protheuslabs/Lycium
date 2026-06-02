@@ -265,7 +265,7 @@ Nested section records may include optional `citations`. Citation source IDs mus
 - Public export: Yes
 - JSON Schema ID: `https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json`
 - Root type: `object`
-- Required root fields: `contract_version`, `consumer`, `context_id`, `prompt`, `source_urls`, `corpus_run`, `sources`, `source_documents`, `synthesis`, `warnings`, `quality`
+- Required root fields: `contract_version`, `packet_id`, `generated_at`, `producer`, `consumer`, `context_id`, `prompt`, `source_urls`, `corpus_run`, `sources`, `source_documents`, `synthesis`, `warnings`, `quality`
 - Example fixture: `packages/contracts/fixtures/valid-source-packet.json`
 
 ### Top-level properties
@@ -276,7 +276,10 @@ Nested section records may include optional `citations`. Citation source IDs mus
 | `context_id` | string | required |
 | `contract_version` | unspecified | required |
 | `corpus_run` | #/$defs/corpusRun | required |
+| `generated_at` | string | required |
+| `packet_id` | string | required |
 | `prompt` | string | required |
+| `producer` | #/$defs/packetProducer | required |
 | `quality` | #/$defs/packetQuality | required |
 | `source_documents` | array | required |
 | `source_urls` | array | required |

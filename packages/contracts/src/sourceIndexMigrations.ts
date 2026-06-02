@@ -1,4 +1,8 @@
-import type { LyciumSourcePacket } from "./sourceIndexTypes";
+import {
+  LYCIUM_SOURCE_PACKET_CONTRACT_VERSION,
+  LYCIUM_SOURCE_PACKET_SCHEMA_ID,
+  type LyciumSourcePacket,
+} from "./sourceIndexTypes";
 
 type SourcePacketQuality = LyciumSourcePacket["quality"];
 
@@ -8,6 +12,26 @@ function arrayValue(value: unknown): unknown[] {
 
 function objectValue(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function fallbackPacketId(packet: Record<string, unknown>): string {
+  const seed = [
+    stringValue(packet.consumer),
+    stringValue(packet.context_id),
+    stringValue(packet.prompt),
+    ...arrayValue(packet.source_urls).map((url) => stringValue(url)).filter(Boolean).sort(),
+  ]
+    .filter(Boolean)
+    .join("|");
+  let hash = 0;
+  for (const character of seed || "source-packet-v1") {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return `source-packet-${hash.toString(16).padStart(8, "0")}`;
 }
 
 export function summarizeSourcePacketQuality(packet: Record<string, unknown>): SourcePacketQuality {
@@ -33,14 +57,19 @@ export function summarizeSourcePacketQuality(packet: Record<string, unknown>): S
 }
 
 export function migrateSourcePacketV1(packet: Record<string, unknown>): Record<string, unknown> {
-  if (packet.contract_version !== "source-packet-v1") {
+  if (packet.contract_version !== LYCIUM_SOURCE_PACKET_CONTRACT_VERSION) {
     return packet;
   }
-  if (packet.quality && typeof packet.quality === "object") {
-    return packet;
-  }
+  const producer = objectValue(packet.producer);
   return {
     ...packet,
-    quality: summarizeSourcePacketQuality(packet),
+    packet_id: stringValue(packet.packet_id) || fallbackPacketId(packet),
+    generated_at: stringValue(packet.generated_at) || new Date(0).toISOString(),
+    producer: {
+      service: stringValue(producer.service) || "unknown-source-index",
+      version: stringValue(producer.version) || LYCIUM_SOURCE_PACKET_CONTRACT_VERSION,
+      schema_id: stringValue(producer.schema_id) || LYCIUM_SOURCE_PACKET_SCHEMA_ID,
+    },
+    quality: packet.quality && typeof packet.quality === "object" ? packet.quality : summarizeSourcePacketQuality(packet),
   };
 }

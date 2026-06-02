@@ -23,6 +23,7 @@ from app.source_index import (
 
 SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
 SOURCE_IMPORT_BATCH_CONTRACT_VERSION = "source-import-batch-v1"
+SOURCE_PACKET_SCHEMA_ID = "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json"
 
 def snapshot_payload(snapshot: Snapshot, source: Source | None = None) -> dict[str, Any]:
     source_public_id = source.public_id if source else None
@@ -73,6 +74,20 @@ def _packet_quality(packet_sources: list[dict[str, Any]], packet_documents: list
         "documentCoverageRatio": round(document_coverage, 3),
         "evidenceCoverageRatio": round(evidence_coverage, 3),
         "warningCount": len(warnings),
+    }
+
+
+def _source_packet_id(*, consumer: str, context_id: str, prompt: str, source_urls: list[str]) -> str:
+    seed = "\n".join([consumer, context_id, prompt, *sorted(source_urls)])
+    digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:16]
+    return f"source-packet-{digest}"
+
+
+def _source_packet_producer(service_name: str) -> dict[str, str]:
+    return {
+        "service": service_name,
+        "version": SOURCE_PACKET_CONTRACT_VERSION,
+        "schema_id": SOURCE_PACKET_SCHEMA_ID,
     }
 
 
@@ -354,12 +369,21 @@ def create_source_packet_response(
     if packet_sources and len(packet_documents) < len(packet_sources):
         warnings.append("Packet is missing extracted documents for one or more included sources.")
     quality = _packet_quality(packet_sources, packet_documents, warnings)
+    packet_source_urls = [str(source["source"]["canonical_url"]) for source in packet_sources]
     return {
         "contract_version": SOURCE_PACKET_CONTRACT_VERSION,
+        "packet_id": _source_packet_id(
+            consumer=run.consumer,
+            context_id=run.context_id,
+            prompt=run.prompt,
+            source_urls=packet_source_urls,
+        ),
+        "generated_at": (run.created_at or datetime.now(UTC)).isoformat(),
+        "producer": _source_packet_producer("lycium-api-transitional-index"),
         "consumer": run.consumer,
         "context_id": run.context_id,
         "prompt": run.prompt,
-        "source_urls": [str(source["source"]["canonical_url"]) for source in packet_sources],
+        "source_urls": packet_source_urls,
         "corpus_run": corpus_run_payload(run),
         "sources": packet_sources,
         "source_documents": packet_documents,

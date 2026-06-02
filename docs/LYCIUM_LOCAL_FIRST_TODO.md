@@ -20,7 +20,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
    - Depends on: source-gap resume flow.
 
 4. Source packet contract
-   - Status: pending
+   - Status: done
    - Goal: stabilize `source-packet-v1` as the portable input to generation.
    - Depends on: source index packet export/import.
 
