@@ -35,11 +35,14 @@ from app.ingestion import ingest_source
 from app.jobs import enqueue_job, list_jobs, run_job, run_pending_jobs
 from app.local_store import (
     activate_agent_api_key,
+    create_local_data_backup,
     ensure_local_data_dirs,
+    export_local_data,
     get_active_agent_profile,
     get_agent_profile_by_id,
     local_data_migration_status,
     local_data_security_status,
+    local_data_storage_status,
     local_settings_summary,
     read_course_bookmark,
     read_course_feedback,
@@ -96,7 +99,10 @@ from app.schemas import (
     LocalAgentKeyModelUpdate,
     LocalAgentKeyVerifyUpdate,
     LocalAiProviderRead,
+    LocalDataBackupRead,
+    LocalDataExportRead,
     LocalDataMigrationStatusRead,
+    LocalDataStorageStatusRead,
     LocalCourseBookmarkRead,
     LocalCourseBookmarkUpdate,
     LocalCourseFeedbackRead,
@@ -150,6 +156,21 @@ def register(app: FastAPI) -> None:
     def get_local_security_status() -> dict[str, Any]:
         ensure_local_data_dirs()
         return local_data_security_status()
+
+
+    @app.get("/v1/local/storage", response_model=LocalDataStorageStatusRead)
+    def get_local_storage_status() -> dict[str, Any]:
+        return local_data_storage_status()
+
+
+    @app.get("/v1/local/export", response_model=LocalDataExportRead)
+    def get_local_data_export(include_secrets: bool = Query(default=False)) -> dict[str, Any]:
+        return export_local_data(include_secrets=include_secrets)
+
+
+    @app.post("/v1/local/backups", response_model=LocalDataBackupRead)
+    def create_local_backup(include_secrets: bool = Query(default=False)) -> dict[str, Any]:
+        return create_local_data_backup(include_secrets=include_secrets)
 
 
     @app.get("/v1/local/ai/providers", response_model=list[LocalAiProviderRead])

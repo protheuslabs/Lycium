@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models import GenerationRun, GenerationRunEvent, Job, utcnow
 from app.security import redact_sensitive_payload
+from app.local_store_generation_runs import write_generation_run_record
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
@@ -75,6 +76,8 @@ def _quality_gate_summary(quality_report: dict[str, Any], trace: dict[str, Any])
     if not isinstance(gates, list):
         trace_quality = trace.get("quality_report")
         gates = trace_quality.get("gates") if isinstance(trace_quality, dict) else []
+    if not isinstance(gates, list):
+        gates = []
     passed = [
         str(gate.get("gate") or gate.get("name"))
         for gate in gates
@@ -138,6 +141,10 @@ def generation_run_payload(run: GenerationRun) -> dict[str, Any]:
         "updated_at": run.updated_at,
         "completed_at": run.completed_at,
     }
+
+
+def mirror_generation_run(run: GenerationRun) -> None:
+    write_generation_run_record(generation_run_payload(run))
 
 
 def add_generation_run_event(
@@ -212,6 +219,7 @@ def start_generation_run(session: Session, job: Job, *, message: str, progress: 
             )
         ),
     )
+    mirror_generation_run(run)
     return run
 
 
@@ -238,6 +246,7 @@ def record_generation_run_checkpoint(job_id: int, update: dict[str, Any], *, ses
             message=message,
             payload=redact_sensitive_payload(_event_payload(progress=progress, trace=trace)),
         )
+        mirror_generation_run(run)
         session.commit()
 
 
@@ -284,6 +293,7 @@ def complete_generation_run(
         message=message,
         payload=redact_sensitive_payload(_event_payload(progress=1.0, trace=run.trace, extra=run.result_summary)),
     )
+    mirror_generation_run(run)
 
 
 def fail_generation_run(job_id: int, *, error: str, result: dict[str, Any], session_factory) -> None:
@@ -309,6 +319,7 @@ def fail_generation_run(job_id: int, *, error: str, result: dict[str, Any], sess
             message=error,
             payload=redact_sensitive_payload(_event_payload(progress=progress, trace=trace, extra={"error": error})),
         )
+        mirror_generation_run(run)
         session.commit()
 
 

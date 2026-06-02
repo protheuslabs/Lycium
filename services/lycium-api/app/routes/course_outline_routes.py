@@ -24,6 +24,7 @@ from app.course_generation_service import (
     build_course_snapshot_from_agent_result,
     validate_generation_taxonomy_input,
 )
+from app.course_generation_job_helpers import job_payload_from_course_request, source_gap_job_result
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
 from app.generation import (
@@ -39,7 +40,6 @@ from app.generation import (
     source_count_meets_minimum,
     validate_learner_exists,
 )
-from app.generation_observability import generation_run_payload, get_generation_run, list_generation_runs
 from app.ingestion import ingest_source
 from app.jobs import enqueue_job, list_jobs, run_agent_course_generation_job, run_job, run_pending_jobs
 from app.local_store import (
@@ -86,7 +86,6 @@ from app.schemas import (
     CredentialRead,
     GenerateCourseFromOutlineRequest,
     GenerateCourseRequest,
-    GenerationRunRead,
     GenerateOutlineRequest,
     IngestSourceRequest,
     IngestSourceResponse,
@@ -430,23 +429,7 @@ def register(app: FastAPI) -> None:
                 job = enqueue_job(
                     session,
                     job_type="agent_generate_course_staged",
-                    payload={
-                        "prompt": payload.prompt,
-                        "learner_id": payload.learner_id,
-                        "level": payload.level,
-                        "language": payload.language,
-                        "model": payload.model,
-                        "source_policy": payload.source_policy,
-                        "free_only": payload.free_only,
-                        "trust_min": payload.trust_min,
-                        "category": payload.category,
-                        "department": payload.department,
-                        "desired_module_count": payload.desired_module_count,
-                        "expected_duration_minutes": payload.expected_duration_minutes,
-                        "source_urls": source_urls,
-                        "source_packet_id": payload.source_packet_id,
-                        "source_packet": payload.source_packet,
-                    },
+                    payload=job_payload_from_course_request(payload, source_urls),
                 )
                 snapshot = create_needs_sources_course_snapshot(
                     session,
@@ -462,22 +445,7 @@ def register(app: FastAPI) -> None:
                     department=payload.department,
                 )
                 save_course_snapshot(snapshot)
-                job.status = "completed"
-                job.result = {
-                    "request": job.payload,
-                    "accepted": False,
-                    "progress": 1.0,
-                    "current_stage": "source_coverage",
-                    "message": "Course draft needs more sources before full generation.",
-                    "course": snapshot.structure,
-                    "trace": snapshot.generation_trace,
-                    "course_snapshot": {
-                        "id": snapshot.id,
-                        "title": snapshot.title,
-                        "status": snapshot.status,
-                        "version": snapshot.version,
-                    },
-                }
+                source_gap_job_result(session, job, snapshot)
                 session.commit()
                 session.refresh(job)
                 return course_generation_job_response(job)
@@ -487,23 +455,7 @@ def register(app: FastAPI) -> None:
         job = enqueue_job(
             session,
             job_type="agent_generate_course_staged",
-            payload={
-                "prompt": payload.prompt,
-                "learner_id": payload.learner_id,
-                "level": payload.level,
-                "language": payload.language,
-                "model": payload.model or agent_profile.get("model"),
-                "source_policy": payload.source_policy,
-                "free_only": payload.free_only,
-                "trust_min": payload.trust_min,
-                "category": payload.category,
-                "department": payload.department,
-                "desired_module_count": payload.desired_module_count,
-                "expected_duration_minutes": payload.expected_duration_minutes,
-                "source_urls": source_urls,
-                "source_packet_id": payload.source_packet_id,
-                "source_packet": payload.source_packet,
-            },
+            payload=job_payload_from_course_request(payload, source_urls, model=payload.model or agent_profile.get("model")),
         )
         session.commit()
         session.refresh(job)
@@ -516,44 +468,4 @@ def register(app: FastAPI) -> None:
         job = session.get(Job, job_id)
         if job is None or job.job_type != "agent_generate_course_staged":
             raise HTTPException(status_code=404, detail="Course generation job not found.")
-        return course_generation_job_response(job)
-
-
-    @app.get("/v1/agent/courses/runs", response_model=list[GenerationRunRead])
-    def list_agent_course_generation_runs(
-        limit: int = Query(default=50, ge=1, le=200),
-        status_filter: str | None = Query(default=None, alias="status"),
-        session: Session = Depends(get_session),
-    ) -> list[dict[str, Any]]:
-        return [
-            generation_run_payload(run)
-            for run in list_generation_runs(session, status=status_filter, limit=limit)
-        ]
-
-
-    @app.get("/v1/agent/courses/runs/{run_id}", response_model=GenerationRunRead)
-    def get_agent_course_generation_run(run_id: int, session: Session = Depends(get_session)) -> dict[str, Any]:
-        run = get_generation_run(session, run_id)
-        if run is None:
-            raise HTTPException(status_code=404, detail="Generation run not found.")
-        return generation_run_payload(run)
-
-
-    @app.post("/v1/agent/courses/jobs/{job_id}/resume", response_model=CourseGenerationJobRead, status_code=status.HTTP_202_ACCEPTED)
-    def resume_agent_course_generation_job(
-        job_id: int,
-        background_tasks: BackgroundTasks,
-        session: Session = Depends(get_session),
-    ) -> dict[str, Any]:
-        job = session.get(Job, job_id)
-        if job is None or job.job_type != "agent_generate_course_staged":
-            raise HTTPException(status_code=404, detail="Course generation job not found.")
-        if job.status == "running":
-            return course_generation_job_response(job)
-        job.status = "pending"
-        job.error = None
-        job.result = {**(job.result or {}), "message": "Generation re-queued from the saved request."}
-        session.commit()
-        session.refresh(job)
-        background_tasks.add_task(run_agent_course_generation_job, job.id)
         return course_generation_job_response(job)

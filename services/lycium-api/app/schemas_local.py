@@ -80,6 +80,48 @@ class LocalSecurityStatusRead(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class LocalDataDirectoryStatusRead(BaseModel):
+    name: str
+    path: str
+    exists: bool
+    file_count: int = 0
+    byte_count: int = 0
+    description: str | None = None
+
+
+class LocalDataStorageStatusRead(LocalDataMigrationStatusRead):
+    directories: list[LocalDataDirectoryStatusRead] = Field(default_factory=list)
+    backup_count: int = 0
+    latest_backup_path: str | None = None
+    json_error_count: int = 0
+    json_errors: list[str] = Field(default_factory=list)
+
+
+class LocalDataExportFileRead(BaseModel):
+    path: str
+    payload: Any
+
+
+class LocalDataExportRead(BaseModel):
+    format: Literal["lycium-local-data-export-v1"]
+    exported_at: str
+    local_data_dir: str
+    schema_version: int
+    include_secrets: bool = False
+    file_count: int
+    files: list[LocalDataExportFileRead] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+
+
+class LocalDataBackupRead(BaseModel):
+    path: str
+    created_at: str
+    file_count: int
+    byte_count: int
+    include_secrets: bool = False
+    errors: list[str] = Field(default_factory=list)
+
+
 class LocalSettingsUpdate(BaseModel):
     provider_id: str = Field(min_length=1, max_length=120)
     agent_api_key: str = Field(min_length=1, max_length=4096)

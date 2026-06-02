@@ -114,6 +114,36 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       return readJsonResponse(response, "Failed to resume course generation job");
     },
 
+    async listGenerationRuns(options = {}) {
+      const params = new URLSearchParams();
+      if (options.status) params.set("status", options.status);
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await fetch(`${base}/v1/generation-runs${query ? `?${query}` : ""}`);
+      return readJsonResponse(response, "Generation run history unavailable");
+    },
+
+    async getGenerationRun(runId) {
+      const response = await fetch(`${base}/v1/generation-runs/${encodeURIComponent(String(runId))}`);
+      return readJsonResponse(response, "Generation run unavailable");
+    },
+
+    async resumeGenerationRun(runId) {
+      const response = await fetch(`${base}/v1/generation-runs/${encodeURIComponent(String(runId))}/resume`, {
+        method: "POST",
+      });
+      return readJsonResponse(response, "Failed to resume generation run");
+    },
+
+    async resumeCourseSourceGaps(courseId, payload) {
+      const response = await fetch(`${base}/v1/courses/${encodeURIComponent(String(courseId))}/source-gaps/resume`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      return readJsonResponse(response, "Failed to resume course source gaps");
+    },
+
     async getCourseQualityReport(courseId) {
       const response = await fetch(`${base}/v1/courses/${encodeURIComponent(String(courseId))}/quality-report`);
       return readJsonResponse(response, "Course quality report unavailable");
@@ -198,6 +228,23 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
     async loadAgentProviders() {
       const response = await fetch(`${base}/v1/local/ai/providers`);
       return readJsonResponse(response, "AI providers unavailable");
+    },
+
+    async loadLocalStorageStatus() {
+      const response = await fetch(`${base}/v1/local/storage`);
+      return readJsonResponse(response, "Local storage status unavailable");
+    },
+
+    async exportLocalData(includeSecrets = false) {
+      const params = new URLSearchParams({ include_secrets: String(includeSecrets) });
+      const response = await fetch(`${base}/v1/local/export?${params.toString()}`);
+      return readJsonResponse(response, "Local data export unavailable");
+    },
+
+    async createLocalBackup(includeSecrets = false) {
+      const params = new URLSearchParams({ include_secrets: String(includeSecrets) });
+      const response = await fetch(`${base}/v1/local/backups?${params.toString()}`, { method: "POST" });
+      return readJsonResponse(response, "Local backup failed");
     },
 
     async loadSettings() {

@@ -85,6 +85,13 @@ class GenerateCourseRequest(BaseModel):
     source_packet: dict[str, Any] | None = None
 
 
+class CourseSourceGapResumeRequest(BaseModel):
+    source_urls: list[HttpUrl] = Field(default_factory=list)
+    model: str | None = None
+    source_packet_id: int | str | None = None
+    source_packet: dict[str, Any] | None = None
+
+
 class GenerateCourseFromOutlineRequest(BaseModel):
     learner_id: int | None = None
     source_policy: Literal["balanced", "high-trust", "free-only"] = "balanced"

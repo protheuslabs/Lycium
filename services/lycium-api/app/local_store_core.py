@@ -11,14 +11,17 @@ from uuid import uuid4
 from app.config import SETTINGS
 from app.security import PRIVATE_DIR_MODE, PRIVATE_FILE_MODE, chmod_private, permission_mode, permissions_are_private
 
-LOCAL_DATA_SUBDIRS = ("courses", "completion", "links", "secrets", "user")
-LOCAL_DATA_SCHEMA_VERSION = 2
+LOCAL_DATA_SUBDIRS = ("courses", "completion", "generation-runs", "links", "secrets", "user", "backups")
+LOCAL_DATA_SCHEMA_VERSION = 3
+LOCAL_DATA_EXPORT_FORMAT = "lycium-local-data-export-v1"
 LOCAL_DATA_DIRECTORIES = {
     "courses": "Generated course snapshots and exports.",
     "completion": "Learner completion and progress mirrors.",
+    "generation-runs": "Durable local mirrors of generation run timelines and results.",
     "links": "User-added or fetched source/link metadata.",
     "secrets": "Local secrets such as agent provider credentials.",
     "user": "Local learner and user preference data.",
+    "backups": "Local JSON backups created before risky operations or user-requested exports.",
 }
 LOCAL_DATA_MIGRATIONS = (
     {
@@ -30,6 +33,11 @@ LOCAL_DATA_MIGRATIONS = (
         "id": "002_agent_key_profiles",
         "version": 2,
         "description": "Normalize AI credentials into provider/model profile records.",
+    },
+    {
+        "id": "003_local_backups_directory",
+        "version": 3,
+        "description": "Add dedicated local generation-run and backup directories with export format metadata.",
     },
 )
 
@@ -77,6 +85,15 @@ def _write_json(path: Path, payload: Any) -> None:
     chmod_private(tmp_path, PRIVATE_FILE_MODE)
     tmp_path.replace(path)
     chmod_private(path, PRIVATE_FILE_MODE)
+
+
+def _read_json_strict(path: Path) -> tuple[Any | None, str | None]:
+    try:
+        return json.loads(path.read_text(encoding="utf-8")), None
+    except json.JSONDecodeError as exc:
+        return None, f"{path}: invalid JSON at line {exc.lineno}, column {exc.colno}"
+    except OSError as exc:
+        return None, f"{path}: {exc}"
 
 
 def _normalize_model_records(models: Any, selected_model: str | None = None) -> list[dict[str, str]]:
@@ -216,6 +233,11 @@ def _apply_local_data_migration(root: Path, manifest: dict[str, Any], migration:
             normalized = _normalize_agent_secret_payload(secret)
             if normalized != secret:
                 _write_json(secret_path, normalized)
+    elif migration["id"] == "003_local_backups_directory":
+        (root / "backups").mkdir(parents=True, exist_ok=True)
+        chmod_private(root / "backups", PRIVATE_DIR_MODE)
+        (root / "generation-runs").mkdir(parents=True, exist_ok=True)
+        chmod_private(root / "generation-runs", PRIVATE_DIR_MODE)
     manifest["schema_version"] = max(int(manifest.get("schema_version") or 0), int(migration["version"]))
 
 
@@ -269,6 +291,94 @@ def local_data_migration_status(root: Path | None = None) -> dict[str, Any]:
         "pending_migrations": pending,
         "migrations": manifest.get("migrations", []),
         "updated_at": manifest.get("updated_at"),
+    }
+
+
+def _exportable_json_files(root: Path, *, include_secrets: bool) -> list[Path]:
+    files: list[Path] = []
+    for subdir in LOCAL_DATA_SUBDIRS:
+        if subdir == "backups" or (subdir == "secrets" and not include_secrets):
+            continue
+        path = root / subdir
+        if not path.exists():
+            continue
+        files.extend(sorted(file for file in path.rglob("*.json") if file.is_file()))
+    manifest_path = root / "manifest.json"
+    if manifest_path.exists():
+        files.insert(0, manifest_path)
+    return files
+
+
+def _directory_status(root: Path, subdir: str) -> dict[str, Any]:
+    path = root / subdir
+    files = [file for file in path.rglob("*.json") if file.is_file()] if path.exists() else []
+    return {
+        "name": subdir,
+        "path": str(path),
+        "exists": path.exists(),
+        "file_count": len(files),
+        "byte_count": sum(file.stat().st_size for file in files),
+        "description": LOCAL_DATA_DIRECTORIES.get(subdir),
+    }
+
+
+def local_data_storage_status(root: Path | None = None) -> dict[str, Any]:
+    local_root = ensure_local_data_dirs() if root is None else root
+    migration = local_data_migration_status(local_root)
+    errors: list[str] = []
+    for file in _exportable_json_files(local_root, include_secrets=True):
+        _, error = _read_json_strict(file)
+        if error:
+            errors.append(error)
+    backup_files = sorted((local_root / "backups").glob("*.json")) if (local_root / "backups").exists() else []
+    return {
+        **migration,
+        "directories": [_directory_status(local_root, subdir) for subdir in LOCAL_DATA_SUBDIRS],
+        "backup_count": len(backup_files),
+        "latest_backup_path": str(backup_files[-1]) if backup_files else None,
+        "json_error_count": len(errors),
+        "json_errors": errors[:20],
+    }
+
+
+def export_local_data(*, include_secrets: bool = False, root: Path | None = None) -> dict[str, Any]:
+    local_root = ensure_local_data_dirs() if root is None else root
+    errors: list[str] = []
+    files: list[dict[str, Any]] = []
+    for file in _exportable_json_files(local_root, include_secrets=include_secrets):
+        payload, error = _read_json_strict(file)
+        if error:
+            errors.append(error)
+            continue
+        files.append({"path": str(file.relative_to(local_root)), "payload": payload})
+    return {
+        "format": LOCAL_DATA_EXPORT_FORMAT,
+        "exported_at": _now(),
+        "local_data_dir": str(local_root),
+        "schema_version": LOCAL_DATA_SCHEMA_VERSION,
+        "include_secrets": include_secrets,
+        "file_count": len(files),
+        "files": files,
+        "errors": errors,
+    }
+
+
+def create_local_data_backup(*, include_secrets: bool = False, root: Path | None = None) -> dict[str, Any]:
+    local_root = ensure_local_data_dirs() if root is None else root
+    backup_dir = local_root / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    chmod_private(backup_dir, PRIVATE_DIR_MODE)
+    export = export_local_data(include_secrets=include_secrets, root=local_root)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    backup_path = backup_dir / f"lycium-local-data-backup-{timestamp}-{uuid4().hex[:8]}.json"
+    _write_json(backup_path, export)
+    return {
+        "path": str(backup_path),
+        "created_at": export["exported_at"],
+        "file_count": export["file_count"],
+        "byte_count": backup_path.stat().st_size,
+        "include_secrets": include_secrets,
+        "errors": export["errors"],
     }
 
 
