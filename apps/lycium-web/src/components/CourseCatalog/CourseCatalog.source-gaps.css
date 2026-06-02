@@ -1,0 +1,177 @@
+.course-source-gap-policy,
+.course-source-gap-overview {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.course-source-gap-policy h3,
+.course-source-gap-overview h3 {
+  margin: 0;
+  color: #253049;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.course-source-gap-policy div,
+.course-source-gap-overview article {
+  border-radius: 18px;
+  padding: 0.85rem;
+  background: #f8fafc;
+}
+
+.course-source-gap-policy div,
+.course-source-gap-overview article div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.course-source-gap-policy span,
+.course-source-gap-overview span {
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  color: #30405d;
+  background: #eef3ff;
+  font-size: 0.73rem;
+  font-weight: 850;
+}
+
+.course-source-gap-overview {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.course-source-gap-suggestions {
+  display: grid;
+  gap: 0.32rem;
+  border-radius: 14px;
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.course-source-gap-suggestions strong,
+.course-source-gap-selected strong {
+  color: #253049;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.course-source-gap-suggestions a {
+  min-width: 0;
+  overflow: hidden;
+  color: #4a6cf7;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-source-gap-suggestions a:hover,
+.course-source-gap-suggestions a:focus-visible {
+  outline: none;
+  text-decoration: underline;
+}
+
+.course-source-gap-selected {
+  display: grid;
+  gap: 0.18rem;
+  border-radius: 18px;
+  padding: 0.8rem;
+  background: #f8fafc;
+}
+
+.course-source-gap-selected span {
+  color: #253049;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.course-source-gap-selected p {
+  margin: 0;
+  color: #4f5d76;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 620px) {
+  .course-source-gap-overview {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .course-source-gap-policy h3,
+  .course-source-gap-overview h3,
+  .course-source-gap-suggestions strong,
+  .course-source-gap-selected strong,
+  .course-source-gap-selected span {
+    color: #f8fafc;
+  }
+
+  .course-source-gap-policy div,
+  .course-source-gap-overview article,
+  .course-source-gap-selected {
+    background: #262626;
+  }
+
+  .course-source-gap-policy span,
+  .course-source-gap-overview span {
+    color: #dbeafe;
+    background: #222734;
+  }
+
+  .course-source-gap-suggestions {
+    background: rgba(23, 23, 23, 0.72);
+  }
+
+  .course-source-gap-selected p {
+    color: #cbd5e1;
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-policy h3,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-overview h3,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-suggestions strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-selected strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-selected span {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-policy div,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-overview article,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-selected {
+  background: #262626;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-policy span,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-overview span {
+  color: #dbeafe;
+  background: #222734;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-suggestions {
+  background: rgba(23, 23, 23, 0.72);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-selected p {
+  color: #cbd5e1;
+}
+
+html[data-theme="light"] .course-source-gap-policy h3,
+html[data-theme="light"] .course-source-gap-overview h3,
+html[data-theme="light"] .course-source-gap-suggestions strong,
+html[data-theme="light"] .course-source-gap-selected strong,
+html[data-theme="light"] .course-source-gap-selected span {
+  color: #253049;
+}
+
+html[data-theme="light"] .course-source-gap-policy div,
+html[data-theme="light"] .course-source-gap-overview article,
+html[data-theme="light"] .course-source-gap-selected {
+  background: #eef2f7;
+}

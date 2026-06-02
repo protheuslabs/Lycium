@@ -5,17 +5,17 @@ This list tracks the work needed to make Lycium's local generation, storage, and
 ## Active priority
 
 1. Generation run records
-   - Status: in progress
+   - Status: done
    - Goal: every generation attempt has durable local evidence.
    - Deliverables: DB run record, local run mirror, run detail API, run history API, resume API.
 
 2. Source-gap resume flow
-   - Status: in progress
+   - Status: done
    - Goal: `needs_sources` drafts can accept new sources and resume generation without starting over.
    - Depends on: generation run records.
 
 3. Source-gap review UI
-   - Status: pending
+   - Status: done
    - Goal: users can see missing concepts, suggested source types, current coverage, and resume actions.
    - Depends on: source-gap resume flow.
 
@@ -57,7 +57,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: generated courses stay draft/reviewable until source, quality, quiz, citation, and filler checks pass.
 
 13. Generation observability UI
-    - Status: pending
+    - Status: partially done
     - Goal: local timeline with source decisions, gate results, quality report, errors, and resume action.
     - Depends on: generation run records.
 

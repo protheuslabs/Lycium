@@ -70,12 +70,21 @@ export function sourceGapSummary(course: CourseEntry) {
   const policy = course.data.metadata?.sourceCoveragePolicy ?? DEFAULT_SOURCE_COVERAGE_POLICY;
   const requiredSourceCount = policy.minimumCourseSources ?? DEFAULT_SOURCE_COVERAGE_POLICY.minimumCourseSources;
   const currentSourceCount = new Set(course.data.sourceIds ?? []).size;
+  const requiredConcepts = Array.from(
+    new Set(gaps.flatMap((gap) => gap.requiredConcepts ?? []).map((concept) => concept.trim()).filter(Boolean)),
+  );
+  const suggestedSourceTypes = Array.from(
+    new Set(gaps.flatMap((gap) => gap.recommendedSourceTypes ?? []).map((sourceType) => sourceType.trim()).filter(Boolean)),
+  );
 
   return {
     gaps,
     blockingGaps,
+    policy,
     requiredSourceCount,
     currentSourceCount,
+    requiredConcepts,
+    suggestedSourceTypes,
     suggestionCount: getCourseSourceGapSuggestions(course).length,
   };
 }
