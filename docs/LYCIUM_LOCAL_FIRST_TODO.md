@@ -45,7 +45,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
    - Goal: every required concept has primary/fallback sources, confidence, section mapping, and weak/missing status.
 
 10. Section citation enforcement
-    - Status: partially done
+    - Status: done
     - Goal: review/generation fails when section citations are not mapped to concepts in that section.
 
 11. Needs-sources draft behavior

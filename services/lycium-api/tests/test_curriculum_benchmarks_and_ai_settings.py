@@ -212,6 +212,7 @@ def test_curriculum_context_maps_required_concepts_to_course_sections() -> None:
                         "pageType": "learn",
                         "sectionType": "lesson",
                         "sourceIds": ["input-source-1"],
+                        "citations": [{"sourceId": "input-source-1"}],
                         "content": [
                             {
                                 "type": "conceptCards",
@@ -230,6 +231,14 @@ def test_curriculum_context_maps_required_concepts_to_course_sections() -> None:
     assert any("section-stoichiometry" in row["sectionIds"] for row in coverage)
     assert all(row["status"] in {"covered", "weak", "missing"} for row in coverage)
     assert attached["metadata"]["sourceSlots"][0]["coverageStatus"] in {"covered", "weak", "missing"}
+
+    source_gate = next(gate for gate in run_course_generation_workflow(attached).model_dump()["gates"] if gate["gate"] == "source_analysis")
+    assert not any("not mapped to concepts" in issue["message"] for issue in source_gate["issues"])
+
+    broken = json.loads(json.dumps(attached))
+    broken["modules"][0]["sections"][0]["citations"] = [{"sourceId": "unmapped-source"}]
+    broken_gate = next(gate for gate in run_course_generation_workflow(broken).model_dump()["gates"] if gate["gate"] == "source_analysis")
+    assert any("not mapped to concepts" in issue["message"] for issue in broken_gate["issues"])
 
 
 def test_source_index_snapshots_feed_curriculum_benchmark_extraction(client, monkeypatch) -> None:

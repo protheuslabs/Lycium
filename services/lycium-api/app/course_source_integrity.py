@@ -78,6 +78,10 @@ def _slot_tokens(slot: dict[str, Any], requirement_context: dict[str, dict[str, 
     token_set: set[str] = set()
     for value in values:
         token_set.update(_tokens(value))
+    section_ids = slot.get("sectionIds")
+    if isinstance(section_ids, list):
+        for section_id in section_ids:
+            token_set.update(_tokens(section_id))
     context = requirement_context.get(_slot_requirement_key(slot))
     if context:
         token_set.update(context["tokens"])
@@ -87,6 +91,10 @@ def _slot_tokens(slot: dict[str, Any], requirement_context: dict[str, dict[str, 
 def _source_slots(course: dict[str, Any]) -> list[dict[str, Any]]:
     metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
     return _items(metadata.get("sourceSlots"))
+
+
+def _concept_source_coverage(metadata: dict[str, Any]) -> list[dict[str, Any]]:
+    return _items(metadata.get("conceptSourceCoverageMap"))
 
 
 def _matching_slot_sources(slots: list[dict[str, Any]], requirement_context: dict[str, dict[str, set[str]]], *labels: Any) -> set[str]:
@@ -100,6 +108,56 @@ def _matching_slot_sources(slots: list[dict[str, Any]], requirement_context: dic
             continue
         if any(label_tokens.issubset(slot_tokens) or slot_tokens.issubset(label_tokens) for label_tokens in label_token_sets):
             matched.update(_slot_sources(slot, requirement_context))
+    return matched
+
+
+def _coverage_sources(row: dict[str, Any]) -> set[str]:
+    sources: set[str] = set()
+    primary = row.get("primarySourceId")
+    if isinstance(primary, str) and primary.strip():
+        sources.add(primary)
+    fallback = row.get("fallbackSourceIds")
+    if isinstance(fallback, list):
+        sources.update(source_id for source_id in fallback if isinstance(source_id, str) and source_id.strip())
+    evidence_refs = row.get("evidenceRefs")
+    if isinstance(evidence_refs, list):
+        sources.update(source_id for source_id in evidence_refs if isinstance(source_id, str) and source_id.strip())
+    sources.update(source_ids(row))
+    return sources
+
+
+def _coverage_tokens(row: dict[str, Any]) -> set[str]:
+    token_set: set[str] = set()
+    for key in ("conceptId", "requirementOriginId", "title", "name"):
+        token_set.update(_tokens(row.get(key)))
+    return token_set
+
+
+def _section_coverage_sources(
+    coverage_map: list[dict[str, Any]],
+    section: dict[str, Any],
+    concepts: list[dict[str, Any]],
+) -> set[str]:
+    section_id = section.get("id")
+    section_key = str(section_id).strip() if isinstance(section_id, str) else ""
+    label_values: list[Any] = [section.get("title"), section.get("id")]
+    for concept in concepts:
+        label_values.append(_concept_name(concept))
+        label_values.append(concept.get("sourceSectionId"))
+    label_token_sets = [tokens for tokens in (_tokens(value) for value in label_values) if tokens]
+
+    matched: set[str] = set()
+    for row in coverage_map:
+        row_sources = _coverage_sources(row)
+        if not row_sources:
+            continue
+        row_section_ids = row.get("sectionIds")
+        if section_key and isinstance(row_section_ids, list) and section_key in {str(value).strip() for value in row_section_ids}:
+            matched.update(row_sources)
+            continue
+        row_tokens = _coverage_tokens(row)
+        if row_tokens and any(label_tokens.issubset(row_tokens) or row_tokens.issubset(label_tokens) for label_tokens in label_token_sets):
+            matched.update(row_sources)
     return matched
 
 
@@ -158,6 +216,7 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
     slots = _source_slots(course)
     course_sources = set(source_ids(course)) or _source_record_ids(course)
     metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    coverage_map = _concept_source_coverage(metadata)
     requirement_context = _requirement_origin_context(metadata)
     raw_policy = metadata.get("sourceCoveragePolicy")
     policy = raw_policy if isinstance(raw_policy, dict) else {}
@@ -169,6 +228,7 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
     section_count = 0
     blanket_section_count = 0
     citation_issue_count = 0
+    unmapped_citation_count = 0
 
     for module_index, module in enumerate(modules(course), start=1):
         module_sources = set(source_ids(module))
@@ -185,14 +245,28 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
             direct_concept_sources = set().union(
                 *(_matching_slot_sources(slots, requirement_context, _concept_name(concept), concept.get("sourceSectionId")) for concept in concepts)
             ) if concepts else set()
-            allowed = label_sources | inherited_sources | direct_concept_sources
-            if not slots and not allowed:
+            coverage_sources = _section_coverage_sources(coverage_map, section, concepts)
+            allowed = label_sources | inherited_sources | direct_concept_sources | coverage_sources
+            if not slots and not coverage_map and not allowed:
                 allowed = set(source_ids(section)) or module_sources
             section_id = section.get("id")
             if isinstance(section_id, str):
                 section_allowed[section_id] = allowed
 
             used = _section_source_ids(section)
+            citation_ids = _citation_source_ids(section)
+            unmapped_citations: set[str] = set()
+            if citation_ids and (slots or coverage_map):
+                unmapped_citations = citation_ids - allowed
+                if unmapped_citations:
+                    citation_issue_count += len(unmapped_citations)
+                    unmapped_citation_count += len(unmapped_citations)
+                    issues.append({
+                        "severity": "error",
+                        "message": f"Section citations are not mapped to concepts in this section: {', '.join(sorted(unmapped_citations)[:6])}.",
+                        "location": location,
+                    })
+
             if course_sources and used == course_sources and len(course_sources) >= 4:
                 blanket_section_count += 1
                 issues.append({
@@ -201,7 +275,7 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
                     "location": location,
                 })
             if allowed:
-                extra = sorted(used - allowed)
+                extra = sorted((used - allowed) - unmapped_citations)
                 if extra:
                     citation_issue_count += len(extra)
                     issues.append({
@@ -209,7 +283,7 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
                         "message": f"Section references sources not mapped to its concepts: {', '.join(extra[:6])}.",
                         "location": location,
                     })
-            elif used and slots:
+            elif used and (slots or coverage_map) and not unmapped_citations:
                 citation_issue_count += len(used)
                 issues.append({
                     "severity": "error",
@@ -224,8 +298,9 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
                     | _matching_slot_sources(slots, requirement_context, _concept_name(concept), concept.get("sourceSectionId"))
                     | inherited_sources
                     | label_sources
+                    | coverage_sources
                 )
-                if not slots:
+                if not slots and not coverage_map:
                     concept_sources.update(source_ids(section))
                 if concept_sources:
                     covered_concept_count += 1
@@ -236,7 +311,7 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
                         "location": location,
                     })
 
-    if not slots and concept_count:
+    if not slots and not coverage_map and concept_count:
         issues.append({
             "severity": "warning",
             "message": "Course has concepts but no metadata.sourceSlots; concept-level source support cannot be fully verified.",
@@ -256,8 +331,10 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
             "coveredConceptCount": covered_concept_count,
             "conceptSourceCoveragePercent": coverage_percent,
             "sourceSlotCount": len(slots),
+            "conceptCoverageMapCount": len(coverage_map),
             "sectionCount": section_count,
             "blanketSourceSectionCount": blanket_section_count,
             "citationIssueCount": citation_issue_count,
+            "unmappedCitationCount": unmapped_citation_count,
         },
     }
