@@ -23,6 +23,17 @@
     "Debug and test programs using repeatable techniques.",
     "Read and write simple files while explaining program behavior."
   ],
+  "prerequisites": ["College algebra readiness"],
+  "assessmentTypes": ["quiz", "programming assignment", "project"],
+  "scheduleClues": [
+    {
+      "label": "Week 1",
+      "topics": ["variables", "expressions"],
+      "evidenceRefs": ["source-syllabus-cs101-c#L12"]
+    }
+  ],
+  "requiredCandidates": ["variables", "control flow", "functions"],
+  "optionalCandidates": ["file input and output"],
   "extractedRequirements": [
     {
       "id": "req-intro-programming-control-flow",

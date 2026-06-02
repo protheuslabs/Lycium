@@ -24,20 +24,32 @@ HEADING_ALIASES = {
     "topics": "topics",
     "course topics": "topics",
     "outline": "topics",
-    "schedule": "topics",
-    "weekly schedule": "topics",
-    "course schedule": "topics",
-    "calendar": "topics",
+    "required topics": "required",
+    "core topics": "required",
+    "required content": "required",
+    "optional topics": "optional",
+    "recommended topics": "optional",
+    "supplemental topics": "optional",
+    "schedule": "schedule",
+    "weekly schedule": "schedule",
+    "course schedule": "schedule",
+    "calendar": "schedule",
     "prerequisites": "prerequisites",
+    "prerequisite": "prerequisites",
+    "recommended preparation": "prerequisites",
     "required materials": "materials",
     "textbook": "materials",
     "assessment": "assessment",
+    "assessments": "assessment",
     "assignments": "assessment",
+    "evaluation": "assessment",
+    "grading": "assessment",
 }
 
 ITEM_PREFIX_RE = re.compile(r"^\s*(?:[-*•]+|\(?\d{1,2}[\).:-]|\(?[a-zA-Z][\).:-])\s*")
 COURSE_CODE_RE = re.compile(r"\b[A-Z]{2,6}\s*[- ]?\d{2,4}[A-Z]?\b")
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+")
+SCHEDULE_LABEL_RE = re.compile(r"^\s*((?:week|module|unit|lesson|class|day)\s*\d{1,2})\s*[:\-.)]\s*(.+)$", re.IGNORECASE)
 
 ACTION_VERBS = (
     "analyze",
@@ -61,6 +73,21 @@ ACTION_VERBS = (
     "understand",
     "use",
 )
+
+ASSESSMENT_KEYWORDS = (
+    ("quiz", ("quiz", "quizzes")),
+    ("exam", ("exam", "midterm", "final")),
+    ("lab", ("lab", "laboratory")),
+    ("homework", ("homework", "problem set")),
+    ("project", ("project", "capstone")),
+    ("paper", ("paper", "essay", "report")),
+    ("presentation", ("presentation", "present")),
+    ("discussion", ("discussion", "participation")),
+    ("assignment", ("assignment", "assignments")),
+)
+
+OPTIONAL_MARKERS = ("optional", "recommended", "supplemental", "additional", "enrichment", "extra credit")
+REQUIRED_MARKERS = ("required", "must", "core", "mandatory")
 
 
 def _slug(value: str) -> str:
@@ -194,6 +221,24 @@ def _candidate_items(section_rows: list[tuple[int, str]], *, allow_sentences: bo
     return items
 
 
+def _plain_items(section_rows: list[tuple[int, str]], limit: int) -> list[tuple[int, str]]:
+    items: list[tuple[int, str]] = []
+    for line_no, line in section_rows:
+        for chunk in re.split(r";|\s{2,}", line):
+            cleaned = _clean_item(chunk)
+            cleaned = re.sub(
+                r"^(?:prerequisites?|required|optional|recommended preparation)\s*:\s*",
+                "",
+                cleaned,
+                flags=re.IGNORECASE,
+            )
+            if 3 <= len(cleaned) <= 180:
+                items.append((line_no, cleaned))
+        if len(items) >= limit:
+            break
+    return _dedupe_items(items, limit=limit)
+
+
 def _dedupe_items(items: list[tuple[int, str]], limit: int) -> list[tuple[int, str]]:
     seen: set[str] = set()
     deduped: list[tuple[int, str]] = []
@@ -225,6 +270,41 @@ def _learning_outcome(item: str, prompt: str) -> str:
     return f"Explain and apply {_requirement_title(item)} in the context of {prompt}."
 
 
+def _assessment_types(sections: dict[str, list[tuple[int, str]]]) -> list[str]:
+    text = " ".join(line.lower() for rows in (sections.get("assessment", []), sections.get("general", [])[:40]) for _, line in rows)
+    return [label for label, tokens in ASSESSMENT_KEYWORDS if any(token in text for token in tokens)]
+
+
+def _topics_from_text(value: str) -> list[str]:
+    cleaned = re.sub(r"^(?:topics?|includes?|covers?)\s*:\s*", "", value, flags=re.IGNORECASE)
+    topics = [_clean_item(part) for part in re.split(r",|;|\band\b", cleaned)]
+    return [topic for topic in topics if 3 <= len(topic) <= 80][:8]
+
+
+def _schedule_clues(rows: list[tuple[int, str]], evidence_ref: str) -> list[dict[str, Any]]:
+    clues: list[dict[str, Any]] = []
+    for line_no, line in rows:
+        match = SCHEDULE_LABEL_RE.match(line)
+        label = match.group(1).title() if match else f"Schedule item {len(clues) + 1}"
+        body = match.group(2) if match else line
+        topics = _topics_from_text(body)
+        if topics:
+            clues.append({"label": label, "topics": topics, "evidenceRefs": [f"{evidence_ref}#L{line_no}"]})
+        if len(clues) >= 16:
+            break
+    return clues
+
+
+def _item_importance(item: str, index: int, required_keys: set[str], optional_keys: set[str]) -> str:
+    lowered = item.lower()
+    key = _slug(item)[:80]
+    if key in optional_keys or any(marker in lowered for marker in OPTIONAL_MARKERS):
+        return "optional"
+    if key in required_keys or any(marker in lowered for marker in REQUIRED_MARKERS):
+        return "required"
+    return "required" if index <= 8 else "recommended"
+
+
 def _extract_title(rows: list[tuple[int, str]], html_title: str | None, prompt: str) -> str:
     if html_title and len(html_title) <= 180:
         return html_title
@@ -243,11 +323,15 @@ def _requirements_from_items(
     benchmark_id: str,
     evidence_ref: str,
     prompt: str,
+    required_keys: set[str] | None = None,
+    optional_keys: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     requirements: list[dict[str, Any]] = []
+    required_keys = required_keys or set()
+    optional_keys = optional_keys or set()
     for index, (line_no, item) in enumerate(items, start=1):
         title = _requirement_title(item)
-        importance = "required" if index <= 8 else "recommended"
+        importance = _item_importance(item, index, required_keys, optional_keys)
         requirements.append(
             {
                 "id": f"req-{_slug(title)}",
@@ -295,25 +379,47 @@ def extract_benchmark_from_text(
     topic_items = _dedupe_items(
         [
             *_candidate_items(sections.get("topics", []), allow_sentences=False),
+            *_candidate_items(sections.get("schedule", []), allow_sentences=False),
             *_candidate_items(sections.get("general", [])[:30], allow_sentences=True),
         ],
         limit=12,
     )
-    requirement_items = _dedupe_items([*outcome_items, *topic_items], limit=16)
+    required_items = _dedupe_items(_candidate_items(sections.get("required", []), allow_sentences=False), limit=12)
+    optional_items = _dedupe_items(_candidate_items(sections.get("optional", []), allow_sentences=False), limit=12)
+    prerequisite_items = _plain_items(sections.get("prerequisites", []), limit=8)
+    assessment_types = _assessment_types(sections)
+    evidence_ref = f"input-source-{index}"
+    schedule_clues = _schedule_clues(sections.get("schedule", []), evidence_ref)
+    requirement_items = _dedupe_items([*outcome_items, *required_items, *topic_items, *optional_items], limit=20)
     if len(requirement_items) < 2:
         return None
 
     title = _extract_title(rows, html_title, prompt)
     benchmark_id = f"benchmark-extracted-{index}-{_slug(title)[:48]}"
-    evidence_ref = f"input-source-{index}"
+    required_keys = {_slug(item)[:80] for _, item in required_items}
+    optional_keys = {_slug(item)[:80] for _, item in optional_items}
     requirements = _requirements_from_items(
         requirement_items,
         benchmark_id=benchmark_id,
         evidence_ref=evidence_ref,
         prompt=prompt,
+        required_keys=required_keys,
+        optional_keys=optional_keys,
     )
     topics = [requirement["topics"][0] for requirement in requirements[:10]]
-    confidence = 0.86 if len(requirements) >= 6 else 0.72
+    signal_count = sum(
+        bool(value)
+        for value in (
+            outcome_items,
+            topic_items,
+            prerequisite_items,
+            assessment_types,
+            schedule_clues,
+            required_items,
+            optional_items,
+        )
+    )
+    confidence = min(0.94, (0.66 if len(requirements) < 6 else 0.8) + signal_count * 0.025)
 
     return {
         "id": benchmark_id,
@@ -326,14 +432,28 @@ def extract_benchmark_from_text(
         "sourceRefs": [evidence_ref],
         "topics": topics,
         "learningOutcomes": [_learning_outcome(item, prompt) for _, item in requirement_items[:8]],
+        "prerequisites": [item for _, item in prerequisite_items],
+        "assessmentTypes": assessment_types,
+        "scheduleClues": schedule_clues,
+        "requiredCandidates": [item for _, item in required_items]
+        or [requirement["title"] for requirement in requirements if requirement["importance"] == "required"],
+        "optionalCandidates": [item for _, item in optional_items]
+        or [requirement["title"] for requirement in requirements if requirement["importance"] == "optional"],
         "extractedRequirements": requirements,
         "confidence": confidence,
         "extraction": {
             "status": "parsed",
-            "extractor": "curriculum-structure-v1",
+            "extractor": "curriculum-structure-v2",
             "contentType": content_type or "text/plain",
             "lineCount": len(rows),
             "requirementCount": len(requirements),
+            "outcomeCandidateCount": len(outcome_items),
+            "topicCandidateCount": len(topic_items),
+            "prerequisiteCount": len(prerequisite_items),
+            "assessmentTypeCount": len(assessment_types),
+            "scheduleClueCount": len(schedule_clues),
+            "requiredCandidateCount": len(required_items),
+            "optionalCandidateCount": len(optional_items),
         },
     }
 

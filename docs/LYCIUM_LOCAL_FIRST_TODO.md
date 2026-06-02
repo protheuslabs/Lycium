@@ -29,7 +29,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
    - Goal: Source Index can export, import, and validate packets without Lycium UI assumptions.
 
 6. Benchmark extraction upgrade
-   - Status: pending
+   - Status: done
    - Goal: extract outcomes, topics, prerequisites, assessment types, schedule clues, and required/optional candidates.
 
 7. Requirement origin scoring

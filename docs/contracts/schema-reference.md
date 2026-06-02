@@ -116,18 +116,24 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 
 | Property | Type | Required |
 | --- | --- | --- |
+| `assessmentTypes` | array | optional |
 | `catalogYear` | string | optional |
 | `confidence` | number | required |
 | `courseCode` | string | optional |
 | `department` | string | optional |
 | `extractedAt` | string | optional |
 | `extractedRequirements` | array | required |
+| `extraction` | object | optional |
 | `id` | string | required |
 | `institution` | string | optional |
 | `learningOutcomes` | array | required |
 | `notes` | string | optional |
+| `optionalCandidates` | array | optional |
+| `prerequisites` | array | optional |
 | `programName` | string | optional |
+| `requiredCandidates` | array | optional |
 | `reviewedBy` | string | optional |
+| `scheduleClues` | array | optional |
 | `sourceRefs` | array | optional |
 | `sourceType` | string | required |
 | `title` | string | required |

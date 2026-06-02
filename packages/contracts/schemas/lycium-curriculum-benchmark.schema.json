@@ -26,8 +26,14 @@
     },
     "topics": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
     "learningOutcomes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "prerequisites": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "assessmentTypes": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "scheduleClues": { "type": "array", "items": { "$ref": "#/$defs/scheduleClue" } },
+    "requiredCandidates": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "optionalCandidates": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
     "extractedAt": { "type": "string" },
+    "extraction": { "type": "object", "additionalProperties": true },
     "reviewedBy": { "type": "string" },
     "notes": { "type": "string" }
   },
@@ -55,6 +61,16 @@
         "benchmarkIds": { "type": "array", "items": { "type": "string" } },
         "frequency": { "type": "number", "minimum": 0, "maximum": 1 },
         "notes": { "type": "string" }
+      }
+    },
+    "scheduleClue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "topics", "evidenceRefs"],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "topics": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "evidenceRefs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
       }
     },
     "benchmarkRequirement": {

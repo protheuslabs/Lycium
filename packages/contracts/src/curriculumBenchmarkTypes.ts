@@ -58,6 +58,12 @@ export type LyciumBenchmarkRequirement = {
   origin?: LyciumRequirementOrigin;
 };
 
+export type LyciumScheduleClue = {
+  label: string;
+  topics: string[];
+  evidenceRefs: string[];
+};
+
 export type LyciumCurriculumBenchmark = {
   id: string;
   sourceType: LyciumCurriculumBenchmarkSourceType;
@@ -72,8 +78,14 @@ export type LyciumCurriculumBenchmark = {
   extractedRequirements: LyciumBenchmarkRequirement[];
   topics: string[];
   learningOutcomes: string[];
+  prerequisites?: string[];
+  assessmentTypes?: string[];
+  scheduleClues?: LyciumScheduleClue[];
+  requiredCandidates?: string[];
+  optionalCandidates?: string[];
   confidence: number;
   extractedAt?: string;
+  extraction?: Record<string, unknown>;
   reviewedBy?: string;
   notes?: string;
 };

@@ -103,6 +103,12 @@ def test_curriculum_context_extracts_real_syllabus_structure() -> None:
     Week 2: Atoms, isotopes, and periodic trends
     Week 3: Chemical formulas, reactions, and stoichiometry
     Week 4: Chemical bonding and molecular geometry
+    Prerequisites
+    High school algebra and prior chemistry are recommended.
+    Assessment
+    Students complete quizzes, labs, exams, and a final project.
+    Optional Topics
+    Nuclear chemistry applications
     """
     context = compile_curriculum_benchmark_context(
         prompt="CHEM 105 General Chemistry I",
@@ -120,8 +126,13 @@ def test_curriculum_context_extracts_real_syllabus_structure() -> None:
     benchmark = context["curriculumBenchmarks"][0]
 
     assert benchmark["extraction"]["status"] == "parsed"
+    assert benchmark["extraction"]["extractor"] == "curriculum-structure-v2"
     assert benchmark["sourceType"] == "university_catalog"
     assert len(benchmark["extractedRequirements"]) >= 4
+    assert "High school algebra and prior chemistry are recommended" in benchmark["prerequisites"]
+    assert {"quiz", "lab", "exam", "project"}.issubset(set(benchmark["assessmentTypes"]))
+    assert benchmark["scheduleClues"]
+    assert benchmark["optionalCandidates"]
     assert any("Stoichiometry" in topic for topic in context["courseParityProfile"]["commonRequiredTopics"])
     assert context["sourceSlots"]
 
