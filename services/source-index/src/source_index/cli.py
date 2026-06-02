@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from source_index.db import init_db, session_scope
-from source_index.packet_service import create_source_packet, import_source_batch
+from source_index.packet_service import create_source_packet, import_source_batch, import_source_packet
 
 
 def _read_json(path: str) -> dict[str, Any]:
@@ -71,9 +71,33 @@ def build_packet_cli(argv: list[str] | None = None) -> None:
     _write_json(packet, args.output)
 
 
+def import_packet_cli(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Import or validate a source-packet-v1 JSON file.")
+    parser.add_argument("packet", help="Path to a source-packet-v1 JSON file.")
+    parser.add_argument("--dry-run", action="store_true", help="Validate without writing sources or snapshots.")
+    parser.add_argument("--no-snapshots", action="store_true", help="Import source rows without snapshot text.")
+    parser.add_argument("--output", help="Optional path for the import report JSON.")
+    args = parser.parse_args(argv)
+
+    payload = _read_json(args.packet)
+    init_db()
+    with session_scope() as session:
+        report = import_source_packet(
+            session,
+            packet=payload,
+            import_snapshots=not args.no_snapshots,
+            dry_run=args.dry_run,
+        )
+    _write_json(report, args.output)
+    if not report.get("valid"):
+        raise SystemExit(1)
+
+
 if __name__ == "__main__":
     command = Path(sys.argv[0]).name
-    if "packet" in command:
+    if "import-packet" in command:
+        import_packet_cli()
+    elif "packet" in command:
         build_packet_cli()
     else:
         import_batch_cli()

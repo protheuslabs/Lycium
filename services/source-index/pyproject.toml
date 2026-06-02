@@ -19,6 +19,7 @@ dependencies = [
 [project.scripts]
 source-index-api = "source_index.main:run"
 source-index-import-batch = "source_index.cli:import_batch_cli"
+source-index-import-packet = "source_index.cli:import_packet_cli"
 source-index-build-packet = "source_index.cli:build_packet_cli"
 source-index-openapi = "source_index.openapi:export_cli"
 source-index-crawl-task = "source_index.crawl.worker:run_cli"

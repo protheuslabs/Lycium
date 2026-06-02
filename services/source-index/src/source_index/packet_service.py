@@ -23,6 +23,7 @@ from source_index.service import (
 
 SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
 SOURCE_IMPORT_BATCH_CONTRACT_VERSION = "source-import-batch-v1"
+SOURCE_PACKET_IMPORT_REPORT_VERSION = "source-packet-import-report-v1"
 SOURCE_PACKET_SCHEMA_ID = "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json"
 
 def import_source_batch(
@@ -140,6 +141,121 @@ def _source_packet_producer(service_name: str) -> dict[str, str]:
         "service": service_name,
         "version": SOURCE_PACKET_CONTRACT_VERSION,
         "schema_id": SOURCE_PACKET_SCHEMA_ID,
+    }
+
+
+def validate_source_packet(packet: dict[str, Any]) -> dict[str, Any]:
+    errors: list[str] = []
+    warnings: list[str] = []
+    if packet.get("contract_version") != SOURCE_PACKET_CONTRACT_VERSION:
+        errors.append("Packet contract_version must be source-packet-v1.")
+    packet_id = str(packet.get("packet_id") or "").strip()
+    if not packet_id:
+        errors.append("Packet packet_id is required.")
+    producer = packet.get("producer")
+    if not isinstance(producer, dict) or not str(producer.get("service") or "").strip():
+        errors.append("Packet producer.service is required.")
+    if not str(packet.get("consumer") or "").strip():
+        errors.append("Packet consumer is required.")
+    if not str(packet.get("context_id") or "").strip():
+        errors.append("Packet context_id is required.")
+    if not str(packet.get("prompt") or "").strip():
+        warnings.append("Packet prompt is empty; downstream relevance checks may be weak.")
+    sources = packet.get("sources")
+    documents = packet.get("source_documents")
+    if not isinstance(sources, list):
+        errors.append("Packet sources must be an array.")
+        sources = []
+    if not isinstance(documents, list):
+        errors.append("Packet source_documents must be an array.")
+        documents = []
+    for index, item in enumerate(sources, start=1):
+        if not isinstance(item, dict):
+            errors.append(f"Packet source {index} must be an object.")
+            continue
+        source = item.get("source")
+        if not isinstance(source, dict) or not str(source.get("canonical_url") or "").strip():
+            errors.append(f"Packet source {index} is missing source.canonical_url.")
+        if not isinstance(item.get("decision"), dict):
+            errors.append(f"Packet source {index} is missing a decision object.")
+        if not isinstance(item.get("evidence_refs"), list):
+            errors.append(f"Packet source {index} is missing evidence_refs.")
+    return {
+        "valid": not errors,
+        "packet_id": packet_id,
+        "source_count": len(sources),
+        "source_document_count": len(documents),
+        "errors": errors,
+        "warnings": warnings,
+    }
+
+
+def import_source_packet(
+    session: Session,
+    *,
+    packet: dict[str, Any],
+    import_snapshots: bool = True,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    validation = validate_source_packet(packet)
+    imported_sources = 0
+    imported_snapshots = 0
+    source_refs: list[dict[str, Any]] = []
+    warnings = list(validation["warnings"])
+
+    if validation["valid"] and not dry_run:
+        for item in packet.get("sources", []):
+            source_data = item.get("source") if isinstance(item, dict) else None
+            if not isinstance(source_data, dict):
+                continue
+            source = upsert_source(
+                session,
+                url=str(source_data.get("canonical_url") or ""),
+                title=source_data.get("title"),
+                source_type=source_data.get("source_type"),
+                license=str(source_data.get("license") or "unknown"),
+                is_free=bool(source_data.get("is_free", True)),
+            )
+            imported_sources += 1
+            snapshot_refs: list[dict[str, Any]] = []
+            if import_snapshots:
+                for snapshot_data in item.get("snapshots", []):
+                    if not isinstance(snapshot_data, dict):
+                        continue
+                    raw_text = str(snapshot_data.get("extracted_text") or "").strip()
+                    if not raw_text:
+                        warnings.append(f"Source {source.canonical_url} has a snapshot without extracted_text.")
+                        continue
+                    snapshot = create_source_snapshot(
+                        session,
+                        source_id=source.id,
+                        fetch=False,
+                        raw_text=raw_text,
+                        content_type=snapshot_data.get("content_type") or "text/plain",
+                        title=snapshot_data.get("title") or source.title,
+                        raw_storage_ref=snapshot_data.get("raw_storage_ref"),
+                        snapshot_metadata={
+                            **(snapshot_data.get("snapshot_metadata") if isinstance(snapshot_data.get("snapshot_metadata"), dict) else {}),
+                            "imported_from_packet_id": validation["packet_id"],
+                        },
+                    )
+                    imported_snapshots += 1
+                    snapshot_refs.append(snapshot_payload(snapshot))
+            source_refs.append({"source": source_payload(source), "snapshots": snapshot_refs})
+
+    return {
+        "contract_version": SOURCE_PACKET_IMPORT_REPORT_VERSION,
+        "packet_id": validation["packet_id"],
+        "valid": validation["valid"],
+        "dry_run": dry_run,
+        "import_snapshots": import_snapshots,
+        "source_count": validation["source_count"],
+        "source_document_count": validation["source_document_count"],
+        "imported_source_count": imported_sources,
+        "imported_snapshot_count": imported_snapshots,
+        "source_refs": source_refs,
+        "errors": validation["errors"],
+        "warnings": warnings,
     }
 
 

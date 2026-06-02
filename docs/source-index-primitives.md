@@ -81,7 +81,25 @@ source-index-build-packet \
   --no-fetch \
   --output /tmp/source-packet.json
 
+source-index-import-packet /tmp/source-packet.json \
+  --dry-run \
+  --output /tmp/source-packet-import-report.json
+
 source-index-openapi --output /tmp/source-index-openapi.json
 ```
 
 These commands intentionally speak stable JSON contracts instead of Lycium UI concepts. That keeps the index detachable for InfRing and future Protheus systems.
+
+## Packet import report
+
+`POST /v1/index/source-packet-imports` and `source-index-import-packet` both return `source-packet-import-report-v1`.
+
+The report records:
+
+- whether the packet envelope is valid,
+- source and document counts,
+- imported source and snapshot counts,
+- source refs created or matched during import,
+- validation errors and warnings.
+
+Use `dry_run: true` or `--dry-run` to validate a packet before mutating a Source Index database.

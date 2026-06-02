@@ -19,11 +19,13 @@ from source_index.schemas import (
     SourceCorpusRunCreate,
     SourceCorpusRunRead,
     SourcePacketCreate,
+    SourcePacketImportCreate,
+    SourcePacketImportRead,
     SourcePacketRead,
     SourceSnapshotCreate,
     SourceSnapshotRead,
 )
-from source_index.packet_service import create_source_packet, import_source_batch, source_packet_payload
+from source_index.packet_service import create_source_packet, import_source_batch, import_source_packet, source_packet_payload
 from source_index.service import (
     corpus_run_payload,
     create_corpus_run,
@@ -232,6 +234,18 @@ def register(app: FastAPI) -> None:
         )
         session.commit()
         return packet
+
+    @app.post("/v1/index/source-packet-imports", response_model=SourcePacketImportRead, status_code=status.HTTP_201_CREATED)
+    def import_index_source_packet(payload: SourcePacketImportCreate, session: Session = Depends(get_session)) -> dict:
+        report = import_source_packet(
+            session,
+            packet=payload.packet,
+            import_snapshots=payload.import_snapshots,
+            dry_run=payload.dry_run,
+        )
+        if report["valid"] and not payload.dry_run:
+            session.commit()
+        return report
 
     @app.get("/v1/index/source-packets/{run_id}", response_model=SourcePacketRead)
     def read_index_source_packet(run_id: int, session: Session = Depends(get_session)) -> dict:

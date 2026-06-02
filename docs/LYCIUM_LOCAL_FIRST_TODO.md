@@ -25,7 +25,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
    - Depends on: source index packet export/import.
 
 5. Source packet export/import
-   - Status: pending
+   - Status: done
    - Goal: Source Index can export, import, and validate packets without Lycium UI assumptions.
 
 6. Benchmark extraction upgrade

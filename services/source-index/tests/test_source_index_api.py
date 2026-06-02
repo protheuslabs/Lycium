@@ -122,6 +122,49 @@ def test_source_packet_builds_generation_ready_evidence_from_documents(client) -
     assert fetched.json()["source_documents"][0]["snapshotId"]
 
 
+def test_source_packet_import_validates_and_imports_packet_contract(client) -> None:
+    packet_response = client.post(
+        "/v1/index/source-packets",
+        json={
+            "consumer": "lycium-course-generation",
+            "context_id": "packet-import-chem105",
+            "prompt": "CHEM 105 chemistry stoichiometry bonding acids bases",
+            "fetch_sources": False,
+            "source_urls": ["https://chem.example.edu/chemistry/stoichiometry"],
+            "source_documents": [
+                {
+                    "url": "https://chem.example.edu/chemistry/stoichiometry",
+                    "contentType": "text/plain",
+                    "text": "Stoichiometry, atomic structure, bonding, acids, bases, and thermochemistry.",
+                }
+            ],
+        },
+    )
+    assert packet_response.status_code == 201, packet_response.text
+    packet = packet_response.json()
+
+    dry_run = client.post("/v1/index/source-packet-imports", json={"packet": packet, "dry_run": True})
+    assert dry_run.status_code == 201, dry_run.text
+    assert dry_run.json()["valid"] is True
+    assert dry_run.json()["imported_source_count"] == 0
+
+    imported = client.post("/v1/index/source-packet-imports", json={"packet": packet})
+    assert imported.status_code == 201, imported.text
+    report = imported.json()
+
+    assert report["contract_version"] == "source-packet-import-report-v1"
+    assert report["packet_id"] == packet["packet_id"]
+    assert report["valid"] is True
+    assert report["imported_source_count"] == 1
+    assert report["imported_snapshot_count"] == 1
+    assert report["errors"] == []
+
+    invalid = client.post("/v1/index/source-packet-imports", json={"packet": {"contract_version": "bad"}})
+    assert invalid.status_code == 201, invalid.text
+    assert invalid.json()["valid"] is False
+    assert invalid.json()["errors"]
+
+
 def test_bulk_source_import_feeds_generation_packet_eval(client) -> None:
     import_response = client.post(
         "/v1/index/source-imports",
@@ -462,3 +505,4 @@ def test_source_index_cli_import_packet_and_openapi_exports(tmp_path: Path) -> N
     assert packet["corpus_run"]["excluded_source_count"] == 1
     assert openapi["info"]["title"] == "Protheus Source Index API"
     assert "/v1/index/source-packets" in openapi["paths"]
+    assert "/v1/index/source-packet-imports" in openapi["paths"]

@@ -217,3 +217,24 @@ class SourcePacketRead(BaseModel):
     synthesis: dict[str, Any]
     warnings: list[str]
     quality: SourcePacketQualityRead
+
+
+class SourcePacketImportCreate(BaseModel):
+    packet: dict[str, Any]
+    import_snapshots: bool = True
+    dry_run: bool = False
+
+
+class SourcePacketImportRead(BaseModel):
+    contract_version: str
+    packet_id: str
+    valid: bool
+    dry_run: bool
+    import_snapshots: bool
+    source_count: int
+    source_document_count: int
+    imported_source_count: int
+    imported_snapshot_count: int
+    source_refs: list[dict[str, Any]]
+    errors: list[str]
+    warnings: list[str]

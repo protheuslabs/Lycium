@@ -103,8 +103,6 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 | `tags` | array | optional |
 | `title` | string | required |
 
-Nested section records may include optional `citations`. Citation source IDs must be scoped to sources that support concepts taught or assessed in that section, not blanket copies of the course source inventory.
-
 ## LyciumCurriculumBenchmark
 
 - Schema file: `packages/contracts/schemas/lycium-curriculum-benchmark.schema.json`
@@ -278,8 +276,8 @@ Nested section records may include optional `citations`. Citation source IDs mus
 | `corpus_run` | #/$defs/corpusRun | required |
 | `generated_at` | string | required |
 | `packet_id` | string | required |
-| `prompt` | string | required |
 | `producer` | #/$defs/packetProducer | required |
+| `prompt` | string | required |
 | `quality` | #/$defs/packetQuality | required |
 | `source_documents` | array | required |
 | `source_urls` | array | required |
