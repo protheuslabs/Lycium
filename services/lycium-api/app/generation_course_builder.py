@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.course_quiz_blocks import normalize_quiz_block
 from app.course_source_gaps import create_needs_sources_course_snapshot, source_count_meets_minimum
 from app.course_quality import assess_course_quality
-from app.course_section_generation import _build_section_content, _source_ids_from_citations, _source_records_from_citations, _source_records_from_input_urls, _with_source_ids
+from app.course_section_generation import _build_section_content, _source_ids_from_citations, _source_records_from_citations, _source_records_from_input_urls, _source_slot_for_section, _with_source_ids
 from app.generation_helpers import COURSE_GENERATION_RULES, _build_module_summary_section, _build_quiz_for_section, _catalog_metadata_from_prompt, _ensure_minimum_outline_modules, _stable_id
 from app.generation_outline import create_draft
 from app.models import CourseDraft, CourseSnapshot
@@ -27,6 +27,7 @@ def generate_course_from_draft(
     modules: list[dict[str, Any]] = []
     section_source_map: dict[str, list[int]] = {}
     citation_map: dict[str, list[dict[str, Any]]] = {}
+    source_slots: list[dict[str, Any]] = []
 
     for module in _ensure_minimum_outline_modules(outline.get("modules", [])):
         section_rows: list[dict[str, Any]] = []
@@ -41,6 +42,9 @@ def generate_course_from_draft(
             )
             section_id = section["id"]
             source_ids = _source_ids_from_citations(citations)
+            source_slot = _source_slot_for_section(section_id, section["title"], source_ids)
+            if source_slot:
+                source_slots.append(source_slot)
             concept_card_block = {
                 "type": "conceptCards",
                 "title": "Concepts introduced",
@@ -142,6 +146,16 @@ def generate_course_from_draft(
                 "candidateRanking": "intent-aware",
                 "sourceSelection": "source-diversified",
                 "levelFallback": "strict-then-unscoped",
+            },
+            "sourceSlots": source_slots,
+            "sourceCoverageTrace": {
+                "sourceSlotCount": len(source_slots),
+                "sectionSourceMap": {
+                    section_id: _source_ids_from_citations(citations)
+                    for section_id, citations in citation_map.items()
+                    if _source_ids_from_citations(citations)
+                },
+                "knowledgeObjectMap": section_source_map,
             },
             "pacingLabel": "Module",
             "targetAudience": draft.target_audience,

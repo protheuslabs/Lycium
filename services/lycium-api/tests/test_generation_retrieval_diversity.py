@@ -97,3 +97,10 @@ def test_course_generation_prefers_prompt_specific_sources(client, monkeypatch) 
     assert outbreak_course["structure"]["department"] == "epidemiology"
     assert surveillance_course["structure"]["department"] == "epidemiology"
     assert outbreak_titles != surveillance_titles
+
+    for generated_course in (outbreak_course, surveillance_course):
+        metadata = generated_course["structure"]["metadata"]
+        assert metadata["sourceSlots"]
+        assert metadata["sourceCoverageTrace"]["sourceSlotCount"] == len(metadata["sourceSlots"])
+        assert metadata["sourceCoverageTrace"]["sectionSourceMap"]
+        assert all(slot["primarySourceId"] in generated_course["structure"]["sourceIds"] for slot in metadata["sourceSlots"])

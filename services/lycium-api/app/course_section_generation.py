@@ -75,6 +75,19 @@ def _with_source_ids(blocks: list[dict[str, Any]], source_ids: list[str]) -> lis
     ]
 
 
+def _source_slot_for_section(section_id: str, section_title: str, source_ids: list[str]) -> dict[str, Any] | None:
+    if not source_ids:
+        return None
+    return {
+        "requiredConceptId": section_id,
+        "title": section_title,
+        "primarySourceId": source_ids[0],
+        "fallbackSourceIds": source_ids[1:],
+        "replacementPolicy": "review_required",
+        "sourceSectionId": section_id,
+    }
+
+
 def _section_candidates(
     session: Session,
     *,
