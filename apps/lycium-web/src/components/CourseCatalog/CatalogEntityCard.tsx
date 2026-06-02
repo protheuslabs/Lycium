@@ -3,6 +3,7 @@ import CatalogActionCard from "./CatalogActionCard";
 
 type CatalogEntityCardProps = {
   className: string;
+  continuity?: ReactNode;
   description?: string;
   kicker: string;
   meta: string[];
@@ -13,6 +14,7 @@ type CatalogEntityCardProps = {
 
 export default function CatalogEntityCard({
   className,
+  continuity,
   description,
   kicker,
   meta,
@@ -32,6 +34,7 @@ export default function CatalogEntityCard({
           <span key={item}>{item}</span>
         ))}
       </div>
+      {continuity}
       {progress}
     </CatalogActionCard>
   );

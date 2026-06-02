@@ -3,8 +3,11 @@ import type { CourseEntry } from "../../courseTypes";
 import { estimateProgramTime, estimateRequirementGroupTime, type TimeEstimate } from "../../utils/curriculumTime";
 import {
   catalogPathProgress,
+  groupPathContinuity,
   groupCourseIds,
+  programPathContinuity,
   programCourseIds,
+  type CatalogPathContinuity,
   type CatalogPathProgress,
   type CatalogProgressCache,
 } from "./catalogProgramProgress";
@@ -16,6 +19,7 @@ export type CatalogVisibleProgram = {
   program: LyciumProgram;
   estimate: TimeEstimate;
   progress: CatalogPathProgress;
+  continuity: CatalogPathContinuity;
   searchScore: number;
 };
 
@@ -24,6 +28,7 @@ export type CatalogVisibleCluster = {
   courseIds: string[];
   estimate: TimeEstimate;
   progress: CatalogPathProgress;
+  continuity: CatalogPathContinuity;
   searchScore: number;
 };
 
@@ -194,6 +199,7 @@ export function getVisibleCatalogPrograms({
         program,
         estimate: estimateProgramTime(program, courses),
         progress,
+        continuity: programPathContinuity(program, courseMap, progressCache),
         searchScore: programSearchScore(program, query),
         pathCourses: pathCourses(courseIds, courseMap),
       };
@@ -239,6 +245,7 @@ export function getVisibleCatalogClusters({
         courseIds,
         estimate: estimateRequirementGroupTime(cluster, courseMap),
         progress: catalogPathProgress(courseIds, courseMap, progressCache),
+        continuity: groupPathContinuity(cluster, courseMap, progressCache),
         searchScore: clusterSearchScore(cluster, query),
         pathCourses: pathCourses(courseIds, courseMap),
       };

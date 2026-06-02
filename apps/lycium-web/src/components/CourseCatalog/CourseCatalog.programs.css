@@ -95,6 +95,36 @@
   white-space: nowrap;
 }
 
+.path-continuity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.path-continuity span,
+.path-continuity strong {
+  border-radius: 999px;
+  padding: 0.26rem 0.52rem;
+  color: #263448;
+  background: #f3f6fb;
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.path-continuity strong {
+  color: #13233b;
+  background: #dfe8ff;
+  font-weight: 950;
+}
+
+.path-continuity--gaps span:nth-last-child(n + 2) {
+  background: #fff2d9;
+  color: #6f4700;
+}
+
 .program-showcase-progress {
   grid-column: 1 / -1;
   align-self: end;
