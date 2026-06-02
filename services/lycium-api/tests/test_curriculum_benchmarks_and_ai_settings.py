@@ -9,6 +9,7 @@ import pytest
 from app.config import SETTINGS
 from app.course_agent_types import CourseAgentError
 from app.course_generation_workflow import run_course_generation_workflow
+from app.course_agent_assembly import _coerce_plan_modules
 from app.curriculum_artifacts import curriculum_artifacts_for_course, persist_curriculum_artifacts_for_snapshot
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 from app.program_validation import validate_program_contract
@@ -137,6 +138,36 @@ def test_curriculum_context_extracts_real_syllabus_structure() -> None:
     assert benchmark["optionalCandidates"]
     assert any("Stoichiometry" in topic for topic in context["courseParityProfile"]["commonRequiredTopics"])
     assert context["sourceSlots"]
+
+
+def test_course_module_outlines_are_built_from_requirement_origins() -> None:
+    context = compile_curriculum_benchmark_context(
+        prompt="CHEM 105 General Chemistry I",
+        source_urls=[],
+        source_documents=[
+            {
+                "url": "https://catalog.example.edu/courses/chem105",
+                "contentType": "text/plain",
+                "text": """
+                CHEM 105 General Chemistry I
+                Learning Outcomes
+                1. Calculate quantities in chemical reactions using stoichiometry.
+                2. Explain atomic structure and periodic trends.
+                3. Compare ionic and covalent bonding.
+                4. Solve thermochemistry problems.
+                """,
+            }
+        ],
+        category="natural-sciences-mathematics",
+        department="chemistry",
+    )
+    modules = _coerce_plan_modules({"modules": [{"title": "Model invented module"}]}, 3, benchmark_context=context)
+
+    assert modules
+    assert modules[0]["planningSource"] == "benchmark_requirements"
+    assert modules[0]["requirementOrigins"]
+    assert modules[0]["lessonTitles"]
+    assert "Model invented module" not in [module["title"] for module in modules]
 
 
 def test_source_index_snapshots_feed_curriculum_benchmark_extraction(client, monkeypatch) -> None:

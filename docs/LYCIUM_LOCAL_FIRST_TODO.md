@@ -37,7 +37,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
    - Goal: score requirements by benchmark frequency, source confidence, source type, and review status.
 
 8. Course generation from requirements
-   - Status: pending
+   - Status: done
    - Goal: modules and sections are built from extracted requirements instead of prompt/topic tokens alone.
 
 9. Concept-to-source coverage map

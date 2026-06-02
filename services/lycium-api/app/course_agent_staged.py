@@ -130,7 +130,16 @@ def generate_course_with_agent_staged(
     trace["plan"] = plan
     source_records = _input_source_records(effective_source_urls, title)
     source_ids = [str(record["id"]) for record in source_records]
-    module_outlines = _coerce_plan_modules(plan, desired_module_count)
+    module_outlines = _coerce_plan_modules(plan, desired_module_count, benchmark_context=benchmark_context)
+    trace["module_planning"] = {
+        "source": "benchmark_requirements"
+        if any(str(module.get("planningSource") or "") == "benchmark_requirements" for module in module_outlines)
+        else "model_plan",
+        "moduleCount": len(module_outlines),
+        "requirementOriginCount": len(benchmark_context.get("requirementOrigins", []))
+        if isinstance(benchmark_context.get("requirementOrigins"), list)
+        else 0,
+    }
     resume_modules = _resume_modules_from_course(resume_course, desired_module_count)
     completed_modules: dict[int, dict] = {index: module for index, module in enumerate(resume_modules, start=1)}
     if completed_modules:

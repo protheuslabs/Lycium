@@ -158,6 +158,122 @@ def _module_lesson_titles(module_outline: dict) -> list[str]:
     return titles[:6] or ["Core concepts", "Worked examples", "Practice and applications"]
 
 
+def _importance_rank(value: str) -> int:
+    return {
+        "required": 0,
+        "recommended": 1,
+        "remedial": 2,
+        "optional": 3,
+        "alternate": 4,
+        "enrichment": 5,
+    }.get(value, 6)
+
+
+def _requirement_title(requirement: dict[str, Any]) -> str:
+    title = str(requirement.get("title") or requirement.get("requirementId") or requirement.get("id") or "").strip()
+    return title or "Curriculum requirement"
+
+
+def _requirement_score(requirement: dict[str, Any]) -> float:
+    score = requirement.get("score")
+    if isinstance(score, int | float):
+        return float(score)
+    frequency = requirement.get("frequency")
+    if isinstance(frequency, int | float):
+        return float(frequency)
+    return 0.0
+
+
+def _requirements_from_benchmark_context(benchmark_context: dict | None) -> list[dict[str, Any]]:
+    if not isinstance(benchmark_context, dict):
+        return []
+    raw_origins = benchmark_context.get("requirementOrigins")
+    origins = [origin for origin in raw_origins if isinstance(origin, dict)] if isinstance(raw_origins, list) else []
+    if origins:
+        return sorted(
+            origins,
+            key=lambda origin: (
+                _importance_rank(str(origin.get("importance") or "")),
+                -_requirement_score(origin),
+                _requirement_title(origin),
+            ),
+        )
+
+    raw_benchmarks = benchmark_context.get("curriculumBenchmarks")
+    benchmarks = [benchmark for benchmark in raw_benchmarks if isinstance(benchmark, dict)] if isinstance(raw_benchmarks, list) else []
+    requirements: list[dict[str, Any]] = []
+    for benchmark in benchmarks:
+        benchmark_id = str(benchmark.get("id") or "")
+        raw_requirements = benchmark.get("extractedRequirements")
+        if not isinstance(raw_requirements, list):
+            continue
+        for requirement in raw_requirements:
+            if not isinstance(requirement, dict):
+                continue
+            requirements.append(
+                {
+                    "requirementId": str(requirement.get("id") or ""),
+                    "title": str(requirement.get("title") or ""),
+                    "importance": str(requirement.get("importance") or "recommended"),
+                    "evidenceRefs": requirement.get("origin", {}).get("evidenceRefs", [])
+                    if isinstance(requirement.get("origin"), dict)
+                    else [],
+                    "benchmarkIds": [benchmark_id] if benchmark_id else [],
+                    "score": _requirement_score(requirement),
+                }
+            )
+    return sorted(
+        requirements,
+        key=lambda requirement: (
+            _importance_rank(str(requirement.get("importance") or "")),
+            -_requirement_score(requirement),
+            _requirement_title(requirement),
+        ),
+    )
+
+
+def _chunk_requirements(requirements: list[dict[str, Any]], module_count: int) -> list[list[dict[str, Any]]]:
+    if not requirements:
+        return []
+    module_count = max(1, min(module_count, len(requirements)))
+    chunks: list[list[dict[str, Any]]] = [[] for _ in range(module_count)]
+    for index, requirement in enumerate(requirements):
+        chunks[index % module_count].append(requirement)
+    return [chunk for chunk in chunks if chunk]
+
+
+def _module_outlines_from_requirements(requirements: list[dict[str, Any]], desired_module_count: int) -> list[dict[str, Any]]:
+    modules: list[dict[str, Any]] = []
+    for index, group in enumerate(_chunk_requirements(requirements, desired_module_count), start=1):
+        titles = [_requirement_title(requirement) for requirement in group]
+        evidence_refs = list(
+            dict.fromkeys(
+                str(ref)
+                for requirement in group
+                for ref in requirement.get("evidenceRefs", [])
+                if str(ref).strip()
+            )
+        )
+        requirement_ids = [
+            str(requirement.get("requirementId") or requirement.get("id") or f"requirement-{index}-{item_index}")
+            for item_index, requirement in enumerate(group, start=1)
+        ]
+        modules.append(
+            {
+                "id": f"module-{index}",
+                "title": f"Module {index}: {titles[0]}",
+                "objective": "Teach and assess benchmark-derived requirements: " + "; ".join(titles),
+                "lessonTitles": titles[:6],
+                "requirementOriginIds": requirement_ids,
+                "requirementOrigins": group,
+                "evidenceRefs": evidence_refs,
+                "planningSource": "benchmark_requirements",
+                "sourceIds": evidence_refs,
+            }
+        )
+    return modules
+
+
 def _coerce_generated_section(
     raw_section: dict,
     *,
@@ -219,7 +335,14 @@ def _insert_media_block(sections: list[dict], media_block: dict[str, Any]) -> bo
     return True
 
 
-def _coerce_plan_modules(plan: dict, desired_module_count: int) -> list[dict]:
+def _coerce_plan_modules(plan: dict, desired_module_count: int, *, benchmark_context: dict | None = None) -> list[dict]:
+    requirement_modules = _module_outlines_from_requirements(
+        _requirements_from_benchmark_context(benchmark_context),
+        desired_module_count,
+    )
+    if requirement_modules:
+        return requirement_modules
+
     modules = plan.get("modules")
     if not isinstance(modules, list):
         modules = []
