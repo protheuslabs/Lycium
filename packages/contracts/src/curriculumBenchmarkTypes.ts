@@ -45,6 +45,10 @@ export type LyciumRequirementOrigin = {
   evidenceRefs: string[];
   benchmarkIds?: string[];
   frequency?: number;
+  score?: number;
+  sourceConfidence?: number;
+  sourceTypeWeight?: number;
+  reviewStatus?: "unreviewed" | "reviewed" | "mixed";
   notes?: string;
 };
 

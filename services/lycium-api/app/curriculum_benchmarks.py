@@ -29,6 +29,14 @@ STOPWORDS = {
     "with",
 }
 
+SOURCE_TYPE_WEIGHTS = {
+    "syllabus": 1.0,
+    "university_catalog": 0.94,
+    "certification_exam": 0.9,
+    "employer_profile": 0.84,
+    "expert_reference": 0.68,
+}
+
 
 def _slug(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
@@ -92,6 +100,48 @@ def _requirement(keyword: str, *, benchmark_id: str, evidence_ref: str, index: i
             "frequency": 1,
         },
     }
+
+
+def _clamped_score(value: float) -> float:
+    return round(max(0.0, min(1.0, value)), 2)
+
+
+def _benchmark_source_weight(benchmark: dict[str, Any]) -> float:
+    return SOURCE_TYPE_WEIGHTS.get(str(benchmark.get("sourceType") or "").strip(), 0.62)
+
+
+def _benchmark_confidence(benchmark: dict[str, Any]) -> float:
+    value = benchmark.get("confidence")
+    return float(value) if isinstance(value, int | float) else 0.5
+
+
+def _benchmark_review_weight(benchmark: dict[str, Any]) -> float:
+    return 1.0 if benchmark.get("reviewedBy") else 0.58
+
+
+def _review_status(review_weight: float, benchmark_count: int) -> str:
+    if benchmark_count <= 0:
+        return "unreviewed"
+    if review_weight >= 0.95:
+        return "reviewed"
+    if review_weight > 0.58:
+        return "mixed"
+    return "unreviewed"
+
+
+def _requirement_origin_score(
+    *,
+    frequency: float,
+    source_confidence: float,
+    source_type_weight: float,
+    review_weight: float,
+) -> float:
+    return _clamped_score(
+        frequency * 0.42
+        + source_confidence * 0.26
+        + source_type_weight * 0.22
+        + review_weight * 0.1
+    )
 
 
 def _benchmark_from_url(
@@ -162,14 +212,25 @@ def _aggregate_requirement_origins(benchmarks: list[dict[str, Any]]) -> list[dic
     total = max(len(benchmarks), 1)
     grouped: dict[str, dict[str, Any]] = {}
     counts: Counter[str] = Counter()
+    score_inputs: dict[str, dict[str, float]] = {}
 
     for benchmark in benchmarks:
         benchmark_id = str(benchmark.get("id") or "")
+        source_confidence = _benchmark_confidence(benchmark)
+        source_type_weight = _benchmark_source_weight(benchmark)
+        review_weight = _benchmark_review_weight(benchmark)
         for requirement in benchmark.get("extractedRequirements", []):
             if not isinstance(requirement, dict):
                 continue
             key = _slug(str(requirement.get("title") or requirement.get("id") or "requirement"))
             counts[key] += 1
+            metrics = score_inputs.setdefault(
+                key,
+                {"sourceConfidence": 0.0, "sourceTypeWeight": 0.0, "reviewWeight": 0.0},
+            )
+            metrics["sourceConfidence"] += source_confidence
+            metrics["sourceTypeWeight"] += source_type_weight
+            metrics["reviewWeight"] += review_weight
             row = grouped.setdefault(
                 key,
                 {
@@ -191,7 +252,21 @@ def _aggregate_requirement_origins(benchmarks: list[dict[str, Any]]) -> list[dic
     origins: list[dict[str, Any]] = []
     for key, row in grouped.items():
         frequency = round(counts[key] / total, 2)
+        matched_count = max(counts[key], 1)
+        metrics = score_inputs.get(key, {})
+        source_confidence = _clamped_score(float(metrics.get("sourceConfidence", 0.5)) / matched_count)
+        source_type_weight = _clamped_score(float(metrics.get("sourceTypeWeight", 0.62)) / matched_count)
+        review_weight = _clamped_score(float(metrics.get("reviewWeight", 0.58)) / matched_count)
         row["frequency"] = frequency
+        row["sourceConfidence"] = source_confidence
+        row["sourceTypeWeight"] = source_type_weight
+        row["reviewStatus"] = _review_status(review_weight, matched_count)
+        row["score"] = _requirement_origin_score(
+            frequency=frequency,
+            source_confidence=source_confidence,
+            source_type_weight=source_type_weight,
+            review_weight=review_weight,
+        )
         if frequency >= 0.67:
             row["importance"] = "required"
             row["originType"] = "common_academic_requirement"
@@ -238,6 +313,15 @@ def _source_corpus_requirement_origins(source_corpus_synthesis: dict[str, Any] |
                 "evidenceRefs": matched_source_ids[:8],
                 "benchmarkIds": ["source-corpus-preflight"],
                 "frequency": frequency,
+                "score": _requirement_origin_score(
+                    frequency=frequency,
+                    source_confidence=0.72,
+                    source_type_weight=0.62,
+                    review_weight=0.58,
+                ),
+                "sourceConfidence": 0.72,
+                "sourceTypeWeight": 0.62,
+                "reviewStatus": "unreviewed",
             }
         )
     return origins

@@ -56,6 +56,8 @@ def test_curriculum_context_derives_requirements_origins_and_source_slots() -> N
 
     assert context["curriculumBenchmarks"]
     assert context["requirementOrigins"]
+    assert all("score" in origin for origin in context["requirementOrigins"])
+    assert all("sourceConfidence" in origin for origin in context["requirementOrigins"])
     assert context["courseParityProfile"]["commonRequiredTopics"]
     assert context["sourceSlots"]
     assert "benchmark_intake" in context["workflowGates"]

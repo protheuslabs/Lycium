@@ -60,6 +60,10 @@
         "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
         "benchmarkIds": { "type": "array", "items": { "type": "string" } },
         "frequency": { "type": "number", "minimum": 0, "maximum": 1 },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sourceConfidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sourceTypeWeight": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reviewStatus": { "enum": ["unreviewed", "reviewed", "mixed"] },
         "notes": { "type": "string" }
       }
     },

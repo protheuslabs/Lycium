@@ -33,7 +33,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
    - Goal: extract outcomes, topics, prerequisites, assessment types, schedule clues, and required/optional candidates.
 
 7. Requirement origin scoring
-   - Status: pending
+   - Status: done
    - Goal: score requirements by benchmark frequency, source confidence, source type, and review status.
 
 8. Course generation from requirements
