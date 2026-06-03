@@ -9,6 +9,7 @@ import type {
 import type { CSSProperties } from "react";
 import Button from "../Button/Button";
 import type { CourseEntry } from "../../courseTypes";
+import RequirementDetailPanel from "./RequirementDetailPanel";
 import { getCourseProgress } from "../../utils/courseRouting";
 import {
   estimateProgramTime,
@@ -212,6 +213,16 @@ function RequirementRow({
           </span>
         ))}
       </div>
+
+      <RequirementDetailPanel
+        requirement={requirement}
+        evaluation={evaluation}
+        blockers={blockers}
+        dependencyEdges={dependencyEdges}
+        sourceMap={sourceMap}
+        benchmarkMap={benchmarkMap}
+        requirementTitleMap={requirementTitleMap}
+      />
 
       {requirement.type === "requirement_set" && (
         <div className="program-nested-requirements">

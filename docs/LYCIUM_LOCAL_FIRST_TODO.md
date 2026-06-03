@@ -87,7 +87,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: course completion satisfies requirements, requirements satisfy clusters, clusters satisfy programs.
 
 20. Requirement detail UI
-    - Status: partially done
+    - Status: done
     - Goal: requirement status, linked courses, source coverage, prerequisites, and assessment/project evidence are visible.
 
 21. Portfolio/capstone artifact records
