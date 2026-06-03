@@ -1,6 +1,6 @@
-# Lycium Source Index Service
+# Source Index Service
 
-The source index is the durable boundary for public learning-source data. Lycium can run it inside this monorepo today, but it should remain extractable into an independent service that can later feed Lycium, InfRing, and other Protheus systems through the same API contracts.
+Source Index is the durable boundary for public learning-source data. Lycium can run it inside this monorepo today, but Source Index should remain extractable into an independent service that can feed Lycium, InfRing, and other Protheus systems through the same API contracts.
 
 ## Responsibilities
 
@@ -15,6 +15,7 @@ The source index is the durable boundary for public learning-source data. Lycium
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/health` | Check service availability. |
+| `GET` | `/v1/index/service-contract` | Read the portable service boundary, stable contracts, endpoints, and ownership rules. |
 | `POST` | `/v1/index/sources` | Upsert one indexed source. |
 | `GET` | `/v1/index/sources` | Search/list indexed sources by query, domain, or source type. |
 | `GET` | `/v1/index/sources/{source_id}` | Read one indexed source. |
@@ -84,3 +85,16 @@ This keeps benchmark evidence reusable across courses and prevents generated cou
 ## Extraction Boundary
 
 The source index should not import Lycium course renderer code. It can know about source packets, snapshots, crawl policies, and generic corpus preflight. Lycium-specific course planning, module generation, quiz generation, and review/publish state should remain in Lycium services.
+
+## Service Contract
+
+`GET /v1/index/service-contract` and `source-index-service-contract` export `source-index-service-v1`, a small manifest for consumers and future repo extraction. The manifest declares:
+
+- portable contracts emitted or accepted by the service
+- stable endpoint paths
+- standalone CLI commands
+- data the service owns
+- data and workflows the service explicitly does not own
+- expectations for downstream consumers preserving packet IDs and evidence references
+
+This keeps the service boundary explicit as Source Index grows from Lycium-local infrastructure into a reusable evidence service.

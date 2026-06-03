@@ -228,6 +228,19 @@ class SourcePacketRead(BaseModel):
     quality: SourcePacketQualityRead
 
 
+class SourceIndexServiceContractRead(BaseModel):
+    contract_version: str
+    service: str
+    api_version: str
+    purpose: str
+    portable_contracts: list[dict[str, Any]]
+    stable_endpoints: list[dict[str, Any]]
+    cli_commands: list[str]
+    owns: list[str]
+    does_not_own: list[str]
+    consumer_expectations: list[str]
+
+
 class SourcePacketImportCreate(BaseModel):
     packet: dict[str, Any]
     import_snapshots: bool = True

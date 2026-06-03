@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from source_index.db import init_db, session_scope
+from source_index.contracts import source_index_service_contract
 from source_index.packet_service import create_source_packet, import_source_batch, import_source_packet
 
 
@@ -93,9 +94,19 @@ def import_packet_cli(argv: list[str] | None = None) -> None:
         raise SystemExit(1)
 
 
+def service_contract_cli(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Export the Source Index service contract manifest.")
+    parser.add_argument("--output", help="Optional path for the service contract JSON.")
+    args = parser.parse_args(argv)
+
+    _write_json(source_index_service_contract(), args.output)
+
+
 if __name__ == "__main__":
     command = Path(sys.argv[0]).name
-    if "import-packet" in command:
+    if "service-contract" in command or "contract" in command:
+        service_contract_cli()
+    elif "import-packet" in command:
         import_packet_cli()
     elif "packet" in command:
         build_packet_cli()

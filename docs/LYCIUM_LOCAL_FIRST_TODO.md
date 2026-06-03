@@ -111,7 +111,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: packet reports coverage, duplicates, broken URLs, source type mix, trust/freshness, and benchmark usefulness.
 
 26. Source Index independence pass
-    - Status: partially done
+    - Status: done
     - Goal: stable API, packet schema, import/export CLI, docs, and no Lycium UI assumptions.
 
 27. Docs update

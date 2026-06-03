@@ -8,12 +8,25 @@ import httpx
 from source_index.crawl.contracts import CrawlTask, CrawlWorkerResult, ExtractionResult, FetchResult, PageClassification
 from source_index.crawl.policies import default_policy_payload, should_visit_url
 from source_index.crawl.worker import run_crawl_task
+from source_index.cli import service_contract_cli
 
 
 def test_health(client) -> None:
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "source-index"}
+
+
+def test_service_contract_declares_independent_boundary(client) -> None:
+    response = client.get("/v1/index/service-contract")
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["contract_version"] == "source-index-service-v1"
+    assert payload["service"] == "source-index"
+    assert "source-index-build-packet" in payload["cli_commands"]
+    assert any(row["path"] == "/v1/index/source-packets" for row in payload["stable_endpoints"])
+    assert "web UI behavior" in payload["does_not_own"]
 
 
 def test_source_upsert_canonicalizes_and_dedupes(client) -> None:
@@ -461,6 +474,7 @@ def test_source_index_cli_import_packet_and_openapi_exports(tmp_path: Path) -> N
     import_report_path = tmp_path / "import-report.json"
     packet_path = tmp_path / "packet.json"
     openapi_path = tmp_path / "openapi.json"
+    service_contract_path = tmp_path / "service-contract.json"
     batch_path.write_text(
         """
         {
@@ -502,10 +516,12 @@ def test_source_index_cli_import_packet_and_openapi_exports(tmp_path: Path) -> N
         ]
     )
     export_cli(["--output", str(openapi_path)])
+    service_contract_cli(["--output", str(service_contract_path)])
 
     import_report = json.loads(import_report_path.read_text(encoding="utf-8"))
     packet = json.loads(packet_path.read_text(encoding="utf-8"))
     openapi = json.loads(openapi_path.read_text(encoding="utf-8"))
+    service_contract = json.loads(service_contract_path.read_text(encoding="utf-8"))
 
     assert import_report["contract_version"] == "source-import-batch-v1"
     assert packet["contract_version"] == "source-packet-v1"
@@ -514,3 +530,5 @@ def test_source_index_cli_import_packet_and_openapi_exports(tmp_path: Path) -> N
     assert openapi["info"]["title"] == "Protheus Source Index API"
     assert "/v1/index/source-packets" in openapi["paths"]
     assert "/v1/index/source-packet-imports" in openapi["paths"]
+    assert service_contract["contract_version"] == "source-index-service-v1"
+    assert "source-index-openapi" in service_contract["cli_commands"]

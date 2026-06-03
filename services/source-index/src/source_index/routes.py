@@ -5,6 +5,7 @@ from httpx import HTTPError
 from sqlalchemy.orm import Session
 
 from source_index.db import get_session
+from source_index.contracts import source_index_service_contract
 from source_index.models import CrawlPolicyRecord, CrawlRun, IndexedSource, SourceCorpusRun
 from source_index.schemas import (
     BulkSourceImportCreate,
@@ -18,6 +19,7 @@ from source_index.schemas import (
     IndexedSourceRead,
     SourceCorpusRunCreate,
     SourceCorpusRunRead,
+    SourceIndexServiceContractRead,
     SourcePacketCreate,
     SourcePacketImportCreate,
     SourcePacketImportRead,
@@ -48,6 +50,10 @@ def register(app: FastAPI) -> None:
     @app.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok", "service": "source-index"}
+
+    @app.get("/v1/index/service-contract", response_model=SourceIndexServiceContractRead)
+    def read_service_contract() -> dict:
+        return source_index_service_contract()
 
     @app.post("/v1/index/sources", response_model=IndexedSourceRead, status_code=status.HTTP_201_CREATED)
     def create_indexed_source(payload: IndexedSourceCreate, session: Session = Depends(get_session)) -> dict:
