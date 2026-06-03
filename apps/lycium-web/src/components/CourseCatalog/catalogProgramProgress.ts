@@ -1,6 +1,13 @@
 import type { LyciumProgram, LyciumRequirement, LyciumRequirementGroup } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseProgress } from "../../utils/courseRouting";
+import {
+  leafRequirements,
+  requirementCourseIds,
+  rollupProgramProgress,
+  rollupRequirementGroupProgress,
+  type ProgramProgressRollup,
+} from "../../utils/programProgressRollup";
 import { getUnmetCoursePrerequisites } from "./catalogPrerequisites";
 
 export type CatalogPathProgress = {
@@ -25,21 +32,8 @@ export type CatalogPathContinuity = {
 };
 export type CatalogProgressCache = Map<string, ReturnType<typeof getCourseProgress>>;
 
-export function requirementCourseIds(requirement: LyciumRequirement): string[] {
-  if (requirement.type === "complete_course") return [requirement.courseId];
-  if (requirement.type === "complete_n_of_courses") return requirement.courseIds;
-  if (requirement.type === "requirement_set") return requirement.requirements.flatMap(requirementCourseIds);
-  return [];
-}
-
 export function groupCourseIds(group: LyciumRequirementGroup): string[] {
   return Array.from(new Set(group.requirements.flatMap(requirementCourseIds)));
-}
-
-function leafRequirements(requirements: LyciumRequirement[]): LyciumRequirement[] {
-  return requirements.flatMap((requirement) =>
-    requirement.type === "requirement_set" ? leafRequirements(requirement.requirements) : [requirement],
-  );
 }
 
 function requirementIsMapped(requirement: LyciumRequirement, courseMap: Map<string, CourseEntry>): boolean {
@@ -113,6 +107,33 @@ export function catalogPathProgress(
     viewedPercentage: (viewed / total) * 100,
     hasProgress: viewed > 0 || completed > 0,
   };
+}
+
+function fromProgramProgressRollup(progress: ProgramProgressRollup): CatalogPathProgress {
+  return {
+    total: progress.total,
+    completed: progress.completed,
+    viewed: progress.viewed,
+    percentage: progress.percentage,
+    viewedPercentage: progress.viewedPercentage,
+    hasProgress: progress.hasProgress,
+  };
+}
+
+export function catalogProgramRollupProgress(
+  program: LyciumProgram,
+  courseMap: Map<string, CourseEntry>,
+  progressCache?: CatalogProgressCache,
+): CatalogPathProgress {
+  return fromProgramProgressRollup(rollupProgramProgress(program, courseMap, progressCache));
+}
+
+export function catalogGroupRollupProgress(
+  group: LyciumRequirementGroup,
+  courseMap: Map<string, CourseEntry>,
+  progressCache?: CatalogProgressCache,
+): CatalogPathProgress {
+  return fromProgramProgressRollup(rollupRequirementGroupProgress(group, courseMap, progressCache));
 }
 
 export function programCourseIds(program: LyciumProgram): string[] {

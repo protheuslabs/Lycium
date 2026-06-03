@@ -2,7 +2,8 @@ import type { LyciumProgram, LyciumRequirement, LyciumRequirementGroup } from "@
 import type { CourseEntry } from "../../courseTypes";
 import { estimateProgramTime, estimateRequirementGroupTime, type TimeEstimate } from "../../utils/curriculumTime";
 import {
-  catalogPathProgress,
+  catalogGroupRollupProgress,
+  catalogProgramRollupProgress,
   groupPathContinuity,
   groupCourseIds,
   programPathContinuity,
@@ -194,7 +195,7 @@ export function getVisibleCatalogPrograms({
   return programs
     .map((program) => {
       const courseIds = programCourseIds(program);
-      const progress = catalogPathProgress(courseIds, courseMap, progressCache);
+      const progress = catalogProgramRollupProgress(program, courseMap, progressCache);
       return {
         program,
         estimate: estimateProgramTime(program, courses),
@@ -244,7 +245,7 @@ export function getVisibleCatalogClusters({
         cluster,
         courseIds,
         estimate: estimateRequirementGroupTime(cluster, courseMap),
-        progress: catalogPathProgress(courseIds, courseMap, progressCache),
+        progress: catalogGroupRollupProgress(cluster, courseMap, progressCache),
         continuity: groupPathContinuity(cluster, courseMap, progressCache),
         searchScore: clusterSearchScore(cluster, query),
         pathCourses: pathCourses(courseIds, courseMap),

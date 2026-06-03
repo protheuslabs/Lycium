@@ -17,6 +17,16 @@ import {
   formatTimeEstimate,
   timeEstimateSourceLabel,
 } from "../../utils/curriculumTime";
+import {
+  allRequirementNodes,
+  evaluateRequirementProgress,
+  leafRequirements,
+  requirementCourseIds,
+  rollupProgramProgress,
+  rollupRequirementGroupProgress,
+  type RequirementProgressEvaluation,
+  type RequirementProgressStatus,
+} from "../../utils/programProgressRollup";
 import "./ProgramView.css";
 
 type SourceRecord = {
@@ -24,18 +34,6 @@ type SourceRecord = {
   title?: string;
   url?: string;
   publisher?: string;
-};
-
-type RequirementStatus = "complete" | "in_progress" | "blocked" | "pending" | "missing";
-
-type RequirementEvaluation = {
-  status: RequirementStatus;
-  completedCount: number;
-  targetCount: number;
-  connectedCourseIds: string[];
-  missingCourseIds: string[];
-  evidenceIds: string[];
-  benchmarkIds: string[];
 };
 
 type ProgramViewProps = {
@@ -47,96 +45,11 @@ type ProgramViewProps = {
   onOpenCatalog: () => void;
 };
 
-function leafRequirements(requirements: LyciumRequirement[]): LyciumRequirement[] {
-  return requirements.flatMap((requirement) =>
-    requirement.type === "requirement_set" ? leafRequirements(requirement.requirements) : [requirement],
-  );
-}
-
-function allRequirementNodes(requirements: LyciumRequirement[]): LyciumRequirement[] {
-  return requirements.flatMap((requirement) =>
-    requirement.type === "requirement_set" ? [requirement, ...allRequirementNodes(requirement.requirements)] : [requirement],
-  );
-}
-
-function courseIdsForRequirement(requirement: LyciumRequirement): string[] {
-  if (requirement.type === "complete_course") return [requirement.courseId];
-  if (requirement.type === "complete_n_of_courses") return requirement.courseIds;
-  if (requirement.type === "requirement_set") return requirement.requirements.flatMap(courseIdsForRequirement);
-  return [];
-}
-
 function unique(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
-function sourceIdsForCourse(course: CourseEntry | undefined): string[] {
-  if (!course) return [];
-  const topLevel = Array.isArray(course.data.sourceIds) ? course.data.sourceIds : [];
-  const courseLevel = Array.isArray(course.data.sourceRecords) ? course.data.sourceRecords.map((source) => source.id) : [];
-  return unique([...topLevel, ...courseLevel]);
-}
-
-function evaluateRequirement(requirement: LyciumRequirement, courseMap: Map<string, CourseEntry>): RequirementEvaluation {
-  if (requirement.type === "requirement_set") {
-    const nested = requirement.requirements.map((child) => evaluateRequirement(child, courseMap));
-    const completedCount = nested.filter((row) => row.status === "complete").length;
-    const targetCount = requirement.operator === "n_of" ? requirement.count ?? 1 : requirement.operator === "any" ? 1 : nested.length;
-    const hasMissing = nested.some((row) => row.status === "missing");
-    const hasProgress = nested.some((row) => row.status === "complete" || row.status === "in_progress");
-    return {
-      status: completedCount >= targetCount ? "complete" : hasMissing ? "missing" : hasProgress ? "in_progress" : "pending",
-      completedCount,
-      targetCount,
-      connectedCourseIds: unique(nested.flatMap((row) => row.connectedCourseIds)),
-      missingCourseIds: unique(nested.flatMap((row) => row.missingCourseIds)),
-      evidenceIds: unique([...(requirement.origin?.evidenceRefs ?? []), ...nested.flatMap((row) => row.evidenceIds)]),
-      benchmarkIds: unique([...(requirement.origin?.benchmarkIds ?? []), ...nested.flatMap((row) => row.benchmarkIds)]),
-    };
-  }
-
-  const originEvidence = requirement.origin?.evidenceRefs ?? [];
-  const benchmarkIds = requirement.origin?.benchmarkIds ?? [];
-
-  if (requirement.type === "complete_course" || requirement.type === "complete_n_of_courses") {
-    const courseIds = courseIdsForRequirement(requirement);
-    const targetCount = requirement.type === "complete_n_of_courses" ? requirement.count : courseIds.length;
-    const connectedCourses = courseIds.map((courseId) => courseMap.get(courseId)).filter((course): course is CourseEntry => Boolean(course));
-    const missingCourseIds = courseIds.filter((courseId) => !courseMap.has(courseId));
-    const completedCount = connectedCourses.filter((course) => getCourseProgress(course).percentage >= 100).length;
-    const viewedCount = connectedCourses.filter((course) => getCourseProgress(course).viewed > 0).length;
-    const evidenceIds = unique([...originEvidence, ...connectedCourses.flatMap(sourceIdsForCourse)]);
-
-    return {
-      status:
-        missingCourseIds.length > 0
-          ? "missing"
-          : completedCount >= targetCount
-            ? "complete"
-            : completedCount > 0 || viewedCount > 0
-              ? "in_progress"
-              : "pending",
-      completedCount,
-      targetCount,
-      connectedCourseIds: connectedCourses.map((course) => course.key),
-      missingCourseIds,
-      evidenceIds,
-      benchmarkIds,
-    };
-  }
-
-  return {
-    status: "pending",
-    completedCount: 0,
-    targetCount: 1,
-    connectedCourseIds: [],
-    missingCourseIds: [],
-    evidenceIds: unique(originEvidence),
-    benchmarkIds: unique(benchmarkIds),
-  };
-}
-
-function statusLabel(status: RequirementStatus): string {
+function statusLabel(status: RequirementProgressStatus): string {
   if (status === "complete") return "Complete";
   if (status === "in_progress") return "In progress";
   if (status === "blocked") return "Blocked";
@@ -174,7 +87,7 @@ function requirementActionLabel(requirement: LyciumRequirement): string | null {
 function dependencyBlockers(
   requirement: LyciumRequirement,
   dependencyEdges: LyciumDependencyEdge[],
-  evaluationMap: Map<string, RequirementEvaluation>,
+  evaluationMap: Map<string, RequirementProgressEvaluation>,
   requirementTitleMap: Map<string, string>,
 ) {
   return dependencyEdges
@@ -186,21 +99,6 @@ function dependencyBlockers(
       rationale: edge.rationale,
     }))
     .filter((blocker) => blocker.status !== "complete");
-}
-
-function groupProgress(group: LyciumRequirementGroup, courseMap: Map<string, CourseEntry>) {
-  const requirements = leafRequirements(group.requirements).filter((requirement) => requirement.required !== false);
-  const total = Math.max(1, requirements.length);
-  const completed = requirements.filter((requirement) => evaluateRequirement(requirement, courseMap).status === "complete").length;
-  const active = requirements.filter((requirement) => ["complete", "in_progress"].includes(evaluateRequirement(requirement, courseMap).status)).length;
-
-  return {
-    completed,
-    active,
-    total,
-    percentage: Math.round((completed / total) * 100),
-    viewedPercentage: Math.round((active / total) * 100),
-  };
 }
 
 function sourceLabel(sourceId: string, sourceMap: Map<string, SourceRecord>): string {
@@ -227,20 +125,20 @@ function RequirementRow({
   courseMap: Map<string, CourseEntry>;
   sourceMap: Map<string, SourceRecord>;
   benchmarkMap: Map<string, LyciumCurriculumBenchmark>;
-  evaluationMap: Map<string, RequirementEvaluation>;
+  evaluationMap: Map<string, RequirementProgressEvaluation>;
   requirementTitleMap: Map<string, string>;
   dependencyEdges: LyciumDependencyEdge[];
   onOpenCourse: (course: CourseEntry) => void;
   depth?: number;
 }) {
-  const baseEvaluation = evaluationMap.get(requirement.id) ?? evaluateRequirement(requirement, courseMap);
+  const baseEvaluation = evaluationMap.get(requirement.id) ?? evaluateRequirementProgress(requirement, courseMap);
   const blockers = dependencyBlockers(requirement, dependencyEdges, evaluationMap, requirementTitleMap);
   const evaluation =
     blockers.length > 0 && baseEvaluation.status !== "complete" && baseEvaluation.status !== "missing"
       ? { ...baseEvaluation, status: "blocked" as const }
       : baseEvaluation;
   const timeEstimate = estimateRequirementTime(requirement, courseMap);
-  const courseIds = courseIdsForRequirement(requirement);
+  const courseIds = requirementCourseIds(requirement);
   const actionLabel = requirementActionLabel(requirement);
   const title = requirement.title ?? requirement.id;
 
@@ -339,6 +237,7 @@ function RequirementRow({
 
 export default function ProgramView({ program, courses, benchmarks, sources, onOpenCourse, onOpenCatalog }: ProgramViewProps) {
   const courseMap = new Map(courses.map((course) => [course.key, course]));
+  const programProgress = rollupProgramProgress(program, courseMap);
   const programTimeEstimate = estimateProgramTime(program, courses);
   const sourceMap = new Map(sources.map((source) => [source.id, source]));
   const benchmarkMap = new Map(benchmarks.map((benchmark) => [benchmark.id, benchmark]));
@@ -348,18 +247,16 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
     ...program.requirementGroups.flatMap((group) => allRequirementNodes(group.requirements)),
   ];
   const requirementTitleMap = new Map(requirementNodes.map((requirement) => [requirement.id, requirement.title ?? requirement.id]));
-  const evaluationMap = new Map(requirementNodes.map((requirement) => [requirement.id, evaluateRequirement(requirement, courseMap)]));
+  const evaluationMap = new Map(requirementNodes.map((requirement) => [requirement.id, evaluateRequirementProgress(requirement, courseMap)]));
   const allRequirements = program.requirementGroups.flatMap((group) => leafRequirements(group.requirements));
   const requiredRequirements = allRequirements.filter((requirement) => requirement.required !== false);
   const evaluations = requiredRequirements.map((requirement) => evaluateRequirement(requirement, courseMap));
-  const completed = evaluations.filter((evaluation) => evaluation.status === "complete").length;
-  const active = evaluations.filter((evaluation) => evaluation.status === "complete" || evaluation.status === "in_progress").length;
   const missingCourseRefs = unique(evaluations.flatMap((evaluation) => evaluation.missingCourseIds));
   const sourceCoveredCount = evaluations.filter((evaluation) => evaluation.evidenceIds.length > 0).length;
   const assessmentOrProjectCount = requiredRequirements.filter((requirement) => requirement.type === "pass_assessment" || requirement.type === "submit_project").length;
   const capstoneRequirements = requiredRequirements.filter((requirement) => requirement.type === "submit_project");
-  const completePercentage = Math.round((completed / Math.max(1, requiredRequirements.length)) * 100);
-  const activePercentage = Math.round((active / Math.max(1, requiredRequirements.length)) * 100);
+  const completePercentage = Math.round(programProgress.percentage);
+  const activePercentage = Math.round(programProgress.viewedPercentage);
 
   return (
     <main className="program-view-shell">
@@ -386,7 +283,7 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
             <div className="program-progress-viewed" style={{ width: `${activePercentage}%` }} />
             <div className="program-progress-complete" style={{ width: `${completePercentage}%` }} />
           </div>
-          <small>{completed} of {requiredRequirements.length} required requirements complete</small>
+          <small>{programProgress.completed} of {programProgress.total} clusters complete</small>
         </div>
       </section>
 
@@ -482,7 +379,7 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
 
       <section className="program-cluster-list" aria-label="Program requirement groups">
         {program.requirementGroups.map((group) => {
-          const progress = groupProgress(group, courseMap);
+          const progress = rollupRequirementGroupProgress(group, courseMap);
           const groupTimeEstimate = estimateRequirementGroupTime(group, courseMap);
           return (
             <article className="program-cluster-card" key={group.id}>

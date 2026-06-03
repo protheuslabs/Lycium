@@ -83,7 +83,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: one excellent vertical path from program to capstone evidence.
 
 19. Program progress rollup
-    - Status: partially done
+    - Status: done
     - Goal: course completion satisfies requirements, requirements satisfy clusters, clusters satisfy programs.
 
 20. Requirement detail UI
