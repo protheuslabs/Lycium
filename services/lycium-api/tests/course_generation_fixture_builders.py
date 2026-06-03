@@ -112,3 +112,63 @@ def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
         },
         "modules": modules,
     }
+
+
+def under_sourced_course_draft_from_scenario() -> dict[str, Any]:
+    spec = COURSE_SCENARIOS["under-sourced-course-prompt"]
+    return {
+        "title": spec["label"],
+        "shortDescription": "Draft course waiting for source coverage.",
+        "status": "needs_sources",
+        "difficultyLevel": "undergrad",
+        "category": "computing-information-sciences",
+        "department": "computer-science",
+        "tags": ["source gaps", "draft"],
+        "sourceIds": ["submitted-source-1"],
+        "sourceRecords": [
+            {"id": "submitted-source-1", "type": "web", "title": "Submitted source 1", "url": "https://example.edu/source"}
+        ],
+        "metadata": {
+            "status": "needs_sources",
+            "sourceGaps": [
+                {
+                    "id": "course-source-minimum",
+                    "scopeType": "course",
+                    "scopeId": "course",
+                    "title": "Add course sources",
+                    "description": "This draft has 1 submitted source, but Lycium requires more course-level sources before full course generation.",
+                    "severity": "blocking",
+                    "minimumSourceCount": 3,
+                    "currentSourceCount": 1,
+                    "sourceTypeHints": ["university_catalog", "syllabus", "open_textbook", "video"],
+                    "suggestedQueries": ["under sourced course syllabus", "under sourced course open textbook"],
+                }
+            ],
+            "generationPlan": {
+                "status": ["scoped", "needs_sources"],
+                "mode": "source-gated-draft",
+                "message": "Add enough relevant sources before generating learner-facing course content.",
+            },
+        },
+        "modules": [
+            {
+                "id": "source-planning",
+                "title": "Source planning",
+                "sections": [
+                    {
+                        "id": "source-planning-overview",
+                        "title": "Add sources to continue",
+                        "sectionType": "source-gap",
+                        "pageType": "learn",
+                        "content": [
+                            {
+                                "type": "text",
+                                "heading": "Course generation is paused",
+                                "value": "Add benchmark, textbook, lecture, lab, video, simulation, or assignment sources before course generation continues.",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }

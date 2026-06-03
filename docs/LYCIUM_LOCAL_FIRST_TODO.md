@@ -91,15 +91,15 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: requirement status, linked courses, source coverage, prerequisites, and assessment/project evidence are visible.
 
 21. Portfolio/capstone artifact records
-    - Status: pending
+    - Status: done
     - Goal: programs can require repos, essays, demos, lab reports, presentations, and case studies.
 
 22. Course-generation eval scenarios
-    - Status: partially done
+    - Status: done
     - Goal: fixed scenarios for CHEM 105, Intro Programming, Software Engineering Program, noisy corpus, and under-sourced prompts.
 
 23. Eval score dashboard
-    - Status: pending
+    - Status: done
     - Goal: track quality pass/fail, source coverage, quiz quality, content depth, and citation validity over time.
 
 24. Noisy source filtering

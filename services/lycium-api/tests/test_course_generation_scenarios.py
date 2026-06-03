@@ -31,7 +31,7 @@ def _questions(topic: str) -> list[dict[str, Any]]:
 
 
 
-from tests.course_generation_fixture_builders import source_backed_course_from_scenario
+from tests.course_generation_fixture_builders import source_backed_course_from_scenario, under_sourced_course_draft_from_scenario
 
 def _course_for_scenario() -> dict[str, Any]:
     topics = [
@@ -316,6 +316,7 @@ def test_lists_fixed_course_and_program_scenarios() -> None:
     scenarios = list_generation_eval_scenarios()
 
     assert "chem-105-general-chemistry" in {scenario["id"] for scenario in scenarios["courses"]}
+    assert "under-sourced-course-prompt" in {scenario["id"] for scenario in scenarios["courses"]}
     assert "full-stack-software-engineer-program" in {scenario["id"] for scenario in scenarios["programs"]}
 
 
@@ -376,6 +377,32 @@ def test_course_generation_scenario_rejects_prompt_like_filler() -> None:
 
     assert report["status"] == "failed"
     assert any("Prompt-like" in recommendation for recommendation in report["recommendations"])
+
+
+def test_under_sourced_prompt_scenario_accepts_needs_sources_draft() -> None:
+    report = evaluate_course_generation_scenario(
+        under_sourced_course_draft_from_scenario(),
+        "under-sourced-course-prompt",
+    )
+
+    assert report["status"] == "passed"
+    assert report["metrics"]["failedCheckCount"] == 0
+    lifecycle = next(check for check in report["checks"] if check["key"] == "source_gap_lifecycle")
+    assert lifecycle["metrics"]["sourceGapCount"] == 1
+
+
+def test_under_sourced_prompt_scenario_rejects_hollow_course() -> None:
+    course = source_backed_course_from_scenario("intro-programming-foundations")
+    course["status"] = "draft"
+    course["sourceRecords"] = []
+    course["metadata"]["sourceGaps"] = []
+    course["metadata"]["status"] = "draft"
+
+    report = evaluate_course_generation_scenario(course, "under-sourced-course-prompt")
+
+    assert report["status"] == "failed"
+    assert any("Expected course status needs_sources" in recommendation for recommendation in report["recommendations"])
+    assert any("full course module set" in recommendation for recommendation in report["recommendations"])
 
 def test_chem_105_flagship_blueprint_has_real_benchmarks_sources_and_slots() -> None:
     assert len(CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"]) >= 3

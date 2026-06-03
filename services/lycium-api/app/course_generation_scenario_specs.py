@@ -61,6 +61,17 @@ COURSE_SCENARIOS: dict[str, dict[str, Any]] = {
             "deployment",
         ],
     },
+    "under-sourced-course-prompt": {
+        "label": "Under-Sourced Course Prompt",
+        "kind": "course",
+        "expectsNeedsSourcesDraft": True,
+        "expectedStatus": "needs_sources",
+        "minSourceGaps": 1,
+        "maxPlanningModules": 1,
+        "minSuggestedQueries": 2,
+        "minSourceTypeHints": 3,
+        "maxSourceRecords": 2,
+    },
 }
 
 PROGRAM_SCENARIOS: dict[str, dict[str, Any]] = {

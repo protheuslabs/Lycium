@@ -148,6 +148,97 @@ def _course_metrics(course: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _metadata(course: dict[str, Any]) -> dict[str, Any]:
+    return course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+
+
+def _source_gap_metrics(course: dict[str, Any]) -> dict[str, Any]:
+    metadata = _metadata(course)
+    source_gaps = _items(metadata.get("sourceGaps"))
+    first_gap = source_gaps[0] if source_gaps else {}
+    generation_plan = metadata.get("generationPlan") if isinstance(metadata.get("generationPlan"), dict) else {}
+    modules = _items(course.get("modules"))
+    sections = [section for module in modules for section in _items(module.get("sections"))]
+    planning_sections = [
+        section
+        for section in sections
+        if section.get("sectionType") == "source-gap" or "source" in _normalize(_text(section.get("title")))
+    ]
+    source_records = course.get("sourceRecords")
+    source_record_count = len(source_records) if isinstance(source_records, list) else len(source_records or {}) if isinstance(source_records, dict) else 0
+    return {
+        "status": course.get("status") or metadata.get("status"),
+        "metadataStatus": metadata.get("status"),
+        "sourceGapCount": len(source_gaps),
+        "blockingSourceGapCount": sum(1 for gap in source_gaps if gap.get("severity") == "blocking"),
+        "suggestedQueryCount": len(first_gap.get("suggestedQueries", [])) if isinstance(first_gap.get("suggestedQueries"), list) else 0,
+        "sourceTypeHintCount": len(first_gap.get("sourceTypeHints", [])) if isinstance(first_gap.get("sourceTypeHints"), list) else 0,
+        "currentSourceCount": int(first_gap.get("currentSourceCount") or 0) if isinstance(first_gap, dict) else 0,
+        "minimumSourceCount": int(first_gap.get("minimumSourceCount") or 0) if isinstance(first_gap, dict) else 0,
+        "generationPlanMode": generation_plan.get("mode"),
+        "moduleCount": len(modules),
+        "planningSectionCount": len(planning_sections),
+        "sourceRecordCount": source_record_count,
+    }
+
+
+def _evaluate_needs_sources_scenario(course: dict[str, Any], scenario_id: str, spec: dict[str, Any]) -> dict[str, Any]:
+    metrics = _source_gap_metrics(course)
+    text_blob = _course_metrics(course)["textBlob"]
+    expected_status = spec.get("expectedStatus", "needs_sources")
+    checks = [
+        _check(
+            key="source_gap_lifecycle",
+            label="Needs-sources lifecycle",
+            score=(
+                0.4 * (metrics["status"] == expected_status)
+                + 0.3 * (metrics["metadataStatus"] == expected_status)
+                + 0.3 * (metrics["sourceGapCount"] >= int(spec["minSourceGaps"]))
+            ),
+            findings=[
+                *([] if metrics["status"] == expected_status else [_finding("error", f"Expected course status {expected_status}.", "status")]),
+                *([] if metrics["metadataStatus"] == expected_status else [_finding("error", f"Expected metadata status {expected_status}.", "metadata.status")]),
+                *([] if metrics["sourceGapCount"] >= int(spec["minSourceGaps"]) else [_finding("error", "Expected at least one metadata.sourceGaps entry.", "metadata.sourceGaps")]),
+            ],
+            metrics={key: metrics[key] for key in ("status", "metadataStatus", "sourceGapCount")},
+        ),
+        _check(
+            key="source_gap_actionability",
+            label="Actionable source gap",
+            score=(
+                0.35 * (metrics["blockingSourceGapCount"] >= 1)
+                + 0.25 * (metrics["suggestedQueryCount"] >= int(spec["minSuggestedQueries"]))
+                + 0.25 * (metrics["sourceTypeHintCount"] >= int(spec["minSourceTypeHints"]))
+                + 0.15 * (metrics["minimumSourceCount"] > metrics["currentSourceCount"])
+            ),
+            findings=[
+                *([] if metrics["blockingSourceGapCount"] else [_finding("error", "Source gap must be blocking.")]),
+                *([] if metrics["suggestedQueryCount"] >= int(spec["minSuggestedQueries"]) else [_finding("error", "Source gap should include suggested queries.")]),
+                *([] if metrics["sourceTypeHintCount"] >= int(spec["minSourceTypeHints"]) else [_finding("error", "Source gap should include source type hints.")]),
+                *([] if metrics["minimumSourceCount"] > metrics["currentSourceCount"] else [_finding("error", "Source gap should explain the missing source count.")]),
+            ],
+            metrics={key: metrics[key] for key in ("blockingSourceGapCount", "suggestedQueryCount", "sourceTypeHintCount", "currentSourceCount", "minimumSourceCount")},
+        ),
+        _check(
+            key="no_hollow_course",
+            label="No hollow generated course",
+            score=(
+                0.4 * (metrics["moduleCount"] <= int(spec["maxPlanningModules"]))
+                + 0.3 * (metrics["planningSectionCount"] >= 1)
+                + 0.3 * (metrics["sourceRecordCount"] <= int(spec["maxSourceRecords"]))
+            ),
+            findings=[
+                *([] if metrics["moduleCount"] <= int(spec["maxPlanningModules"]) else [_finding("error", "Under-sourced prompts should not produce a full course module set.", "modules")]),
+                *([] if metrics["planningSectionCount"] else [_finding("error", "Under-sourced drafts should show a source-planning section.")]),
+                *([] if metrics["sourceRecordCount"] <= int(spec["maxSourceRecords"]) else [_finding("error", "Scenario draft appears to have enough sources but is still source-gated.")]),
+            ],
+            metrics={key: metrics[key] for key in ("moduleCount", "planningSectionCount", "sourceRecordCount", "generationPlanMode")},
+        ),
+        _specificity_check(text_blob),
+    ]
+    return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course", checks=checks)
+
+
 def _coverage_check(text_blob: str, required_keywords: list[str], min_coverage: float) -> dict[str, Any]:
     covered = [keyword for keyword in required_keywords if _keyword_present(text_blob, keyword)]
     coverage = len(covered) / len(required_keywords) if required_keywords else 1.0
@@ -185,6 +276,8 @@ def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str
     if scenario_id not in COURSE_SCENARIOS:
         raise ValueError(f"Unknown course generation scenario '{scenario_id}'")
     spec = COURSE_SCENARIOS[scenario_id]
+    if spec.get("expectsNeedsSourcesDraft"):
+        return _evaluate_needs_sources_scenario(course, scenario_id, spec)
     metrics = _course_metrics(course)
     checks = [
         _check(

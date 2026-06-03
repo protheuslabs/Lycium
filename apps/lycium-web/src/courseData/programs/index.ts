@@ -1,6 +1,7 @@
 import { validateLyciumProgram } from "@lycium/contracts";
 import fullStackEngineerBenchmarks from "./fullStackEngineerBenchmarks";
 import fullStackEngineerProgram from "./fullStackEngineerProgram";
+import { localPortfolioArtifactIds, localPortfolioArtifactMap, localPortfolioArtifacts } from "./portfolioArtifacts";
 import softwareEngineeringProgramBenchmarks from "./softwareEngineeringProgramBenchmarks";
 import softwareEngineeringProgram from "./softwareEngineeringProgram";
 import { softwareEngineeringCourseWrapperIds, softwareEngineeringCourseWrappers } from "./softwareEngineeringCourseWrappers";
@@ -18,6 +19,7 @@ export const programBenchmarks = {
   [softwareEngineeringProgram.id]: softwareEngineeringProgramBenchmarks,
   [fullStackEngineerProgram.id]: fullStackEngineerBenchmarks,
 };
+export { localPortfolioArtifactIds, localPortfolioArtifactMap, localPortfolioArtifacts };
 export { softwareEngineeringCourseWrapperIds, softwareEngineeringCourseWrappers };
 
 export function validateLocalPrograms() {
@@ -40,13 +42,7 @@ export function validateLocalPrograms() {
         "se-professional-readiness-review",
       ],
       projectIds: [
-        "full-stack-portfolio-capstone",
-        "se-architecture-quality-evidence-package",
-        "se-service-backed-application-slice",
-        "se-deployed-service-evidence",
-        "se-professional-practice-dossier",
-        "se-specialization-evidence-artifact",
-        "se-capstone-portfolio-project",
+        ...localPortfolioArtifactIds,
       ],
       competencyIds: ["basic-computer-literacy", "high-school-algebra-and-computer-literacy"],
     }),

@@ -1,4 +1,9 @@
-import type { LyciumCurriculumBenchmark, LyciumDependencyEdge, LyciumRequirement } from "@lycium/contracts";
+import type {
+  LyciumCurriculumBenchmark,
+  LyciumDependencyEdge,
+  LyciumPortfolioArtifactRequirement,
+  LyciumRequirement,
+} from "@lycium/contracts";
 import type { RequirementProgressEvaluation } from "../../utils/programProgressRollup";
 
 type SourceRecord = {
@@ -22,6 +27,7 @@ type RequirementDetailPanelProps = {
   dependencyEdges: LyciumDependencyEdge[];
   sourceMap: Map<string, SourceRecord>;
   benchmarkMap: Map<string, LyciumCurriculumBenchmark>;
+  portfolioArtifact?: LyciumPortfolioArtifactRequirement | null;
   requirementTitleMap: Map<string, string>;
 };
 
@@ -50,6 +56,7 @@ export default function RequirementDetailPanel({
   dependencyEdges,
   sourceMap,
   benchmarkMap,
+  portfolioArtifact,
   requirementTitleMap,
 }: RequirementDetailPanelProps) {
   const downstreamEdges = dependencyEdges.filter((edge) => edge.fromNodeId === requirement.id);
@@ -86,6 +93,16 @@ export default function RequirementDetailPanel({
             {evaluation.benchmarkIds.map((benchmarkId) => <span key={benchmarkId}>{benchmarkLabel(benchmarkId, benchmarkMap)}</span>)}
           </div>
         </article>
+        {portfolioArtifact && (
+          <article>
+            <h5>Portfolio artifact</h5>
+            <p>{portfolioArtifact.artifactType.replace(/_/g, " ")}</p>
+            {portfolioArtifact.rubricId && <p>Rubric: {portfolioArtifact.rubricId}</p>}
+            <div className="program-requirement-detail-chip-row">
+              {portfolioArtifact.requiredEvidence.map((item) => <span key={item}>{item}</span>)}
+            </div>
+          </article>
+        )}
         <article>
           <h5>Dependencies</h5>
           <div className="program-requirement-detail-chip-row">

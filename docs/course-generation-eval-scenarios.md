@@ -103,17 +103,37 @@ Assertions:
 - Publish is blocked until gates pass or a reviewer records an override.
 - Review UI can show gate evidence, source coverage, benchmark context, and source slots.
 
+## Scenario 6: Under-Sourced Prompt
+
+Goal: prove Lycium does not invent a hollow course when the prompt lacks enough relevant source coverage.
+
+Inputs:
+
+- A course prompt with fewer than the minimum required source records.
+- No benchmark packet or weak concept-source coverage.
+
+Assertions:
+
+- Output remains a `needs_sources` draft.
+- `metadata.sourceGaps` includes a blocking gap.
+- The gap includes source type hints and suggested queries.
+- The draft contains only source-planning scaffolding, not a full set of generated lessons, quizzes, or summaries.
+- The draft can collect additional sources before generation resumes.
+
 ## Automated Coverage
 
 The backend scenario checks live in `services/lycium-api/tests/test_course_generation_scenarios.py`.
 
 Current automated coverage includes:
 
-- Scenario registry checks for CHEM 105 and full-stack program scenarios.
+- Scenario registry checks for CHEM 105, intro programming, software engineering methods, under-sourced prompts, and full-stack program scenarios.
 - CHEM 105 acceptance and rejection checks.
 - CHEM 105 flagship benchmark/source/source-slot checks.
+- Intro programming and software engineering methods source-backed fixture checks.
+- Noisy source corpus exclusion checks.
 - Full-stack program requirement-shape checks.
 - Actual full-stack fixture scenario validation.
+- Under-sourced prompt acceptance and hollow-course rejection checks.
 - Publish-gate acceptance for a teachable source-backed course.
 - Publish-gate rejection for placeholder or prompt-like generated content.
 

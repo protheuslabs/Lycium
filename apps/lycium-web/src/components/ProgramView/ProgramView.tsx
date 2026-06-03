@@ -2,6 +2,7 @@ import type {
   LyciumCompletionRule,
   LyciumCurriculumBenchmark,
   LyciumDependencyEdge,
+  LyciumPortfolioArtifactRequirement,
   LyciumProgram,
   LyciumRequirement,
   LyciumRequirementGroup,
@@ -41,6 +42,7 @@ type ProgramViewProps = {
   program: LyciumProgram;
   courses: CourseEntry[];
   benchmarks: LyciumCurriculumBenchmark[];
+  portfolioArtifacts: Map<string, LyciumPortfolioArtifactRequirement>;
   sources: SourceRecord[];
   onOpenCourse: (course: CourseEntry) => void;
   onOpenCatalog: () => void;
@@ -77,9 +79,9 @@ function completionRuleLabel(rule: LyciumCompletionRule): string {
   return `Custom rule: ${rule.ruleId}`;
 }
 
-function requirementActionLabel(requirement: LyciumRequirement): string | null {
+function requirementActionLabel(requirement: LyciumRequirement, portfolioArtifact?: LyciumPortfolioArtifactRequirement | null): string | null {
   if (requirement.type === "pass_assessment") return `Assessment: ${requirement.assessmentId} (${requirement.minScore}%+)`;
-  if (requirement.type === "submit_project") return `Project: ${requirement.projectId}`;
+  if (requirement.type === "submit_project") return `Project: ${portfolioArtifact?.title ?? requirement.projectId}`;
   if (requirement.type === "demonstrate_competency") return `Competency: ${requirement.competencyId}`;
   if (requirement.type === "earn_hours") return `${requirement.minimumHours} required learning hours`;
   return null;
@@ -116,6 +118,7 @@ function RequirementRow({
   courseMap,
   sourceMap,
   benchmarkMap,
+  portfolioArtifacts,
   evaluationMap,
   requirementTitleMap,
   dependencyEdges,
@@ -126,6 +129,7 @@ function RequirementRow({
   courseMap: Map<string, CourseEntry>;
   sourceMap: Map<string, SourceRecord>;
   benchmarkMap: Map<string, LyciumCurriculumBenchmark>;
+  portfolioArtifacts: Map<string, LyciumPortfolioArtifactRequirement>;
   evaluationMap: Map<string, RequirementProgressEvaluation>;
   requirementTitleMap: Map<string, string>;
   dependencyEdges: LyciumDependencyEdge[];
@@ -140,7 +144,8 @@ function RequirementRow({
       : baseEvaluation;
   const timeEstimate = estimateRequirementTime(requirement, courseMap);
   const courseIds = requirementCourseIds(requirement);
-  const actionLabel = requirementActionLabel(requirement);
+  const portfolioArtifact = requirement.type === "submit_project" ? portfolioArtifacts.get(requirement.projectId) : null;
+  const actionLabel = requirementActionLabel(requirement, portfolioArtifact);
   const title = requirement.title ?? requirement.id;
 
   return (
@@ -182,6 +187,7 @@ function RequirementRow({
       {actionLabel && (
         <div className="program-action-chip-row">
           <span className="program-action-chip">{actionLabel}</span>
+          {portfolioArtifact && <span className="program-action-chip">{portfolioArtifact.artifactType.replace(/_/g, " ")}</span>}
           <span className="program-action-chip program-action-chip-placeholder">Evidence submission UI not connected yet</span>
         </div>
       )}
@@ -221,6 +227,7 @@ function RequirementRow({
         dependencyEdges={dependencyEdges}
         sourceMap={sourceMap}
         benchmarkMap={benchmarkMap}
+        portfolioArtifact={portfolioArtifact}
         requirementTitleMap={requirementTitleMap}
       />
 
@@ -233,6 +240,7 @@ function RequirementRow({
               courseMap={courseMap}
                   sourceMap={sourceMap}
                   benchmarkMap={benchmarkMap}
+                  portfolioArtifacts={portfolioArtifacts}
                   evaluationMap={evaluationMap}
                   requirementTitleMap={requirementTitleMap}
                   dependencyEdges={dependencyEdges}
@@ -246,7 +254,7 @@ function RequirementRow({
   );
 }
 
-export default function ProgramView({ program, courses, benchmarks, sources, onOpenCourse, onOpenCatalog }: ProgramViewProps) {
+export default function ProgramView({ program, courses, benchmarks, portfolioArtifacts, sources, onOpenCourse, onOpenCatalog }: ProgramViewProps) {
   const courseMap = new Map(courses.map((course) => [course.key, course]));
   const programProgress = rollupProgramProgress(program, courseMap);
   const programTimeEstimate = estimateProgramTime(program, courses);
@@ -364,7 +372,7 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
           <div className="program-capstone-list">
             {capstoneRequirements.map((requirement) => (
               <span className="program-action-chip" key={requirement.id}>
-                {requirement.title ?? requirement.projectId}
+                {portfolioArtifacts.get(requirement.projectId)?.title ?? requirement.title ?? requirement.projectId}
               </span>
             ))}
           </div>
@@ -429,6 +437,7 @@ export default function ProgramView({ program, courses, benchmarks, sources, onO
                     courseMap={courseMap}
                   sourceMap={sourceMap}
                   benchmarkMap={benchmarkMap}
+                  portfolioArtifacts={portfolioArtifacts}
                   evaluationMap={evaluationMap}
                   requirementTitleMap={requirementTitleMap}
                   dependencyEdges={dependencyEdges}

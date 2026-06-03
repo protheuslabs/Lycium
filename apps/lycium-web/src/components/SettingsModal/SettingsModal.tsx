@@ -1,6 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import Dropdown from "../Dropdown/Dropdown";
 import AgentProviderDiagnostics from "./AgentProviderDiagnostics";
+import EvalScoreDashboard from "./EvalScoreDashboard";
 import GenerationRunsPanel from "./GenerationRunsPanel";
 import LocalStoragePanel from "./LocalStoragePanel";
 import Modal from "../Modal/Modal";
@@ -208,6 +209,7 @@ export default function SettingsModal({
           </div>
         </section>
         <LocalStoragePanel />
+        <EvalScoreDashboard />
         <GenerationRunsPanel />
         {settingsMessage && <p className={`settings-status settings-status-${settingsStatus}`}>{settingsMessage}</p>}
     </Modal>
