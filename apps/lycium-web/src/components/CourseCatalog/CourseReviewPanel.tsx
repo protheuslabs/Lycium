@@ -3,6 +3,7 @@ import type {
   LyciumCourseQualityReport,
 } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
+import CourseGenerationTimeline from "./CourseGenerationTimeline";
 
 type CourseReviewPanelProps = {
   course: CourseEntry;
@@ -123,6 +124,8 @@ export default function CourseReviewPanel({ course, isPublishing, onPublishCours
         <h4>Workflow gates</h4>
         <GateList gates={gates} />
       </div>
+
+      <CourseGenerationTimeline course={course} />
 
       <div className="course-review-section">
         <h4>Required topics</h4>

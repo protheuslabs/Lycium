@@ -57,7 +57,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: generated courses stay draft/reviewable until source, quality, quiz, citation, and filler checks pass.
 
 13. Generation observability UI
-    - Status: partially done
+    - Status: done
     - Goal: local timeline with source decisions, gate results, quality report, errors, and resume action.
     - Depends on: generation run records.
 
