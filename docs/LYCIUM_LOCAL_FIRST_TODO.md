@@ -79,7 +79,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: show active provider/model, verification state, last check, discovered models, and local endpoint status.
 
 18. Software Engineering flagship path
-    - Status: pending
+    - Status: done
     - Goal: one excellent vertical path from program to capstone evidence.
 
 19. Program progress rollup
