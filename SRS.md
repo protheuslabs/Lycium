@@ -11,7 +11,9 @@ This file is the entry point for the Lycium SRS. The full specification is split
 
 ## Current product boundary
 
-Lycium is a local-first learning platform that renders portable course JSON, supports generated course snapshots, records source and progress metadata separately, and is moving toward a source-backed generation, review, and publication workflow.
+Lycium is a local-first learning platform that renders portable course/program JSON, records learner state separately from source evidence, and now implements the first local curriculum-compiler loop: sources are imported or packetized, preflighted, converted into benchmark/requirement evidence, used to create either a `needs_sources` draft or a generated snapshot, and then evaluated through validation, quality, citation, quiz, and review/publish gates before catalog trust.
+
+Source Index is the reusable evidence boundary for canonical sources, snapshots, source-corpus decisions, source packets, packet quality, and crawl contracts. Lycium consumes that evidence to generate and review learning artifacts, but should not become the canonical internet index.
 
 ## Maintenance rule
 

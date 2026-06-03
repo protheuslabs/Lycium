@@ -33,6 +33,15 @@ Lycium may keep transitional source tables while the service boundary matures, b
 
 When `LYCIUM_SOURCE_INDEX_API_URL` is configured, Lycium should route source-index API calls through the standalone Source Index service. When it is not configured, the transitional internal source tables remain available for local development and offline tests.
 
+## Local-first compiler flow
+
+The current local compiler path keeps ownership boundaries explicit:
+
+1. Source Index owns source import, snapshots, preflight include/exclude decisions, source packets, packet quality reports, and future crawl/index records.
+2. Lycium owns generation run records, source-gap drafts, curriculum benchmark references, generated course/program snapshots, review/publish lifecycle, eval dashboards, and learner progress.
+3. Generated snapshots may preserve compact packet IDs, source public IDs, snapshot public IDs, source-slot metadata, and citation mappings for reproducibility.
+4. Generated snapshots should not duplicate Source Index as a hidden source database.
+5. Learner feedback and source suggestions should become review candidates before being promoted into Source Index records.
 
 ## Enforced boundary manifest
 

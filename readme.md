@@ -22,6 +22,20 @@ Lycium should make public internet knowledge usable for building real skills. Th
 
 Private learner data is a separate trust zone. Progress, quiz attempts, goals, notes, feedback linked to identity, and local provider secrets should remain user-owned, exportable, deletable, and protected from silent repurposing.
 
+## Local-first compiler loop
+
+The current product loop is intentionally local-first before cloud services are connected:
+
+1. A learner or author provides a goal, description, source URLs, pasted source text, or a source packet.
+2. Source Index imports or fetches sources, creates snapshots, runs source-corpus preflight, records include/exclude reasons, and emits a `source-packet-v1` payload with packet quality evidence.
+3. Lycium extracts curriculum benchmarks, requirement origins, source slots, and concept-to-source coverage from accepted evidence.
+4. If coverage is too weak, Lycium creates a `needs_sources` draft card instead of hollow lessons, records missing concepts/source types, and lets the user add sources before resuming.
+5. If coverage is sufficient, generation produces a structured course or program snapshot with modules, Learn/Apply sections, concept cards, quizzes, summaries, citations, and review metadata.
+6. Validation, quality evals, source coverage checks, citation checks, quiz checks, and review/publish gates decide whether the snapshot can appear as catalog-ready.
+7. Local learner state records progress, bookmarks, quiz attempts, feedback, provider settings, generation runs, and eval dashboard signals separately from portable course/source artifacts.
+
+This loop is the bridge between the immediate local app and the long-term internet curriculum compiler: source evidence improves the reusable index, while learner state stays in a separate trust boundary.
+
 ## Current capabilities
 
 - Course catalog with canonical route support at `/Lycium/catalog`
@@ -40,6 +54,9 @@ Private learner data is a separate trust zone. Progress, quiz attempts, goals, n
 - Software engineering program/catalog scaffolds with prerequisite metadata, college-course parity metadata, requirement origins, portfolio artifacts, and generated module/quiz/summary structure
 - Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
 - Course-generation eval scenarios for CHEM 105, intro programming, software engineering methods, noisy source corpora, under-sourced prompts, and full-stack program paths
+- Durable generation run records, source-gap resume flow, eval score dashboard, and local storage diagnostics for debugging generated artifacts
+- Source Index source packets with coverage, duplicate, broken-link, source-type, trust, freshness, and benchmark-usefulness quality reports
+- Source Index service contract endpoint and CLI manifest so the index can remain detachable from Lycium UI code
 - Retrieval quality reports for source-backed search and learning-packet assembly
 - Professional readiness guardrails for review/publish, benchmarks, extraction, evals, providers, observability, contracts, migrations, secrets, and deployment
 - Playwright E2E coverage for catalog views, program/cluster navigation, search/filter/sort behavior, locked courses, settings, and course-opening flow

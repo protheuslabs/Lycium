@@ -78,6 +78,9 @@ At the time of writing, Lycium provides:
 - A settings modal for AI provider keys, model selection, and light/dark/auto display mode
 - A create-course modal that stays locked until an active AI model is connected
 - A FastAPI local control plane for course generation, local settings, source records, progress mirroring, quality reports, and publish/review lifecycle endpoints
+- A local-first generation record and resume flow that preserves generation runs, source-gap drafts, source decisions, quality evidence, and eval dashboard summaries
+- A detachable Source Index service boundary with canonical sources, snapshots, source-corpus preflight decisions, `source-packet-v1` export/import, packet quality reports, a service contract manifest, and education-focused crawl contracts
+- A requirement-driven compiler path that can turn accepted source evidence into curriculum benchmarks, requirement origins, source slots, concept-source coverage, course/program snapshots, and reviewable publication artifacts
 
 Current limitations relative to the target concept:
 
@@ -88,6 +91,7 @@ Current limitations relative to the target concept:
 - Source file upload is not connected yet
 - Retrieval is still prototype-level and not yet true hybrid vector/lexical/graph retrieval
 - Review/edit/lock workflow UI is still incomplete even though review/publish surfaces and backend endpoints exist
+- Hosted/cloud synchronization and external Source Index deployment are not connected yet; the current loop is intentionally local-first
 
 ## 5. Users and Roles
 

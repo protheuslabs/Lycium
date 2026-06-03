@@ -115,7 +115,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: stable API, packet schema, import/export CLI, docs, and no Lycium UI assumptions.
 
 27. Docs update
-    - Status: pending
+    - Status: done
     - Goal: README/SRS describe the actual local-first compiler loop.
 
 28. End-to-end local workflow test
