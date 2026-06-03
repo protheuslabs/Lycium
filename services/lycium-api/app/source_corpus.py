@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 from app.config import SETTINGS
 from app.source_index_client import SourceIndexClient, SourceIndexClientError, source_index_client_configured
+from app.source_relevance import decide_source_relevance
 
 
 MIN_RELEVANCE_SCORE = 0.12
@@ -281,10 +282,6 @@ def _score_source(prompt_tokens: set[str], url: str, document: dict[str, Any] | 
     return round(min(1.0, score), 3), matched_terms, source_tokens
 
 
-def _has_subject_anchor(matched_terms: list[str]) -> bool:
-    return any(term not in AMBIGUOUS_RELEVANCE_TERMS for term in matched_terms)
-
-
 def compile_source_corpus_preflight(
     *,
     prompt: str,
@@ -308,6 +305,7 @@ def compile_source_corpus_preflight(
     documents = [*source_documents, *fetched_documents]
     included: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
+    exclusion_reasons: Counter[str] = Counter()
     source_token_counts: Counter[str] = Counter()
 
     for original_index, url in enumerate(source_urls, start=1):
@@ -321,14 +319,27 @@ def compile_source_corpus_preflight(
         }
         if isinstance(document, dict) and document.get("fetchStatus"):
             row["fetchStatus"] = document.get("fetchStatus")
-        if score >= MIN_RELEVANCE_SCORE and (_has_subject_anchor(matched_terms) or score >= STRONG_RELEVANCE_SCORE):
+        decision = decide_source_relevance(
+            score=score,
+            matched_terms=matched_terms,
+            prompt_tokens=prompt_tokens,
+            url=url,
+            document=document,
+            min_score=MIN_RELEVANCE_SCORE,
+            strong_score=STRONG_RELEVANCE_SCORE,
+            ambiguous_terms=AMBIGUOUS_RELEVANCE_TERMS,
+        )
+        row["decision"] = "included" if decision["included"] else "excluded"
+        row["reasonCode"] = decision["reasonCode"]
+        row["reason"] = decision["reason"]
+        row["evidence"] = decision["evidence"]
+        if decision["included"]:
             row["sourceId"] = f"input-source-{len(included) + 1}"
-            row["reason"] = "Source matched the course prompt strongly enough for curriculum grounding."
             included.append(row)
             for token in source_tokens.intersection(prompt_tokens):
                 source_token_counts[token] += 1
         else:
-            row["reason"] = "Source did not share enough course-specific anchored terms with the prompt."
+            exclusion_reasons[str(decision["reasonCode"])] += 1
             excluded.append(row)
 
     selected_urls = [str(source["url"]) for source in included]
@@ -348,6 +359,10 @@ def compile_source_corpus_preflight(
         "promptTerms": sorted(prompt_tokens)[:32],
         "includedSources": included,
         "excludedSources": excluded,
+        "exclusionReasons": [
+            {"reasonCode": reason_code, "count": count}
+            for reason_code, count in exclusion_reasons.most_common()
+        ],
         "commonThemes": common_themes,
         "metrics": {
             "submittedSourceCount": len(source_urls),
@@ -355,10 +370,14 @@ def compile_source_corpus_preflight(
             "excludedSourceCount": len(excluded),
             "fetchedSourceCount": len([document for document in documents if document.get("fetchStatus") == "fetched"]),
             "failedFetchCount": len([document for document in documents if document.get("fetchStatus") == "failed"]),
+            "ambiguousOverlapExcludedCount": exclusion_reasons.get("ambiguous_overlap_only", 0),
+            "weakSingleAnchorExcludedCount": exclusion_reasons.get("weak_single_anchor_match", 0),
         },
     }
     if source_urls and not included:
         synthesis["warning"] = "No submitted sources passed relevance preflight; course planning should not treat the source list as authoritative."
+    elif excluded:
+        synthesis["warning"] = "Some submitted sources were excluded before generation; use includedSources as the authoritative evidence set."
     return SourceCorpusPreflight(synthesis=synthesis, source_urls=selected_urls, source_documents=selected_documents)
 
 

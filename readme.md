@@ -31,13 +31,15 @@ Private learner data is a separate trust zone. Progress, quiz attempts, goals, n
 - Persistent progress tracking for completion and viewed/interacted percentages
 - Course cards with progress layers, active module/unit context, metadata modals, categories, and tags
 - Catalog search, pagination, sorting, college and department filters, and an internal college-to-department taxonomy for course classification
+- Program and cluster catalog views with requirement-based progress rollups, prerequisite continuity, requirement detail panels, and portfolio/capstone evidence records
 - Quiz attempts with shuffled question/answer order, timers, pass percentages, max attempts, review flags, and attempt history
 - Settings modal for local AI provider keys, model selection, and light/dark/auto display preferences
 - Course creation modal that stays locked until a valid active AI provider key and model are connected
 - Local user-data storage for completion, bookmarks, secrets, source links, and other machine-specific data
 - Course-generation rules for agents, including source records, assessment-only quiz pages, Learn/Apply page types, concept cards, and module summaries
-- Software engineering program/catalog scaffolds with prerequisite metadata, college-course parity metadata, and generated module/quiz/summary structure
+- Software engineering program/catalog scaffolds with prerequisite metadata, college-course parity metadata, requirement origins, portfolio artifacts, and generated module/quiz/summary structure
 - Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
+- Course-generation eval scenarios for CHEM 105, intro programming, software engineering methods, noisy source corpora, under-sourced prompts, and full-stack program paths
 - Retrieval quality reports for source-backed search and learning-packet assembly
 - Professional readiness guardrails for review/publish, benchmarks, extraction, evals, providers, observability, contracts, migrations, secrets, and deployment
 - Playwright E2E coverage for catalog views, program/cluster navigation, search/filter/sort behavior, locked courses, settings, and course-opening flow

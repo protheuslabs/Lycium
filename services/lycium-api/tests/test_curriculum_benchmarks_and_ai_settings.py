@@ -93,6 +93,36 @@ def test_source_corpus_preflight_filters_irrelevant_sources() -> None:
     assert preflight.synthesis["excludedSources"][0]["url"] == "https://example.org/gardening/herb-roasting-guide"
 
 
+def test_source_corpus_preflight_records_weak_single_anchor_noise() -> None:
+    preflight = compile_source_corpus_preflight(
+        prompt="Data science statistics programming visualization modeling project",
+        source_urls=[
+            "https://datascience.example.edu/courses/statistics-modeling",
+            "https://example.org/general/reading-list",
+        ],
+        source_documents=[
+            {
+                "url": "https://datascience.example.edu/courses/statistics-modeling",
+                "contentType": "text/plain",
+                "text": "Data science students use statistics, programming, visualization, and modeling to complete projects.",
+            },
+            {
+                "url": "https://example.org/general/reading-list",
+                "contentType": "text/plain",
+                "text": "This reading list mentions programming once, but focuses on memoirs, travel writing, and weekend habits.",
+            },
+        ],
+    )
+
+    excluded = preflight.synthesis["excludedSources"][0]
+
+    assert preflight.source_urls == ["https://datascience.example.edu/courses/statistics-modeling"]
+    assert excluded["reasonCode"] == "weak_single_anchor_match"
+    assert excluded["evidence"]["matchedAnchorTerms"] == ["programming"]
+    assert preflight.synthesis["metrics"]["weakSingleAnchorExcludedCount"] == 1
+    assert preflight.synthesis["exclusionReasons"] == [{"reasonCode": "weak_single_anchor_match", "count": 1}]
+
+
 def test_curriculum_context_extracts_real_syllabus_structure() -> None:
     syllabus = """
     CHEM 105 General Chemistry I

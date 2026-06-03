@@ -103,7 +103,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: track quality pass/fail, source coverage, quiz quality, content depth, and citation validity over time.
 
 24. Noisy source filtering
-    - Status: partially done
+    - Status: done
     - Goal: irrelevant sources are rejected before generation, with recorded reasons.
 
 25. Source Index packet quality report

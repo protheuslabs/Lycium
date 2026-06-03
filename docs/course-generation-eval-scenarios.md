@@ -84,6 +84,7 @@ Inputs:
 Assertions:
 
 - Source-corpus preflight excludes irrelevant sources with evidence.
+- Weak one-term overlaps are excluded unless they have strong score, multiple subject anchors, or clear URL/path evidence.
 - Included sources cluster around common themes.
 - Generation uses included sources only unless a reviewer restores an excluded source.
 - Quality report warns when source coverage is thin, duplicative, or too narrow.
