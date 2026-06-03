@@ -67,15 +67,15 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Depends on: local storage status/export/backup API.
 
 15. Local data migration tests
-    - Status: partially done
+    - Status: done
     - Goal: old local data fixtures migrate or fail clearly.
 
 16. Corrupt local data handling
-    - Status: pending
+    - Status: done
     - Goal: invalid JSON produces visible repair/backup warnings instead of silent fallback.
 
 17. Provider/local model diagnostics
-    - Status: partially done
+    - Status: done
     - Goal: show active provider/model, verification state, last check, discovered models, and local endpoint status.
 
 18. Software Engineering flagship path

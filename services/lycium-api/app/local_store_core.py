@@ -14,6 +14,7 @@ from app.security import PRIVATE_DIR_MODE, PRIVATE_FILE_MODE, chmod_private, per
 LOCAL_DATA_SUBDIRS = ("courses", "completion", "generation-runs", "links", "secrets", "user", "backups")
 LOCAL_DATA_SCHEMA_VERSION = 3
 LOCAL_DATA_EXPORT_FORMAT = "lycium-local-data-export-v1"
+LOCAL_DATA_REPAIR_WARNING_FILE = "local-data-repair-warnings.json"
 LOCAL_DATA_DIRECTORIES = {
     "courses": "Generated course snapshots and exports.",
     "completion": "Learner completion and progress mirrors.",
@@ -68,12 +69,80 @@ def ensure_local_data_dirs() -> Path:
     return root
 
 
-def _read_json(path: Path, fallback: Any) -> Any:
+def _repair_warning_path(root: Path) -> Path:
+    return root / "user" / LOCAL_DATA_REPAIR_WARNING_FILE
+
+
+def _repair_warning_rows(root: Path) -> list[dict[str, Any]]:
+    path = _repair_warning_path(root)
+    if not path.exists():
+        return []
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+    return [row for row in payload if isinstance(row, dict)] if isinstance(payload, list) else []
+
+
+def _relative_path(root: Path, path: Path) -> str:
+    try:
+        return str(path.relative_to(root))
+    except ValueError:
+        return str(path)
+
+
+def _backup_corrupt_json(root: Path, path: Path) -> Path | None:
+    if not path.exists():
+        return None
+    backup_dir = root / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    chmod_private(backup_dir, PRIVATE_DIR_MODE)
+    backup_name = f"corrupt-{_safe_key(_relative_path(root, path))}-{_safe_key(_now())}.json.bak"
+    backup_path = backup_dir / backup_name
+    try:
+        backup_path.write_text(path.read_text(encoding="utf-8", errors="replace"), encoding="utf-8")
+        chmod_private(backup_path, PRIVATE_FILE_MODE)
+        return backup_path
+    except OSError:
+        return None
+
+
+def _record_repair_warning(root: Path, *, path: Path, error: str, action: str, backup_path: Path | None) -> None:
+    repair_path = _repair_warning_path(root)
+    if path == repair_path:
+        return
+    warnings = _repair_warning_rows(root)
+    warnings.append(
+        {
+            "path": _relative_path(root, path),
+            "error": error,
+            "action": action,
+            "backupPath": _relative_path(root, backup_path) if backup_path else None,
+            "createdAt": _now(),
+        }
+    )
+    _write_json(repair_path, warnings[-25:])
+
+
+def _read_json(
+    path: Path,
+    fallback: Any,
+    *,
+    repair_root: Path | None = None,
+    replace_corrupt: bool = False,
+    repair_action: str = "backed up corrupt JSON and used fallback data",
+) -> Any:
     if not path.exists():
         return fallback
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as exc:
+        if repair_root is not None:
+            error = f"{path}: invalid JSON at line {exc.lineno}, column {exc.colno}"
+            backup_path = _backup_corrupt_json(repair_root, path)
+            if replace_corrupt:
+                _write_json(path, fallback)
+            _record_repair_warning(repair_root, path=path, error=error, action=repair_action, backup_path=backup_path)
         return fallback
 
 
@@ -228,7 +297,13 @@ def _apply_local_data_migration(root: Path, manifest: dict[str, Any], migration:
         manifest["directories"] = LOCAL_DATA_DIRECTORIES
     elif migration["id"] == "002_agent_key_profiles":
         secret_path = root / "secrets" / "agent.json"
-        secret = _read_json(secret_path, {})
+        secret = _read_json(
+            secret_path,
+            {},
+            repair_root=root,
+            replace_corrupt=True,
+            repair_action="Backed up corrupt agent secret file and replaced it with an empty agent profile.",
+        )
         if isinstance(secret, dict) and secret:
             normalized = _normalize_agent_secret_payload(secret)
             if normalized != secret:
@@ -248,7 +323,15 @@ def run_local_data_migrations(root: Path | None = None) -> dict[str, Any]:
         (local_root / subdir).mkdir(parents=True, exist_ok=True)
 
     manifest_path = local_root / "manifest.json"
-    manifest = _base_manifest(_read_json(manifest_path, {}))
+    manifest = _base_manifest(
+        _read_json(
+            manifest_path,
+            {},
+            repair_root=local_root,
+            replace_corrupt=True,
+            repair_action="Backed up corrupt manifest and regenerated local data manifest.",
+        )
+    )
     if int(manifest.get("schema_version") or 0) > LOCAL_DATA_SCHEMA_VERSION:
         raise LocalDataMigrationError(
             f"Local data schema version {manifest['schema_version']} is newer than supported version {LOCAL_DATA_SCHEMA_VERSION}."
@@ -338,6 +421,8 @@ def local_data_storage_status(root: Path | None = None) -> dict[str, Any]:
         "latest_backup_path": str(backup_files[-1]) if backup_files else None,
         "json_error_count": len(errors),
         "json_errors": errors[:20],
+        "repair_warning_count": len(_repair_warning_rows(local_root)),
+        "repair_warnings": _repair_warning_rows(local_root)[-20:],
     }
 
 

@@ -163,6 +163,14 @@ export type LyciumLocalStorageStatus = {
   latest_backup_path?: string | null;
   json_error_count: number;
   json_errors: string[];
+  repair_warning_count: number;
+  repair_warnings: Array<{
+    path?: string;
+    error?: string;
+    action?: string;
+    backupPath?: string | null;
+    createdAt?: string;
+  }>;
   directories: Array<{
     name: string;
     path: string;

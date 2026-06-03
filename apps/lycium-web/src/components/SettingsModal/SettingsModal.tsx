@@ -1,5 +1,6 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import Dropdown from "../Dropdown/Dropdown";
+import AgentProviderDiagnostics from "./AgentProviderDiagnostics";
 import GenerationRunsPanel from "./GenerationRunsPanel";
 import LocalStoragePanel from "./LocalStoragePanel";
 import Modal from "../Modal/Modal";
@@ -183,6 +184,13 @@ export default function SettingsModal({
                 </button>
               </div>
             </form>
+            <AgentProviderDiagnostics
+              agentKeys={agentKeys}
+              agentProviders={agentProviders}
+              agentProviderId={agentProviderId}
+              verifyingAgentKeyId={verifyingAgentKeyId}
+              onVerifyAgentKey={onVerifyAgentKey}
+            />
           </div>
         </section>
         <section className="settings-section" aria-labelledby="settings-display">

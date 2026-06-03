@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.config import SETTINGS
+
 
 def test_local_storage_status_export_and_backup(client) -> None:
     status_response = client.get("/v1/local/storage")
@@ -32,3 +34,18 @@ def test_local_storage_status_export_and_backup(client) -> None:
     assert backup["include_secrets"] is False
     assert backup["file_count"] >= 1
     assert backup["byte_count"] > 0
+
+
+def test_local_storage_status_reports_repaired_corrupt_manifest(client) -> None:
+    root = SETTINGS.local_data_dir
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "manifest.json").write_text("{not valid json", encoding="utf-8")
+
+    response = client.get("/v1/local/storage")
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["schema_version"] == payload["target_schema_version"]
+    assert payload["repair_warning_count"] >= 1
+    assert any(warning["path"] == "manifest.json" for warning in payload["repair_warnings"])
+    assert any((root / "backups").glob("corrupt-manifest.json-*.json.bak"))

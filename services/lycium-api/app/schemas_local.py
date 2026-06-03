@@ -95,6 +95,8 @@ class LocalDataStorageStatusRead(LocalDataMigrationStatusRead):
     latest_backup_path: str | None = None
     json_error_count: int = 0
     json_errors: list[str] = Field(default_factory=list)
+    repair_warning_count: int = 0
+    repair_warnings: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class LocalDataExportFileRead(BaseModel):

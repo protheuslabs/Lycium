@@ -29,6 +29,7 @@
 .settings-storage-path-card,
 .settings-storage-backup-card,
 .settings-storage-error-card,
+.settings-storage-warning-card,
 .settings-storage-directory-row {
   min-width: 0;
   border-radius: 16px;
@@ -50,6 +51,7 @@
 .settings-storage-path-card span,
 .settings-storage-backup-card span,
 .settings-storage-error-card span,
+.settings-storage-warning-card span,
 .settings-storage-directory-row span,
 .settings-storage-backup-card small {
   min-width: 0;
@@ -62,6 +64,7 @@
 .settings-storage-path-card strong,
 .settings-storage-backup-card strong,
 .settings-storage-error-card strong,
+.settings-storage-warning-card strong,
 .settings-storage-directory-row strong {
   min-width: 0;
   color: #171717;
@@ -71,6 +74,7 @@
 .settings-storage-path-card strong,
 .settings-storage-backup-card small,
 .settings-storage-error-card span,
+.settings-storage-warning-card span,
 .settings-storage-directory-row span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -90,6 +94,16 @@
 
 .settings-storage-error-card strong {
   color: #991b1b;
+}
+
+.settings-storage-warning-card {
+  display: grid;
+  gap: 0.18rem;
+  background: rgba(255, 251, 235, 0.96);
+}
+
+.settings-storage-warning-card strong {
+  color: #92400e;
 }
 
 .settings-storage-directory-list {
@@ -120,6 +134,7 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-path-card,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-backup-card,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-error-card,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-warning-card,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-directory-row {
   color: #e5e7eb;
   background: #1a1a1c;
@@ -133,12 +148,17 @@
   color: #f8fafc;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-warning-card strong {
+  color: #fbbf24;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-empty,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-note,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-summary-grid span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-path-card span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-backup-card span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-backup-card small,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-warning-card span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-storage-directory-row span {
   color: #a1a1aa;
 }

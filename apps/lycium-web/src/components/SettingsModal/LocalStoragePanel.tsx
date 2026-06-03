@@ -192,6 +192,18 @@ export default function LocalStoragePanel() {
               </div>
             )}
 
+            {status.repair_warning_count > 0 && (
+              <div className="settings-storage-warning-card">
+                <strong>{status.repair_warning_count} local repair warning{status.repair_warning_count === 1 ? "" : "s"}</strong>
+                <span>
+                  {status.repair_warnings
+                    .slice(-2)
+                    .map((warning) => [warning.path, warning.action].filter(Boolean).join(": "))
+                    .join(" | ")}
+                </span>
+              </div>
+            )}
+
             <div className="settings-storage-directory-list">
               {status.directories.map((directory) => (
                 <article className="settings-storage-directory-row" key={directory.name}>
