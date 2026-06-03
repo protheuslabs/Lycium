@@ -170,9 +170,18 @@ class SourcePacketQualityRead(BaseModel):
     status: str
     includedSourceCount: int
     sourceDocumentCount: int
+    duplicateSourceCount: int
+    brokenUrlCount: int
     snapshotCoverageRatio: float
     documentCoverageRatio: float
     evidenceCoverageRatio: float
+    sourceTypeMix: dict[str, int]
+    averageTrustScore: float
+    freshnessKnownRatio: float
+    staleVerificationCount: int
+    benchmarkSourceCount: int
+    benchmarkUsefulnessRatio: float
+    qualityWarnings: list[str]
     warningCount: int
 
 

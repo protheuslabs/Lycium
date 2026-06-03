@@ -107,7 +107,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: irrelevant sources are rejected before generation, with recorded reasons.
 
 25. Source Index packet quality report
-    - Status: pending
+    - Status: done
     - Goal: packet reports coverage, duplicates, broken URLs, source type mix, trust/freshness, and benchmark usefulness.
 
 26. Source Index independence pass

@@ -111,6 +111,11 @@ def test_source_packet_builds_generation_ready_evidence_from_documents(client) -
     assert packet["quality"]["status"] == "usable"
     assert packet["quality"]["documentCoverageRatio"] == 1
     assert packet["quality"]["evidenceCoverageRatio"] == 1
+    assert packet["quality"]["duplicateSourceCount"] == 0
+    assert packet["quality"]["brokenUrlCount"] == 0
+    assert packet["quality"]["sourceTypeMix"]
+    assert "averageTrustScore" in packet["quality"]
+    assert "benchmarkUsefulnessRatio" in packet["quality"]
     assert packet["sources"][0]["decision"]["decision"] == "included"
     assert packet["sources"][0]["snapshots"][0]["public_id"]
     assert packet["source_documents"][0]["sourceIndexRef"]["snapshotPublicId"]
@@ -221,6 +226,9 @@ def test_bulk_source_import_feeds_generation_packet_eval(client) -> None:
     assert packet["quality"]["status"] == "usable"
     assert packet["quality"]["includedSourceCount"] == 2
     assert packet["quality"]["sourceDocumentCount"] == 2
+    assert packet["quality"]["duplicateSourceCount"] == 0
+    assert packet["quality"]["sourceTypeMix"]
+    assert "qualityWarnings" in packet["quality"]
     assert all(document["snapshotId"] for document in packet["source_documents"])
     assert "pasta" not in " ".join(packet["source_urls"]).lower()
     assert {"stoichiometry", "bonding"}.issubset(

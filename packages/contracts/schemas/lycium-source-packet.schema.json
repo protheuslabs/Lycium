@@ -210,18 +210,42 @@
         "status",
         "includedSourceCount",
         "sourceDocumentCount",
+        "duplicateSourceCount",
+        "brokenUrlCount",
         "snapshotCoverageRatio",
         "documentCoverageRatio",
         "evidenceCoverageRatio",
+        "sourceTypeMix",
+        "averageTrustScore",
+        "freshnessKnownRatio",
+        "staleVerificationCount",
+        "benchmarkSourceCount",
+        "benchmarkUsefulnessRatio",
+        "qualityWarnings",
         "warningCount"
       ],
       "properties": {
         "status": { "enum": ["usable", "needs_review", "empty"] },
         "includedSourceCount": { "type": "number", "minimum": 0 },
         "sourceDocumentCount": { "type": "number", "minimum": 0 },
+        "duplicateSourceCount": { "type": "number", "minimum": 0 },
+        "brokenUrlCount": { "type": "number", "minimum": 0 },
         "snapshotCoverageRatio": { "type": "number", "minimum": 0, "maximum": 1 },
         "documentCoverageRatio": { "type": "number", "minimum": 0, "maximum": 1 },
         "evidenceCoverageRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sourceTypeMix": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0 }
+        },
+        "averageTrustScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "freshnessKnownRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "staleVerificationCount": { "type": "number", "minimum": 0 },
+        "benchmarkSourceCount": { "type": "number", "minimum": 0 },
+        "benchmarkUsefulnessRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "qualityWarnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "warningCount": { "type": "number", "minimum": 0 }
       }
     }

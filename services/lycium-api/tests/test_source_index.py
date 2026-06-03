@@ -369,6 +369,10 @@ def test_index_bulk_import_feeds_generation_packet(client) -> None:
     assert len(packet["source_documents"]) == 1
     assert packet["quality"]["status"] == "usable"
     assert packet["quality"]["documentCoverageRatio"] == 1
+    assert packet["quality"]["duplicateSourceCount"] == 0
+    assert packet["quality"]["brokenUrlCount"] == 0
+    assert packet["quality"]["sourceTypeMix"]
+    assert "benchmarkUsefulnessRatio" in packet["quality"]
     assert packet["source_documents"][0]["snapshotId"]
     assert "Stoichiometry" in packet["source_documents"][0]["text"]
 

@@ -17,6 +17,8 @@ Course generation should prefer source packets over loose URL lists when packet 
 
 Each source packet includes a `quality` summary. Downstream generators should treat packets with `quality.status: "usable"` as generation-ready evidence. Packets marked `needs_review` or `empty` should stay inspectable, but should not be used as the only grounding evidence for a publishable course without reviewer approval.
 
+The packet quality report is the first reusable evidence-health primitive for Lycium and future Protheus research systems. It reports document, snapshot, and evidence coverage; duplicate canonical URLs; broken-link counts; source type mix; average trust; freshness and verification coverage; stale verification count; curriculum-benchmark source count; benchmark usefulness ratio; and quality warnings.
+
 Every `source-packet-v1` has a portable root envelope:
 
 - `packet_id`: a stable packet identifier derived from consumer, context, prompt, and included source URLs.

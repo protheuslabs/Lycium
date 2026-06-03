@@ -137,9 +137,20 @@
     "status": "usable",
     "includedSourceCount": 1,
     "sourceDocumentCount": 1,
+    "duplicateSourceCount": 0,
+    "brokenUrlCount": 0,
     "snapshotCoverageRatio": 1,
     "documentCoverageRatio": 1,
     "evidenceCoverageRatio": 1,
+    "sourceTypeMix": {
+      "open_courseware": 1
+    },
+    "averageTrustScore": 0.75,
+    "freshnessKnownRatio": 1,
+    "staleVerificationCount": 0,
+    "benchmarkSourceCount": 1,
+    "benchmarkUsefulnessRatio": 1,
+    "qualityWarnings": [],
     "warningCount": 0
   }
 }

@@ -154,9 +154,18 @@ export type LyciumSourcePacket = {
     status: "usable" | "needs_review" | "empty" | string;
     includedSourceCount: number;
     sourceDocumentCount: number;
+    duplicateSourceCount: number;
+    brokenUrlCount: number;
     snapshotCoverageRatio: number;
     documentCoverageRatio: number;
     evidenceCoverageRatio: number;
+    sourceTypeMix: Record<string, number>;
+    averageTrustScore: number;
+    freshnessKnownRatio: number;
+    staleVerificationCount: number;
+    benchmarkSourceCount: number;
+    benchmarkUsefulnessRatio: number;
+    qualityWarnings: string[];
     warningCount: number;
   };
 };
