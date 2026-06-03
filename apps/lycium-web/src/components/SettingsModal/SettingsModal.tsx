@@ -1,6 +1,7 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import Dropdown from "../Dropdown/Dropdown";
 import GenerationRunsPanel from "./GenerationRunsPanel";
+import LocalStoragePanel from "./LocalStoragePanel";
 import Modal from "../Modal/Modal";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
 
@@ -198,6 +199,7 @@ export default function SettingsModal({
             </button>
           </div>
         </section>
+        <LocalStoragePanel />
         <GenerationRunsPanel />
         {settingsMessage && <p className={`settings-status settings-status-${settingsStatus}`}>{settingsMessage}</p>}
     </Modal>

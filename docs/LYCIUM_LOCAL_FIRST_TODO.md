@@ -62,7 +62,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Depends on: generation run records.
 
 14. Local storage export/import UI
-    - Status: pending
+    - Status: done
     - Goal: expose storage health, backup, export, and latest backup from the app.
     - Depends on: local storage status/export/backup API.
 
