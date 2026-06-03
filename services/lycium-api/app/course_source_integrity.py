@@ -29,6 +29,15 @@ def _source_record_ids(course: dict[str, Any]) -> set[str]:
     return set()
 
 
+def _source_ref_ids(value: Any) -> set[str]:
+    if not isinstance(value, str):
+        return set()
+    clean = value.strip()
+    if not clean:
+        return set()
+    return {clean, clean.split("#", 1)[0]}
+
+
 def _requirement_key(value: Any) -> str:
     return str(value or "").strip()
 
@@ -54,11 +63,11 @@ def _slot_requirement_key(slot: dict[str, Any]) -> str:
 def _slot_sources(slot: dict[str, Any], requirement_context: dict[str, dict[str, set[str]]]) -> set[str]:
     sources: set[str] = set()
     primary = slot.get("primarySourceId")
-    if isinstance(primary, str) and primary.strip():
-        sources.add(primary)
+    sources.update(_source_ref_ids(primary))
     fallback = slot.get("fallbackSourceIds")
     if isinstance(fallback, list):
-        sources.update(source_id for source_id in fallback if isinstance(source_id, str) and source_id.strip())
+        for source_id in fallback:
+            sources.update(_source_ref_ids(source_id))
     sources.update(source_ids(slot))
     context = requirement_context.get(_slot_requirement_key(slot))
     if context:
@@ -114,14 +123,15 @@ def _matching_slot_sources(slots: list[dict[str, Any]], requirement_context: dic
 def _coverage_sources(row: dict[str, Any]) -> set[str]:
     sources: set[str] = set()
     primary = row.get("primarySourceId")
-    if isinstance(primary, str) and primary.strip():
-        sources.add(primary)
+    sources.update(_source_ref_ids(primary))
     fallback = row.get("fallbackSourceIds")
     if isinstance(fallback, list):
-        sources.update(source_id for source_id in fallback if isinstance(source_id, str) and source_id.strip())
+        for source_id in fallback:
+            sources.update(_source_ref_ids(source_id))
     evidence_refs = row.get("evidenceRefs")
     if isinstance(evidence_refs, list):
-        sources.update(source_id for source_id in evidence_refs if isinstance(source_id, str) and source_id.strip())
+        for source_id in evidence_refs:
+            sources.update(_source_ref_ids(source_id))
     sources.update(source_ids(row))
     return sources
 

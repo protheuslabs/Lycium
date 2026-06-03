@@ -5,7 +5,8 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.course_quiz_blocks import normalize_quiz_block
-from app.course_source_gaps import create_needs_sources_course_snapshot, source_count_meets_minimum
+from app.course_generation_workflow import run_course_generation_workflow
+from app.course_source_gaps import create_needs_sources_course_snapshot, source_count_meets_minimum, update_needs_sources_course_snapshot
 from app.course_quality import assess_course_quality
 from app.course_section_generation import _build_section_content, _source_ids_from_citations, _source_records_from_citations, _source_records_from_input_urls, _source_slot_for_section, _with_source_ids
 from app.generation_helpers import COURSE_GENERATION_RULES, _build_module_summary_section, _build_quiz_for_section, _catalog_metadata_from_prompt, _ensure_minimum_outline_modules, _stable_id
@@ -195,6 +196,31 @@ def generate_course_from_draft(
         "section_source_map": section_source_map,
         "citation_map": citation_map,
     }
+    workflow_report = run_course_generation_workflow(structure)
+    source_gate = next((gate for gate in workflow_report.gates if gate.gate == "source_analysis"), None)
+    if source_gate and source_gate.status == "failed":
+        snapshot = CourseSnapshot(
+            learner_id=learner_id,
+            draft_id=draft.id,
+            title=draft.title,
+            prompt=draft.prompt,
+            language=draft.language,
+            level=draft.difficulty,
+            source_policy=source_policy,
+            status="needs_sources",
+            version=1,
+            structure=structure,
+            generation_trace={**trace, "workflow_report": workflow_report.model_dump()},
+        )
+        session.add(snapshot)
+        session.flush()
+        draft.status = "needs_sources"
+        return update_needs_sources_course_snapshot(
+            snapshot,
+            source_urls=[str(url) for url in submitted_source_urls],
+            source_gate=source_gate.model_dump(),
+        )
+
     quality_report = assess_course_quality(structure, gate="review")
     snapshot = CourseSnapshot(
         learner_id=learner_id,

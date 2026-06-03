@@ -384,12 +384,23 @@ def extract_benchmark_from_text(
         ],
         limit=12,
     )
-    required_items = _dedupe_items(_candidate_items(sections.get("required", []), allow_sentences=False), limit=12)
-    optional_items = _dedupe_items(_candidate_items(sections.get("optional", []), allow_sentences=False), limit=12)
+    required_items = _dedupe_items(
+        [*_candidate_items(sections.get("required", []), allow_sentences=False), *_plain_items(sections.get("required", []), limit=12)],
+        limit=12,
+    )
+    optional_items = _dedupe_items(
+        [*_candidate_items(sections.get("optional", []), allow_sentences=False), *_plain_items(sections.get("optional", []), limit=12)],
+        limit=12,
+    )
     prerequisite_items = _plain_items(sections.get("prerequisites", []), limit=8)
     assessment_types = _assessment_types(sections)
     evidence_ref = f"input-source-{index}"
-    schedule_clues = _schedule_clues(sections.get("schedule", []), evidence_ref)
+    schedule_rows = [
+        *sections.get("schedule", []),
+        *[row for row in sections.get("topics", []) if SCHEDULE_LABEL_RE.match(row[1])],
+        *[row for row in sections.get("general", [])[:40] if SCHEDULE_LABEL_RE.match(row[1])],
+    ]
+    schedule_clues = _schedule_clues(schedule_rows, evidence_ref)
     requirement_items = _dedupe_items([*outcome_items, *required_items, *topic_items, *optional_items], limit=20)
     if len(requirement_items) < 2:
         return None

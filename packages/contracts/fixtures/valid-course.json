@@ -7,6 +7,7 @@
   "tags": ["web", "networking", "http"],
   "learningTypes": [],
   "orderMandatory": false,
+  "prerequisites": ["Basic web browser use", "Basic client-server vocabulary"],
   "sourceIds": ["source-http", "source-mdn-status"],
   "sourceRecords": [
     {
@@ -24,6 +25,58 @@
   ],
   "metadata": {
     "pacingLabel": "Module",
+    "requirementOrigins": [
+      {
+        "requirementId": "req-http-request-response",
+        "title": "HTTP request and response",
+        "importance": "required",
+        "originType": "common_academic_requirement",
+        "evidenceRefs": ["source-http"],
+        "benchmarkIds": ["benchmark-http-fundamentals"],
+        "frequency": 1,
+        "score": 0.92,
+        "sourceConfidence": 0.9,
+        "sourceTypeWeight": 0.68,
+        "reviewStatus": "reviewed"
+      },
+      {
+        "requirementId": "req-http-methods-status-codes",
+        "title": "HTTP methods and status codes",
+        "importance": "required",
+        "originType": "common_academic_requirement",
+        "evidenceRefs": ["source-mdn-status"],
+        "benchmarkIds": ["benchmark-http-fundamentals"],
+        "frequency": 1,
+        "score": 0.92,
+        "sourceConfidence": 0.9,
+        "sourceTypeWeight": 0.68,
+        "reviewStatus": "reviewed"
+      }
+    ],
+    "sourceSlots": [
+      {
+        "requiredConceptId": "req-http-request-response",
+        "title": "HTTP request and response",
+        "primarySourceId": "source-http",
+        "fallbackSourceIds": [],
+        "replacementPolicy": "review_required",
+        "evidenceRefs": ["source-http"],
+        "confidence": 0.92,
+        "coverageStatus": "covered",
+        "sectionIds": ["http-request-response", "quiz-http-request-response", "module-http-messages-summary"]
+      },
+      {
+        "requiredConceptId": "req-http-methods-status-codes",
+        "title": "HTTP methods and status codes",
+        "primarySourceId": "source-mdn-status",
+        "fallbackSourceIds": [],
+        "replacementPolicy": "review_required",
+        "evidenceRefs": ["source-mdn-status"],
+        "confidence": 0.92,
+        "coverageStatus": "covered",
+        "sectionIds": ["http-methods-status-codes", "quiz-http-methods-status-codes", "module-http-semantics-summary"]
+      }
+    ],
     "scope": {
       "audience": "undergraduate web development learner",
       "level": "undergrad",
@@ -47,7 +100,7 @@
             {
               "type": "text",
               "heading": "Explanation",
-              "value": "HTTP is a request-response protocol used by browsers, servers, command-line clients, APIs, and many distributed systems. A client starts an exchange by sending a request that names the desired resource and the action it wants performed. A server answers with a response that includes a status code, metadata, and sometimes a response body. This structure matters because web developers debug systems by locating where an exchange failed: the request may target the wrong URL, omit required headers, use the wrong method, or send a body the server cannot interpret.",
+              "value": "HTTP is a request-response protocol used by browsers, servers, command-line clients, APIs, and many distributed systems. This section builds on the prerequisite idea that clients ask for resources and servers answer with representations. A client starts an exchange by sending a request that names the desired resource and the action it wants performed. A server answers with a response that includes a status code, metadata, and sometimes a response body. This foundation matters because web developers debug systems by locating where an exchange failed: the request may target the wrong URL, omit required headers, use the wrong method, or send a body the server cannot interpret.",
               "sourceIds": ["source-http"]
             },
             {
@@ -153,7 +206,7 @@
             {
               "type": "text",
               "heading": "Explanation",
-              "value": "HTTP methods and status codes give shared meaning to web exchanges. A method such as GET, POST, PUT, PATCH, or DELETE tells the server what kind of action the client is requesting. A status code tells the client how the server interpreted the request. This vocabulary allows clients, servers, proxies, caches, and developers to coordinate without a private explanation for every endpoint. The exact response body may differ across applications, but the method and status code provide a common diagnostic frame.",
+              "value": "HTTP methods and status codes give shared meaning to web exchanges. This module moves from the foundation of messages to the deeper semantic contract that lets teams reason about API behavior. A method such as GET, POST, PUT, PATCH, or DELETE tells the server what kind of action the client is requesting. A status code tells the client how the server interpreted the request. This vocabulary allows clients, servers, proxies, caches, and developers to coordinate without a private explanation for every endpoint. The exact response body may differ across applications, but the method and status code provide a common diagnostic frame for mastery evidence in quizzes, debugging exercises, and project reviews.",
               "sourceIds": ["source-mdn-status"]
             },
             {

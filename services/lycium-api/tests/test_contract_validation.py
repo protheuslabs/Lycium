@@ -6,6 +6,7 @@ from pathlib import Path
 
 from app.contract_validation import validate_course_schema
 from app.course_agent_contract import validate_course_contract
+from app.course_generation_workflow import run_course_generation_workflow
 from app.course_quality import assess_course_quality
 from app.program_quality import assess_program_quality
 from app.program_validation import validate_program_contract
@@ -64,6 +65,25 @@ def test_quality_gate_rejects_prompt_like_placeholder_lessons() -> None:
 
     assert report["passed"] is False
     assert report["metrics"]["qualityEvalFailedDimensionCount"] >= 1
+
+
+def test_publish_readiness_requires_critical_gates_to_pass() -> None:
+    course = deepcopy(read_fixture("valid-course.json"))
+    first_quiz = next(
+        block
+        for module in course["modules"]
+        for section in module["sections"]
+        for block in section.get("content", [])
+        if isinstance(block, dict) and block.get("type") == "quiz"
+    )
+    first_quiz["questions"] = first_quiz["questions"][:3]
+
+    report = run_course_generation_workflow(course).model_dump()
+    publish_gate = next(gate for gate in report["gates"] if gate["gate"] == "review_publish")
+
+    assert publish_gate["status"] == "failed"
+    assert publish_gate["artifacts"]["criticalGateBlockerCount"] >= 1
+    assert any("Publish-critical gates must pass" in issue["message"] for issue in publish_gate["issues"])
 
 
 def _program_course_packets(program: dict) -> list[dict]:

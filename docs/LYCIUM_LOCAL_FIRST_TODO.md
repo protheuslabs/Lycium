@@ -49,11 +49,11 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: review/generation fails when section citations are not mapped to concepts in that section.
 
 11. Needs-sources draft behavior
-    - Status: partially done
+    - Status: done
     - Goal: weak source coverage creates an incomplete draft card, not hollow lesson content.
 
 12. Review/publish gate hardening
-    - Status: partially done
+    - Status: done
     - Goal: generated courses stay draft/reviewable until source, quality, quiz, citation, and filler checks pass.
 
 13. Generation observability UI

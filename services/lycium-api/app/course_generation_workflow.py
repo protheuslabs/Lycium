@@ -386,10 +386,63 @@ def _gate_quality_eval(course: dict[str, Any]) -> GateResult:
     )
 
 
-def _gate_review_publish(gates: list[GateResult]) -> GateResult:
+PUBLISH_CRITICAL_GATES = {
+    "source_analysis",
+    "content_draft",
+    "assessment",
+    "validation",
+    "quality_eval",
+}
+
+
+def _blocking_source_gaps(course: dict[str, Any]) -> list[dict[str, Any]]:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    gaps = metadata.get("sourceGaps")
+    return [
+        gap
+        for gap in gaps
+        if isinstance(gap, dict) and str(gap.get("severity") or "").strip() == "blocking"
+    ] if isinstance(gaps, list) else []
+
+
+def _gate_review_publish(gates: list[GateResult], course: dict[str, Any]) -> GateResult:
     failed_gate_names = [gate.gate for gate in gates if gate.status == "failed"]
+    critical_review_gates = [
+        gate.gate
+        for gate in gates
+        if gate.gate in PUBLISH_CRITICAL_GATES and gate.status != "passed"
+    ]
+    blocking_source_gaps = _blocking_source_gaps(course)
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    metadata_status = str(metadata.get("status") or "").strip()
     issues = [_issue("error", f"Failed gates must be resolved before publish: {', '.join(failed_gate_names)}.")] if failed_gate_names else []
-    return _gate("review_publish", "Workflow gate status was summarized for review/publish readiness.", issues, {"failedGateCount": len(failed_gate_names)})
+    if critical_review_gates:
+        issues.append(
+            _issue(
+                "error",
+                "Publish-critical gates must pass before publish: "
+                + ", ".join(critical_review_gates)
+                + ".",
+            )
+        )
+    if metadata_status == "needs_sources" or blocking_source_gaps:
+        issues.append(
+            _issue(
+                "error",
+                "Course has blocking source gaps and must remain a needs_sources draft until source coverage is resolved.",
+                "metadata.sourceGaps",
+            )
+        )
+    return _gate(
+        "review_publish",
+        "Workflow gate status was summarized for review/publish readiness.",
+        issues,
+        {
+            "failedGateCount": len(failed_gate_names),
+            "criticalGateBlockerCount": len(critical_review_gates),
+            "blockingSourceGapCount": len(blocking_source_gaps),
+        },
+    )
 
 
 _COURSE_GATE_RUNNERS = {
@@ -415,7 +468,7 @@ _COURSE_GATE_RUNNERS = {
 
 def run_course_generation_workflow(course: dict[str, Any]) -> CourseGenerationWorkflowReport:
     gates = [_COURSE_GATE_RUNNERS[gate_name](course) for gate_name in COURSE_GENERATION_GATE_NAMES if gate_name != "review_publish"]
-    gates.append(_gate_review_publish(gates))
+    gates.append(_gate_review_publish(gates, course))
 
     failed_count = sum(1 for gate in gates if gate.status == "failed")
     review_count = sum(1 for gate in gates if gate.status == "needs_review")

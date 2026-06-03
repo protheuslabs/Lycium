@@ -57,13 +57,60 @@ def source_urls_from_needs_sources_snapshot(snapshot: CourseSnapshot) -> list[st
     return _unique_source_urls(urls)
 
 
-def _source_gap_description(current_count: int) -> str:
+def _source_gate_issue_messages(source_gate: dict[str, Any] | None) -> list[str]:
+    issues = source_gate.get("issues") if isinstance(source_gate, dict) else None
+    if not isinstance(issues, list):
+        return []
+    messages: list[str] = []
+    for issue in issues:
+        if isinstance(issue, dict) and isinstance(issue.get("message"), str) and issue["message"].strip():
+            messages.append(issue["message"].strip())
+    return messages
+
+
+def _source_gap_description(current_count: int, source_gate: dict[str, Any] | None = None) -> str:
+    if source_gate:
+        return (
+            f"This draft has {current_count} submitted source{'' if current_count == 1 else 's'}, "
+            "but Lycium could not verify enough concept-level source coverage for the generated sections. "
+            "Add targeted benchmark, textbook, lecture, lab, video, simulation, or assignment sources for the uncovered concepts."
+        )
     minimum_count = int(SOURCE_COVERAGE_POLICY["minimumCourseSources"])
     return (
         f"This draft has {current_count} submitted source"
         f"{'' if current_count == 1 else 's'}, but Lycium requires at least {minimum_count} course-level sources "
         "before full course generation. Add benchmark, textbook, lecture, lab, video, simulation, or assignment sources."
     )
+
+
+def _source_gap(title: str, current_count: int, source_gate: dict[str, Any] | None = None) -> dict[str, Any]:
+    minimum_count = int(SOURCE_COVERAGE_POLICY["minimumCourseSources"])
+    gap_id = "concept-source-coverage" if source_gate else "course-source-minimum"
+    gap = {
+        "id": gap_id,
+        "scopeType": "course",
+        "scopeId": "course",
+        "title": "Add concept sources" if source_gate else "Add course sources",
+        "description": _source_gap_description(current_count, source_gate),
+        "severity": "blocking",
+        "minimumSourceCount": minimum_count,
+        "currentSourceCount": current_count,
+        "sourceTypeHints": ["university_catalog", "syllabus", "open_textbook", "video", "simulation", "lab"],
+        "suggestedQueries": [
+            f"{title} syllabus",
+            f"{title} open textbook",
+            f"{title} lecture notes",
+        ],
+    }
+    if source_gate:
+        artifacts = source_gate.get("artifacts") if isinstance(source_gate.get("artifacts"), dict) else {}
+        gap["coverageGate"] = {
+            "gate": source_gate.get("gate") or "source_analysis",
+            "status": source_gate.get("status") or "failed",
+            "issues": _source_gate_issue_messages(source_gate)[:8],
+            "metrics": artifacts,
+        }
+    return gap
 
 
 def source_gap_quality_report(snapshot: CourseSnapshot) -> dict[str, Any]:
@@ -89,6 +136,7 @@ def update_needs_sources_course_snapshot(
     snapshot: CourseSnapshot,
     *,
     source_urls: list[str] | None,
+    source_gate: dict[str, Any] | None = None,
 ) -> CourseSnapshot:
     title = snapshot.title
     clean_source_urls = _unique_source_urls(source_urls)
@@ -96,23 +144,8 @@ def update_needs_sources_course_snapshot(
     minimum_count = int(SOURCE_COVERAGE_POLICY["minimumCourseSources"])
     source_records = _source_records_from_input_urls(clean_source_urls, title)
     source_ids = [record["id"] for record in source_records]
-    description = _source_gap_description(current_count)
-    gap = {
-        "id": "course-source-minimum",
-        "scopeType": "course",
-        "scopeId": "course",
-        "title": "Add course sources",
-        "description": description,
-        "severity": "blocking",
-        "minimumSourceCount": minimum_count,
-        "currentSourceCount": current_count,
-        "sourceTypeHints": ["university_catalog", "syllabus", "open_textbook", "video", "simulation", "lab"],
-        "suggestedQueries": [
-            f"{title} syllabus",
-            f"{title} open textbook",
-            f"{title} lecture notes",
-        ],
-    }
+    gap = _source_gap(title, current_count, source_gate)
+    description = str(gap["description"])
     structure = dict(snapshot.structure or {})
     metadata = dict(structure.get("metadata") or {})
     metadata["status"] = "needs_sources"
@@ -161,7 +194,9 @@ def update_needs_sources_course_snapshot(
             "passed": False,
             "currentSourceCount": current_count,
             "minimumCourseSources": minimum_count,
-            "blockingGapIds": ["course-source-minimum"],
+            "blockingGapIds": [gap["id"]],
+            "failedGate": source_gate.get("gate") if source_gate else "source_coverage",
+            "sourceAnalysis": source_gate,
         },
         "source_urls": clean_source_urls,
     }
@@ -181,6 +216,7 @@ def create_needs_sources_course_snapshot(
     source_urls: list[str] | None = None,
     category: str | None = None,
     department: str | None = None,
+    source_gate: dict[str, Any] | None = None,
 ) -> CourseSnapshot:
     title = _title_from_prompt(prompt)
     clean_source_urls = _unique_source_urls(source_urls)
@@ -189,10 +225,11 @@ def create_needs_sources_course_snapshot(
     catalog_metadata = _catalog_metadata_from_prompt(prompt)
     course_category = category or catalog_metadata["category"]
     course_department = department or catalog_metadata["department"]
-    gap_id = "course-source-minimum"
     source_records = _source_records_from_input_urls(clean_source_urls, title)
     source_ids = [record["id"] for record in source_records]
-    description = _source_gap_description(current_count)
+    gap = _source_gap(title, current_count, source_gate)
+    gap_id = str(gap["id"])
+    description = str(gap["description"])
     draft_outline = {
         "title": title,
         "shortDescription": f"Draft course waiting for source coverage: {prompt[:120].strip()}",
@@ -239,24 +276,7 @@ def create_needs_sources_course_snapshot(
             "version": 1,
             "durationMinutes": expected_duration_minutes,
             "sourceCoveragePolicy": SOURCE_COVERAGE_POLICY,
-            "sourceGaps": [
-                {
-                    "id": gap_id,
-                    "scopeType": "course",
-                    "scopeId": "course",
-                    "title": "Add course sources",
-                    "description": description,
-                    "severity": "blocking",
-                    "minimumSourceCount": minimum_count,
-                    "currentSourceCount": current_count,
-                    "sourceTypeHints": ["university_catalog", "syllabus", "open_textbook", "video", "simulation", "lab"],
-                    "suggestedQueries": [
-                        f"{title} syllabus",
-                        f"{title} open textbook",
-                        f"{title} lecture notes",
-                    ],
-                }
-            ],
+            "sourceGaps": [gap],
             "sourceGapSuggestions": [],
             "generationPlan": {
                 "status": ["scoped", "needs_sources"],
@@ -305,6 +325,8 @@ def create_needs_sources_course_snapshot(
                 "currentSourceCount": current_count,
                 "minimumCourseSources": minimum_count,
                 "blockingGapIds": [gap_id],
+                "failedGate": source_gate.get("gate") if source_gate else "source_coverage",
+                "sourceAnalysis": source_gate,
             },
             "source_urls": clean_source_urls,
         },
