@@ -138,7 +138,7 @@ function textValues(value: unknown): string[] {
 function courseConcepts(course: CourseEntry): string[] {
   const conceptValues = course.data.modules.flatMap((module) =>
     module.sections.flatMap((section) =>
-      (section.blocks ?? []).flatMap((block) => {
+      section.content.flatMap((block) => {
         if (!block || typeof block !== "object") return [];
         const record = block as Record<string, unknown>;
         if (record.type !== "conceptCards") return [];

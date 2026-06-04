@@ -424,6 +424,7 @@ def register(app: FastAPI) -> None:
             taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
             if taxonomy_errors:
                 raise ValueError("; ".join(taxonomy_errors))
+            agent_profile = require_verified_active_agent_profile()
             source_urls = _generation_source_urls(payload)
             if not source_count_meets_minimum(source_urls):
                 job = enqueue_job(
@@ -449,7 +450,6 @@ def register(app: FastAPI) -> None:
                 session.commit()
                 session.refresh(job)
                 return course_generation_job_response(job)
-            agent_profile = require_verified_active_agent_profile()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         job = enqueue_job(

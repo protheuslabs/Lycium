@@ -336,13 +336,24 @@ def _gate_assessment(course: dict[str, Any]) -> GateResult:
 
 def _gate_media(course: dict[str, Any]) -> GateResult:
     issues: list[GateIssue] = []
+    source_records = course.get("sourceRecords")
+    records = source_records.values() if isinstance(source_records, dict) else source_records if isinstance(source_records, list) else []
+    has_video_source = any(
+        isinstance(record, dict)
+        and (
+            str(record.get("type") or record.get("sourceType") or "").lower() == "video"
+            or "youtube" in str(record.get("url") or "").lower()
+            or "video" in str(record.get("url") or "").lower()
+        )
+        for record in records
+    )
     video_count = 0
     for module_index, module in enumerate(_modules(course), start=1):
         module_video_count = sum(1 for section in _sections(module) for block in _content(section) if _is_video_block(block))
         video_count += module_video_count
-        if module_video_count == 0:
+        if has_video_source and module_video_count == 0:
             issues.append(_issue("warning", "Module should include at least one source-backed video when reputable video material is available.", f"modules[{module_index}]"))
-    return _gate("media", "Video coverage was checked as a tunable course-production minimum.", issues, {"videoCount": video_count})
+    return _gate("media", "Video coverage was checked as a tunable course-production minimum.", issues, {"videoCount": video_count, "hasVideoSource": int(has_video_source)})
 
 
 def _gate_summary(course: dict[str, Any]) -> GateResult:

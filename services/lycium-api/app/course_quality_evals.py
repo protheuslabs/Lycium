@@ -257,15 +257,26 @@ def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
 def _eval_media(course: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, str]] = []
     module_count = len(_modules(course))
+    source_records = course.get("sourceRecords")
+    records = source_records.values() if isinstance(source_records, dict) else source_records if isinstance(source_records, list) else []
+    has_video_source = any(
+        isinstance(record, dict)
+        and (
+            str(record.get("type") or record.get("sourceType") or "").lower() == "video"
+            or "youtube" in str(record.get("url") or "").lower()
+            or "video" in str(record.get("url") or "").lower()
+        )
+        for record in records
+    )
     video_count = 0
     for module_index, module in enumerate(_modules(course), start=1):
         module_videos = sum(1 for section in _sections(module) for block in _content(section) if _is_video(block))
         video_count += module_videos
-        if module_videos == 0:
+        if has_video_source and module_videos == 0:
             findings.append(_finding("warning", "Module has no video block; acceptable only if no reputable video source is available.", f"modules[{module_index}]"))
     coverage = video_count / module_count if module_count else 0
-    score = 0.72 + min(0.28, coverage * 0.28)
-    return _dimension(key="media", label="Media support", weight=0.06, score=score, findings=findings, metrics={"videoCount": video_count, "moduleVideoCoverage": round(coverage, 2)})
+    score = 1.0 if not has_video_source else 0.72 + min(0.28, coverage * 0.28)
+    return _dimension(key="media", label="Media support", weight=0.06, score=score, findings=findings, metrics={"videoCount": video_count, "moduleVideoCoverage": round(coverage, 2), "hasVideoSource": int(has_video_source)})
 
 
 def _eval_specificity(course: dict[str, Any]) -> dict[str, Any]:

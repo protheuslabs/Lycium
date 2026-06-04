@@ -7,12 +7,12 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app import db
 from app.coverage import recompute_coverage
 from app.course_agent_harness import CourseAgentError, generate_course_with_agent_staged
 from app.course_quality import assess_course_quality
 from app.course_generation_service import build_course_snapshot_from_agent_result
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
-from app.db import SessionLocal
 from app.generation import generate_course_direct
 from app.generation_observability import (
     complete_generation_run,
@@ -137,7 +137,7 @@ def _checkpoint_progress(payload: dict[str, Any], trace: dict[str, Any]) -> floa
 
 
 def _update_generation_job(job_id: int, updates: dict[str, Any], *, status: str | None = None, error: str | None = None) -> None:
-    with SessionLocal() as session:
+    with db.SessionLocal() as session:
         job = session.get(Job, job_id)
         if job is None:
             return
@@ -192,7 +192,7 @@ def _persist_source_index_for_generation(session: Session, *, job_id: int, paylo
 
 
 def run_agent_course_generation_job(job_id: int) -> None:
-    with SessionLocal() as session:
+    with db.SessionLocal() as session:
         job = session.get(Job, job_id)
         if job is None:
             return
@@ -230,7 +230,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
             if isinstance(partial_course, dict):
                 next_result["course"] = partial_course
             _update_generation_job(job_id, next_result, status="running")
-            record_generation_run_checkpoint(job_id, next_result, session_factory=SessionLocal)
+            record_generation_run_checkpoint(job_id, next_result, session_factory=db.SessionLocal)
 
         generated = generate_course_with_agent_staged(
             prompt=str(payload.get("prompt") or ""),
@@ -255,7 +255,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
         quality_report = assess_course_quality(generated.course, gate="generation")
         snapshot_payload = None
 
-        with SessionLocal() as session:
+        with db.SessionLocal() as session:
             job = session.get(Job, job_id)
             if job is None:
                 return
@@ -315,9 +315,9 @@ def run_agent_course_generation_job(job_id: int) -> None:
         }
         if isinstance(partial_course, dict):
             result["course"] = partial_course
-        fail_generation_run(job_id, error=str(exc), result=result, session_factory=SessionLocal)
+        fail_generation_run(job_id, error=str(exc), result=result, session_factory=db.SessionLocal)
         if isinstance(trace, dict):
-            with SessionLocal() as session:
+            with db.SessionLocal() as session:
                 _persist_source_index_for_generation(session, job_id=job_id, payload=payload, trace=trace)
                 session.commit()
         _update_generation_job(job_id, result, status="failed", error=str(exc))
