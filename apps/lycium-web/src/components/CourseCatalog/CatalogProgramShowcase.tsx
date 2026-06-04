@@ -12,7 +12,6 @@ type CatalogProgramShowcaseProps = {
   selectedProgram: LyciumProgram | null;
   onProgramSelect: (program: LyciumProgram) => void;
   onClusterSelect: (cluster: LyciumRequirementGroup) => void;
-  onOpenProgram: (program: LyciumProgram) => void;
 };
 
 function CatalogPathContinuityStrip({ continuity }: { continuity: CatalogPathContinuity }) {
@@ -38,7 +37,6 @@ export default function CatalogProgramShowcase({
   selectedProgram,
   onProgramSelect,
   onClusterSelect,
-  onOpenProgram,
 }: CatalogProgramShowcaseProps) {
   if (viewLevel === "programs") {
     return (
@@ -111,9 +109,6 @@ export default function CatalogProgramShowcase({
           );
         })}
       </div>
-      <button className="program-open-detail-button" type="button" onClick={() => onOpenProgram(selectedProgram)}>
-        Open full program detail
-      </button>
     </section>
   );
 }

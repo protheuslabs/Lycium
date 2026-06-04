@@ -316,6 +316,7 @@
           "enum": ["cluster", "track", "concentration", "elective_pool", "foundation", "capstone", "bridge", "remedial", "lab", "seminar"]
         },
         "purpose": { "type": "string", "minLength": 1 },
+        "locked": { "type": "boolean" },
         "learningOutcomes": { "type": "array", "items": { "$ref": "#/$defs/learningOutcome" } },
         "requirements": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
         "completionRule": { "$ref": "#/$defs/completionRule" },

@@ -15,6 +15,7 @@ import "../components/CatalogFooter/CatalogFooter.css";
 import "../components/Sidebar/Sidebar.css";
 import "../components/SettingsModal/SettingsModal.css";
 import "../components/SettingsModal/SettingsModal.theme.css";
+import "../components/Legal/LegalPage.css";
 
 export const metadata: Metadata = {
   title: "Lycium",

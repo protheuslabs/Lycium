@@ -1,7 +1,9 @@
+import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
 import { scoreWeightedSearch } from "../../utils/weightedSearch";
+import type { CatalogUnmetPrerequisite } from "./catalogPrerequisites";
 export { normalizeSearchText } from "../../utils/weightedSearch";
 
 export type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
@@ -15,7 +17,7 @@ export type CatalogVisibleCourse = {
   bookmarkedSection: ReturnType<typeof getBookmarkedModuleSection>;
   hasCourseActivity: boolean;
   isLocked: boolean;
-  unmetPrerequisites: string[];
+  unmetPrerequisites: CatalogUnmetPrerequisite[];
   collegeLabel: string;
   searchScore: number;
 };
@@ -68,6 +70,21 @@ export function getGeneratingCourseTitle(prompt: string): string {
 
 export function getCollegeFilterLabel(label: string): string {
   return label.replace(/^College of\s+/i, "");
+}
+
+export function canCreateCourseInCatalogScope(
+  program: LyciumProgram | null,
+  cluster: LyciumRequirementGroup | null,
+): boolean {
+  if (!cluster) {
+    return true;
+  }
+
+  if (typeof cluster.locked === "boolean") {
+    return !cluster.locked;
+  }
+
+  return program?.reviewStatus === "draft";
 }
 
 export function getCourseSearchScore(course: CourseEntry, query: string): number {

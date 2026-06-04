@@ -126,7 +126,7 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 ## Content Blocks
 
 - `text`: instructional prose in `value`.
-- `video`: embedded material. Prefer `sourceIds` that resolve to a source record with `embedUrl`.
+- `video`: embedded material. Prefer `sourceIds` that resolve to a source record with `embedUrl`. Use optional `clip.startSeconds` and `clip.endSeconds` when only a slice of the video supports the section; omit `clip` for the full video.
 - `quiz`: assessment only. Use nested `questions` for multi-question quizzes.
 - `game`: hands-on practice placeholder or project-like activity.
 - `conceptCards`: renderable concept inventory data. Use a `title` and `concepts`, where each concept object has a `name` and `description`.

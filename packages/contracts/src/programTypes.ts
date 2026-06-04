@@ -84,6 +84,7 @@ export type LyciumRequirementGroup = {
   displayName: string;
   groupKind: LyciumRequirementGroupKind;
   purpose: string;
+  locked?: boolean;
   learningOutcomes: LyciumLearningOutcome[];
   requirements: LyciumRequirement[];
   completionRule: LyciumCompletionRule;

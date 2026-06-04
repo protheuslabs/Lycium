@@ -101,3 +101,63 @@
 .catalog-search-field input::placeholder {
   color: #8a94a6;
 }
+
+.catalog-path-row {
+  display: flex;
+  align-items: center;
+  margin: -0.15rem 0 0.95rem;
+  min-width: 0;
+}
+
+.catalog-path-row ol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  list-style: none;
+}
+
+.catalog-path-row li {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.catalog-path-row li:not(:last-child)::after {
+  content: "/";
+  margin-left: 0.35rem;
+  color: currentColor;
+  opacity: 0.42;
+  font-weight: 800;
+}
+
+.catalog-path-row button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.28rem 0.62rem;
+  color: inherit;
+  background: rgba(74, 108, 247, 0.09);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.catalog-path-row button:hover {
+  background: rgba(74, 108, 247, 0.16);
+}
+
+.catalog-path-row button:focus,
+.catalog-path-row button:focus-visible,
+.catalog-path-row button:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.catalog-path-row button[aria-current="page"] {
+  background: rgba(74, 108, 247, 0.18);
+}

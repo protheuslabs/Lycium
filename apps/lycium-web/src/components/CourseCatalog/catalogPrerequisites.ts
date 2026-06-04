@@ -3,6 +3,11 @@ import { getCourseProgress } from "../../utils/courseRouting";
 
 type CoursePrerequisiteLike = NonNullable<CourseEntry["data"]["prerequisites"]>[number] | string;
 
+export type CatalogUnmetPrerequisite = {
+  id: string;
+  title: string;
+};
+
 function getPrerequisiteCourseId(prerequisite: CoursePrerequisiteLike): string | null {
   if (typeof prerequisite === "string") {
     return prerequisite;
@@ -23,7 +28,7 @@ function getPrerequisiteTitle(prerequisite: CoursePrerequisiteLike, prerequisite
   return prerequisite.title ?? prerequisiteCourse?.title ?? prerequisite.courseId ?? prerequisite.id ?? "required course";
 }
 
-export function getUnmetCoursePrerequisites(course: CourseEntry, courseMap: Map<string, CourseEntry>): string[] {
+export function getUnmetCoursePrerequisites(course: CourseEntry, courseMap: Map<string, CourseEntry>): CatalogUnmetPrerequisite[] {
   return (course.data.prerequisites ?? [])
     .map((prerequisite) => {
       const prerequisiteCourseId = getPrerequisiteCourseId(prerequisite);
@@ -36,7 +41,12 @@ export function getUnmetCoursePrerequisites(course: CourseEntry, courseMap: Map<
       const prerequisiteProgress = prerequisiteCourse ? getCourseProgress(prerequisiteCourse) : null;
       const isMet = Boolean(prerequisiteProgress && prerequisiteProgress.percentage >= 100);
 
-      return isMet ? null : getPrerequisiteTitle(prerequisite, prerequisiteCourse);
+      return isMet
+        ? null
+        : {
+            id: prerequisiteCourseId,
+            title: getPrerequisiteTitle(prerequisite, prerequisiteCourse),
+          };
     })
-    .filter((title): title is string => Boolean(title));
+    .filter((prerequisite): prerequisite is CatalogUnmetPrerequisite => Boolean(prerequisite));
 }

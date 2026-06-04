@@ -1,4 +1,6 @@
+import { useState } from "react";
 import type { CourseEntry } from "../../courseTypes";
+import Modal from "../Modal/Modal";
 import CatalogActionCard from "./CatalogActionCard";
 import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogVisibleCourse } from "./catalogUtils";
@@ -9,33 +11,25 @@ type CatalogCourseCardProps = {
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
   onOpenSourceGaps: (course: CourseEntry) => void;
+  onSearchPrerequisite: (query: string) => void;
   isPublishing: boolean;
 };
-
-function formatPrerequisiteTitles(titles: string[]): string {
-  if (titles.length <= 1) {
-    return titles[0] ?? "required course";
-  }
-
-  if (titles.length === 2) {
-    return `${titles[0]} and ${titles[1]}`;
-  }
-
-  return `${titles.slice(0, -1).join(", ")}, and ${titles[titles.length - 1]}`;
-}
 
 export default function CatalogCourseCard({
   visibleCourse,
   onOpenCourse,
   onOpenInfo,
   onOpenSourceGaps,
+  onSearchPrerequisite,
   isPublishing,
 }: CatalogCourseCardProps) {
   const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites } = visibleCourse;
+  const [isPrerequisiteModalOpen, setIsPrerequisiteModalOpen] = useState(false);
   const isReadyForReview = course.status === "ready_for_review";
   const needsSources = hasBlockingSourceGaps(course);
   const sourceSummary = sourceGapSummary(course);
   const requiresPrerequisites = !hasCourseActivity && unmetPrerequisites.length > 0;
+  const requiredCourseLabel = `Requires ${unmetPrerequisites.length} course${unmetPrerequisites.length === 1 ? "" : "s"}`;
 
   const handleCourseOpen = () => {
     if (needsSources) {
@@ -53,6 +47,7 @@ export default function CatalogCourseCard({
       disabled={requiresPrerequisites && !needsSources}
       onActivate={handleCourseOpen}
     >
+      {requiresPrerequisites && <span className="course-card-lock-watermark" aria-hidden="true" />}
       <button
         className="course-info-button"
         type="button"
@@ -84,10 +79,17 @@ export default function CatalogCourseCard({
       ) : !hasCourseActivity ? (
         <p className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}>
           {requiresPrerequisites ? (
-            <>
-              <span className="sidebar-lock-icon course-card-lock-icon" aria-hidden="true" />
-              <span>Required: {formatPrerequisiteTitles(unmetPrerequisites)}</span>
-            </>
+            <button
+              className="course-card-requires-button"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsPrerequisiteModalOpen(true);
+              }}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              {requiredCourseLabel}
+            </button>
           ) : (
             "Course not started"
           )}
@@ -111,6 +113,36 @@ export default function CatalogCourseCard({
         >
           {isPublishing ? "Publishing..." : "Review"}
         </button>
+      )}
+      {requiresPrerequisites && (
+        <Modal
+          isOpen={isPrerequisiteModalOpen}
+          title={course.title}
+          eyebrow="Prerequisites"
+          labelledById={`course-prerequisites-${course.key}`}
+          size="sm"
+          className="course-prerequisite-modal"
+          onClose={() => setIsPrerequisiteModalOpen(false)}
+        >
+          <p className="course-prerequisite-modal-intro">
+            Complete the following course{unmetPrerequisites.length === 1 ? "" : "s"} before opening this course.
+          </p>
+          <div className="course-prerequisite-modal-list">
+            {unmetPrerequisites.map((prerequisite) => (
+              <button
+                key={prerequisite.id}
+                className="course-prerequisite-modal-link"
+                type="button"
+                onClick={() => {
+                  setIsPrerequisiteModalOpen(false);
+                  onSearchPrerequisite(prerequisite.title);
+                }}
+              >
+                {prerequisite.title}
+              </button>
+            ))}
+          </div>
+        </Modal>
       )}
     </CatalogActionCard>
   );

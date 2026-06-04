@@ -5,7 +5,6 @@ import type {
   LyciumPortfolioArtifactRequirement,
   LyciumProgram,
   LyciumRequirement,
-  LyciumRequirementGroup,
 } from "@lycium/contracts";
 import type { CSSProperties } from "react";
 import Button from "../Button/Button";
@@ -269,7 +268,7 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
   const evaluationMap = new Map(requirementNodes.map((requirement) => [requirement.id, evaluateRequirementProgress(requirement, courseMap)]));
   const allRequirements = program.requirementGroups.flatMap((group) => leafRequirements(group.requirements));
   const requiredRequirements = allRequirements.filter((requirement) => requirement.required !== false);
-  const evaluations = requiredRequirements.map((requirement) => evaluateRequirement(requirement, courseMap));
+  const evaluations = requiredRequirements.map((requirement) => evaluateRequirementProgress(requirement, courseMap));
   const missingCourseRefs = unique(evaluations.flatMap((evaluation) => evaluation.missingCourseIds));
   const sourceCoveredCount = evaluations.filter((evaluation) => evaluation.evidenceIds.length > 0).length;
   const assessmentOrProjectCount = requiredRequirements.filter((requirement) => requirement.type === "pass_assessment" || requirement.type === "submit_project").length;

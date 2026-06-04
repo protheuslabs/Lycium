@@ -248,9 +248,102 @@
   opacity: 1;
 }
 
-.course-card-lock-icon {
-  flex: 0 0 auto;
-  display: inline-block;
+.course-card-lock-watermark {
+  position: absolute;
+  z-index: 0;
+  left: 50%;
+  top: 50%;
+  width: 5.2rem;
+  height: 4.35rem;
+  border-radius: 0.72rem;
+  color: currentColor;
+  background: currentColor;
+  opacity: 0.075;
+  pointer-events: none;
+  transform: translate(-50%, -38%);
+}
+
+.course-card-lock-watermark::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3.25rem;
+  width: 3.3rem;
+  height: 2.8rem;
+  border: 0.72rem solid currentColor;
+  border-bottom: 0;
+  border-radius: 999px 999px 0 0;
+  transform: translateX(-50%);
+}
+
+.course-card--locked > :not(.course-card-lock-watermark, .course-info-button) {
+  position: relative;
+  z-index: 1;
+}
+
+.course-card-requires-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 850;
+  line-height: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
+  cursor: pointer;
+}
+
+.course-card-requires-button:hover {
+  opacity: 0.76;
+}
+
+.course-card-requires-button:focus,
+.course-card-requires-button:focus-visible,
+.course-card-requires-button:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.course-prerequisite-modal-intro {
+  margin: 0 0 0.95rem;
+  color: inherit;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  opacity: 0.82;
+}
+
+.course-prerequisite-modal-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.course-prerequisite-modal-link {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 0.75rem 0.9rem;
+  color: inherit;
+  background: rgba(74, 108, 247, 0.1);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 850;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+}
+
+.course-prerequisite-modal-link:hover {
+  background: rgba(74, 108, 247, 0.16);
+}
+
+.course-prerequisite-modal-link:focus,
+.course-prerequisite-modal-link:focus-visible,
+.course-prerequisite-modal-link:active {
+  outline: none;
+  box-shadow: none;
 }
 
 .course-publish-button {

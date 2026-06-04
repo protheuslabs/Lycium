@@ -179,7 +179,7 @@ def _staged_media_messages(
                 f"{load_behavioral_contract()}\n\n"
                 "Return only one JSON object for an optional source-backed media block. "
                 "If no reputable source-backed video is available from the provided sources, return available:false with a reason. "
-                "Do not invent a video URL."
+                "Do not invent a video URL. If only part of a video is relevant, add block.clip.startSeconds and block.clip.endSeconds as integer seconds."
             ),
         },
         {
@@ -202,6 +202,7 @@ def _staged_media_messages(
                             "url": "https://source-backed-video-url",
                             "sourceIds": source_ids,
                             "description": "One sentence explaining why this video belongs in the module.",
+                            "clip": {"startSeconds": 0, "endSeconds": 300},
                         },
                     },
                 },

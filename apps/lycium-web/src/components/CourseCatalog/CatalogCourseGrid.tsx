@@ -7,6 +7,7 @@ import type { CatalogVisibleCourse } from "./catalogUtils";
 type CatalogCourseGridProps = {
   courseGridRef: RefObject<HTMLDivElement | null>;
   isGeneratingCourse: boolean;
+  canCreateCourseInScope: boolean;
   generatingCourseTitle: string;
   generateMessage: string;
   visibleCourses: CatalogVisibleCourse[];
@@ -16,11 +17,13 @@ type CatalogCourseGridProps = {
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
   onOpenSourceGaps: (course: CourseEntry) => void;
+  onSearchPrerequisite: (query: string) => void;
 };
 
 export default function CatalogCourseGrid({
   courseGridRef,
   isGeneratingCourse,
+  canCreateCourseInScope,
   generatingCourseTitle,
   generateMessage,
   visibleCourses,
@@ -30,20 +33,23 @@ export default function CatalogCourseGrid({
   onOpenCourse,
   onOpenInfo,
   onOpenSourceGaps,
+  onSearchPrerequisite,
 }: CatalogCourseGridProps) {
   return (
     <div className="course-grid" ref={courseGridRef}>
-      <CatalogActionCard
-        className="course-card create-course-card"
-        onActivate={onCreateCourse}
-      >
-        <div className="create-course-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
-          </svg>
-        </div>
-        <h3>Create Course</h3>
-      </CatalogActionCard>
+      {canCreateCourseInScope && (
+        <CatalogActionCard
+          className="course-card create-course-card"
+          onActivate={onCreateCourse}
+        >
+          <div className="create-course-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
+            </svg>
+          </div>
+          <h3>Create Course</h3>
+        </CatalogActionCard>
+      )}
       {isGeneratingCourse && (
         <article className="course-card course-card--generating" aria-live="polite" aria-busy="true">
           <h3>{generatingCourseTitle}</h3>
@@ -64,6 +70,7 @@ export default function CatalogCourseGrid({
           onOpenCourse={onOpenCourse}
           onOpenInfo={onOpenInfo}
           onOpenSourceGaps={onOpenSourceGaps}
+          onSearchPrerequisite={onSearchPrerequisite}
           isPublishing={publishingCourseKey === visibleCourse.course.key}
         />
       ))}

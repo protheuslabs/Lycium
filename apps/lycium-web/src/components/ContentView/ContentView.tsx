@@ -26,6 +26,16 @@ type ContentBlock = {
   heading?: string;
   title?: string;
   url?: string;
+  clip?: {
+    startSeconds?: number | string;
+    endSeconds?: number | string;
+    start?: number | string;
+    end?: number | string;
+  };
+  startSeconds?: number | string;
+  endSeconds?: number | string;
+  start_seconds?: number | string;
+  end_seconds?: number | string;
   sourceIds?: string[];
   cards?: Array<ConceptCard | string>;
   concepts?: Array<ConceptCard | string>;
@@ -117,6 +127,18 @@ type QuizProgressStatus = {
   timed: boolean;
 };
 type QuizProgressStatusHandler = (quizKey: string, status: QuizProgressStatus) => void;
+
+function getVideoClip(item: ContentBlock) {
+  const clip = item.clip ?? {};
+  const startSeconds = clip.startSeconds ?? clip.start ?? item.startSeconds ?? item.start_seconds;
+  const endSeconds = clip.endSeconds ?? clip.end ?? item.endSeconds ?? item.end_seconds;
+
+  if (startSeconds === undefined && endSeconds === undefined) {
+    return undefined;
+  }
+
+  return { startSeconds, endSeconds };
+}
 
 export default function ContentView({ 
   courseKey,
@@ -383,6 +405,7 @@ function renderContentBlock(
     case "video": {
       const videoSource = blockSources.find((source) => source.embedUrl) ?? blockSources[0];
       const videoUrl = item.url ?? videoSource?.embedUrl ?? videoSource?.url;
+      const clip = getVideoClip(item);
 
       if (!videoUrl) {
         return (
@@ -393,7 +416,7 @@ function renderContentBlock(
       }
 
       return (
-        <VideoBlock key={key} url={videoUrl} title={videoSource?.title ?? "Video content"} />
+        <VideoBlock key={key} url={videoUrl} title={videoSource?.title ?? item.title ?? "Video content"} clip={clip} />
       );
     }
       

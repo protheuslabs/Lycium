@@ -89,6 +89,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
    - scope `sourceIds` and citations locally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, section/block `sourceIds` support only concepts taught or assessed there, and section citations must not blanket-repeat unrelated course sources
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
+   - video blocks may reuse a full video source with an optional `clip` object such as `{ "startSeconds": 185, "endSeconds": 420 }`; omit `clip` to play the whole video
    - for required concepts, prefer source slots with a primary source, fallback sources, and a replacement policy
 12. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
 13. Validate structure and coherence before finishing.

@@ -66,6 +66,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 - `content_draft`: fill sections with actual learner-facing explanation, examples, practice, source references, and concept cards.
 - `assessment`: create assessment-only quiz sections that test previously taught or sourced concepts.
 - `media`: best-effort source-backed video/media discovery. Log skipped or failed media stages, but do not fail an otherwise valid course solely because reputable video support is unavailable.
+- Video sources should be recorded as full source records. Reuse a video in a section with a `video` block and optional `clip: { "startSeconds": n, "endSeconds": n }` when the learner should watch only the relevant slice. Omit `clip` to use the whole video.
 - `summary`: end modules/weeks with concept-card summaries pulled from prior Learn pages.
 - `validation`: run schema, source-reference, placeholder-prose, structure, assessment, and taxonomy checks.
 - `quality_eval`: score course quality across structure, instructional substance, assessment, concept-card integrity, source grounding, media support, and course specificity.

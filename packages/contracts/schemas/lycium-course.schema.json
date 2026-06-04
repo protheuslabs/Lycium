@@ -85,6 +85,20 @@
                       "title": { "type": "string" },
                       "value": { "type": "string" },
                       "url": { "type": "string" },
+                      "clip": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "properties": {
+                          "startSeconds": { "type": ["number", "string"] },
+                          "endSeconds": { "type": ["number", "string"] },
+                          "start": { "type": ["number", "string"] },
+                          "end": { "type": ["number", "string"] }
+                        }
+                      },
+                      "startSeconds": { "type": ["number", "string"] },
+                      "endSeconds": { "type": ["number", "string"] },
+                      "start_seconds": { "type": ["number", "string"] },
+                      "end_seconds": { "type": ["number", "string"] },
                       "sourceIds": { "type": "array", "items": { "type": "string" } },
                       "concepts": {
                         "type": "array",

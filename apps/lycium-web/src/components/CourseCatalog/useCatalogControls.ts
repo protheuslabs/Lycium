@@ -197,6 +197,18 @@ export function useCatalogControls({
   };
 
   const handleSearchQueryChange = (value: string) => setCourseFilter(() => setSearchQuery(value));
+  const handlePrerequisiteSearch = (value: string) => {
+    setSearchQuery(value);
+    setCatalogViewLevel("courses");
+    setSelectedClusterId("");
+    setShowLockedCourses(true);
+    setCollegeFilter("all");
+    setDepartmentFilter("all");
+    setDifficultyFilter("all");
+    setActivityFilter("all");
+    setCatalogPage(1);
+    onCatalogDrilldown("courses");
+  };
   const handleCollegeFilterChange = (value: string) =>
     setCourseFilter(() => {
       setCollegeFilter(value);
@@ -280,6 +292,7 @@ export function useCatalogControls({
     handleDepartmentFilterChange,
     handleDifficultyFilterChange,
     handlePathSortModeChange,
+    handlePrerequisiteSearch,
     handleProgramSelect,
     handleResetCatalogFilters,
     handleSearchQueryChange,

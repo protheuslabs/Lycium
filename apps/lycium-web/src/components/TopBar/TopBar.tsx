@@ -3,8 +3,8 @@ import type { MouseEvent } from "react";
 import { COURSE_CATALOG_PATH, SETTINGS_PATH } from "../../utils/courseRouting";
 
 type TopBarProps = {
-  onOpenCatalog: () => void;
-  onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onOpenCatalog?: () => void;
+  onOpenSettings?: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
 
 export default function TopBar({ onOpenCatalog, onOpenSettings }: TopBarProps) {
@@ -15,10 +15,14 @@ export default function TopBar({ onOpenCatalog, onOpenSettings }: TopBarProps) {
         href={COURSE_CATALOG_PATH}
         className="catalog-link top-bar-icon-button"
         aria-label="Course catalog"
-        onClick={(event) => {
-          event.preventDefault();
-          onOpenCatalog();
-        }}
+        onClick={
+          onOpenCatalog
+            ? (event) => {
+                event.preventDefault();
+                onOpenCatalog();
+              }
+            : undefined
+        }
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
           <path d="M4.5 4h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm10 0h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm-10 10h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm10 0h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Z" />

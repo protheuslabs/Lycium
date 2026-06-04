@@ -155,11 +155,23 @@ export type LyciumQuizQuestion = {
   timed?: "t" | "f" | boolean;
 };
 
+export type LyciumVideoClip = {
+  startSeconds?: number | string;
+  endSeconds?: number | string;
+  start?: number | string;
+  end?: number | string;
+};
+
 export type LyciumCourseBlock = {
   type: string;
   title?: string;
   value?: string;
   url?: string;
+  clip?: LyciumVideoClip;
+  startSeconds?: number | string;
+  endSeconds?: number | string;
+  start_seconds?: number | string;
+  end_seconds?: number | string;
   sourceIds?: string[];
   concepts?: LyciumConcept[];
   question?: string;

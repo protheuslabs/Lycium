@@ -1,4 +1,7 @@
 
+import Link from "next/link";
+import { legalDocuments } from "../../legal/legalDocuments";
+
 type CatalogFooterProps = {
   note?: string;
 };
@@ -8,6 +11,14 @@ export default function CatalogFooter({
 }: CatalogFooterProps) {
   return (
     <footer className="catalog-footer" aria-label="Catalog footer">
+      <nav className="catalog-footer-legal" aria-label="Legal documents">
+        {legalDocuments.map((document, index) => (
+          <span className="catalog-footer-legal-item" key={document.slug}>
+            {index > 0 && <span className="catalog-footer-legal-separator" aria-hidden="true">•</span>}
+            <Link href={`/legal/${document.slug}`}>{document.navLabel}</Link>
+          </span>
+        ))}
+      </nav>
       <div className="catalog-footer-meta">
         <p>{note}</p>
         <nav className="catalog-footer-social" aria-label="Social media">
