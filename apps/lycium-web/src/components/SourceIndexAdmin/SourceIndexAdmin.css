@@ -1,9 +1,7 @@
 .source-index-admin-page {
   min-height: 100vh;
   box-sizing: border-box;
-  display: grid;
-  place-items: center;
-  padding: 5rem 1.25rem;
+  padding: 3rem 1.25rem;
   color: var(--lycium-color-text);
   background:
     radial-gradient(circle at 15% 12%, rgba(37, 99, 235, 0.16), transparent 28rem),
@@ -12,8 +10,9 @@
 }
 
 .source-index-admin-panel {
-  width: min(100%, 58rem);
+  width: min(100%, 68rem);
   box-sizing: border-box;
+  margin: 0 auto;
   border: 1px solid var(--lycium-color-border);
   border-radius: var(--lycium-radius-modal);
   display: grid;
@@ -27,7 +26,10 @@
 .source-index-admin-copy,
 .source-index-admin-field span,
 .source-index-admin-status,
-.source-index-admin-summary span {
+.source-index-admin-summary span,
+.source-index-admin-quality,
+.source-index-admin-source-list span,
+.source-index-admin-source-list em {
   color: var(--lycium-color-text-muted);
 }
 
@@ -47,13 +49,25 @@
 }
 
 .source-index-admin-copy {
-  max-width: 45rem;
+  max-width: 54rem;
   margin: 0;
+  line-height: 1.55;
+}
+
+.source-index-admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
 }
 
 .source-index-admin-field {
   display: grid;
   gap: 0.45rem;
+  min-width: 0;
+}
+
+.source-index-admin-field-wide {
+  grid-column: 1 / -1;
 }
 
 .source-index-admin-field span {
@@ -64,6 +78,7 @@
 }
 
 .source-index-admin-field input,
+.source-index-admin-field select,
 .source-index-admin-field textarea {
   width: 100%;
   box-sizing: border-box;
@@ -77,18 +92,50 @@
 }
 
 .source-index-admin-field textarea {
-  min-height: 18rem;
+  min-height: 8.5rem;
   resize: vertical;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 0.84rem;
   line-height: 1.55;
 }
 
+.source-index-admin-url-box {
+  min-height: 10rem;
+}
+
+.source-index-admin-field input:focus,
+.source-index-admin-field select:focus,
+.source-index-admin-field textarea:focus {
+  border-color: rgba(74, 108, 247, 0.55);
+  box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.12);
+}
+
+.source-index-admin-switches,
 .source-index-admin-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.85rem;
+}
+
+.source-index-admin-switches label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  padding: 0.48rem 0.7rem;
+  color: var(--lycium-color-text);
+  background: var(--lycium-color-surface);
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.source-index-admin-switches input {
+  accent-color: #4a6cf7;
+}
+
+.source-index-admin-switches label:has(input:disabled) {
+  opacity: 0.55;
 }
 
 .source-index-admin-status-error {
@@ -99,13 +146,19 @@
   color: var(--lycium-success);
 }
 
+.source-index-admin-results {
+  display: grid;
+  gap: 0.85rem;
+}
+
 .source-index-admin-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
 }
 
-.source-index-admin-summary div {
+.source-index-admin-summary div,
+.source-index-admin-source-list article {
   border-radius: 1rem;
   padding: 0.85rem;
   background: var(--lycium-color-surface);
@@ -122,8 +175,96 @@
   font-size: 1.45rem;
 }
 
+.source-index-admin-quality {
+  margin: 0;
+  font-weight: 750;
+}
+
+.source-index-admin-source-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.source-index-admin-source-list article,
+.source-index-admin-candidates article {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.source-index-admin-source-list strong,
+.source-index-admin-candidates strong {
+  color: var(--lycium-color-text);
+}
+
+.source-index-admin-source-list a {
+  color: #4a6cf7;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.source-index-admin-source-list a:hover,
+.source-index-admin-source-list a:focus-visible {
+  text-decoration: underline;
+  outline: none;
+}
+
+.source-index-admin-source-list em {
+  font-style: normal;
+  font-size: 0.82rem;
+}
+
+.source-index-admin-candidates {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.source-index-admin-candidates h2,
+.source-index-admin-candidates p {
+  margin: 0;
+}
+
+.source-index-admin-candidates h2 {
+  color: var(--lycium-color-text);
+  font-size: 1rem;
+}
+
+.source-index-admin-candidates > p {
+  color: var(--lycium-color-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.source-index-admin-candidates > div {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.source-index-admin-candidates article {
+  border-radius: 1rem;
+  padding: 0.85rem;
+  background: var(--lycium-color-surface);
+}
+
+.source-index-admin-candidates span,
+.source-index-admin-candidates em {
+  color: var(--lycium-color-text-muted);
+  font-size: 0.82rem;
+  font-style: normal;
+}
+
+.source-index-admin-candidates article p {
+  color: var(--lycium-color-text-muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
 @media (max-width: 720px) {
+  .source-index-admin-page {
+    padding: 1.25rem 0.75rem;
+  }
+
+  .source-index-admin-grid,
   .source-index-admin-summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 }

@@ -260,3 +260,80 @@ class SourcePacketImportRead(BaseModel):
     source_refs: list[dict[str, Any]]
     errors: list[str]
     warnings: list[str]
+
+
+class SourceIndexSearchFilters(BaseModel):
+    source_types: list[str] = Field(default_factory=list)
+    topics: list[str] = Field(default_factory=list)
+    domains: list[str] = Field(default_factory=list)
+    free_only: bool | None = None
+
+
+class SourceIndexSearchCreate(BaseModel):
+    query: str
+    filters: SourceIndexSearchFilters = Field(default_factory=SourceIndexSearchFilters)
+    limit: int = Field(default=12, ge=1, le=100)
+
+
+class SourceIndexSearchResultRead(BaseModel):
+    source: IndexedSourceRead
+    snapshot: SourceSnapshotRead | None = None
+    score: float
+    matched_terms: list[str]
+    evidence_refs: list[str]
+    summary: str | None = None
+
+
+class SourceIndexSearchRead(BaseModel):
+    contract_version: str
+    query: str
+    result_count: int
+    results: list[SourceIndexSearchResultRead]
+
+
+class SourceFitSourceInput(BaseModel):
+    source_id: int | None = None
+    url: HttpUrl | None = None
+    title: str | None = None
+    text: str | None = None
+    source_type: str | None = None
+
+
+class SourceFitTargetDescriptor(BaseModel):
+    target_id: str
+    target_type: str = "target"
+    title: str
+    description: str | None = None
+    concepts: list[str] = Field(default_factory=list)
+    requirements: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+
+
+class SourceFitCreate(BaseModel):
+    sources: list[SourceFitSourceInput]
+    targets: list[SourceFitTargetDescriptor]
+    limit: int = Field(default=20, ge=1, le=200)
+    minimum_score: float = Field(default=0.15, ge=0, le=1)
+
+
+class SourceFitCandidateRead(BaseModel):
+    source_id: int | None = None
+    source_url: str | None = None
+    source_title: str | None = None
+    target_type: str
+    target_id: str
+    target_title: str
+    fit_score: float
+    matched_terms: list[str]
+    fit_reason: str
+    suggested_use: str
+    confidence: str
+
+
+class SourceFitRead(BaseModel):
+    contract_version: str
+    source_count: int
+    target_count: int
+    candidate_count: int
+    candidates: list[SourceFitCandidateRead]
+    warnings: list[str]

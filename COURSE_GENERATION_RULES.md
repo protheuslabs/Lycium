@@ -56,7 +56,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 - `requirement_extraction`: extract benchmark requirements, topics, outcomes, prerequisites, and course-parity metadata.
 - `commonality_analysis`: compare comparable benchmarks to separate required material from recommended, optional, remedial, alternate, or enrichment material.
 - `source_analysis`: inspect provided sources, extract topics, claims, examples, media, exercises, prerequisites, and source metadata, then verify concept-level source coverage and section citation integrity.
-- `source_enrichment`: add reputable supplemental sources when coverage is weak.
+- `source_enrichment`: query Source Index with `source-index-search-v1` before asking the user for more sources, then add reputable supplemental sources when coverage is weak.
 - `source_coverage_gate`: allow planning with sparse sources, but block full learner-facing generation or publication when required concept coverage is below policy. Emit structured `metadata.sourceGaps` and set lifecycle status `needs_sources` instead of drafting hollow modules.
 - `classification`: assign college/school category, selected department metadata, tags, difficulty, parity metadata, and prerequisites.
   Select the college/category first, then select the department only from the departments nested under that college/category. Classify by the course's primary learning domain, learner purpose, and program role. Do not mechanically map `courseEquivalencies[].department` into top-level `category` or `department`; parity records are reference metadata and may describe a service department, cross-listed analogue, or catalog source rather than the best Lycium catalog home.
@@ -242,6 +242,8 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - If a block fetches or embeds material from a link, it must reference the source record for that link.
 - Generated courses must either reference existing central source records or include course-level `sourceRecords` for generated/local-only records.
 - Course generation should accept source packets as the preferred source handoff. A source packet records the corpus run, inclusion/exclusion decisions, source documents, snapshots, and evidence refs that explain why a source was used.
+- Course generation should use Source Index in reverse during enrichment: search the index for missing concepts, replacement sources, benchmark evidence, and media candidates before treating a course as blocked for lack of sources.
+- Newly submitted sources should be checked with source-fit analysis against abstract course/program/concept descriptors. Fit results are review candidates only; they should not automatically attach a source to a course section without acceptance.
 - Do not let a generated course enter the catalog with unresolved `sourceIds`.
 
 ## MVP Validation Gate

@@ -1,4 +1,6 @@
 export const LYCIUM_SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1" as const;
+export const LYCIUM_SOURCE_INDEX_SEARCH_CONTRACT_VERSION = "source-index-search-v1" as const;
+export const LYCIUM_SOURCE_FIT_ANALYSIS_CONTRACT_VERSION = "source-fit-analysis-v1" as const;
 export const LYCIUM_SOURCE_PACKET_SCHEMA_ID = "https://protheuslabs.github.io/Lycium/schemas/lycium-source-packet.schema.json";
 
 export type LyciumSourcePacketProducer = {
@@ -168,4 +170,74 @@ export type LyciumSourcePacket = {
     qualityWarnings: string[];
     warningCount: number;
   };
+};
+
+export type LyciumSourceIndexSearchFilters = {
+  source_types?: string[];
+  topics?: string[];
+  domains?: string[];
+  free_only?: boolean | null;
+};
+
+export type LyciumSourceIndexSearchRequest = {
+  query: string;
+  filters?: LyciumSourceIndexSearchFilters;
+  limit?: number;
+};
+
+export type LyciumSourceIndexSearchResult = {
+  source: LyciumIndexedSourceRecord;
+  snapshot?: LyciumSourceSnapshotRecord | null;
+  score: number;
+  matched_terms: string[];
+  evidence_refs: string[];
+  summary?: string | null;
+};
+
+export type LyciumSourceIndexSearchReport = {
+  contract_version: typeof LYCIUM_SOURCE_INDEX_SEARCH_CONTRACT_VERSION;
+  query: string;
+  result_count: number;
+  results: LyciumSourceIndexSearchResult[];
+};
+
+export type LyciumSourceFitSourceInput = {
+  source_id?: number | string | null;
+  url?: string | null;
+  title?: string | null;
+  text?: string | null;
+  source_type?: string | null;
+};
+
+export type LyciumSourceFitTargetDescriptor = {
+  target_id: string;
+  target_type: string;
+  title: string;
+  description?: string | null;
+  concepts?: string[];
+  requirements?: string[];
+  tags?: string[];
+};
+
+export type LyciumSourceFitCandidate = {
+  source_id?: number | string | null;
+  source_url?: string | null;
+  source_title?: string | null;
+  target_type: string;
+  target_id: string;
+  target_title: string;
+  fit_score: number;
+  matched_terms: string[];
+  fit_reason: string;
+  suggested_use: string;
+  confidence: string;
+};
+
+export type LyciumSourceFitReport = {
+  contract_version: typeof LYCIUM_SOURCE_FIT_ANALYSIS_CONTRACT_VERSION;
+  source_count: number;
+  target_count: number;
+  candidate_count: number;
+  candidates: LyciumSourceFitCandidate[];
+  warnings: string[];
 };

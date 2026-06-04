@@ -84,6 +84,8 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - use `sourceIds` in course, module, section, and block records
    - when many sources are submitted, run source corpus preflight and use only included sources as course evidence unless a reviewer restores an excluded source
    - when source packets are available, prefer `source-packet-v1` evidence over loose URL lists so generation uses imported snapshots, source decisions, and evidence refs
+   - during source enrichment, query Source Index search (`source-index-search-v1`) for missing concepts, replacement sources, benchmark evidence, and media candidates before asking the user for more sources
+   - when a new source is submitted, use source-fit analysis against abstract course/program/concept descriptors to create review candidates; do not auto-attach the source to course sections
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
    - if source coverage is below policy, create or preserve a `needs_sources` draft with `metadata.sourceGaps` instead of drafting hollow learner-facing modules
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping

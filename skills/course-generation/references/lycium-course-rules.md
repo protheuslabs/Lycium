@@ -22,6 +22,8 @@ Use the course JSON as both the output artifact and the progress tracker.
 
 Course generation should move through named gates that can be checked by deterministic validators and later by LLM-assisted evals. The backend source of truth for gate names is `services/lycium-api/app/course_generation_gates.py`: `intake`, `source_corpus_preflight`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`.
 
+The `source_enrichment` gate should use Source Index in reverse before treating source coverage as blocked: search indexed records for missing concepts, replacement sources, benchmark evidence, and media candidates, then record accepted results as source-packet or source-slot evidence. Newly submitted sources should also run through source-fit analysis against abstract course/program/concept descriptors so reviewers can decide whether a source should improve existing content.
+
 Backend LLM experiments should return `quality_report.evals` before persistence. Use those deterministic eval dimensions to judge structure, instructional substance, assessment quality, concept-card integrity, source grounding, media support, and course specificity before a generated course is accepted for review.
 
 1. Scope the course.

@@ -60,6 +60,36 @@ class SourceIndexClient:
             },
         )
 
+    def search_index(self, *, query: str, filters: dict[str, Any] | None = None, limit: int = 12) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/v1/index/search",
+            json={
+                "query": query,
+                "filters": filters or {},
+                "limit": limit,
+            },
+        )
+
+    def analyze_source_fit(
+        self,
+        *,
+        sources: list[dict[str, Any]],
+        targets: list[dict[str, Any]],
+        limit: int = 20,
+        minimum_score: float = 0.15,
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/v1/index/source-fit",
+            json={
+                "sources": sources,
+                "targets": targets,
+                "limit": limit,
+                "minimum_score": minimum_score,
+            },
+        )
+
     def list_sources(
         self,
         *,

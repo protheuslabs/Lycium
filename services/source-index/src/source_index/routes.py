@@ -20,6 +20,10 @@ from source_index.schemas import (
     SourceCorpusRunCreate,
     SourceCorpusRunRead,
     SourceIndexServiceContractRead,
+    SourceIndexSearchCreate,
+    SourceIndexSearchRead,
+    SourceFitCreate,
+    SourceFitRead,
     SourcePacketCreate,
     SourcePacketImportCreate,
     SourcePacketImportRead,
@@ -28,6 +32,7 @@ from source_index.schemas import (
     SourceSnapshotRead,
 )
 from source_index.packet_service import create_source_packet, import_source_batch, import_source_packet, source_packet_payload
+from source_index.search import analyze_source_fit, search_index
 from source_index.service import (
     corpus_run_payload,
     create_corpus_run,
@@ -252,6 +257,25 @@ def register(app: FastAPI) -> None:
         if report["valid"] and not payload.dry_run:
             session.commit()
         return report
+
+    @app.post("/v1/index/search", response_model=SourceIndexSearchRead)
+    def search_index_sources(payload: SourceIndexSearchCreate, session: Session = Depends(get_session)) -> dict:
+        return search_index(
+            session,
+            query=payload.query,
+            filters=payload.filters.model_dump(mode="json"),
+            limit=payload.limit,
+        )
+
+    @app.post("/v1/index/source-fit", response_model=SourceFitRead)
+    def analyze_index_source_fit(payload: SourceFitCreate, session: Session = Depends(get_session)) -> dict:
+        return analyze_source_fit(
+            session,
+            sources=[source.model_dump(mode="json") for source in payload.sources],
+            targets=[target.model_dump(mode="json") for target in payload.targets],
+            limit=payload.limit,
+            minimum_score=payload.minimum_score,
+        )
 
     @app.get("/v1/index/source-packets/{run_id}", response_model=SourcePacketRead)
     def read_index_source_packet(run_id: int, session: Session = Depends(get_session)) -> dict:

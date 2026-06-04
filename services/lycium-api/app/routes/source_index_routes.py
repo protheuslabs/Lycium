@@ -11,6 +11,10 @@ from app.schemas import (
     IndexedSourceRead,
     SourceCorpusRunCreate,
     SourceCorpusRunRead,
+    SourceFitCreate,
+    SourceFitRead,
+    SourceIndexSearchCreate,
+    SourceIndexSearchRead,
     SourcePacketCreate,
     SourcePacketRead,
 )
@@ -23,6 +27,7 @@ from app.source_index import (
     list_indexed_source_responses,
 )
 from app.source_index_packets import create_source_packet_response, get_source_packet_response, import_source_batch_response
+from app.source_index_search import analyze_source_fit_response, search_index_response
 
 
 def register(app: FastAPI) -> None:
@@ -76,6 +81,31 @@ def register(app: FastAPI) -> None:
                 session,
                 batch_id=payload.batch_id,
                 sources=[source.model_dump(mode="json") for source in payload.sources],
+            )
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    @app.post("/v1/index/search", response_model=SourceIndexSearchRead)
+    def search_index_sources(payload: SourceIndexSearchCreate, session: Session = Depends(get_session)) -> dict:
+        try:
+            return search_index_response(
+                session,
+                query=payload.query,
+                filters=payload.filters.model_dump(mode="json"),
+                limit=payload.limit,
+            )
+        except SourceIndexClientError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    @app.post("/v1/index/source-fit", response_model=SourceFitRead)
+    def analyze_index_source_fit(payload: SourceFitCreate, session: Session = Depends(get_session)) -> dict:
+        try:
+            return analyze_source_fit_response(
+                session,
+                sources=[source.model_dump(mode="json") for source in payload.sources],
+                targets=[target.model_dump(mode="json") for target in payload.targets],
+                limit=payload.limit,
+                minimum_score=payload.minimum_score,
             )
         except SourceIndexClientError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc

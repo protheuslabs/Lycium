@@ -7,6 +7,7 @@ Source Index is the durable boundary for public learning-source data. Lycium can
 - Store canonical source records separately from course JSON.
 - Store snapshots and extracted text so course generation can use evidence, not loose links.
 - Record source-corpus preflight decisions before generation uses a submitted source list.
+- Search indexed records and analyze whether new sources may fit existing abstract learning targets.
 - Emit `source-packet-v1` records that package source decisions, snapshots, source documents, warnings, and evidence refs.
 - Support narrow crawl policies for education-focused indexing without coupling the crawler to Lycium UI code.
 
@@ -20,6 +21,8 @@ Source Index is the durable boundary for public learning-source data. Lycium can
 | `GET` | `/v1/index/sources` | Search/list indexed sources by query, domain, or source type. |
 | `GET` | `/v1/index/sources/{source_id}` | Read one indexed source. |
 | `POST` | `/v1/index/source-imports` | Import a manual source batch and optionally create snapshots. |
+| `POST` | `/v1/index/search` | Search indexed source records and snapshots for reusable evidence. |
+| `POST` | `/v1/index/source-fit` | Compare submitted/indexed sources against abstract target descriptors and return review candidates. |
 | `POST` | `/v1/index/sources/{source_id}/snapshots` | Create a fetched or manually supplied snapshot. |
 | `GET` | `/v1/index/sources/{source_id}/snapshots` | List snapshots for a source. |
 | `POST` | `/v1/index/corpus-runs` | Run source-corpus preflight for a prompt and submitted URLs/documents. |
@@ -52,6 +55,59 @@ Manual imports should use `source-import-batch-v1`.
 ```
 
 The service returns source IDs, snapshot IDs, row warnings, and batch-level warnings. Courses should reference returned evidence through source packets or benchmark records rather than copying untracked source text into course JSON.
+
+## Direct Manual Import
+
+Source Index is intentionally usable without a Lycium course context. Operators can submit sources directly through:
+
+- the Source Index admin page at `/source-index`
+- `POST /v1/index/source-imports`
+- the `source-index-import-batch` CLI entrypoint
+
+Direct imports should store source-level context in item `metadata`, such as:
+
+```json
+{
+  "origin": "direct_source_index_admin",
+  "intended_use": "curriculum_benchmark",
+  "topic": "General Chemistry",
+  "tags": ["chemistry", "open-courseware"],
+  "notes": "Useful as benchmark evidence for first-semester chemistry."
+}
+```
+
+This keeps Source Index detachable: a source may be indexed because it is broadly useful public knowledge, not because it already belongs to a course. Courses, programs, crawlers, and InfRing-style research tools should consume the indexed source records later through source packets, benchmark records, or stable source IDs.
+
+## Reverse Lookup Primitives
+
+Source Index supports two reverse lookup flows so consumers can draw from the index instead of only submitting to it.
+
+### Search
+
+`POST /v1/index/search` accepts a generic query, optional source-type/topic/domain/free filters, and a limit. It returns ranked source records, latest snapshot evidence when available, matched terms, summaries, and evidence refs. Course or program generators should use this during source enrichment, missing-concept coverage, and replacement-source discovery.
+
+### Source Fit
+
+`POST /v1/index/source-fit` accepts one or more submitted/indexed sources and a list of abstract target descriptors:
+
+```json
+{
+  "sources": [{ "source_id": 12 }],
+  "targets": [
+    {
+      "target_id": "course:chem-105",
+      "target_type": "course",
+      "title": "General Chemistry I",
+      "description": "First-semester chemistry.",
+      "concepts": ["stoichiometry", "atomic structure"],
+      "requirements": ["balance chemical equations"]
+    }
+  ],
+  "limit": 20
+}
+```
+
+The response is a ranked candidate list. Source Index does not attach the source to a course or program. Consumers own review, acceptance, rejection, and downstream source-slot updates.
 
 ## Source Packet Contract
 
