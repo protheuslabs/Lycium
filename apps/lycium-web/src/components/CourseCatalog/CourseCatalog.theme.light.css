@@ -287,7 +287,24 @@ html[data-theme="light"] .catalog-pagination-page {
   }
 
   .catalog-dropdown-row {
-    grid-template-columns: 1fr;
+    justify-self: stretch;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.4rem;
+    width: 100%;
+  }
+
+  .catalog-filter-shell,
+  .catalog-dropdown-field,
+  .catalog-filter-button,
+  .catalog-sort-dropdown {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .catalog-filter-button {
+    gap: 0.35rem;
+    padding-inline: 0.68rem;
+    font-size: 0.82rem;
   }
 
   .catalog-course-scope {
