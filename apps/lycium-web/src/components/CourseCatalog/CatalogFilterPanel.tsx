@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Dropdown from "../Dropdown/Dropdown";
 import type { DropdownOption } from "../Dropdown/Dropdown";
 import { CATALOG_ACTIVITY_OPTIONS, type CatalogActivityFilter } from "./catalogUtils";
@@ -39,9 +39,37 @@ export default function CatalogFilterPanel({
   onResetFilters,
 }: CatalogFilterPanelProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const shellRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isFilterOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const shell = shellRef.current;
+      if (!shell || shell.contains(event.target as Node)) {
+        return;
+      }
+      setIsFilterOpen(false);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsFilterOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isFilterOpen]);
 
   return (
-    <div className="catalog-filter-shell">
+    <div className="catalog-filter-shell" ref={shellRef}>
       <button
         className={`catalog-filter-button ${isFilterOpen ? "catalog-filter-button--active" : ""}`}
         type="button"

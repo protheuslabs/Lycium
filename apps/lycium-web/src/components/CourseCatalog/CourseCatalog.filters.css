@@ -120,3 +120,20 @@
   outline: none;
   background: #35507c;
 }
+
+@media (max-width: 560px) {
+  .catalog-filter-panel {
+    position: fixed;
+    top: 5.75rem;
+    right: auto;
+    left: 50%;
+    width: min(calc(100vw - 1.3rem), 31rem);
+    max-height: calc(100vh - 7rem);
+    overflow: auto;
+    transform: translateX(-50%);
+  }
+
+  .catalog-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}

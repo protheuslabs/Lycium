@@ -274,4 +274,31 @@ html[data-theme="light"] .sidebar-status--timed {
   .sidebar-title {
     font-size: 0.95rem;
   }
+
+  .sidebar--collapsed .sidebar-status {
+    width: 0.86rem;
+    height: 0.86rem;
+    flex-basis: 0.86rem;
+  }
+
+  .sidebar--collapsed .sidebar-status-check {
+    font-size: 0.54rem;
+  }
+
+  .sidebar--collapsed .sidebar-status-icon {
+    width: 0.58rem;
+    height: 0.58rem;
+  }
+
+  .sidebar--collapsed .sidebar-lock-icon {
+    width: 0.34rem;
+    height: 0.3rem;
+  }
+
+  .sidebar--collapsed .sidebar-lock-icon::before {
+    bottom: 0.22rem;
+    width: 0.22rem;
+    height: 0.2rem;
+    border-width: 0.07rem;
+  }
 }

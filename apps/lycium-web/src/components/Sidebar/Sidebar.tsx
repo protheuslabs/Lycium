@@ -106,7 +106,6 @@ function formatModuleHeaderLabel(moduleIndex: number, moduleTitle: string, isCol
 const SidebarModuleHeader = memo(function SidebarModuleHeader({
   moduleIndex,
   moduleTitle,
-  moduleStatus,
   isExpanded,
   isActiveModule,
   isCollapsed,
@@ -114,7 +113,6 @@ const SidebarModuleHeader = memo(function SidebarModuleHeader({
 }: {
   moduleIndex: number;
   moduleTitle: string;
-  moduleStatus: DisplayStatus;
   isExpanded: boolean;
   isActiveModule: boolean;
   isCollapsed: boolean;
@@ -133,7 +131,6 @@ const SidebarModuleHeader = memo(function SidebarModuleHeader({
       aria-disabled={isActiveModule}
     >
       <span className="module-header-label">{label}</span>
-      {isCollapsed && <SidebarStatusBadge status={moduleStatus} className="module-header-status" />}
       <span className="module-header-caret" aria-hidden="true">
         ▾
       </span>
@@ -222,25 +219,6 @@ export default function Sidebar({
     [sectionStatuses],
   );
 
-  const getModuleStatus = useCallback((
-    moduleSections: Array<{ section: SidebarSection; index: number }>
-  ): DisplayStatus => {
-    const statuses = moduleSections.map(({ section }) => getSectionStatus(section.id));
-    if (statuses.length > 0 && statuses.every((status) => status === "completed")) {
-      return "completed";
-    }
-    if (statuses.length > 0 && statuses.every((status) => status === "locked")) {
-      return "locked";
-    }
-    if (statuses.some((status) => status === "timed")) {
-      return "timed";
-    }
-    if (statuses.some((status) => status === "seen")) {
-      return "seen";
-    }
-    return "available";
-  }, [getSectionStatus]);
-
   const toggleModule = useCallback((moduleIndex: number) => {
     if (moduleIndex === activeModuleIndexRef.current) {
       return;
@@ -296,14 +274,12 @@ export default function Sidebar({
         {moduleGroups.map((moduleGroup) => {
           const isActiveModule = moduleGroup.moduleIndex === activeModuleIndex;
           const isExpanded = isActiveModule || expandedModules.has(moduleGroup.moduleIndex);
-          const moduleStatus = getModuleStatus(moduleGroup.sections);
           
           return (
             <section className="sidebar-module" key={moduleGroup.moduleIndex}>
               <SidebarModuleHeader
                 moduleIndex={moduleGroup.moduleIndex}
                 moduleTitle={moduleGroup.moduleTitle}
-                moduleStatus={moduleStatus}
                 isExpanded={isExpanded}
                 isActiveModule={isActiveModule}
                 isCollapsed={isCollapsed}
