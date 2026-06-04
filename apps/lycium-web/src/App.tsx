@@ -36,7 +36,6 @@ import {
   getCourseSectionPath,
   getFirstCourseSection,
   getProgramClusterPathSlug,
-  getProgramPath,
   getProgramPathSlug,
   getSectionPathSlug,
   parseCourseRoute,
@@ -204,17 +203,6 @@ function App() {
           window.history.pushState(null, "", browserPathForRoute(nextPath));
         }
       }
-      currentPathRef.current = nextPath;
-      setCurrentPath(nextPath);
-      scrollCoursePageToTop();
-    },
-    [router],
-  );
-
-  const openProgramByEntry = useCallback(
-    (program: (typeof localPrograms)[number]) => {
-      const nextPath = getProgramPath(program);
-      router.push(nextPath);
       currentPathRef.current = nextPath;
       setCurrentPath(nextPath);
       scrollCoursePageToTop();
