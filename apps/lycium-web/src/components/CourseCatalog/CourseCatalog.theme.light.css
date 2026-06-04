@@ -309,14 +309,30 @@ html[data-theme="light"] .catalog-pagination-page {
   }
 
   .catalog-pagination-controls {
-    display: grid;
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
     width: 100%;
+    max-width: 100%;
   }
 
-  .catalog-pagination-button,
+  .catalog-pagination-pill {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .catalog-pagination-pill .catalog-pagination-button--icon {
+    width: clamp(1.9rem, 12vw, 2.3rem);
+    min-width: clamp(1.9rem, 12vw, 2.3rem);
+    height: clamp(1.9rem, 12vw, 2.3rem);
+  }
+
   .catalog-pagination-page {
-    width: 100%;
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+    white-space: nowrap;
+    font-size: clamp(0.72rem, 3.5vw, 0.88rem);
   }
 }
 
