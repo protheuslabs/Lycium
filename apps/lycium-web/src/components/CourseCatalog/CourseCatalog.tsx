@@ -42,7 +42,6 @@ type CourseCatalogProps = {
     classification: { category: string; department: string },
   ) => void;
   onOpenCourse: (course: CourseEntry) => void;
-  onOpenProgram: (program: LyciumProgram) => void;
   onQueueCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
   onResumeCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
   onCatalogDrilldown: (
@@ -70,7 +69,6 @@ export default function CourseCatalog({
   onLevelChange,
   onGenerateCourse,
   onOpenCourse,
-  onOpenProgram,
   onQueueCourseSourceGap,
   onResumeCourseSourceGap,
   onCatalogDrilldown,

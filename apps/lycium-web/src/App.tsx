@@ -445,7 +445,6 @@ const {
           onLevelChange={setLevel}
           onGenerateCourse={handleGenerateCourse}
           onOpenCourse={openCourseByEntry}
-          onOpenProgram={openProgramByEntry}
           onQueueCourseSourceGap={queueCourseSourceGap}
           onResumeCourseSourceGap={handleResumeCourseSourceGap}
           onCatalogDrilldown={routeToCatalogDrilldown}
