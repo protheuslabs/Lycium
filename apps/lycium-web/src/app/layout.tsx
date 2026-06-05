@@ -5,6 +5,7 @@ import "../index.css";
 import "../App.css";
 import "../components/TopBar/topBar.css";
 import "../components/ContentView/contentView.css";
+import "../components/ContentView/contentView.edit.css";
 import "../components/Video/VideoBlock.css";
 import "../components/Quiz/quiz.css";
 import "../components/CourseCatalog/CourseCatalog.css";

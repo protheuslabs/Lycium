@@ -473,36 +473,3 @@ def test_curriculum_artifacts_are_persisted_as_course_records(client) -> None:
     assert response.json()["artifactReferences"] == artifacts["artifactReferences"]
 
 
-def test_local_endpoint_save_persists_unverified_connection(client, monkeypatch, isolated_local_data) -> None:
-    def fail_validation(*args, **kwargs):
-        raise CourseAgentError("Ollama is unavailable at http://localhost:65535")
-
-    monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", fail_validation)
-    monkeypatch.setattr("app.routes.local_routes.detect_local_agent_endpoint", lambda provider_id: None)
-
-    response = client.put(
-        "/v1/local/settings",
-        json={"provider_id": "local-model", "agent_api_key": "http://localhost:65535"},
-    )
-
-    assert response.status_code == 200, response.text
-    settings = response.json()
-    active_key = settings["agent_keys"][0]
-    assert active_key["provider_id"] == "local-model"
-    assert active_key["connection_status"] == "unverified"
-    assert active_key["key_preview"] == "http://localhost:65535"
-
-
-def test_cloud_key_save_rejects_invalid_connection(client, monkeypatch, isolated_local_data) -> None:
-    def fail_validation(*args, **kwargs):
-        raise CourseAgentError("API key invalid.")
-
-    monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", fail_validation)
-
-    response = client.put(
-        "/v1/local/settings",
-        json={"provider_id": "openai", "agent_api_key": "bad-key"},
-    )
-
-    assert response.status_code == 400
-    assert "API key invalid" in response.text

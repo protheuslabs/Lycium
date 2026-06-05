@@ -1,0 +1,95 @@
+.course-edit-toolbar {
+  width: min(100%, 42rem);
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.course-edit-toolbar-note {
+  color: #667085;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.course-editable-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  max-width: 100%;
+}
+
+.section-title.course-editable-line {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.course-edit-pencil {
+  width: 1.65rem;
+  min-width: 1.65rem;
+  height: 1.65rem;
+  border: 0;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  color: #ffffff;
+  background: #4a6cf7;
+  cursor: pointer;
+  opacity: 0.82;
+}
+
+.course-edit-pencil:hover,
+.course-edit-pencil:focus-visible {
+  outline: none;
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.course-edit-pencil svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: currentColor;
+}
+
+.editable-block-shell,
+.concept-card-stack.editable-block-shell--active {
+  position: relative;
+}
+
+.editable-block-shell--active {
+  border-radius: 1rem;
+  outline: 1px dashed rgba(74, 108, 247, 0.28);
+  outline-offset: 0.35rem;
+}
+
+.content-block-edit-actions {
+  position: absolute;
+  top: -0.55rem;
+  right: -0.45rem;
+  z-index: 2;
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+@media (max-width: 640px) {
+  .course-edit-toolbar {
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .content-block-edit-actions {
+    top: -0.35rem;
+    right: -0.2rem;
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-edit-toolbar-note {
+  color: #a1a1aa;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .editable-block-shell--active {
+  outline-color: rgba(142, 162, 255, 0.34);
+}
+

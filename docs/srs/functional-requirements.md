@@ -62,6 +62,10 @@
 - FR-36: The system shall allow generated courses to be reopened, edited, duplicated, and exported.
 - FR-37: The primary export format shall be JSON aligned with the Lycium data model.
 - FR-38: The system should support Markdown or PDF export in a later phase.
+- FR-38a: Published course snapshots shall be immutable. Editing a published course shall create a draft revision rather than mutating the published snapshot in place.
+- FR-38b: A course creator or authorized maintainer shall be able to edit the canonical course lineage by creating a new draft revision from the current published snapshot.
+- FR-38c: A learner or non-owner shall edit an existing course by creating a forked lineage when forking is allowed by the course edit policy.
+- FR-38d: Learner progress shall remain attached to the snapshot version the learner used unless the learner or platform explicitly migrates progress to a newer published version.
 
 ### 7.9 Authoring and Review Controls
 
@@ -69,6 +73,13 @@
 - FR-40: Instructors shall be able to lock sections against automatic regeneration after manual edits.
 - FR-41: The system shall mark AI-generated content clearly in the authoring workflow.
 - FR-42: The system shall provide a mechanism to report factual errors or unsafe outputs.
+- FR-42a: The system shall expose course edit mode only when the active user has edit permission for the course lineage or draft snapshot.
+- FR-42b: In course edit mode, the interface shall show pencil edit affordances next to editable course titles, module titles, section titles, text blocks, concept cards, media blocks, quiz blocks, and other rendered content elements.
+- FR-42c: Pencil edit affordances shall open structured editors appropriate to the selected element type rather than requiring direct raw JSON editing.
+- FR-42d: Draft edits shall be saved against an editable draft snapshot and shall preserve authored edit history or audit metadata.
+- FR-42e: Publishing a draft revision shall require schema validation, source-reference validation, course quality gates, and review/publish approval before it becomes the current published snapshot for its lineage.
+- FR-42f: The system shall support proposed revisions from users who can suggest edits but cannot directly publish to the canonical lineage.
+- FR-42g: Course edit policy shall support at minimum owner editing, maintainer editing, learner forks, contributor suggestions, and locked sections or locked content elements.
 
 ### 7.10 Analytics and Observability
 

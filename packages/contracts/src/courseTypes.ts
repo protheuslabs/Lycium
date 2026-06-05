@@ -1,3 +1,9 @@
+import type {
+  LyciumCourseEditHistoryEntry,
+  LyciumCourseEditPolicy,
+  LyciumCourseSnapshotLifecycle,
+} from "./courseEditTypes";
+
 export const LYCIUM_COURSE_CONTRACT_VERSION = "0.1.0" as const;
 
 export type LyciumPageType = "learn" | "apply";
@@ -13,66 +19,6 @@ export type LyciumSourceRecord = {
   usedByCourseIds?: string[];
   usedByCourseTitles?: string[];
   [key: string]: unknown;
-};
-
-export type LyciumCourseFeedbackRating = "up" | "down";
-export type LyciumCourseFeedbackMagnitude = 1 | 2 | 3;
-
-export type LyciumCourseSourceSuggestion = {
-  id?: string;
-  url: string;
-  description?: string | null;
-  created_at?: string;
-};
-
-export type LyciumCourseFeedbackNote = {
-  id?: string;
-  rating?: LyciumCourseFeedbackRating | null;
-  feedback_magnitude?: LyciumCourseFeedbackMagnitude | null;
-  text?: string | null;
-  created_at?: string;
-};
-
-export type LyciumCourseFeedbackRatingEvent = {
-  id?: string;
-  rating: LyciumCourseFeedbackRating;
-  created_at?: string;
-};
-
-export type LyciumCourseFeedbackRecord = {
-  course_key: string;
-  course_title?: string | null;
-  rating?: LyciumCourseFeedbackRating | null;
-  rating_events?: LyciumCourseFeedbackRatingEvent[];
-  feedback_notes?: LyciumCourseFeedbackNote[];
-  source_suggestions?: LyciumCourseSourceSuggestion[];
-  updated_at?: string | null;
-};
-
-export type LyciumCourseFeedbackPayload = {
-  course_key: string;
-  course_title?: string | null;
-  rating?: LyciumCourseFeedbackRating | null;
-  feedback_text?: string | null;
-  feedback_magnitude?: LyciumCourseFeedbackMagnitude | null;
-  source_url?: string | null;
-  source_description?: string | null;
-};
-
-export type LyciumCourseHealthStatus = "unknown" | "healthy" | "watch" | "needs_review";
-
-export type LyciumCourseHealthRecord = {
-  course_key: string;
-  course_title?: string | null;
-  status: LyciumCourseHealthStatus;
-  score: number | null;
-  latest_rating?: LyciumCourseFeedbackRating | null;
-  rating_counts: Record<LyciumCourseFeedbackRating, number>;
-  feedback_note_count: number;
-  source_suggestion_count: number;
-  average_feedback_magnitude: number | null;
-  signals: string[];
-  updated_at?: string | null;
 };
 
 export type LyciumCoursePrerequisite = {
@@ -254,6 +200,9 @@ export type LyciumCourseData = {
   sourceRecords?: LyciumSourceRecord[] | Record<string, LyciumSourceRecord | Record<string, unknown>>;
   metadata?: {
     pacingLabel?: "Module" | "Week" | string;
+    editPolicy?: LyciumCourseEditPolicy;
+    snapshotLifecycle?: LyciumCourseSnapshotLifecycle;
+    editHistory?: LyciumCourseEditHistoryEntry[];
     sourceGaps?: LyciumCourseSourceGap[];
     sourceCoveragePolicy?: LyciumCourseSourceCoveragePolicy;
     sourceGapSuggestions?: LyciumCourseSourceGapSuggestion[];

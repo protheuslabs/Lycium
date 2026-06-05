@@ -1,0 +1,125 @@
+.course-source-gap-intro {
+  margin: 0.85rem 0 0;
+  color: #4f5d76;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.course-source-gap-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.course-source-gap-summary article,
+.course-source-gap-card {
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.course-source-gap-summary article {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.85rem;
+}
+
+.course-source-gap-summary strong {
+  color: #855f00;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.course-source-gap-summary span {
+  color: #667085;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.course-source-gap-list,
+.course-source-gap-form {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.course-source-gap-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.9rem;
+}
+
+.course-source-gap-card div:first-child {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.course-source-gap-card h3,
+.course-source-gap-card p {
+  margin: 0;
+}
+
+.course-source-gap-card h3 {
+  color: #253049;
+  font-size: 0.96rem;
+}
+
+.course-source-gap-card p {
+  color: #4f5d76;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.course-source-gap-card div:first-child span,
+.course-source-gap-meta span,
+.course-source-gap-concepts span {
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  color: #30405d;
+  background: #eef3ff;
+  font-size: 0.73rem;
+  font-weight: 850;
+}
+
+.course-source-gap-card-blocking div:first-child span {
+  color: #855f00;
+  background: #fff4cc;
+}
+
+.course-source-gap-meta,
+.course-source-gap-concepts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.course-source-gap-form input,
+.course-source-gap-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #d8deea;
+  border-radius: 16px;
+  padding: 0.75rem 0.85rem;
+  color: #171717;
+  background: #ffffff;
+  font: inherit;
+}
+
+.course-source-gap-form button {
+  justify-self: end;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.62rem 1rem;
+  color: #ffffff;
+  background: #27324a;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.course-source-gap-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+

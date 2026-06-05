@@ -64,6 +64,10 @@ Minimum schema additions:
 - Assessment metadata: rubric, answer type, feedback, remediation hook
 - Adaptation metadata: inserted recap, skipped section, regenerated explanation, confidence marker
 - Audit metadata: created by, reviewed by, last regenerated at, locked state
+- Course lineage metadata: lineage id, canonical slug, owner id, maintainer ids, current published snapshot id, active draft snapshot id, edit policy, and fork policy
+- Course snapshot lifecycle metadata: snapshot id, lineage id, immutable version, status, based-on snapshot id, forked-from lineage id, parent snapshot hash, published-at timestamp, archived-at timestamp, and review state
+- Course edit policy metadata: owner edit permission, maintainer edit permission, learner fork permission, contributor suggestion permission, locked section ids, locked block ids, and publish gate requirements
+- Course edit history metadata: draft snapshot id, editor id, operation type, target element id, previous value reference, new value reference, timestamp, and validation state
 - Program metadata: path id, parent program, milestone order, capstone flag, credential checkpoint
 - Knowledge object metadata: source id, canonical URL, publisher, license, modality, cost, freshness, trust score, corroboration state
 - Citation graph metadata: generated block id to source object mappings and generation recipe
@@ -88,12 +92,16 @@ Minimum schema additions:
 - The front end shall remain a React-based client application.
 - The current renderer shall be refactored so authored and generated courses use the same rendering pipeline.
 - The interface shall introduce a classroom mode that can present agent dialogue, lesson scenes, and inline learner interaction.
+- The course renderer shall support a read-only mode and an edit mode using the same course structure, with pencil affordances attached to editable rendered elements.
+- Edit mode shall submit structured draft updates against editable draft snapshots instead of mutating published course snapshots.
 
 ### 10.3 Backend
 
 - A backend service shall be introduced for generation, persistence, and analytics.
 - The backend shall orchestrate outline generation, scene generation, assessment generation, and adaptive decision logic.
 - The backend shall expose APIs for course creation, regeneration, retrieval, progress updates, and conversation turns.
+- The backend shall expose course-lineage and course-snapshot APIs for creating draft revisions, saving draft edits, validating drafts, submitting drafts for review, publishing immutable snapshots, forking lineages, and proposing revisions.
+- The backend shall reject direct mutation of published snapshots and shall update the current published snapshot pointer only through the publish workflow.
 
 ### 10.4 Knowledge Platform Services
 
@@ -115,4 +123,3 @@ Minimum schema additions:
 - The AI layer should be able to assemble both canonical course templates and individualized course forks.
 - The AI layer should reason over knowledge objects, claims, graph structure, and source policies rather than relying on page-level retrieval alone.
 - The AI layer should be able to request complementary learning packets that balance trust, modality, and pedagogical fit.
-

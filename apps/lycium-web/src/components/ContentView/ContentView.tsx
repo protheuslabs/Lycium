@@ -5,100 +5,11 @@ import CourseFeedback from "../CourseFeedback/CourseFeedback";
 import SourceSuggestionButton from "../CourseFeedback/SourceSuggestionButton";
 import CourseNav from "../CourseNav/CourseNav";
 import Button from "../Button/Button";
-import QuizBlock from "../Quiz/QuizBlock";
-import VideoBlock from "../Video/VideoBlock";
+import EditableContentBlock from "./EditableContentBlock";
+import { EditPencilButton, promptForText } from "./CourseEditControls";
+import type { ContentBlock, Section, SourceRecord, QuizProgressStatus, QuizProgressStatusHandler, QuizSubmissionStatusHandler } from "./contentViewTypes";
 
-type ConceptCard = {
-  name?: string;
-  description?: string;
-  title?: string;
-  heading?: string;
-  body?: string;
-  value?: string;
-  text?: string;
-  sourceIds?: string[];
-};
-
-type ContentBlock = {
-  type: string;
-  value?: string;
-  text?: string;
-  heading?: string;
-  title?: string;
-  url?: string;
-  clip?: {
-    startSeconds?: number | string;
-    endSeconds?: number | string;
-    start?: number | string;
-    end?: number | string;
-  };
-  startSeconds?: number | string;
-  endSeconds?: number | string;
-  start_seconds?: number | string;
-  end_seconds?: number | string;
-  sourceIds?: string[];
-  cards?: Array<ConceptCard | string>;
-  concepts?: Array<ConceptCard | string>;
-  question?: string;
-  questions?: Array<{
-    question?: string;
-    options?: string[];
-    answer?: number;
-    answers?: number[];
-    timed?: "t" | "f" | boolean;
-  }>;
-  questionBank?: unknown;
-  question_bank?: unknown;
-  questionsPerAttempt?: number | string;
-  questions_per_attempt?: number | string;
-  questionCount?: number | string;
-  question_count?: number | string;
-  options?: string[];
-  answer?: number;
-  answers?: number[];
-  name?: string;
-  description?: string;
-  timed?: "t" | "f" | boolean;
-  maxAttempts?: number | string;
-  max_attempts?: number | string;
-  attemptLimit?: number | string;
-  attempt_limit?: number | string;
-  timeLimit?: number | string;
-  time_limit?: number | string;
-  timeLimitSeconds?: number | string;
-  time_limit_seconds?: number | string;
-  passPercentage?: number | string;
-  pass_percentage?: number | string;
-  passPercent?: number | string;
-  pass_percent?: number | string;
-  showAnswers?: boolean | string;
-  show_answers?: boolean | string;
-  showCorrectAnswers?: boolean | string;
-  show_correct_answers?: boolean | string;
-};
-
-type Section = {
-  id: string;
-  title: string;
-  content: ContentBlock[];
-  displayNumber: string;
-  sectionType?: string;
-  pageType?: "learn" | "apply";
-  sourceIds?: string[];
-};
-
-export type SourceRecord = {
-  id: string;
-  type: string;
-  title: string;
-  author?: string;
-  publisher?: string;
-  url?: string;
-  embedUrl?: string;
-  localPath?: string;
-  usedByCourseIds?: string[];
-  usedByCourseTitles?: string[];
-};
+export type { SourceRecord } from "./contentViewTypes";
 
 type ContentViewProps = {
   courseKey: string;
@@ -118,27 +29,14 @@ type ContentViewProps = {
   orderMandatory: boolean;
   onSectionTimedStatusChange?: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
   sources: SourceRecord[];
+  canEditCourse?: boolean;
+  isEditMode?: boolean;
+  onEditModeChange?: (isEditMode: boolean) => void;
+  onCourseTitleChange?: (title: string) => void;
+  onModuleTitleChange?: (moduleIndex: number, title: string) => void;
+  onSectionTitleChange?: (sectionId: string, title: string) => void;
+  onBlockChange?: (sectionId: string, blockIndex: number, block: ContentBlock) => void;
 };
-
-type QuizSubmissionStatusHandler = (quizKey: string, submitted: boolean) => void;
-type QuizProgressStatus = {
-  submitted: boolean;
-  inProgress: boolean;
-  timed: boolean;
-};
-type QuizProgressStatusHandler = (quizKey: string, status: QuizProgressStatus) => void;
-
-function getVideoClip(item: ContentBlock) {
-  const clip = item.clip ?? {};
-  const startSeconds = clip.startSeconds ?? clip.start ?? item.startSeconds ?? item.start_seconds;
-  const endSeconds = clip.endSeconds ?? clip.end ?? item.endSeconds ?? item.end_seconds;
-
-  if (startSeconds === undefined && endSeconds === undefined) {
-    return undefined;
-  }
-
-  return { startSeconds, endSeconds };
-}
 
 export default function ContentView({ 
   courseKey,
@@ -157,7 +55,14 @@ export default function ContentView({
   isComplete,
   orderMandatory,
   onSectionTimedStatusChange,
-  sources
+  sources,
+  canEditCourse = false,
+  isEditMode = false,
+  onEditModeChange,
+  onCourseTitleChange,
+  onModuleTitleChange,
+  onSectionTitleChange,
+  onBlockChange
 }: ContentViewProps) {
   const quizBlockKeys = useMemo(() => {
     if (!section) {
@@ -255,9 +160,35 @@ export default function ContentView({
   
   return (
     <main className={`content-view content-view--${pageType}`} data-module-index={moduleIndex}>
-      <p className="course-name">{courseTitle}</p>
+      {canEditCourse && (
+        <div className="course-edit-toolbar">
+          <Button type="button" variant="nav" onClick={() => onEditModeChange?.(!isEditMode)}>
+            {isEditMode ? "Exit edit" : "Edit course"}
+          </Button>
+          <span className="course-edit-toolbar-note">
+            {isEditMode ? "Editing local draft" : "Creates a draft revision, not an in-place published edit"}
+          </span>
+        </div>
+      )}
+      <p className="course-name course-editable-line">
+        <span>{courseTitle}</span>
+        {isEditMode && (
+          <EditPencilButton
+            label="Edit course title"
+            onClick={() => promptForText("Edit course title", courseTitle, (title) => onCourseTitleChange?.(title))}
+          />
+        )}
+      </p>
       <div className="module-progress-block">
-        <h1 className="course-title">{moduleTitle}</h1>
+        <h1 className="course-title course-editable-line">
+          <span>{moduleTitle}</span>
+          {isEditMode && (
+            <EditPencilButton
+              label="Edit module title"
+              onClick={() => promptForText("Edit module title", moduleTitle, (title) => onModuleTitleChange?.(moduleIndex, title))}
+            />
+          )}
+        </h1>
         <ProgressMeter
           cacheKey={`content:${courseTitle}:${moduleIndex}`}
           progressPercentage={progressPercentage}
@@ -266,21 +197,30 @@ export default function ContentView({
       </div>
       
       {/* Section Title With Decimal */}
-      <h2 className="section-title">
-        {section.displayNumber} {section.title}
+      <h2 className="section-title course-editable-line">
+        <span>{section.displayNumber} {section.title}</span>
+        {isEditMode && (
+          <EditPencilButton
+            label="Edit section title"
+            onClick={() => promptForText("Edit section title", section.title, (title) => onSectionTitleChange?.(section.id, title))}
+          />
+        )}
       </h2>
       <div className="section-content">
         {Array.isArray(section.content)
-          ? section.content.map((block, idx) =>
-              renderContentBlock(
-                block,
-                idx,
-                sources,
-                section.id,
-                handleQuizSubmissionChange,
-                handleQuizProgressChange
-              )
-            )
+          ? section.content.map((block, idx) => (
+              <EditableContentBlock
+                key={idx}
+                block={block}
+                blockIndex={idx}
+                sources={sources}
+                sectionId={section.id}
+                isEditMode={isEditMode}
+                onBlockChange={onBlockChange}
+                onQuizSubmissionChange={handleQuizSubmissionChange}
+                onQuizProgressChange={handleQuizProgressChange}
+              />
+            ))
           : <p>{section.content}</p> /* fallback for old data */}
       </div>
 
@@ -340,7 +280,6 @@ export default function ContentView({
   
 }
 
-// Render a normalized course content block.
 function getSourcesByIds(sourceIds: string[] | undefined, sources: SourceRecord[]) {
   if (!Array.isArray(sourceIds) || sourceIds.length === 0) {
     return [];
@@ -377,102 +316,4 @@ function getPageType(section: Section) {
   }
 
   return "learn";
-}
-
-function renderContentBlock(
-  item: ContentBlock,
-  key: number,
-  sources: SourceRecord[],
-  sectionId: string,
-  onQuizSubmissionChange: QuizSubmissionStatusHandler,
-  onQuizProgressChange: QuizProgressStatusHandler
-) {
-  const blockSources = getSourcesByIds(item.sourceIds, sources);
-
-  switch (item.type) {
-    case "text":
-      return (
-        <div key={key} className="text-block">
-          {item.heading && <h3>{item.heading}</h3>}
-          {(item.value || item.text) && <p>{item.value || item.text}</p>}
-        </div>
-        )
-
-    case "conceptCards":
-    case "concept_cards":
-      return renderConceptCards(item, key);
-
-    case "video": {
-      const videoSource = blockSources.find((source) => source.embedUrl) ?? blockSources[0];
-      const videoUrl = item.url ?? videoSource?.embedUrl ?? videoSource?.url;
-      const clip = getVideoClip(item);
-
-      if (!videoUrl) {
-        return (
-          <p key={key} className="source-missing">
-            Video source unavailable.
-          </p>
-        );
-      }
-
-      return (
-        <VideoBlock key={key} url={videoUrl} title={videoSource?.title ?? item.title ?? "Video content"} clip={clip} />
-      );
-    }
-      
-    case "quiz": {
-      const quizKey = `quiz-${sectionId}-${key}`;
-      return (
-        <QuizBlock
-          key={key}
-          data={item}
-          name={quizKey}
-          onSubmissionChange={onQuizSubmissionChange}
-          onProgressChange={onQuizProgressChange}
-        />
-      );
-    }
-      
-      case "game":
-        return (
-          <div key={key} className="game-block">
-            <p><strong>Game:</strong> {item.name || "Unnamed game"}</p>
-            {item.description && <p>{item.description}</p>}
-          </div>
-        );
-      
-      default:
-        return <p key={key}>Unknown content type</p>;
-  }
-}
-
-function renderConceptCards(item: ContentBlock, key: number) {
-  const cards = item.concepts ?? item.cards ?? [];
-
-  if (cards.length === 0) {
-    return null;
-  }
-
-  return (
-    <section key={key} className="concept-card-stack" aria-label={item.title ?? "Concept cards"}>
-      {item.title && <h3 className="concept-card-stack-title">{item.title}</h3>}
-      {cards.map((card, idx) => {
-        const title =
-          typeof card === "string"
-            ? card
-            : card.name ?? card.title ?? card.heading ?? `Concept ${idx + 1}`;
-        const body =
-          typeof card === "string"
-            ? undefined
-            : card.description ?? card.body ?? card.value ?? card.text;
-
-        return (
-          <article className="concept-card" key={`${title}-${idx}`}>
-            <h4>{title}</h4>
-            {body && <p>{body}</p>}
-          </article>
-        );
-      })}
-    </section>
-  );
 }
