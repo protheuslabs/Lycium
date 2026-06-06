@@ -1,13 +1,16 @@
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
 import CourseFeedback from "../CourseFeedback/CourseFeedback";
 import SourceSuggestionButton from "../CourseFeedback/SourceSuggestionButton";
 import CourseNav from "../CourseNav/CourseNav";
 import Button from "../Button/Button";
+import Modal from "../Modal/Modal";
+import CourseSourcesPage from "./CourseSourcesPage";
 import EditableContentBlock from "./EditableContentBlock";
 import { EditPencilButton, promptForBlockType, promptForText, type CourseEditBlockKind } from "./CourseEditControls";
 import type { ContentBlock, Section, SourceRecord, QuizProgressStatus, QuizProgressStatusHandler, QuizSubmissionStatusHandler } from "./contentViewTypes";
+import { buildCourseSourceIndex, getSectionSources, sourceCitationNumber } from "./sourceCitationUtils";
 
 export type { SourceRecord } from "./contentViewTypes";
 
@@ -29,6 +32,7 @@ type ContentViewProps = {
   orderMandatory: boolean;
   onSectionTimedStatusChange?: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
   sources: SourceRecord[];
+  showCourseSourcesPage?: boolean;
   isEditMode?: boolean;
   onCourseTitleChange?: (title: string) => void;
   onModuleTitleChange?: (moduleIndex: number, title: string) => void;
@@ -37,6 +41,7 @@ type ContentViewProps = {
   onBlockAdd?: (sectionId: string, block: ContentBlock) => void;
   onBlockDelete?: (sectionId: string, blockIndex: number) => void;
   onBlockMove?: (sectionId: string, fromIndex: number, toIndex: number) => void;
+  onSourceCreate?: (sourceUrl: string) => SourceRecord | null;
 };
 
 function editableModuleTitle(title: string) {
@@ -116,6 +121,7 @@ export default function ContentView({
   orderMandatory,
   onSectionTimedStatusChange,
   sources,
+  showCourseSourcesPage = false,
   isEditMode = false,
   onCourseTitleChange,
   onModuleTitleChange,
@@ -123,7 +129,8 @@ export default function ContentView({
   onBlockChange,
   onBlockAdd,
   onBlockDelete,
-  onBlockMove
+  onBlockMove,
+  onSourceCreate
 }: ContentViewProps) {
   const quizBlockKeys = useMemo(() => {
     if (!section) {
@@ -139,7 +146,11 @@ export default function ContentView({
   const [quizProgressByKey, setQuizProgressByKey] = useState<Record<string, QuizProgressStatus>>({});
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
+  const [sourceTarget, setSourceTarget] = useState<{ sectionId: string; blockIndex: number } | null>(null);
+  const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceStatus, setSourceStatus] = useState("");
   const citationFocusTimer = useRef<number | null>(null);
+  const courseSourceIndex = useMemo(() => buildCourseSourceIndex(sources), [sources]);
 
   useEffect(() => {
     // Resetting quiz submission state when the learner changes sections is intentional.
@@ -148,6 +159,9 @@ export default function ContentView({
     setQuizProgressByKey({});
     setSourcesExpanded(false);
     setDraggedBlockIndex(null);
+    setSourceTarget(null);
+    setSourceUrl("");
+    setSourceStatus("");
   }, [section?.id]);
 
   const handleQuizSubmissionChange = useCallback<QuizSubmissionStatusHandler>((quizKey, submitted) => {
@@ -228,6 +242,50 @@ export default function ContentView({
     promptForBlockType((kind, initialValue) => onBlockAdd?.(section.id, createBlockTemplate(kind, initialValue)));
   }, [onBlockAdd, section?.id]);
 
+  const handleAttachSource = useCallback(
+    (sourceId: string) => {
+      if (!section || !sourceTarget || sourceTarget.sectionId !== section.id) {
+        return;
+      }
+
+      const block = section.content[sourceTarget.blockIndex];
+
+      if (!block) {
+        return;
+      }
+
+      onBlockChange?.(section.id, sourceTarget.blockIndex, {
+        ...block,
+        sourceIds: [sourceId],
+      });
+      setSourceTarget(null);
+      setSourceUrl("");
+      setSourceStatus("");
+    },
+    [onBlockChange, section, sourceTarget],
+  );
+
+  const handleSubmitNewSource = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const cleanUrl = sourceUrl.trim();
+
+      if (!cleanUrl) {
+        return;
+      }
+
+      const source = onSourceCreate?.(cleanUrl);
+
+      if (!source) {
+        setSourceStatus("Source could not be created yet.");
+        return;
+      }
+
+      handleAttachSource(source.id);
+    },
+    [handleAttachSource, onSourceCreate, sourceUrl],
+  );
+
   useEffect(() => {
     if (!section?.id) {
       return;
@@ -237,6 +295,17 @@ export default function ContentView({
   }, [hasTimedQuizInProgress, onSectionTimedStatusChange, section?.id]);
 
   if (!section) {
+    if (showCourseSourcesPage) {
+      return (
+        <CourseSourcesPage
+          courseKey={courseKey}
+          courseTitle={courseTitle}
+          sources={sources}
+          courseSourceIndex={courseSourceIndex}
+        />
+      );
+    }
+
     return (
       <main className="content-view">
         <h1 className="course-title">{moduleTitle}</h1>
@@ -245,7 +314,18 @@ export default function ContentView({
     );
   }
 
-  const sectionSources = getSectionSources(section, sources);
+  if (showCourseSourcesPage) {
+    return (
+      <CourseSourcesPage
+        courseKey={courseKey}
+        courseTitle={courseTitle}
+        sources={sources}
+        courseSourceIndex={courseSourceIndex}
+      />
+    );
+  }
+
+  const sectionSources = getSectionSources(section, sources, courseSourceIndex);
   const pageType = getPageType(section);
 
   
@@ -300,8 +380,15 @@ export default function ContentView({
                     event.preventDefault();
                     event.dataTransfer.dropEffect = "move";
                     if (draggedBlockIndex !== null && draggedBlockIndex !== idx) {
-                      onBlockMove?.(section.id, draggedBlockIndex, idx);
-                      setDraggedBlockIndex(idx);
+                      const bounds = event.currentTarget.getBoundingClientRect();
+                      let targetIndex = idx + (event.clientY > bounds.top + bounds.height / 2 ? 1 : 0);
+                      if (draggedBlockIndex < targetIndex) {
+                        targetIndex -= 1;
+                      }
+                      if (targetIndex !== draggedBlockIndex) {
+                        onBlockMove?.(section.id, draggedBlockIndex, targetIndex);
+                        setDraggedBlockIndex(targetIndex);
+                      }
                     }
                   }
                 }}
@@ -333,11 +420,13 @@ export default function ContentView({
                   block={block}
                   blockIndex={idx}
                   sources={sources}
+                  courseSourceIndex={courseSourceIndex}
                   sectionId={section.id}
                   isEditMode={isEditMode}
                   onBlockChange={onBlockChange}
                   onBlockDelete={onBlockDelete}
                   onCitationClick={handleInlineCitationClick}
+                  onMissingCitationClick={() => setSourceTarget({ sectionId: section.id, blockIndex: idx })}
                   onQuizSubmissionChange={handleQuizSubmissionChange}
                   onQuizProgressChange={handleQuizProgressChange}
                 />
@@ -386,53 +475,92 @@ export default function ContentView({
           </div>
           {sourcesExpanded && (
             <ul>
-              {sectionSources.map((source, index) => (
-                <li
-                  id={`source-reference-${section.id}-${index + 1}`}
-                  key={source.id}
-                  tabIndex={-1}
-                >
-                  <span className="source-reference-index">[{index + 1}]</span>
-                  {source.url ? (
-                    <a href={source.url} target="_blank" rel="noreferrer">
-                      {source.title}
-                    </a>
-                  ) : (
-                    <span>{source.title}</span>
-                  )}
-                  {source.publisher && <span> - {source.publisher}</span>}
-                </li>
-              ))}
+              {sectionSources.map((source) => {
+                const citationIndex = sourceCitationNumber(source.id, courseSourceIndex);
+
+                return (
+                  <li
+                    id={`source-reference-${section.id}-${citationIndex ?? source.id}`}
+                    key={source.id}
+                    tabIndex={-1}
+                  >
+                    <span className="source-reference-index">[{citationIndex ?? "?"}]</span>
+                    {source.url ? (
+                      <a href={source.url} target="_blank" rel="noreferrer">
+                        {source.title}
+                      </a>
+                    ) : (
+                      <span>{source.title}</span>
+                    )}
+                    {source.publisher && <span> - {source.publisher}</span>}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
       )}
+
+      <Modal
+        isOpen={Boolean(sourceTarget)}
+        title="Add a source for this course"
+        eyebrow="Block citation"
+        labelledById="block-source-modal-title"
+        size="md"
+        onClose={() => {
+          setSourceTarget(null);
+          setSourceUrl("");
+          setSourceStatus("");
+        }}
+      >
+        <form className="block-source-form" onSubmit={handleSubmitNewSource}>
+          <label>
+            <span>Source URL</span>
+            <input
+              type="url"
+              value={sourceUrl}
+              onChange={(event) => setSourceUrl(event.target.value)}
+              placeholder="https://example.edu/source"
+            />
+          </label>
+          <div className="block-source-form-footer">
+            {sourceStatus && <p>{sourceStatus}</p>}
+            <Button type="submit" variant="standard" disabled={!sourceUrl.trim()}>
+              Add URL source
+            </Button>
+          </div>
+        </form>
+
+        {sources.length > 0 && (
+          <div className="block-source-existing">
+            <p>Or connect an existing course source</p>
+            <div className="block-source-existing-list">
+              {sources.map((source) => {
+                const citationIndex = sourceCitationNumber(source.id, courseSourceIndex);
+
+                return (
+                  <div className="block-source-existing-row" key={source.id}>
+                    <button type="button" onClick={() => handleAttachSource(source.id)}>
+                      <span className="source-reference-index">[{citationIndex ?? "?"}]</span>
+                      <span>{source.title}</span>
+                    </button>
+                    {source.url && (
+                      <a href={source.url} target="_blank" rel="noreferrer" aria-label={`Open ${source.title}`}>
+                        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                          <path d="M8 5l8 7-8 7" />
+                        </svg>
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </Modal>
     </main>
   );
   
-}
-
-function getSourcesByIds(sourceIds: string[] | undefined, sources: SourceRecord[]) {
-  if (!Array.isArray(sourceIds) || sourceIds.length === 0) {
-    return [];
-  }
-
-  const sourceMap = new Map(sources.map((source) => [source.id, source]));
-  return sourceIds
-    .map((sourceId) => sourceMap.get(sourceId))
-    .filter((source): source is SourceRecord => Boolean(source));
-}
-
-function getSectionSources(section: Section, sources: SourceRecord[]) {
-  const sourceIds = new Set(section.sourceIds ?? []);
-
-  for (const block of section.content) {
-    for (const sourceId of block.sourceIds ?? []) {
-      sourceIds.add(sourceId);
-    }
-  }
-
-  return getSourcesByIds(Array.from(sourceIds), sources);
 }
 
 function getPageType(section: Section) {

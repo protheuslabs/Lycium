@@ -47,15 +47,16 @@ def _llm_messages(
             "Always choose the college/category first, then choose a department contained inside that category. "
             "Do not mechanically copy courseEquivalencies[].department into top-level category or department."
         ),
-        "course_shape": "Lycium course JSON with learn/apply pages, conceptCards, sourceRecords, and quiz-only assessment pages.",
+        "course_shape": "Lycium course JSON with learn/apply pages, editor-native atomic blocks, sourceRecords, and quiz-only assessment pages.",
         "critical_renderer_rules": [
             "Every section.content MUST be an array of block objects, never a plain string.",
             "Text blocks use {\"type\":\"text\",\"heading\":\"...\",\"value\":\"...\"}.",
-            "Every non-summary Learn section ends with {\"type\":\"conceptCards\",\"title\":\"Concepts introduced\",\"concepts\":[{\"name\":\"...\",\"description\":\"...\"}]}",
+            "Use the same editable blocks a human can add in the UI: text, heading, conceptCard, video, iframe, and quiz.",
+            "Every non-summary Learn section ends with {\"type\":\"heading\",\"title\":\"Concepts introduced\"} followed by one {\"type\":\"conceptCard\",\"title\":\"...\",\"description\":\"...\"} block per concept.",
             "Every module has one Apply assessment section containing only one quiz block.",
             "Each quiz block contains at least 10 questions.",
-            "Quiz questions MUST use {\"id\":\"q1\",\"question\":\"...\",\"options\":[\"...\"],\"answers\":[0]}; answers are zero-based option indexes, not answer objects.",
-            "Every module ends with one summary section containing one conceptCards block titled \"Module concepts\" or \"Week concepts\".",
+            "Quiz questions MUST use {\"id\":\"q1\",\"question\":\"...\",\"options\":[\"...\"],\"answers\":[0],\"multiple\":false}; answers are zero-based option indexes, not answer objects.",
+            "Every module ends with one summary section containing a heading titled \"Module concepts\" or \"Week concepts\" followed by one conceptCard block per reviewed concept.",
         ],
         "minimal_section_example": {
             "id": "module-1-section-1",
@@ -68,10 +69,10 @@ def _llm_messages(
                 {"type": "text", "heading": "Worked example", "value": "Show the idea in a concrete situation."},
                 {"type": "text", "heading": "Practice", "value": "Ask the learner to apply the idea."},
                 {
-                    "type": "conceptCards",
+                    "type": "heading",
                     "title": "Concepts introduced",
-                    "concepts": [{"name": "Raw concept name", "description": "Concise definition."}],
                 },
+                {"type": "conceptCard", "title": "Raw concept name", "description": "Concise definition."},
             ],
         },
     }
@@ -140,6 +141,11 @@ def _staged_plan_messages(
                         "If curriculum_benchmark_context.sourceCorpusSynthesis is present, use includedSources as the trusted source corpus. "
                         "Do not use excludedSources for course requirements, lessons, quizzes, or citations unless a reviewer later restores them. "
                         "Use commonThemes to identify recurring source themes, but still prioritize the requested course prompt and benchmark-derived requirements."
+                    ),
+                    "inline_citation_instruction": (
+                        "Text block values may include inline citation markers like [1]. "
+                        "Each marker is a 1-based index into the course-wide source inventory; section source lists render only locally used sources sorted by that course-wide number. "
+                        "Only add markers next to claims supported by sources assigned to that section."
                     ),
                     "required_json_shape": {
                         "title": "Course title",

@@ -17,6 +17,7 @@ export default function CourseInfoModal({ course, isPublishing, onClose, onPubli
   const learningTypes = course.data.learningTypes ?? [];
   const courseEquivalencies = course.data.courseEquivalencies ?? [];
   const isGeneratedCourse = course.source === "remote" || Boolean(course.generation_trace);
+  const learnersCanFork = course.data.metadata?.editPolicy?.learnersCanFork !== false;
 
   return (
     <Modal
@@ -100,12 +101,14 @@ export default function CourseInfoModal({ course, isPublishing, onClose, onPubli
         {isGeneratedCourse && (
           <CourseReviewPanel course={course} isPublishing={isPublishing} onPublishCourse={onPublishCourse} />
         )}
-        <section className="course-info-section course-fork-section">
-          <Button type="button" variant="nav" className="course-fork-button" onClick={() => onForkCourse(course)}>
-            Fork course
-          </Button>
-          <p className="course-info-muted">Creates a local editable copy titled "Fork of {course.title}".</p>
-        </section>
+        {learnersCanFork && (
+          <section className="course-info-section course-fork-section">
+            <Button type="button" variant="nav" className="course-fork-button" onClick={() => onForkCourse(course)}>
+              Fork course
+            </Button>
+            <p className="course-info-muted">Creates a local editable copy titled "Fork of {course.title}".</p>
+          </section>
+        )}
     </Modal>
   );
 }

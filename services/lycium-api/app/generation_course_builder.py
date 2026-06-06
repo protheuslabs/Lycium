@@ -58,20 +58,19 @@ def generate_course_from_draft(
             source_slot = _source_slot_for_section(section_id, section["title"], source_ids)
             if source_slot:
                 source_slots.append(source_slot)
-            concept_card_block = {
-                "type": "conceptCards",
-                "title": "Concepts introduced",
-                "concepts": [
-                    {
-                        "name": section["title"],
-                        "description": f"A core concept introduced in the lesson page titled {section['title']}.",
-                    },
-                    {
-                        "name": f"{section['title']} application",
-                        "description": f"Using {section['title']} in a realistic practice, project, or decision-making context.",
-                    },
-                ],
-            }
+            concept_blocks = [
+                {"type": "heading", "title": "Concepts introduced"},
+                {
+                    "type": "conceptCard",
+                    "title": section["title"],
+                    "description": f"A core concept introduced in the lesson page titled {section['title']}.",
+                },
+                {
+                    "type": "conceptCard",
+                    "title": f"{section['title']} application",
+                    "description": f"Using {section['title']} in a realistic practice, project, or decision-making context.",
+                },
+            ]
             section_rows.append(
                 {
                     "id": section_id,
@@ -81,7 +80,7 @@ def generate_course_from_draft(
                     "sourceIds": source_ids,
                     "learningObjectives": section.get("learning_objectives", []),
                     "estimatedMinutes": section.get("estimated_minutes", 20),
-                    "content": [*_with_source_ids(blocks, source_ids), concept_card_block],
+                    "content": [*_with_source_ids(blocks, source_ids), *_with_source_ids(concept_blocks, source_ids)],
                     "citations": citations,
                 }
             )

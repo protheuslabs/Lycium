@@ -67,19 +67,25 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
 9. End every module with a summary section:
    - use `sectionType: "summary"`
    - treat the summary as a module concept inventory, not a prose recap
-   - use one `conceptCards` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`
-   - list concept objects in a `concepts` array
+   - use a `heading` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`
+   - follow it with one `conceptCard` block per reviewed concept so humans can reorder, edit, or delete concepts one at a time
    - pull summary concepts from the concept cards on the module's prior Learn pages
-   - preserve the originating `sourceSectionId` when possible
+   - preserve the originating `sourceSectionId` on each `conceptCard` when possible
    - do not invent interpretive categories such as "key concepts", "how the ideas connect", or "common pitfalls" as concept cards
    - do not include quiz blocks in summary sections
 10. Add concept cards to Learn pages:
-   - every Learn page should end with at least one `conceptCards` block
-   - cards should name raw concepts introduced on the page, not generic study tips or LLM interpretation
-   - use simple concept objects with `name` and `description`
+   - every Learn page should end with a `heading` block titled `Concepts introduced` followed by at least one `conceptCard` block
+   - each card block should name one raw concept introduced on the page, not generic study tips or LLM interpretation
+   - use simple card fields such as `title` and `description`
    - concept names should read like bullet-list terms: `HTTP request`, `Training-serving skew`, `Gradient synchronization`
    - descriptions should be concise definitions of the concept, not prose summaries of the page
-11. Record all sources centrally and reference them from the course:
+11. Use editor-native content blocks for generated output:
+   - generated sections must be easy for a human to tweak in the course editor
+   - use atomic `text`, `heading`, `conceptCard`, `video`, `iframe`, and `quiz` blocks instead of monolithic markdown or large nested block payloads
+   - use one `conceptCard` block per concept; do not generate a single `conceptCards` stack except when preserving or repairing a legacy course
+   - video blocks should not include a filler title by default; use a separate `heading` block if the video needs a visible label
+   - quiz questions should include `multiple: true` only when the UI should render checkboxes; single-answer questions should use `answers: [index]` and omit `multiple` or set it false
+12. Record all sources centrally and reference them from the course:
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
    - use `sourceIds` in course, module, section, and block records
    - when many sources are submitted, run source corpus preflight and use only included sources as course evidence unless a reviewer restores an excluded source
@@ -89,19 +95,21 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
    - if source coverage is below policy, create or preserve a `needs_sources` draft with `metadata.sourceGaps` instead of drafting hollow learner-facing modules
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
-   - scope `sourceIds` and citations locally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, section/block `sourceIds` support only concepts taught or assessed there, and section citations must not blanket-repeat unrelated course sources
+   - scope `sourceIds` locally while numbering citations globally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, and section/block `sourceIds` support only concepts taught or assessed there
+   - text blocks may include inline citation markers such as `[1]`; these are 1-based indexes into the course-wide source index, while each section renders only the subset it uses sorted from lowest to highest citation number
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
    - video blocks may reuse a full video source with an optional `clip` object such as `{ "startSeconds": 185, "endSeconds": 420 }`; omit `clip` to play the whole video
    - for required concepts, prefer source slots with a primary source, fallback sources, and a replacement policy
-12. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
-13. Validate structure and coherence before finishing.
-14. Treat validation as a catalog gate:
+13. If adding a local course, import it in `App.tsx` and add a `local-*` course entry.
+14. Validate structure and coherence before finishing.
+15. Treat validation as a catalog gate:
    - generated courses must not enter the catalog until structural validation passes
    - sparse-source drafts may appear only as incomplete `needs_sources` artifacts that collect missing sources before full generation resumes
    - every referenced `sourceId` must resolve to a central or course-level source record
    - every section citation must point to a source that supports at least one concept taught or assessed in that section
+   - every inline `[n]` citation marker in a text block must resolve to a course-wide source index entry that is also connected to the section or nearby block through `sourceIds`
    - validation failures should be reported as generation errors, not silently repaired after rendering
-15. Treat publication as a separate lifecycle gate:
+16. Treat publication as a separate lifecycle gate:
    - generated snapshots should start as reviewable artifacts, not automatically trusted catalog entries
    - create or preserve `generation_trace.quality_report` when backend generation is involved
    - use `generation_trace.quality_report.evals` to judge structure, instructional substance, assessment quality, concepts, source grounding, media, and specificity
@@ -109,7 +117,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - keep only a small ring buffer of full course-generation job logs so recent runs are inspectable without creating unbounded local churn
    - publish only after the quality report passes or a reviewer explicitly records a force-publish reason
    - locked sections should be represented in review metadata rather than by mutating lesson content
-16. Feed course-health records after learner use:
+17. Feed course-health records after learner use:
    - combine learner ratings, feedback notes, source suggestions, quality evals, validation issues, and reviewer actions into course health
    - keep health data separate from course JSON
    - store feedback magnitude as a numeric 1-3 signal; emoji are presentation only

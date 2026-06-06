@@ -4,6 +4,7 @@ import ContentView from "../ContentView/ContentView";
 import type { SourceRecord } from "../ContentView/ContentView";
 import type { ContentBlock } from "../ContentView/contentViewTypes";
 import Sidebar from "../Sidebar/Sidebar";
+import CourseSettingsModal, { type CourseSettingsDraft } from "./CourseSettingsModal";
 
 type DisplaySection = CourseSection & {
   moduleIndex: number;
@@ -43,6 +44,10 @@ function courseAllowsLocalEdit(course: CourseEntry | undefined) {
   return course.source === "local" || course.status === "draft" || course.status === "generated";
 }
 
+function courseLearnersCanFork(course: CourseEntry | undefined) {
+  return course?.data.metadata?.editPolicy?.learnersCanFork !== false;
+}
+
 function stripModulePrefix(title: string) {
   return title.replace(/^\s*(Module|Week)\s+\d+\s*:?\s*/i, "").trim() || "Module title";
 }
@@ -63,6 +68,73 @@ function cloneModules(modules: CourseModule[]): CourseModule[] {
       content: section.content.map((block) => ({ ...block })),
     })),
   }));
+}
+
+function sourceRecordFromUnknown(record: unknown): SourceRecord | null {
+  if (!record || typeof record !== "object") {
+    return null;
+  }
+
+  const value = record as Record<string, unknown>;
+
+  if (typeof value.id !== "string" || typeof value.title !== "string") {
+    return null;
+  }
+
+  return {
+    id: value.id,
+    type: typeof value.type === "string" ? value.type : "web",
+    title: value.title,
+    author: typeof value.author === "string" ? value.author : undefined,
+    publisher: typeof value.publisher === "string" ? value.publisher : undefined,
+    url: typeof value.url === "string" ? value.url : undefined,
+    embedUrl: typeof value.embedUrl === "string" ? value.embedUrl : undefined,
+    localPath: typeof value.localPath === "string" ? value.localPath : undefined,
+    usedByCourseIds: Array.isArray(value.usedByCourseIds) ? value.usedByCourseIds.filter((item): item is string => typeof item === "string") : undefined,
+    usedByCourseTitles: Array.isArray(value.usedByCourseTitles) ? value.usedByCourseTitles.filter((item): item is string => typeof item === "string") : undefined,
+  };
+}
+
+function normalizeCourseSourceRecords(course: CourseEntry | undefined): SourceRecord[] {
+  const records = course?.data.sourceRecords;
+
+  if (Array.isArray(records)) {
+    return records.map(sourceRecordFromUnknown).filter((record): record is SourceRecord => record !== null);
+  }
+
+  if (records && typeof records === "object") {
+    return Object.values(records).map(sourceRecordFromUnknown).filter((record): record is SourceRecord => record !== null);
+  }
+
+  return [];
+}
+
+function mergeSourceRecords(...sourceGroups: SourceRecord[][]) {
+  const sourceMap = new Map<string, SourceRecord>();
+
+  for (const sourceGroup of sourceGroups) {
+    for (const source of sourceGroup) {
+      if (source?.id && !sourceMap.has(source.id)) {
+        sourceMap.set(source.id, source);
+      }
+    }
+  }
+
+  return Array.from(sourceMap.values());
+}
+
+function sourceIdFromUrl(url: string) {
+  const cleanUrl = url.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return `local-source-${cleanUrl.slice(0, 48) || Date.now()}-${Date.now()}`;
+}
+
+function titleFromUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace(/^www\./, "") || url;
+  } catch {
+    return url;
+  }
 }
 
 function newDraftId(courseKey: string, label: string, moduleIndex: number, sectionIndex = 0) {
@@ -129,6 +201,63 @@ function deleteSectionFromModules(modules: CourseModule[], sectionId: string) {
     .filter((module) => module.sections.length > 0);
 }
 
+function moveSectionInModules(
+  modules: CourseModule[],
+  sectionId: string,
+  targetModuleIndex: number,
+  targetSectionIndex: number,
+) {
+  const nextModules = cloneModules(modules);
+  const sourceModuleIndex = nextModules.findIndex((module) => module.sections.some((section) => section.id === sectionId));
+
+  if (sourceModuleIndex < 0) {
+    return { modules: nextModules, movedModuleIndex: targetModuleIndex, movedSectionIndex: targetSectionIndex };
+  }
+
+  const sourceModule = nextModules[sourceModuleIndex];
+  const sourceSectionIndex = sourceModule.sections.findIndex((section) => section.id === sectionId);
+
+  if (sourceSectionIndex < 0) {
+    return { modules: nextModules, movedModuleIndex: targetModuleIndex, movedSectionIndex: targetSectionIndex };
+  }
+
+  const [movedSection] = sourceModule.sections.splice(sourceSectionIndex, 1);
+  let adjustedTargetModuleIndex = targetModuleIndex;
+  let adjustedTargetSectionIndex = targetSectionIndex;
+
+  if (sourceModule.sections.length === 0) {
+    nextModules.splice(sourceModuleIndex, 1);
+    if (nextModules.length === 0) {
+      return {
+        modules,
+        movedModuleIndex: sourceModuleIndex,
+        movedSectionIndex: sourceSectionIndex,
+      };
+    }
+    if (sourceModuleIndex < adjustedTargetModuleIndex) {
+      adjustedTargetModuleIndex -= 1;
+    }
+  } else if (sourceModuleIndex === adjustedTargetModuleIndex && sourceSectionIndex < adjustedTargetSectionIndex) {
+    adjustedTargetSectionIndex -= 1;
+  }
+
+  adjustedTargetModuleIndex = Math.max(0, Math.min(adjustedTargetModuleIndex, nextModules.length - 1));
+  const targetModule = nextModules[adjustedTargetModuleIndex];
+
+  if (!targetModule) {
+    return { modules: nextModules, movedModuleIndex: 0, movedSectionIndex: 0 };
+  }
+
+  adjustedTargetSectionIndex = Math.max(0, Math.min(adjustedTargetSectionIndex, targetModule.sections.length));
+  targetModule.sections.splice(adjustedTargetSectionIndex, 0, movedSection);
+
+  return {
+    modules: nextModules,
+    movedModuleIndex: adjustedTargetModuleIndex,
+    movedSectionIndex: adjustedTargetSectionIndex,
+  };
+}
+
 function moveBlock(blocks: CourseBlock[], fromIndex: number, toIndex: number) {
   if (
     fromIndex === toIndex ||
@@ -163,16 +292,29 @@ export default function CourseLearningLayout({
   onSaveCourseDraft,
 }: CourseLearningLayoutProps) {
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isCourseSettingsOpen, setIsCourseSettingsOpen] = useState(false);
+  const [isCourseSourcesPageActive, setIsCourseSourcesPageActive] = useState(false);
   const [draftCourseTitle, setDraftCourseTitle] = useState("");
+  const [draftCourseSettings, setDraftCourseSettings] = useState<CourseSettingsDraft>({
+    orderMandatory: false,
+    learnersCanFork: true,
+  });
   const [draftModuleTitles, setDraftModuleTitles] = useState<Record<number, string>>({});
   const [draftSectionTitles, setDraftSectionTitles] = useState<Record<string, string>>({});
   const [draftBlocks, setDraftBlocks] = useState<Record<string, Record<number, ContentBlock>>>({});
   const [draftModules, setDraftModules] = useState<CourseModule[] | null>(null);
+  const [draftSourceRecords, setDraftSourceRecords] = useState<SourceRecord[] | null>(null);
   const [editSectionIndex, setEditSectionIndex] = useState<number | null>(null);
   const canEditCourse = courseAllowsLocalEdit(selectedCourse);
   const displayedCourseTitle = draftCourseTitle || selectedCourse?.data?.title || "Course";
   const activeEditMode = isEditMode && canEditCourse;
+  const effectiveOrderMandatory = activeEditMode ? draftCourseSettings.orderMandatory : orderMandatory;
   const sourceModules = draftModules ?? selectedCourse?.data.modules ?? [];
+  const courseSourceRecords = useMemo(() => normalizeCourseSourceRecords(selectedCourse), [selectedCourse]);
+  const displayedSources = useMemo(
+    () => mergeSourceRecords(sources, draftSourceRecords ?? courseSourceRecords),
+    [courseSourceRecords, draftSourceRecords, sources],
+  );
   const displayedSections = useMemo(
     () => {
       if (!selectedCourse) {
@@ -196,11 +338,18 @@ export default function CourseLearningLayout({
   const displayedCurrentSection = displayedSections[effectiveSectionIndex] ?? displayedSections[0] ?? currentSection;
   const resetDraft = () => {
     setDraftCourseTitle("");
+    setDraftCourseSettings({
+      orderMandatory: selectedCourse?.data.orderMandatory ?? false,
+      learnersCanFork: courseLearnersCanFork(selectedCourse),
+    });
     setDraftModuleTitles({});
     setDraftSectionTitles({});
     setDraftBlocks({});
     setDraftModules(null);
+    setDraftSourceRecords(null);
     setEditSectionIndex(null);
+    setIsCourseSettingsOpen(false);
+    setIsCourseSourcesPageActive(false);
   };
 
   useEffect(() => {
@@ -210,11 +359,18 @@ export default function CourseLearningLayout({
 
   const handleStartEdit = () => {
     setDraftModules(cloneModules(selectedCourse?.data.modules ?? []));
+    setDraftSourceRecords(normalizeCourseSourceRecords(selectedCourse));
+    setDraftCourseSettings({
+      orderMandatory: selectedCourse?.data.orderMandatory ?? false,
+      learnersCanFork: courseLearnersCanFork(selectedCourse),
+    });
     setEditSectionIndex(visibleSectionIndex);
     setIsEditMode(true);
   };
 
   const handleSectionSelect = (index: number) => {
+    setIsCourseSourcesPageActive(false);
+
     if (activeEditMode) {
       setEditSectionIndex(index);
       return;
@@ -324,6 +480,26 @@ export default function CourseLearningLayout({
     clearSectionDraftBlocks(sectionId);
   };
 
+  const handleSourceCreate = (sourceUrl: string) => {
+    const cleanUrl = sourceUrl.trim();
+
+    if (!cleanUrl) {
+      return null;
+    }
+
+    const newSource: SourceRecord = {
+      id: sourceIdFromUrl(cleanUrl),
+      type: "web",
+      title: titleFromUrl(cleanUrl),
+      url: cleanUrl,
+      usedByCourseIds: selectedCourse?.key ? [selectedCourse.key] : undefined,
+      usedByCourseTitles: selectedCourse?.data.title ? [selectedCourse.data.title] : undefined,
+    };
+
+    setDraftSourceRecords((current) => mergeSourceRecords(current ?? courseSourceRecords, [newSource]));
+    return newSource;
+  };
+
   const handleModuleTitleChange = (moduleIndex: number, title: string) => {
     const cleanTitle = stripModulePrefix(title);
     setDraftModuleTitles((current) => ({ ...current, [moduleIndex]: cleanTitle }));
@@ -364,6 +540,7 @@ export default function CourseLearningLayout({
       setEditSectionIndex(nextSectionIndex);
       return modules;
     });
+    setDraftModuleTitles({});
     setDraftSectionTitles((current) => {
       if (!current[sectionId]) {
         return current;
@@ -374,6 +551,16 @@ export default function CourseLearningLayout({
       return next;
     });
     clearSectionDraftBlocks(sectionId);
+  };
+
+  const handleMoveSection = (sectionId: string, targetModuleIndex: number, targetSectionIndex: number) => {
+    setDraftModules((current) => {
+      const modules = cloneModules(current ?? selectedCourse?.data.modules ?? []);
+      const moveResult = moveSectionInModules(modules, sectionId, targetModuleIndex, targetSectionIndex);
+      setEditSectionIndex(flatSectionIndexForModule(moveResult.modules, moveResult.movedModuleIndex, moveResult.movedSectionIndex));
+      return moveResult.modules;
+    });
+    setDraftModuleTitles({});
   };
 
   const handleAddModule = () => {
@@ -391,6 +578,10 @@ export default function CourseLearningLayout({
     resetDraft();
   };
 
+  const handleCourseSourcesSelect = () => {
+    setIsCourseSourcesPageActive(true);
+  };
+
   const handleSaveEdit = () => {
     if (!selectedCourse) {
       setIsEditMode(false);
@@ -399,9 +590,21 @@ export default function CourseLearningLayout({
     }
 
     const modulesToSave = draftModules ?? selectedCourse.data.modules;
+    const sourceRecordsToSave = draftSourceRecords ?? normalizeCourseSourceRecords(selectedCourse);
+    const sourceIdsToSave = Array.from(new Set([...(selectedCourse.data.sourceIds ?? []), ...sourceRecordsToSave.map((source) => source.id)]));
     onSaveCourseDraft(selectedCourse.key, {
       ...selectedCourse.data,
       title: displayedCourseTitle,
+      orderMandatory: draftCourseSettings.orderMandatory,
+      metadata: {
+        ...(selectedCourse.data.metadata ?? {}),
+        editPolicy: {
+          ...(selectedCourse.data.metadata?.editPolicy ?? {}),
+          learnersCanFork: draftCourseSettings.learnersCanFork,
+        },
+      },
+      sourceIds: sourceIdsToSave,
+      sourceRecords: sourceRecordsToSave,
       modules: modulesToSave.map((module, moduleIndex) => ({
         ...module,
         title: stripModulePrefix(draftModuleTitles[moduleIndex] ?? module.title),
@@ -416,6 +619,11 @@ export default function CourseLearningLayout({
     resetDraft();
   };
 
+  const handleCourseSettingsSave = (settings: CourseSettingsDraft) => {
+    setDraftCourseSettings(settings);
+    setIsCourseSettingsOpen(false);
+  };
+
   return (
     <div className="main-layout">
       <Sidebar
@@ -426,13 +634,18 @@ export default function CourseLearningLayout({
         progressPercentage={courseProgress.percentage}
         viewedPercentage={courseProgress.viewedPercentage}
         sectionStatuses={resolvedSectionStatuses}
+        isSourcesActive={isCourseSourcesPageActive}
+        sourceCount={displayedSources.length}
         canEditCourse={canEditCourse}
         isEditMode={activeEditMode}
         onStartEdit={handleStartEdit}
         onCancelEdit={handleCancelEdit}
         onSaveEdit={handleSaveEdit}
+        onOpenCourseSettings={() => setIsCourseSettingsOpen(true)}
+        onSourcesSelect={handleCourseSourcesSelect}
         onAddSection={handleAddSection}
         onDeleteSection={handleDeleteSection}
+        onMoveSection={handleMoveSection}
         onAddModule={handleAddModule}
       />
       <div className="course-content-host">
@@ -451,9 +664,10 @@ export default function CourseLearningLayout({
           viewedPercentage={moduleProgress.viewedPercentage}
           markComplete={onCompleteSection}
           isComplete={currentSection ? completedSectionIds.has(currentSection.id) : false}
-          orderMandatory={orderMandatory}
+          orderMandatory={effectiveOrderMandatory}
           onSectionTimedStatusChange={onSectionTimedStatusChange}
-          sources={sources}
+          sources={displayedSources}
+          showCourseSourcesPage={isCourseSourcesPageActive}
           isEditMode={activeEditMode}
           onCourseTitleChange={setDraftCourseTitle}
           onModuleTitleChange={handleModuleTitleChange}
@@ -462,8 +676,16 @@ export default function CourseLearningLayout({
           onBlockAdd={handleBlockAdd}
           onBlockDelete={handleBlockDelete}
           onBlockMove={handleBlockMove}
+          onSourceCreate={handleSourceCreate}
         />
       </div>
+      <CourseSettingsModal
+        isOpen={isCourseSettingsOpen && activeEditMode}
+        settings={draftCourseSettings}
+        canEditCourse={canEditCourse}
+        onClose={() => setIsCourseSettingsOpen(false)}
+        onSave={handleCourseSettingsSave}
+      />
     </div>
   );
 }

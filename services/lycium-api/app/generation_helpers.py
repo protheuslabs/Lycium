@@ -8,11 +8,13 @@ from typing import Any
 COURSE_GENERATION_RULES = (
     "Quizzes are assessment-only sections. Do not mix instructional content and quiz content "
     "inside the same generated section. Use pageType='learn' for instructional pages and "
-    "pageType='apply' for assessment or practice pages. End every learn page with a conceptCards "
-    "block that identifies concepts introduced on the page. Each concept object must include "
-    "a raw name and a concise description. Module summaries must be learn pages with a conceptCards "
-    "block titled according to the course pacing label, such as 'Module concepts' or 'Week concepts', "
-    "that aggregates concept objects from the module or week learn pages. Choose exactly one learner-facing "
+    "pageType='apply' for assessment or practice pages. Generated content must use the same atomic "
+    "editable blocks the UI creates: text, heading, conceptCard, video, iframe, and quiz. End every "
+    "learn page with a heading block titled 'Concepts introduced' followed by one conceptCard block per "
+    "raw concept. Each conceptCard must include a short title/name and concise description. Module "
+    "summaries must be learn pages with a heading block titled according to the course pacing label, "
+    "such as 'Module concepts' or 'Week concepts', followed by one conceptCard per reviewed concept. "
+    "Choose exactly one learner-facing "
     "pacing label, 'Module' or 'Week', record it in metadata.pacingLabel, and do not mix the two labels "
     "in module titles, summary titles, or summary concept-card titles. "
     "Do not use interpretive prose categories as concept cards. Quiz blocks may include maxAttempts "
@@ -91,6 +93,17 @@ def _build_instructional_blocks(section_title: str, prompt: str, source_excerpt:
             ),
         },
     ]
+
+
+def _concept_card_block(name: str, description: str, *, source_section_id: str | None = None) -> dict[str, Any]:
+    block: dict[str, Any] = {
+        "type": "conceptCard",
+        "title": name,
+        "description": description,
+    }
+    if source_section_id:
+        block["sourceSectionId"] = source_section_id
+    return block
 
 
 def _ensure_minimum_outline_modules(raw_modules: Any) -> list[dict[str, Any]]:
@@ -185,7 +198,19 @@ def _build_module_summary_section(
         if section.get("sectionType") == "assessment":
             continue
         for block in section.get("content", []):
-            if block.get("type") != "conceptCards":
+            if block.get("type") in {"conceptCard", "concept_card"}:
+                name = block.get("title") or block.get("name") or block.get("heading")
+                description = block.get("description") or block.get("body") or block.get("value") or block.get("text") or ""
+                if name:
+                    summary_concepts.append(
+                        {
+                            "name": str(name),
+                            "description": str(description),
+                            "sourceSectionId": section["id"],
+                        }
+                    )
+                continue
+            if block.get("type") not in {"conceptCards", "concept_cards"}:
                 continue
             for concept in block.get("concepts", []):
                 name = concept.get("name") if isinstance(concept, dict) else concept
@@ -222,6 +247,16 @@ def _build_module_summary_section(
         "pageType": "learn",
         "learningObjectives": [],
         "estimatedMinutes": 10,
-        "content": [{"type": "conceptCards", "title": f"{pacing_label} concepts", "concepts": summary_concepts}],
+        "content": [
+            {"type": "heading", "title": f"{pacing_label} concepts"},
+            *[
+                _concept_card_block(
+                    str(concept["name"]),
+                    str(concept.get("description") or ""),
+                    source_section_id=str(concept.get("sourceSectionId") or "") or None,
+                )
+                for concept in summary_concepts
+            ],
+        ],
         "citations": citations[:5],
     }

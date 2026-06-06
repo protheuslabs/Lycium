@@ -6,6 +6,7 @@ from typing import Any
 from app.course_structure import content_blocks, modules, sections, source_ids
 
 LABEL_STOP_TOKENS = {"quiz", "summary", "module", "week", "lesson", "review"}
+INLINE_CITATION_PATTERN = re.compile(r"\[(\d+)\]")
 
 
 def _items(value: Any) -> list[dict[str, Any]]:
@@ -218,6 +219,26 @@ def _section_source_ids(section: dict[str, Any]) -> set[str]:
     return ids
 
 
+def _rendered_section_source_count(section: dict[str, Any]) -> int:
+    ids = set(source_ids(section))
+    for block in content_blocks(section):
+        ids.update(source_ids(block))
+    return len(ids)
+
+
+def _inline_citation_indexes(section: dict[str, Any]) -> list[int]:
+    indexes: list[int] = []
+    for block in content_blocks(section):
+        if block.get("type") != "text":
+            continue
+        for key in ("heading", "value", "text"):
+            value = block.get(key)
+            if not isinstance(value, str):
+                continue
+            indexes.extend(int(match.group(1)) for match in INLINE_CITATION_PATTERN.finditer(value))
+    return indexes
+
+
 def _section_location(module_index: int, section_index: int) -> str:
     return f"modules[{module_index}].sections[{section_index}]"
 
@@ -225,6 +246,7 @@ def _section_location(module_index: int, section_index: int) -> str:
 def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
     slots = _source_slots(course)
     course_sources = set(source_ids(course)) or _source_record_ids(course)
+    course_source_by_number = {index: source_id for index, source_id in enumerate(source_ids(course) or sorted(_source_record_ids(course)), start=1)}
     metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
     coverage_map = _concept_source_coverage(metadata)
     requirement_context = _requirement_origin_context(metadata)
@@ -239,6 +261,7 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
     blanket_section_count = 0
     citation_issue_count = 0
     unmapped_citation_count = 0
+    inline_citation_issue_count = 0
 
     for module_index, module in enumerate(modules(course), start=1):
         module_sources = set(source_ids(module))
@@ -265,6 +288,23 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
 
             used = _section_source_ids(section)
             citation_ids = _citation_source_ids(section)
+            inline_citation_indexes = _inline_citation_indexes(section)
+            invalid_inline_citations = [
+                index
+                for index in inline_citation_indexes
+                if index not in course_source_by_number or course_source_by_number[index] not in used
+            ]
+            if invalid_inline_citations:
+                inline_citation_issue_count += len(invalid_inline_citations)
+                citation_issue_count += len(invalid_inline_citations)
+                issues.append({
+                    "severity": "error",
+                    "message": (
+                        "Inline citation markers are outside the course-wide source index or missing local sourceId support: "
+                        f"{', '.join(f'[{index}]' for index in invalid_inline_citations[:6])}."
+                    ),
+                    "location": location,
+                })
             unmapped_citations: set[str] = set()
             if citation_ids and (slots or coverage_map):
                 unmapped_citations = citation_ids - allowed
@@ -346,5 +386,6 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
             "blanketSourceSectionCount": blanket_section_count,
             "citationIssueCount": citation_issue_count,
             "unmappedCitationCount": unmapped_citation_count,
+            "inlineCitationIssueCount": inline_citation_issue_count,
         },
     }

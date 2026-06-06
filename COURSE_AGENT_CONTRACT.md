@@ -67,13 +67,12 @@ Canonical Learn section block pattern:
   { "type": "text", "heading": "Explanation", "value": "Teach the idea directly." },
   { "type": "text", "heading": "Worked example", "value": "Show the idea in a concrete situation." },
   { "type": "text", "heading": "Practice", "value": "Ask the learner to apply the idea." },
-  {
-    "type": "conceptCards",
-    "title": "Concepts introduced",
-    "concepts": [{ "name": "Raw concept name", "description": "Concise definition." }]
-  }
+  { "type": "heading", "title": "Concepts introduced" },
+  { "type": "conceptCard", "title": "Raw concept name", "description": "Concise definition." }
 ]
 ```
+
+Generated courses must use the same atomic block grammar the course editor creates. Prefer `text`, `heading`, `conceptCard`, `video`, `iframe`, and `quiz` blocks. Do not generate monolithic markdown, plain-string content, or large `conceptCards` stacks except when repairing legacy courses.
 
 Canonical quiz section block pattern:
 
@@ -86,6 +85,7 @@ Canonical quiz section block pattern:
         "question": "Question text",
         "options": ["Correct answer", "Distractor A", "Distractor B", "Distractor C"],
         "answers": [0],
+        "multiple": false,
         "timed": "f"
       }
     ],
@@ -100,11 +100,8 @@ Canonical summary section block pattern:
 
 ```json
 [
-  {
-    "type": "conceptCards",
-    "title": "Module concepts",
-    "concepts": [{ "name": "Raw concept name", "description": "Concise definition.", "sourceSectionId": "module-1-section-1" }]
-  }
+  { "type": "heading", "title": "Module concepts" },
+  { "type": "conceptCard", "title": "Raw concept name", "description": "Concise definition.", "sourceSectionId": "module-1-section-1" }
 ]
 ```
 
@@ -123,11 +120,11 @@ Canonical summary section block pattern:
 - Each module should include at least three learner-facing Learn sections, one quiz-only Apply section, and one summary section unless the requested scope is intentionally shorter.
 - Each Learn section should contain direct explanation, a worked example or concrete case, and a practice prompt or studio task.
 - Learn sections must teach the learner directly. Do not write prompt-like text such as "students should study", "learners define", "the model should explain", or "content goes here".
-- Every non-assessment learn page must end with a `conceptCards` block titled `Concepts introduced`.
-- Concept cards must contain raw concepts with `name` and `description`.
+- Every non-assessment learn page must end with a `heading` block titled `Concepts introduced`, followed by one `conceptCard` block per raw concept.
+- Concept card blocks must contain a raw concept title/name and a concise description.
 - Every module must end with a summary section.
 - Module summary sections must use `sectionType: "summary"` and `pageType: "learn"`.
-- Summary sections must contain one `conceptCards` block titled `{PacingLabel} concepts`.
+- Summary sections must contain a `heading` block titled `{PacingLabel} concepts`, followed by one `conceptCard` block per reviewed concept.
 - Module summary concepts must be copied from prior learn pages in the same module and include `sourceSectionId` when possible.
 
 ## Quiz Rules

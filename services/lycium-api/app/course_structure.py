@@ -51,6 +51,32 @@ def is_concept_cards_block(block: dict[str, Any]) -> bool:
     return block.get("type") in {"conceptCards", "concept_cards"}
 
 
+def is_single_concept_card_block(block: dict[str, Any]) -> bool:
+    return block.get("type") in {"conceptCard", "concept_card"}
+
+
+def is_concept_block(block: dict[str, Any]) -> bool:
+    return is_concept_cards_block(block) or is_single_concept_card_block(block)
+
+
+def concept_items(block: dict[str, Any]) -> list[dict[str, Any]]:
+    if is_concept_cards_block(block):
+        concepts = block.get("concepts")
+        return [concept for concept in concepts if isinstance(concept, dict)] if isinstance(concepts, list) else []
+    if is_single_concept_card_block(block):
+        name = block.get("name") or block.get("title") or block.get("heading")
+        description = block.get("description") or block.get("body") or block.get("value") or block.get("text")
+        return [
+            {
+                "name": name,
+                "description": description,
+                "sourceSectionId": block.get("sourceSectionId"),
+                "sourceIds": block.get("sourceIds"),
+            }
+        ]
+    return []
+
+
 def is_video_block(block: dict[str, Any]) -> bool:
     return block.get("type") == "video"
 
@@ -76,6 +102,8 @@ def block_text(block: dict[str, Any]) -> str:
         for concept in block["concepts"]:
             if isinstance(concept, dict):
                 values.extend(str(concept.get(key) or "") for key in ("name", "description"))
+    if is_single_concept_card_block(block):
+        values.extend(str(block.get(key) or "") for key in ("name", "description"))
     if isinstance(block.get("questions"), list):
         for question in block["questions"]:
             if isinstance(question, dict):

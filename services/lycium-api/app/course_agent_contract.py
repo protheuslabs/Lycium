@@ -5,6 +5,9 @@ from typing import Any
 
 from app.contract_validation import validate_course_schema
 from app.course_taxonomy import validate_course_taxonomy
+from app.course_structure import concept_items as _concept_items
+from app.course_structure import is_concept_block as _is_concept_block
+from app.course_structure import is_concept_cards_block as _is_concept_cards_block
 from app.course_structure import source_record_ids as _source_record_ids
 
 
@@ -55,12 +58,22 @@ def normalize_course(course: dict[str, Any]) -> dict[str, Any]:
                 is_summary = str(section.get("sectionType") or "").lower() == "summary" or "concept" in str(section.get("title") or "").lower()
                 section["content"] = [
                     {
-                        "type": "conceptCards",
+                        "type": "heading",
                         "title": f"{pacing_label} concepts" if is_summary else "Concepts introduced",
-                        "concepts": content,
                         "sourceIds": section.get("sourceIds", []),
                     }
                 ]
+                section["content"].extend(
+                    {
+                        "type": "conceptCard",
+                        "title": str(item.get("name") or "Concept"),
+                        "description": str(item.get("description") or ""),
+                        "sourceSectionId": item.get("sourceSectionId"),
+                        "sourceIds": section.get("sourceIds", []),
+                    }
+                    for item in content
+                    if isinstance(item, dict)
+                )
                 content = section["content"]
             contains_quiz = any(isinstance(block, dict) and block.get("type") == "quiz" for block in content)
             if contains_quiz:
@@ -72,10 +85,10 @@ def normalize_course(course: dict[str, Any]) -> dict[str, Any]:
     return course
 
 
-def _validate_concept_cards(block: dict[str, Any], errors: list[str], location: str) -> None:
-    concepts = block.get("concepts")
-    if not isinstance(concepts, list) or not concepts:
-        errors.append(f"{location} conceptCards must include concepts.")
+def _validate_concept_block(block: dict[str, Any], errors: list[str], location: str) -> None:
+    concepts = _concept_items(block)
+    if not concepts:
+        errors.append(f"{location} concept block must include at least one concept.")
         return
 
     for concept_index, concept in enumerate(concepts, start=1):
@@ -183,7 +196,7 @@ def _validate_section(
     referenced_source_ids.update(str(source_id) for source_id in section.get("sourceIds", []) if source_id)
     content = section["content"]
     quiz_blocks = [block for block in content if isinstance(block, dict) and block.get("type") == "quiz"]
-    concept_blocks = [block for block in content if isinstance(block, dict) and block.get("type") == "conceptCards"]
+    concept_blocks = [block for block in content if isinstance(block, dict) and _is_concept_block(block)]
     for block in content:
         if isinstance(block, dict):
             referenced_source_ids.update(str(source_id) for source_id in block.get("sourceIds", []) if source_id)
@@ -194,17 +207,38 @@ def _validate_section(
         expected_summary_title = f"{pacing_label} concepts"
         if section.get("pageType") != "learn":
             errors.append(f"{section_location} summary must be a learn page.")
-        if len(concept_blocks) != 1 or concept_blocks[0].get("title") != expected_summary_title:
-            errors.append(f"{section_location} summary must include one {expected_summary_title} block.")
+        if not concept_blocks:
+            errors.append(f"{section_location} summary must include editable conceptCard blocks.")
+        if _uses_editable_concept_cards(content) and not _has_heading(content, expected_summary_title):
+            errors.append(f"{section_location} summary must include a heading block titled {expected_summary_title}.")
+        legacy_stacks = [block for block in concept_blocks if _is_concept_cards_block(block)]
+        if legacy_stacks and (len(legacy_stacks) != 1 or legacy_stacks[0].get("title") != expected_summary_title):
+            errors.append(f"{section_location} legacy summary conceptCards block must be titled {expected_summary_title}.")
         for concept_block in concept_blocks:
-            _validate_concept_cards(concept_block, errors, section_location)
+            _validate_concept_block(concept_block, errors, section_location)
     elif section.get("pageType") == "learn":
         if not concept_blocks:
-            errors.append(f"{section_location} learn page must include conceptCards.")
-        elif concept_blocks[-1].get("title") != "Concepts introduced":
-            errors.append(f"{section_location} learn page conceptCards title must be Concepts introduced.")
+            errors.append(f"{section_location} learn page must include editable conceptCard blocks.")
+        if _uses_editable_concept_cards(content) and not _has_heading(content, "Concepts introduced"):
+            errors.append(f"{section_location} learn page must include a Concepts introduced heading before concept cards.")
+        legacy_stacks = [block for block in concept_blocks if _is_concept_cards_block(block)]
+        if legacy_stacks and legacy_stacks[-1].get("title") != "Concepts introduced":
+            errors.append(f"{section_location} legacy learn page conceptCards title must be Concepts introduced.")
         for concept_block in concept_blocks:
-            _validate_concept_cards(concept_block, errors, section_location)
+            _validate_concept_block(concept_block, errors, section_location)
+
+
+def _has_heading(content: list[Any], title: str) -> bool:
+    return any(
+        isinstance(block, dict)
+        and block.get("type") == "heading"
+        and str(block.get("title") or block.get("heading") or "").strip().lower() == title.lower()
+        for block in content
+    )
+
+
+def _uses_editable_concept_cards(content: list[Any]) -> bool:
+    return any(isinstance(block, dict) and block.get("type") in {"conceptCard", "concept_card"} for block in content)
 
 
 def _validate_quiz_section(

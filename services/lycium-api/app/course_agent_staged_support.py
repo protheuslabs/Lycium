@@ -36,9 +36,31 @@ def _normalize_summary_for_pacing(summary_section: dict, pacing_label: str) -> d
     expected_title = f"{pacing_label} concepts"
     content = summary_section.get("content")
     if isinstance(content, list):
-        for block in content:
-            if isinstance(block, dict) and block.get("type") in {"conceptCards", "concept_cards"}:
+        has_concepts = False
+        has_summary_heading = False
+        first_concept_index: int | None = None
+
+        for index, block in enumerate(content):
+            if not isinstance(block, dict):
+                continue
+            block_type = block.get("type")
+            if block_type in {"conceptCard", "concept_card", "conceptCards", "concept_cards"}:
+                has_concepts = True
+                if first_concept_index is None:
+                    first_concept_index = index
+            if block_type == "heading" and str(block.get("title") or "").strip() in {
+                "Module concepts",
+                "Week concepts",
+                "Concepts introduced",
+                expected_title,
+            }:
                 block["title"] = expected_title
+                has_summary_heading = True
+            if block_type in {"conceptCards", "concept_cards"}:
+                block["title"] = expected_title
+        if has_concepts and not has_summary_heading:
+            insert_index = first_concept_index if first_concept_index is not None else 0
+            content.insert(insert_index, {"type": "heading", "title": expected_title})
     return summary_section
 
 

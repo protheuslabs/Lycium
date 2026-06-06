@@ -316,10 +316,11 @@ def _coerce_media_block(raw_media: dict, source_ids: list[str]) -> tuple[dict[st
     coerced = {
         **block,
         "type": "video",
-        "title": str(block.get("title") or "Source-backed video"),
         "url": url,
         "sourceIds": block.get("sourceIds") if isinstance(block.get("sourceIds"), list) else source_ids,
     }
+    if block.get("title"):
+        coerced["title"] = str(block.get("title"))
     return coerced, None
 
 
@@ -329,7 +330,11 @@ def _insert_media_block(sections: list[dict], media_block: dict[str, Any]) -> bo
     content = sections[0].get("content")
     if not isinstance(content, list):
         return False
-    insert_at = max(0, len(content) - 1) if content and isinstance(content[-1], dict) and content[-1].get("type") == "conceptCards" else len(content)
+    insert_at = len(content)
+    for index, block in enumerate(content):
+        if isinstance(block, dict) and block.get("type") in {"heading", "conceptCard", "concept_card", "conceptCards", "concept_cards"}:
+            insert_at = index
+            break
     content.insert(insert_at, media_block)
     sections[0]["content"] = content
     return True

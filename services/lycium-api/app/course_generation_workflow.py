@@ -13,7 +13,7 @@ from app.course_taxonomy import validate_course_taxonomy
 from app.course_quality_evals import run_course_quality_evals
 from app.course_structure import (
     content_blocks as _content,
-    is_concept_cards_block as _is_concept_cards_block,
+    is_concept_block as _is_concept_block,
     is_quiz_block as _is_quiz_block,
     is_summary_section as _is_summary_section,
     is_video_block as _is_video_block,
@@ -302,8 +302,8 @@ def _gate_content_draft(course: dict[str, Any]) -> GateResult:
             location = f"modules[{module_index}].sections[{section_index}]"
             text = _section_text(section)
             if section.get("pageType") == "learn" and not _is_summary_section(section):
-                if not any(_is_concept_cards_block(block) for block in _content(section)):
-                    issues.append(_issue("warning", "Learn sections should end with conceptCards.", location))
+                if not any(_is_concept_block(block) for block in _content(section)):
+                    issues.append(_issue("warning", "Learn sections should include editable conceptCard blocks.", location))
                 if len(text.split()) < 40:
                     issues.append(_issue("warning", "Learn section appears thin; add direct explanation, example, or practice.", location))
             for pattern in PLACEHOLDER_PATTERNS:
@@ -365,8 +365,8 @@ def _gate_summary(course: dict[str, Any]) -> GateResult:
         if not summaries:
             issues.append(_issue("error", "Module must include a summary/concept review section.", f"modules[{module_index}]"))
         for summary_index, summary in enumerate(summaries, start=1):
-            if not any(_is_concept_cards_block(block) for block in _content(summary)):
-                issues.append(_issue("error", "Summary section must include conceptCards.", f"modules[{module_index}].summary[{summary_index}]"))
+            if not any(_is_concept_block(block) for block in _content(summary)):
+                issues.append(_issue("error", "Summary section must include editable conceptCard blocks.", f"modules[{module_index}].summary[{summary_index}]"))
     return _gate("summary", "Module summary/concept review sections were checked.", issues, {"summaryCount": summary_count})
 
 

@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { CourseCardRecord } from "@lycium/data-access";
 import Button from "../Button/Button";
-import { API_BASE } from "../../runtime/appRuntime";
-import { localCourses } from "../../courseData/localCourses";
-import type { CourseEntry } from "../../courseTypes";
+import { API_BASE, repositorySet } from "../../runtime/appRuntime";
 import "./SourceIndexAdmin.css";
 
 const SOURCE_TYPE_OPTIONS = [
@@ -135,7 +134,9 @@ function textValues(value: unknown): string[] {
   return [];
 }
 
-function courseConcepts(course: CourseEntry): string[] {
+function courseConcepts(courseCard: CourseCardRecord): string[] {
+  const course = courseCard.course;
+  if (!course) return [];
   const conceptValues = course.data.modules.flatMap((module) =>
     module.sections.flatMap((section) =>
       section.content.flatMap((block) => {
@@ -149,18 +150,19 @@ function courseConcepts(course: CourseEntry): string[] {
   return Array.from(new Set(conceptValues)).slice(0, 40);
 }
 
-function courseFitTargets() {
-  return localCourses.map((course) => ({
+async function courseFitTargets() {
+  const courses = await repositorySet.courses.listCourses();
+  return courses.map((course) => ({
     target_id: course.key,
     target_type: "course",
     title: course.title,
-    description: course.data.shortDescription ?? (course.data as { description?: string }).description ?? "",
+    description: course.shortDescription ?? course.course?.data.shortDescription ?? (course.course?.data as { description?: string } | undefined)?.description ?? "",
     concepts: courseConcepts(course),
     requirements: [
-      ...(course.data.modules ?? []).map((module) => module.title),
-      ...(course.data.modules ?? []).flatMap((module) => module.sections.map((section) => section.title)),
+      ...(course.course?.data.modules ?? []).map((module) => module.title),
+      ...(course.course?.data.modules ?? []).flatMap((module) => module.sections.map((section) => section.title)),
     ].slice(0, 60),
-    tags: course.data.tags ?? [],
+    tags: course.tags ?? course.course?.data.tags ?? [],
   }));
 }
 
@@ -233,7 +235,7 @@ export default function SourceIndexAdmin() {
           title: row.title,
           source_type: row.sourceType,
         })),
-        targets: courseFitTargets(),
+        targets: await courseFitTargets(),
         limit: 16,
         minimum_score: 0.18,
       });

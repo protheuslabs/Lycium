@@ -5,6 +5,8 @@ from typing import Any
 
 from app.course_generation_workflow import run_course_generation_workflow
 from app.course_quality_evals import run_course_quality_evals
+from app.course_structure import concept_items as _concept_items
+from app.course_structure import is_concept_block as _is_concept_block
 
 
 COURSE_CONTRACT_VERSION = "0.1.0"
@@ -37,10 +39,8 @@ def _concept_count(course: dict[str, Any]) -> int:
     count = 0
     for section in _iter_sections(course):
         for block in section.get("content", []):
-            if isinstance(block, dict) and block.get("type") == "conceptCards":
-                concepts = block.get("concepts")
-                if isinstance(concepts, list):
-                    count += len(concepts)
+            if isinstance(block, dict) and _is_concept_block(block):
+                count += len(_concept_items(block))
     return count
 
 

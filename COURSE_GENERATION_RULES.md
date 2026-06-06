@@ -63,7 +63,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 - `scope`: define audience, outcomes, duration, exclusions, workload, assessment model, and `Module` vs `Week` pacing.
 - `module_structure`: create the module/week arc and make each module serve a distinct role.
 - `section_structure`: create Learn and Apply sections, keeping instruction and assessment separate.
-- `content_draft`: fill sections with actual learner-facing explanation, examples, practice, source references, and concept cards.
+- `content_draft`: fill sections with actual learner-facing explanation, examples, practice, source references, and editor-native concept card blocks.
 - `assessment`: create assessment-only quiz sections that test previously taught or sourced concepts.
 - `media`: best-effort source-backed video/media discovery. Log skipped or failed media stages, but do not fail an otherwise valid course solely because reputable video support is unavailable.
 - Video sources should be recorded as full source records. Reuse a video in a section with a `video` block and optional `clip: { "startSeconds": n, "endSeconds": n }` when the learner should watch only the relevant slice. Omit `clip` to use the whole video.
@@ -101,7 +101,8 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
    If benchmark curricula are available, map sources to benchmark-derived requirements rather than letting the source list define the curriculum.
    When many sources are submitted, run source corpus preflight first and do not use excluded sources as course evidence unless a reviewer restores them.
    If submitted sources do not meet the course's source coverage policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps` rather than generating placeholder course pages.
-   Source IDs should narrow as the course narrows: course-level `sourceIds` are the full accepted inventory, module-level `sourceIds` support the module, and section/block `sourceIds` plus section citations must only reference sources that support concepts in that section.
+   Source IDs should narrow as the course narrows: course-level `sourceIds` are the full accepted inventory, module-level `sourceIds` support the module, and section/block `sourceIds` must only reference sources that support concepts in that section. Citation numbers are assigned from the course-wide source inventory.
+   Text blocks may include inline citation markers such as `[1]`; each marker must be a 1-based index into the course-wide source inventory and must resolve to a supporting source for the nearby claim.
 
 7. Generate instructional content for each idea.
    Teach the concept, connect it to prior units, include examples or practice where useful, and keep the pacing coherent.
@@ -111,7 +112,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
    Quizzes must be their own assessment sections after the relevant lesson/unit content.
 
 9. Generate module/week concept inventories.
-   End every module/week with a summary section that aggregates the raw concept names introduced on that module/week's Learn pages. Do not turn the summary into interpretive prose categories.
+   End every module/week with a summary section that aggregates the raw concept names introduced on that module/week's Learn pages. Use one heading block followed by one editable `conceptCard` block per concept. Do not turn the summary into interpretive prose categories.
 
 10. Validate coherence.
    Check that modules progress logically, units are not redundant, prerequisites are introduced before use, and assessments only test taught or sourced material.
@@ -178,9 +179,11 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Use either `Module` or `Week` consistently in learner-facing titles. If module titles use `Week 1: ...`, summary titles and summary concept-card titles should use `Week`; if module titles use `Module 1: ...`, they should use `Module`.
 - Balance theory, examples, practice, and assessment.
 - Catalog-visible courses must contain actual learner-facing explanations, examples, activities, concept cards, summaries, and assessment sections. They must not read like placeholders or model instructions.
+- Generated courses must use the same atomic block format as the course editor: `text`, `heading`, `conceptCard`, `video`, `iframe`, and `quiz`. Do not generate monolithic markdown, plain-string section content, or large nested concept-card payloads when smaller editable blocks are possible.
 - Prefer deeper coverage of fewer ideas over shallow lists of loosely related topics.
 - Cite sources for claims, readings, videos, examples, and imported content.
-- Do not blanket-cite the same full course source list on every section. Section citations should be derived from that section's concept-source mapping.
+- Do not blanket-cite the same full course source list on every section. Section source lists should be derived from that section's concept-source mapping, then sorted by course-wide citation number.
+- Inline `[n]` citations in text blocks should be used for source-backed claims when helpful, and must point to course-wide source index entries connected to that page or block through local `sourceIds`.
 - Do not let source availability alone dictate course structure; structure the course pedagogically, then find or create appropriate sourced content for each idea.
 
 ## Assessment Rules
@@ -207,16 +210,25 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Quiz metadata should display current attempts over max attempts and elapsed time over max time.
 - Submitted quiz attempts should display their score in the center of that attempt's metadata row.
 
+## Editor-Native Content Block Rules
+
+- Generated course content must be easy for a human to edit in the UI without structural repair.
+- Use `text` blocks for learner-facing prose.
+- Use `heading` blocks for visible labels such as `Concepts introduced`, `Module concepts`, and `Week concepts`.
+- Use one `conceptCard` block per concept, with `title` or `name` and `description`.
+- Use `video` blocks for source-backed videos and optional `clip` slices; do not add filler video titles by default.
+- Use `iframe` blocks for generic embeds.
+- Use `quiz` blocks only in assessment Apply sections.
+- Treat legacy `conceptCards` stacks as backward-compatible input only. New generated courses should prefer atomic `conceptCard` blocks so concepts can be dragged, edited, and deleted individually.
+
 ## Concept Card Rules
 
-- Use `conceptCards` blocks to make introduced raw concepts explicit and easy to render with CSS.
+- Use editable `conceptCard` blocks to make introduced raw concepts explicit and easy to render with CSS.
 - Concept cards are raw concept inventories, not prose summaries, interpretations, advice, or explanations.
-- A `conceptCards` block should contain a `title` and a `concepts` array.
-- Each concept should be a simple object with `name` and `description`.
+- Each `conceptCard` block should contain one simple concept using `title` or `name` plus `description`.
 - Concept names should read like bullet-list terms: `HTTP request`, `CSS specificity`, `Training-serving skew`, `Gradient synchronization`.
 - Concept descriptions should be concise definitions of the concept, not prose summaries of the page.
-- Every non-assessment Learn page should end with at least one concept card naming the concept or concepts introduced on that page.
-- Learn-page concept cards should use the title `Concepts introduced`.
+- Every non-assessment Learn page should end with a `heading` block titled `Concepts introduced`, followed by one `conceptCard` block per introduced concept.
 - Concept cards should read like a bullet list of actual course concepts, not generated interpretation or study advice.
 - Do not add concept cards to quiz-only Apply pages.
 - Do not write paragraph-length teaching content in concept cards.
@@ -227,9 +239,9 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Mark module summaries with `sectionType: "summary"` when authoring JSON or backend-generated sections.
 - Mark module summaries with `pageType: "learn"`.
 - Summary sections are instructional Learn pages, not assessments.
-- Use one `conceptCards` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`.
+- Use one `heading` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`, followed by one `conceptCard` block per reviewed concept.
 - Pull the summary concepts from concept cards on the module's preceding Learn pages.
-- Summary concept objects should preserve `name`, `description`, and `sourceSectionId` so the UI can show the definition and later link back to the originating page.
+- Summary concept cards should preserve `title` or `name`, `description`, and `sourceSectionId` so the UI can show the definition and later link back to the originating page.
 - Do not create summary cards named "Key concepts", "How the ideas connect", "Common pitfalls", or "What you can do now".
 - Do not add new concepts on the summary page unless they were introduced on a prior Learn page in the same module.
 - Do not mix quizzes into module summary sections.

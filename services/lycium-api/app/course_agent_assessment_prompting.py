@@ -14,7 +14,15 @@ def _concepts_from_sections(sections: list[dict]) -> list[dict[str, str]]:
         if not isinstance(content, list):
             continue
         for block in content:
-            if not isinstance(block, dict) or block.get("type") != "conceptCards":
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") in {"conceptCard", "concept_card"}:
+                name = str(block.get("name") or block.get("title") or block.get("heading") or "").strip()
+                description = str(block.get("description") or block.get("body") or block.get("value") or block.get("text") or "").strip()
+                if name and description:
+                    concepts.append({"name": name, "description": description, "sourceSectionId": section_id})
+                continue
+            if block.get("type") not in {"conceptCards", "concept_cards"}:
                 continue
             raw_concepts = block.get("concepts")
             if not isinstance(raw_concepts, list):
@@ -124,11 +132,13 @@ def _staged_summary_messages(
                         "sectionType": "summary",
                         "sourceIds": source_ids,
                         "content": [
+                            {"type": "heading", "title": f"{pacing_label} concepts"},
                             {
-                                "type": "conceptCards",
-                                "title": f"{pacing_label} concepts",
-                                "concepts": "copy the provided concepts_to_include array, preserving sourceSectionId",
-                            }
+                                "type": "conceptCard",
+                                "title": "Concept title copied from concepts_to_include",
+                                "description": "Concise definition copied from concepts_to_include",
+                                "sourceSectionId": "preserve sourceSectionId from concepts_to_include",
+                            },
                         ],
                     },
                 },

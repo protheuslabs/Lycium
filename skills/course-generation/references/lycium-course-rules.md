@@ -49,6 +49,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 
 7. Draft instruction.
    Turn sub-units into teachable content blocks with examples, transitions, practice prompts, and source references.
+   Use the same atomic block grammar the editor creates so generated courses are easy for humans to tweak later.
    Do not write lesson pages as prompts, outlines, or instructions for a future model. The rendered course must teach the learner directly.
 
 8. Draft assessment.
@@ -127,25 +128,27 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 
 ## Content Blocks
 
-- `text`: instructional prose in `value`.
-- `video`: embedded material. Prefer `sourceIds` that resolve to a source record with `embedUrl`. Use optional `clip.startSeconds` and `clip.endSeconds` when only a slice of the video supports the section; omit `clip` for the full video.
+- `text`: instructional prose in `value`, optionally with `heading`.
+- `heading`: standalone section/block label such as `Concepts introduced`.
+- `conceptCard`: one raw concept card with `title` or `name`, `description`, optional `sourceSectionId`, and local `sourceIds`.
+- `video`: embedded material. Prefer `sourceIds` that resolve to a source record with `embedUrl`. Use optional `clip.startSeconds` and `clip.endSeconds` when only a slice of the video supports the section; omit `clip` for the full video. Do not add filler video titles; use a separate `heading` block if a visible title is needed.
+- `iframe`: generic embedded web resource for interactive or external material.
 - `quiz`: assessment only. Use nested `questions` for multi-question quizzes.
 - `game`: hands-on practice placeholder or project-like activity.
-- `conceptCards`: renderable concept inventory data. Use a `title` and `concepts`, where each concept object has a `name` and `description`.
-- `summary`: not a block type. Use a section marked `sectionType: "summary"` and represent reviewed concepts with `conceptCards`.
+- `conceptCards`: legacy render-compatible concept stack. Do not generate this for new courses unless preserving or repairing a legacy course.
+- `summary`: not a block type. Use a section marked `sectionType: "summary"` and represent reviewed concepts with `heading` plus one `conceptCard` block per concept.
 
 Canonical Learn-page concept-card block:
 
 ```json
 {
-  "type": "conceptCards",
-  "title": "Concepts introduced",
-  "concepts": [
-    {
-      "name": "Training-serving skew",
-      "description": "A mismatch between data, features, or preprocessing used in training and those used during production inference."
-    }
-  ]
+  "type": "heading",
+  "title": "Concepts introduced"
+},
+{
+  "type": "conceptCard",
+  "title": "Training-serving skew",
+  "description": "A mismatch between data, features, or preprocessing used in training and those used during production inference."
 }
 ```
 
@@ -153,15 +156,14 @@ Canonical module/week-summary concept-card block:
 
 ```json
 {
-  "type": "conceptCards",
-  "title": "{PacingLabel} concepts",
-  "concepts": [
-    {
-      "name": "Training-serving skew",
-      "description": "A mismatch between data, features, or preprocessing used in training and those used during production inference.",
-      "sourceSectionId": "section-id"
-    }
-  ]
+  "type": "heading",
+  "title": "{PacingLabel} concepts"
+},
+{
+  "type": "conceptCard",
+  "title": "Training-serving skew",
+  "description": "A mismatch between data, features, or preprocessing used in training and those used during production inference.",
+  "sourceSectionId": "section-id"
 }
 ```
 
@@ -172,8 +174,7 @@ Canonical module/week-summary concept-card block:
 - Learn pages contain instructional material, summaries, examples, readings, videos, labs, or projects.
 - Apply pages contain quizzes, assessment, practice, or other learner action checkpoints.
 - A page that contains quiz blocks should not also contain instructional blocks. Split mixed pages into a Learn page followed by an Apply page.
-- Every non-assessment Learn page should end with at least one `conceptCards` block naming the raw concepts introduced on that page.
-- Learn-page concept cards should use the title `Concepts introduced`.
+- Every non-assessment Learn page should end with a `heading` block titled `Concepts introduced`, followed by at least one `conceptCard` block naming the raw concepts introduced on that page.
 - Do not add concept cards to quiz-only Apply pages.
 - Concept cards are raw concept inventories, not prose summaries, interpretations, advice, or explanations.
 - Concept names should read like bullet-list terms: `HTTP request`, `CSS specificity`, `Training-serving skew`, `Gradient synchronization`.
@@ -219,9 +220,9 @@ Canonical module/week-summary concept-card block:
 - Mark module summaries with `sectionType: "summary"` when authoring JSON or backend-generated sections.
 - Mark module summaries with `pageType: "learn"`.
 - Summary sections are instructional Learn pages, not assessments.
-- Use one `conceptCards` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`.
-- Pull the summary concepts from the `conceptCards` blocks in the module's preceding Learn pages.
-- Summary concept objects should remain simple raw data, usually `{ "name": "Concept name", "description": "Concise definition.", "sourceSectionId": "section-id" }`.
+- Use one `heading` block titled `{PacingLabel} concepts`, such as `Module concepts` or `Week concepts`, followed by one `conceptCard` block per reviewed concept.
+- Pull the summary concepts from the `conceptCard` blocks in the module's preceding Learn pages.
+- Summary concept card objects should remain simple raw data, usually `{ "type": "conceptCard", "title": "Concept name", "description": "Concise definition.", "sourceSectionId": "section-id" }`.
 - Do not include quiz blocks in module summary sections.
 - Do not use interpretive prose headings such as "Key concepts", "How the ideas connect", "Common pitfalls", or "What you can do now" as concept cards.
 - Do not add new concepts on the summary page unless they were introduced on a prior Learn page in the same module.
@@ -240,7 +241,8 @@ Canonical module/week-summary concept-card block:
   - `usedByCourseTitles`
 - Course records should reference sources using `sourceIds`.
 - Use source IDs at the most helpful levels: course, module, section, and block.
-- Narrow source IDs as the content narrows. Course-level source IDs are the full accepted inventory, module-level source IDs support that module, and section/block source IDs plus section citations must only reference sources connected to concepts in that section.
+- Narrow source IDs as the content narrows. Course-level source IDs are the full accepted inventory, module-level source IDs support that module, and section/block source IDs must only reference sources connected to concepts in that section.
+- Text blocks may include inline citation markers such as `[1]`. Citation numbers are 1-based positions in the course-wide source inventory. Sections render only the sources used locally, sorted by those course-wide citation numbers.
 - Do not blanket-cite the same full course source list on every page.
 - If a block fetches or embeds material from a link, it must reference the source record for that link.
 - Generated courses must include course-level `sourceRecords` for generated/local-only sources or reference existing central source records.
@@ -274,8 +276,8 @@ Canonical module/week-summary concept-card block:
 - Every quiz-only assessment section is an Apply page.
 - Every instructional section is a Learn page.
 - Every module ends with a summary section.
-- Every summary section uses `conceptCards` to aggregate raw concepts from the module's Learn pages.
-- Every non-assessment Learn page ends with at least one `conceptCards` block naming introduced raw concepts.
+- Every summary section uses editable `conceptCard` blocks to aggregate raw concepts from the module's Learn pages.
+- Every non-assessment Learn page ends with `Concepts introduced` plus at least one `conceptCard` block naming introduced raw concepts.
 - Summary sections contain no quiz blocks.
 - Every source ID referenced by a course exists in `sourceRecords/`.
 - Generated and remote course entries are rejected before catalog insertion if referenced source IDs do not resolve.

@@ -1,0 +1,110 @@
+.course-settings-modal {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.course-settings-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.course-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--lycium-color-modal-border);
+  border-radius: 1rem;
+  padding: 0.9rem 1rem;
+  background: color-mix(in srgb, var(--lycium-color-surface) 88%, transparent);
+}
+
+.course-settings-row input[type="checkbox"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--lycium-brand-primary);
+  cursor: pointer;
+}
+
+.course-settings-row--static {
+  cursor: default;
+}
+
+.course-settings-copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.course-settings-title {
+  color: var(--lycium-color-text);
+  font-size: 0.98rem;
+  font-weight: 850;
+}
+
+.course-settings-description {
+  color: var(--lycium-color-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.course-settings-pill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  color: var(--lycium-brand-primary);
+  background: color-mix(in srgb, var(--lycium-brand-primary) 10%, transparent);
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.course-settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.course-settings-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  color: #ffffff;
+  background: var(--lycium-brand-primary);
+  cursor: pointer;
+  font-weight: 850;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.course-settings-button:hover,
+.course-settings-button:focus-visible {
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.course-settings-button--secondary {
+  color: var(--lycium-color-text);
+  background: var(--lycium-color-surface);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-settings-row {
+  border-color: #303033;
+  background: #171717;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-settings-button--secondary {
+  color: #f8fafc;
+  background: #242427;
+}
+
+@media (max-width: 620px) {
+  .course-settings-row {
+    align-items: flex-start;
+  }
+
+  .course-settings-actions {
+    flex-direction: column-reverse;
+  }
+
+  .course-settings-button {
+    width: 100%;
+  }
+}

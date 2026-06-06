@@ -6,7 +6,8 @@ from typing import Any, Literal
 from app.course_structure import (
     block_text as _block_text,
     content_blocks as _content,
-    is_concept_cards_block as _is_concept_cards,
+    concept_items as _concept_items,
+    is_concept_block as _is_concept_block,
     is_quiz_block as _is_quiz,
     is_summary_section as _is_summary,
     is_video_block as _is_video,
@@ -195,18 +196,18 @@ def _eval_concepts(course: dict[str, Any]) -> dict[str, Any]:
     for module_index, module in enumerate(_modules(course), start=1):
         for section_index, section in enumerate(_sections(module), start=1):
             blocks = _content(section)
-            cards = [block for block in blocks if _is_concept_cards(block)]
+            cards = [block for block in blocks if _is_concept_block(block)]
             location = f"modules[{module_index}].sections[{section_index}]"
             if section.get("pageType") == "learn" and not _is_summary(section):
                 learn_count += 1
                 if cards:
                     learn_with_cards += 1
                 else:
-                    findings.append(_finding("warning", "Learn section has no conceptCards block.", location))
+                    findings.append(_finding("warning", "Learn section has no editable conceptCard blocks.", location))
             for card in cards:
-                concepts = card.get("concepts")
-                if not isinstance(concepts, list) or not concepts:
-                    findings.append(_finding("error", "conceptCards block has no concepts.", location))
+                concepts = _concept_items(card)
+                if not concepts:
+                    findings.append(_finding("error", "Concept block has no concept data.", location))
                     continue
                 concept_count += len(concepts)
                 for concept_index, concept in enumerate(concepts, start=1):

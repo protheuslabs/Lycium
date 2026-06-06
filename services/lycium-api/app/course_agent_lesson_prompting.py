@@ -37,6 +37,11 @@ def _staged_module_messages(
                     "module_number": module_number,
                     "module_outline": module_outline,
                     "available_source_ids": source_ids,
+                    "inline_citation_instruction": (
+                        "When a text block makes a source-backed claim, you may add [1], [2], etc. after the sentence. "
+                        "Those numbers are 1-based indexes into the course-wide source inventory; this section will render only its locally used sources sorted by that course-wide number. "
+                        "Do not cite sources that are not assigned to the section."
+                    ),
                     "required_shape": {
                         "id": module_outline.get("id") or f"module-{module_number}",
                         "title": module_outline.get("title") or f"{pacing_label} {module_number}",
@@ -53,10 +58,10 @@ def _staged_module_messages(
                                     {"type": "text", "heading": "Worked example", "value": "Concrete example."},
                                     {"type": "text", "heading": "Practice", "value": "Learner action prompt."},
                                     {
-                                        "type": "conceptCards",
+                                        "type": "heading",
                                         "title": "Concepts introduced",
-                                        "concepts": [{"name": "Concept", "description": "Concise definition."}],
                                     },
+                                    {"type": "conceptCard", "title": "Concept", "description": "Concise definition."},
                                 ],
                             },
                             {
@@ -89,11 +94,13 @@ def _staged_module_messages(
                                 "sectionType": "summary",
                                 "sourceIds": source_ids,
                                 "content": [
+                                    {"type": "heading", "title": f"{pacing_label} concepts"},
                                     {
-                                        "type": "conceptCards",
-                                        "title": f"{pacing_label} concepts",
-                                        "concepts": "concepts copied from the module Learn pages, with sourceSectionId",
-                                    }
+                                        "type": "conceptCard",
+                                        "title": "Concept title copied from module Learn pages",
+                                        "description": "Concise definition copied from module Learn pages",
+                                        "sourceSectionId": "source section id",
+                                    },
                                 ],
                             },
                         ],
@@ -146,14 +153,14 @@ def _staged_lesson_messages(
                         "sectionType": "lesson",
                         "sourceIds": source_ids,
                         "content": [
-                            {"type": "text", "heading": "Explanation", "value": "Teach the core idea directly in learner-facing prose."},
-                            {"type": "text", "heading": "Worked example", "value": "Show a concrete problem or classification example with reasoning."},
+                            {"type": "text", "heading": "Explanation", "value": "Teach the core idea directly in learner-facing prose. Add [1] when the sentence is grounded in the first local source."},
+                            {"type": "text", "heading": "Worked example", "value": "Show a concrete problem or classification example with reasoning. Use inline citation markers only when they resolve to course-wide source index entries also connected to this section or block through sourceIds."},
                             {"type": "text", "heading": "Practice", "value": "Give the learner a short action prompt or self-check."},
                             {
-                                "type": "conceptCards",
+                                "type": "heading",
                                 "title": "Concepts introduced",
-                                "concepts": [{"name": "Specific course concept", "description": "Concise definition."}],
                             },
+                            {"type": "conceptCard", "title": "Specific course concept", "description": "Concise definition."},
                         ],
                     },
                 },
@@ -198,10 +205,8 @@ def _staged_media_messages(
                         "reason": "Why this video supports the module, or why no video is available.",
                         "block": {
                             "type": "video",
-                            "title": "Short video title",
                             "url": "https://source-backed-video-url",
                             "sourceIds": source_ids,
-                            "description": "One sentence explaining why this video belongs in the module.",
                             "clip": {"startSeconds": 0, "endSeconds": 300},
                         },
                     },

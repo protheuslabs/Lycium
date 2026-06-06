@@ -9,16 +9,20 @@ import type {
   QuizSubmissionStatusHandler,
   SourceRecord,
 } from "./contentViewTypes";
+import type { CourseSourceIndex } from "./sourceCitationUtils";
+import { sourceCitationNumber } from "./sourceCitationUtils";
 
 type EditableContentBlockProps = {
   block: ContentBlock;
   blockIndex: number;
   sources: SourceRecord[];
+  courseSourceIndex: CourseSourceIndex;
   sectionId: string;
   isEditMode: boolean;
   onBlockChange?: (sectionId: string, blockIndex: number, block: ContentBlock) => void;
   onBlockDelete?: (sectionId: string, blockIndex: number) => void;
   onCitationClick?: (citationIndex: number) => void;
+  onMissingCitationClick?: () => void;
   onQuizSubmissionChange: QuizSubmissionStatusHandler;
   onQuizProgressChange: QuizProgressStatusHandler;
 };
@@ -58,15 +62,18 @@ export default function EditableContentBlock({
   block,
   blockIndex,
   sources,
+  courseSourceIndex,
   sectionId,
   isEditMode,
   onBlockChange,
   onBlockDelete,
   onCitationClick,
+  onMissingCitationClick,
   onQuizSubmissionChange,
   onQuizProgressChange,
 }: EditableContentBlockProps) {
   const blockSources = getSourcesByIds(block.sourceIds, sources);
+  const citationIndex = blockCitationIndex(block.sourceIds, courseSourceIndex);
   const updateBlock = (nextBlock: ContentBlock) => onBlockChange?.(sectionId, blockIndex, nextBlock);
   const deleteAction = (
     <DeleteBlockButton
@@ -74,7 +81,15 @@ export default function EditableContentBlock({
       onClick={() => promptForDeleteBlock(() => onBlockDelete?.(sectionId, blockIndex))}
     />
   );
-  const editShell = (children: ReactNode, actions?: ReactNode) => (
+  const blockCitation = (
+    <BlockCitationBadge
+      citationIndex={citationIndex}
+      isEditMode={isEditMode}
+      onCitationClick={onCitationClick}
+      onMissingCitationClick={onMissingCitationClick}
+    />
+  );
+  const editShell = (children: ReactNode, actions?: ReactNode, showTrailingCitation = true) => (
     <div className={`editable-block-shell ${isEditMode ? "editable-block-shell--active" : ""}`}>
       {isEditMode && <div className="content-block-delete-row">{deleteAction}</div>}
       {isEditMode && (
@@ -83,6 +98,7 @@ export default function EditableContentBlock({
         </div>
       )}
       {children}
+      {showTrailingCitation && blockCitation}
     </div>
   );
 
@@ -94,7 +110,10 @@ export default function EditableContentBlock({
         <div className="text-block">
           {block.heading && (
             <h3 className="course-editable-line">
-              <span className="course-editable-line-content">{renderCitationText(block.heading, onCitationClick)}</span>
+              <span className="course-editable-line-content">
+                {renderCitationText(block.heading, onCitationClick)}
+                {!bodyValue && blockCitation}
+              </span>
               {isEditMode && (
                 <EditPencilButton
                   label="Edit text heading"
@@ -105,7 +124,10 @@ export default function EditableContentBlock({
           )}
           {bodyValue && (
             <p className="course-editable-line">
-              <span className="course-editable-line-content">{renderCitationText(bodyValue, onCitationClick)}</span>
+              <span className="course-editable-line-content">
+                {renderCitationText(bodyValue, onCitationClick)}
+                {blockCitation}
+              </span>
               {isEditMode && (
                 <EditPencilButton
                   label="Edit text block"
@@ -115,6 +137,8 @@ export default function EditableContentBlock({
             </p>
           )}
         </div>,
+        undefined,
+        false,
       );
     }
 
@@ -125,6 +149,7 @@ export default function EditableContentBlock({
         isEditMode,
         updateBlock,
         () => promptForDeleteBlock(() => onBlockDelete?.(sectionId, blockIndex)),
+        blockCitation,
       );
 
     case "conceptCard":
@@ -135,7 +160,10 @@ export default function EditableContentBlock({
       return editShell(
         <article className="concept-card concept-card--single">
           <div className="course-editable-line">
-            <h4>{title}</h4>
+            <h4>
+              {title}
+              {!body && blockCitation}
+            </h4>
             {isEditMode && (
               <EditPencilButton
                 label="Edit concept title"
@@ -144,7 +172,12 @@ export default function EditableContentBlock({
             )}
           </div>
           <div className="course-editable-line">
-            {body && <p>{body}</p>}
+            {body && (
+              <p>
+                {body}
+                {blockCitation}
+              </p>
+            )}
             {isEditMode && (
               <EditPencilButton
                 label="Edit concept description"
@@ -153,6 +186,8 @@ export default function EditableContentBlock({
             )}
           </div>
         </article>,
+        undefined,
+        false,
       );
     }
 
@@ -160,7 +195,10 @@ export default function EditableContentBlock({
       const heading = block.title ?? block.heading ?? block.value ?? block.text ?? "Heading title";
       return editShell(
         <h3 className="course-editable-line content-heading-block">
-          <span className="course-editable-line-content">{renderCitationText(heading, onCitationClick)}</span>
+          <span className="course-editable-line-content">
+            {renderCitationText(heading, onCitationClick)}
+            {blockCitation}
+          </span>
           {isEditMode && (
             <EditPencilButton
               label="Edit heading"
@@ -168,6 +206,8 @@ export default function EditableContentBlock({
             />
           )}
         </h3>,
+        undefined,
+        false,
       );
     }
 
@@ -257,6 +297,56 @@ export default function EditableContentBlock({
   }
 }
 
+function blockCitationIndex(sourceIds: string[] | undefined, courseSourceIndex: CourseSourceIndex) {
+  if (!Array.isArray(sourceIds) || sourceIds.length === 0) {
+    return null;
+  }
+
+  for (const sourceId of sourceIds) {
+    const citationIndex = sourceCitationNumber(sourceId, courseSourceIndex);
+    if (citationIndex !== null) {
+      return citationIndex;
+    }
+  }
+
+  return null;
+}
+
+function BlockCitationBadge({
+  citationIndex,
+  isEditMode,
+  onCitationClick,
+  onMissingCitationClick,
+}: {
+  citationIndex: number | null;
+  isEditMode: boolean;
+  onCitationClick?: (citationIndex: number) => void;
+  onMissingCitationClick?: () => void;
+}) {
+  if (citationIndex !== null) {
+    return (
+      <sup className="block-citation">
+        <button type="button" onClick={() => onCitationClick?.(citationIndex)} aria-label={`Open source ${citationIndex}`}>
+          [{citationIndex}]
+        </button>
+      </sup>
+    );
+  }
+
+  return (
+    <sup className="block-citation block-citation--missing">
+      <button
+        type="button"
+        onClick={onMissingCitationClick}
+        aria-label="Add a source for this block"
+        disabled={!onMissingCitationClick}
+      >
+        [!]
+      </button>
+    </sup>
+  );
+}
+
 function renderCitationText(value: string | undefined, onCitationClick?: (citationIndex: number) => void): ReactNode {
   if (!value || !onCitationClick) {
     return value;
@@ -294,7 +384,13 @@ function renderCitationText(value: string | undefined, onCitationClick?: (citati
   return parts.length > 0 ? parts : value;
 }
 
-function renderConceptCards(item: ContentBlock, isEditMode: boolean, onBlockChange: (block: ContentBlock) => void, onBlockDelete: () => void) {
+function renderConceptCards(
+  item: ContentBlock,
+  isEditMode: boolean,
+  onBlockChange: (block: ContentBlock) => void,
+  onBlockDelete: () => void,
+  citation: ReactNode,
+) {
   const cards = item.concepts ?? item.cards ?? [];
   const cardField = item.concepts ? "concepts" : "cards";
 
@@ -353,6 +449,7 @@ function renderConceptCards(item: ContentBlock, isEditMode: boolean, onBlockChan
           </article>
         );
       })}
+      {citation}
     </section>
   );
 }
