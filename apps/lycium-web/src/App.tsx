@@ -12,7 +12,7 @@ import TopBar from "./components/TopBar/TopBar";
 import { localCourses } from "./courseData/localCourses";
 import { localPortfolioArtifactMap, localPrograms, programBenchmarks } from "./courseData/programs";
 import sourceRecordsData from "./courseData/sourceRecords";
-import type { CourseEntry, CourseSection } from "./courseTypes";
+import type { CourseData, CourseEntry, CourseSection } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
 import { useConfiguredCourses } from "./hooks/useConfiguredCourses";
 import { useCourseGenerationActions } from "./hooks/useCourseGenerationActions";
@@ -313,6 +313,53 @@ function App() {
     [pushSectionPath, router],
   );
 
+  const saveCourseDraft = useCallback((courseKey: string, data: CourseData) => {
+    setCourses((currentCourses) =>
+      currentCourses.map((course) =>
+        course.key === courseKey
+          ? {
+              ...course,
+              title: data.title,
+              data,
+              status: course.status === "published" ? "draft" : course.status,
+            }
+          : course,
+      ),
+    );
+  }, []);
+
+  const forkCourse = useCallback(
+    (course: CourseEntry) => {
+      const forkTitle = `Fork of ${course.title}`;
+      const forkData = JSON.parse(JSON.stringify(course.data)) as CourseData;
+      forkData.title = forkTitle;
+      forkData.metadata = {
+        ...(forkData.metadata ?? {}),
+        editPolicy: {
+          ...((forkData.metadata?.editPolicy as Record<string, unknown> | undefined) ?? {}),
+          editable: true,
+          ownerCanEdit: true,
+          forkable: true,
+        },
+      };
+
+      const fork: CourseEntry = {
+        ...course,
+        key: `${course.key}-fork-${Date.now().toString(36)}`,
+        title: forkTitle,
+        source: "local",
+        status: "draft",
+        snapshotId: undefined,
+        generation_trace: undefined,
+        data: forkData,
+      };
+
+      setCourses((currentCourses) => [fork, ...currentCourses]);
+      void openCourseByEntry(fork);
+    },
+    [openCourseByEntry],
+  );
+
   const goToSectionIndex = useCallback((index: number) => {
     setCurrentSectionIndex(index);
     const section = sections[index];
@@ -435,9 +482,10 @@ const {
           onOpenCourse={openCourseByEntry}
           onQueueCourseSourceGap={queueCourseSourceGap}
           onResumeCourseSourceGap={handleResumeCourseSourceGap}
-          onCatalogDrilldown={routeToCatalogDrilldown}
-          onPublishCourse={handlePublishCourse}
-          publishingCourseKey={publishingCourseKey}
+	          onCatalogDrilldown={routeToCatalogDrilldown}
+	          onPublishCourse={handlePublishCourse}
+	          onForkCourse={forkCourse}
+	          publishingCourseKey={publishingCourseKey}
           onOpenSettings={routeToSettings}
         />
       ) : viewRoute.kind === "program" && selectedProgram ? (
@@ -463,9 +511,10 @@ const {
           orderMandatory={orderMandatory}
           sources={sourceRecordsData.sources}
           onSectionSelect={goToSectionIndex}
-          onCompleteSection={handleCompleteSection}
-          onSectionTimedStatusChange={handleSectionTimedStatusChange}
-        />
+	          onCompleteSection={handleCompleteSection}
+	          onSectionTimedStatusChange={handleSectionTimedStatusChange}
+	          onSaveCourseDraft={saveCourseDraft}
+	        />
       )}
 
       <SettingsModal

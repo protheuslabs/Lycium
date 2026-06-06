@@ -29,9 +29,7 @@ type ContentViewProps = {
   orderMandatory: boolean;
   onSectionTimedStatusChange?: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
   sources: SourceRecord[];
-  canEditCourse?: boolean;
   isEditMode?: boolean;
-  onEditModeChange?: (isEditMode: boolean) => void;
   onCourseTitleChange?: (title: string) => void;
   onModuleTitleChange?: (moduleIndex: number, title: string) => void;
   onSectionTitleChange?: (sectionId: string, title: string) => void;
@@ -56,9 +54,7 @@ export default function ContentView({
   orderMandatory,
   onSectionTimedStatusChange,
   sources,
-  canEditCourse = false,
   isEditMode = false,
-  onEditModeChange,
   onCourseTitleChange,
   onModuleTitleChange,
   onSectionTitleChange,
@@ -160,16 +156,6 @@ export default function ContentView({
   
   return (
     <main className={`content-view content-view--${pageType}`} data-module-index={moduleIndex}>
-      {canEditCourse && (
-        <div className="course-edit-toolbar">
-          <Button type="button" variant="nav" onClick={() => onEditModeChange?.(!isEditMode)}>
-            {isEditMode ? "Exit edit" : "Edit course"}
-          </Button>
-          <span className="course-edit-toolbar-note">
-            {isEditMode ? "Editing local draft" : "Creates a draft revision, not an in-place published edit"}
-          </span>
-        </div>
-      )}
       <p className="course-name course-editable-line">
         <span>{courseTitle}</span>
         {isEditMode && (

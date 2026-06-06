@@ -71,12 +71,31 @@
     color: #ffd49b;
   }
 
-  .sidebar-pulltab {
-    border-color: #303033;
-    color: #d4d4d8;
-    background: #171717;
-    box-shadow: 8px 0 18px rgba(0, 0, 0, 0.28);
-  }
+	  .sidebar-pulltab {
+	    border-color: #303033;
+	    color: #d4d4d8;
+	    background: #171717;
+	    box-shadow: 8px 0 18px rgba(0, 0, 0, 0.28);
+	  }
+
+	  .sidebar-edit-button {
+	    border-color: #303033;
+	    color: #d4d4d8;
+	    background: #171717;
+	    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+	  }
+
+	  .sidebar-edit-button:hover,
+	  .sidebar-edit-button:focus-visible {
+	    border-color: #3a3a3d;
+	    color: #ffffff;
+	    background: #2b2b2d;
+	  }
+
+	  .sidebar-edit-button--save:hover,
+	  .sidebar-edit-button--save:focus-visible {
+	    background: #2f8f4e;
+	  }
 
   .progress-bar {
     background: #262626;
@@ -174,6 +193,25 @@
   box-shadow: 8px 0 18px rgba(0, 0, 0, 0.28);
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-edit-button {
+  border-color: #303033;
+  color: #d4d4d8;
+  background: #171717;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-edit-button:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-edit-button:focus-visible {
+  border-color: #3a3a3d;
+  color: #ffffff;
+  background: #2b2b2d;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-edit-button--save:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-edit-button--save:focus-visible {
+  background: #2f8f4e;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-pulltab:hover,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-pulltab:focus,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-pulltab:focus-visible,
@@ -254,6 +292,12 @@ html[data-theme="light"] .sidebar-status--timed {
   border-color: rgba(247, 170, 74, 0.45);
   background: rgba(247, 170, 74, 0.16);
   color: #b26811;
+}
+
+html[data-theme="light"] .sidebar-edit-button {
+  border-color: #d8deea;
+  color: #253049;
+  background: #ffffff;
 }
 
 @media (max-width: 720px) {

@@ -50,6 +50,7 @@ type CourseCatalogProps = {
     cluster?: LyciumRequirementGroup | null,
   ) => void;
   onPublishCourse: (course: CourseEntry) => void;
+  onForkCourse: (course: CourseEntry) => void;
   publishingCourseKey: string | null;
   onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
@@ -73,6 +74,7 @@ export default function CourseCatalog({
   onResumeCourseSourceGap,
   onCatalogDrilldown,
   onPublishCourse,
+  onForkCourse,
   publishingCourseKey,
   onOpenSettings,
 }: CourseCatalogProps) {
@@ -264,6 +266,10 @@ export default function CourseCatalog({
           isPublishing={publishingCourseKey === infoCourse.key}
           onPublishCourse={(course) => {
             onPublishCourse(course);
+            setInfoCourse(null);
+          }}
+          onForkCourse={(course) => {
+            onForkCourse(course);
             setInfoCourse(null);
           }}
           onClose={() => setInfoCourse(null)}

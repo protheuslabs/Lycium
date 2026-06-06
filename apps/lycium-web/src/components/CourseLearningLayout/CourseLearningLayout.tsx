@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CourseEntry, CourseSection, SectionStatus } from "../../courseTypes";
+import type { CourseData, CourseEntry, CourseSection, SectionStatus } from "../../courseTypes";
 import ContentView from "../ContentView/ContentView";
 import type { SourceRecord } from "../ContentView/ContentView";
 import type { ContentBlock } from "../ContentView/contentViewTypes";
@@ -30,6 +30,7 @@ type CourseLearningLayoutProps = {
   onSectionSelect: (index: number) => void;
   onCompleteSection: (sectionId: string) => void;
   onSectionTimedStatusChange: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
+  onSaveCourseDraft: (courseKey: string, data: CourseData) => void;
 };
 
 function courseAllowsLocalEdit(course: CourseEntry | undefined) {
@@ -56,6 +57,7 @@ export default function CourseLearningLayout({
   onSectionSelect,
   onCompleteSection,
   onSectionTimedStatusChange,
+  onSaveCourseDraft,
 }: CourseLearningLayoutProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [draftCourseTitle, setDraftCourseTitle] = useState("");
@@ -75,13 +77,16 @@ export default function CourseLearningLayout({
     [draftBlocks, draftModuleTitles, draftSectionTitles, sections],
   );
   const displayedCurrentSection = displayedSections[visibleSectionIndex] ?? currentSection;
-
-  useEffect(() => {
-    setIsEditMode(false);
+  const resetDraft = () => {
     setDraftCourseTitle("");
     setDraftModuleTitles({});
     setDraftSectionTitles({});
     setDraftBlocks({});
+  };
+
+  useEffect(() => {
+    setIsEditMode(false);
+    resetDraft();
   }, [selectedCourse?.key]);
 
   const handleBlockChange = (sectionId: string, blockIndex: number, block: ContentBlock) => {
@@ -94,6 +99,35 @@ export default function CourseLearningLayout({
     }));
   };
 
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    resetDraft();
+  };
+
+  const handleSaveEdit = () => {
+    if (!selectedCourse) {
+      setIsEditMode(false);
+      resetDraft();
+      return;
+    }
+
+    onSaveCourseDraft(selectedCourse.key, {
+      ...selectedCourse.data,
+      title: displayedCourseTitle,
+      modules: selectedCourse.data.modules.map((module, moduleIndex) => ({
+        ...module,
+        title: draftModuleTitles[moduleIndex] ?? module.title,
+        sections: module.sections.map((section) => ({
+          ...section,
+          title: draftSectionTitles[section.id] ?? section.title,
+          content: section.content.map((block, blockIndex) => draftBlocks[section.id]?.[blockIndex] ?? block),
+        })),
+      })),
+    });
+    setIsEditMode(false);
+    resetDraft();
+  };
+
   return (
     <div className="main-layout">
       <Sidebar
@@ -104,6 +138,11 @@ export default function CourseLearningLayout({
         progressPercentage={courseProgress.percentage}
         viewedPercentage={courseProgress.viewedPercentage}
         sectionStatuses={resolvedSectionStatuses}
+        canEditCourse={canEditCourse}
+        isEditMode={isEditMode && canEditCourse}
+        onStartEdit={() => setIsEditMode(true)}
+        onCancelEdit={handleCancelEdit}
+        onSaveEdit={handleSaveEdit}
       />
       <div className="course-content-host">
         <ContentView
@@ -124,9 +163,7 @@ export default function CourseLearningLayout({
           orderMandatory={orderMandatory}
           onSectionTimedStatusChange={onSectionTimedStatusChange}
           sources={sources}
-          canEditCourse={canEditCourse}
           isEditMode={isEditMode && canEditCourse}
-          onEditModeChange={setIsEditMode}
           onCourseTitleChange={setDraftCourseTitle}
           onModuleTitleChange={(moduleIndex, title) =>
             setDraftModuleTitles((current) => ({ ...current, [moduleIndex]: title }))

@@ -1,5 +1,6 @@
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryLabel, getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
+import Button from "../Button/Button";
 import Modal from "../Modal/Modal";
 import CourseReviewPanel from "./CourseReviewPanel";
 
@@ -8,9 +9,10 @@ type CourseInfoModalProps = {
   isPublishing: boolean;
   onClose: () => void;
   onPublishCourse: (course: CourseEntry) => void;
+  onForkCourse: (course: CourseEntry) => void;
 };
 
-export default function CourseInfoModal({ course, isPublishing, onClose, onPublishCourse }: CourseInfoModalProps) {
+export default function CourseInfoModal({ course, isPublishing, onClose, onPublishCourse, onForkCourse }: CourseInfoModalProps) {
   const tagLabels = getCourseTagLabels(course.data.tags);
   const learningTypes = course.data.learningTypes ?? [];
   const courseEquivalencies = course.data.courseEquivalencies ?? [];
@@ -98,6 +100,12 @@ export default function CourseInfoModal({ course, isPublishing, onClose, onPubli
         {isGeneratedCourse && (
           <CourseReviewPanel course={course} isPublishing={isPublishing} onPublishCourse={onPublishCourse} />
         )}
+        <section className="course-info-section course-fork-section">
+          <Button type="button" variant="nav" className="course-fork-button" onClick={() => onForkCourse(course)}>
+            Fork course
+          </Button>
+          <p className="course-info-muted">Creates a local editable copy titled "Fork of {course.title}".</p>
+        </section>
     </Modal>
   );
 }

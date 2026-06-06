@@ -18,6 +18,11 @@ type SidebarProps = {
   progressPercentage: number;
   viewedPercentage: number;
   sectionStatuses: Record<string, SectionStatus>;
+  canEditCourse?: boolean;
+  isEditMode?: boolean;
+  onStartEdit?: () => void;
+  onCancelEdit?: () => void;
+  onSaveEdit?: () => void;
 };
 
 let persistedSidebarCollapsed = true;
@@ -78,6 +83,63 @@ const SidebarStatusBadge = memo(function SidebarStatusBadge({
     </span>
   );
 });
+
+function SidebarIcon({ name }: { name: "pencil" | "save" | "cancel" }) {
+  if (name === "pencil") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 16.9V20h3.1L17.8 9.3l-3.1-3.1L4 16.9Zm15.8-9.8a1.1 1.1 0 0 0 0-1.6l-1.3-1.3a1.1 1.1 0 0 0-1.6 0l-1 1 3.1 3.1.8-.8Z" />
+      </svg>
+    );
+  }
+
+  if (name === "save") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M5 3h12l2 2v16H5V3Zm3 2v5h8V5H8Zm0 10v4h8v-4H8Z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5Z" />
+    </svg>
+  );
+}
+
+function SidebarEditControls({
+  isEditMode,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+}: {
+  isEditMode: boolean;
+  onStartEdit?: () => void;
+  onCancelEdit?: () => void;
+  onSaveEdit?: () => void;
+}) {
+  if (!isEditMode) {
+    return (
+      <div className="sidebar-edit-controls">
+        <button type="button" className="sidebar-edit-button" aria-label="Edit course" onClick={onStartEdit}>
+          <SidebarIcon name="pencil" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sidebar-edit-controls sidebar-edit-controls--active">
+      <button type="button" className="sidebar-edit-button" aria-label="Cancel course edits" onClick={onCancelEdit}>
+        <SidebarIcon name="cancel" />
+      </button>
+      <button type="button" className="sidebar-edit-button sidebar-edit-button--save" aria-label="Save course edits" onClick={onSaveEdit}>
+        <SidebarIcon name="save" />
+      </button>
+    </div>
+  );
+}
 
 function formatModuleHeaderLabel(moduleIndex: number, moduleTitle: string, isCollapsed: boolean) {
   const moduleNumber = moduleIndex + 1;
@@ -181,7 +243,12 @@ export default function Sidebar({
   courseTitle,
   progressPercentage,
   viewedPercentage,
-  sectionStatuses
+  sectionStatuses,
+  canEditCourse = false,
+  isEditMode = false,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
 }: SidebarProps) {
   const activeModuleIndex = sections[currentSectionIndex]?.moduleIndex ?? 0;
   const activeModuleIndexRef = useRef(activeModuleIndex);
@@ -260,6 +327,15 @@ export default function Sidebar({
       >
         <span aria-hidden="true">{isCollapsed ? "›" : "‹"}</span>
       </button>
+
+      {canEditCourse && (
+        <SidebarEditControls
+          isEditMode={isEditMode}
+          onStartEdit={onStartEdit}
+          onCancelEdit={onCancelEdit}
+          onSaveEdit={onSaveEdit}
+        />
+      )}
 
       <div className="progress-wrapper" aria-hidden={isCollapsed}>
         <h3 className="sidebar-title">{courseTitle}</h3>
