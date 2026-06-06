@@ -1,10 +1,9 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createBrowserStorageRepository } from "@lycium/data-access";
-import { promptForDeleteBlock, promptForText } from "../ContentView/CourseEditControls";
 import QuizMetaRows from "./QuizMetaRows";
 import QuizQuestionList from "./QuizQuestionList";
+import { useQuizEditor } from "./quizEditor";
 import {
   areSelectionsCorrect,
   attemptSignature,
@@ -26,9 +25,7 @@ import {
   shouldShowAnswersFromPayload,
 } from "./quizNormalization";
 import type { AttemptHistoryItem, AttemptOrderItem, QuizPayload } from "./quizTypes";
-
 const browserStorage = createBrowserStorageRepository();
-
 export default function QuizBlock({
   data,
   name,
@@ -65,7 +62,6 @@ export default function QuizBlock({
       })),
     [attemptOrder, data.timed, questionBank]
   );
-
   const isTimed = questionsWithTiming.some((question) => question.timed);
   const timeLimit = extractTimeLimit(data);
   const maxAttempts = extractMaxAttempts(data);
@@ -77,7 +73,6 @@ export default function QuizBlock({
     }
     return timeLimit;
   }, [isTimed, timeLimit]);
-
   const [selectedByQuestion, setSelectedByQuestion] = useState<number[][]>(questionsWithTiming.map(() => []));
   const [submitted, setSubmitted] = useState(false);
   const [questionCorrectness, setQuestionCorrectness] = useState<boolean[]>([]);
@@ -315,7 +310,6 @@ export default function QuizBlock({
   }, [isEditMode, timerDuration, elapsedSeconds, submitted, handleSubmit, startedAtMs]);
 
   const allQuestionsAnswered = questionsWithTiming.every((_, idx) => (selectedByQuestion[idx] ?? []).length > 0);
-  const hasMultipleQuestions = questionsWithTiming.length > 1;
   const attemptLimitReached = maxAttempts !== null && attemptCount >= maxAttempts;
   const canTryAgain = submitted && !attemptLimitReached;
   const canSubmit = !isEditMode && !submitted && !attemptLimitReached && allQuestionsAnswered;
@@ -336,172 +330,19 @@ export default function QuizBlock({
   const historicalAttempts = submitted ? attemptHistory.slice(0, -1) : attemptHistory;
   const currentAttemptResult = submitted ? attemptHistory[attemptHistory.length - 1] : null;
 
-  const rawQuestions = useMemo(() => editableQuestionsFromPayload(data, questionBank), [data, questionBank]);
-  const editorDisplayedQuestions = useMemo(
-    () =>
-      rawQuestions.map((question) => ({
-        prompt: question.question,
-        options: question.options,
-        correctAnswers: question.answers,
-        isMultiple: question.multiple,
-        timed: false,
-      })),
-    [rawQuestions],
-  );
+  const {
+    addAnswer,
+    deleteAnswer,
+    deleteQuestion,
+    editAnswer,
+    editQuestion,
+    editorDisplayedQuestions,
+    promptAddQuestion,
+    setCorrectAnswer,
+    toggleQuestionMultiple,
+    updateQuizData,
+  } = useQuizEditor({ data, questionBank, onDataChange });
   const activeDisplayedQuestions = isEditMode ? editorDisplayedQuestions : displayedQuestions;
-  const updateQuizData = useCallback((nextData: QuizPayload) => onDataChange?.(nextData), [onDataChange]);
-
-  const updateRawQuestions = useCallback(
-    (questions: EditableQuizQuestion[]) => {
-      updateQuizData({
-        ...data,
-        questions: questions.map((question) => ({
-          question: question.question,
-          options: question.options,
-          multiple: question.multiple,
-          ...(question.answers.length > 1 ? { answers: question.answers } : { answer: question.answers[0] ?? 0 }),
-        })),
-      });
-    },
-    [data, updateQuizData],
-  );
-
-  const editQuestion = useCallback(
-    (questionIndex: number, question: string) => {
-      updateRawQuestions(rawQuestions.map((currentQuestion, index) => (index === questionIndex ? { ...currentQuestion, question } : currentQuestion)));
-    },
-    [rawQuestions, updateRawQuestions],
-  );
-
-  const deleteQuestion = useCallback(
-    (questionIndex: number) => {
-      promptForDeleteBlock(
-        () => updateRawQuestions(rawQuestions.filter((_, index) => index !== questionIndex)),
-        "Delete question",
-        "Are you sure you want to delete this question?",
-      );
-    },
-    [rawQuestions, updateRawQuestions],
-  );
-
-  const addQuestion = useCallback((questionText: string) => {
-    const questionNumber = rawQuestions.length + 1;
-    updateRawQuestions([
-      ...rawQuestions,
-      {
-        question: `Question ${questionNumber}: ${questionText.trim() || "Enter question"}`,
-        options: ["Answer option A", "Answer option B"],
-        answers: [0],
-        multiple: false,
-      },
-    ]);
-  }, [rawQuestions, updateRawQuestions]);
-
-  const editAnswer = useCallback(
-    (questionIndex: number, answerIndex: number, value: string) => {
-      updateRawQuestions(
-        rawQuestions.map((question, index) =>
-          index === questionIndex
-            ? {
-                ...question,
-                options: question.options.map((option, optionIndex) => (optionIndex === answerIndex ? value : option)),
-              }
-            : question,
-        ),
-      );
-    },
-    [rawQuestions, updateRawQuestions],
-  );
-
-  const deleteAnswer = useCallback(
-    (questionIndex: number, answerIndex: number) => {
-      promptForDeleteBlock(
-        () =>
-          updateRawQuestions(
-            rawQuestions.map((question, index) => {
-              if (index !== questionIndex) {
-                return question;
-              }
-
-              const nextOptions = question.options.filter((_, optionIndex) => optionIndex !== answerIndex);
-              const nextAnswers = question.answers
-                .filter((answer) => answer !== answerIndex)
-                .map((answer) => (answer > answerIndex ? answer - 1 : answer))
-                .filter((answer) => answer >= 0 && answer < nextOptions.length);
-
-              return {
-                ...question,
-                options: nextOptions,
-                answers: nextAnswers.length > 0 ? nextAnswers : [0],
-              };
-            }),
-          ),
-        "Delete answer",
-        "Are you sure you want to delete this answer?",
-      );
-    },
-    [rawQuestions, updateRawQuestions],
-  );
-
-  const addAnswer = useCallback(
-    (questionIndex: number) => {
-      updateRawQuestions(
-        rawQuestions.map((question, index) =>
-          index === questionIndex
-            ? {
-                ...question,
-                options: [...question.options, `Answer option ${question.options.length + 1}`],
-              }
-            : question,
-        ),
-      );
-    },
-    [rawQuestions, updateRawQuestions],
-  );
-
-  const toggleQuestionMultiple = useCallback(
-    (questionIndex: number, isMultiple: boolean) => {
-      updateRawQuestions(
-        rawQuestions.map((question, index) =>
-          index === questionIndex
-            ? {
-                ...question,
-                multiple: isMultiple,
-                answers: isMultiple ? question.answers : [question.answers[0] ?? 0],
-              }
-            : question,
-        ),
-      );
-    },
-    [rawQuestions, updateRawQuestions],
-  );
-
-  const setCorrectAnswer = useCallback(
-    (questionIndex: number, optionIndex: number, isMultiple: boolean) => {
-      updateRawQuestions(
-        rawQuestions.map((question, index) => {
-          if (index !== questionIndex) {
-            return question;
-          }
-
-          if (!isMultiple) {
-            return { ...question, answers: [optionIndex], multiple: false };
-          }
-
-          const answers = question.answers.includes(optionIndex)
-            ? question.answers.filter((answer) => answer !== optionIndex)
-            : [...question.answers, optionIndex];
-
-          return {
-            ...question,
-            multiple: true,
-            answers: answers.length > 0 ? answers : [optionIndex],
-          };
-        }),
-      );
-    },
-    [rawQuestions, updateRawQuestions],
-  );
 
   useEffect(() => {
     onProgressChange?.(name, {
@@ -629,7 +470,7 @@ export default function QuizBlock({
         onOptionSelect={handleOptionSelect}
         onQuestionEdit={(questionIndex, prompt) => editQuestion(questionIndex, prompt)}
         onQuestionDelete={deleteQuestion}
-        onQuestionAdd={() => promptForText("Add question", "", addQuestion)}
+        onQuestionAdd={promptAddQuestion}
         onAnswerEdit={editAnswer}
         onAnswerDelete={deleteAnswer}
         onAnswerAdd={addAnswer}
@@ -653,65 +494,4 @@ export default function QuizBlock({
       </div>
     </div>
   );
-}
-
-type EditableQuizQuestion = {
-  question: string;
-  options: string[];
-  answers: number[];
-  multiple: boolean;
-};
-
-function editableQuestionsFromPayload(payload: QuizPayload, fallbackQuestions: Array<{ prompt: string; options: string[]; correctAnswers: number[] }>): EditableQuizQuestion[] {
-  const rawBank = Array.isArray(payload.questionBank)
-    ? payload.questionBank
-    : Array.isArray(payload.question_bank)
-      ? payload.question_bank
-      : Array.isArray(payload.bank)
-        ? payload.bank
-        : Array.isArray(payload.questions)
-          ? payload.questions
-          : null;
-
-  if (rawBank) {
-    return rawBank.map((rawQuestion, index) => normalizeEditableQuestion(rawQuestion, fallbackQuestions[index]));
-  }
-
-  if (typeof payload.question === "string") {
-    return [normalizeEditableQuestion(payload, fallbackQuestions[0])];
-  }
-
-  return fallbackQuestions.map((question) => ({
-    question: question.prompt,
-    options: question.options,
-    answers: question.correctAnswers,
-    multiple: question.correctAnswers.length > 1,
-  }));
-}
-
-function normalizeEditableQuestion(rawQuestion: unknown, fallbackQuestion?: { prompt: string; options: string[]; correctAnswers: number[] }): EditableQuizQuestion {
-  const record = rawQuestion && typeof rawQuestion === "object" ? rawQuestion as Record<string, unknown> : {};
-  const question = typeof record.question === "string" ? record.question : fallbackQuestion?.prompt ?? "Enter question";
-  const options = Array.isArray(record.options)
-    ? record.options.map((option) => String(option))
-    : fallbackQuestion?.options ?? ["Answer option A", "Answer option B"];
-  const rawAnswers = Array.isArray(record.answers)
-    ? record.answers
-    : record.answer !== undefined
-      ? [record.answer]
-      : fallbackQuestion?.correctAnswers ?? [0];
-  const answers = rawAnswers
-    .map((answer) => Number(answer))
-    .filter((answer) => Number.isInteger(answer) && answer >= 0 && answer < options.length);
-
-  return {
-    question,
-    options,
-    answers: answers.length > 0 ? answers : [0],
-    multiple:
-      record.multiple === true ||
-      record.isMultiple === true ||
-      (typeof record.questionType === "string" && record.questionType.trim().toLowerCase() === "multiple") ||
-      (answers.length > 1),
-  };
 }

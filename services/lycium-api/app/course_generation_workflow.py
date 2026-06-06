@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.course_agent_contract import validate_course_contract
 from app.course_generation_gates import COURSE_GENERATION_GATE_NAMES
+from app.course_generation_source_coverage import has_unverified_submitted_source_coverage
 from app.course_source_integrity import assess_course_source_integrity
 from app.course_taxonomy import validate_course_taxonomy
 from app.course_quality_evals import run_course_quality_evals
@@ -24,7 +25,6 @@ from app.course_structure import (
     source_ids as _source_ids,
     source_record_count as _source_record_count,
 )
-
 
 WORKFLOW_VERSION = "course-generation-workflow-v1"
 
@@ -212,6 +212,8 @@ def _gate_source_analysis(course: dict[str, Any]) -> GateResult:
                 integrity_issue.get("location"),
             )
         )
+    if has_unverified_submitted_source_coverage(course, integrity["metrics"]):
+        issues.append(_issue("error", "Submitted sources exist, but Lycium could not verify concept-level or section-level source coverage.", "metadata.sourceCoverageTrace"))
     return _gate(
         "source_analysis",
         "Source references, concept coverage, and section citation integrity were inspected.",

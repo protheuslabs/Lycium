@@ -98,13 +98,17 @@ def _slot_tokens(slot: dict[str, Any], requirement_context: dict[str, dict[str, 
     return token_set
 
 
+def _is_verified_source_mapping(row: dict[str, Any]) -> bool:
+    return str(row.get("coverageStatus") or row.get("status") or "").lower() != "unverified"
+
+
 def _source_slots(course: dict[str, Any]) -> list[dict[str, Any]]:
     metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
-    return _items(metadata.get("sourceSlots"))
+    return [slot for slot in _items(metadata.get("sourceSlots")) if _is_verified_source_mapping(slot)]
 
 
 def _concept_source_coverage(metadata: dict[str, Any]) -> list[dict[str, Any]]:
-    return _items(metadata.get("conceptSourceCoverageMap"))
+    return [row for row in _items(metadata.get("conceptSourceCoverageMap")) if _is_verified_source_mapping(row)]
 
 
 def _matching_slot_sources(slots: list[dict[str, Any]], requirement_context: dict[str, dict[str, set[str]]], *labels: Any) -> set[str]:

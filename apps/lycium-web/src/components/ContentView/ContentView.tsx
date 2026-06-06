@@ -8,9 +8,11 @@ import Button from "../Button/Button";
 import Modal from "../Modal/Modal";
 import CourseSourcesPage from "./CourseSourcesPage";
 import EditableContentBlock from "./EditableContentBlock";
-import { EditPencilButton, promptForBlockType, promptForText, type CourseEditBlockKind } from "./CourseEditControls";
-import type { ContentBlock, Section, SourceRecord, QuizProgressStatus, QuizProgressStatusHandler, QuizSubmissionStatusHandler } from "./contentViewTypes";
+import { EditPencilButton, promptForBlockType, promptForText } from "./CourseEditControls";
+import type { ContentBlock, Section, SourceRecord } from "./contentViewTypes";
 import { buildCourseSourceIndex, getSectionSources, sourceCitationNumber } from "./sourceCitationUtils";
+import { createBlockTemplate, stripModulePrefix } from "../CourseEditing/courseEditPrimitives";
+import { useSectionQuizStatus } from "./useSectionQuizStatus";
 
 export type { SourceRecord } from "./contentViewTypes";
 
@@ -43,66 +45,6 @@ type ContentViewProps = {
   onBlockMove?: (sectionId: string, fromIndex: number, toIndex: number) => void;
   onSourceCreate?: (sourceUrl: string) => SourceRecord | null;
 };
-
-function editableModuleTitle(title: string) {
-  return title.replace(/^\s*(Module|Week)\s+\d+\s*:?\s*/i, "").trim() || "Module title";
-}
-
-function createBlockTemplate(kind: CourseEditBlockKind, initialValue: string): ContentBlock {
-  const value = initialValue.trim();
-
-  switch (kind) {
-    case "card":
-      return {
-        type: "conceptCard",
-        title: "Concept title",
-        description: value || "Lorem ipsum dolor sit amet. Replace this with a concise concept definition.",
-        sourceIds: [],
-      };
-    case "video":
-      return {
-        type: "video",
-        url: value,
-        sourceIds: [],
-      };
-    case "iframe":
-      return {
-        type: "iframe",
-        title: "Embedded resource title",
-        url: value,
-        sourceIds: [],
-      };
-    case "heading":
-      return {
-        type: "heading",
-        title: value || "Heading title",
-        sourceIds: [],
-      };
-    case "quiz":
-      return {
-        type: "quiz",
-        title: value || "Quiz title",
-        questions: [
-          {
-            question: "Replace this with the quiz question.",
-            options: ["Answer option A", "Answer option B", "Answer option C", "Answer option D"],
-            answer: 0,
-          },
-        ],
-        questionsPerAttempt: 1,
-        showAnswers: false,
-      };
-    case "text":
-    default:
-      return {
-        type: "text",
-        heading: "Text block title",
-        value: value || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Replace this text with learner-facing instruction.",
-        sourceIds: [],
-      };
-  }
-}
-
 export default function ContentView({ 
   courseKey,
   courseTitle,
@@ -132,18 +74,6 @@ export default function ContentView({
   onBlockMove,
   onSourceCreate
 }: ContentViewProps) {
-  const quizBlockKeys = useMemo(() => {
-    if (!section) {
-      return [];
-    }
-
-    return section.content
-      .map((block, idx) => (block.type === "quiz" ? `quiz-${section.id}-${idx}` : null))
-      .filter((quizKey): quizKey is string => quizKey !== null);
-  }, [section]);
-
-  const [submittedQuizKeys, setSubmittedQuizKeys] = useState<Set<string>>(() => new Set());
-  const [quizProgressByKey, setQuizProgressByKey] = useState<Record<string, QuizProgressStatus>>({});
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
   const [sourceTarget, setSourceTarget] = useState<{ sectionId: string; blockIndex: number } | null>(null);
@@ -151,69 +81,21 @@ export default function ContentView({
   const [sourceStatus, setSourceStatus] = useState("");
   const citationFocusTimer = useRef<number | null>(null);
   const courseSourceIndex = useMemo(() => buildCourseSourceIndex(sources), [sources]);
+  const {
+    allRequiredQuizzesSubmitted,
+    canMarkComplete,
+    completeButtonTitle,
+    handleQuizProgressChange,
+    handleQuizSubmissionChange,
+  } = useSectionQuizStatus({ section, isComplete, onSectionTimedStatusChange });
 
   useEffect(() => {
-    // Resetting quiz submission state when the learner changes sections is intentional.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSubmittedQuizKeys(new Set());
-    setQuizProgressByKey({});
     setSourcesExpanded(false);
     setDraggedBlockIndex(null);
     setSourceTarget(null);
     setSourceUrl("");
     setSourceStatus("");
   }, [section?.id]);
-
-  const handleQuizSubmissionChange = useCallback<QuizSubmissionStatusHandler>((quizKey, submitted) => {
-    setSubmittedQuizKeys((prev) => {
-      if (submitted === prev.has(quizKey)) {
-        return prev;
-      }
-
-      const next = new Set(prev);
-
-      if (submitted) {
-        next.add(quizKey);
-      } else {
-        next.delete(quizKey);
-      }
-
-      return next;
-    });
-  }, []);
-
-  const handleQuizProgressChange = useCallback<QuizProgressStatusHandler>((quizKey, status) => {
-    setQuizProgressByKey((prev) => {
-      const existing = prev[quizKey];
-      if (
-        existing &&
-        existing.submitted === status.submitted &&
-        existing.inProgress === status.inProgress &&
-        existing.timed === status.timed
-      ) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [quizKey]: status,
-      };
-    });
-  }, []);
-
-  const requiresQuizSubmission = quizBlockKeys.length > 0;
-  const allRequiredQuizzesSubmitted =
-    !requiresQuizSubmission || quizBlockKeys.every((quizKey) => submittedQuizKeys.has(quizKey));
-  const hasTimedQuizInProgress = quizBlockKeys.some((quizKey) => {
-    const status = quizProgressByKey[quizKey];
-    return Boolean(status && status.timed && status.inProgress && !status.submitted);
-  });
-  const canMarkComplete = !isComplete && allRequiredQuizzesSubmitted;
-  const completeButtonTitle = isComplete
-    ? "Section complete"
-    : requiresQuizSubmission && !allRequiredQuizzesSubmitted
-      ? "Submit the quiz before marking this page complete"
-      : "Mark section complete";
 
   const handleInlineCitationClick = useCallback((citationIndex: number) => {
     if (!section?.id) {
@@ -286,14 +168,6 @@ export default function ContentView({
     [handleAttachSource, onSourceCreate, sourceUrl],
   );
 
-  useEffect(() => {
-    if (!section?.id) {
-      return;
-    }
-
-    onSectionTimedStatusChange?.(section.id, hasTimedQuizInProgress);
-  }, [hasTimedQuizInProgress, onSectionTimedStatusChange, section?.id]);
-
   if (!section) {
     if (showCourseSourcesPage) {
       return (
@@ -346,7 +220,7 @@ export default function ContentView({
           {isEditMode && (
               <EditPencilButton
                 label="Edit module title"
-                onClick={() => promptForText("Edit module title", editableModuleTitle(moduleTitle), (title) => onModuleTitleChange?.(moduleIndex, title))}
+                onClick={() => promptForText("Edit module title", stripModulePrefix(moduleTitle), (title) => onModuleTitleChange?.(moduleIndex, title))}
               />
           )}
         </h1>

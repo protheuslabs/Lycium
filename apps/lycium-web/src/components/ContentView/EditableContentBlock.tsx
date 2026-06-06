@@ -84,7 +84,6 @@ export default function EditableContentBlock({
   const blockCitation = (
     <BlockCitationBadge
       citationIndex={citationIndex}
-      isEditMode={isEditMode}
       onCitationClick={onCitationClick}
       onMissingCitationClick={onMissingCitationClick}
     />
@@ -263,7 +262,7 @@ export default function EditableContentBlock({
           data={block}
           name={quizKey}
           isEditMode={isEditMode}
-          onDataChange={(nextData) => updateBlock({ ...block, ...nextData })}
+          onDataChange={(nextData) => updateBlock({ ...block, ...nextData } as ContentBlock)}
           onSubmissionChange={onQuizSubmissionChange}
           onProgressChange={onQuizProgressChange}
         />,
@@ -314,12 +313,10 @@ function blockCitationIndex(sourceIds: string[] | undefined, courseSourceIndex: 
 
 function BlockCitationBadge({
   citationIndex,
-  isEditMode,
   onCitationClick,
   onMissingCitationClick,
 }: {
   citationIndex: number | null;
-  isEditMode: boolean;
   onCitationClick?: (citationIndex: number) => void;
   onMissingCitationClick?: () => void;
 }) {

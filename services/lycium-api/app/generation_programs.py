@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.generation_helpers import _stable_id, _title_from_prompt
 from app.models import CourseSnapshot, Learner, ProgramSnapshot
+from app.program_contract_builder import build_program_contract
 from app.curriculum_benchmarks import compile_curriculum_benchmark_context
 from app.program_quality import assess_program_quality
 from app.program_validation import validate_program_contract
@@ -27,6 +28,75 @@ PROGRAM_TOPIC_STOPWORDS = {
     "study",
     "with",
 }
+
+PROGRAM_GROUP_RULES = [
+    (
+        "group-foundations",
+        "Foundations",
+        "foundation",
+        ["foundation", "intro", "basics", "overview", "history", "ethics", "measurement", "matter", "command", "git"],
+    ),
+    (
+        "group-programming",
+        "Programming Core",
+        "cluster",
+        ["programming", "python", "javascript", "typescript", "algorithm", "function", "variable", "control flow", "data structure"],
+    ),
+    (
+        "group-frontend",
+        "Frontend Engineering",
+        "cluster",
+        ["html", "css", "react", "frontend", "browser", "accessibility", "responsive"],
+    ),
+    (
+        "group-backend",
+        "Backend Systems",
+        "cluster",
+        ["backend", "server", "http", "api", "authentication", "authorization", "security"],
+    ),
+    (
+        "group-data",
+        "Data and Analysis",
+        "cluster",
+        ["data", "database", "sql", "postgres", "statistics", "visualization", "analytics", "biostatistics"],
+    ),
+    (
+        "group-modeling",
+        "Modeling and Inference",
+        "cluster",
+        ["model", "modeling", "machine learning", "regression", "classification", "kinetics", "equilibrium", "thermodynamics"],
+    ),
+    (
+        "group-chemistry-core",
+        "Chemistry Core",
+        "cluster",
+        ["atomic", "periodic", "bonding", "stoichiometry", "reaction", "molecular", "acid", "base", "gas", "solution"],
+    ),
+    (
+        "group-health-systems",
+        "Health Systems and Policy",
+        "cluster",
+        ["epidemiology", "population", "policy", "health system", "community", "intervention", "surveillance"],
+    ),
+    (
+        "group-delivery",
+        "Delivery and Operations",
+        "cluster",
+        ["deployment", "docker", "ci/cd", "cloud", "operations", "maintenance", "monitoring"],
+    ),
+    (
+        "group-professional",
+        "Professional Practice",
+        "cluster",
+        ["communication", "review", "team", "professional", "portfolio", "documentation", "law", "equity"],
+    ),
+    (
+        "group-lab-practice",
+        "Lab and Applied Practice",
+        "lab",
+        ["lab", "laboratory", "simulation", "experiment", "field", "practice", "project"],
+    ),
+]
 
 
 def ask_instructor(
@@ -99,6 +169,147 @@ def _course_requirement(goal: str, term: str, index: int, *, title_prefix: str =
     }
 
 
+def _items(value: Any) -> list[dict[str, Any]]:
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+
+
+def _origin_title(origin: dict[str, Any]) -> str:
+    for key in ("title", "name", "requirementId", "id"):
+        value = origin.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return "Required topic"
+
+
+def _origin_sort_key(origin: dict[str, Any]) -> tuple[int, float, float, str]:
+    importance = str(origin.get("importance") or "")
+    importance_rank = {"required": 0, "recommended": 1, "optional": 2}.get(importance, 3)
+    score = origin.get("score")
+    frequency = origin.get("frequency")
+    return (
+        importance_rank,
+        -float(score if isinstance(score, int | float) else 0),
+        -float(frequency if isinstance(frequency, int | float) else 0),
+        _origin_title(origin).lower(),
+    )
+
+
+def _benchmark_requirements(goal: str, benchmark_context: dict[str, Any] | None, desired_course_count: int) -> list[dict[str, Any]]:
+    if not isinstance(benchmark_context, dict):
+        return []
+
+    origins = sorted(_items(benchmark_context.get("requirementOrigins")), key=_origin_sort_key)
+    if not origins:
+        return []
+
+    max_requirements = max(desired_course_count, min(24, len(origins)))
+    requirements: list[dict[str, Any]] = []
+    used_titles: set[str] = set()
+
+    for index, origin in enumerate(origins, start=1):
+        title = _origin_title(origin)
+        title_key = title.lower()
+        if title_key in used_titles:
+            continue
+        used_titles.add(title_key)
+        course_id = _stable_id("course", goal, title, str(index))
+        requirements.append(
+            {
+                "id": _stable_id("req", course_id),
+                "type": "complete_course",
+                "title": f"{title} Course",
+                "courseId": course_id,
+                "estimatedHours": 30,
+                "required": str(origin.get("importance") or "required") != "optional",
+                "importance": str(origin.get("importance") or "required"),
+                "origin": origin,
+            }
+        )
+        if len(requirements) >= max_requirements:
+            break
+
+    return requirements
+
+
+def _program_field(goal: str, requirements: list[dict[str, Any]]) -> str:
+    blob = " ".join([goal, *(str(requirement.get("title") or "") for requirement in requirements)]).lower()
+    if any(term in blob for term in ("software", "full stack", "frontend", "backend", "api", "react")):
+        return "Software Engineering"
+    if any(term in blob for term in ("data science", "statistics", "analytics", "visualization", "modeling")):
+        return "Data Science"
+    if any(term in blob for term in ("chemistry", "chemical", "stoichiometry", "atomic", "bonding")):
+        return "Chemistry"
+    if any(term in blob for term in ("public health", "epidemiology", "population health", "health policy")):
+        return "Public Health"
+    return "Interdisciplinary Learning"
+
+
+def _program_type(goal: str, field: str) -> str:
+    blob = f"{goal} {field}".lower()
+    if any(term in blob for term in ("engineer", "developer", "career", "professional")):
+        return "career_path"
+    if any(term in blob for term in ("degree", "college", "chemistry", "public health")):
+        return "degree_equivalent"
+    return "certificate"
+
+
+def _group_key_for_requirement(requirement: dict[str, Any]) -> str:
+    title = str(requirement.get("title") or "").lower()
+    for group_id, _display_name, _kind, keywords in PROGRAM_GROUP_RULES:
+        if any(keyword in title for keyword in keywords):
+            return group_id
+    return "group-core"
+
+
+def _fallback_group_plan(requirements: list[dict[str, Any]]) -> list[tuple[str, str, str, list[dict[str, Any]]]]:
+    foundation, core, elective = _split_requirements(requirements)
+    return [
+        ("group-foundations", "Foundations", "foundation", foundation),
+        ("group-core", "Core Requirements", "cluster", core),
+        ("group-applied-practice", "Applied Practice", "cluster", elective),
+    ]
+
+
+def _group_requirements(requirements: list[dict[str, Any]]) -> list[tuple[str, str, str, list[dict[str, Any]]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for requirement in requirements:
+        grouped.setdefault(_group_key_for_requirement(requirement), []).append(requirement)
+
+    ordered_groups: list[tuple[str, str, str, list[dict[str, Any]]]] = []
+    for group_id, display_name, kind, _keywords in PROGRAM_GROUP_RULES:
+        rows = grouped.pop(group_id, [])
+        if rows:
+            ordered_groups.append((group_id, display_name, kind, rows))
+    if grouped.get("group-core"):
+        ordered_groups.append(("group-core", "Core Requirements", "cluster", grouped["group-core"]))
+    if len(ordered_groups) < 3:
+        return _fallback_group_plan(requirements)
+    return ordered_groups
+
+
+def _group_outcome(group_id: str, display_name: str) -> dict[str, str]:
+    return {
+        "id": f"{group_id}-outcome",
+        "statement": f"Complete the {display_name.lower()} requirements and explain how they support the program outcome.",
+    }
+
+
+def _requirement_group(group_id: str, display_name: str, kind: str, requirements: list[dict[str, Any]], prerequisite_group_id: str | None = None) -> dict[str, Any]:
+    group: dict[str, Any] = {
+        "id": group_id,
+        "displayName": display_name,
+        "groupKind": kind,
+        "purpose": f"Build capability in {display_name.lower()} through source-backed requirements.",
+        "learningOutcomes": [_group_outcome(group_id, display_name)],
+        "requirements": requirements,
+        "completionRule": {"type": "complete_all"},
+        "estimatedHours": sum(float(req.get("estimatedHours") or 0) for req in requirements),
+    }
+    if prerequisite_group_id:
+        group["prerequisites"] = [{"nodeId": prerequisite_group_id, "type": "required"}]
+    return group
+
+
 def _split_requirements(requirements: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     foundation = requirements[:2]
     core = requirements[2:4] or requirements[:2]
@@ -107,138 +318,8 @@ def _split_requirements(requirements: list[dict[str, Any]]) -> tuple[list[dict[s
 
 
 def _build_program(goal: str, level: str | None, desired_course_count: int) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    terms = [term for term in tokenize(goal) if len(term) > 3 and term not in PROGRAM_TOPIC_STOPWORDS]
-    defaults = ["foundation", "programming", "systems", "practice", "deployment", "capstone"]
-    course_terms = list(dict.fromkeys([*terms, *defaults]))[: max(4, desired_course_count)]
-    course_requirements = [_course_requirement(goal, term, index) for index, term in enumerate(course_terms, start=1)]
-    foundation, core, elective = _split_requirements(course_requirements)
-    capstone_project_id = _stable_id("project", goal, "capstone")
-    portfolio_assessment_id = _stable_id("assessment", goal, "portfolio")
-    program_id = _stable_id("program", goal, level or "foundational")
-    groups = [
-        {
-            "id": "group-foundations",
-            "displayName": "Foundations",
-            "groupKind": "foundation",
-            "purpose": "Establish the shared concepts and setup needed before deeper work.",
-            "learningOutcomes": [{"id": "group-foundations-outcome", "statement": "Explain the core vocabulary and baseline workflow for the program."}],
-            "requirements": foundation,
-            "completionRule": {"type": "complete_all"},
-            "estimatedHours": sum(req.get("estimatedHours", 0) for req in foundation),
-        },
-        {
-            "id": "group-core",
-            "displayName": "Core Practice",
-            "groupKind": "cluster",
-            "purpose": "Build the central course sequence that makes the goal actionable.",
-            "learningOutcomes": [{"id": "group-core-outcome", "statement": "Apply the main concepts to realistic practice tasks."}],
-            "requirements": [
-                *core,
-                {
-                    "id": "req-core-checkpoint",
-                    "type": "pass_assessment",
-                    "title": "Core checkpoint",
-                    "assessmentId": _stable_id("assessment", goal, "core"),
-                    "minScore": 0.8,
-                    "estimatedHours": 4,
-                },
-            ],
-            "completionRule": {"type": "complete_all"},
-            "estimatedHours": sum(req.get("estimatedHours", 0) for req in core) + 4,
-            "prerequisites": [{"nodeId": "group-foundations", "type": "required"}],
-        },
-        {
-            "id": "group-electives",
-            "displayName": "Elective Depth",
-            "groupKind": "elective_pool",
-            "purpose": "Allow depth choices while preserving a coherent program path.",
-            "learningOutcomes": [{"id": "group-electives-outcome", "statement": "Choose related areas that deepen the learner's target outcome."}],
-            "requirements": [
-                {
-                    "id": "req-elective-choice",
-                    "type": "complete_n_of_courses",
-                    "title": "Choose elective courses",
-                    "count": min(2, len(elective)),
-                    "courseIds": [str(req["courseId"]) for req in elective],
-                    "estimatedHours": 60,
-                }
-            ],
-            "completionRule": {"type": "complete_all"},
-            "estimatedHours": 60,
-            "prerequisites": [{"nodeId": "group-core", "type": "required"}],
-        },
-        {
-            "id": "group-capstone",
-            "displayName": "Capstone Evidence",
-            "groupKind": "capstone",
-            "purpose": "Turn learning into a reviewable artifact and credential checkpoint.",
-            "learningOutcomes": [{"id": "group-capstone-outcome", "statement": "Demonstrate the program outcome with a project and review checkpoint."}],
-            "requirements": [
-                {
-                    "id": "req-capstone-project",
-                    "type": "submit_project",
-                    "title": "Capstone project",
-                    "projectId": capstone_project_id,
-                    "estimatedHours": 40,
-                },
-                {
-                    "id": "req-portfolio-review",
-                    "type": "pass_assessment",
-                    "title": "Portfolio review",
-                    "assessmentId": portfolio_assessment_id,
-                    "minScore": 0.85,
-                    "estimatedHours": 6,
-                },
-            ],
-            "completionRule": {"type": "complete_all"},
-            "estimatedHours": 46,
-            "prerequisites": [
-                {"nodeId": "group-core", "type": "required"},
-                {"nodeId": "group-electives", "type": "recommended"},
-            ],
-        },
-    ]
-    program = {
-        "id": program_id,
-        "title": f"Program: {_title_from_prompt(goal)}",
-        "description": f"A structured Lycium program for: {goal}.",
-        "programType": "career_path",
-        "field": "Interdisciplinary Learning",
-        "level": _program_level(level),
-        "targetOutcome": f"Complete a coherent learning path for {goal}.",
-        "learningOutcomes": [
-            {"id": "outcome-foundations", "statement": "Build the foundations needed for the path."},
-            {"id": "outcome-practice", "statement": "Apply the core concepts in realistic work."},
-            {"id": "outcome-capstone", "statement": "Produce reviewable evidence of learning."},
-        ],
-        "entryRequirements": [],
-        "requirementGroups": groups,
-        "estimatedHours": sum(group.get("estimatedHours", 0) for group in groups),
-        "masteryPolicy": {
-            "minimumMasteryPercent": 85,
-            "minimumAssessmentPercent": 80,
-            "requiresCapstone": True,
-            "remediationPolicy": "recommended",
-        },
-        "credentialPolicy": {
-            "credentialType": "certificate",
-            "title": f"{_title_from_prompt(goal)} Certificate",
-            "issuer": "Lycium",
-            "requiresHumanReview": True,
-        },
-        "dependencyGraph": {
-            "edges": [
-                {"fromNodeId": "group-foundations", "toNodeId": "group-core", "type": "required"},
-                {"fromNodeId": "group-core", "toNodeId": "group-electives", "type": "recommended"},
-                {"fromNodeId": "group-core", "toNodeId": "group-capstone", "type": "required"},
-                {"fromNodeId": "group-electives", "toNodeId": "group-capstone", "type": "recommended"},
-            ]
-        },
-        "version": "0.1.0",
-        "reviewStatus": "draft",
-    }
+    program, course_requirements, _synthesis = build_program_contract(goal, level, desired_course_count)
     return program, course_requirements
-
 
 def _assemble_program_packet(
     session: Session,
@@ -285,13 +366,18 @@ def generate_program(
     desired_course_count: int,
     source_urls: list[str] | None = None,
 ) -> ProgramSnapshot:
-    program, course_requirements = _build_program(goal, level, desired_course_count)
     indexed_source_documents = source_documents_from_index_snapshots(session, source_urls=source_urls or []) if source_urls else []
     benchmark_context = compile_curriculum_benchmark_context(
         prompt=goal,
         source_urls=source_urls or [],
         fetch_sources=False,
         source_documents=indexed_source_documents,
+    )
+    program, course_requirements, program_synthesis = build_program_contract(
+        goal,
+        level,
+        desired_course_count,
+        benchmark_context=benchmark_context,
     )
     course_packets = []
     for requirement in course_requirements:
@@ -325,6 +411,7 @@ def generate_program(
             "sourceUrls": source_urls or [],
             "sourceIndexSnapshotDocumentCount": len(indexed_source_documents),
             "curriculumBenchmarkContext": benchmark_context,
+            "programSynthesis": program_synthesis,
         },
         "contractValidation": {
             "passed": len(validation_errors) == 0,

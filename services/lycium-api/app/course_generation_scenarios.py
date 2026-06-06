@@ -336,86 +336,10 @@ def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str
     return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course", checks=checks)
 
 
-def _program_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
-    return payload.get("program") if isinstance(payload.get("program"), dict) else payload
-
-
-def _program_text_and_metrics(payload: dict[str, Any]) -> dict[str, Any]:
-    program = _program_from_payload(payload)
-    groups = _items(program.get("requirementGroups"))
-    requirements = [requirement for group in groups for requirement in _items(group.get("requirements"))]
-    dependency_edges = _items((program.get("dependencyGraph") or {}).get("edges") if isinstance(program.get("dependencyGraph"), dict) else [])
-    text_parts = [_text(program.get(key)) for key in ("title", "description", "field", "targetOutcome")]
-    for group in groups:
-        text_parts.extend(_text(group.get(key)) for key in ("displayName", "purpose", "groupKind"))
-        for requirement in _items(group.get("requirements")):
-            text_parts.extend(_text(requirement.get(key)) for key in ("title", "type", "courseId", "assessmentId", "projectId"))
-            course_ids = requirement.get("courseIds")
-            if isinstance(course_ids, list):
-                text_parts.extend(str(course_id) for course_id in course_ids)
-    return {
-        "groupCount": len(groups),
-        "courseRequirementCount": sum(1 for requirement in requirements if requirement.get("type") in {"complete_course", "complete_n_of_courses"}),
-        "assessmentRequirementCount": sum(1 for requirement in requirements if requirement.get("type") == "pass_assessment"),
-        "projectRequirementCount": sum(1 for requirement in requirements if requirement.get("type") == "submit_project"),
-        "dependencyEdgeCount": len(dependency_edges),
-        "textBlob": "\n".join(text_parts),
-    }
-
-
 def evaluate_program_generation_scenario(program_payload: dict[str, Any], scenario_id: str) -> dict[str, Any]:
-    if scenario_id not in PROGRAM_SCENARIOS:
-        raise ValueError(f"Unknown program generation scenario '{scenario_id}'")
-    spec = PROGRAM_SCENARIOS[scenario_id]
-    metrics = _program_text_and_metrics(program_payload)
-    text_blob = metrics["textBlob"]
-    covered_groups = [keyword for keyword in spec["requiredGroupKeywords"] if _keyword_present(text_blob, keyword)]
-    covered_requirements = [keyword for keyword in spec["requiredRequirementKeywords"] if _keyword_present(text_blob, keyword)]
-    requirement_coverage = len(covered_requirements) / len(spec["requiredRequirementKeywords"])
+    from app.program_generation_scenarios import evaluate_program_generation_scenario as _evaluate_program_generation_scenario
 
-    checks = [
-        _check(
-            key="requirement_group_shape",
-            label="Requirement-group shape",
-            score=min(1.0, metrics["groupCount"] / spec["minRequirementGroups"]) * 0.45
-            + min(1.0, len(covered_groups) / len(spec["requiredGroupKeywords"])) * 0.55,
-            findings=[
-                *([] if metrics["groupCount"] >= spec["minRequirementGroups"] else [_finding("error", f"Expected at least {spec['minRequirementGroups']} requirement groups.")]),
-                *([] if len(covered_groups) / len(spec["requiredGroupKeywords"]) >= 0.7 else [_finding("error", "Program groups do not cover the expected full-stack domains.")]),
-            ],
-            metrics={"groupCount": metrics["groupCount"], "coveredGroupKeywordCount": len(covered_groups)},
-        ),
-        _check(
-            key="requirement_coverage",
-            label="Requirement coverage",
-            score=requirement_coverage,
-            findings=[
-                *([] if metrics["courseRequirementCount"] >= spec["minCourseRequirements"] else [_finding("error", f"Expected at least {spec['minCourseRequirements']} course requirements.")]),
-                *([] if requirement_coverage >= spec["minRequiredKeywordCoverage"] else [_finding("error", "Program course requirements miss core full-stack topics.")]),
-            ],
-            metrics={"courseRequirementCount": metrics["courseRequirementCount"], "coveredRequirementKeywordCount": len(covered_requirements), "coverage": round(requirement_coverage, 2)},
-        ),
-        _check(
-            key="evidence_and_assessment",
-            label="Assessment and portfolio evidence",
-            score=min(1.0, metrics["assessmentRequirementCount"] / spec["minAssessmentRequirements"]) * 0.45
-            + min(1.0, metrics["projectRequirementCount"] / spec["minProjectRequirements"]) * 0.55,
-            findings=[
-                *([] if metrics["assessmentRequirementCount"] >= spec["minAssessmentRequirements"] else [_finding("error", "Program needs more assessment requirements.")]),
-                *([] if metrics["projectRequirementCount"] >= spec["minProjectRequirements"] else [_finding("error", "Program needs a project/capstone requirement.")]),
-            ],
-            metrics={key: metrics[key] for key in ("assessmentRequirementCount", "projectRequirementCount")},
-        ),
-        _check(
-            key="dependency_graph",
-            label="Prerequisite dependency graph",
-            score=min(1.0, metrics["dependencyEdgeCount"] / spec["minDependencyEdges"]),
-            findings=[] if metrics["dependencyEdgeCount"] >= spec["minDependencyEdges"] else [_finding("error", "Program dependency graph is too thin.")],
-            metrics={"dependencyEdgeCount": metrics["dependencyEdgeCount"]},
-        ),
-    ]
-    return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="program", checks=checks)
-
+    return _evaluate_program_generation_scenario(program_payload, scenario_id)
 
 def _scenario_report(*, scenario_id: str, label: str, kind: str, checks: list[dict[str, Any]]) -> dict[str, Any]:
     score = round(sum(float(check["score"]) for check in checks) / max(1, len(checks)), 2)

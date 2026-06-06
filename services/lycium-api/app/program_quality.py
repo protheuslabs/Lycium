@@ -16,8 +16,27 @@ def _items(value: Any) -> list[dict[str, Any]]:
 
 def _packet_has_evidence(packet: dict[str, Any]) -> bool:
     learning_packet = packet.get("learningPacket") if isinstance(packet.get("learningPacket"), dict) else {}
-    object_ids = learning_packet.get("object_ids")
-    return isinstance(object_ids, list) and bool(object_ids)
+    evidence_keys = (
+        "object_ids",
+        "objectIds",
+        "sourceIds",
+        "source_ids",
+        "sourceRefs",
+        "source_refs",
+        "evidenceRefs",
+        "evidence_refs",
+    )
+    if any(isinstance(learning_packet.get(key), list) and learning_packet[key] for key in evidence_keys):
+        return True
+
+    structured_keys = ("sources", "items", "chunks", "concepts", "claims")
+    for key in structured_keys:
+        value = learning_packet.get(key)
+        if isinstance(value, list) and any(isinstance(item, dict) for item in value):
+            return True
+
+    source_decision = packet.get("sourceDecision")
+    return isinstance(source_decision, dict) and source_decision.get("status") == "included"
 
 
 def _course_source_coverage(requirements: list[dict[str, Any]], course_packets: list[dict[str, Any]]) -> dict[str, Any]:

@@ -374,6 +374,10 @@ def compile_curriculum_benchmark_context(
     optional_topics = [row["title"] for row in requirement_origins if row["importance"] != "required"]
     evidence_refs = [ref for row in requirement_origins for ref in row["evidenceRefs"]]
     primary_source = evidence_refs[0] if evidence_refs else "benchmark-generated-intake"
+    has_parsed_benchmark = any(
+        isinstance(benchmark.get("extraction"), dict) and benchmark["extraction"].get("status") == "parsed"
+        for benchmark in benchmarks
+    )
     source_slots = [
         {
             "requiredConceptId": row["requirementId"],
@@ -386,13 +390,16 @@ def compile_curriculum_benchmark_context(
             "coverageStatus": _coverage_status(
                 row["evidenceRefs"][0] if row["evidenceRefs"] else primary_source,
                 _origin_confidence(row),
-            ),
+            ) if has_parsed_benchmark else "unverified",
             "sectionIds": [],
         }
         for row in requirement_origins
-        if row["importance"] == "required"
     ]
     concept_source_coverage_map = _concept_source_coverage_map(requirement_origins)
+    if not has_parsed_benchmark:
+        for row in concept_source_coverage_map:
+            row["status"] = "unverified"
+            row["sectionIds"] = []
 
     context = {
         "workflowGates": ["benchmark_intake", "requirement_extraction", "commonality_analysis"],
