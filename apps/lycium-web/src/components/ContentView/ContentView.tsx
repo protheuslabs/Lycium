@@ -157,7 +157,7 @@ export default function ContentView({
   return (
     <main className={`content-view content-view--${pageType}`} data-module-index={moduleIndex}>
       <p className="course-name course-editable-line">
-        <span>{courseTitle}</span>
+        <span className="course-editable-line-content">{courseTitle}</span>
         {isEditMode && (
           <EditPencilButton
             label="Edit course title"
@@ -167,7 +167,7 @@ export default function ContentView({
       </p>
       <div className="module-progress-block">
         <h1 className="course-title course-editable-line">
-          <span>{moduleTitle}</span>
+          <span className="course-editable-line-content">{moduleTitle}</span>
           {isEditMode && (
             <EditPencilButton
               label="Edit module title"
@@ -184,7 +184,7 @@ export default function ContentView({
       
       {/* Section Title With Decimal */}
       <h2 className="section-title course-editable-line">
-        <span>{section.displayNumber} {section.title}</span>
+        <span className="course-editable-line-content">{section.displayNumber} {section.title}</span>
         {isEditMode && (
           <EditPencilButton
             label="Edit section title"

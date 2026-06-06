@@ -64,9 +64,9 @@ export default function EditableContentBlock({
 }: EditableContentBlockProps) {
   const blockSources = getSourcesByIds(block.sourceIds, sources);
   const updateBlock = (nextBlock: ContentBlock) => onBlockChange?.(sectionId, blockIndex, nextBlock);
-  const editShell = (children: ReactNode, actions: ReactNode) => (
+  const editShell = (children: ReactNode, actions?: ReactNode) => (
     <div className={`editable-block-shell ${isEditMode ? "editable-block-shell--active" : ""}`}>
-      {isEditMode && <div className="content-block-edit-actions">{actions}</div>}
+      {isEditMode && actions && <div className="content-block-edit-actions">{actions}</div>}
       {children}
     </div>
   );
@@ -77,19 +77,29 @@ export default function EditableContentBlock({
       const bodyValue = block.value ?? block.text;
       return editShell(
         <div className="text-block">
-          {block.heading && <h3>{block.heading}</h3>}
-          {bodyValue && <p>{bodyValue}</p>}
+          {block.heading && (
+            <h3 className="course-editable-line">
+              <span className="course-editable-line-content">{block.heading}</span>
+              {isEditMode && (
+                <EditPencilButton
+                  label="Edit text heading"
+                  onClick={() => promptForText("Edit text heading", block.heading, (heading) => updateBlock({ ...block, heading }))}
+                />
+              )}
+            </h3>
+          )}
+          {bodyValue && (
+            <p className="course-editable-line">
+              <span className="course-editable-line-content">{bodyValue}</span>
+              {isEditMode && (
+                <EditPencilButton
+                  label="Edit text block"
+                  onClick={() => promptForText("Edit text block", bodyValue, (value) => updateBlock({ ...block, [bodyField]: value }))}
+                />
+              )}
+            </p>
+          )}
         </div>,
-        <>
-          <EditPencilButton
-            label="Edit text heading"
-            onClick={() => promptForText("Edit text heading", block.heading, (heading) => updateBlock({ ...block, heading }))}
-          />
-          <EditPencilButton
-            label="Edit text block"
-            onClick={() => promptForText("Edit text block", bodyValue, (value) => updateBlock({ ...block, [bodyField]: value }))}
-          />
-        </>,
       );
     }
 
