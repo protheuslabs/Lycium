@@ -19,7 +19,7 @@ export function promptForText(label: string, currentValue: string | undefined, o
   const cancelButton = document.createElement("button");
   const saveButton = document.createElement("button");
 
-  dialog.className = "course-edit-native-dialog";
+  dialog.className = "lycium-modal lycium-modal-md course-edit-native-dialog";
   form.className = "course-edit-native-form";
   fieldLabel.className = "course-edit-native-label";
   field.className = "course-edit-native-field";

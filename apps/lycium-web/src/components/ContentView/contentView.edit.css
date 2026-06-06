@@ -34,7 +34,12 @@
 .course-edit-pencil {
   width: 1.65rem;
   flex: 0 0 1.65rem;
+  min-width: 1.65rem;
+  max-width: 1.65rem;
   height: 1.65rem;
+  min-height: 1.65rem;
+  max-height: 1.65rem;
+  padding: 0;
   border: 0;
   border-radius: 50%;
   aspect-ratio: 1;
@@ -81,12 +86,10 @@
 
 .course-edit-native-dialog {
   width: min(92vw, 34rem);
-  border: 1px solid var(--lycium-color-modal-border);
-  border-radius: var(--lycium-radius-modal);
+  max-width: min(92vw, 34rem);
+  box-sizing: border-box;
   padding: 0;
-  color: var(--lycium-color-text);
-  background: var(--lycium-color-surface);
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  overflow-x: hidden;
 }
 
 .course-edit-native-dialog::backdrop {
@@ -95,9 +98,13 @@
 }
 
 .course-edit-native-form {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
   display: grid;
   gap: 0.9rem;
   padding: 1.35rem;
+  overflow-x: hidden;
 }
 
 .course-edit-native-label {
@@ -109,15 +116,23 @@
 }
 
 .course-edit-native-field {
+  box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   border: 0;
   border-radius: 1rem;
   padding: 0.9rem 1rem;
-  resize: vertical;
+  resize: none;
+  overflow-x: hidden;
   color: var(--lycium-color-text);
   background: var(--lycium-color-page);
   box-shadow: inset 0 0 0 1px rgba(117, 130, 170, 0.22);
   font: inherit;
+}
+
+textarea.course-edit-native-field {
+  min-height: 10rem;
+  resize: vertical;
 }
 
 .course-edit-native-field:focus {
