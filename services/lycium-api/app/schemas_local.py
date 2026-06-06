@@ -7,6 +7,20 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
+class LocalAiProviderContractRead(BaseModel):
+    provider_kind: Literal["cloud", "local"]
+    credential_kind: Literal["api_key", "local_endpoint"]
+    generation_adapter: str
+    requires_verified_connection: bool = True
+    supports_model_list: bool = False
+    supports_json_mode: bool = False
+    supports_streaming: bool = False
+    supports_tool_use: bool = False
+    supports_usage_metadata: bool = False
+    model_source: Literal["provider_api", "static_default"] = "static_default"
+    capabilities: dict[str, Any] = Field(default_factory=dict)
+
+
 class LocalAiProviderRead(BaseModel):
     id: str
     label: str
@@ -21,6 +35,8 @@ class LocalAiProviderRead(BaseModel):
     credential_placeholder: str = "api key"
     credential_default: str = ""
     local_endpoint_candidates: list[str] = Field(default_factory=list)
+    credential_kind: Literal["api_key", "local_endpoint"] = "api_key"
+    contract: LocalAiProviderContractRead | None = None
 
 
 class LocalAgentModelRead(BaseModel):
@@ -41,6 +57,11 @@ class LocalAgentKeyRead(BaseModel):
     last_verified_at: str | None = None
     last_error: str | None = None
     is_active: bool = False
+    generation_adapter: str | None = None
+    local_provider: bool = False
+    credential_label: str = "api key"
+    credential_kind: Literal["api_key", "local_endpoint"] = "api_key"
+    contract: LocalAiProviderContractRead | None = None
 
 
 class LocalSettingsRead(BaseModel):

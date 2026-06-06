@@ -444,6 +444,11 @@ def attach_curriculum_context(course: dict[str, Any], context: dict[str, Any]) -
         else [],
         concept_source_coverage_map,
     )
+    source_coverage_trace = dict(
+        metadata.get("sourceCoverageTrace") if isinstance(metadata.get("sourceCoverageTrace"), dict) else {}
+    )
+    source_coverage_trace["sourceSlotCount"] = len(metadata["sourceSlots"])
+    metadata["sourceCoverageTrace"] = source_coverage_trace
     if context.get("sourceCorpusSynthesis"):
         metadata["sourceCorpusSynthesis"] = context["sourceCorpusSynthesis"]
     generation_plan = dict(metadata.get("generationPlan") if isinstance(metadata.get("generationPlan"), dict) else {})

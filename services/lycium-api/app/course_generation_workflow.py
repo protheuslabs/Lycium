@@ -402,7 +402,6 @@ PUBLISH_CRITICAL_GATES = {
     "content_draft",
     "assessment",
     "validation",
-    "quality_eval",
 }
 
 

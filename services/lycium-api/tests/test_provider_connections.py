@@ -7,6 +7,7 @@ import pytest
 
 from app.config import SETTINGS
 from app.course_agent_types import CourseAgentError
+from app.local_store import get_active_agent_profile
 
 
 @pytest.fixture()
@@ -21,6 +22,29 @@ def isolated_local_data(tmp_path: Path) -> Iterator[None]:
 
 def _mock_models(*model_ids: str) -> list[dict[str, str]]:
     return [{"id": model_id, "label": model_id} for model_id in model_ids]
+
+
+def _provider_models(_api_key: str, provider_id: str = "openai", *_args, **_kwargs) -> list[dict[str, str]]:
+    return {
+        "anthropic": _mock_models("claude-3-5-sonnet-latest", "claude-3-opus-latest"),
+        "google-gemini": _mock_models("models/gemini-2.5-flash", "models/gemini-2.5-pro"),
+        "local-model": _mock_models("kimi-k2.6:cloud", "llama3.1:70b"),
+        "openai": _mock_models("gpt-4.1-mini", "gpt-4.1"),
+        "openrouter": _mock_models("openai/gpt-4.1-mini", "anthropic/claude-3.5-sonnet"),
+    }.get(provider_id, _mock_models("gpt-4.1-mini"))
+
+
+def test_provider_summaries_expose_generation_contract(client) -> None:
+    response = client.get("/v1/local/ai/providers")
+
+    assert response.status_code == 200, response.text
+    providers = {provider["id"]: provider for provider in response.json()}
+    assert providers["local-model"]["credential_kind"] == "local_endpoint"
+    assert providers["local-model"]["contract"]["provider_kind"] == "local"
+    assert providers["local-model"]["contract"]["supports_json_mode"] is True
+    assert providers["openai"]["credential_kind"] == "api_key"
+    assert providers["openai"]["contract"]["generation_adapter"] == "openai-chat-completions"
+    assert providers["anthropic"]["contract"]["provider_kind"] == "cloud"
 
 
 def test_valid_cloud_key_is_saved_verified_and_active(client, monkeypatch, isolated_local_data) -> None:
@@ -42,6 +66,9 @@ def test_valid_cloud_key_is_saved_verified_and_active(client, monkeypatch, isola
     assert key["key_preview"].endswith("-key")
     assert key["key_preview"].startswith("*")
     assert key["last_verified_at"]
+    assert key["credential_kind"] == "api_key"
+    assert key["generation_adapter"] == "openai-chat-completions"
+    assert key["contract"]["supports_model_list"] is True
 
 
 def test_empty_cloud_model_list_keeps_default_model_available(client, monkeypatch, isolated_local_data) -> None:
@@ -103,6 +130,8 @@ def test_local_endpoint_input_routes_to_local_provider_even_if_provider_dropdown
     assert key["provider_id"] == "local-model"
     assert key["connection_status"] == "unverified"
     assert key["key_preview"] == "http://localhost:11434"
+    assert key["credential_kind"] == "local_endpoint"
+    assert key["local_provider"] is True
 
 
 def test_saving_same_local_endpoint_updates_existing_key_instead_of_duplicating(
@@ -142,6 +171,59 @@ def test_model_update_persists_for_active_key(client, monkeypatch, isolated_loca
     assert updated.status_code == 200, updated.text
     assert fetched.status_code == 200, fetched.text
     assert fetched.json()["agent_keys"][0]["model"] == "gpt-4.1"
+
+
+def test_active_provider_switch_persists_selected_provider_and_model(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", _provider_models)
+
+    openai = client.put("/v1/local/settings", json={"provider_id": "openai", "agent_api_key": "sk-valid-openai"})
+    anthropic = client.put("/v1/local/settings", json={"provider_id": "anthropic", "agent_api_key": "sk-valid-anthropic"})
+
+    assert openai.status_code == 200, openai.text
+    assert anthropic.status_code == 200, anthropic.text
+    anthropic_key = next(key for key in anthropic.json()["agent_keys"] if key["provider_id"] == "anthropic")
+    assert anthropic.json()["active_agent_key_id"] == anthropic_key["id"]
+    active = get_active_agent_profile()
+    assert active is not None
+    assert active["provider_id"] == "anthropic"
+    assert active["model"] == "claude-3-5-sonnet-latest"
+    assert active["contract"]["provider_kind"] == "cloud"
+
+    openai_key = next(key for key in anthropic.json()["agent_keys"] if key["provider_id"] == "openai")
+    switched = client.put("/v1/local/settings/active-key", json={"key_id": openai_key["id"]})
+
+    assert switched.status_code == 200, switched.text
+    active = get_active_agent_profile()
+    assert active is not None
+    assert active["provider_id"] == "openai"
+    assert active["model"] == "gpt-4.1-mini"
+    assert active["generation_adapter"] == "openai-chat-completions"
+
+
+def test_generation_job_uses_active_provider_model_after_switch(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", _provider_models)
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_job", lambda job_id: None)
+    client.put("/v1/local/settings", json={"provider_id": "openai", "agent_api_key": "sk-valid-openai"})
+    anthropic = client.put("/v1/local/settings", json={"provider_id": "anthropic", "agent_api_key": "sk-valid-anthropic"})
+    anthropic_key = next(key for key in anthropic.json()["agent_keys"] if key["provider_id"] == "anthropic")
+    client.put("/v1/local/settings/active-key", json={"key_id": anthropic_key["id"]})
+
+    response = client.post(
+        "/v1/agent/courses/jobs",
+        json={
+            "prompt": "Create an undergrad environmental policy course",
+            "level": "undergrad",
+            "desired_module_count": 3,
+            "source_urls": [
+                "https://example.edu/environmental-policy/syllabus",
+                "https://example.edu/environmental-policy/readings",
+                "https://example.edu/environmental-policy/lab",
+            ],
+        },
+    )
+
+    assert response.status_code == 202, response.text
+    assert response.json()["request"]["model"] == "claude-3-5-sonnet-latest"
 
 
 def test_unverified_active_local_key_blocks_generation(client, monkeypatch, isolated_local_data) -> None:

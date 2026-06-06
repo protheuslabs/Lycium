@@ -9,7 +9,7 @@ from app.course_generation_workflow import run_course_generation_workflow
 from app.course_source_gaps import create_needs_sources_course_snapshot, source_count_meets_minimum, update_needs_sources_course_snapshot
 from app.course_quality import assess_course_quality
 from app.course_section_generation import _build_section_content, _source_ids_from_citations, _source_records_from_citations, _source_records_from_input_urls, _source_slot_for_section, _with_source_ids
-from app.curriculum_benchmarks import compile_curriculum_benchmark_context
+from app.generation_curriculum_context import with_generated_curriculum_context
 from app.generation_helpers import COURSE_GENERATION_RULES, _build_module_summary_section, _build_quiz_for_section, _catalog_metadata_from_prompt, _ensure_minimum_outline_modules, _stable_id
 from app.generation_outline import create_draft
 from app.models import CourseDraft, CourseSnapshot
@@ -25,54 +25,6 @@ def _source_record_urls(source_records: list[dict[str, Any]]) -> list[str]:
             seen.add(url)
             urls.append(url)
     return urls
-
-
-def _merge_source_slots(existing: list[dict[str, Any]], incoming: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    merged: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for slot in [*existing, *incoming]:
-        if not isinstance(slot, dict):
-            continue
-        key = str(slot.get("requiredConceptId") or slot.get("conceptId") or slot.get("sourceSectionId") or slot.get("title") or "")
-        if key and key in seen:
-            continue
-        if key:
-            seen.add(key)
-        merged.append(slot)
-    return merged
-
-
-def _with_generated_curriculum_context(
-    structure: dict[str, Any],
-    *,
-    prompt: str,
-    source_urls: list[str],
-    category: str | None,
-    department: str | None,
-) -> dict[str, Any]:
-    context = compile_curriculum_benchmark_context(
-        prompt=prompt,
-        source_urls=source_urls,
-        category=category,
-        department=department,
-        fetch_sources=False,
-    )
-    metadata = dict(structure.get("metadata") if isinstance(structure.get("metadata"), dict) else {})
-    existing_slots = metadata.get("sourceSlots") if isinstance(metadata.get("sourceSlots"), list) else []
-    incoming_slots = context.get("sourceSlots") if isinstance(context.get("sourceSlots"), list) else []
-    metadata["curriculumBenchmarks"] = context.get("curriculumBenchmarks", [])
-    metadata["requirementOrigins"] = context.get("requirementOrigins", [])
-    metadata["courseParityProfile"] = context.get("courseParityProfile", {})
-    metadata["conceptSourceCoverageMap"] = context.get("conceptSourceCoverageMap", [])
-    metadata["sourceSlots"] = _merge_source_slots(existing_slots, incoming_slots)
-    generation_plan = dict(metadata.get("generationPlan") if isinstance(metadata.get("generationPlan"), dict) else {})
-    existing_status = generation_plan.get("status") if isinstance(generation_plan.get("status"), list) else []
-    generation_plan["status"] = list(dict.fromkeys([*existing_status, *context.get("workflowGates", [])]))
-    metadata["generationPlan"] = generation_plan
-    prerequisites = structure.get("prerequisites")
-    if not isinstance(prerequisites, list) or not prerequisites:
-        prerequisites = ["No formal prerequisites; foundational concepts are introduced before applied practice."]
-    return {**structure, "metadata": metadata, "prerequisites": prerequisites}
 
 
 def generate_course_from_draft(
@@ -252,7 +204,7 @@ def generate_course_from_draft(
         "modules": modules,
     }
     curriculum_source_urls = [str(url) for url in submitted_source_urls if isinstance(url, str) and url] or _source_record_urls(source_records)
-    structure = _with_generated_curriculum_context(
+    structure = with_generated_curriculum_context(
         structure,
         prompt=draft.prompt,
         source_urls=curriculum_source_urls,

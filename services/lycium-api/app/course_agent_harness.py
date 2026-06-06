@@ -13,6 +13,7 @@ from app.course_agent_prompting import _llm_messages, load_behavioral_contract
 from app.course_generation_service import validate_generation_taxonomy_input
 from app.course_agent_providers import (
     assess_agent_model_capability,
+    agent_provider_contract,
     call_agent_model,
     detect_local_agent_endpoint,
     get_agent_provider,
@@ -132,6 +133,7 @@ def generate_course_with_agent(
 __all__ = [
     "CourseAgentError",
     "CourseAgentResult",
+    "agent_provider_contract",
     "generate_course_with_agent",
     "generate_course_with_agent_staged",
     "get_agent_provider",

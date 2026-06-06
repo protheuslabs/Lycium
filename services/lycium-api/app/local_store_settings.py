@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.config import SETTINGS
+from app.course_agent_providers import agent_provider_contract, get_agent_provider
 from app.local_store_core import _now, _read_json, _safe_key, _write_json, ensure_local_data_dirs
 
 
@@ -24,6 +25,48 @@ def _credential_preview(key: dict[str, Any]) -> str:
     if key.get("provider_id") == "local-model":
         return credential
     return _mask_key(credential)
+
+
+def _agent_provider_metadata(provider_id: str, provider_label: str | None = None) -> dict[str, Any]:
+    try:
+        provider = get_agent_provider(provider_id)
+        contract = agent_provider_contract(provider)
+        return {
+            "provider_label": str(provider.get("label") or provider_label or provider_id),
+            "generation_adapter": str(provider.get("generationAdapter") or contract["generation_adapter"]),
+            "local_provider": bool(provider.get("localProvider") or contract["provider_kind"] == "local"),
+            "credential_label": str(provider.get("credentialLabel") or ("local path" if contract["credential_kind"] == "local_endpoint" else "api key")),
+            "credential_kind": contract["credential_kind"],
+            "contract": contract,
+        }
+    except Exception:
+        local_provider = provider_id == "local-model"
+        credential_kind = "local_endpoint" if local_provider else "api_key"
+        return {
+            "provider_label": provider_label or provider_id,
+            "generation_adapter": "",
+            "local_provider": local_provider,
+            "credential_label": "local path" if local_provider else "api key",
+            "credential_kind": credential_kind,
+            "contract": {
+                "provider_kind": "local" if local_provider else "cloud",
+                "credential_kind": credential_kind,
+                "generation_adapter": "",
+                "requires_verified_connection": True,
+                "supports_model_list": False,
+                "supports_json_mode": False,
+                "supports_streaming": False,
+                "supports_tool_use": False,
+                "supports_usage_metadata": False,
+                "model_source": "static_default",
+                "capabilities": {},
+            },
+        }
+
+
+def _enrich_agent_key(key: dict[str, Any]) -> dict[str, Any]:
+    metadata = _agent_provider_metadata(str(key.get("provider_id") or "openai"), str(key.get("provider_label") or ""))
+    return {**key, **metadata}
 
 
 def _normalize_model_records(models: Any, selected_model: str | None = None) -> list[dict[str, str]]:
@@ -125,20 +168,25 @@ def local_settings_summary() -> dict[str, Any]:
         "active_agent_key_id": active_key["id"] if active_key else None,
         "agent_keys": [
             {
-                "id": key["id"],
-                "provider_id": key["provider_id"],
-                "provider_label": key["provider_label"],
-                "key_preview": _credential_preview(key),
-                "model": key.get("model"),
-                "models": key.get("models", []),
-                "models_fetched_at": key.get("models_fetched_at"),
-                "connection_status": key.get("connection_status") or "verified",
-                "connection_message": key.get("connection_message"),
-                "last_verified_at": key.get("last_verified_at"),
-                "last_error": key.get("last_error"),
-                "is_active": key["id"] == (active_key["id"] if active_key else None),
+                "id": enriched_key["id"],
+                "provider_id": enriched_key["provider_id"],
+                "provider_label": enriched_key["provider_label"],
+                "key_preview": _credential_preview(enriched_key),
+                "model": enriched_key.get("model"),
+                "models": enriched_key.get("models", []),
+                "models_fetched_at": enriched_key.get("models_fetched_at"),
+                "connection_status": enriched_key.get("connection_status") or "verified",
+                "connection_message": enriched_key.get("connection_message"),
+                "last_verified_at": enriched_key.get("last_verified_at"),
+                "last_error": enriched_key.get("last_error"),
+                "is_active": enriched_key["id"] == (active_key["id"] if active_key else None),
+                "generation_adapter": enriched_key.get("generation_adapter"),
+                "local_provider": bool(enriched_key.get("local_provider")),
+                "credential_label": enriched_key.get("credential_label") or "api key",
+                "credential_kind": enriched_key.get("credential_kind") or "api_key",
+                "contract": enriched_key.get("contract"),
             }
-            for key in keys
+            for enriched_key in [_enrich_agent_key(key) for key in keys]
         ],
     }
 
@@ -217,7 +265,8 @@ def save_agent_api_key(
 
 def get_agent_profile_by_id(key_id: str) -> dict[str, Any] | None:
     secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
-    return next((key for key in secret.get("agent_keys", []) if key["id"] == key_id), None)
+    key = next((key for key in secret.get("agent_keys", []) if key["id"] == key_id), None)
+    return _enrich_agent_key(key) if key else None
 
 
 def update_agent_key_verification(
@@ -290,7 +339,7 @@ def get_active_agent_profile() -> dict[str, Any] | None:
     active_key = next((key for key in keys if key["id"] == active_key_id), keys[0] if keys else None)
     if not active_key:
         return None
-    return active_key
+    return _enrich_agent_key(active_key)
 
 
 def require_verified_active_agent_profile() -> dict[str, Any]:

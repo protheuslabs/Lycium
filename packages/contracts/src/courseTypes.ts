@@ -337,6 +337,20 @@ export type LyciumAgentModelRecord = {
   label?: string | null;
 };
 
+export type LyciumAgentProviderContract = {
+  provider_kind: "cloud" | "local";
+  credential_kind: "api_key" | "local_endpoint";
+  generation_adapter: string;
+  requires_verified_connection: boolean;
+  supports_model_list: boolean;
+  supports_json_mode: boolean;
+  supports_streaming: boolean;
+  supports_tool_use: boolean;
+  supports_usage_metadata: boolean;
+  model_source: "provider_api" | "static_default";
+  capabilities?: Record<string, unknown>;
+};
+
 export type LyciumAgentProviderRecord = {
   id: string;
   label: string;
@@ -351,6 +365,8 @@ export type LyciumAgentProviderRecord = {
   credential_placeholder?: string;
   credential_default?: string;
   local_endpoint_candidates?: string[];
+  credential_kind?: "api_key" | "local_endpoint";
+  contract?: LyciumAgentProviderContract | null;
 };
 
 export type LyciumAgentKeyRecord = {
@@ -366,6 +382,11 @@ export type LyciumAgentKeyRecord = {
   last_verified_at?: string | null;
   last_error?: string | null;
   is_active: boolean;
+  generation_adapter?: string | null;
+  local_provider?: boolean;
+  credential_label?: string;
+  credential_kind?: "api_key" | "local_endpoint";
+  contract?: LyciumAgentProviderContract | null;
 };
 
 export type LyciumThemeMode = "light" | "auto" | "dark";

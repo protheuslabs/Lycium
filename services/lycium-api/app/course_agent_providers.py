@@ -38,6 +38,34 @@ def get_agent_provider(provider_id: str) -> dict[str, Any]:
     raise CourseAgentError("Unknown AI provider.")
 
 
+def agent_provider_contract(provider: dict[str, Any]) -> dict[str, Any]:
+    adapter = str(provider.get("generationAdapter") or "openai-chat-completions")
+    local_provider = bool(provider.get("localProvider") or adapter == "ollama-chat")
+    model_fetch_supported = bool(provider.get("modelsPath"))
+    json_mode_supported = adapter in {"openai-chat-completions", "gemini-generate-content", "ollama-chat"}
+
+    return {
+        "provider_kind": "local" if local_provider else "cloud",
+        "credential_kind": "local_endpoint" if local_provider else "api_key",
+        "generation_adapter": adapter,
+        "requires_verified_connection": True,
+        "supports_model_list": model_fetch_supported,
+        "supports_json_mode": json_mode_supported,
+        "supports_streaming": False,
+        "supports_tool_use": False,
+        "supports_usage_metadata": False,
+        "model_source": "provider_api" if model_fetch_supported else "static_default",
+        "capabilities": {
+            "json_mode": json_mode_supported,
+            "local_execution": local_provider,
+            "model_list": model_fetch_supported,
+            "streaming": False,
+            "tool_use": False,
+            "usage_metadata": False,
+        },
+    }
+
+
 def list_agent_provider_summaries() -> list[dict[str, Any]]:
     return [
         {
@@ -54,6 +82,8 @@ def list_agent_provider_summaries() -> list[dict[str, Any]]:
             "credential_placeholder": str(provider.get("credentialPlaceholder") or "api key"),
             "credential_default": str(provider.get("credentialDefault") or ""),
             "local_endpoint_candidates": provider.get("localEndpointCandidates") if isinstance(provider.get("localEndpointCandidates"), list) else [],
+            "credential_kind": agent_provider_contract(provider)["credential_kind"],
+            "contract": agent_provider_contract(provider),
         }
         for provider in load_agent_providers()
         if provider.get("id")

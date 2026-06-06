@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CourseData, CourseEntry, CourseSection, SectionStatus } from "../../courseTypes";
+import type { CourseBlock, CourseData, CourseEntry, CourseSection, SectionStatus } from "../../courseTypes";
 import ContentView from "../ContentView/ContentView";
 import type { SourceRecord } from "../ContentView/ContentView";
 import type { ContentBlock } from "../ContentView/contentViewTypes";
@@ -120,7 +120,7 @@ export default function CourseLearningLayout({
         sections: module.sections.map((section) => ({
           ...section,
           title: draftSectionTitles[section.id] ?? section.title,
-          content: section.content.map((block, blockIndex) => draftBlocks[section.id]?.[blockIndex] ?? block),
+          content: section.content.map((block, blockIndex) => (draftBlocks[section.id]?.[blockIndex] ?? block) as CourseBlock),
         })),
       })),
     });
