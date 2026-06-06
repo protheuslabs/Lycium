@@ -3,6 +3,9 @@ export type QuizQuestionPayload = {
   options?: unknown;
   answer?: unknown;
   answers?: unknown;
+  multiple?: unknown;
+  isMultiple?: unknown;
+  questionType?: unknown;
   timed?: "t" | "f" | boolean;
 };
 

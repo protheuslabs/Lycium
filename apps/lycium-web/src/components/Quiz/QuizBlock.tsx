@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createBrowserStorageRepository } from "@lycium/data-access";
+import { promptForDeleteBlock, promptForText } from "../ContentView/CourseEditControls";
 import QuizMetaRows from "./QuizMetaRows";
 import QuizQuestionList from "./QuizQuestionList";
 import {
@@ -31,11 +32,15 @@ const browserStorage = createBrowserStorageRepository();
 export default function QuizBlock({
   data,
   name,
+  isEditMode = false,
+  onDataChange,
   onSubmissionChange,
   onProgressChange,
 }: {
   data: QuizPayload;
   name: string;
+  isEditMode?: boolean;
+  onDataChange?: (data: QuizPayload) => void;
   onSubmissionChange?: (quizKey: string, submitted: boolean) => void;
   onProgressChange?: (
     quizKey: string,
@@ -84,6 +89,25 @@ export default function QuizBlock({
   const [startedAtMs, setStartedAtMs] = useState(() => Date.now());
 
   useEffect(() => {
+    if (isEditMode) {
+      const editorAttemptOrder = questionBank.map((question, questionIndex) => ({
+        questionIndex,
+        optionOrder: question.options.map((_, optionIndex) => optionIndex),
+      }));
+      setAttemptOrder(editorAttemptOrder);
+      setSelectedByQuestion(editorAttemptOrder.map(() => []));
+      setQuestionCorrectness([]);
+      setSubmitted(false);
+      setQuestionMarked(Array(editorAttemptOrder.length).fill(false));
+      setReviewAttemptNumber(null);
+      setStartedAtMs(Date.now());
+      setAttemptCount(0);
+      setAttemptHistory([]);
+      setElapsedSeconds(0);
+      onSubmissionChange?.(name, false);
+      return;
+    }
+
     let nextAttemptOrder: AttemptOrderItem[] = [];
     let nextSelectedByQuestion: number[][] = [];
     let nextQuestionCorrectness: boolean[] = [];
@@ -197,9 +221,14 @@ export default function QuizBlock({
     }
 
     onSubmissionChange?.(name, nextSubmitted);
-  }, [name, onSubmissionChange, questionBank, questionsPerAttempt, timerDuration]);
+  }, [isEditMode, name, onSubmissionChange, questionBank, questionsPerAttempt, timerDuration]);
 
   useEffect(() => {
+    if (isEditMode) {
+      setQuestionMarked(Array(questionsWithTiming.length).fill(false));
+      return;
+    }
+
     const stored = browserStorage.readQuizMarkers(name);
     if (!stored) {
       setQuestionMarked(Array(questionsWithTiming.length).fill(false));
@@ -214,7 +243,7 @@ export default function QuizBlock({
     }
 
     setQuestionMarked(Array(questionsWithTiming.length).fill(false));
-  }, [name, questionsWithTiming.length]);
+  }, [isEditMode, name, questionsWithTiming.length]);
 
   const handleSubmit = useCallback(() => {
     const results = questionsWithTiming.map((question, idx) => {
@@ -266,7 +295,7 @@ export default function QuizBlock({
   }, [attemptCount, attemptHistory, attemptOrder, name, onSubmissionChange, questionsWithTiming, selectedByQuestion, startedAtMs, timerDuration]);
 
   useEffect(() => {
-    if (submitted) {
+    if (isEditMode || submitted) {
       return;
     }
 
@@ -283,13 +312,13 @@ export default function QuizBlock({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [timerDuration, elapsedSeconds, submitted, handleSubmit, startedAtMs]);
+  }, [isEditMode, timerDuration, elapsedSeconds, submitted, handleSubmit, startedAtMs]);
 
   const allQuestionsAnswered = questionsWithTiming.every((_, idx) => (selectedByQuestion[idx] ?? []).length > 0);
   const hasMultipleQuestions = questionsWithTiming.length > 1;
   const attemptLimitReached = maxAttempts !== null && attemptCount >= maxAttempts;
   const canTryAgain = submitted && !attemptLimitReached;
-  const canSubmit = !submitted && !attemptLimitReached && allQuestionsAnswered;
+  const canSubmit = !isEditMode && !submitted && !attemptLimitReached && allQuestionsAnswered;
   const currentAttempt = submitted || attemptLimitReached ? attemptCount : attemptCount + 1;
   const attemptsLabel = `${currentAttempt}/${maxAttempts ?? "∞"}`;
   const timeLabel = `${formatDuration(elapsedSeconds)}/${timerDuration === null ? "∞" : formatDuration(timerDuration)}`;
@@ -306,6 +335,173 @@ export default function QuizBlock({
     (showAnswers || (maxAttempts !== null && displayedAttemptNumber >= maxAttempts));
   const historicalAttempts = submitted ? attemptHistory.slice(0, -1) : attemptHistory;
   const currentAttemptResult = submitted ? attemptHistory[attemptHistory.length - 1] : null;
+
+  const rawQuestions = useMemo(() => editableQuestionsFromPayload(data, questionBank), [data, questionBank]);
+  const editorDisplayedQuestions = useMemo(
+    () =>
+      rawQuestions.map((question) => ({
+        prompt: question.question,
+        options: question.options,
+        correctAnswers: question.answers,
+        isMultiple: question.multiple,
+        timed: false,
+      })),
+    [rawQuestions],
+  );
+  const activeDisplayedQuestions = isEditMode ? editorDisplayedQuestions : displayedQuestions;
+  const updateQuizData = useCallback((nextData: QuizPayload) => onDataChange?.(nextData), [onDataChange]);
+
+  const updateRawQuestions = useCallback(
+    (questions: EditableQuizQuestion[]) => {
+      updateQuizData({
+        ...data,
+        questions: questions.map((question) => ({
+          question: question.question,
+          options: question.options,
+          multiple: question.multiple,
+          ...(question.answers.length > 1 ? { answers: question.answers } : { answer: question.answers[0] ?? 0 }),
+        })),
+      });
+    },
+    [data, updateQuizData],
+  );
+
+  const editQuestion = useCallback(
+    (questionIndex: number, question: string) => {
+      updateRawQuestions(rawQuestions.map((currentQuestion, index) => (index === questionIndex ? { ...currentQuestion, question } : currentQuestion)));
+    },
+    [rawQuestions, updateRawQuestions],
+  );
+
+  const deleteQuestion = useCallback(
+    (questionIndex: number) => {
+      promptForDeleteBlock(
+        () => updateRawQuestions(rawQuestions.filter((_, index) => index !== questionIndex)),
+        "Delete question",
+        "Are you sure you want to delete this question?",
+      );
+    },
+    [rawQuestions, updateRawQuestions],
+  );
+
+  const addQuestion = useCallback((questionText: string) => {
+    const questionNumber = rawQuestions.length + 1;
+    updateRawQuestions([
+      ...rawQuestions,
+      {
+        question: `Question ${questionNumber}: ${questionText.trim() || "Enter question"}`,
+        options: ["Answer option A", "Answer option B"],
+        answers: [0],
+        multiple: false,
+      },
+    ]);
+  }, [rawQuestions, updateRawQuestions]);
+
+  const editAnswer = useCallback(
+    (questionIndex: number, answerIndex: number, value: string) => {
+      updateRawQuestions(
+        rawQuestions.map((question, index) =>
+          index === questionIndex
+            ? {
+                ...question,
+                options: question.options.map((option, optionIndex) => (optionIndex === answerIndex ? value : option)),
+              }
+            : question,
+        ),
+      );
+    },
+    [rawQuestions, updateRawQuestions],
+  );
+
+  const deleteAnswer = useCallback(
+    (questionIndex: number, answerIndex: number) => {
+      promptForDeleteBlock(
+        () =>
+          updateRawQuestions(
+            rawQuestions.map((question, index) => {
+              if (index !== questionIndex) {
+                return question;
+              }
+
+              const nextOptions = question.options.filter((_, optionIndex) => optionIndex !== answerIndex);
+              const nextAnswers = question.answers
+                .filter((answer) => answer !== answerIndex)
+                .map((answer) => (answer > answerIndex ? answer - 1 : answer))
+                .filter((answer) => answer >= 0 && answer < nextOptions.length);
+
+              return {
+                ...question,
+                options: nextOptions,
+                answers: nextAnswers.length > 0 ? nextAnswers : [0],
+              };
+            }),
+          ),
+        "Delete answer",
+        "Are you sure you want to delete this answer?",
+      );
+    },
+    [rawQuestions, updateRawQuestions],
+  );
+
+  const addAnswer = useCallback(
+    (questionIndex: number) => {
+      updateRawQuestions(
+        rawQuestions.map((question, index) =>
+          index === questionIndex
+            ? {
+                ...question,
+                options: [...question.options, `Answer option ${question.options.length + 1}`],
+              }
+            : question,
+        ),
+      );
+    },
+    [rawQuestions, updateRawQuestions],
+  );
+
+  const toggleQuestionMultiple = useCallback(
+    (questionIndex: number, isMultiple: boolean) => {
+      updateRawQuestions(
+        rawQuestions.map((question, index) =>
+          index === questionIndex
+            ? {
+                ...question,
+                multiple: isMultiple,
+                answers: isMultiple ? question.answers : [question.answers[0] ?? 0],
+              }
+            : question,
+        ),
+      );
+    },
+    [rawQuestions, updateRawQuestions],
+  );
+
+  const setCorrectAnswer = useCallback(
+    (questionIndex: number, optionIndex: number, isMultiple: boolean) => {
+      updateRawQuestions(
+        rawQuestions.map((question, index) => {
+          if (index !== questionIndex) {
+            return question;
+          }
+
+          if (!isMultiple) {
+            return { ...question, answers: [optionIndex], multiple: false };
+          }
+
+          const answers = question.answers.includes(optionIndex)
+            ? question.answers.filter((answer) => answer !== optionIndex)
+            : [...question.answers, optionIndex];
+
+          return {
+            ...question,
+            multiple: true,
+            answers: answers.length > 0 ? answers : [optionIndex],
+          };
+        }),
+      );
+    },
+    [rawQuestions, updateRawQuestions],
+  );
 
   useEffect(() => {
     onProgressChange?.(name, {
@@ -410,22 +606,35 @@ export default function QuizBlock({
         attemptsLabel={attemptsLabel}
         timeLabel={timeLabel}
         isReviewingPastAttempt={isReviewingPastAttempt}
-        displayedQuestionCount={displayedQuestions.length}
+        displayedQuestionCount={activeDisplayedQuestions.length}
+        isEditMode={isEditMode}
+        onMaxAttemptsChange={(value) => updateQuizData({ ...data, maxAttempts: value })}
+        onTimeLimitChange={(value) => updateQuizData({ ...data, timeLimit: value })}
+        onPassPercentageChange={(value) => updateQuizData({ ...data, passPercentage: value })}
         onReviewAttemptChange={setReviewAttemptNumber}
       />
 
       <QuizQuestionList
         name={name}
-        questions={displayedQuestions}
+        questions={activeDisplayedQuestions}
         selectedByQuestion={displayedSelectedByQuestion}
         questionCorrectness={displayedQuestionCorrectness}
         questionMarked={questionMarked}
-        hasMultipleQuestions={hasMultipleQuestions}
+        hasMultipleQuestions={activeDisplayedQuestions.length > 1}
         submitted={submitted}
+        isEditMode={isEditMode}
         isReviewingPastAttempt={isReviewingPastAttempt}
         shouldRevealAnswers={shouldRevealAnswers}
         onToggleQuestionMarker={toggleQuestionMarker}
         onOptionSelect={handleOptionSelect}
+        onQuestionEdit={(questionIndex, prompt) => editQuestion(questionIndex, prompt)}
+        onQuestionDelete={deleteQuestion}
+        onQuestionAdd={() => promptForText("Add question", "", addQuestion)}
+        onAnswerEdit={editAnswer}
+        onAnswerDelete={deleteAnswer}
+        onAnswerAdd={addAnswer}
+        onQuestionMultipleChange={toggleQuestionMultiple}
+        onCorrectAnswerChange={setCorrectAnswer}
       />
 
       <div className="quiz-actions">
@@ -433,7 +642,7 @@ export default function QuizBlock({
           type="button"
           className="quiz-button"
           onClick={handlePrimaryButton}
-          disabled={!isReviewingPastAttempt && !canSubmit && !canTryAgain}
+          disabled={isEditMode || (!isReviewingPastAttempt && !canSubmit && !canTryAgain)}
         >
           {isReviewingPastAttempt
             ? "Back to current attempt"
@@ -444,4 +653,65 @@ export default function QuizBlock({
       </div>
     </div>
   );
+}
+
+type EditableQuizQuestion = {
+  question: string;
+  options: string[];
+  answers: number[];
+  multiple: boolean;
+};
+
+function editableQuestionsFromPayload(payload: QuizPayload, fallbackQuestions: Array<{ prompt: string; options: string[]; correctAnswers: number[] }>): EditableQuizQuestion[] {
+  const rawBank = Array.isArray(payload.questionBank)
+    ? payload.questionBank
+    : Array.isArray(payload.question_bank)
+      ? payload.question_bank
+      : Array.isArray(payload.bank)
+        ? payload.bank
+        : Array.isArray(payload.questions)
+          ? payload.questions
+          : null;
+
+  if (rawBank) {
+    return rawBank.map((rawQuestion, index) => normalizeEditableQuestion(rawQuestion, fallbackQuestions[index]));
+  }
+
+  if (typeof payload.question === "string") {
+    return [normalizeEditableQuestion(payload, fallbackQuestions[0])];
+  }
+
+  return fallbackQuestions.map((question) => ({
+    question: question.prompt,
+    options: question.options,
+    answers: question.correctAnswers,
+    multiple: question.correctAnswers.length > 1,
+  }));
+}
+
+function normalizeEditableQuestion(rawQuestion: unknown, fallbackQuestion?: { prompt: string; options: string[]; correctAnswers: number[] }): EditableQuizQuestion {
+  const record = rawQuestion && typeof rawQuestion === "object" ? rawQuestion as Record<string, unknown> : {};
+  const question = typeof record.question === "string" ? record.question : fallbackQuestion?.prompt ?? "Enter question";
+  const options = Array.isArray(record.options)
+    ? record.options.map((option) => String(option))
+    : fallbackQuestion?.options ?? ["Answer option A", "Answer option B"];
+  const rawAnswers = Array.isArray(record.answers)
+    ? record.answers
+    : record.answer !== undefined
+      ? [record.answer]
+      : fallbackQuestion?.correctAnswers ?? [0];
+  const answers = rawAnswers
+    .map((answer) => Number(answer))
+    .filter((answer) => Number.isInteger(answer) && answer >= 0 && answer < options.length);
+
+  return {
+    question,
+    options,
+    answers: answers.length > 0 ? answers : [0],
+    multiple:
+      record.multiple === true ||
+      record.isMultiple === true ||
+      (typeof record.questionType === "string" && record.questionType.trim().toLowerCase() === "multiple") ||
+      (answers.length > 1),
+  };
 }

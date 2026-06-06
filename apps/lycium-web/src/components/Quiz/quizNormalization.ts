@@ -49,12 +49,16 @@ function normalizeQuestion(payload: QuizQuestionPayload | undefined): Normalized
 
   const options = toStringArray(payload?.options);
   const correctAnswers = normalizeAnswers(payload?.answers ?? payload?.answer);
+  const explicitlyMultiple =
+    normalizeBoolean(payload?.multiple) ||
+    normalizeBoolean(payload?.isMultiple) ||
+    (typeof payload?.questionType === "string" && payload.questionType.trim().toLowerCase() === "multiple");
 
   return {
     prompt: questionText,
     options,
     correctAnswers,
-    isMultiple: correctAnswers.length > 1,
+    isMultiple: explicitlyMultiple || correctAnswers.length > 1,
     timed: normalizeBoolean(payload?.timed),
   };
 }

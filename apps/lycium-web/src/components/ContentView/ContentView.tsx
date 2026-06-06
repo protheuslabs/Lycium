@@ -1,12 +1,12 @@
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
 import CourseFeedback from "../CourseFeedback/CourseFeedback";
 import SourceSuggestionButton from "../CourseFeedback/SourceSuggestionButton";
 import CourseNav from "../CourseNav/CourseNav";
 import Button from "../Button/Button";
 import EditableContentBlock from "./EditableContentBlock";
-import { EditPencilButton, promptForText } from "./CourseEditControls";
+import { EditPencilButton, promptForBlockType, promptForText, type CourseEditBlockKind } from "./CourseEditControls";
 import type { ContentBlock, Section, SourceRecord, QuizProgressStatus, QuizProgressStatusHandler, QuizSubmissionStatusHandler } from "./contentViewTypes";
 
 export type { SourceRecord } from "./contentViewTypes";
@@ -34,7 +34,69 @@ type ContentViewProps = {
   onModuleTitleChange?: (moduleIndex: number, title: string) => void;
   onSectionTitleChange?: (sectionId: string, title: string) => void;
   onBlockChange?: (sectionId: string, blockIndex: number, block: ContentBlock) => void;
+  onBlockAdd?: (sectionId: string, block: ContentBlock) => void;
+  onBlockDelete?: (sectionId: string, blockIndex: number) => void;
+  onBlockMove?: (sectionId: string, fromIndex: number, toIndex: number) => void;
 };
+
+function editableModuleTitle(title: string) {
+  return title.replace(/^\s*(Module|Week)\s+\d+\s*:?\s*/i, "").trim() || "Module title";
+}
+
+function createBlockTemplate(kind: CourseEditBlockKind, initialValue: string): ContentBlock {
+  const value = initialValue.trim();
+
+  switch (kind) {
+    case "card":
+      return {
+        type: "conceptCard",
+        title: "Concept title",
+        description: value || "Lorem ipsum dolor sit amet. Replace this with a concise concept definition.",
+        sourceIds: [],
+      };
+    case "video":
+      return {
+        type: "video",
+        url: value,
+        sourceIds: [],
+      };
+    case "iframe":
+      return {
+        type: "iframe",
+        title: "Embedded resource title",
+        url: value,
+        sourceIds: [],
+      };
+    case "heading":
+      return {
+        type: "heading",
+        title: value || "Heading title",
+        sourceIds: [],
+      };
+    case "quiz":
+      return {
+        type: "quiz",
+        title: value || "Quiz title",
+        questions: [
+          {
+            question: "Replace this with the quiz question.",
+            options: ["Answer option A", "Answer option B", "Answer option C", "Answer option D"],
+            answer: 0,
+          },
+        ],
+        questionsPerAttempt: 1,
+        showAnswers: false,
+      };
+    case "text":
+    default:
+      return {
+        type: "text",
+        heading: "Text block title",
+        value: value || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Replace this text with learner-facing instruction.",
+        sourceIds: [],
+      };
+  }
+}
 
 export default function ContentView({ 
   courseKey,
@@ -58,7 +120,10 @@ export default function ContentView({
   onCourseTitleChange,
   onModuleTitleChange,
   onSectionTitleChange,
-  onBlockChange
+  onBlockChange,
+  onBlockAdd,
+  onBlockDelete,
+  onBlockMove
 }: ContentViewProps) {
   const quizBlockKeys = useMemo(() => {
     if (!section) {
@@ -73,6 +138,8 @@ export default function ContentView({
   const [submittedQuizKeys, setSubmittedQuizKeys] = useState<Set<string>>(() => new Set());
   const [quizProgressByKey, setQuizProgressByKey] = useState<Record<string, QuizProgressStatus>>({});
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
+  const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
+  const citationFocusTimer = useRef<number | null>(null);
 
   useEffect(() => {
     // Resetting quiz submission state when the learner changes sections is intentional.
@@ -80,6 +147,7 @@ export default function ContentView({
     setSubmittedQuizKeys(new Set());
     setQuizProgressByKey({});
     setSourcesExpanded(false);
+    setDraggedBlockIndex(null);
   }, [section?.id]);
 
   const handleQuizSubmissionChange = useCallback<QuizSubmissionStatusHandler>((quizKey, submitted) => {
@@ -133,6 +201,33 @@ export default function ContentView({
       ? "Submit the quiz before marking this page complete"
       : "Mark section complete";
 
+  const handleInlineCitationClick = useCallback((citationIndex: number) => {
+    if (!section?.id) {
+      return;
+    }
+
+    setSourcesExpanded(true);
+    if (citationFocusTimer.current !== null) {
+      window.clearTimeout(citationFocusTimer.current);
+    }
+    citationFocusTimer.current = window.setTimeout(() => {
+      const target = document.getElementById(`source-reference-${section.id}-${citationIndex}`);
+      if (!target) {
+        return;
+      }
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.focus({ preventScroll: true });
+    }, 0);
+  }, [section?.id]);
+
+  const handleAddBlock = useCallback(() => {
+    if (!section?.id) {
+      return;
+    }
+
+    promptForBlockType((kind, initialValue) => onBlockAdd?.(section.id, createBlockTemplate(kind, initialValue)));
+  }, [onBlockAdd, section?.id]);
+
   useEffect(() => {
     if (!section?.id) {
       return;
@@ -169,17 +264,19 @@ export default function ContentView({
         <h1 className="course-title course-editable-line">
           <span className="course-editable-line-content">{moduleTitle}</span>
           {isEditMode && (
-            <EditPencilButton
-              label="Edit module title"
-              onClick={() => promptForText("Edit module title", moduleTitle, (title) => onModuleTitleChange?.(moduleIndex, title))}
-            />
+              <EditPencilButton
+                label="Edit module title"
+                onClick={() => promptForText("Edit module title", editableModuleTitle(moduleTitle), (title) => onModuleTitleChange?.(moduleIndex, title))}
+              />
           )}
         </h1>
-        <ProgressMeter
-          cacheKey={`content:${courseTitle}:${moduleIndex}`}
-          progressPercentage={progressPercentage}
-          viewedPercentage={viewedPercentage}
-        />
+        {!isEditMode && (
+          <ProgressMeter
+            cacheKey={`content:${courseTitle}:${moduleIndex}`}
+            progressPercentage={progressPercentage}
+            viewedPercentage={viewedPercentage}
+          />
+        )}
       </div>
       
       {/* Section Title With Decimal */}
@@ -195,19 +292,64 @@ export default function ContentView({
       <div className="section-content">
         {Array.isArray(section.content)
           ? section.content.map((block, idx) => (
-              <EditableContentBlock
-                key={idx}
-                block={block}
-                blockIndex={idx}
-                sources={sources}
-                sectionId={section.id}
-                isEditMode={isEditMode}
-                onBlockChange={onBlockChange}
-                onQuizSubmissionChange={handleQuizSubmissionChange}
-                onQuizProgressChange={handleQuizProgressChange}
-              />
+              <div
+                className={`content-block-editor-row ${draggedBlockIndex === idx ? "content-block-editor-row--dragging" : ""}`}
+                key={`${block.type}-${idx}`}
+                onDragOver={(event) => {
+                  if (isEditMode) {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = "move";
+                    if (draggedBlockIndex !== null && draggedBlockIndex !== idx) {
+                      onBlockMove?.(section.id, draggedBlockIndex, idx);
+                      setDraggedBlockIndex(idx);
+                    }
+                  }
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  setDraggedBlockIndex(null);
+                }}
+              >
+                {isEditMode && (
+                  <button
+                    className="content-block-drag-handle"
+                    type="button"
+                    draggable
+                    aria-label={`Move block ${idx + 1}`}
+                    title="Drag to reorder block"
+                    onDragStart={(event) => {
+                      setDraggedBlockIndex(idx);
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", String(idx));
+                    }}
+                    onDragEnd={() => setDraggedBlockIndex(null)}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+                      <path d="M8 6h.01M12 6h.01M16 6h.01M8 12h.01M12 12h.01M16 12h.01M8 18h.01M12 18h.01M16 18h.01" />
+                    </svg>
+                  </button>
+                )}
+                <EditableContentBlock
+                  block={block}
+                  blockIndex={idx}
+                  sources={sources}
+                  sectionId={section.id}
+                  isEditMode={isEditMode}
+                  onBlockChange={onBlockChange}
+                  onBlockDelete={onBlockDelete}
+                  onCitationClick={handleInlineCitationClick}
+                  onQuizSubmissionChange={handleQuizSubmissionChange}
+                  onQuizProgressChange={handleQuizProgressChange}
+                />
+              </div>
             ))
           : <p>{section.content}</p> /* fallback for old data */}
+        {isEditMode && (
+          <button className="course-edit-add-block" type="button" onClick={handleAddBlock}>
+            <span className="course-edit-add-block-icon" aria-hidden="true">+</span>
+            <span>Add block</span>
+          </button>
+        )}
       </div>
 
       <CourseNav
@@ -245,7 +387,11 @@ export default function ContentView({
           {sourcesExpanded && (
             <ul>
               {sectionSources.map((source, index) => (
-                <li key={source.id}>
+                <li
+                  id={`source-reference-${section.id}-${index + 1}`}
+                  key={source.id}
+                  tabIndex={-1}
+                >
                   <span className="source-reference-index">[{index + 1}]</span>
                   {source.url ? (
                     <a href={source.url} target="_blank" rel="noreferrer">

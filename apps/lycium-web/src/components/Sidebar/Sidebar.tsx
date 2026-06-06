@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import type { SectionStatus } from "../../courseTypes";
+import { DeleteBlockButton, promptForDeleteBlock } from "../ContentView/CourseEditControls";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
 
 type SidebarSection = {
@@ -23,6 +24,9 @@ type SidebarProps = {
   onStartEdit?: () => void;
   onCancelEdit?: () => void;
   onSaveEdit?: () => void;
+  onAddSection?: (moduleIndex: number) => void;
+  onDeleteSection?: (sectionId: string) => void;
+  onAddModule?: () => void;
 };
 
 let persistedSidebarCollapsed = true;
@@ -105,6 +109,23 @@ function SidebarIcon({ name }: { name: "pencil" | "save" | "cancel" }) {
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5Z" />
     </svg>
+  );
+}
+
+function SidebarAddRow({
+  label,
+  isCollapsed,
+  onClick,
+}: {
+  label: string;
+  isCollapsed: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button type="button" className="sidebar-add-row" aria-label={label} onClick={onClick}>
+      <span className="sidebar-add-row-plus" aria-hidden="true">+</span>
+      {!isCollapsed && <span className="sidebar-add-row-label">{label}</span>}
+    </button>
   );
 }
 
@@ -206,14 +227,18 @@ const SidebarSectionItem = memo(function SidebarSectionItem({
   status,
   isActive,
   isCollapsed,
+  isEditMode,
   onSectionSelect,
+  onDeleteSection,
 }: {
   section: SidebarSection;
   index: number;
   status: DisplayStatus;
   isActive: boolean;
   isCollapsed: boolean;
+  isEditMode: boolean;
   onSectionSelect: (index: number) => void;
+  onDeleteSection?: (sectionId: string) => void;
 }) {
   const isLocked = status === "locked";
   const handleClick = useCallback(() => {
@@ -231,7 +256,14 @@ const SidebarSectionItem = memo(function SidebarSectionItem({
       <span className="sidebar-item-label">
         {isCollapsed ? section.displayNumber : `${section.displayNumber} ${section.title}`}
       </span>
-      <SidebarStatusBadge status={status} />
+      {isEditMode ? (
+        <DeleteBlockButton
+          label={`Delete ${section.displayNumber} ${section.title}`}
+          onClick={() => promptForDeleteBlock(() => onDeleteSection?.(section.id), "Delete section", "Are you sure you want to delete this section?")}
+        />
+      ) : (
+        <SidebarStatusBadge status={status} />
+      )}
     </div>
   );
 });
@@ -249,6 +281,9 @@ export default function Sidebar({
   onStartEdit,
   onCancelEdit,
   onSaveEdit,
+  onAddSection,
+  onDeleteSection,
+  onAddModule,
 }: SidebarProps) {
   const activeModuleIndex = sections[currentSectionIndex]?.moduleIndex ?? 0;
   const activeModuleIndexRef = useRef(activeModuleIndex);
@@ -337,14 +372,16 @@ export default function Sidebar({
         />
       )}
 
-      <div className="progress-wrapper" aria-hidden={isCollapsed}>
-        <h3 className="sidebar-title">{courseTitle}</h3>
-        <ProgressMeter
-          cacheKey={`sidebar:${courseTitle}`}
-          progressPercentage={progressPercentage}
-          viewedPercentage={viewedPercentage}
-        />
-      </div>
+      {!isEditMode && (
+        <div className="progress-wrapper" aria-hidden={isCollapsed}>
+          <h3 className="sidebar-title">{courseTitle}</h3>
+          <ProgressMeter
+            cacheKey={`sidebar:${courseTitle}`}
+            progressPercentage={progressPercentage}
+            viewedPercentage={viewedPercentage}
+          />
+        </div>
+      )}
       
       <div className="sidebar-section-list">
         {moduleGroups.map((moduleGroup) => {
@@ -364,7 +401,7 @@ export default function Sidebar({
 
               {isExpanded && (
                 <div className="sidebar-module-sections">
-                  {moduleGroup.sections.map(({ section, index: idx }) => {
+	                  {moduleGroup.sections.map(({ section, index: idx }) => {
                     const sectionStatus = getSectionStatus(section.id);
 
                     return (
@@ -375,16 +412,26 @@ export default function Sidebar({
                         status={sectionStatus}
                         isActive={idx === currentSectionIndex}
                         isCollapsed={isCollapsed}
+                        isEditMode={isEditMode}
                         onSectionSelect={onSectionSelect}
+                        onDeleteSection={onDeleteSection}
+	                      />
+	                    );
+	                  })}
+                    {isEditMode && (
+                      <SidebarAddRow
+                        label="Add section"
+                        isCollapsed={isCollapsed}
+                        onClick={() => onAddSection?.(moduleGroup.moduleIndex)}
                       />
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          );
-        })}
-      </div>
+                    )}
+	                </div>
+	              )}
+	            </section>
+	          );
+	        })}
+          {isEditMode && <SidebarAddRow label="Add module" isCollapsed={isCollapsed} onClick={onAddModule} />}
+	      </div>
 
       
     </aside>

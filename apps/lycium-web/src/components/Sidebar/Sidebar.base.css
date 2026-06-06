@@ -29,7 +29,8 @@
 .module-header-caret,
 .module-header-status,
 .sidebar-item-label,
-.sidebar-status {
+.sidebar-status,
+.sidebar-add-row {
   transition: opacity 140ms ease;
 }
 
@@ -38,7 +39,8 @@
 .sidebar--content-fading .module-header-caret,
 .sidebar--content-fading .module-header-status,
 .sidebar--content-fading .sidebar-item-label,
-.sidebar--content-fading .sidebar-status {
+.sidebar--content-fading .sidebar-status,
+.sidebar--content-fading .sidebar-add-row {
   opacity: 0;
 }
 
@@ -161,6 +163,13 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sidebar-section-list::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .sidebar--collapsed .progress-wrapper {
@@ -238,7 +247,10 @@
 .module-header:active,
 .sidebar-item:focus,
 .sidebar-item:focus-visible,
-.sidebar-item:active {
+.sidebar-item:active,
+.sidebar-add-row:focus,
+.sidebar-add-row:focus-visible,
+.sidebar-add-row:active {
   outline: none;
   box-shadow: none;
 }
@@ -337,6 +349,53 @@
 
 .sidebar-item.locked:hover {
   background-color: #ffffff;
+}
+
+.sidebar-add-row {
+  width: 100%;
+  min-height: 2.3rem;
+  border: 1px dashed #cfd7ec;
+  border-top-width: 0;
+  border-radius: 0 0 8px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.65rem;
+  color: #4a5f91;
+  background: rgba(74, 108, 247, 0.055);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.sidebar-add-row:hover,
+.sidebar-add-row:focus-visible {
+  border-color: #4a6cf7;
+  color: #314fe0;
+  background: rgba(74, 108, 247, 0.1);
+}
+
+.sidebar-add-row-plus {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  color: #ffffff;
+  background: #4a6cf7;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.sidebar-add-row-label {
+  min-width: 0;
+}
+
+.sidebar--collapsed .sidebar-add-row {
+  min-height: 2rem;
+  padding: 0.35rem;
 }
 
 .sidebar-status {

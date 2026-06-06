@@ -48,6 +48,18 @@
   font-size: 1rem;
 }
 
+.iframe-block {
+  width: 100%;
+}
+
+.iframe-block iframe {
+  width: 100%;
+  min-height: 24rem;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--lycium-color-surface);
+}
+
 .progress-percentage {
   margin: 0 0 0.5rem 0;
   font-size: 1rem;

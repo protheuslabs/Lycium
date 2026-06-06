@@ -1,5 +1,6 @@
 import type { AttemptHistoryItem } from "./quizTypes";
 import { formatDuration } from "./quizAttempts";
+import { EditPencilButton, promptForText } from "../ContentView/CourseEditControls";
 
 type QuizMetaRowsProps = {
   name: string;
@@ -13,6 +14,10 @@ type QuizMetaRowsProps = {
   timeLabel: string;
   isReviewingPastAttempt: boolean;
   displayedQuestionCount: number;
+  isEditMode?: boolean;
+  onMaxAttemptsChange?: (value: string) => void;
+  onTimeLimitChange?: (value: string) => void;
+  onPassPercentageChange?: (value: string) => void;
   onReviewAttemptChange: (attemptNumber: number | null) => void;
 };
 
@@ -67,13 +72,28 @@ export default function QuizMetaRows({
   timeLabel,
   isReviewingPastAttempt,
   displayedQuestionCount,
+  isEditMode = false,
+  onMaxAttemptsChange,
+  onTimeLimitChange,
+  onPassPercentageChange,
   onReviewAttemptChange,
 }: QuizMetaRowsProps) {
+  const editAttempts = (currentValue: string) => {
+    promptForText("Edit max attempts", maxAttempts === null ? "" : currentValue.split("/")[1] ?? "", (value) => onMaxAttemptsChange?.(value));
+  };
+  const editTime = () => {
+    promptForText("Edit time limit in seconds", timerDuration === null ? "" : String(timerDuration), (value) => onTimeLimitChange?.(value));
+  };
+  const editPassingScore = () => {
+    promptForText("Edit passing score percent", passPercentage === null ? "" : String(passPercentage), (value) => onPassPercentageChange?.(value));
+  };
+
   return (
     <div className="quiz-meta-stack" aria-label="Quiz metadata">
       {historicalAttempts.map((attempt) => (
-        <button
-          type="button"
+        <div
+          role="button"
+          tabIndex={0}
           className={`quiz-meta-row quiz-meta-row--submitted ${
             reviewAttemptNumber === attempt.attemptNumber ? "quiz-meta-row--active" : ""
           }`}
@@ -87,32 +107,61 @@ export default function QuizMetaRows({
           <span>
             {formatDuration(attempt.elapsedSeconds)}/{timerDuration === null ? "∞" : formatDuration(timerDuration)}
           </span>
-        </button>
+        </div>
       ))}
 
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         className={`quiz-meta-row quiz-meta-row--current ${!isReviewingPastAttempt ? "quiz-meta-row--active" : ""}`}
         onClick={() => onReviewAttemptChange(null)}
       >
-        <span>Attempt {attemptsLabel}</span>
+        <span className="quiz-meta-edit-field">
+          Attempt {attemptsLabel}
+          {isEditMode && (
+            <EditPencilButton
+              label="Edit max attempts"
+              onClick={() => editAttempts(attemptsLabel)}
+            />
+          )}
+        </span>
         {currentAttemptResult ? (
           <span className={`quiz-score ${scoreClassFor(currentAttemptResult.scorePercentage, passPercentage)}`}>
             Score: {formatScore(currentAttemptResult)}
           </span>
         ) : passPercentage !== null ? (
-          <span className="quiz-score quiz-score--neutral">
+          <span className="quiz-score quiz-score--neutral quiz-meta-edit-field">
             Passing score: {formatPassingScore(passPercentage, displayedQuestionCount)}
+            {isEditMode && (
+              <EditPencilButton
+                label="Edit passing score"
+                onClick={editPassingScore}
+              />
+            )}
           </span>
         ) : (
-          <span aria-hidden="true" />
+          <span className="quiz-score quiz-score--neutral quiz-meta-edit-field">
+            Passing score: ∞
+            {isEditMode && (
+              <EditPencilButton
+                label="Edit passing score"
+                onClick={editPassingScore}
+              />
+            )}
+          </span>
         )}
-        <span>
+        <span className="quiz-meta-edit-field">
           {currentAttemptResult
             ? `${formatDuration(currentAttemptResult.elapsedSeconds)}/${timerDuration === null ? "∞" : formatDuration(timerDuration)}`
             : timeLabel}
+          {isEditMode && (
+            <EditPencilButton
+              label="Edit time limit"
+              onClick={editTime}
+            />
+          )}
         </span>
-      </button>
+      </div>
     </div>
   );
 }

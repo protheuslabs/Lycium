@@ -13,6 +13,7 @@ export type ContentBlock = {
   type: string;
   value?: string;
   text?: string;
+  body?: string;
   heading?: string;
   title?: string;
   url?: string;
@@ -35,6 +36,8 @@ export type ContentBlock = {
     options?: string[];
     answer?: number;
     answers?: number[];
+    multiple?: boolean;
+    isMultiple?: boolean;
     timed?: "t" | "f" | boolean;
   }>;
   questionBank?: unknown;
@@ -99,4 +102,3 @@ export type QuizProgressStatus = {
 };
 
 export type QuizProgressStatusHandler = (quizKey: string, status: QuizProgressStatus) => void;
-
