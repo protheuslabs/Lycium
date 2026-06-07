@@ -211,7 +211,11 @@ function App() {
       settingsReturnPathRef.current = returnPath;
       setPageBehindSettingsPath(returnPath);
       writeSettingsBackdropPath(returnPath);
-      router.push(SETTINGS_PATH);
+      if (typeof window !== "undefined") {
+        window.history.pushState(null, "", browserPathForRoute(SETTINGS_PATH));
+      } else {
+        router.push(SETTINGS_PATH);
+      }
       currentPathRef.current = SETTINGS_PATH;
       setCurrentPath(SETTINGS_PATH);
     },
@@ -221,7 +225,11 @@ function App() {
   const closeSettingsModal = useCallback(() => {
     const returnTo = pageBehindSettingsPath || settingsReturnPathRef.current;
     const targetPath = returnTo && returnTo !== SETTINGS_PATH ? returnTo : COURSE_CATALOG_PATH;
-    router.replace(targetPath);
+    if (typeof window !== "undefined") {
+      window.history.replaceState(null, "", browserPathForRoute(targetPath));
+    } else {
+      router.replace(targetPath);
+    }
     currentPathRef.current = targetPath;
     setCurrentPath(targetPath);
     setPageBehindSettingsPath(targetPath);
@@ -245,7 +253,9 @@ function App() {
     (course: CourseEntry, section: CourseSection, replace = false) => {
       const nextPath = getCourseSectionPath(course, section);
       if (currentPathRef.current !== nextPath) {
-        if (replace) {
+        if (typeof window !== "undefined") {
+          window.history[replace ? "replaceState" : "pushState"](null, "", browserPathForRoute(nextPath));
+        } else if (replace) {
           router.replace(nextPath);
         } else {
           router.push(nextPath);
@@ -280,7 +290,9 @@ function App() {
       }
 
       const nextPath = getCoursePath(course);
-      if (replace) {
+      if (typeof window !== "undefined") {
+        window.history[replace ? "replaceState" : "pushState"](null, "", browserPathForRoute(nextPath));
+      } else if (replace) {
         router.replace(nextPath);
       } else {
         router.push(nextPath);
@@ -292,7 +304,7 @@ function App() {
     [pushSectionPath, router],
   );
 
-  const { deleteCourseDraft, exportCourseDraft, forkCourse, importCourseDraft, resetCourseDraft, saveCourseDraft } = useCourseEditingActions({ openCourseByEntry, setCourses });
+  const { createManualCourse, deleteCourseDraft, exportCourseDraft, forkCourse, importCourseDraft, resetCourseDraft, saveCourseDraft } = useCourseEditingActions({ openCourseByEntry, setCourses });
 
   const goToSectionIndex = useCallback((index: number) => {
     setCurrentSectionIndex(index);
@@ -302,18 +314,9 @@ function App() {
     }
   }, [pushSectionPath, sections, selectedCourse]);
 
-  const activeAiReady = agentSettings.agentKeys.some(
-    (key) => key.is_active && Boolean(key.model) && key.connection_status !== "unverified",
-  );
+  const activeAiReady = agentSettings.agentKeys.some((key) => key.is_active && Boolean(key.model) && key.connection_status !== "unverified");
 
-const {
-  generateStatus,
-  generateMessage,
-  publishingCourseKey,
-  handleGenerateCourse,
-  handlePublishCourse,
-  handleResumeCourseSourceGap,
-} = useCourseGenerationActions({
+const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCourse, handlePublishCourse, handleResumeCourseSourceGap } = useCourseGenerationActions({
   prompt,
   level,
   learnerId,
@@ -425,14 +428,11 @@ const {
           onOpenCourse={openCourseByEntry}
           onQueueCourseSourceGap={queueCourseSourceGap}
           onResumeCourseSourceGap={handleResumeCourseSourceGap}
-	          onCatalogDrilldown={routeToCatalogDrilldown}
-	          onPublishCourse={handlePublishCourse}
-	          onForkCourse={forkCourse}
-            onDeleteCourseDraft={deleteCourseDraft}
-            onExportCourseDraft={exportCourseDraft}
-            onImportCourseDraft={importCourseDraft}
-            onResetCourseDraft={resetCourseDraft}
-	          publishingCourseKey={publishingCourseKey}
+          onCatalogDrilldown={routeToCatalogDrilldown} onPublishCourse={handlePublishCourse}
+          onForkCourse={forkCourse} onCreateManualCourse={createManualCourse}
+          onDeleteCourseDraft={deleteCourseDraft} onExportCourseDraft={exportCourseDraft}
+          onImportCourseDraft={importCourseDraft} onResetCourseDraft={resetCourseDraft}
+          publishingCourseKey={publishingCourseKey}
           onOpenSettings={routeToSettings}
         />
       ) : viewRoute.kind === "program" && selectedProgram ? (

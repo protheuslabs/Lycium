@@ -11,10 +11,14 @@ type CourseGenerationHandler = (
 type CreateCourseModalOptions = {
   canCreateCourse: boolean;
   onGenerateCourse: CourseGenerationHandler;
+  onCreateManualCourse: () => void;
 };
 
-export function useCreateCourseModal({ canCreateCourse, onGenerateCourse }: CreateCourseModalOptions) {
+export type CreateCourseMode = "ai" | "manual";
+
+export function useCreateCourseModal({ canCreateCourse, onGenerateCourse, onCreateManualCourse }: CreateCourseModalOptions) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mode, setMode] = useState<CreateCourseMode>("ai");
   const [sourceLinks, setSourceLinks] = useState([""]);
   const [college, setCollege] = useState("");
   const [department, setDepartment] = useState("");
@@ -38,6 +42,13 @@ export function useCreateCourseModal({ canCreateCourse, onGenerateCourse }: Crea
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (mode === "manual") {
+      event.preventDefault();
+      onCreateManualCourse();
+      setIsOpen(false);
+      return;
+    }
+
     if (!canCreateCourse || !college || !department) {
       event.preventDefault();
       return;
@@ -54,12 +65,14 @@ export function useCreateCourseModal({ canCreateCourse, onGenerateCourse }: Crea
   return {
     college,
     collegeOptions,
+    mode,
     department,
     departmentOptions,
     handleCollegeChange,
     handleSourceLinkChange,
     handleSubmit,
     isOpen,
+    setMode,
     setDepartment,
     setIsOpen,
     sourceLinks,

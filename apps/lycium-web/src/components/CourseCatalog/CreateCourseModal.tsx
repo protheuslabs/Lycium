@@ -2,6 +2,7 @@ import type { FormEvent, MouseEvent } from "react";
 import Dropdown from "../Dropdown/Dropdown";
 import Modal from "../Modal/Modal";
 import { SETTINGS_PATH } from "../../utils/courseRouting";
+import type { CreateCourseMode } from "./useCreateCourseModal";
 
 type SelectOption = {
   value: string;
@@ -20,12 +21,14 @@ type CreateCourseModalProps = {
   department: string;
   collegeOptions: SelectOption[];
   departmentOptions: SelectOption[];
+  mode: CreateCourseMode;
   onPromptChange: (value: string) => void;
   onLevelChange: (value: string) => void;
   onCollegeChange: (value: string) => void;
   onDepartmentChange: (value: string) => void;
   onSourceLinkChange: (index: number, value: string) => void;
   onAddSourceLink: () => void;
+  onModeChange: (mode: CreateCourseMode) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
   onClose: () => void;
@@ -43,18 +46,21 @@ export default function CreateCourseModal({
   department,
   collegeOptions,
   departmentOptions,
+  mode,
   onPromptChange,
   onLevelChange,
   onCollegeChange,
   onDepartmentChange,
   onSourceLinkChange,
   onAddSourceLink,
+  onModeChange,
   onSubmit,
   onOpenSettings,
   onClose,
 }: CreateCourseModalProps) {
   const canSubmitCourse =
-    canCreateCourse && Boolean(prompt.trim()) && Boolean(college) && Boolean(department) && generateStatus !== "loading";
+    mode === "manual" ||
+    (canCreateCourse && Boolean(prompt.trim()) && Boolean(college) && Boolean(department) && generateStatus !== "loading");
 
   return (
     <Modal
@@ -66,7 +72,27 @@ export default function CreateCourseModal({
       onClose={onClose}
     >
         <form className="create-course-form" onSubmit={onSubmit}>
-          {!canCreateCourse && (
+          <div className="create-course-tabs" role="tablist" aria-label="Course creation mode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "ai"}
+              className={`create-course-tab ${mode === "ai" ? "create-course-tab--active" : ""}`}
+              onClick={() => onModeChange("ai")}
+            >
+              AI
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === "manual"}
+              className={`create-course-tab ${mode === "manual" ? "create-course-tab--active" : ""}`}
+              onClick={() => onModeChange("manual")}
+            >
+              Manual
+            </button>
+          </div>
+          {mode === "ai" && !canCreateCourse && (
             <p className="create-course-unlock-message">
               To unlock course creation, go to settings
               <a href={SETTINGS_PATH} aria-label="Open settings" onClick={onOpenSettings}>
@@ -77,6 +103,7 @@ export default function CreateCourseModal({
               and connect an AI model.
             </p>
           )}
+          {mode === "ai" ? (
           <div className={`create-course-controls ${canCreateCourse ? "" : "create-course-controls--locked"}`}>
             <label className="create-course-field">
               <span>Description</span>
@@ -161,6 +188,16 @@ export default function CreateCourseModal({
             </button>
             {generateMessage && <p className={`generator-status generator-status-${generateStatus}`}>{generateMessage}</p>}
           </div>
+          ) : (
+            <div className="create-course-controls create-course-manual-panel">
+              <p className="create-course-manual-note">
+                Start with one blank module and one blank section. You can build the course in edit mode after it opens.
+              </p>
+              <button className="create-course-submit" type="submit" disabled={!canSubmitCourse}>
+                Create blank course
+              </button>
+            </div>
+          )}
         </form>
     </Modal>
   );

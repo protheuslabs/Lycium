@@ -18,6 +18,10 @@ CHEM_105_FLAGSHIP_BLUEPRINT: dict[str, Any] = {
         "minQuestionsPerQuiz": 10,
         "minSourceRecords": 6,
         "minModuleVideoCoverage": 0.8,
+        "minSourceSlotCount": 14,
+        "minSourceSlotPrimaryCoverageRatio": 1.0,
+        "minSectionSourceCoverage": 1.0,
+        "minBlockSourceCoverage": 0.9,
         "minRequiredKeywordCoverage": 0.82,
         "requiredKeywords": [
             "matter and measurement",

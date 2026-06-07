@@ -57,18 +57,20 @@ def _course_for_scenario() -> dict[str, Any]:
     primary_source_id = CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"][0]["id"]
     for index, topic in enumerate(topics, start=1):
         section_id = f"chem-105-{index}"
+        source_ids = [source["id"] for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]]
+        topic_source_ids = source_ids[:2]
         modules.append(
             {
                 "id": f"module-{index}",
                 "title": f"Week {index}: {topic.title()}",
-                "sourceIds": [primary_source_id],
+                "sourceIds": topic_source_ids,
                 "sections": [
                     {
                         "id": section_id,
                         "title": topic.title(),
                         "pageType": "learn",
                         "sectionType": "lesson",
-                        "sourceIds": [primary_source_id],
+                        "sourceIds": topic_source_ids,
                         "content": [
                             {
                                 "type": "text",
@@ -77,11 +79,13 @@ def _course_for_scenario() -> dict[str, Any]:
                                     f"This CHEM 105 lesson teaches {topic}, laboratory safety, equilibrium, "
                                     "and evidence-based chemical reasoning through worked examples and practice."
                                 ),
+                                "sourceIds": [topic_source_ids[0]],
                             },
-                            {"type": "video", "title": f"{topic.title()} lecture", "url": "https://example.edu/video"},
+                            {"type": "video", "title": f"{topic.title()} lecture", "url": "https://example.edu/video", "sourceIds": [topic_source_ids[1]]},
                             {
                                 "type": "conceptCards",
                                 "title": "Concepts introduced",
+                                "sourceIds": [topic_source_ids[0]],
                                 "concepts": [{"name": topic.title(), "description": f"Core CHEM 105 concept: {topic}.", "sourceSectionId": section_id}],
                             },
                         ],
@@ -91,19 +95,20 @@ def _course_for_scenario() -> dict[str, Any]:
                         "title": f"Quiz: {topic.title()}",
                         "pageType": "apply",
                         "sectionType": "assessment",
-                        "sourceIds": [primary_source_id],
-                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": [primary_source_id]}],
+                        "sourceIds": [topic_source_ids[0]],
+                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": [topic_source_ids[0]]}],
                     },
                     {
                         "id": f"{section_id}-summary",
                         "title": f"Week {index} Summary",
                         "pageType": "learn",
                         "sectionType": "summary",
-                        "sourceIds": [primary_source_id],
+                        "sourceIds": [topic_source_ids[0]],
                         "content": [
                             {
                                 "type": "conceptCards",
                                 "title": "Week concepts",
+                                "sourceIds": [topic_source_ids[0]],
                                 "concepts": [{"name": topic.title(), "description": f"Review concept for {topic}.", "sourceSectionId": section_id}],
                             }
                         ],
@@ -425,6 +430,22 @@ def test_chem_105_scenario_rejects_wrong_department_and_thin_assessment() -> Non
     assert report["status"] == "failed"
     assert any("Expected department chemistry" in recommendation for recommendation in report["recommendations"])
     assert any("at least 10 questions" in recommendation for recommendation in report["recommendations"])
+
+
+def test_chem_105_scenario_rejects_blanket_sources_without_block_grounding() -> None:
+    course = _course_for_scenario()
+    course["metadata"]["sourceSlots"] = []
+    for module in course["modules"]:
+        for section in module["sections"]:
+            section["sourceIds"] = []
+            for block in section["content"]:
+                block.pop("sourceIds", None)
+
+    report = evaluate_course_generation_scenario(course, "chem-105-general-chemistry")
+
+    assert report["status"] == "failed"
+    assert any("source slots" in recommendation for recommendation in report["recommendations"])
+    assert any("blocks should carry sourceIds" in recommendation for recommendation in report["recommendations"])
 
 
 def test_full_stack_program_scenario_accepts_requirement_based_path() -> None:

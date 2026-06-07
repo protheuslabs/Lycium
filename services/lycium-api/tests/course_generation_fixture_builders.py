@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.course_generation_flagships import CHEM_105_FLAGSHIP_BLUEPRINT, chem_105_source_slots
 from app.course_generation_scenario_specs import COURSE_SCENARIOS
 
 
@@ -109,6 +110,103 @@ def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
                 "excludedSources": [],
                 "commonThemes": keywords[:8],
             },
+        },
+        "modules": modules,
+    }
+
+
+def chem_105_flagship_course_from_scenario() -> dict[str, Any]:
+    topics = list(CHEM_105_FLAGSHIP_BLUEPRINT["scenario"]["requiredKeywords"])
+    source_records = [
+        {
+            "id": source["id"],
+            "type": source["type"],
+            "title": source["title"],
+            "url": source["url"],
+        }
+        for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]
+    ]
+    source_ids = [source["id"] for source in source_records]
+    modules = []
+    for index, topic in enumerate(topics, start=1):
+        section_id = f"chem-105-{index:02d}-lesson"
+        topic_source_ids = source_ids[:2]
+        modules.append(
+            {
+                "id": f"chem-105-week-{index:02d}",
+                "title": f"Week {index}: {topic.title()}",
+                "sourceIds": topic_source_ids,
+                "sections": [
+                    {
+                        "id": section_id,
+                        "title": topic.title(),
+                        "pageType": "learn",
+                        "sectionType": "lesson",
+                        "sourceIds": topic_source_ids,
+                        "content": [
+                            {
+                                "type": "text",
+                                "heading": "Explanation",
+                                "value": (
+                                    f"CHEM 105 learners study {topic} through worked examples, quantitative reasoning, "
+                                    "laboratory safety, source-grounded models, and practice appropriate for a college course."
+                                ),
+                                "sourceIds": [topic_source_ids[0]],
+                            },
+                            {"type": "video", "url": "https://example.edu/chemistry-video", "sourceIds": [topic_source_ids[1]]},
+                            {
+                                "type": "conceptCards",
+                                "title": "Concepts introduced",
+                                "sourceIds": [topic_source_ids[0]],
+                                "concepts": [
+                                    {"name": topic.title(), "description": f"Required general chemistry concept covering {topic}.", "sourceSectionId": section_id}
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        "id": f"{section_id}-quiz",
+                        "title": f"Quiz: {topic.title()}",
+                        "pageType": "apply",
+                        "sectionType": "assessment",
+                        "sourceIds": [topic_source_ids[0]],
+                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": [topic_source_ids[0]]}],
+                    },
+                    {
+                        "id": f"{section_id}-summary",
+                        "title": f"Week {index} Summary",
+                        "pageType": "learn",
+                        "sectionType": "summary",
+                        "sourceIds": [topic_source_ids[0]],
+                        "content": [
+                            {
+                                "type": "conceptCards",
+                                "title": "Week concepts",
+                                "sourceIds": [topic_source_ids[0]],
+                                "concepts": [{"name": topic.title(), "description": f"Review definition for {topic}.", "sourceSectionId": section_id}],
+                            }
+                        ],
+                    },
+                ],
+            }
+        )
+    return {
+        "title": CHEM_105_FLAGSHIP_BLUEPRINT["title"],
+        "shortDescription": "A first-semester general chemistry course aligned to college CHEM 105 expectations.",
+        "difficultyLevel": "undergrad",
+        "category": "natural-sciences-mathematics",
+        "department": "chemistry",
+        "tags": ["chemistry", "stoichiometry", "thermochemistry", "equilibrium"],
+        "sourceIds": source_ids,
+        "sourceRecords": source_records,
+        "metadata": {
+            "pacingLabel": "Week",
+            "curriculumBenchmarks": CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"],
+            "requirementOrigins": [
+                {"requirementId": f"req-{index}", "title": topic.title(), "evidenceRefs": [source_ids[0]]}
+                for index, topic in enumerate(topics, start=1)
+            ],
+            "sourceSlots": chem_105_source_slots(),
         },
         "modules": modules,
     }

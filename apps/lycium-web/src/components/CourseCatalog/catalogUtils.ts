@@ -113,7 +113,16 @@ function compareCourseTitles(a: CourseEntry, b: CourseEntry): number {
   return a.title.localeCompare(b.title, undefined, { sensitivity: "base" });
 }
 
+function courseCatalogPriority(course: CourseEntry): number {
+  if (course.status === "needs_sources") return 0;
+  if (course.source === "local" && course.status === "draft") return 1;
+  return 2;
+}
+
 export function compareCatalogSort(a: CatalogVisibleCourse, b: CatalogVisibleCourse, sortMode: CatalogSortMode): number {
+  const priorityDelta = courseCatalogPriority(a.course) - courseCatalogPriority(b.course);
+  if (priorityDelta !== 0) return priorityDelta;
+
   if (sortMode === "completion-desc") {
     return b.courseProgress.percentage - a.courseProgress.percentage || compareCourseTitles(a.course, b.course);
   }

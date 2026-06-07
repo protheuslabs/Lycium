@@ -84,7 +84,7 @@ jobs:
         run: python -m pip install -e 'services/lycium-api[test]'
 
       - name: Run program generation eval scenarios
-        run: pnpm test:program-evals
+        run: cd services/lycium-api && python3 -m pytest tests/test_program_generation_eval_scenarios.py -q
 
       - name: Run API tests
         run: cd services/lycium-api && pytest -q

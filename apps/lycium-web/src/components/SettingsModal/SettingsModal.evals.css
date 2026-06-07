@@ -65,6 +65,69 @@
   line-height: 1.45;
 }
 
+.settings-eval-trend-panel {
+  display: grid;
+  gap: 0.55rem;
+  border-radius: 18px;
+  padding: 0.65rem;
+  background: rgba(239, 246, 255, 0.76);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.14);
+}
+
+.settings-eval-trend-heading,
+.settings-eval-trend-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(5.8rem, 0.45fr);
+  gap: 0.65rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.settings-eval-trend-heading div {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
+.settings-eval-trend-heading div:last-child {
+  justify-items: end;
+  text-align: right;
+}
+
+.settings-eval-trend-heading span,
+.settings-eval-trend-heading strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-eval-trend-heading span {
+  color: #4b5563;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-eval-trend-heading strong {
+  color: #171717;
+  font-size: 0.9rem;
+}
+
+.settings-eval-trend-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.settings-eval-trend-row {
+  border-radius: 16px;
+  padding: 0.65rem;
+  color: #171717;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+}
+
 .settings-eval-row {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(5.8rem, 0.45fr);
@@ -205,11 +268,23 @@
   box-shadow: inset 0 0 0 1px rgba(82, 82, 91, 0.28);
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-trend-panel {
+  background: #171717;
+  box-shadow: inset 0 0 0 1px rgba(82, 82, 91, 0.34);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-trend-row {
+  color: #e5e7eb;
+  background: #111112;
+  box-shadow: inset 0 0 0 1px rgba(82, 82, 91, 0.28);
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-empty,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-message,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-main span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-score span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-summary-card span,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-trend-heading span,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-metric span {
   color: #a1a1aa;
 }
@@ -217,6 +292,7 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-main strong,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-score strong,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-summary-card strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-trend-heading strong,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .settings-eval-metric strong {
   color: #f4f4f5;
 }
@@ -241,7 +317,8 @@ html[data-theme="light"] .settings-eval-summary-card {
   }
 
   .settings-eval-row,
-  .settings-eval-summary-card {
+  .settings-eval-summary-card,
+  .settings-eval-trend-row {
     color: #e5e7eb;
     background: #1a1a1c;
     box-shadow: inset 0 0 0 1px rgba(82, 82, 91, 0.34), 0 10px 22px rgba(0, 0, 0, 0.22);
@@ -258,6 +335,7 @@ html[data-theme="light"] .settings-eval-summary-card {
   .settings-eval-main span,
   .settings-eval-score span,
   .settings-eval-summary-card span,
+  .settings-eval-trend-heading span,
   .settings-eval-metric span {
     color: #a1a1aa;
   }
@@ -265,6 +343,7 @@ html[data-theme="light"] .settings-eval-summary-card {
   .settings-eval-main strong,
   .settings-eval-score strong,
   .settings-eval-summary-card strong,
+  .settings-eval-trend-heading strong,
   .settings-eval-metric strong {
     color: #f4f4f5;
   }
@@ -279,7 +358,17 @@ html[data-theme="light"] .settings-eval-summary-card {
     grid-template-columns: 1fr;
   }
 
+  .settings-eval-trend-heading,
+  .settings-eval-trend-row {
+    grid-template-columns: 1fr;
+  }
+
   .settings-eval-score {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .settings-eval-trend-heading div:last-child {
     justify-items: start;
     text-align: left;
   }

@@ -101,6 +101,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
 23. Eval score dashboard
     - Status: done
     - Goal: track quality pass/fail, source coverage, quiz quality, content depth, and citation validity over time.
+    - Deliverable: generation eval run reports persist to `.lycium-local/eval-runs` or `LYCIUM_EVAL_REPORT_DIR` with `latest.json`, `index.json`, bounded history, and trend deltas.
 
 24. Noisy source filtering
     - Status: done
@@ -123,7 +124,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
    - Goal: editable course forks preserve local draft metadata, save conflict-safely, and support portable draft JSON import/export.
 
 29. End-to-end local workflow test
-   - Status: pending
+   - Status: done
    - Goal: prove sources -> draft -> source gate -> add source -> resume -> publish -> persisted progress.
 
 30. Exterior service connection

@@ -233,6 +233,40 @@ export type LyciumGenerationRun = {
   completed_at?: string | null;
 };
 
+export type LyciumGenerationEvalSummary = {
+  scenarioCount: number;
+  passedCount: number;
+  needsReviewCount: number;
+  failedCount: number;
+  averageScore: number;
+  minimumScore: number;
+};
+
+export type LyciumGenerationEvalScenarioTrend = {
+  scenarioId: string;
+  scenarioLabel?: string | null;
+  status?: string | null;
+  previousStatus?: string | null;
+  score: number;
+  previousScore?: number | null;
+  scoreDelta?: number | null;
+};
+
+export type LyciumGenerationEvalTrend = {
+  kind: string;
+  schemaVersion: number;
+  runCount: number;
+  latestRunId?: string | null;
+  previousRunId?: string | null;
+  latestSummary: Partial<LyciumGenerationEvalSummary>;
+  scenarioTrends: LyciumGenerationEvalScenarioTrend[];
+};
+
+export type LyciumGenerationEvalReportSet = {
+  runs: Array<Record<string, unknown>>;
+  trend: LyciumGenerationEvalTrend;
+};
+
 export type LyciumLocalApi = {
   listRemoteCourses(limit?: number, status?: string): Promise<LyciumGeneratedCourseRecord[]>;
   generateCourse(request: LyciumCourseGenerationRequest): Promise<LyciumGeneratedCourseRecord>;
@@ -242,6 +276,7 @@ export type LyciumLocalApi = {
   getCourseGenerationJob(jobId: string | number): Promise<LyciumCourseGenerationJob>;
   resumeCourseGenerationJob(jobId: string | number): Promise<LyciumCourseGenerationJob>;
   listGenerationRuns(options?: { status?: string; limit?: number }): Promise<LyciumGenerationRun[]>;
+  loadGenerationEvalTrend(options?: { limit?: number }): Promise<LyciumGenerationEvalReportSet>;
   getGenerationRun(runId: string | number): Promise<LyciumGenerationRun>;
   resumeGenerationRun(runId: string | number): Promise<LyciumCourseGenerationJob>;
   resumeCourseSourceGaps(courseId: string | number, payload: SourceGapResumePayload): Promise<LyciumCourseGenerationJob>;

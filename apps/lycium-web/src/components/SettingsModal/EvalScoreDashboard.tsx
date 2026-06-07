@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { LyciumGenerationRun } from "@lycium/data-access";
+import type { LyciumGenerationEvalTrend, LyciumGenerationRun } from "@lycium/data-access";
 import { lyciumApi } from "../../runtime/appRuntime";
 
 type LoadState = "idle" | "loading" | "error" | "success";
@@ -91,6 +91,17 @@ function formatDate(value?: string | null): string {
 function formatPercent(value: number | null): string {
   if (value === null) return "No score";
   return `${Math.round(value)}%`;
+}
+
+function formatScore(value?: number | null): string {
+  return formatPercent(normalizePercent(typeof value === "number" ? value : null));
+}
+
+function formatDelta(value?: number | null): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "New";
+  const percentagePoints = Math.round((Math.abs(value) <= 1 ? value * 100 : value) * 10) / 10;
+  if (percentagePoints === 0) return "No change";
+  return `${percentagePoints > 0 ? "+" : ""}${percentagePoints} pts`;
 }
 
 function normalizeStatus(value: unknown): EvalStatus {
@@ -279,8 +290,29 @@ function EvalMetric({ label, value }: { label: string; value: number | null }) {
   );
 }
 
+function TrendRow({ row }: { row: LyciumGenerationEvalTrend["scenarioTrends"][number] }) {
+  const status = normalizeStatus(row.status);
+  return (
+    <article className="settings-eval-trend-row">
+      <div className="settings-eval-main">
+        <span className={`settings-eval-status settings-eval-status-${status}`}>
+          {statusLabel(status)}
+        </span>
+        <strong>{row.scenarioLabel || row.scenarioId}</strong>
+        <span>{row.scenarioId}</span>
+      </div>
+      <div className="settings-eval-score">
+        <span>{formatDelta(row.scoreDelta)}</span>
+        <strong>{formatScore(row.score)}</strong>
+        <span>{row.previousScore === null || row.previousScore === undefined ? "No prior run" : `Previous ${formatScore(row.previousScore)}`}</span>
+      </div>
+    </article>
+  );
+}
+
 export default function EvalScoreDashboard() {
   const [runs, setRuns] = useState<LyciumGenerationRun[]>([]);
+  const [evalTrend, setEvalTrend] = useState<LyciumGenerationEvalTrend | null>(null);
   const [loadState, setLoadState] = useState<LoadState>("idle");
   const [message, setMessage] = useState("");
 
@@ -294,14 +326,27 @@ export default function EvalScoreDashboard() {
   const loadRuns = async () => {
     setLoadState("loading");
     setMessage("");
-    try {
-      const nextRuns = await lyciumApi.listGenerationRuns({ limit: MAX_EVAL_RUNS });
-      setRuns(nextRuns);
-      setLoadState("success");
-    } catch (error) {
-      setLoadState("error");
-      setMessage(error instanceof Error ? error.message : "Eval dashboard unavailable.");
+    const [runResult, trendResult] = await Promise.allSettled([
+      lyciumApi.listGenerationRuns({ limit: MAX_EVAL_RUNS }),
+      lyciumApi.loadGenerationEvalTrend({ limit: MAX_EVAL_RUNS }),
+    ]);
+    if (runResult.status === "fulfilled") {
+      setRuns(runResult.value);
     }
+    if (trendResult.status === "fulfilled") {
+      setEvalTrend(trendResult.value.trend);
+    }
+    if (runResult.status === "fulfilled" || trendResult.status === "fulfilled") {
+      setLoadState("success");
+      if (runResult.status === "rejected" || trendResult.status === "rejected") {
+        const error = runResult.status === "rejected" ? runResult.reason : trendResult.status === "rejected" ? trendResult.reason : null;
+        setMessage(error instanceof Error ? error.message : "Some eval data is unavailable.");
+      }
+      return;
+    }
+    setLoadState("error");
+    const error = runResult.status === "rejected" ? runResult.reason : trendResult.status === "rejected" ? trendResult.reason : null;
+    setMessage(error instanceof Error ? error.message : "Eval dashboard unavailable.");
   };
 
   useEffect(() => {
@@ -322,6 +367,25 @@ export default function EvalScoreDashboard() {
         </button>
       </div>
       <div className="settings-eval-panel">
+        {evalTrend && evalTrend.runCount > 0 && (
+          <div className="settings-eval-trend-panel" aria-label="Persisted generation eval trend">
+            <div className="settings-eval-trend-heading">
+              <div>
+                <span>Persisted scenario evals</span>
+                <strong>{evalTrend.latestRunId || "Latest run"}</strong>
+              </div>
+              <div>
+                <span>{evalTrend.runCount} run{evalTrend.runCount === 1 ? "" : "s"}</span>
+                <strong>{formatScore(evalTrend.latestSummary.averageScore)}</strong>
+              </div>
+            </div>
+            <div className="settings-eval-trend-list">
+              {evalTrend.scenarioTrends.map((row) => (
+                <TrendRow key={row.scenarioId} row={row} />
+              ))}
+            </div>
+          </div>
+        )}
         <div className="settings-eval-summary-grid" aria-label="Generation eval summary">
           <span className="settings-eval-summary-card">
             <span>Runs</span>

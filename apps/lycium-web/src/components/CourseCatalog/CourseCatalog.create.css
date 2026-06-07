@@ -115,6 +115,40 @@
   margin-top: 1.2rem;
 }
 
+.create-course-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  border-radius: 999px;
+  padding: 0.25rem;
+  background: #eef2f7;
+}
+
+.create-course-tab {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  color: #4f5d76;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.create-course-tab--active {
+  color: #253049;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.create-course-tab:focus,
+.create-course-tab:focus-visible,
+.create-course-tab:active {
+  outline: none;
+  box-shadow: none;
+}
+
 .create-course-controls {
   display: grid;
   gap: 1rem;
@@ -127,6 +161,18 @@
 
 .create-course-controls--locked :is(textarea, input, button, .dropdown) {
   pointer-events: none;
+}
+
+.create-course-manual-panel {
+  min-height: 12rem;
+  align-content: end;
+}
+
+.create-course-manual-note {
+  margin: 0;
+  color: #667085;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .create-course-unlock-message {

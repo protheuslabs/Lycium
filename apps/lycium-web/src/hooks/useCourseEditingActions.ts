@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { CourseData, CourseEntry } from "../courseTypes";
 import {
   createLocalCourseFork,
+  createManualCourseDraft,
   deletePersistedLocalCourseDraft,
   exportLocalCourseDraftToJson,
   getLocalDraftMetadata,
@@ -76,6 +77,13 @@ export function useCourseEditingActions({ setCourses, openCourseByEntry }: UseCo
     [openCourseByEntry, setCourses],
   );
 
+  const createManualCourse = useCallback(() => {
+    const course = createManualCourseDraft();
+    persistLocalCourseDraft(course);
+    setCourses((currentCourses) => [course, ...currentCourses]);
+    void openCourseByEntry(course);
+  }, [openCourseByEntry, setCourses]);
+
   const deleteCourseDraft = useCallback(
     (course: CourseEntry) => {
       deletePersistedLocalCourseDraft(course.key);
@@ -133,6 +141,7 @@ export function useCourseEditingActions({ setCourses, openCourseByEntry }: UseCo
   );
 
   return {
+    createManualCourse,
     deleteCourseDraft,
     exportCourseDraft,
     forkCourse,

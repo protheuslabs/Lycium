@@ -130,6 +130,12 @@
   fill: currentColor;
 }
 
+.sidebar-edit-button[aria-label="Edit course"]:hover svg,
+.sidebar-edit-button[aria-label="Edit course"]:focus-visible svg {
+  animation: edit-pencil-write 420ms ease-in-out 3;
+  transform-origin: 35% 80%;
+}
+
 .sidebar-edit-button:hover,
 .sidebar-edit-button:focus-visible {
   border-color: #d8deea;

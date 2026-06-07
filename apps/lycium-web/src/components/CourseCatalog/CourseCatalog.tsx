@@ -51,6 +51,7 @@ type CourseCatalogProps = {
   ) => void;
   onPublishCourse: (course: CourseEntry) => void;
   onForkCourse: (course: CourseEntry) => void;
+  onCreateManualCourse: () => void;
   onDeleteCourseDraft: (course: CourseEntry) => void;
   onExportCourseDraft: (course: CourseEntry) => void;
   onImportCourseDraft: (file: File) => Promise<void>;
@@ -79,6 +80,7 @@ export default function CourseCatalog({
   onCatalogDrilldown,
   onPublishCourse,
   onForkCourse,
+  onCreateManualCourse,
   onDeleteCourseDraft,
   onExportCourseDraft,
   onImportCourseDraft,
@@ -100,7 +102,7 @@ export default function CourseCatalog({
     catalogClusterId,
     onCatalogDrilldown,
   });
-  const createCourseModal = useCreateCourseModal({ canCreateCourse, onGenerateCourse });
+  const createCourseModal = useCreateCourseModal({ canCreateCourse, onGenerateCourse, onCreateManualCourse });
   const canCreateCourseInScope = canCreateCourseInCatalogScope(
     catalogControls.selectedProgram,
     catalogControls.selectedCluster,
@@ -251,6 +253,7 @@ export default function CourseCatalog({
           levelOptions={CATALOG_LEVEL_OPTIONS}
           college={createCourseModal.college}
           department={createCourseModal.department}
+          mode={createCourseModal.mode}
           collegeOptions={createCourseModal.collegeOptions}
           departmentOptions={createCourseModal.departmentOptions}
           onPromptChange={onPromptChange}
@@ -259,6 +262,7 @@ export default function CourseCatalog({
           onDepartmentChange={createCourseModal.setDepartment}
           onSourceLinkChange={createCourseModal.handleSourceLinkChange}
           onAddSourceLink={createCourseModal.addSourceLink}
+          onModeChange={createCourseModal.setMode}
           onSubmit={createCourseModal.handleSubmit}
           onOpenSettings={(event) => {
             onOpenSettings(event);

@@ -139,3 +139,29 @@ Current automated coverage includes:
 - Publish-gate rejection for placeholder or prompt-like generated content.
 
 The source-index packet checks live in `services/source-index/tests/test_source_index_api.py` and `services/lycium-api/tests/test_source_index.py`.
+
+## Persistent Eval Run Reports
+
+Generation evals also support a local run-report format so scores can be trended over time instead of only passing or failing inside pytest. The primitive lives in `services/lycium-api/app/generation_eval_reports.py`.
+
+The report writer stores:
+
+- `run-*.json` for each eval run.
+- `latest.json` for the newest run.
+- `index.json` as a bounded ring of recent run summaries.
+
+The default storage location is `.lycium-local/eval-runs`, which is gitignored. Set `LYCIUM_EVAL_REPORT_DIR` to write reports somewhere else, such as a CI artifact directory.
+
+Use:
+
+```bash
+corepack pnpm test:generation-evals
+```
+
+To write a real local report:
+
+```bash
+corepack pnpm report:generation-evals
+```
+
+The current persistent report test covers CHEM 105, Intro Programming, Full-Stack Software Engineer Program, multi-source noisy corpus, and under-sourced prompt scenarios.

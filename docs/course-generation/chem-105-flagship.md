@@ -38,6 +38,8 @@ The scenario uses only free-access source targets:
 - At least one quiz per week.
 - At least 10 questions per quiz.
 - At least one source slot per required week.
+- Every generated Learn, Apply, and Summary section must carry local `sourceIds`.
+- Instructional and assessment blocks must carry `sourceIds` so inline citations can be verified against the section's actual evidence.
 - At least 80 percent module video/media coverage.
 - Summary sections use concept-card inventories, not prose recaps.
 - Course metadata records benchmark evidence, requirement origins, and source slots.
@@ -51,6 +53,8 @@ The implementation is centered on `chem-105-general-chemistry` in:
 - `services/lycium-api/tests/test_course_generation_scenarios.py`
 
 This does not mean generated CHEM 105 courses are automatically excellent yet. It means Lycium now has a concrete target that future generator work can be measured against.
+
+The current eval also rejects courses that rely only on a blanket course-level source list. A passing CHEM 105 draft must map sources to source slots, sections, and sourceable blocks so the renderer and review workflow can show only the citations that support the current page.
 
 ## What still needs deeper proof
 

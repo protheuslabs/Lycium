@@ -6,6 +6,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, sta
 from sqlalchemy.orm import Session
 
 from app.db import get_session
+from app.generation_eval_reports import build_generation_eval_trend, load_generation_eval_runs
 from app.generation_observability import generation_run_payload, get_generation_run, list_generation_runs
 from app.jobs import run_agent_course_generation_job
 from app.models import Job
@@ -51,6 +52,14 @@ def register(app: FastAPI) -> None:
         session: Session = Depends(get_session),
     ) -> list[dict[str, Any]]:
         return list_agent_course_generation_runs(limit=limit, status_filter=status_filter, session=session)
+
+    @app.get("/v1/generation-evals/trend")
+    def get_generation_eval_trend(limit: int = Query(default=20, ge=1, le=100)) -> dict[str, Any]:
+        runs = load_generation_eval_runs(limit=limit)
+        return {
+            "runs": runs,
+            "trend": build_generation_eval_trend(runs),
+        }
 
     @app.get("/v1/agent/courses/runs/{run_id}", response_model=GenerationRunRead)
     def get_agent_course_generation_run(run_id: int, session: Session = Depends(get_session)) -> dict[str, Any]:

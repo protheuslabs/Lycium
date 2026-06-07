@@ -4,7 +4,8 @@ import Modal from "../Modal/Modal";
 import CatalogActionCard from "./CatalogActionCard";
 import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogVisibleCourse } from "./catalogUtils";
-import { hasBlockingSourceGaps, sourceGapSummary } from "../../utils/courseSourceGaps";
+import { sourceGapSummary } from "../../utils/courseSourceGaps";
+import { getCourseLifecycleSummary } from "../../utils/courseLifecycle";
 import { getLocalDraftMetadata } from "../../utils/localCourseDrafts";
 
 type CatalogCourseCardProps = {
@@ -27,26 +28,27 @@ export default function CatalogCourseCard({
   const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites } = visibleCourse;
   const [isPrerequisiteModalOpen, setIsPrerequisiteModalOpen] = useState(false);
   const localDraft = getLocalDraftMetadata(course);
-  const isReadyForReview = course.status === "ready_for_review";
-  const needsSources = hasBlockingSourceGaps(course);
+  const lifecycle = getCourseLifecycleSummary(course);
   const sourceSummary = sourceGapSummary(course);
   const requiresPrerequisites = !hasCourseActivity && unmetPrerequisites.length > 0;
   const requiredCourseLabel = `Requires ${unmetPrerequisites.length} course${unmetPrerequisites.length === 1 ? "" : "s"}`;
+  const canActivateCard = lifecycle.needsSourceInput || (!requiresPrerequisites && lifecycle.canOpen);
+  const shouldShowLifecycleAction = lifecycle.needsSourceInput || lifecycle.isPublishCandidate || lifecycle.status === "failed";
 
   const handleCourseOpen = () => {
-    if (needsSources) {
+    if (lifecycle.needsSourceInput) {
       onOpenSourceGaps(course);
       return;
     }
-    if (!requiresPrerequisites) {
+    if (!requiresPrerequisites && lifecycle.canOpen) {
       onOpenCourse(course);
     }
   };
 
   return (
     <CatalogActionCard
-      className={`course-card ${requiresPrerequisites ? "course-card--locked" : ""} ${needsSources ? "course-card--needs-sources" : ""}`}
-      disabled={requiresPrerequisites && !needsSources}
+      className={`course-card course-card--lifecycle-${lifecycle.tone} ${requiresPrerequisites ? "course-card--locked" : ""}`}
+      disabled={!canActivateCard}
       onActivate={handleCourseOpen}
     >
       {requiresPrerequisites && <span className="course-card-lock-watermark" aria-hidden="true" />}
@@ -65,8 +67,7 @@ export default function CatalogCourseCard({
       <h3>
         {course.title}
         {localDraft && <span className="course-draft-badge">{localDraft.parentCourseKey ? "Fork" : "Local draft"}</span>}
-        {isReadyForReview && <span className="course-review-badge">Ready for review</span>}
-        {needsSources && <span className="course-source-gap-badge">Needs sources</span>}
+        <span className={`course-lifecycle-badge course-lifecycle-badge-${lifecycle.tone}`}>{lifecycle.badgeLabel}</span>
       </h3>
       {bookmarkedSection && (
         <p className="course-active-subheader">
@@ -75,7 +76,7 @@ export default function CatalogCourseCard({
         </p>
       )}
       {course.data.shortDescription && <p className="course-short-description">{course.data.shortDescription}</p>}
-      {needsSources ? (
+      {lifecycle.needsSourceInput ? (
         <p className="course-progress-percentage course-progress-empty course-progress-required course-progress-needs-sources">
           <span>Needs sources: {sourceSummary.blockingGaps.length} blocking gap{sourceSummary.blockingGaps.length === 1 ? "" : "s"}</span>
         </p>
@@ -103,18 +104,22 @@ export default function CatalogCourseCard({
           variant="course"
         />
       )}
-      {isReadyForReview && (
+      {shouldShowLifecycleAction && (
         <button
           className="course-publish-button"
           type="button"
           disabled={isPublishing}
           onClick={(event) => {
             event.stopPropagation();
+            if (lifecycle.needsSourceInput) {
+              onOpenSourceGaps(course);
+              return;
+            }
             onOpenInfo(course);
           }}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          {isPublishing ? "Publishing..." : "Review"}
+          {isPublishing ? "Publishing..." : lifecycle.actionLabel}
         </button>
       )}
       {requiresPrerequisites && (

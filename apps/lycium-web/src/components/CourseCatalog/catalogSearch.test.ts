@@ -86,6 +86,37 @@ describe("catalog search scoring", () => {
     expect(visible.map(({ course }) => course.key)).not.toContain(lockedCourse.key);
   });
 
+  it("pins local source-gated drafts above normal catalog sorting", () => {
+    const sourceGatedDraft: CourseEntry = {
+      ...baseCourse,
+      key: "draft-needs-sources-test",
+      title: "Zoology Source Gap Draft",
+      source: "local",
+      status: "needs_sources",
+      data: {
+        ...baseCourse.data,
+        title: "Zoology Source Gap Draft",
+        category: "natural-sciences-mathematics",
+        department: "biology",
+      },
+    };
+    const visible = getVisibleCatalogCourses({
+      activityFilter: "all",
+      catalogCourseMap: new Map([baseCourse, sourceGatedDraft].map((course) => [course.key, course])),
+      collegeFilter: "all",
+      courses: [baseCourse, sourceGatedDraft],
+      departmentFilter: "all",
+      difficultyFilter: "all",
+      isClusterScoped: false,
+      searchQuery: "",
+      selectedClusterCourseIds: new Set(),
+      showLockedCourses: true,
+      sortMode: "college",
+    });
+
+    expect(visible[0]?.course.key).toBe(sourceGatedDraft.key);
+  });
+
   it("sorts programs and clusters through shared path sort rules", () => {
     const courseMap = new Map(localCourses.map((course) => [course.key, course]));
     const programs = getVisibleCatalogPrograms({

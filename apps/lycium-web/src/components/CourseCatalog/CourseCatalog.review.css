@@ -24,9 +24,35 @@
   background: rgba(47, 122, 79, 0.12);
 }
 
-.course-review-status-wait {
+.course-review-status-wait,
+.course-review-status-source,
+.course-review-status-draft {
   color: #8a4f00;
   background: rgba(245, 158, 11, 0.14);
+}
+
+.course-review-status-review,
+.course-review-status-published {
+  color: #1f6f42;
+  background: rgba(47, 122, 79, 0.12);
+}
+
+.course-review-status-revision,
+.course-review-status-failed {
+  color: #8f1f1f;
+  background: rgba(214, 69, 69, 0.14);
+}
+
+.course-review-status-archived {
+  color: #475569;
+  background: rgba(100, 116, 139, 0.14);
+}
+
+.course-review-lifecycle-note {
+  margin: -0.35rem 0 0;
+  color: #4f5d76;
+  font-size: 0.88rem;
+  line-height: 1.4;
 }
 
 .course-review-summary-grid {

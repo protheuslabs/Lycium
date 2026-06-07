@@ -123,6 +123,14 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       return readJsonResponse(response, "Generation run history unavailable");
     },
 
+    async loadGenerationEvalTrend(options = {}) {
+      const params = new URLSearchParams();
+      if (options.limit) params.set("limit", String(options.limit));
+      const query = params.toString();
+      const response = await fetch(`${base}/v1/generation-evals/trend${query ? `?${query}` : ""}`);
+      return readJsonResponse(response, "Generation eval trend unavailable");
+    },
+
     async getGenerationRun(runId) {
       const response = await fetch(`${base}/v1/generation-runs/${encodeURIComponent(String(runId))}`);
       return readJsonResponse(response, "Generation run unavailable");

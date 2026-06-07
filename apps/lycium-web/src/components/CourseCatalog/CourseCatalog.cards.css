@@ -92,30 +92,46 @@
   overflow: hidden;
 }
 
-.course-review-badge {
+.course-lifecycle-badge {
   display: inline-flex;
   width: fit-content;
   margin: 0.32rem 0 0;
   padding: 0.22rem 0.55rem;
   border-radius: 999px;
-  color: #2b4a14;
-  background: #e7f5d8;
   font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
-.course-source-gap-badge {
-  display: inline-flex;
-  width: fit-content;
-  margin: 0.32rem 0 0;
-  padding: 0.22rem 0.55rem;
-  border-radius: 999px;
+.course-lifecycle-badge-draft {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.course-lifecycle-badge-source {
   color: #855f00;
   background: #fff4cc;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+}
+
+.course-lifecycle-badge-review {
+  color: #2b4a14;
+  background: #e7f5d8;
+}
+
+.course-lifecycle-badge-revision,
+.course-lifecycle-badge-failed {
+  color: #8f1f1f;
+  background: #ffe2e2;
+}
+
+.course-lifecycle-badge-published {
+  color: #1f6f42;
+  background: rgba(47, 122, 79, 0.14);
+}
+
+.course-lifecycle-badge-archived {
+  color: #475569;
+  background: #e5e7eb;
 }
 
 .course-active-subheader {
@@ -219,11 +235,11 @@
   color: #855f00;
 }
 
-.course-card--needs-sources {
+.course-card--lifecycle-source {
   border-style: dashed;
 }
 
-.course-card--needs-sources:hover {
+.course-card--lifecycle-source:hover {
   background: #fff9e8;
 }
 

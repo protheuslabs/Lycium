@@ -3,6 +3,7 @@ import type {
   LyciumCourseQualityReport,
 } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
+import { getCourseGenerationGates, getCourseLifecycleSummary, getCourseQualityReport } from "../../utils/courseLifecycle";
 import CourseGenerationTimeline from "./CourseGenerationTimeline";
 
 type CourseReviewPanelProps = {
@@ -41,16 +42,10 @@ function reviewMetadata(course: CourseEntry) {
   const metadata = isRecord(course.data.metadata) ? course.data.metadata : {};
   const trace = isRecord(course.generation_trace) ? course.generation_trace : {};
   const traceContext = isRecord(trace.curriculum_benchmark_context) ? trace.curriculum_benchmark_context : {};
-  const qualityReport = (
-    isRecord(course.qualityReport)
-      ? course.qualityReport
-      : isRecord(trace.quality_report)
-        ? trace.quality_report
-        : null
-  ) as LyciumCourseQualityReport | null;
+  const qualityReport = getCourseQualityReport(course) as LyciumCourseQualityReport | null;
 
   const workflow = qualityReport?.workflow;
-  const gates = Array.isArray(workflow?.gates) ? workflow.gates : [];
+  const gates = Array.isArray(workflow?.gates) ? workflow.gates : getCourseGenerationGates(course);
   const benchmarks = asRecordArray(metadata.curriculumBenchmarks ?? traceContext.curriculumBenchmarks);
   const requirementOrigins = asRecordArray(metadata.requirementOrigins ?? traceContext.requirementOrigins);
   const parityProfile = isRecord(metadata.courseParityProfile)
@@ -61,9 +56,10 @@ function reviewMetadata(course: CourseEntry) {
   const sourceSlots = asRecordArray(metadata.sourceSlots ?? traceContext.sourceSlots);
   const failedGateCount = gates.filter((gate) => gate.status === "failed").length;
   const needsReviewGateCount = gates.filter((gate) => gate.status === "needs_review").length;
-  const canPublish = course.status === "ready_for_review" && Boolean(qualityReport?.passed) && failedGateCount === 0;
+  const lifecycle = getCourseLifecycleSummary(course);
+  const canPublish = lifecycle.canPublish;
 
-  return { qualityReport, gates, benchmarks, requirementOrigins, parityProfile, sourceSlots, failedGateCount, needsReviewGateCount, canPublish };
+  return { qualityReport, gates, benchmarks, requirementOrigins, parityProfile, sourceSlots, failedGateCount, needsReviewGateCount, lifecycle, canPublish };
 }
 
 function GateList({ gates }: { gates: LyciumCourseGenerationGateResult[] }) {
@@ -87,21 +83,25 @@ function GateList({ gates }: { gates: LyciumCourseGenerationGateResult[] }) {
 }
 
 export default function CourseReviewPanel({ course, isPublishing, onPublishCourse }: CourseReviewPanelProps) {
-  const { qualityReport, gates, benchmarks, requirementOrigins, parityProfile, sourceSlots, failedGateCount, needsReviewGateCount, canPublish } =
+  const { qualityReport, gates, benchmarks, requirementOrigins, parityProfile, sourceSlots, failedGateCount, needsReviewGateCount, lifecycle, canPublish } =
     reviewMetadata(course);
   const score = numberValue(qualityReport?.score);
-  const coveragePercent = numberValue(parityProfile.coveragePercent);
   const requiredTopics = Array.isArray(parityProfile.commonRequiredTopics) ? parityProfile.commonRequiredTopics : [];
 
   return (
     <section className="course-info-section course-review-panel">
       <div className="course-review-header">
         <h3>Generation review</h3>
-        <span className={`course-review-status ${canPublish ? "course-review-status-pass" : "course-review-status-wait"}`}>
-          {canPublish ? "Publish ready" : "Review required"}
+        <span className={`course-review-status course-review-status-${lifecycle.tone}`}>
+          {lifecycle.label}
         </span>
       </div>
+      <p className="course-review-lifecycle-note">{lifecycle.description}</p>
       <div className="course-review-summary-grid">
+        <article>
+          <span>Lifecycle</span>
+          <strong>{lifecycle.status.replaceAll("_", " ")}</strong>
+        </article>
         <article>
           <span>Quality score</span>
           <strong>{score === null ? "Not scored" : `${Math.round(score * 100)}%`}</strong>
@@ -115,8 +115,8 @@ export default function CourseReviewPanel({ course, isPublishing, onPublishCours
           <strong>{benchmarks.length}</strong>
         </article>
         <article>
-          <span>Parity coverage</span>
-          <strong>{coveragePercent === null ? "Not recorded" : `${coveragePercent}%`}</strong>
+          <span>Publish gate</span>
+          <strong>{canPublish ? "Open" : lifecycle.isPublishCandidate ? "Blocked" : "Not requested"}</strong>
         </article>
       </div>
 
@@ -176,7 +176,7 @@ export default function CourseReviewPanel({ course, isPublishing, onPublishCours
         )}
       </div>
 
-      {course.status === "ready_for_review" && (
+      {lifecycle.isPublishCandidate && (
         <button className="course-review-publish-button" type="button" disabled={!canPublish || isPublishing} onClick={() => onPublishCourse(course)}>
           {isPublishing ? "Publishing..." : canPublish ? "Publish course" : "Resolve gates before publishing"}
         </button>

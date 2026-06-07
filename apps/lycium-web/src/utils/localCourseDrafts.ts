@@ -265,6 +265,63 @@ export function createLocalCourseFork(course: CourseEntry): CourseEntry {
   };
 }
 
+export function createManualCourseDraft(): CourseEntry {
+  const now = new Date().toISOString();
+  const stamp = Date.now().toString(36);
+  const key = `manual-course-${stamp}`;
+  const title = "Untitled course";
+  const editHistoryEntry: LyciumCourseEditHistoryEntry = {
+    operationType: "create_manual_course",
+    createdAt: now,
+    validationState: "unchecked",
+  };
+
+  return {
+    key,
+    title,
+    source: "local",
+    status: "draft",
+    data: {
+      title,
+      shortDescription: "A blank local course draft.",
+      orderMandatory: false,
+      metadata: {
+        pacingLabel: "Module",
+        editPolicy: {
+          editable: true,
+          ownerCanEdit: true,
+          learnersCanFork: true,
+        },
+        localDraft: {
+          isLocalDraft: true,
+          schemaVersion: 1,
+          draftId: `${key}-draft`,
+          origin: "local_edit",
+          createdAt: now,
+          updatedAt: now,
+          revision: 1,
+        },
+        editHistory: [editHistoryEntry],
+      },
+      modules: [
+        {
+          id: `${key}-m01`,
+          title: "Module 1",
+          sections: [
+            {
+              id: `${key}-m01-s01`,
+              title: "Section title",
+              pageType: "learn",
+              sectionType: "lesson",
+              content: [],
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
 export function importLocalCourseDraftFromJson(jsonText: string): CourseEntry {
   const parsed = JSON.parse(jsonText) as unknown;
   const candidate =

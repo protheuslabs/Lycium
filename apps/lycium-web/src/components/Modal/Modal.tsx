@@ -1,4 +1,4 @@
-import { useEffect, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import "./Modal.css";
 
@@ -25,6 +25,12 @@ export default function Modal({
   children,
   onClose,
 }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!isOpen) return undefined;
 
@@ -38,7 +44,7 @@ export default function Modal({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || typeof document === "undefined") {
+  if (!mounted || !isOpen || typeof document === "undefined") {
     return null;
   }
 

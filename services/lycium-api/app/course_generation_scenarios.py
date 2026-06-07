@@ -36,6 +36,10 @@ def _items(value: Any) -> list[dict[str, Any]]:
     return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
 
 
+def _has_items(value: Any) -> bool:
+    return isinstance(value, list) and bool(value)
+
+
 def _text(value: Any) -> str:
     return value if isinstance(value, str) else ""
 
@@ -93,6 +97,9 @@ def _block_text(block: dict[str, Any]) -> str:
 def _course_metrics(course: dict[str, Any]) -> dict[str, Any]:
     modules = _items(course.get("modules"))
     learn_sections = 0
+    sourced_sections = 0
+    sourceable_blocks = 0
+    sourced_blocks = 0
     quiz_blocks = 0
     quiz_blocks_with_min_questions = 0
     video_modules = 0
@@ -113,12 +120,18 @@ def _course_metrics(course: dict[str, Any]) -> dict[str, Any]:
         for section in sections:
             if section.get("pageType") == "learn":
                 learn_sections += 1
+            if _has_items(section.get("sourceIds")):
+                sourced_sections += 1
             section_type = _normalize(_text(section.get("sectionType")) + " " + _text(section.get("title")))
             if "summary" in section_type or "concept review" in section_type:
                 module_has_summary = True
             full_text_parts.extend([_text(section.get("title")), _text(section.get("sectionType"))])
             for block in _items(section.get("content")):
                 full_text_parts.append(_block_text(block))
+                if block.get("type") in {"text", "video", "iframe", "conceptCard", "conceptCards", "quiz"}:
+                    sourceable_blocks += 1
+                    if _has_items(block.get("sourceIds")):
+                        sourced_blocks += 1
                 if block.get("type") == "video":
                     module_has_video = True
                 if block.get("type") == "quiz":
@@ -134,12 +147,19 @@ def _course_metrics(course: dict[str, Any]) -> dict[str, Any]:
     source_records = course.get("sourceRecords")
     source_record_count = len(source_records) if isinstance(source_records, list) else len(source_records or {}) if isinstance(source_records, dict) else 0
     metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    source_slots = _items(metadata.get("sourceSlots"))
+    slots_with_primary = sum(1 for slot in source_slots if isinstance(slot.get("primarySourceId"), str) and slot["primarySourceId"])
+    total_sections = sum(len(_items(module.get("sections"))) for module in modules)
     return {
         "moduleCount": len(modules),
         "learnSectionCount": learn_sections,
+        "sectionSourceCoverage": round(sourced_sections / total_sections, 2) if total_sections else 0,
         "quizBlockCount": quiz_blocks,
         "quizBlocksWithMinQuestions": quiz_blocks_with_min_questions,
         "sourceRecordCount": source_record_count,
+        "sourceSlotCount": len(source_slots),
+        "sourceSlotPrimaryCoverageRatio": round(slots_with_primary / len(source_slots), 2) if source_slots else 0,
+        "blockSourceCoverage": round(sourced_blocks / sourceable_blocks, 2) if sourceable_blocks else 0,
         "moduleVideoCoverage": round(video_modules / len(modules), 2) if modules else 0,
         "moduleSummaryCoverage": round(summary_modules / len(modules), 2) if modules else 0,
         "benchmarkCount": len(metadata.get("curriculumBenchmarks", [])) if isinstance(metadata.get("curriculumBenchmarks"), list) else 0,
@@ -272,6 +292,32 @@ def _specificity_check(text_blob: str) -> dict[str, Any]:
     )
 
 
+def _source_mapping_check(metrics: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+    min_slot_count = int(spec.get("minSourceSlotCount") or 0)
+    min_slot_primary_coverage = float(spec.get("minSourceSlotPrimaryCoverageRatio") or 0)
+    min_section_source_coverage = float(spec.get("minSectionSourceCoverage") or 0)
+    min_block_source_coverage = float(spec.get("minBlockSourceCoverage") or 0)
+    slot_score = min(1.0, metrics["sourceSlotCount"] / max(1, min_slot_count))
+    primary_score = min(1.0, metrics["sourceSlotPrimaryCoverageRatio"] / max(0.01, min_slot_primary_coverage))
+    section_score = min(1.0, metrics["sectionSourceCoverage"] / max(0.01, min_section_source_coverage))
+    block_score = min(1.0, metrics["blockSourceCoverage"] / max(0.01, min_block_source_coverage))
+    return _check(
+        key="source_mapping",
+        label="Concept and block source mapping",
+        score=slot_score * 0.3 + primary_score * 0.2 + section_score * 0.2 + block_score * 0.3,
+        findings=[
+            *([] if metrics["sourceSlotCount"] >= min_slot_count else [_finding("error", f"Expected at least {min_slot_count} source slots.", "metadata.sourceSlots")]),
+            *([] if metrics["sourceSlotPrimaryCoverageRatio"] >= min_slot_primary_coverage else [_finding("error", "Every source slot should name a primary source.", "metadata.sourceSlots")]),
+            *([] if metrics["sectionSourceCoverage"] >= min_section_source_coverage else [_finding("error", "Sections should carry local sourceIds instead of only course-level sources.")]),
+            *([] if metrics["blockSourceCoverage"] >= min_block_source_coverage else [_finding("error", "Instructional and assessment blocks should carry sourceIds for citation grounding.")]),
+        ],
+        metrics={
+            key: metrics[key]
+            for key in ("sourceSlotCount", "sourceSlotPrimaryCoverageRatio", "sectionSourceCoverage", "blockSourceCoverage")
+        },
+    )
+
+
 def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str) -> dict[str, Any]:
     if scenario_id not in COURSE_SCENARIOS:
         raise ValueError(f"Unknown course generation scenario '{scenario_id}'")
@@ -333,6 +379,11 @@ def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str
         ),
         _specificity_check(metrics["textBlob"]),
     ]
+    if any(
+        key in spec
+        for key in ("minSourceSlotCount", "minSourceSlotPrimaryCoverageRatio", "minSectionSourceCoverage", "minBlockSourceCoverage")
+    ):
+        checks.insert(-1, _source_mapping_check(metrics, spec))
     return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course", checks=checks)
 
 

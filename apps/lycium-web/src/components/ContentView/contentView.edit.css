@@ -49,7 +49,6 @@
   background: #4a6cf7;
   cursor: pointer;
   opacity: 0.82;
-  transform-origin: 35% 80%;
 }
 
 .course-edit-delete {
@@ -76,6 +75,10 @@
 .course-edit-pencil:focus-visible {
   outline: none;
   opacity: 1;
+}
+
+.course-edit-pencil:hover svg,
+.course-edit-pencil:focus-visible svg {
   animation: edit-pencil-write 420ms ease-in-out 3;
 }
 
@@ -116,6 +119,7 @@
 
 .course-edit-pencil svg {
   fill: currentColor;
+  transform-origin: 35% 80%;
 }
 
 .course-edit-delete svg {
