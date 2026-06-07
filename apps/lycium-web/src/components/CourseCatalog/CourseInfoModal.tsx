@@ -1,8 +1,10 @@
+import { useRef } from "react";
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryLabel, getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/courseTaxonomy";
 import Button from "../Button/Button";
 import Modal from "../Modal/Modal";
 import CourseReviewPanel from "./CourseReviewPanel";
+import { getLocalDraftMetadata } from "../../utils/localCourseDrafts";
 
 type CourseInfoModalProps = {
   course: CourseEntry;
@@ -10,14 +12,35 @@ type CourseInfoModalProps = {
   onClose: () => void;
   onPublishCourse: (course: CourseEntry) => void;
   onForkCourse: (course: CourseEntry) => void;
+  onDeleteCourseDraft: (course: CourseEntry) => void;
+  onExportCourseDraft: (course: CourseEntry) => void;
+  onImportCourseDraft: (file: File) => Promise<void>;
+  onResetCourseDraft: (course: CourseEntry) => void;
 };
 
-export default function CourseInfoModal({ course, isPublishing, onClose, onPublishCourse, onForkCourse }: CourseInfoModalProps) {
+export default function CourseInfoModal({
+  course,
+  isPublishing,
+  onClose,
+  onPublishCourse,
+  onForkCourse,
+  onDeleteCourseDraft,
+  onExportCourseDraft,
+  onImportCourseDraft,
+  onResetCourseDraft,
+}: CourseInfoModalProps) {
+  const importDraftInputRef = useRef<HTMLInputElement | null>(null);
   const tagLabels = getCourseTagLabels(course.data.tags);
   const learningTypes = course.data.learningTypes ?? [];
   const courseEquivalencies = course.data.courseEquivalencies ?? [];
   const isGeneratedCourse = course.source === "remote" || Boolean(course.generation_trace);
   const learnersCanFork = course.data.metadata?.editPolicy?.learnersCanFork !== false;
+  const localDraft = getLocalDraftMetadata(course);
+  const localDraftDescription = localDraft
+    ? localDraft.origin === "fork"
+      ? `Forked from ${localDraft.parentCourseTitle ?? localDraft.forkedFromTitle ?? "another course"}.`
+      : "Local editable draft."
+    : "";
 
   return (
     <Modal
@@ -101,6 +124,47 @@ export default function CourseInfoModal({ course, isPublishing, onClose, onPubli
         {isGeneratedCourse && (
           <CourseReviewPanel course={course} isPublishing={isPublishing} onPublishCourse={onPublishCourse} />
         )}
+        <section className="course-info-section course-draft-section">
+            <h3>{localDraft ? "Local draft" : "Local drafts"}</h3>
+            <p className="course-info-muted">
+              {localDraft
+                ? `${localDraftDescription} Revision ${localDraft.revision}.${
+                    localDraft.updatedAt ? ` Last saved ${new Date(localDraft.updatedAt).toLocaleString()}.` : ""
+                  }`
+                : "Import a portable Lycium local draft file."}
+            </p>
+            <div className="course-draft-actions">
+              {localDraft && (
+                <Button type="button" variant="nav" onClick={() => onExportCourseDraft(course)}>
+                  Export draft
+                </Button>
+              )}
+              <Button type="button" variant="nav" onClick={() => importDraftInputRef.current?.click()}>
+                Import draft
+              </Button>
+              {localDraft?.parentCourseKey && (
+                <Button type="button" variant="nav" onClick={() => onResetCourseDraft(course)}>
+                  Reset to original
+                </Button>
+              )}
+              {localDraft && (
+                <Button type="button" variant="nav" onClick={() => onDeleteCourseDraft(course)}>
+                  Delete draft
+                </Button>
+              )}
+              <input
+                ref={importDraftInputRef}
+                className="course-draft-file-input"
+                type="file"
+                accept="application/json,.json"
+                onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+                  event.currentTarget.value = "";
+                  if (file) void onImportCourseDraft(file);
+                }}
+              />
+            </div>
+          </section>
         {learnersCanFork && (
           <section className="course-info-section course-fork-section">
             <Button type="button" variant="nav" className="course-fork-button" onClick={() => onForkCourse(course)}>

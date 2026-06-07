@@ -17,8 +17,12 @@ const INTERACTIVE_SELECTOR = [
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
+    if (window.sessionStorage.getItem("lycium-e2e-storage-cleared") === "1") {
+      return;
+    }
     window.localStorage.clear();
     window.sessionStorage.clear();
+    window.sessionStorage.setItem("lycium-e2e-storage-cleared", "1");
   });
 });
 

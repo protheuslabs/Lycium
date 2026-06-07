@@ -21,26 +21,8 @@ import { useCourseProgressState } from "./hooks/useCourseProgressState";
 import { useCourseSourceGapActions } from "./hooks/useCourseSourceGapActions";
 import { API_BASE, browserStorage, localApiSyncEnabled, lyciumApi, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { summarizeCourseProgress } from "./utils/courseProgress";
-import {
-  COURSE_CATALOG_PATH,
-  COURSE_CATALOG_COURSES_PATH,
-  COURSE_CATALOG_PROGRAMS_PATH,
-  LYCIUM_ROUTE_ROOT,
-  SETTINGS_PATH,
-  findBookmarkedSection,
-  getCatalogClusterPath,
-  browserPathForRoute,
-  getCatalogProgramPath,
-  getCoursePath,
-  getCoursePathSlug,
-  getCourseSectionIndex,
-  getCourseSectionPath,
-  getFirstCourseSection,
-  getProgramClusterPathSlug,
-  getProgramPathSlug,
-  getSectionPathSlug,
-  parseCourseRoute,
-} from "./utils/courseRouting";
+import { COURSE_CATALOG_PATH, COURSE_CATALOG_COURSES_PATH, COURSE_CATALOG_PROGRAMS_PATH, LYCIUM_ROUTE_ROOT, SETTINGS_PATH, browserPathForRoute, findBookmarkedSection, getCatalogClusterPath, getCatalogProgramPath, getCoursePath, getCoursePathSlug, getCourseSectionIndex, getCourseSectionPath, getFirstCourseSection, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug, parseCourseRoute } from "./utils/courseRouting";
+import { mergeCourseEntriesByKey, readPersistedLocalCourseEntries } from "./utils/localCourseDrafts";
 import { readSettingsBackdropPath, writeSettingsBackdropPath } from "./utils/settingsRouteState";
 
 function App() {
@@ -97,9 +79,13 @@ function App() {
   }, [courses, resolveCourseKeyFromPath, viewRoute.courseSlug, viewRoute.kind]);
 
   const selectedCourse = useMemo(() => {
+    if (viewRoute.kind === "course") {
+      return selectedCourseFromPath ?? undefined;
+    }
+
     const match = selectedCourseFromPath ?? courses.find((course) => course.key === currentCourseKey);
     return match ?? courses[0];
-  }, [courses, currentCourseKey, selectedCourseFromPath]);
+  }, [courses, currentCourseKey, selectedCourseFromPath, viewRoute.kind]);
 
   const selectedProgram = useMemo(() => {
     if (viewRoute.kind !== "program" || !viewRoute.programSlug) {
@@ -306,7 +292,7 @@ function App() {
     [pushSectionPath, router],
   );
 
-  const { forkCourse, saveCourseDraft } = useCourseEditingActions({ openCourseByEntry, setCourses });
+  const { deleteCourseDraft, exportCourseDraft, forkCourse, importCourseDraft, resetCourseDraft, saveCourseDraft } = useCourseEditingActions({ openCourseByEntry, setCourses });
 
   const goToSectionIndex = useCallback((index: number) => {
     setCurrentSectionIndex(index);
@@ -373,7 +359,16 @@ const {
     if (route.kind !== "course" || !route.courseSlug) return;
     const resolvedKey = resolveCourseKeyFromPath(route.courseSlug);
     const routeCourse = resolvedKey ? courses.find((course) => course.key === resolvedKey) ?? null : null;
-    if (!routeCourse) return;
+    if (!routeCourse) {
+      const persistedCourse = readPersistedLocalCourseEntries().find(
+        (course) => getCoursePathSlug(course) === route.courseSlug,
+      );
+      if (persistedCourse) {
+        setCourses((current) => mergeCourseEntriesByKey([persistedCourse], current));
+        setCurrentCourseKey(persistedCourse.key);
+      }
+      return;
+    }
     if (routeCourse.key !== currentCourseKey) setCurrentCourseKey(routeCourse.key);
 
     const routeSections = routeCourse.data.modules.flatMap((module) => module.sections);
@@ -433,6 +428,10 @@ const {
 	          onCatalogDrilldown={routeToCatalogDrilldown}
 	          onPublishCourse={handlePublishCourse}
 	          onForkCourse={forkCourse}
+            onDeleteCourseDraft={deleteCourseDraft}
+            onExportCourseDraft={exportCourseDraft}
+            onImportCourseDraft={importCourseDraft}
+            onResetCourseDraft={resetCourseDraft}
 	          publishingCourseKey={publishingCourseKey}
           onOpenSettings={routeToSettings}
         />

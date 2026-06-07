@@ -68,6 +68,8 @@ Minimum schema additions:
 - Course snapshot lifecycle metadata: snapshot id, lineage id, immutable version, status, based-on snapshot id, forked-from lineage id, parent snapshot hash, published-at timestamp, archived-at timestamp, and review state
 - Course edit policy metadata: owner edit permission, maintainer edit permission, learner fork permission, contributor suggestion permission, locked section ids, locked block ids, and publish gate requirements
 - Course edit history metadata: draft snapshot id, editor id, operation type, target element id, previous value reference, new value reference, timestamp, and validation state
+- Local course draft metadata: local draft id, schema version, origin, parent course key/title, forked-from title, conflict reference, conflict reason, created-at timestamp, updated-at timestamp, and revision number
+- Local course draft exchange envelope: artifact kind, schema version, exported-at timestamp, and embedded course entry aligned with the Lycium course data model
 - Program metadata: path id, parent program, milestone order, capstone flag, credential checkpoint
 - Knowledge object metadata: source id, canonical URL, publisher, license, modality, cost, freshness, trust score, corroboration state
 - Citation graph metadata: generated block id to source object mappings and generation recipe
@@ -94,6 +96,8 @@ Minimum schema additions:
 - The interface shall introduce a classroom mode that can present agent dialogue, lesson scenes, and inline learner interaction.
 - The course renderer shall support a read-only mode and an edit mode using the same course structure, with pencil affordances attached to editable rendered elements.
 - Edit mode shall submit structured draft updates against editable draft snapshots instead of mutating published course snapshots.
+- Browser-local edit mode shall preserve user work with conflict-safe local draft saves. When a newer persisted draft exists, the app shall create an explicit conflict copy instead of overwriting either copy.
+- Browser-local draft import/export shall use a portable JSON envelope so local work can move between browser storage, backups, and future backend draft lineage APIs.
 
 ### 10.3 Backend
 

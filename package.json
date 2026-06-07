@@ -20,6 +20,7 @@
     "verify:pages-export": "node scripts/verify-pages-export.mjs",
     "test:contracts": "corepack pnpm --filter @lycium/contracts test",
     "test:api": "cd services/lycium-api && python3 -m pytest -q",
+    "test:program-evals": "cd services/lycium-api && python3 -m pytest tests/test_program_generation_eval_scenarios.py -q",
     "test:source-index": "cd services/source-index && python3 -m pytest -q",
     "test:workers": "cd services/lycium-workers && PYTHONPATH=src pytest -q",
     "test:e2e": "corepack pnpm --filter @lycium/web e2e",

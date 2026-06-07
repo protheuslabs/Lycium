@@ -66,6 +66,8 @@
 - FR-38b: A course creator or authorized maintainer shall be able to edit the canonical course lineage by creating a new draft revision from the current published snapshot.
 - FR-38c: A learner or non-owner shall edit an existing course by creating a forked lineage when forking is allowed by the course edit policy.
 - FR-38d: Learner progress shall remain attached to the snapshot version the learner used unless the learner or platform explicitly migrates progress to a newer published version.
+- FR-38e: The local-first web app shall support portable local draft export and import using JSON envelopes that preserve course data and local draft metadata.
+- FR-38f: Local draft saves shall be conflict-safe. If a persisted local draft is newer than the in-memory edited copy, the system shall preserve both versions by creating a conflict copy instead of silently overwriting the newer draft.
 
 ### 7.9 Authoring and Review Controls
 
@@ -80,6 +82,7 @@
 - FR-42e: Publishing a draft revision shall require schema validation, source-reference validation, course quality gates, and review/publish approval before it becomes the current published snapshot for its lineage.
 - FR-42f: The system shall support proposed revisions from users who can suggest edits but cannot directly publish to the canonical lineage.
 - FR-42g: Course edit policy shall support at minimum owner editing, maintainer editing, learner forks, contributor suggestions, and locked sections or locked content elements.
+- FR-42h: Local draft metadata shall record at minimum draft identity, origin, parent course reference, creation timestamp, update timestamp, and revision number so local forks can later migrate into backend lineage records.
 
 ### 7.10 Analytics and Observability
 

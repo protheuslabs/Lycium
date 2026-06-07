@@ -5,6 +5,7 @@ import CatalogActionCard from "./CatalogActionCard";
 import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogVisibleCourse } from "./catalogUtils";
 import { hasBlockingSourceGaps, sourceGapSummary } from "../../utils/courseSourceGaps";
+import { getLocalDraftMetadata } from "../../utils/localCourseDrafts";
 
 type CatalogCourseCardProps = {
   visibleCourse: CatalogVisibleCourse;
@@ -25,6 +26,7 @@ export default function CatalogCourseCard({
 }: CatalogCourseCardProps) {
   const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites } = visibleCourse;
   const [isPrerequisiteModalOpen, setIsPrerequisiteModalOpen] = useState(false);
+  const localDraft = getLocalDraftMetadata(course);
   const isReadyForReview = course.status === "ready_for_review";
   const needsSources = hasBlockingSourceGaps(course);
   const sourceSummary = sourceGapSummary(course);
@@ -62,6 +64,7 @@ export default function CatalogCourseCard({
       </button>
       <h3>
         {course.title}
+        {localDraft && <span className="course-draft-badge">{localDraft.parentCourseKey ? "Fork" : "Local draft"}</span>}
         {isReadyForReview && <span className="course-review-badge">Ready for review</span>}
         {needsSources && <span className="course-source-gap-badge">Needs sources</span>}
       </h3>

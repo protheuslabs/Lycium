@@ -32,7 +32,7 @@ The current product loop is intentionally local-first before cloud services are 
 4. If coverage is too weak, Lycium creates a `needs_sources` draft card instead of hollow lessons, records missing concepts/source types, and lets the user add sources before resuming.
 5. If coverage is sufficient, generation produces a structured course or program snapshot with modules, Learn/Apply sections, concept cards, quizzes, summaries, citations, and review metadata.
 6. Validation, quality evals, source coverage checks, citation checks, quiz checks, and review/publish gates decide whether the snapshot can appear as catalog-ready.
-7. Local learner state records progress, bookmarks, quiz attempts, feedback, provider settings, generation runs, and eval dashboard signals separately from portable course/source artifacts.
+7. Local learner state records progress, bookmarks, quiz attempts, feedback, provider settings, generation runs, local editable drafts, and eval dashboard signals separately from portable course/source artifacts.
 
 This loop is the bridge between the immediate local app and the long-term internet curriculum compiler: source evidence improves the reusable index, while learner state stays in a separate trust boundary.
 
@@ -47,6 +47,7 @@ This loop is the bridge between the immediate local app and the long-term intern
 - Catalog search, pagination, sorting, college and department filters, and an internal college-to-department taxonomy for course classification
 - Program and cluster catalog views with requirement-based progress rollups, prerequisite continuity, requirement detail panels, and portfolio/capstone evidence records
 - Quiz attempts with shuffled question/answer order, timers, pass percentages, max attempts, review flags, and attempt history
+- Course edit mode with structured element editors, local fork creation, explicit local draft metadata, conflict-safe saves, and portable local draft JSON import/export
 - Settings modal for local AI provider keys, model selection, and light/dark/auto display preferences
 - Course creation modal that stays locked until a valid active AI provider key and model are connected
 - Local user-data storage for completion, bookmarks, secrets, source links, and other machine-specific data
@@ -252,6 +253,7 @@ These are intended for data such as:
 - API keys and provider settings
 - local progress records
 - course bookmarks
+- local editable course drafts, fork metadata, draft revision metadata, and imported/exported draft JSON
 - generated course snapshots
 - source links and local source metadata
 - source index SQLite databases and source-corpus decision records

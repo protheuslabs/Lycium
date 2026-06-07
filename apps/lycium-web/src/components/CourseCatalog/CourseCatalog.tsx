@@ -51,6 +51,10 @@ type CourseCatalogProps = {
   ) => void;
   onPublishCourse: (course: CourseEntry) => void;
   onForkCourse: (course: CourseEntry) => void;
+  onDeleteCourseDraft: (course: CourseEntry) => void;
+  onExportCourseDraft: (course: CourseEntry) => void;
+  onImportCourseDraft: (file: File) => Promise<void>;
+  onResetCourseDraft: (course: CourseEntry) => void;
   publishingCourseKey: string | null;
   onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
@@ -75,6 +79,10 @@ export default function CourseCatalog({
   onCatalogDrilldown,
   onPublishCourse,
   onForkCourse,
+  onDeleteCourseDraft,
+  onExportCourseDraft,
+  onImportCourseDraft,
+  onResetCourseDraft,
   publishingCourseKey,
   onOpenSettings,
 }: CourseCatalogProps) {
@@ -270,6 +278,19 @@ export default function CourseCatalog({
           }}
           onForkCourse={(course) => {
             onForkCourse(course);
+            setInfoCourse(null);
+          }}
+          onDeleteCourseDraft={(course) => {
+            onDeleteCourseDraft(course);
+            setInfoCourse(null);
+          }}
+          onExportCourseDraft={onExportCourseDraft}
+          onImportCourseDraft={async (file) => {
+            await onImportCourseDraft(file);
+            setInfoCourse(null);
+          }}
+          onResetCourseDraft={(course) => {
+            onResetCourseDraft(course);
             setInfoCourse(null);
           }}
           onClose={() => setInfoCourse(null)}

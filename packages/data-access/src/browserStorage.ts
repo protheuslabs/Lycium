@@ -1,5 +1,6 @@
 import type {
   LyciumBookmarkRecord,
+  LyciumCourseEntry,
   LyciumCourseFeedbackRecord,
   LyciumProgressRecord,
   LyciumQuizProgressRecord,
@@ -54,8 +55,31 @@ export function getQuizMarkerStorageKey(quizKey: string): string {
   return `lycium-quiz-marker-${quizKey || "quiz"}`;
 }
 
+export function getLocalCourseDraftsStorageKey(): string {
+  return "lycium-local-course-drafts";
+}
+
 export function createBrowserStorageRepository() {
   return {
+    readLocalCourseDrafts(): LyciumCourseEntry[] {
+      return readJson<LyciumCourseEntry[]>(getLocalCourseDraftsStorageKey()) ?? [];
+    },
+
+    writeLocalCourseDrafts(courses: LyciumCourseEntry[]): void {
+      writeJson(getLocalCourseDraftsStorageKey(), courses);
+    },
+
+    removeLocalCourseDraft(courseKey: string): void {
+      const next = this.readLocalCourseDrafts().filter((course) => course.key !== courseKey);
+      this.writeLocalCourseDrafts(next);
+    },
+
+    upsertLocalCourseDraft(course: LyciumCourseEntry): void {
+      const current = this.readLocalCourseDrafts();
+      const next = [course, ...current.filter((draft) => draft.key !== course.key)];
+      this.writeLocalCourseDrafts(next);
+    },
+
     readProgress(courseKey: string): LyciumProgressRecord | null {
       return readJson<LyciumProgressRecord>(getCourseProgressStorageKey(courseKey));
     },

@@ -87,9 +87,28 @@ export default function CourseLearningLayout({
   const effectiveOrderMandatory = activeEditMode ? draftCourseSettings.orderMandatory : orderMandatory;
   const sourceModules = draftModules ?? selectedCourse?.data.modules ?? [];
   const courseSourceRecords = useMemo(() => normalizeCourseSourceRecords(selectedCourse), [selectedCourse]);
+  const referencedSourceIds = useMemo(() => {
+    const ids = new Set<string>();
+    const addIds = (sourceIds?: string[]) => sourceIds?.forEach((sourceId) => ids.add(sourceId));
+
+    addIds((selectedCourse?.data as { sourceIds?: string[] } | undefined)?.sourceIds);
+    sourceModules.forEach((module) => {
+      addIds((module as { sourceIds?: string[] }).sourceIds);
+      module.sections.forEach((section) => {
+        addIds((section as { sourceIds?: string[] }).sourceIds);
+        section.content.forEach((block) => addIds((block as { sourceIds?: string[] }).sourceIds));
+      });
+    });
+
+    return ids;
+  }, [selectedCourse?.data, sourceModules]);
+  const referencedCentralSources = useMemo(
+    () => sources.filter((source) => referencedSourceIds.has(source.id)),
+    [referencedSourceIds, sources],
+  );
   const displayedSources = useMemo(
-    () => mergeSourceRecords(sources, draftSourceRecords ?? courseSourceRecords),
-    [courseSourceRecords, draftSourceRecords, sources],
+    () => mergeSourceRecords(referencedCentralSources, draftSourceRecords ?? courseSourceRecords),
+    [courseSourceRecords, draftSourceRecords, referencedCentralSources],
   );
   const displayedSections = useMemo(
     () => {

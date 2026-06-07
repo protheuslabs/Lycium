@@ -44,7 +44,7 @@ This data belongs to the learner:
 - career or employment outcomes
 - API keys and local provider settings
 
-Private learner data should be exportable and deletable. It should not feed external training, benchmarking, or ecosystem analytics without explicit consent and clear controls.
+Private learner data should be exportable and deletable. Local editable course drafts, imported draft files, fork metadata, and unsynced authoring changes should be treated as private user-owned data until the user explicitly publishes, shares, or submits them for review. Private learner and draft data should not feed external training, benchmarking, or ecosystem analytics without explicit consent and clear controls.
 
 ## Trust rules
 

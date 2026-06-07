@@ -9,6 +9,7 @@ Lycium owns learner and learning-product state:
 - learners
 - local settings and secrets references
 - course snapshots
+- local editable course drafts and draft exchange files
 - program snapshots
 - quiz attempts and section progress
 - portfolio artifacts
@@ -38,7 +39,7 @@ When `LYCIUM_SOURCE_INDEX_API_URL` is configured, Lycium should route source-ind
 The current local compiler path keeps ownership boundaries explicit:
 
 1. Source Index owns source import, snapshots, preflight include/exclude decisions, source packets, packet quality reports, and future crawl/index records.
-2. Lycium owns generation run records, source-gap drafts, curriculum benchmark references, generated course/program snapshots, review/publish lifecycle, eval dashboards, and learner progress.
+2. Lycium owns generation run records, source-gap drafts, local editable course drafts, curriculum benchmark references, generated course/program snapshots, review/publish lifecycle, eval dashboards, and learner progress.
 3. Generated snapshots may preserve compact packet IDs, source public IDs, snapshot public IDs, source-slot metadata, and citation mappings for reproducibility.
 4. Generated snapshots should not duplicate Source Index as a hidden source database.
 5. Learner feedback and source suggestions should become review candidates before being promoted into Source Index records.
@@ -62,6 +63,12 @@ Stable IDs are the migration seam for future real-server deployments:
 - local integer IDs remain database-local implementation details
 
 Generated course/program traces should prefer stable source and snapshot public IDs when recording evidence.
+
+## Local draft storage
+
+Local course drafts are Lycium-owned learner/authoring state, not Source Index records. They may contain copied course content, fork metadata, edit history, local draft revision metadata, conflict-copy metadata, and portable draft export envelopes.
+
+Local draft import/export is a migration seam, not a publishing workflow. Imported drafts should remain local editable drafts until schema validation, source-reference validation, quality gates, and review/publish rules promote them into canonical course snapshots.
 
 ## Future deployment shape
 

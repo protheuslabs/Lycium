@@ -4,6 +4,7 @@ import sourceRecordsData from "../courseData/sourceRecords";
 import type { CourseEntry } from "../courseTypes";
 import { browserStorage, localApiSyncEnabled, lyciumApi, repositorySet } from "../runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "../utils/courseValidation";
+import { mergeCourseEntriesByKey, readPersistedLocalCourseEntries } from "../utils/localCourseDrafts";
 
 type UseConfiguredCoursesOptions = {
   setCourses: Dispatch<SetStateAction<CourseEntry[]>>;
@@ -12,6 +13,15 @@ type UseConfiguredCoursesOptions = {
 
 export function useConfiguredCourses({ setCourses, setLearnerId }: UseConfiguredCoursesOptions) {
   useEffect(() => {
+    const mergePersistedLocalCourses = (courses: CourseEntry[]) => {
+      const persisted = readPersistedLocalCourseEntries();
+      if (persisted.length === 0) {
+        return courses;
+      }
+
+      return mergeCourseEntriesByKey(persisted, courses);
+    };
+
     if (repositorySet.mode !== "local") {
       repositorySet.courses
         .listCourses()
@@ -21,7 +31,9 @@ export function useConfiguredCourses({ setCourses, setLearnerId }: UseConfigured
             .map((course): CourseEntry => ({ ...course, source: course.source === "local" ? "local" : "remote" }));
 
           if (configuredCourses.length > 0) {
-            setCourses(configuredCourses);
+            setCourses(mergePersistedLocalCourses(configuredCourses));
+          } else {
+            setCourses((current) => mergePersistedLocalCourses(current));
           }
         })
         .catch((err: unknown) => console.warn("Configured course repository unavailable:", err));
@@ -33,6 +45,7 @@ export function useConfiguredCourses({ setCourses, setLearnerId }: UseConfigured
       if (stored) {
         setLearnerId(stored);
       }
+      setCourses((current) => mergePersistedLocalCourses(current));
       return;
     }
 
@@ -62,7 +75,9 @@ export function useConfiguredCourses({ setCourses, setLearnerId }: UseConfigured
             console.warn(`Skipping invalid remote course ${entry.key}: ${formatCourseValidationErrors(validation.errors)}`);
           }
         }
-        setCourses((prev) => [...remoteCourses, ...prev.filter((course) => course.source === "local")]);
+        setCourses((prev) =>
+          mergePersistedLocalCourses([...remoteCourses, ...prev.filter((course) => course.source === "local")]),
+        );
       } catch (err) {
         console.warn("Remote courses unavailable:", err);
       }

@@ -46,7 +46,7 @@ function ProgressMeter({ progressPercentage, viewedPercentage, cacheKey }: Progr
 
   return (
     <div className="progress-meter">
-      <ProgressBar complete={displayValues.complete} viewed={displayValues.viewed} animate={valuesChanged} />
+      <ProgressBar complete={displayValues.complete} viewed={displayValues.viewed} />
       <p className="progress-percentage">
         {Math.round(displayValues.complete)}% complete · {Math.round(displayValues.viewed)}% viewed
       </p>

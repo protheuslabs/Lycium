@@ -1,0 +1,22 @@
+.course-draft-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0.32rem 0.35rem 0 0;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  color: #27496f;
+  background: #dff0ff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.course-draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.course-draft-file-input {
+  display: none;
+}

@@ -230,6 +230,7 @@ export const SidebarSourceTab = memo(function SidebarSourceTab({
       type="button"
       className={`module-header sidebar-source-tab ${isActive ? "module-header--active" : ""}`}
       onClick={onSelect}
+      aria-label={isCollapsed ? `Sources${sourceCount > 0 ? ` (${sourceCount})` : ""}` : undefined}
       aria-current={isActive ? "page" : undefined}
     >
       <span className="module-header-label sidebar-source-label">

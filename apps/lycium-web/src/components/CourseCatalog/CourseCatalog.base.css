@@ -4,3 +4,5 @@
 @import "./CourseCatalog.controls.css";
 @import "./CourseCatalog.filters.css";
 @import "./CourseCatalog.cards.css";
+@import "./CourseCatalog.prerequisites.css";
+@import "./CourseCatalog.drafts.css";

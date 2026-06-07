@@ -72,8 +72,12 @@ async function mockEmptyAiConnection(page: Page) {
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
+    if (window.sessionStorage.getItem("lycium-e2e-storage-cleared") === "1") {
+      return;
+    }
     window.localStorage.clear();
     window.sessionStorage.clear();
+    window.sessionStorage.setItem("lycium-e2e-storage-cleared", "1");
   });
 });
 
@@ -164,7 +168,7 @@ test("create-course modal reflects locked and unlocked AI states", async ({ page
   await page.reload();
   await page.getByLabel("Settings").click();
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
-  await expect(page.getByText("http://localhost:11434")).toBeVisible();
+  await expect(page.locator(".settings-key-preview").getByText("http://localhost:11434")).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await page.getByRole("button", { name: /create course/i }).click();
   await expect(page.getByText(/To unlock course creation/)).toHaveCount(0);
@@ -214,4 +218,58 @@ test("settings modal and course shell survive route changes", async ({ page }) =
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await expect(page).toHaveURL(/\/Lycium\/courses\//);
+});
+
+test("forked courses expose stable edit-mode controls", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/Lycium/catalog");
+
+  const firstCourse = firstUsableCourseCard(page);
+  await expect(firstCourse).toBeVisible();
+  await firstCourse.getByRole("button", { name: /more info about/i }).click();
+  await expect(page.getByRole("dialog", { name: /.+/ })).toBeVisible();
+  await page.getByRole("button", { name: "Fork course" }).click();
+
+  await expect(page).toHaveURL(/\/Lycium\/courses\//);
+  await expect(page.locator(".sidebar")).toBeVisible();
+  await expect(page.locator(".content-view")).toBeVisible();
+  const forkUrl = page.url();
+  const forkCourseName = (await page.locator(".course-name").innerText()).trim();
+  expect(forkCourseName.toLowerCase()).toMatch(/^fork of /);
+  await page.reload();
+  await expect(page).toHaveURL(forkUrl);
+  await expect.poll(async () => (await page.locator(".course-name").innerText()).trim().toLowerCase()).toBe(
+    forkCourseName.toLowerCase(),
+  );
+
+  await page.getByRole("button", { name: "Edit course" }).click();
+  await expect(page.getByRole("button", { name: "Cancel course edits" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save course edits" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open course settings" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit course title" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit module title" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit section title" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Open course settings" }).click();
+  await expect(page.getByRole("dialog", { name: "Course settings" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Course settings" })).toHaveCount(0);
+
+  await expect(page.getByRole("button", { name: /add block/i })).toBeVisible();
+  await page.getByRole("button", { name: /add block/i }).click();
+  await expect(page.locator(".course-edit-native-dialog")).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Text" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Card" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Video" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "iframe" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Heading" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "Quiz" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".course-edit-native-dialog")).toHaveCount(0);
+
+  await page.locator(".sidebar-source-tab").click();
+  await expect(page.locator(".course-sources-page")).toBeVisible();
+
+  await page.getByRole("button", { name: "Cancel course edits" }).click();
+  await expect(page.getByRole("button", { name: "Edit course" })).toBeVisible();
 });

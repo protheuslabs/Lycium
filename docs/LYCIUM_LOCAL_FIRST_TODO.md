@@ -115,16 +115,20 @@ This list tracks the work needed to make Lycium's local generation, storage, and
     - Goal: stable API, packet schema, import/export CLI, docs, and no Lycium UI assumptions.
 
 27. Docs update
-    - Status: done
-    - Goal: README/SRS describe the actual local-first compiler loop.
+   - Status: done
+   - Goal: README/SRS describe the actual local-first compiler loop.
 
-28. End-to-end local workflow test
-    - Status: pending
-    - Goal: prove sources -> draft -> source gate -> add source -> resume -> publish -> persisted progress.
+28. Local course draft management
+   - Status: done
+   - Goal: editable course forks preserve local draft metadata, save conflict-safely, and support portable draft JSON import/export.
 
-29. Exterior service connection
-    - Status: deferred
-    - Goal: connect cloud course JSON, external Source Index, InfRing research tools, and hosted generation after local reliability.
+29. End-to-end local workflow test
+   - Status: pending
+   - Goal: prove sources -> draft -> source gate -> add source -> resume -> publish -> persisted progress.
+
+30. Exterior service connection
+   - Status: deferred
+   - Goal: connect cloud course JSON, external Source Index, InfRing research tools, and hosted generation after local reliability.
 
 ## Current execution note
 
