@@ -212,6 +212,8 @@ When `LYCIUM_SOURCE_INDEX_API_URL` is set on the Lycium API, Lycium routes `/v1/
 | `cd services/source-index && pytest -q` | Run source index tests |
 | `cd services/lycium-workers && PYTHONPATH=src pytest -q` | Run worker tests |
 
+Use `corepack pnpm test:e2e:manual-editing` when touching manual course authoring, local draft persistence, citations, quiz editing, or sidebar edit controls. Use `corepack pnpm validate:mvp` before considering a broader MVP-facing change ready, because it combines the core repo guards, generated-schema checks, web validation, focused authoring E2E, export checks, API tests, source-index tests, and worker tests.
+
 ## Course content model
 
 Lycium courses are structured data. A course is composed of modules, sections, content blocks, source references, progress metadata, and assessment metadata.
