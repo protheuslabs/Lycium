@@ -76,6 +76,39 @@ describe("Lycium contract fixtures", () => {
     );
   });
 
+  it("rejects sourced learn pages whose concept cards are not source-supported", () => {
+    const course = readFixture<LyciumCourseData>("valid-course.json");
+    const brokenCourse: LyciumCourseData = {
+      ...course,
+      modules: course.modules.map((module, moduleIndex) =>
+        moduleIndex === 0
+          ? {
+              ...module,
+              sections: module.sections.map((section, sectionIndex) =>
+                sectionIndex === 0
+                  ? {
+                      ...section,
+                      sourceIds: [],
+                      content: section.content.map((block) =>
+                        block.type === "conceptCards" ? { ...block, sourceIds: [] } : block
+                      ),
+                    }
+                  : section,
+              ),
+            }
+          : module,
+      ),
+    };
+    const entry: LyciumCourseEntry = {
+      key: "fixture-invalid-concept-source",
+      title: brokenCourse.title,
+      data: brokenCourse,
+      source: "local",
+    };
+
+    expect(validateCourseEntry(entry, { requireSources: true }).errors.some((error) => error.includes("concept card must include sourceIds"))).toBe(true);
+  });
+
   it("rejects departments that are not nested under the selected category", () => {
     expect(
       validateCourseTaxonomy({

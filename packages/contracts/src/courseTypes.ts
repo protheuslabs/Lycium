@@ -89,7 +89,9 @@ export type LyciumCourseSourceGapSuggestion = {
 
 export type LyciumConcept = {
   name?: string;
+  title?: string;
   description?: string;
+  sourceIds?: string[];
   sourceSectionId?: string;
 };
 

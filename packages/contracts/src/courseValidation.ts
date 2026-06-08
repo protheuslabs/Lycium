@@ -70,7 +70,75 @@ function getQuizQuestions(block: LyciumCourseBlock): unknown[] {
   return [];
 }
 
-function validateConceptCards(block: LyciumCourseBlock, location: string, errors: string[]) {
+function hasHeading(section: LyciumCourseSection, title: string): boolean {
+  return section.content.some(
+    (block) => block.type === "heading" && typeof block.title === "string" && block.title.trim() === title,
+  );
+}
+
+function isConceptBlock(block: LyciumCourseBlock): boolean {
+  return block.type === "conceptCard" || block.type === "concept_card" || block.type === "conceptCards";
+}
+
+function conceptTitle(concept: Record<string, unknown>): string {
+  return String(concept.name ?? concept.title ?? "").trim();
+}
+
+function conceptDescription(concept: Record<string, unknown>): string {
+  return String(concept.description ?? concept.body ?? concept.value ?? "").trim();
+}
+
+function validateConceptSourceSupport(
+  sourceSupport: Set<string>,
+  location: string,
+  requireConceptSources: boolean,
+  errors: string[],
+) {
+  if (requireConceptSources && sourceSupport.size === 0) {
+    errors.push(`${location} concept card must include sourceIds or inherit section sourceIds.`);
+  }
+}
+
+function validateConceptObject(
+  concept: Record<string, unknown>,
+  location: string,
+  sourceSupport: Set<string>,
+  requireConceptSources: boolean,
+  errors: string[],
+) {
+  if (!conceptTitle(concept)) {
+    errors.push(`${location} is missing name or title.`);
+  }
+
+  if (!conceptDescription(concept)) {
+    errors.push(`${location} is missing description.`);
+  }
+
+  validateConceptSourceSupport(sourceSupport, location, requireConceptSources, errors);
+}
+
+function validateConceptBlock(
+  block: LyciumCourseBlock,
+  location: string,
+  sectionSourceIds: string[],
+  referencedSourceIds: Set<string>,
+  requireConceptSources: boolean,
+  errors: string[],
+) {
+  const blockSourceIds = sourceIdsFrom(block.sourceIds);
+  addSourceIds(referencedSourceIds, block.sourceIds);
+
+  if (block.type === "conceptCard" || block.type === "concept_card") {
+    validateConceptObject(
+      block as Record<string, unknown>,
+      location,
+      new Set([...sectionSourceIds, ...blockSourceIds]),
+      requireConceptSources,
+      errors,
+    );
+    return;
+  }
+
   if (!Array.isArray(block.concepts) || block.concepts.length === 0) {
     errors.push(`${location} conceptCards block must include concepts.`);
     return;
@@ -82,13 +150,15 @@ function validateConceptCards(block: LyciumCourseBlock, location: string, errors
       return;
     }
 
-    if (!isNonEmptyString(concept.name)) {
-      errors.push(`${location} concept ${conceptIndex + 1} is missing name.`);
-    }
-
-    if (!isNonEmptyString(concept.description)) {
-      errors.push(`${location} concept ${conceptIndex + 1} is missing description.`);
-    }
+    const conceptSourceIds = sourceIdsFrom((concept as { sourceIds?: unknown }).sourceIds);
+    addSourceIds(referencedSourceIds, (concept as { sourceIds?: unknown }).sourceIds);
+    validateConceptObject(
+      concept as Record<string, unknown>,
+      `${location} concept ${conceptIndex + 1}`,
+      new Set([...sectionSourceIds, ...blockSourceIds, ...conceptSourceIds]),
+      requireConceptSources,
+      errors,
+    );
   });
 }
 
@@ -142,8 +212,14 @@ function validateSection(
 
   addSourceIds(referencedSourceIds, section.sourceIds);
 
+  if (section.sectionType === "source-gap") {
+    return;
+  }
+
   const quizBlocks = section.content.filter((block) => block.type === "quiz");
-  const conceptBlocks = section.content.filter((block) => block.type === "conceptCards");
+  const conceptBlocks = section.content.filter(isConceptBlock);
+  const sectionSourceIds = sourceIdsFrom(section.sourceIds);
+  const requireConceptSources = referencedSourceIds.size > 0 || sectionSourceIds.length > 0;
 
   for (const block of section.content) {
     addSourceIds(referencedSourceIds, block.sourceIds);
@@ -173,11 +249,17 @@ function validateSection(
       errors.push(`${sectionLocation} summary must be a learn page.`);
     }
 
-    if (conceptBlocks.length !== 1 || conceptBlocks[0]?.title !== expectedTitle) {
-      errors.push(`${sectionLocation} summary must include one ${expectedTitle} block.`);
+    if (conceptBlocks.some((block) => block.type === "conceptCard" || block.type === "concept_card")) {
+      if (!hasHeading(section, expectedTitle)) {
+        errors.push(`${sectionLocation} summary must include a ${expectedTitle} heading before concept cards.`);
+      }
+    } else if (conceptBlocks.length !== 1 || conceptBlocks[0]?.title !== expectedTitle) {
+      errors.push(`${sectionLocation} summary must include one ${expectedTitle} block or editable conceptCard blocks with a heading.`);
     }
 
-    conceptBlocks.forEach((block) => validateConceptCards(block, sectionLocation, errors));
+    conceptBlocks.forEach((block, blockIndex) =>
+      validateConceptBlock(block, `${sectionLocation} concept block ${blockIndex + 1}`, sectionSourceIds, referencedSourceIds, requireConceptSources, errors)
+    );
     return;
   }
 
@@ -188,11 +270,18 @@ function validateSection(
     }
 
     const finalBlock = section.content[section.content.length - 1];
-    if (finalBlock?.type !== "conceptCards" || finalBlock.title !== "Concepts introduced") {
-      errors.push(`${sectionLocation} learn page must end with Concepts introduced conceptCards.`);
+    const usesEditableConceptCards = conceptBlocks.some((block) => block.type === "conceptCard" || block.type === "concept_card");
+    if (usesEditableConceptCards) {
+      if (!hasHeading(section, "Concepts introduced")) {
+        errors.push(`${sectionLocation} learn page must include a Concepts introduced heading before concept cards.`);
+      }
+    } else if (finalBlock?.type !== "conceptCards" || finalBlock.title !== "Concepts introduced") {
+      errors.push(`${sectionLocation} learn page must end with Concepts introduced conceptCards or editable conceptCard blocks.`);
     }
 
-    conceptBlocks.forEach((block) => validateConceptCards(block, sectionLocation, errors));
+    conceptBlocks.forEach((block, blockIndex) =>
+      validateConceptBlock(block, `${sectionLocation} concept block ${blockIndex + 1}`, sectionSourceIds, referencedSourceIds, requireConceptSources, errors)
+    );
   }
 }
 
@@ -215,6 +304,14 @@ function validateModule(
 
   if (!Array.isArray(module.sections) || module.sections.length === 0) {
     errors.push(`${moduleLocation} must include sections.`);
+    return;
+  }
+
+  const isSourceGapModule = module.sections.every((section) => section.sectionType === "source-gap");
+  if (isSourceGapModule) {
+    module.sections.forEach((section, sectionIndex) =>
+      validateSection(section, `${moduleLocation} section ${sectionIndex + 1}`, pacingLabel, referencedSourceIds, errors)
+    );
     return;
   }
 
@@ -262,6 +359,8 @@ export function validateLyciumCourseEntry(
   const pacingLabel = course.metadata?.pacingLabel === "Week" ? "Week" : "Module";
   const referencedSourceIds = new Set<string>();
   const declaredSourceIds = getDeclaredSourceIds(course, options.centralSourceRecords ?? []);
+  const hasSourceGaps = Array.isArray(course.metadata?.sourceGaps) && course.metadata.sourceGaps.length > 0;
+  const isNeedsSources = courseEntry.status === "needs_sources" || course.metadata?.status === "needs_sources" || hasSourceGaps;
 
   if (!isNonEmptyString(course.title)) {
     errors.push("Course is missing title.");
@@ -288,7 +387,7 @@ export function validateLyciumCourseEntry(
     validateModule(module, `module ${moduleIndex + 1}`, pacingLabel, referencedSourceIds, errors)
   );
 
-  if (options.requireSources && referencedSourceIds.size === 0) {
+  if (options.requireSources && referencedSourceIds.size === 0 && !isNeedsSources) {
     errors.push("Generated courses must reference at least one sourceId.");
   }
 
