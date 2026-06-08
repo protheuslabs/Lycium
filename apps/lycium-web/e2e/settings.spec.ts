@@ -134,7 +134,8 @@ const localProvider = {
   credential_default: "http://localhost:11434",
 };
 
-function localSettings(endpoint = "http://localhost:11434") {
+function localSettings(endpoint = "http://localhost:11434", status: "verified" | "unverified" = "verified") {
+  const isVerified = status === "verified";
   return {
     local_data_dir: "/tmp/lycium-e2e",
     has_agent_api_key: true,
@@ -147,12 +148,12 @@ function localSettings(endpoint = "http://localhost:11434") {
         provider_label: "Ollama Local",
         key_preview: endpoint,
         model: "llama3.1:8b",
-        models: [{ id: "llama3.1:8b", label: "llama3.1:8b" }],
-        models_fetched_at: "2026-06-06T00:00:00Z",
-        connection_status: "verified",
-        connection_message: "Connection verified.",
-        last_verified_at: "2026-06-06T00:00:00Z",
-        last_error: null,
+        models: isVerified ? [{ id: "llama3.1:8b", label: "llama3.1:8b" }] : [],
+        models_fetched_at: isVerified ? "2026-06-06T00:00:00Z" : null,
+        connection_status: status,
+        connection_message: isVerified ? "Connection verified." : "Local model endpoint could not be reached.",
+        last_verified_at: isVerified ? "2026-06-06T00:00:00Z" : null,
+        last_error: isVerified ? null : "Local model endpoint could not be reached.",
         is_active: true,
         generation_adapter: "ollama-chat",
         local_provider: true,
@@ -182,6 +183,55 @@ async function mockLocalProviderSettingsApis(page: Page) {
     if (route.request().method() === "PUT") {
       const payload = route.request().postDataJSON() as { agent_api_key?: string };
       settings = localSettings(payload.agent_api_key ?? "http://localhost:11434");
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(settings),
+    });
+  });
+  await page.route("**/v1/local/storage", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        local_data_dir: "/tmp/lycium-e2e",
+        schema_version: 1,
+        target_schema_version: 1,
+        backup_count: 0,
+        json_error_count: 0,
+        json_errors: [],
+        repair_warning_count: 0,
+        repair_warnings: [],
+        directories: [],
+      }),
+    });
+  });
+  await page.route("**/v1/generation-runs**", async (route) => {
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify([]) });
+  });
+  await page.route("**/v1/generation-evals/trend**", async (route) => {
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ runs: [], trend: null }) });
+  });
+}
+
+async function mockUnavailableLocalProviderSettingsApis(page: Page) {
+  let settings = {
+    local_data_dir: "/tmp/lycium-e2e",
+    has_agent_api_key: false,
+    agent_api_key_preview: null,
+    active_agent_key_id: null,
+    agent_keys: [],
+  };
+
+  await page.route("**/v1/local/ai/providers", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([localProvider]),
+    });
+  });
+  await page.route("**/v1/local/settings", async (route) => {
+    if (route.request().method() === "PUT") {
+      const payload = route.request().postDataJSON() as { agent_api_key?: string };
+      settings = localSettings(payload.agent_api_key ?? "http://localhost:9999", "unverified");
     }
     await route.fulfill({
       contentType: "application/json",
@@ -263,4 +313,29 @@ test("local model endpoint saves as an active verified connection across reload"
   await expect(page.getByLabel("AI connection diagnostics")).toContainText("Ollama Local");
   await expect(page.getByLabel("AI connection diagnostics")).toContainText("http://localhost:11434");
   await expect(page.getByLabel("AI connection diagnostics")).toContainText("1 discovered");
+});
+
+test("unavailable local model endpoint remains saved and recoverable", async ({ page }) => {
+  await mockUnavailableLocalProviderSettingsApis(page);
+  await page.goto("/Lycium/settings");
+
+  await page.getByRole("button", { name: "AI provider" }).click();
+  await page.getByRole("option", { name: "Ollama Local" }).click();
+
+  const endpointInput = page.getByPlaceholder("Local Path");
+  await endpointInput.fill("http://localhost:9999");
+  await page.getByRole("button", { name: "Add API key" }).click();
+
+  await expect(page.getByText("Ollama Local saved, but Lycium could not verify it yet.")).toBeVisible();
+  await expect(page.getByLabel("AI connection diagnostics")).toContainText("Needs check");
+  await expect(page.getByLabel("AI connection diagnostics")).toContainText("http://localhost:9999");
+  await expect(page.getByRole("button", { name: "Verify", exact: true })).toBeVisible();
+
+  await page.reload();
+
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+  await expect(page.getByLabel("AI connection diagnostics")).toContainText("Ollama Local");
+  await expect(page.getByLabel("AI connection diagnostics")).toContainText("Needs check");
+  await expect(page.getByLabel("AI connection diagnostics")).toContainText("http://localhost:9999");
+  await expect(page.getByText("Ollama Local is saved but not verified yet.")).toBeVisible();
 });
