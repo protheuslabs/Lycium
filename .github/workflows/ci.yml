@@ -98,6 +98,18 @@ jobs:
             tests/test_program_generation_eval_scenarios.py \
             -q
 
+      - name: Write generation eval report artifact
+        env:
+          LYCIUM_EVAL_REPORT_DIR: ${{ runner.temp }}/lycium-generation-eval-runs
+        run: cd services/lycium-api && python3 scripts/write_generation_eval_report.py
+
+      - name: Upload generation eval report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lycium-generation-eval-runs
+          path: ${{ runner.temp }}/lycium-generation-eval-runs
+          if-no-files-found: error
+
       - name: Run API tests
         run: cd services/lycium-api && pytest -q
 
