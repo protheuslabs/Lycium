@@ -173,6 +173,11 @@
   color: #4f5d76;
 }
 
+.course-active-subheader .course-requirement-context {
+  color: #2f4f7f;
+  font-weight: 750;
+}
+
 .course-progress {
   grid-row: 4;
   align-self: end;

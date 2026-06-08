@@ -4,6 +4,7 @@ import { getCourseDepartmentLabel, getCourseTagLabels } from "../../courseData/c
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
 import { scoreWeightedSearch } from "../../utils/weightedSearch";
 import type { CatalogUnmetPrerequisite } from "./catalogPrerequisites";
+import type { CatalogCourseRequirementContext } from "./catalogRequirementContext";
 export { normalizeSearchText } from "../../utils/weightedSearch";
 
 export type CatalogSortMode = "college" | "completion-desc" | "completion-asc";
@@ -18,6 +19,7 @@ export type CatalogVisibleCourse = {
   hasCourseActivity: boolean;
   isLocked: boolean;
   unmetPrerequisites: CatalogUnmetPrerequisite[];
+  requirementContexts: CatalogCourseRequirementContext[];
   collegeLabel: string;
   searchScore: number;
 };

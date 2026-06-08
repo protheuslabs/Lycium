@@ -123,6 +123,10 @@
   color: #d1d5db;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-active-subheader .course-requirement-context {
+  color: #dbeafe;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-progress-bar {
   background: #262626;
 }

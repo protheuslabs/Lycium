@@ -25,7 +25,8 @@ export default function CatalogCourseCard({
   onSearchPrerequisite,
   isPublishing,
 }: CatalogCourseCardProps) {
-  const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites } = visibleCourse;
+  const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites, requirementContexts } =
+    visibleCourse;
   const [isPrerequisiteModalOpen, setIsPrerequisiteModalOpen] = useState(false);
   const localDraft = getLocalDraftMetadata(course);
   const lifecycle = getCourseLifecycleSummary(course);
@@ -34,6 +35,7 @@ export default function CatalogCourseCard({
   const requiredCourseLabel = `Requires ${unmetPrerequisites.length} course${unmetPrerequisites.length === 1 ? "" : "s"}`;
   const canActivateCard = lifecycle.needsSourceInput || (!requiresPrerequisites && lifecycle.canOpen);
   const shouldShowLifecycleAction = lifecycle.needsSourceInput || lifecycle.isPublishCandidate || lifecycle.status === "failed";
+  const requirementLabel = requirementContexts.map((context) => context.title).join("; ");
 
   const handleCourseOpen = () => {
     if (lifecycle.needsSourceInput) {
@@ -69,10 +71,15 @@ export default function CatalogCourseCard({
         {localDraft && <span className="course-draft-badge">{localDraft.parentCourseKey ? "Fork" : "Local draft"}</span>}
         <span className={`course-lifecycle-badge course-lifecycle-badge-${lifecycle.tone}`}>{lifecycle.badgeLabel}</span>
       </h3>
-      {bookmarkedSection && (
+      {(bookmarkedSection || requirementLabel) && (
         <p className="course-active-subheader">
-          <span>{bookmarkedSection.moduleTitle}</span>
-          <span>{bookmarkedSection.sectionTitle}</span>
+          {bookmarkedSection && (
+            <>
+              <span>{bookmarkedSection.moduleTitle}</span>
+              <span>{bookmarkedSection.sectionTitle}</span>
+            </>
+          )}
+          {requirementLabel && <span className="course-requirement-context">Satisfies: {requirementLabel}</span>}
         </p>
       )}
       {course.data.shortDescription && <p className="course-short-description">{course.data.shortDescription}</p>}

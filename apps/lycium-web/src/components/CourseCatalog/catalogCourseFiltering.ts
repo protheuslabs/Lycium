@@ -2,6 +2,7 @@ import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryLabel } from "../../courseData/courseTaxonomy";
 import { getBookmarkedModuleSection, getCourseProgress } from "../../utils/courseRouting";
 import { getUnmetCoursePrerequisites } from "./catalogPrerequisites";
+import type { CatalogCourseRequirementContext } from "./catalogRequirementContext";
 import {
   type CatalogActivityFilter,
   type CatalogSortMode,
@@ -21,6 +22,7 @@ type VisibleCatalogCourseOptions = {
   isClusterScoped: boolean;
   searchQuery: string;
   selectedClusterCourseIds: Set<string>;
+  selectedClusterRequirementContexts: Map<string, CatalogCourseRequirementContext[]>;
   showLockedCourses: boolean;
   sortMode: CatalogSortMode;
 };
@@ -35,6 +37,7 @@ export function getVisibleCatalogCourses({
   isClusterScoped,
   searchQuery,
   selectedClusterCourseIds,
+  selectedClusterRequirementContexts,
   showLockedCourses,
   sortMode,
 }: VisibleCatalogCourseOptions): CatalogVisibleCourse[] {
@@ -56,6 +59,7 @@ export function getVisibleCatalogCourses({
         hasCourseActivity,
         isLocked,
         unmetPrerequisites,
+        requirementContexts: selectedClusterRequirementContexts.get(course.key) ?? [],
         collegeLabel: getCourseCategoryLabel(course.data.category),
         searchScore: getCourseSearchScore(course, query),
       };

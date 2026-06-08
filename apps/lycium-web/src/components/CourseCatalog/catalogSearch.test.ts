@@ -79,6 +79,7 @@ describe("catalog search scoring", () => {
       isClusterScoped: false,
       searchQuery: "",
       selectedClusterCourseIds: new Set(),
+      selectedClusterRequirementContexts: new Map(),
       showLockedCourses: false,
       sortMode: "college",
     });
@@ -110,6 +111,7 @@ describe("catalog search scoring", () => {
       isClusterScoped: false,
       searchQuery: "",
       selectedClusterCourseIds: new Set(),
+      selectedClusterRequirementContexts: new Map(),
       showLockedCourses: true,
       sortMode: "college",
     });

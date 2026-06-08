@@ -5,6 +5,7 @@ import { getCourseCategoryDepartments, getCourseCategoryLabel } from "../../cour
 import { getVisibleCatalogCourses } from "./catalogCourseFiltering";
 import { getVisibleCatalogClusters, getVisibleCatalogPrograms } from "./catalogPathFiltering";
 import { buildCatalogProgressCache, groupCourseIds } from "./catalogProgramProgress";
+import { groupCourseRequirementContexts } from "./catalogRequirementContext";
 import {
   type CatalogActivityFilter,
   type CatalogPathSortMode,
@@ -57,6 +58,10 @@ export function useCatalogControls({
   );
   const selectedClusterCourseIds = useMemo(
     () => new Set(selectedCluster ? groupCourseIds(selectedCluster) : []),
+    [selectedCluster],
+  );
+  const selectedClusterRequirementContexts = useMemo(
+    () => groupCourseRequirementContexts(selectedCluster),
     [selectedCluster],
   );
   const catalogCourseMap = useMemo(() => new Map(courses.map((course) => [course.key, course])), [courses]);
@@ -139,6 +144,7 @@ export function useCatalogControls({
         isClusterScoped: Boolean(selectedCluster),
         searchQuery,
         selectedClusterCourseIds,
+        selectedClusterRequirementContexts,
         showLockedCourses,
         sortMode,
       }),
@@ -152,6 +158,7 @@ export function useCatalogControls({
       searchQuery,
       selectedCluster,
       selectedClusterCourseIds,
+      selectedClusterRequirementContexts,
       showLockedCourses,
       sortMode,
     ],

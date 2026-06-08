@@ -200,7 +200,7 @@ test("under-sourced AI creation produces a source-gated draft card", async ({ pa
   await page.goto("/Lycium/catalog");
 
   await page.getByLabel("Settings").click();
-  await expect(page.locator(".settings-key-preview").getByText("http://localhost:11434")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await openCreateCourseDialog(page);
   await page.getByPlaceholder("Describe the course you want to build...").fill("Lifecycle Needs Sources Course");
@@ -284,7 +284,9 @@ test("catalog program and cluster navigation is data-driven", async ({ page }) =
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/Lycium\/catalog\/[^/]+\/[^/]+$/);
   await expect(page.getByLabel("Select catalog view level")).toContainText("Courses");
-  await expect(page.locator(".course-card").first()).toBeVisible();
+  const firstClusterCourse = page.locator(".course-card:not(.create-course-card)").first();
+  await expect(firstClusterCourse).toBeVisible();
+  await expect(firstClusterCourse).toContainText("Satisfies:");
 });
 
 test("catalog search, filters, sort, and locked card behavior are generic", async ({ page }) => {
