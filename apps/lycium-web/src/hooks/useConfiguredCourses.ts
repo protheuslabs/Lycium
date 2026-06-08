@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import type { LyciumProgram } from "@lycium/contracts";
+import { validateLyciumProgram } from "@lycium/contracts";
 import sourceRecordsData from "../courseData/sourceRecords";
 import type { CourseEntry } from "../courseTypes";
 import { browserStorage, localApiSyncEnabled, lyciumApi, repositorySet } from "../runtime/appRuntime";
@@ -9,9 +11,18 @@ import { mergeCourseEntriesByKey, readPersistedLocalCourseEntries } from "../uti
 type UseConfiguredCoursesOptions = {
   setCourses: Dispatch<SetStateAction<CourseEntry[]>>;
   setLearnerId: Dispatch<SetStateAction<number | null>>;
+  setPrograms?: Dispatch<SetStateAction<LyciumProgram[]>>;
 };
 
-export function useConfiguredCourses({ setCourses, setLearnerId }: UseConfiguredCoursesOptions) {
+function remoteCourseKey(row: { id: string | number; structure: { metadata?: unknown } }): string {
+  const metadata = row.structure.metadata && typeof row.structure.metadata === "object"
+    ? row.structure.metadata as Record<string, unknown>
+    : {};
+  const scaffoldCourseId = metadata.scaffoldCourseId;
+  return typeof scaffoldCourseId === "string" && scaffoldCourseId.trim() ? scaffoldCourseId : `remote-${row.id}`;
+}
+
+export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: UseConfiguredCoursesOptions) {
   useEffect(() => {
     const mergePersistedLocalCourses = (courses: CourseEntry[]) => {
       const persisted = readPersistedLocalCourseEntries();
@@ -56,7 +67,7 @@ export function useConfiguredCourses({ setCourses, setLearnerId }: UseConfigured
         for (const row of rows) {
           const snapshotId = Number(row.id);
           const entry: CourseEntry = {
-            key: `remote-${row.id}`,
+            key: remoteCourseKey(row),
             title: row.title,
             data: row.structure,
             snapshotId,
@@ -83,6 +94,36 @@ export function useConfiguredCourses({ setCourses, setLearnerId }: UseConfigured
       }
     };
 
+    const fetchRemotePrograms = async () => {
+      if (!setPrograms) {
+        return;
+      }
+
+      try {
+        const rows = await lyciumApi.listRemotePrograms(100);
+        const remotePrograms = rows.flatMap((row) => {
+          const program = row.structure.program;
+          if (!program) {
+            return [];
+          }
+          const validation = validateLyciumProgram(program);
+          if (!validation.valid) {
+            console.warn(`Skipping invalid remote program ${row.id}: ${validation.errors.join("; ")}`);
+            return [];
+          }
+          return [program];
+        });
+        if (remotePrograms.length > 0) {
+          setPrograms((current) => {
+            const remoteIds = new Set(remotePrograms.map((program) => program.id));
+            return [...remotePrograms, ...current.filter((program) => !remoteIds.has(program.id))];
+          });
+        }
+      } catch (err) {
+        console.warn("Remote programs unavailable:", err);
+      }
+    };
+
     const ensureLearner = async () => {
       const stored = browserStorage.readLearnerId();
       if (stored) {
@@ -104,6 +145,7 @@ export function useConfiguredCourses({ setCourses, setLearnerId }: UseConfigured
     };
 
     fetchRemoteCourses();
+    fetchRemotePrograms();
     ensureLearner();
-  }, [setCourses, setLearnerId]);
+  }, [setCourses, setLearnerId, setPrograms]);
 }

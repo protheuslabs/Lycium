@@ -219,6 +219,7 @@ export default function CourseCatalog({
                   courseMap={catalogControls.catalogCourseMap}
                   progressCache={catalogControls.catalogProgressCache}
                   onOpenCourse={onOpenCourse}
+                  onOpenSourceGaps={setSourceGapCourse}
                 />
               )}
               <CatalogCourseGrid

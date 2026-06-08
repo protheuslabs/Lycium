@@ -286,6 +286,7 @@ test("catalog program and cluster navigation is data-driven", async ({ page }) =
   await expect(page.getByLabel("Select catalog view level")).toContainText("Courses");
   await expect(page.getByLabel(`${clusterTitle} requirements`)).toBeVisible();
   await expect(page.locator(".catalog-requirement-row").first()).toBeVisible();
+  await expect(page.locator(".catalog-requirement-main").first()).toContainText(/evidence refs|Needs source evidence/);
   const firstClusterCourse = page.locator(".course-card:not(.create-course-card)").first();
   await expect(firstClusterCourse).toBeVisible();
   await expect(firstClusterCourse).toContainText("Satisfies:");

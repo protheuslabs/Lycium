@@ -89,6 +89,10 @@
   background: linear-gradient(145deg, #171717, #111112);
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-row--source-gap {
+  border-color: #6f5520;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-main h3 {
   color: #f8fafc;
 }
@@ -100,6 +104,19 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-status {
   color: #d1d5db;
   background: #262626;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-source-warning {
+  color: #fde68a;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-source-warning button {
+  color: #171717;
+  background: #fde68a;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-source-warning button:hover {
+  background: #f8d65a;
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-target {

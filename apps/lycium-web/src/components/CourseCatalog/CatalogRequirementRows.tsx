@@ -1,5 +1,7 @@
 import type { LyciumRequirement, LyciumRequirementGroup } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
+import { sourceGapSummary } from "../../utils/courseSourceGaps";
+import { getCourseLifecycleSummary } from "../../utils/courseLifecycle";
 import { evaluateRequirementProgress, leafRequirements, type CourseProgressLookup } from "../../utils/programProgressRollup";
 
 type CatalogRequirementRowsProps = {
@@ -7,6 +9,7 @@ type CatalogRequirementRowsProps = {
   courseMap: Map<string, CourseEntry>;
   progressCache: CourseProgressLookup;
   onOpenCourse: (course: CourseEntry) => void;
+  onOpenSourceGaps: (course: CourseEntry) => void;
 };
 
 type RequirementTarget = {
@@ -75,11 +78,19 @@ function targetTypeLabel(type: RequirementTarget["type"]): string {
   return "Hours";
 }
 
+function courseNeedsSourceInput(course: CourseEntry): boolean {
+  const lifecycle = getCourseLifecycleSummary(course);
+  const sourceSummary = sourceGapSummary(course);
+  const hasCourseSources = Boolean(course.data.sourceIds?.length || course.data.sourceRecords?.length);
+  return lifecycle.needsSourceInput || sourceSummary.blockingGaps.length > 0 || !hasCourseSources;
+}
+
 export default function CatalogRequirementRows({
   group,
   courseMap,
   progressCache,
   onOpenCourse,
+  onOpenSourceGaps,
 }: CatalogRequirementRowsProps) {
   const requirements = leafRequirements(group.requirements).filter((requirement) => requirement.required !== false);
 
@@ -97,9 +108,15 @@ export default function CatalogRequirementRows({
         {requirements.map((requirement) => {
           const progress = evaluateRequirementProgress(requirement, courseMap, progressCache);
           const targets = requirementTargets(requirement, courseMap);
+          const needsEvidence = progress.evidenceIds.length === 0;
+          const courseTargetsNeedingSources = targets.filter((target) => target.course && courseNeedsSourceInput(target.course));
+          const hasSourceWarnings = needsEvidence || courseTargetsNeedingSources.length > 0;
 
           return (
-            <article className={`catalog-requirement-row catalog-requirement-row--${progress.status}`} key={requirement.id}>
+            <article
+              className={`catalog-requirement-row catalog-requirement-row--${progress.status}${hasSourceWarnings ? " catalog-requirement-row--source-gap" : ""}`}
+              key={requirement.id}
+            >
               <div className="catalog-requirement-main">
                 <span className="catalog-requirement-status">{statusLabel(progress.status)}</span>
                 <h3>{requirementTitle(requirement)}</h3>
@@ -107,6 +124,22 @@ export default function CatalogRequirementRows({
                   {progress.completedCount}/{progress.targetCount} complete
                   {progress.evidenceIds.length > 0 ? ` · ${progress.evidenceIds.length} evidence refs` : ""}
                 </p>
+                {hasSourceWarnings && (
+                  <div className="catalog-requirement-source-warning" role="note">
+                    <span>{needsEvidence ? "Needs source evidence" : "Needs stronger source coverage"}</span>
+                    {courseTargetsNeedingSources.slice(0, 2).map((target) =>
+                      target.course ? (
+                        <button
+                          key={target.id}
+                          type="button"
+                          onClick={() => onOpenSourceGaps(target.course as CourseEntry)}
+                        >
+                          Add source
+                        </button>
+                      ) : null,
+                    )}
+                  </div>
+                )}
               </div>
               <div className="catalog-requirement-targets">
                 {targets.map((target) =>

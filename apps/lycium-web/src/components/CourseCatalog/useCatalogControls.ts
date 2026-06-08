@@ -27,6 +27,29 @@ type CatalogControlsOptions = {
   ) => void;
 };
 
+function courseMapAliases(course: CourseEntry): string[] {
+  const aliases = new Set<string>([course.key]);
+  if (course.snapshotId !== undefined) aliases.add(`remote-${course.snapshotId}`);
+  const metadata = course.data.metadata && typeof course.data.metadata === "object"
+    ? course.data.metadata as Record<string, unknown>
+    : {};
+  for (const key of ["scaffoldCourseId", "courseId", "programCourseId", "requirementCourseId", "linkedExistingCourseId"]) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) aliases.add(value);
+  }
+  return Array.from(aliases);
+}
+
+export function buildCatalogCourseMap(courses: CourseEntry[]): Map<string, CourseEntry> {
+  const map = new Map<string, CourseEntry>();
+  for (const course of courses) {
+    for (const alias of courseMapAliases(course)) {
+      if (!map.has(alias)) map.set(alias, course);
+    }
+  }
+  return map;
+}
+
 export function useCatalogControls({
   courses,
   programs,
@@ -64,7 +87,7 @@ export function useCatalogControls({
     () => groupCourseRequirementContexts(selectedCluster),
     [selectedCluster],
   );
-  const catalogCourseMap = useMemo(() => new Map(courses.map((course) => [course.key, course])), [courses]);
+  const catalogCourseMap = useMemo(() => buildCatalogCourseMap(courses), [courses]);
   const catalogProgressCache = useMemo(() => buildCatalogProgressCache(catalogCourseMap), [catalogCourseMap]);
   const programOptions = useMemo(
     () => programs.map((program) => ({ value: program.id, label: program.title })),

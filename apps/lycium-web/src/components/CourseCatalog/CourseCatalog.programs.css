@@ -219,6 +219,37 @@
   background: #ffe2e2;
 }
 
+.catalog-requirement-row--source-gap {
+  border-color: #f1d38a;
+}
+
+.catalog-requirement-source-warning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  color: #855f00;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.catalog-requirement-source-warning button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.24rem 0.52rem;
+  color: #ffffff;
+  background: #855f00;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.catalog-requirement-source-warning button:hover {
+  background: #6f4700;
+}
+
 .catalog-requirement-targets {
   display: flex;
   flex-wrap: wrap;
