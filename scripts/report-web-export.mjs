@@ -2,11 +2,19 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 const repoRoot = process.cwd();
-const outDir = path.resolve(repoRoot, process.argv[2] ?? "apps/lycium-web/out");
+const outDirArg = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
+const outDir = path.resolve(repoRoot, outDirArg ?? "apps/lycium-web/out");
 const nextDir = path.resolve(repoRoot, "apps/lycium-web/.next");
 const courseDataDir = path.resolve(repoRoot, "apps/lycium-web/src/courseData");
 const basePath = normalizeBasePath(process.env.NEXT_PUBLIC_LYCIUM_BASE_PATH ?? "/Lycium");
 const siteRoot = [basePath ? path.join(outDir, basePath.slice(1)) : outDir, outDir].find((candidate) => existsSync(candidate)) ?? outDir;
+const shouldCheckBudget = process.argv.includes("--check") || process.env.LYCIUM_EXPORT_REPORT_CHECK === "1";
+const budget = {
+  maxRouteCount: numberEnv("LYCIUM_EXPORT_MAX_ROUTES", 5000),
+  maxArtifactBytes: bytesEnv("LYCIUM_EXPORT_MAX_ARTIFACT_MB", 250),
+  maxCourseDataBytes: bytesEnv("LYCIUM_EXPORT_MAX_COURSE_DATA_MB", 2),
+  maxLargestChunkBytes: bytesEnv("LYCIUM_EXPORT_MAX_CHUNK_KB", 900, 1024),
+};
 
 const routeFiles = existsSync(siteRoot) ? collectFiles(siteRoot).filter((file) => path.basename(file) === "index.html") : [];
 const chunksDir = path.join(nextDir, "static", "chunks");
@@ -34,6 +42,22 @@ console.log(`- source course-data size: ${formatBytes(report.courseDataSourceByt
 console.log("- largest chunks:");
 for (const chunk of largestChunks) {
   console.log(`  - ${chunk.file}: ${formatBytes(chunk.size)}`);
+}
+
+if (shouldCheckBudget) {
+  const failures = budgetFailures(report, budget);
+  if (failures.length > 0) {
+    console.error("Web export budget check failed:");
+    for (const failure of failures) {
+      console.error(`- ${failure}`);
+    }
+    process.exit(1);
+  }
+  console.log("Web export budget check passed:");
+  console.log(`- max routes: ${budget.maxRouteCount}`);
+  console.log(`- max artifact size: ${formatBytes(budget.maxArtifactBytes)}`);
+  console.log(`- max course-data source size: ${formatBytes(budget.maxCourseDataBytes)}`);
+  console.log(`- max largest chunk: ${formatBytes(budget.maxLargestChunkBytes)}`);
 }
 
 if (process.env.LYCIUM_EXPORT_REPORT_JSON === "1") {
@@ -80,4 +104,45 @@ function normalizeBasePath(value) {
 
 function relative(filePath) {
   return path.relative(repoRoot, filePath).replaceAll("\\\\", "/");
+}
+
+function numberEnv(name, fallback) {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+function bytesEnv(name, fallback, multiplier = 1024 * 1024) {
+  return numberEnv(name, fallback) * multiplier;
+}
+
+function budgetFailures(currentReport, currentBudget) {
+  const failures = [];
+  const largestChunk = currentReport.largestChunks[0];
+
+  if (currentReport.routeCount === 0) {
+    failures.push("route count is 0; run the web static export before checking budget");
+  }
+  if (currentReport.exportedArtifactBytes === 0) {
+    failures.push("exported artifact size is 0 B; run the web static export before checking budget");
+  }
+  if (currentReport.routeCount > currentBudget.maxRouteCount) {
+    failures.push(`route count ${currentReport.routeCount} exceeds ${currentBudget.maxRouteCount}`);
+  }
+  if (currentReport.exportedArtifactBytes > currentBudget.maxArtifactBytes) {
+    failures.push(
+      `exported artifact size ${formatBytes(currentReport.exportedArtifactBytes)} exceeds ${formatBytes(currentBudget.maxArtifactBytes)}`,
+    );
+  }
+  if (currentReport.courseDataSourceBytes > currentBudget.maxCourseDataBytes) {
+    failures.push(
+      `source course-data size ${formatBytes(currentReport.courseDataSourceBytes)} exceeds ${formatBytes(currentBudget.maxCourseDataBytes)}`,
+    );
+  }
+  if (largestChunk && largestChunk.size > currentBudget.maxLargestChunkBytes) {
+    failures.push(
+      `largest chunk ${largestChunk.file} is ${formatBytes(largestChunk.size)}, exceeding ${formatBytes(currentBudget.maxLargestChunkBytes)}`,
+    );
+  }
+
+  return failures;
 }

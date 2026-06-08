@@ -46,6 +46,12 @@ jobs:
       - name: Support direct route fallback on GitHub Pages
         run: cp apps/lycium-web/out/index.html apps/lycium-web/out/404.html
 
+      - name: Report web export size
+        run: pnpm report:web-export
+
+      - name: Check web export budget
+        run: pnpm check:web-export-budget
+
       - name: Verify GitHub Pages export
         env:
           NEXT_PUBLIC_LYCIUM_BASE_PATH: /Lycium

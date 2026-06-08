@@ -60,6 +60,9 @@ jobs:
       - name: Report web export size
         run: pnpm report:web-export
 
+      - name: Check web export budget
+        run: pnpm check:web-export-budget
+
       - name: Verify GitHub Pages export
         run: pnpm verify:pages-export
 
