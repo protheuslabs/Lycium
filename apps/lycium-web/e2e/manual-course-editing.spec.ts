@@ -3,6 +3,8 @@ import { expect, test, type Page } from "@playwright/test";
 const manualCourseTitle = "Manual E2E Course";
 const manualBlockBody = "Manual block body from E2E.";
 const manualSourceUrl = "https://example.edu/manual-source";
+const manualQuizQuestion = "What makes a Lycium course trustworthy?";
+const manualQuizAnswer = "Traceable source citations";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -28,13 +30,20 @@ async function createBlankManualCourse(page: Page) {
   await page.getByRole("button", { name: "Edit course" }).click();
 }
 
-async function addTextBlock(page: Page, body: string) {
+async function addBlock(page: Page, tabName: string, body: string) {
   await page.getByRole("button", { name: /^Add block$/i }).click();
   const addBlockDialog = page.locator("dialog.course-edit-native-dialog");
   await expect(addBlockDialog).toBeVisible();
-  await expect(addBlockDialog.getByRole("tab", { name: "Text" })).toHaveAttribute("aria-selected", "true");
+  if (tabName !== "Text") {
+    await addBlockDialog.getByRole("tab", { name: tabName }).click();
+  }
+  await expect(addBlockDialog.getByRole("tab", { name: tabName })).toHaveAttribute("aria-selected", "true");
   await addBlockDialog.getByRole("textbox").fill(body);
   await addBlockDialog.getByRole("button", { name: "Add block" }).click();
+}
+
+async function addTextBlock(page: Page, body: string) {
+  await addBlock(page, "Text", body);
   await expect(page.getByText(body)).toBeVisible();
 }
 
@@ -105,4 +114,39 @@ test("manual course editing persists URL source attachments on content blocks", 
   }, manualSourceUrl);
 
   expect(persistedSource).toBe(true);
+});
+
+test("manual course editing persists quiz question and answer edits", async ({ page }) => {
+  await createBlankManualCourse(page);
+  await addBlock(page, "Quiz", "Manual Quiz E2E");
+
+  await expect(page.getByText("Replace this with the quiz question.")).toBeVisible();
+  await page.getByRole("button", { name: "Edit question" }).click();
+  const questionDialog = page.locator("dialog.course-edit-native-dialog");
+  await expect(questionDialog).toBeVisible();
+  await questionDialog.getByRole("textbox").fill(manualQuizQuestion);
+  await questionDialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(manualQuizQuestion)).toBeVisible();
+
+  await page.getByRole("button", { name: "Edit answer" }).first().click();
+  const answerDialog = page.locator("dialog.course-edit-native-dialog");
+  await expect(answerDialog).toBeVisible();
+  await answerDialog.getByRole("textbox").fill(manualQuizAnswer);
+  await answerDialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText(manualQuizAnswer)).toBeVisible();
+
+  await page.getByRole("button", { name: "Save course edits" }).click();
+
+  const persistedQuiz = await page.evaluate(
+    ({ question, answer }) => {
+      const drafts = JSON.parse(window.localStorage.getItem("lycium-local-course-drafts") ?? "[]");
+      return drafts.some((draft: unknown) => {
+        const draftText = JSON.stringify(draft);
+        return draftText.includes(question) && draftText.includes(answer);
+      });
+    },
+    { question: manualQuizQuestion, answer: manualQuizAnswer },
+  );
+
+  expect(persistedQuiz).toBe(true);
 });
