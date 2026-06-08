@@ -109,6 +109,55 @@ describe("Lycium contract fixtures", () => {
     expect(validateCourseEntry(entry, { requireSources: true }).errors.some((error) => error.includes("concept card must include sourceIds"))).toBe(true);
   });
 
+  it("allows explicit needs_sources drafts to remain sparse until source gaps are resolved", () => {
+    const course = readFixture<LyciumCourseData>("valid-course.json");
+    const draftCourse: LyciumCourseData = {
+      ...course,
+      sourceIds: [],
+      sourceRecords: [],
+      metadata: {
+        ...(course.metadata ?? {}),
+        status: "needs_sources",
+        sourceGaps: [
+          {
+            id: "gap-core-concepts",
+            scopeType: "course",
+            scopeId: "course",
+            title: "Add core concept sources",
+            neededFor: "Core source coverage",
+            minimumUsefulSources: 3,
+            currentSourceCount: 0,
+            severity: "blocking",
+          },
+        ],
+      },
+      modules: [
+        {
+          id: "source-gap-module",
+          title: "Source coverage needed",
+          sections: [
+            {
+              id: "source-gap-section",
+              title: "Add sources to continue",
+              pageType: "learn",
+              sectionType: "source-gap",
+              content: [{ type: "text", value: "This draft needs sources before course content can be generated." }],
+            },
+          ],
+        },
+      ],
+    };
+    const entry: LyciumCourseEntry = {
+      key: "fixture-needs-sources",
+      title: draftCourse.title,
+      data: draftCourse,
+      source: "local",
+      status: "needs_sources",
+    };
+
+    expect(validateCourseEntry(entry, { requireSources: true })).toEqual({ valid: true, errors: [] });
+  });
+
   it("rejects departments that are not nested under the selected category", () => {
     expect(
       validateCourseTaxonomy({
