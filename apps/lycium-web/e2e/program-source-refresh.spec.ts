@@ -28,7 +28,7 @@ async function mockVerifiedAiConnection(page: Page) {
             provider_label: "Ollama Local",
             key_preview: "http://localhost:11434",
             model: "test-model",
-            models: ["test-model"],
+            models: [{ id: "test-model", label: "test-model" }],
             is_active: true,
             connection_status: "verified",
           },
@@ -124,6 +124,60 @@ async function seedRefreshableCourse(page: Page) {
   });
 }
 
+async function seedProgramRequirementSourceGapCourse(page: Page) {
+  await page.addInitScript(() => {
+    const sourceGapCourse = {
+      key: "local-se-computing-systems",
+      title: "Computing Systems Foundations",
+      source: "local",
+      status: "needs_sources",
+      data: {
+        title: "Computing Systems Foundations",
+        shortDescription: "A seeded program requirement draft that needs source evidence.",
+        category: "computing-information-sciences",
+        department: "software-engineering",
+        tags: ["e2e", "source gap"],
+        sourceIds: [],
+        sourceRecords: [],
+        metadata: {
+          status: "needs_sources",
+          scaffoldCourseId: "local-se-computing-systems",
+          sourceGaps: [
+            {
+              id: "gap-computing-systems",
+              scopeType: "course",
+              scopeId: "local-se-computing-systems",
+              title: "Add computing systems sources",
+              neededFor: "Program requirement source coverage",
+              requiredConcepts: ["operating systems", "computer architecture"],
+              recommendedSourceTypes: ["textbook", "open_courseware"],
+              minimumUsefulSources: 2,
+              currentSourceCount: 0,
+              severity: "blocking",
+            },
+          ],
+        },
+        modules: [
+          {
+            id: "source-gap-module",
+            title: "Source coverage needed",
+            sections: [
+              {
+                id: "source-gap-section",
+                title: "Add sources to continue",
+                pageType: "learn",
+                sectionType: "source-gap",
+                content: [{ type: "text", value: "Add source evidence before this course is generated." }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    window.localStorage.setItem("lycium-local-course-drafts", JSON.stringify([sourceGapCourse]));
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.clear();
@@ -132,16 +186,15 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("program requirement source warnings open the source-gap modal", async ({ page }) => {
+  await seedProgramRequirementSourceGapCourse(page);
   await page.goto("/Lycium/catalog/programs");
-  const firstProgram = page.locator(".program-showcase-card").first();
+  const firstProgram = page.locator(".program-showcase-card").filter({ hasText: "Full-Stack Engineer" }).first();
   await expect(firstProgram).toBeVisible();
-  await firstProgram.focus();
-  await page.keyboard.press("Enter");
+  await firstProgram.click();
 
-  const firstCluster = page.locator(".program-showcase-card").first();
+  const firstCluster = page.locator(".program-showcase-card").filter({ hasText: "Foundations" }).first();
   await expect(firstCluster).toBeVisible();
-  await firstCluster.focus();
-  await page.keyboard.press("Enter");
+  await firstCluster.click();
 
   const addSourceButton = page.locator(".catalog-requirement-source-warning").getByRole("button", { name: "Add source" }).first();
   await expect(addSourceButton).toBeVisible();
@@ -167,6 +220,10 @@ test("section refresh modal opens when an API-backed course and verified model a
   await mockVerifiedAiConnection(page);
   await seedRefreshableCourse(page);
   await page.goto("/Lycium/catalog");
+  await page.getByLabel("Settings").click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+  await expect(page.locator(".settings-key-preview").getByText("http://localhost:11434")).toBeVisible();
+  await page.getByRole("button", { name: /close settings/i }).click();
   await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Refreshable Course");
   await page.locator(".course-card").filter({ hasText: "E2E Refreshable Course" }).first().click();
 
