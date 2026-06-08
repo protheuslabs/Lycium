@@ -5,6 +5,7 @@ const manualBlockBody = "Manual block body from E2E.";
 const manualSourceUrl = "https://example.edu/manual-source";
 const manualQuizQuestion = "What makes a Lycium course trustworthy?";
 const manualQuizAnswer = "Traceable source citations";
+const cancelledCourseTitle = "Cancelled E2E Course";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -182,4 +183,26 @@ test("manual course editing persists sidebar section and module changes", async 
   });
 
   expect(persistedStructure).toBe(true);
+});
+
+test("manual course editing cancel reverts unsaved changes", async ({ page }) => {
+  await createBlankManualCourse(page);
+
+  await page.getByRole("button", { name: "Edit course title" }).click();
+  const titleDialog = page.locator("dialog.course-edit-native-dialog");
+  await expect(titleDialog).toBeVisible();
+  await titleDialog.getByRole("textbox").fill(cancelledCourseTitle);
+  await titleDialog.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".course-name")).toHaveText(cancelledCourseTitle);
+
+  await page.getByRole("button", { name: "Cancel course edits" }).click();
+  await expect(page.locator(".course-name")).toHaveText("Untitled course");
+  await expect(page.getByRole("button", { name: "Edit course" })).toBeVisible();
+
+  const persistedCancelledTitle = await page.evaluate((title) => {
+    const drafts = JSON.parse(window.localStorage.getItem("lycium-local-course-drafts") ?? "[]");
+    return drafts.some((draft: unknown) => JSON.stringify(draft).includes(title));
+  }, cancelledCourseTitle);
+
+  expect(persistedCancelledTitle).toBe(false);
 });
