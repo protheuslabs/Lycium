@@ -50,6 +50,9 @@ jobs:
       - name: Test web app helpers
         run: pnpm --filter @lycium/web test
 
+      - name: Test web export report
+        run: pnpm test:web-export-report
+
       - name: Build web app
         env:
           NEXT_OUTPUT: export
