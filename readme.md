@@ -200,6 +200,7 @@ When `LYCIUM_SOURCE_INDEX_API_URL` is set on the Lycium API, Lycium routes `/v1/
 | `corepack pnpm build` | Build the web app |
 | `corepack pnpm test:contracts` | Run shared contract fixture tests |
 | `corepack pnpm validate` | Run contract tests, web typecheck, and web build |
+| `corepack pnpm validate:mvp` | Run the local MVP validation sweep: core guards, docs check, web tests/build/export verification, API tests, and source-index tests |
 | `corepack pnpm --filter @lycium/web test` | Run web tests |
 | `corepack pnpm --filter @lycium/web e2e` | Run Playwright catalog/course smoke tests |
 | `corepack pnpm --filter @lycium/web lint` | Run web linting |

@@ -28,6 +28,7 @@
     "test:e2e": "corepack pnpm --filter @lycium/web e2e",
     "check:loc": "node scripts/check-loc.mjs",
     "validate": "corepack pnpm check:loc && corepack pnpm check:boundaries && corepack pnpm check:data-boundaries && corepack pnpm check:readiness && corepack pnpm test:contracts && corepack pnpm --filter @lycium/web typecheck && corepack pnpm --filter @lycium/web build",
+    "validate:mvp": "corepack pnpm validate && corepack pnpm check:docs && corepack pnpm --filter @lycium/web test && corepack pnpm verify:pages-export && corepack pnpm report:web-export && corepack pnpm test:api && corepack pnpm test:source-index",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "report:web-export": "node scripts/report-web-export.mjs",
