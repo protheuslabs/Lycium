@@ -89,12 +89,17 @@
   margin-left: 0.35rem;
   vertical-align: super;
   font-size: 0.72em;
-  line-height: 0;
+  line-height: 1;
 }
 
 .block-citation button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
-  padding: 0;
+  min-width: 1.35rem;
+  min-height: 1.2rem;
+  padding: 0 0.1rem;
   color: #4a6cf7;
   background: transparent;
   font: inherit;

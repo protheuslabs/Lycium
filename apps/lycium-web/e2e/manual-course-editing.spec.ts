@@ -1,7 +1,8 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const manualCourseTitle = "Manual E2E Course";
 const manualBlockBody = "Manual block body from E2E.";
+const manualSourceUrl = "https://example.edu/manual-source";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -14,7 +15,7 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test("manual course editing saves title and added block content as a local draft", async ({ page }) => {
+async function createBlankManualCourse(page: Page) {
   await page.goto("/Lycium/catalog");
 
   await page.getByRole("button", { name: /^Create Course$/i }).click();
@@ -25,7 +26,20 @@ test("manual course editing saves title and added block content as a local draft
   await expect(page).toHaveURL(/\/Lycium\/courses\//);
   await expect(page.locator(".course-name")).toHaveText("Untitled course");
   await page.getByRole("button", { name: "Edit course" }).click();
+}
 
+async function addTextBlock(page: Page, body: string) {
+  await page.getByRole("button", { name: /^Add block$/i }).click();
+  const addBlockDialog = page.locator("dialog.course-edit-native-dialog");
+  await expect(addBlockDialog).toBeVisible();
+  await expect(addBlockDialog.getByRole("tab", { name: "Text" })).toHaveAttribute("aria-selected", "true");
+  await addBlockDialog.getByRole("textbox").fill(body);
+  await addBlockDialog.getByRole("button", { name: "Add block" }).click();
+  await expect(page.getByText(body)).toBeVisible();
+}
+
+test("manual course editing saves title and added block content as a local draft", async ({ page }) => {
+  await createBlankManualCourse(page);
   await page.getByRole("button", { name: "Edit course title" }).click();
   const titleDialog = page.locator("dialog.course-edit-native-dialog");
   await expect(titleDialog).toBeVisible();
@@ -33,13 +47,7 @@ test("manual course editing saves title and added block content as a local draft
   await titleDialog.getByRole("button", { name: "Save" }).click();
   await expect(page.locator(".course-name")).toHaveText(manualCourseTitle);
 
-  await page.getByRole("button", { name: /^Add block$/i }).click();
-  const addBlockDialog = page.locator("dialog.course-edit-native-dialog");
-  await expect(addBlockDialog).toBeVisible();
-  await expect(addBlockDialog.getByRole("tab", { name: "Text" })).toHaveAttribute("aria-selected", "true");
-  await addBlockDialog.getByRole("textbox").fill(manualBlockBody);
-  await addBlockDialog.getByRole("button", { name: "Add block" }).click();
-  await expect(page.getByText(manualBlockBody)).toBeVisible();
+  await addTextBlock(page, manualBlockBody);
 
   await page.getByRole("button", { name: "Save course edits" }).click();
 
@@ -59,4 +67,42 @@ test("manual course editing saves title and added block content as a local draft
   await page.getByPlaceholder("Search names, tags, and departments").fill(manualCourseTitle);
   await page.locator(".course-card").filter({ hasText: manualCourseTitle }).first().click();
   await expect(page.locator(".course-name")).toHaveText(manualCourseTitle);
+});
+
+test("manual course editing persists URL source attachments on content blocks", async ({ page }) => {
+  await createBlankManualCourse(page);
+  await addTextBlock(page, "Source-backed manual block.");
+
+  await page.getByRole("button", { name: "Add a source for this block" }).first().click();
+  const sourceDialog = page.getByRole("dialog", { name: "Add a source for this course" });
+  await expect(sourceDialog).toBeVisible();
+  await sourceDialog.getByPlaceholder("https://example.edu/source").fill(manualSourceUrl);
+  await sourceDialog.getByRole("button", { name: "Add URL source" }).click();
+
+  await expect(page.getByRole("button", { name: "Open source 1" }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Save course edits" }).click();
+
+  const persistedSource = await page.evaluate((url) => {
+    const drafts = JSON.parse(window.localStorage.getItem("lycium-local-course-drafts") ?? "[]");
+    return drafts.some((draft: unknown) => {
+      const candidate = draft as {
+        data?: {
+          sourceRecords?: Array<{ id?: string; url?: string }>;
+          modules?: Array<{ sections?: Array<{ content?: Array<{ sourceIds?: string[] }> }> }>;
+        };
+      };
+      const sourceRecord = candidate.data?.sourceRecords?.find((source) => source.url === url);
+      const sourceId = sourceRecord?.id;
+      return Boolean(
+        sourceId &&
+          candidate.data?.modules?.some((module) =>
+            module.sections?.some((section) =>
+              section.content?.some((block) => Array.isArray(block.sourceIds) && block.sourceIds.includes(sourceId)),
+            ),
+          ),
+      );
+    });
+  }, manualSourceUrl);
+
+  expect(persistedSource).toBe(true);
 });
