@@ -128,6 +128,21 @@ function createConflictDraft(
   };
 }
 
+function comparableDraftData(data: CourseEntry["data"]) {
+  const metadata = { ...(data.metadata ?? {}) } as Record<string, unknown>;
+  delete metadata.localDraft;
+  delete metadata.editHistory;
+
+  return JSON.stringify({
+    ...data,
+    metadata,
+  });
+}
+
+function hasSameDraftContent(persistedCourse: CourseEntry, data: CourseEntry["data"]) {
+  return comparableDraftData(persistedCourse.data) === comparableDraftData(data);
+}
+
 function isCourseEntryCandidate(value: unknown): value is CourseEntry {
   if (!value || typeof value !== "object") {
     return false;
@@ -424,7 +439,7 @@ export function saveLocalCourseDraftConflictSafe(course: CourseEntry, data: Cour
   const persistedCourse = readPersistedLocalCourseEntries().find((draftCourse) => draftCourse.key === course.key);
   const conflictReason = persistedCourse ? draftConflictReason(persistedCourse, course) : null;
 
-  if (persistedCourse && conflictReason) {
+  if (persistedCourse && conflictReason === "newer_revision" && !hasSameDraftContent(persistedCourse, data)) {
     const conflictCourse = createConflictDraft(course, data, persistedCourse, conflictReason);
     persistLocalCourseDraft(conflictCourse);
     return {
@@ -435,7 +450,27 @@ export function saveLocalCourseDraftConflictSafe(course: CourseEntry, data: Cour
     };
   }
 
-  const savedCourse = markLocalDraftSaved(course, data);
+  if (persistedCourse && conflictReason === "newer_revision") {
+    return {
+      course: persistedCourse,
+      conflictDetected: false,
+    };
+  }
+
+  const courseToSave =
+    persistedCourse && conflictReason === "newer_timestamp"
+      ? {
+          ...course,
+          data: {
+            ...course.data,
+            metadata: {
+              ...(course.data.metadata ?? {}),
+              localDraft: getLocalDraftMetadata(persistedCourse) ?? (course.data.metadata as Record<string, unknown> | undefined)?.localDraft,
+            },
+          },
+        }
+      : course;
+  const savedCourse = markLocalDraftSaved(courseToSave, data);
   persistLocalCourseDraft(savedCourse);
 
   return {

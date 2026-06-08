@@ -417,6 +417,12 @@ test("forked courses expose stable edit-mode controls", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Edit module title" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Edit section title" })).toBeVisible();
 
+  await page.getByRole("button", { name: "Edit course title" }).click();
+  await expect(page.locator(".course-edit-native-dialog")).toBeVisible();
+  await page.locator("#course-edit-native-field").fill("Forked E2E Saved Course");
+  await page.locator(".course-edit-native-dialog").getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".course-name")).toHaveText("Forked E2E Saved Course");
+
   await page.getByRole("button", { name: "Open course settings" }).click();
   await expect(page.getByRole("dialog", { name: "Course settings" })).toBeVisible();
   await page.keyboard.press("Escape");
@@ -437,6 +443,12 @@ test("forked courses expose stable edit-mode controls", async ({ page }) => {
   await page.locator(".sidebar-source-tab").click();
   await expect(page.locator(".course-sources-page")).toBeVisible();
 
-  await page.getByRole("button", { name: "Cancel course edits" }).click();
-  await expect(page.getByRole("button", { name: "Edit course" })).toBeVisible();
+  await page.getByRole("button", { name: "Save course edits" }).click();
+  await expect(page.getByRole("button", { name: "Save course edits" })).toHaveCount(0);
+  const savedDraftTitles = await page.evaluate(() => {
+    const drafts = JSON.parse(window.localStorage.getItem("lycium-local-course-drafts") ?? "[]") as Array<{ title?: string }>;
+    return drafts.map((draft) => draft.title ?? "");
+  });
+  expect(savedDraftTitles).toContain("Forked E2E Saved Course");
+  expect(savedDraftTitles.some((title) => title.includes("conflict copy"))).toBe(false);
 });
