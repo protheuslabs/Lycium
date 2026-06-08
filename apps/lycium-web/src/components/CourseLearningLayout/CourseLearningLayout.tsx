@@ -25,17 +25,8 @@ import {
   titleFromUrl,
 } from "../CourseEditing/courseEditPrimitives";
 
-type DisplaySection = CourseSection & {
-  moduleId?: string;
-  moduleIndex: number;
-  moduleTitle: string;
-  displayNumber: string;
-};
-
-type ProgressSummary = {
-  percentage: number;
-  viewedPercentage: number;
-};
+type DisplaySection = CourseSection & { moduleId?: string; moduleIndex: number; moduleTitle: string; displayNumber: string };
+type ProgressSummary = { percentage: number; viewedPercentage: number };
 
 type CourseLearningLayoutProps = {
   sections: DisplaySection[];
