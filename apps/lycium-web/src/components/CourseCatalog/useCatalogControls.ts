@@ -285,6 +285,7 @@ export function useCatalogControls({
     activityFilter,
     catalogCourseMap,
     catalogPage,
+    catalogProgressCache,
     catalogViewLevel,
     collegeFilter,
     collegeFilterOptions,

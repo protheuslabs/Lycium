@@ -284,6 +284,8 @@ test("catalog program and cluster navigation is data-driven", async ({ page }) =
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/Lycium\/catalog\/[^/]+\/[^/]+$/);
   await expect(page.getByLabel("Select catalog view level")).toContainText("Courses");
+  await expect(page.getByLabel(`${clusterTitle} requirements`)).toBeVisible();
+  await expect(page.locator(".catalog-requirement-row").first()).toBeVisible();
   const firstClusterCourse = page.locator(".course-card:not(.create-course-card)").first();
   await expect(firstClusterCourse).toBeVisible();
   await expect(firstClusterCourse).toContainText("Satisfies:");

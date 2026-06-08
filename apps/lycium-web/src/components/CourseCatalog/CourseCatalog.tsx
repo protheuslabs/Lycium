@@ -7,6 +7,7 @@ import CatalogCourseGrid from "./CatalogCourseGrid";
 import CatalogPagination from "./CatalogPagination";
 import CatalogPathRow from "./CatalogPathRow";
 import CatalogProgramShowcase from "./CatalogProgramShowcase";
+import CatalogRequirementRows from "./CatalogRequirementRows";
 import CatalogToolbar from "./CatalogToolbar";
 import CourseInfoModal from "./CourseInfoModal";
 import CreateCourseModal from "./CreateCourseModal";
@@ -212,6 +213,14 @@ export default function CourseCatalog({
 
           {catalogControls.catalogViewLevel === "courses" && (
             <>
+              {catalogControls.selectedCluster && (
+                <CatalogRequirementRows
+                  group={catalogControls.selectedCluster}
+                  courseMap={catalogControls.catalogCourseMap}
+                  progressCache={catalogControls.catalogProgressCache}
+                  onOpenCourse={onOpenCourse}
+                />
+              )}
               <CatalogCourseGrid
                 courseGridRef={courseGridRef}
                 isGeneratingCourse={isGeneratingCourse}

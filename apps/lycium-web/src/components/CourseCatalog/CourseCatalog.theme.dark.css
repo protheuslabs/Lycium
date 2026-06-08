@@ -74,6 +74,43 @@
   color: #cbd5e1;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirements-header {
+  color: #9ca3af;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirements-header strong,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-row--in_progress .catalog-requirement-status {
+  color: #dbeafe;
+  background: #222734;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-row {
+  border-color: #303033;
+  background: linear-gradient(145deg, #171717, #111112);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-main h3 {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-main p {
+  color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-status {
+  color: #d1d5db;
+  background: #262626;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-target {
+  color: #f8fafc;
+  background: #2f3542;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-requirement-target:hover {
+  background: #454d5c;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-meta span {
   color: #dbeafe;
   background: #222734;

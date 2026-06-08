@@ -125,6 +125,148 @@
   color: #6f4700;
 }
 
+.catalog-requirements {
+  display: grid;
+  gap: 0.7rem;
+  margin: 0 0 0.9rem;
+}
+
+.catalog-requirements-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #4f5d76;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.catalog-requirements-header p {
+  margin: 0;
+}
+
+.catalog-requirements-header strong {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #eef3ff;
+  color: #30405d;
+}
+
+.catalog-requirements-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.catalog-requirement-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 1.2fr);
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #d8deea;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.catalog-requirement-main {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.catalog-requirement-main h3,
+.catalog-requirement-main p {
+  margin: 0;
+}
+
+.catalog-requirement-main h3 {
+  color: #26324a;
+  font-size: 0.96rem;
+  line-height: 1.25;
+}
+
+.catalog-requirement-main p {
+  color: #667085;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.catalog-requirement-status {
+  width: fit-content;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  color: #475569;
+  background: #e5e7eb;
+  font-size: 0.7rem;
+  font-weight: 850;
+}
+
+.catalog-requirement-row--complete .catalog-requirement-status {
+  color: #1f6f42;
+  background: rgba(47, 122, 79, 0.14);
+}
+
+.catalog-requirement-row--in_progress .catalog-requirement-status {
+  color: #30405d;
+  background: #eef3ff;
+}
+
+.catalog-requirement-row--missing .catalog-requirement-status,
+.catalog-requirement-row--blocked .catalog-requirement-status {
+  color: #8f1f1f;
+  background: #ffe2e2;
+}
+
+.catalog-requirement-targets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.catalog-requirement-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.35rem 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: #27324a;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.catalog-requirement-target span {
+  opacity: 0.7;
+}
+
+.catalog-requirement-target--static {
+  cursor: default;
+}
+
+.catalog-requirement-target:hover {
+  background: #35507c;
+}
+
+@media (max-width: 720px) {
+  .catalog-requirement-row {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-requirement-targets {
+    justify-content: flex-start;
+  }
+}
+
 .program-showcase-progress {
   grid-column: 1 / -1;
   align-self: end;
