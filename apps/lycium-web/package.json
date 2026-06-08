@@ -10,7 +10,8 @@
     "start": "next start --hostname 0.0.0.0 --port 5001",
     "test": "vitest run --config vitest.config.ts",
     "typecheck": "tsc --noEmit",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:manual-editing": "playwright test e2e/manual-course-editing.spec.ts"
   },
   "dependencies": {
     "@lycium/contracts": "workspace:*",

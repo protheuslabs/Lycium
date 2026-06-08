@@ -60,7 +60,7 @@ This loop is the bridge between the immediate local app and the long-term intern
 - Source Index service contract endpoint and CLI manifest so the index can remain detachable from Lycium UI code
 - Retrieval quality reports for source-backed search and learning-packet assembly
 - Professional readiness guardrails for review/publish, benchmarks, extraction, evals, providers, observability, contracts, migrations, secrets, and deployment
-- Playwright E2E coverage for catalog views, program/cluster navigation, search/filter/sort behavior, locked courses, settings, and course-opening flow
+- Playwright E2E coverage for catalog views, program/cluster navigation, search/filter/sort behavior, locked courses, settings, course-opening flow, and manual course editing
 
 ## Repository structure
 
@@ -205,6 +205,7 @@ When `LYCIUM_SOURCE_INDEX_API_URL` is set on the Lycium API, Lycium routes `/v1/
 | `corepack pnpm check:web-export-budget` | Fail if the static export exceeds route, artifact, course-data, or largest-chunk budgets |
 | `corepack pnpm --filter @lycium/web test` | Run web tests |
 | `corepack pnpm --filter @lycium/web e2e` | Run Playwright catalog/course smoke tests |
+| `corepack pnpm test:e2e:manual-editing` | Run the focused Playwright suite for manual course editing, local draft saves, citations, quizzes, sidebar edits, and cancel/revert behavior |
 | `corepack pnpm --filter @lycium/web lint` | Run web linting |
 | `corepack pnpm --filter @lycium/web typecheck` | Run TypeScript checks |
 | `cd services/lycium-api && pytest -q` | Run API tests |
