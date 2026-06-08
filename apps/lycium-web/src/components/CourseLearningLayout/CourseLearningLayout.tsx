@@ -3,6 +3,7 @@ import type { CourseBlock, CourseData, CourseEntry, CourseModule, CourseSection,
 import ContentView from "../ContentView/ContentView";
 import type { SourceRecord } from "../ContentView/ContentView";
 import type { ContentBlock } from "../ContentView/contentViewTypes";
+import type { SectionRegenerationRequest } from "../../hooks/useCourseSectionRegenerationActions";
 import Sidebar from "../Sidebar/Sidebar";
 import CourseSettingsModal, { type CourseSettingsDraft } from "./CourseSettingsModal";
 import {
@@ -25,6 +26,7 @@ import {
 } from "../CourseEditing/courseEditPrimitives";
 
 type DisplaySection = CourseSection & {
+  moduleId?: string;
   moduleIndex: number;
   moduleTitle: string;
   displayNumber: string;
@@ -50,6 +52,8 @@ type CourseLearningLayoutProps = {
   onCompleteSection: (sectionId: string) => void;
   onSectionTimedStatusChange: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
   onSaveCourseDraft: (courseKey: string, data: CourseData) => void;
+  canUseAiRefresh?: boolean;
+  onRegenerateSection?: (request: SectionRegenerationRequest) => Promise<CourseEntry>;
 };
 export default function CourseLearningLayout({
   sections,
@@ -66,6 +70,8 @@ export default function CourseLearningLayout({
   onCompleteSection,
   onSectionTimedStatusChange,
   onSaveCourseDraft,
+  canUseAiRefresh = false,
+  onRegenerateSection,
 }: CourseLearningLayoutProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isCourseSettingsOpen, setIsCourseSettingsOpen] = useState(false);
@@ -119,6 +125,7 @@ export default function CourseLearningLayout({
       return sourceModules.flatMap((module, moduleIndex) =>
         module.sections.map((section, sectionIndex) => ({
           ...section,
+          moduleId: module.id,
           moduleIndex,
           moduleTitle: formatModuleTitle(moduleIndex, draftModuleTitles[moduleIndex] ?? module.title),
           title: stripSectionPrefix(draftSectionTitles[section.id] ?? section.title),
@@ -472,6 +479,18 @@ export default function CourseLearningLayout({
           onBlockDelete={handleBlockDelete}
           onBlockMove={handleBlockMove}
           onSourceCreate={handleSourceCreate}
+          canRegenerateSection={Boolean(selectedCourse?.snapshotId) && canUseAiRefresh}
+          onRegenerateSection={
+            selectedCourse && displayedCurrentSection?.moduleId && onRegenerateSection
+              ? (payload) =>
+                  onRegenerateSection({
+                    course: selectedCourse,
+                    moduleId: displayedCurrentSection.moduleId ?? "",
+                    sectionId: displayedCurrentSection.id,
+                    ...payload,
+                  })
+              : undefined
+          }
         />
       </div>
       <CourseSettingsModal

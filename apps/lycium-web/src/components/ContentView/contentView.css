@@ -42,6 +42,36 @@
   font-weight: 600;
 }
 
+.section-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.section-title-row .section-title {
+  flex: 1;
+}
+
+.section-refresh-button.lycium-button {
+  width: 2.25rem;
+  min-width: 2.25rem;
+  height: 2.25rem;
+  min-height: 2.25rem;
+  border-radius: 999px;
+  padding: 0;
+}
+
+.section-refresh-button svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .section-content {
   margin: 0;
   line-height: 1.6;
@@ -130,6 +160,59 @@
 
 .source-reference-list a {
   color: #3a56d4;
+}
+
+.section-refresh-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.section-refresh-form label,
+.section-refresh-source-fieldset {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.section-refresh-form textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 5rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.section-refresh-source-fieldset {
+  border: 0;
+  padding: 0;
+}
+
+.section-refresh-source-fieldset legend,
+.section-refresh-form label span {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--lycium-text-muted, #6b7280);
+}
+
+.section-refresh-source-row {
+  display: flex;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.section-refresh-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.section-refresh-footer p {
+  margin: 0;
+  color: var(--lycium-text-muted, #6b7280);
+  font-size: 0.85rem;
 }
 
 .source-missing {

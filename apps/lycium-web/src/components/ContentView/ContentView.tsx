@@ -44,6 +44,14 @@ type ContentViewProps = {
   onBlockDelete?: (sectionId: string, blockIndex: number) => void;
   onBlockMove?: (sectionId: string, fromIndex: number, toIndex: number) => void;
   onSourceCreate?: (sourceUrl: string) => SourceRecord | null;
+  canRegenerateSection?: boolean;
+  onRegenerateSection?: (payload: {
+    feedback?: string;
+    positiveFeedback?: string[];
+    negativeFeedback?: string[];
+    newSourceUrls?: string[];
+    badSourceIds?: string[];
+  }) => Promise<unknown> | unknown;
 };
 export default function ContentView({ 
   courseKey,
@@ -72,13 +80,23 @@ export default function ContentView({
   onBlockAdd,
   onBlockDelete,
   onBlockMove,
-  onSourceCreate
+  onSourceCreate,
+  canRegenerateSection = false,
+  onRegenerateSection
 }: ContentViewProps) {
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
   const [sourceTarget, setSourceTarget] = useState<{ sectionId: string; blockIndex: number } | null>(null);
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceStatus, setSourceStatus] = useState("");
+  const [isRefreshOpen, setIsRefreshOpen] = useState(false);
+  const [refreshFeedback, setRefreshFeedback] = useState("");
+  const [positiveFeedback, setPositiveFeedback] = useState("");
+  const [negativeFeedback, setNegativeFeedback] = useState("");
+  const [refreshSourceUrls, setRefreshSourceUrls] = useState("");
+  const [badSourceIds, setBadSourceIds] = useState<Set<string>>(new Set());
+  const [refreshStatus, setRefreshStatus] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const citationFocusTimer = useRef<number | null>(null);
   const courseSourceIndex = useMemo(() => buildCourseSourceIndex(sources), [sources]);
   const {
@@ -95,6 +113,9 @@ export default function ContentView({
     setSourceTarget(null);
     setSourceUrl("");
     setSourceStatus("");
+    setIsRefreshOpen(false);
+    setRefreshStatus("");
+    setBadSourceIds(new Set());
   }, [section?.id]);
 
   const handleInlineCitationClick = useCallback((citationIndex: number) => {
@@ -168,6 +189,40 @@ export default function ContentView({
     [handleAttachSource, onSourceCreate, sourceUrl],
   );
 
+  const splitLines = (value: string) =>
+    value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+  const handleRefreshSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!onRegenerateSection || !section) {
+        return;
+      }
+
+      setIsRefreshing(true);
+      setRefreshStatus("Refreshing this section...");
+      try {
+        await onRegenerateSection({
+          feedback: refreshFeedback,
+          positiveFeedback: splitLines(positiveFeedback),
+          negativeFeedback: splitLines(negativeFeedback),
+          newSourceUrls: splitLines(refreshSourceUrls),
+          badSourceIds: Array.from(badSourceIds),
+        });
+        setIsRefreshOpen(false);
+        setRefreshStatus("");
+      } catch (err) {
+        setRefreshStatus(err instanceof Error ? err.message : "Section refresh failed.");
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    [badSourceIds, negativeFeedback, onRegenerateSection, positiveFeedback, refreshFeedback, refreshSourceUrls, section],
+  );
+
   if (!section) {
     if (showCourseSourcesPage) {
       return (
@@ -234,15 +289,36 @@ export default function ContentView({
       </div>
       
       {/* Section Title With Decimal */}
-      <h2 className="section-title course-editable-line">
-        <span className="course-editable-line-content">{section.displayNumber} {section.title}</span>
-        {isEditMode && (
-          <EditPencilButton
-            label="Edit section title"
-            onClick={() => promptForText("Edit section title", section.title, (title) => onSectionTitleChange?.(section.id, title))}
-          />
+      <div className="section-title-row">
+        <h2 className="section-title course-editable-line">
+          <span className="course-editable-line-content">{section.displayNumber} {section.title}</span>
+          {isEditMode && (
+            <EditPencilButton
+              label="Edit section title"
+              onClick={() => promptForText("Edit section title", section.title, (title) => onSectionTitleChange?.(section.id, title))}
+            />
+          )}
+        </h2>
+        {!isEditMode && onRegenerateSection && (
+          <Button
+            type="button"
+            variant="icon"
+            iconOnly
+            className="section-refresh-button"
+            disabled={!canRegenerateSection || isRefreshing}
+            title={canRegenerateSection ? "Refresh this section with AI" : "Section refresh needs an API-backed snapshot and verified AI model"}
+            aria-label="Refresh this section with AI"
+            onClick={() => setIsRefreshOpen(true)}
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M20 6v5h-5" />
+              <path d="M4 18v-5h5" />
+              <path d="M18.5 9A7 7 0 0 0 6.4 6.7L4 9" />
+              <path d="M5.5 15a7 7 0 0 0 12.1 2.3L20 15" />
+            </svg>
+          </Button>
         )}
-      </h2>
+      </div>
       <div className="section-content">
         {Array.isArray(section.content)
           ? section.content.map((block, idx) => (
@@ -431,6 +507,98 @@ export default function ContentView({
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={isRefreshOpen}
+        title="Refresh this section"
+        eyebrow="AI section revision"
+        labelledById="section-refresh-modal-title"
+        size="md"
+        onClose={() => {
+          if (!isRefreshing) {
+            setIsRefreshOpen(false);
+            setRefreshStatus("");
+          }
+        }}
+      >
+        <form className="section-refresh-form" onSubmit={handleRefreshSubmit}>
+          <label>
+            <span>Overall direction</span>
+            <textarea
+              value={refreshFeedback}
+              onChange={(event) => setRefreshFeedback(event.target.value)}
+              placeholder="What should the model improve or preserve in this section?"
+              disabled={isRefreshing}
+            />
+          </label>
+          <label>
+            <span>Keep or strengthen</span>
+            <textarea
+              value={positiveFeedback}
+              onChange={(event) => setPositiveFeedback(event.target.value)}
+              placeholder="One positive note per line"
+              disabled={isRefreshing}
+            />
+          </label>
+          <label>
+            <span>Fix or avoid</span>
+            <textarea
+              value={negativeFeedback}
+              onChange={(event) => setNegativeFeedback(event.target.value)}
+              placeholder="One negative note per line"
+              disabled={isRefreshing}
+            />
+          </label>
+          <label>
+            <span>New sources</span>
+            <textarea
+              value={refreshSourceUrls}
+              onChange={(event) => setRefreshSourceUrls(event.target.value)}
+              placeholder="https://example.edu/source&#10;https://openstax.org/..."
+              disabled={isRefreshing}
+            />
+          </label>
+
+          {sectionSources.length > 0 && (
+            <fieldset className="section-refresh-source-fieldset">
+              <legend>Sources to avoid</legend>
+              {sectionSources.map((source) => {
+                const citationIndex = sourceCitationNumber(source.id, courseSourceIndex);
+                const checked = badSourceIds.has(source.id);
+
+                return (
+                  <label className="section-refresh-source-row" key={source.id}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={isRefreshing}
+                      onChange={(event) =>
+                        setBadSourceIds((current) => {
+                          const next = new Set(current);
+                          if (event.target.checked) {
+                            next.add(source.id);
+                          } else {
+                            next.delete(source.id);
+                          }
+                          return next;
+                        })
+                      }
+                    />
+                    <span>[{citationIndex ?? "?"}] {source.title}</span>
+                  </label>
+                );
+              })}
+            </fieldset>
+          )}
+
+          <div className="section-refresh-footer">
+            {refreshStatus && <p>{refreshStatus}</p>}
+            <Button type="submit" variant="standard" disabled={isRefreshing || !canRegenerateSection}>
+              {isRefreshing ? "Refreshing..." : "Refresh section"}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </main>
   );

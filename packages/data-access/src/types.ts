@@ -12,6 +12,7 @@ import type {
   LyciumCourseQualityReport,
   LyciumGeneratedCourseRecord,
   LyciumLocalSettings,
+  LyciumProgram,
   LyciumProgressRecord,
   LyciumQuizProgressRecord,
   LyciumThemeMode,
@@ -130,6 +131,21 @@ export type LyciumLearnerRecord = {
   [key: string]: unknown;
 };
 
+export type LyciumGeneratedProgramRecord = {
+  id: string | number;
+  learner_id?: string | number | null;
+  title: string;
+  goal: string;
+  level?: string | null;
+  status: string;
+  structure: {
+    program?: LyciumProgram;
+    [key: string]: unknown;
+  };
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type LocalSettingsPayload = {
   provider_id: string;
   agent_api_key: string;
@@ -153,6 +169,19 @@ export type SourceGapResumePayload = {
   model?: string | null;
   source_packet_id?: string | number | null;
   source_packet?: Record<string, unknown> | null;
+};
+
+export type SectionRegenerationPayload = {
+  module_id: string;
+  section_id: string;
+  learner_id?: number | null;
+  model?: string | null;
+  feedback?: string | null;
+  positive_feedback?: string[];
+  negative_feedback?: string[];
+  new_source_urls?: string[];
+  bad_source_ids?: string[];
+  fork_if_read_only?: boolean;
 };
 
 export type LyciumLocalStorageStatus = {
@@ -269,6 +298,7 @@ export type LyciumGenerationEvalReportSet = {
 
 export type LyciumLocalApi = {
   listRemoteCourses(limit?: number, status?: string): Promise<LyciumGeneratedCourseRecord[]>;
+  listRemotePrograms(limit?: number, learnerId?: string | number | null): Promise<LyciumGeneratedProgramRecord[]>;
   generateCourse(request: LyciumCourseGenerationRequest): Promise<LyciumGeneratedCourseRecord>;
   experimentCourseGeneration(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationExperiment>;
   experimentStagedCourseGeneration(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationExperiment>;
@@ -280,6 +310,7 @@ export type LyciumLocalApi = {
   getGenerationRun(runId: string | number): Promise<LyciumGenerationRun>;
   resumeGenerationRun(runId: string | number): Promise<LyciumCourseGenerationJob>;
   resumeCourseSourceGaps(courseId: string | number, payload: SourceGapResumePayload): Promise<LyciumCourseGenerationJob>;
+  regenerateCourseSection(courseId: string | number, payload: SectionRegenerationPayload): Promise<LyciumGeneratedCourseRecord>;
   getCourseQualityReport(courseId: string | number): Promise<LyciumCourseQualityReport>;
   publishCourse(courseId: string | number): Promise<LyciumGeneratedCourseRecord>;
   createLearner(payload: CreateLearnerPayload): Promise<LyciumLearnerRecord>;

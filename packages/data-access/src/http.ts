@@ -8,6 +8,7 @@ import type {
   JsonCourseRepositoryOptions,
   LyciumLocalApi,
   LyciumGeneratedCourseRecord,
+  LyciumGeneratedProgramRecord,
   LyciumRepositorySet,
   ProgressRepository,
 } from "./types";
@@ -64,6 +65,15 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       const params = new URLSearchParams({ limit: String(limit), status });
       const response = await fetch(`${base}/v1/courses?${params.toString()}`);
       return readJsonResponse<LyciumGeneratedCourseRecord[]>(response, "Failed to fetch courses");
+    },
+
+    async listRemotePrograms(limit = 100, learnerId = null) {
+      const params = new URLSearchParams({ limit: String(limit) });
+      if (learnerId !== null && learnerId !== undefined) {
+        params.set("learner_id", String(learnerId));
+      }
+      const response = await fetch(`${base}/v1/programs?${params.toString()}`);
+      return readJsonResponse<LyciumGeneratedProgramRecord[]>(response, "Failed to fetch programs");
     },
 
     async generateCourse(request) {
@@ -150,6 +160,15 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
         body: JSON.stringify(payload),
       });
       return readJsonResponse(response, "Failed to resume course source gaps");
+    },
+
+    async regenerateCourseSection(courseId, payload) {
+      const response = await fetch(`${base}/v1/agent/courses/${encodeURIComponent(String(courseId))}/regenerate-section`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      return readJsonResponse<LyciumGeneratedCourseRecord>(response, "Section refresh failed");
     },
 
     async getCourseQualityReport(courseId) {

@@ -18,6 +18,7 @@ import { useConfiguredCourses } from "./hooks/useConfiguredCourses";
 import { useCourseEditingActions } from "./hooks/useCourseEditingActions";
 import { useCourseGenerationActions } from "./hooks/useCourseGenerationActions";
 import { useCourseProgressState } from "./hooks/useCourseProgressState";
+import { useCourseSectionRegenerationActions } from "./hooks/useCourseSectionRegenerationActions";
 import { useCourseSourceGapActions } from "./hooks/useCourseSourceGapActions";
 import { API_BASE, browserStorage, localApiSyncEnabled, lyciumApi, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { summarizeCourseProgress } from "./utils/courseProgress";
@@ -30,6 +31,7 @@ function App() {
   const pathname = usePathname();
   const settingsReturnPathRef = useRef(COURSE_CATALOG_PATH);
   const [courses, setCourses] = useState<CourseEntry[]>(localCourses);
+  const [programs, setPrograms] = useState<LyciumProgram[]>(localPrograms);
   const [currentCourseKey, setCurrentCourseKey] = useState(localCourses[0]?.key ?? "");
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [prompt, setPrompt] = useState("");
@@ -59,11 +61,11 @@ function App() {
 
   const programsByPathSlug = useMemo(() => {
     const map = new Map<string, string>();
-    for (const program of localPrograms) {
+    for (const program of programs) {
       map.set(getProgramPathSlug(program), program.id);
     }
     return map;
-  }, []);
+  }, [programs]);
 
   const resolveCourseKeyFromPath = useCallback(
     (courseSlug: string | null): string | null => (courseSlug ? coursesByPathSlug.get(courseSlug) ?? null : null),
@@ -92,16 +94,16 @@ function App() {
       return null;
     }
     const programId = programsByPathSlug.get(viewRoute.programSlug);
-    return programId ? localPrograms.find((program) => program.id === programId) ?? null : null;
-  }, [programsByPathSlug, viewRoute.kind, viewRoute.programSlug]);
+    return programId ? programs.find((program) => program.id === programId) ?? null : null;
+  }, [programs, programsByPathSlug, viewRoute.kind, viewRoute.programSlug]);
 
   const selectedCatalogProgram = useMemo(() => {
     if (viewRoute.kind !== "home" || !viewRoute.programSlug) {
       return null;
     }
     const programId = programsByPathSlug.get(viewRoute.programSlug);
-    return programId ? localPrograms.find((program) => program.id === programId) ?? null : null;
-  }, [programsByPathSlug, viewRoute.kind, viewRoute.programSlug]);
+    return programId ? programs.find((program) => program.id === programId) ?? null : null;
+  }, [programs, programsByPathSlug, viewRoute.kind, viewRoute.programSlug]);
 
   const selectedCatalogCluster = useMemo(() => {
     if (!selectedCatalogProgram || !viewRoute.clusterSlug) {
@@ -119,6 +121,7 @@ function App() {
       (selectedCourse?.data?.modules ?? []).flatMap((module, moduleIndex) =>
         module.sections.map((section, sectionIndex) => ({
           ...section,
+          moduleId: module.id,
           moduleIndex,
           moduleTitle: module.title,
           displayNumber: `${moduleIndex + 1}.${sectionIndex + 1}`,
@@ -305,6 +308,7 @@ function App() {
   );
 
   const { createManualCourse, deleteCourseDraft, exportCourseDraft, forkCourse, importCourseDraft, resetCourseDraft, saveCourseDraft } = useCourseEditingActions({ openCourseByEntry, setCourses });
+  const { regenerateCourseSection } = useCourseSectionRegenerationActions({ learnerId, openCourseByEntry, setCourses });
 
   const goToSectionIndex = useCallback((index: number) => {
     setCurrentSectionIndex(index);
@@ -326,7 +330,7 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
   openCourseByEntry,
 });
 
-  useConfiguredCourses({ setCourses, setLearnerId });
+  useConfiguredCourses({ setCourses, setLearnerId, setPrograms });
 
   useEffect(() => {
     if (pathname) {
@@ -413,7 +417,7 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
       {viewRoute.kind === "home" ? (
         <CourseCatalog
           courses={courses}
-          programs={localPrograms}
+          programs={programs}
           catalogView={viewRoute.kind === "home" ? viewRoute.catalogView ?? null : null}
           catalogProgramId={selectedCatalogProgram?.id ?? null}
           catalogClusterId={selectedCatalogCluster?.id ?? null}
@@ -461,6 +465,8 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
 	          onCompleteSection={handleCompleteSection}
 	          onSectionTimedStatusChange={handleSectionTimedStatusChange}
 	          onSaveCourseDraft={saveCourseDraft}
+            canUseAiRefresh={activeAiReady}
+            onRegenerateSection={regenerateCourseSection}
 	        />
       )}
 

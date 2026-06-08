@@ -75,6 +75,7 @@ export type Section = {
   title: string;
   content: ContentBlock[];
   displayNumber: string;
+  moduleId?: string;
   sectionType?: string;
   pageType?: "learn" | "apply";
   sourceIds?: string[];

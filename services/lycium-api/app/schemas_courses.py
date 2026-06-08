@@ -213,6 +213,13 @@ class RegenerateSectionRequest(BaseModel):
     free_only: bool = False
     trust_min: float = Field(default=0.0, ge=0.0, le=1.0)
     source_policy: Literal["balanced", "high-trust", "free-only"] = "balanced"
+    model: str | None = None
+    feedback: str | None = None
+    positive_feedback: list[str] = Field(default_factory=list)
+    negative_feedback: list[str] = Field(default_factory=list)
+    new_source_urls: list[HttpUrl] = Field(default_factory=list)
+    bad_source_ids: list[str] = Field(default_factory=list)
+    fork_if_read_only: bool = False
 
 
 class AskInstructorRequest(BaseModel):

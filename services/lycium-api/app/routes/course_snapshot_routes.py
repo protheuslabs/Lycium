@@ -19,6 +19,7 @@ from app.course_agent_harness import (
 )
 from app.curriculum_artifacts import curriculum_artifacts_for_course
 from app.db import get_session, init_db
+from app.course_agent_section_refresh import regenerate_section_with_agent
 from app.generation import (
     ask_instructor,
     create_draft,
@@ -45,6 +46,7 @@ from app.local_store import (
     save_course_snapshot,
     save_learner_record,
     update_agent_key_model,
+    require_verified_active_agent_profile,
 )
 from app.models import (
     CourseDraft,
@@ -248,6 +250,49 @@ def register(app: FastAPI) -> None:
             session.refresh(updated)
             save_course_snapshot(updated)
             return updated
+        except ValueError as exc:
+            session.rollback()
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+    @app.post("/v1/agent/courses/{course_snapshot_id}/regenerate-section", response_model=CourseSnapshotRead)
+    def regenerate_section_with_agent_endpoint(
+        course_snapshot_id: int,
+        payload: RegenerateSectionRequest,
+        session: Session = Depends(get_session),
+    ) -> CourseSnapshot:
+        row = session.get(CourseSnapshot, course_snapshot_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Course snapshot not found")
+        try:
+            validate_learner_exists(session, payload.learner_id)
+            agent_profile = require_verified_active_agent_profile()
+            target = row
+            if payload.fork_if_read_only or row.status == "published":
+                target = fork_course(
+                    session,
+                    course=row,
+                    learner_id=payload.learner_id if payload.learner_id is not None else row.learner_id,
+                )
+            updated = regenerate_section_with_agent(
+                course=target,
+                module_id=payload.module_id,
+                section_id=payload.section_id,
+                agent_profile=agent_profile,
+                model=payload.model,
+                feedback=payload.feedback,
+                positive_feedback=payload.positive_feedback,
+                negative_feedback=payload.negative_feedback,
+                new_source_urls=[str(url) for url in payload.new_source_urls],
+                bad_source_ids=payload.bad_source_ids,
+            )
+            session.commit()
+            session.refresh(updated)
+            save_course_snapshot(updated)
+            return updated
+        except CourseAgentError as exc:
+            session.rollback()
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         except ValueError as exc:
             session.rollback()
             raise HTTPException(status_code=400, detail=str(exc)) from exc
