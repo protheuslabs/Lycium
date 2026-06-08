@@ -150,3 +150,36 @@ test("manual course editing persists quiz question and answer edits", async ({ p
 
   expect(persistedQuiz).toBe(true);
 });
+
+test("manual course editing persists sidebar section and module changes", async ({ page }) => {
+  await createBlankManualCourse(page);
+
+  await page.getByRole("button", { name: "Add section" }).click();
+  await expect(page.getByText("1.2 Section title")).toBeVisible();
+
+  await page.getByRole("button", { name: "Delete 1.2 Section title" }).click();
+  const deleteDialog = page.locator("dialog.course-edit-native-dialog");
+  await expect(deleteDialog).toBeVisible();
+  await deleteDialog.getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByText("1.2 Section title")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Add module" }).click();
+  await expect(page.getByText("Module 2: Module title")).toBeVisible();
+  await expect(page.getByText("2.1 Section title")).toBeVisible();
+  await page.getByRole("button", { name: "Save course edits" }).click();
+
+  const persistedStructure = await page.evaluate(() => {
+    const drafts = JSON.parse(window.localStorage.getItem("lycium-local-course-drafts") ?? "[]");
+    return drafts.some((draft: unknown) => {
+      const candidate = draft as {
+        data?: {
+          modules?: Array<{ sections?: unknown[] }>;
+        };
+      };
+      const modules = candidate.data?.modules ?? [];
+      return modules.length === 2 && modules[0]?.sections?.length === 1 && modules[1]?.sections?.length === 1;
+    });
+  });
+
+  expect(persistedStructure).toBe(true);
+});
