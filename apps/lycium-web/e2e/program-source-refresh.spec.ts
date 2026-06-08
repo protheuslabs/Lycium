@@ -38,6 +38,45 @@ async function mockVerifiedAiConnection(page: Page) {
   });
 }
 
+async function mockUnverifiedAiConnection(page: Page) {
+  await page.route("**/v1/local/ai/providers", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: "local-model",
+          label: "Ollama Local",
+          default_model: "test-model",
+          model_fetch_supported: true,
+          local_provider: true,
+          credential_label: "local path",
+          credential_placeholder: "Local Path",
+        },
+      ]),
+    });
+  });
+  await page.route("**/v1/local/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        agent_keys: [
+          {
+            id: "test-local-key",
+            provider_id: "local-model",
+            provider_label: "Ollama Local",
+            key_preview: "http://localhost:9999",
+            model: "test-model",
+            models: [{ id: "test-model", label: "test-model" }],
+            is_active: true,
+            connection_status: "unverified",
+            connection_message: "Local model endpoint could not be reached.",
+          },
+        ],
+      }),
+    });
+  });
+}
+
 async function openFirstUsableCourse(page: Page) {
   const firstCourse = page
     .locator(".course-card:not(.create-course-card):not(.course-card--empty):not(.course-card--generating):not(.course-card--locked)")
@@ -209,6 +248,23 @@ test("program requirement source warnings open the source-gap modal", async ({ p
 test("section refresh is blocked for non API-backed course pages", async ({ page }) => {
   await page.goto("/Lycium/catalog");
   await openFirstUsableCourse(page);
+
+  const refreshButton = page.getByRole("button", { name: "Refresh this section with AI" });
+  await expect(refreshButton).toBeVisible();
+  await expect(refreshButton).toBeDisabled();
+  await expect(refreshButton).toHaveAttribute("title", /API-backed snapshot and verified AI model/);
+});
+
+test("section refresh is blocked when the active model is unverified", async ({ page }) => {
+  await mockUnverifiedAiConnection(page);
+  await seedRefreshableCourse(page);
+  await page.goto("/Lycium/catalog");
+  await page.getByLabel("Settings").click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+  await expect(page.getByText("Ollama Local is saved but not verified yet.")).toBeVisible();
+  await page.getByRole("button", { name: /close settings/i }).click();
+  await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Refreshable Course");
+  await page.locator(".course-card").filter({ hasText: "E2E Refreshable Course" }).first().click();
 
   const refreshButton = page.getByRole("button", { name: "Refresh this section with AI" });
   await expect(refreshButton).toBeVisible();
