@@ -9,11 +9,21 @@ from app.course_agent_assembly import (
     _coerce_plan_modules,
     _emit_checkpoint,
     _input_source_records,
+    _model_json,
     _partial_course_from_stages,
 )
 from app.course_agent_contract import normalize_course, validate_course_contract
 from app.course_agent_prompting import _staged_plan_messages
 from app.course_agent_providers import assess_agent_model_capability, get_agent_provider
+from app.course_agent_staged_support import (
+    DEFAULT_MODULE_PARALLELISM,
+    _failure_trace_context,
+    _generate_module_bundle,
+    _infer_pacing_label,
+    _plan_timeout_seconds,
+    _resume_modules_from_course,
+    _resume_trace,
+)
 from app.course_agent_types import CourseAgentError, CourseAgentResult
 from app.course_generation_service import validate_generation_taxonomy_input
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context

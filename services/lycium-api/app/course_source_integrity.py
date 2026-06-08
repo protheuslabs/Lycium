@@ -178,6 +178,8 @@ def _section_coverage_sources(
 
 def _concepts_from_block(block: dict[str, Any]) -> list[dict[str, Any]]:
     concepts: list[dict[str, Any]] = []
+    if block.get("type") == "conceptCard":
+        concepts.append(block)
     for concept in _items(block.get("concepts")):
         concepts.append(concept)
     questions = block.get("questions") or block.get("questionBank") or block.get("question_bank")

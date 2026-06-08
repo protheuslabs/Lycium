@@ -13,9 +13,62 @@ def _questions(topic: str) -> list[dict[str, Any]]:
             "question": f"Which answer best applies {topic} in a college course setting?",
             "options": [f"{topic} correct use {index}", "Unrelated distractor", "Unsafe shortcut", "Placeholder response"],
             "answers": [0],
+            "concepts": [{"name": topic.title()}],
         }
         for index in range(1, 11)
     ]
+
+
+def _lesson_text(topic: str, supporting: str, discipline: str) -> str:
+    return (
+        f"{topic.title()} is introduced as a foundation for deeper {discipline} reasoning. "
+        f"The section starts from observable evidence, names the key quantities or representations, "
+        f"and then connects those representations to {supporting}. A reliable explanation separates the "
+        "given information from the inference being made, checks units or definitions, and states the "
+        "constraint that controls the result. This creates a foundation for later modules because the same "
+        "pattern recurs with more variables, less obvious evidence, and stronger expectations for justification. "
+        "Mastery evidence comes from a worked solution, a short explanation of why the method fits, and a quiz "
+        "response that applies the concept without relying on memorized wording."
+    )
+
+
+def _example_text(topic: str, supporting: str) -> str:
+    return (
+        f"Example: compare two claims about {topic}. First identify the data, symbol, structure, or observation "
+        f"that each claim uses. Next connect that evidence to {supporting}, then explain which claim is better "
+        "supported and what additional evidence would change the conclusion. The answer is strongest when it "
+        "shows the reasoning path, not only the final label."
+    )
+
+
+def _practice_text(topic: str) -> str:
+    return (
+        f"Practice: solve one applied {topic} problem, mark the step where an assumption enters, and write a "
+        "two-sentence reflection naming the prerequisite idea that made the solution possible. Then compare the "
+        "answer with the source example and revise any step that skipped evidence."
+    )
+
+
+def _concept_card(name: str, description: str, section_id: str, source_ids: list[str]) -> dict[str, Any]:
+    return {
+        "type": "conceptCard",
+        "name": name,
+        "description": description,
+        "sourceSectionId": section_id,
+        "sourceIds": source_ids,
+    }
+
+
+def _summary_blocks(topic: str, supporting: str, section_id: str, source_ids: list[str], pacing_label: str) -> list[dict[str, Any]]:
+    return [
+        {"type": "heading", "title": f"{pacing_label} concepts", "sourceIds": source_ids},
+        _concept_card(topic.title(), f"Review definition and application pattern for {topic}.", section_id, source_ids),
+        _concept_card(supporting.title(), f"Related concept that extends or constrains {topic}.", section_id, source_ids),
+        _concept_card("Mastery evidence", "A source-backed work product showing accurate application under constraints.", section_id, source_ids),
+        _concept_card("Foundation relationship", "A prerequisite idea that must be understood before the next concept can be used well.", section_id, source_ids),
+    ]
+
+
 def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
     spec = COURSE_SCENARIOS[scenario_id]
     keywords = list(spec["requiredKeywords"])
@@ -45,22 +98,15 @@ def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
                             {
                                 "type": "text",
                                 "heading": "Explanation",
-                                "value": (
-                                    f"Learners study {topic} with {supporting}, worked examples, practice, "
-                                    "source-backed reasoning, and professional vocabulary for a college course."
-                                ),
+                                "value": _lesson_text(topic, supporting, "programming"),
                                 "sourceIds": ["source-primary"],
                             },
+                            {"type": "text", "heading": "Example", "value": _example_text(topic, supporting), "sourceIds": ["source-primary"]},
+                            {"type": "text", "heading": "Practice", "value": _practice_text(topic), "sourceIds": ["source-practice"]},
                             {"type": "video", "title": f"{topic.title()} lecture", "url": "https://example.edu/video", "sourceIds": ["source-video"]},
-                            {
-                                "type": "conceptCards",
-                                "title": "Concepts introduced",
-                                "sourceIds": ["source-primary"],
-                                "concepts": [
-                                    {"name": topic.title(), "description": f"A required concept covering {topic}.", "sourceSectionId": section_id},
-                                    {"name": supporting.title(), "description": f"A related concept covering {supporting}.", "sourceSectionId": section_id},
-                                ],
-                            },
+                            {"type": "heading", "title": "Concepts introduced", "sourceIds": ["source-primary"]},
+                            _concept_card(topic.title(), f"A required concept covering {topic}.", section_id, ["source-primary"]),
+                            _concept_card(supporting.title(), f"A related concept covering {supporting}.", section_id, ["source-primary"]),
                         ],
                     },
                     {
@@ -77,14 +123,7 @@ def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
                         "pageType": "learn",
                         "sectionType": "summary",
                         "sourceIds": ["source-primary"],
-                        "content": [
-                            {
-                                "type": "conceptCards",
-                                "title": "Module concepts",
-                                "sourceIds": ["source-primary"],
-                                "concepts": [{"name": topic.title(), "description": f"Review definition for {topic}.", "sourceSectionId": section_id}],
-                            }
-                        ],
+                        "content": _summary_blocks(topic, supporting, section_id, ["source-primary"], "Module"),
                     },
                 ],
             }
@@ -106,9 +145,27 @@ def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
                 for index, _keyword in enumerate(keywords[:6], start=1)
             ],
             "sourceCorpusSynthesis": {
+                "metrics": {"submittedSourceCount": 3, "includedSourceCount": 3, "excludedSourceCount": 0},
                 "includedSources": ["source-primary", "source-video", "source-practice"],
                 "excludedSources": [],
                 "commonThemes": keywords[:8],
+            },
+            "courseParityProfile": {"commonRequiredTopics": keywords[:8], "coveragePercent": 90, "parityStatus": "strong"},
+            "sourceSlots": [
+                {
+                    "requiredConceptId": f"{scenario_id}-{keyword.replace(' ', '-')}",
+                    "title": keyword.title(),
+                    "primarySourceId": "source-primary",
+                    "fallbackSourceIds": ["source-video", "source-practice"],
+                    "replacementPolicy": "review_required",
+                }
+                for keyword in keywords
+            ],
+            "scope": {
+                "audience": "College learners building foundational skill.",
+                "level": "undergraduate",
+                "duration": f"{spec['minModules']} modules",
+                "outcome": f"Apply core {spec['label']} concepts with source-backed reasoning and mastery evidence.",
             },
         },
         "modules": modules,
@@ -147,21 +204,30 @@ def chem_105_flagship_course_from_scenario() -> dict[str, Any]:
                             {
                                 "type": "text",
                                 "heading": "Explanation",
-                                "value": (
-                                    f"CHEM 105 learners study {topic} through worked examples, quantitative reasoning, "
-                                    "laboratory safety, source-grounded models, and practice appropriate for a college course."
-                                ),
+                                "value": _lesson_text(topic, "chemical evidence and quantitative constraints", "chemistry"),
                                 "sourceIds": [topic_source_ids[0]],
                             },
-                            {"type": "video", "url": "https://example.edu/chemistry-video", "sourceIds": [topic_source_ids[1]]},
                             {
-                                "type": "conceptCards",
-                                "title": "Concepts introduced",
+                                "type": "text",
+                                "heading": "Example",
+                                "value": _example_text(topic, "chemical evidence and quantitative constraints"),
                                 "sourceIds": [topic_source_ids[0]],
-                                "concepts": [
-                                    {"name": topic.title(), "description": f"Required general chemistry concept covering {topic}.", "sourceSectionId": section_id}
-                                ],
                             },
+                            {"type": "text", "heading": "Practice", "value": _practice_text(topic), "sourceIds": [topic_source_ids[0]]},
+                            {
+                                "type": "video",
+                                "title": f"{topic.title()} lecture",
+                                "url": "https://example.edu/chemistry-video",
+                                "sourceIds": [topic_source_ids[1]],
+                            },
+                            {"type": "heading", "title": "Concepts introduced", "sourceIds": [topic_source_ids[0]]},
+                            _concept_card(topic.title(), f"A required general chemistry concept covering {topic}.", section_id, [topic_source_ids[0]]),
+                            _concept_card(
+                                "Chemical evidence",
+                                "Observations, measurements, or models used to justify a chemical claim.",
+                                section_id,
+                                [topic_source_ids[0]],
+                            ),
                         ],
                     },
                     {
@@ -178,14 +244,7 @@ def chem_105_flagship_course_from_scenario() -> dict[str, Any]:
                         "pageType": "learn",
                         "sectionType": "summary",
                         "sourceIds": [topic_source_ids[0]],
-                        "content": [
-                            {
-                                "type": "conceptCards",
-                                "title": "Week concepts",
-                                "sourceIds": [topic_source_ids[0]],
-                                "concepts": [{"name": topic.title(), "description": f"Review definition for {topic}.", "sourceSectionId": section_id}],
-                            }
-                        ],
+                        "content": _summary_blocks(topic, "chemical evidence", section_id, [topic_source_ids[0]], "Week"),
                     },
                 ],
             }
@@ -203,10 +262,36 @@ def chem_105_flagship_course_from_scenario() -> dict[str, Any]:
             "pacingLabel": "Week",
             "curriculumBenchmarks": CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"],
             "requirementOrigins": [
-                {"requirementId": f"req-{index}", "title": topic.title(), "evidenceRefs": [source_ids[0]]}
+                {
+                    "requirementId": f"req-{index}",
+                    "title": topic.title(),
+                    "originType": "common_academic_requirement",
+                    "evidenceRefs": [source_ids[0]],
+                }
                 for index, topic in enumerate(topics, start=1)
             ],
+            "sourceCorpusSynthesis": {
+                "metrics": {
+                    "submittedSourceCount": len(source_records),
+                    "includedSourceCount": len(source_records),
+                    "excludedSourceCount": 0,
+                },
+                "includedSources": source_ids,
+                "excludedSources": [],
+                "commonThemes": topics[:8],
+            },
+            "courseParityProfile": {
+                "commonRequiredTopics": topics,
+                "coveragePercent": 92,
+                "parityStatus": "strong",
+            },
             "sourceSlots": chem_105_source_slots(),
+            "scope": {
+                "audience": "College learners taking a first-semester general chemistry sequence.",
+                "level": "undergraduate",
+                "duration": f"{len(topics)} weeks",
+                "outcome": "Use core chemistry models, measurements, and source-backed reasoning to solve CHEM 105 problems.",
+            },
         },
         "modules": modules,
     }

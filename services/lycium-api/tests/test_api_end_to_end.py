@@ -276,6 +276,28 @@ def test_program_portfolio_credentials_and_catalog(client, monkeypatch) -> None:
     assert len(generated_program["requirementGroups"]) >= 3
     assert any(group["groupKind"] == "capstone" for group in generated_program["requirementGroups"])
     assert generated_program["dependencyGraph"]["edges"]
+    scaffold_plan = program_structure["generationTrace"]["programSynthesis"]["courseScaffoldPlan"]
+    materialized_courses = [
+        course for course in scaffold_plan["courses"]
+        if course.get("action") == "create_empty_course"
+    ]
+    assert materialized_courses
+    assert all(course.get("materializedSnapshotId") for course in materialized_courses)
+
+    program_courses = client.get("/v1/courses", params={"limit": 100, "status": "all"})
+    assert program_courses.status_code == 200, program_courses.text
+    program_course_rows = [
+        row for row in program_courses.json()
+        if row["structure"].get("metadata", {}).get("programSnapshotId") == program.json()["id"]
+    ]
+    assert len(program_course_rows) == len(materialized_courses)
+    assert {row["status"] for row in program_course_rows} == {"needs_sources"}
+    assert {
+        row["structure"]["metadata"]["scaffoldCourseId"]
+        for row in program_course_rows
+    } == {course["courseId"] for course in materialized_courses}
+    assert all(row["structure"]["metadata"].get("clusterId") for row in program_course_rows)
+    assert all(row["structure"]["metadata"].get("requirementId") for row in program_course_rows)
 
     artifact = client.post(
         "/v1/portfolio",

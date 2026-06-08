@@ -4,123 +4,8 @@ import re
 from typing import Any
 
 
-PROGRAM_GROUP_RULES: list[tuple[str, str, list[str]]] = [
-    (
-        "foundations",
-        "Foundations",
-        [
-            "foundation",
-            "foundations",
-            "introduction",
-            "overview",
-            "basics",
-            "orientation",
-            "safety",
-            "measurement",
-            "matter",
-            "computer",
-            "command line",
-            "git",
-        ],
-    ),
-    (
-        "programming",
-        "Programming and Computational Practice",
-        [
-            "programming",
-            "python",
-            "javascript",
-            "typescript",
-            "algorithm",
-            "data structure",
-            "function",
-            "variable",
-            "object",
-            "software",
-        ],
-    ),
-    (
-        "frontend",
-        "Frontend and User Experience",
-        ["html", "css", "react", "browser", "frontend", "accessibility", "interface", "user experience"],
-    ),
-    (
-        "backend_data",
-        "Backend, Data, and Infrastructure",
-        [
-            "api",
-            "http",
-            "authentication",
-            "authorization",
-            "server",
-            "backend",
-            "security",
-            "database",
-            "sql",
-            "postgresql",
-            "data",
-            "deployment",
-            "docker",
-            "cloud",
-            "operations",
-        ],
-    ),
-    (
-        "analysis_modeling",
-        "Analysis, Modeling, and Systems",
-        [
-            "statistics",
-            "model",
-            "modeling",
-            "machine learning",
-            "architecture",
-            "systems",
-            "design",
-            "visualization",
-            "equilibrium",
-            "thermochemistry",
-            "bonding",
-            "stoichiometry",
-            "periodic",
-            "atomic",
-            "reaction",
-        ],
-    ),
-    (
-        "public_health",
-        "Population, Policy, and Public Systems",
-        [
-            "epidemiology",
-            "biostatistics",
-            "policy",
-            "community",
-            "environmental health",
-            "health equity",
-            "intervention",
-            "population",
-        ],
-    ),
-    (
-        "practice_lab",
-        "Practice, Laboratory, and Quality",
-        ["lab", "laboratory", "practice", "experiment", "simulation", "testing", "quality", "evaluation"],
-    ),
-    (
-        "professional",
-        "Professional Evidence and Communication",
-        [
-            "communication",
-            "documentation",
-            "code review",
-            "presentation",
-            "portfolio",
-            "ethics",
-            "professional",
-            "maintenance",
-        ],
-    ),
-]
-
+from app.program_contract_group_rules import PROGRAM_GROUP_RULES
+from app.program_course_scaffold import apply_existing_course_links, build_course_scaffold_plan
 IMPORTANCE_RANK = {
     "required": 0,
     "core": 0,
@@ -131,6 +16,11 @@ IMPORTANCE_RANK = {
     "optional": 3,
     "enrichment": 3,
 }
+
+REQUIREMENT_TITLE_PREFIX = re.compile(
+    r"^(?:a|an|complete|apply|integrate|interpret|practice|build|prepare|create|use|explain|conduct|analyze|compare|define|solve|model|evaluate|submit)\s+",
+    re.IGNORECASE,
+)
 
 
 def _slugify(value: str) -> str:
@@ -151,6 +41,8 @@ def _normalize_program_level(level: str | None) -> str:
 
 def _program_type_for_goal(goal: str) -> str:
     value = goal.lower()
+    if any(term in value for term in ("pre-med", "premed", "pre medical", "pre-medical", "medical school")):
+        return "career_path"
     if any(term in value for term in ("engineer", "developer", "analyst", "career", "professional")):
         return "career_path"
     if any(term in value for term in ("degree", "major", "college")):
@@ -162,6 +54,10 @@ def _program_type_for_goal(goal: str) -> str:
 
 def _program_field_for_goal(goal: str) -> str:
     value = goal.lower()
+    if any(term in value for term in ("pre-med", "premed", "pre medical", "pre-medical", "medical school")):
+        return "Pre-Medical Studies"
+    if any(term in value for term in ("medicine", "clinical", "patient")):
+        return "Health Sciences"
     if any(term in value for term in ("chem", "stoichiometry", "molecule", "laboratory")):
         return "Chemistry"
     if any(term in value for term in ("health", "epidemiology", "biostatistics")):
@@ -188,6 +84,15 @@ def _origin_title(origin: dict[str, Any], index: int) -> str:
     if isinstance(requirement_id, str) and requirement_id.strip():
         return _readable_title(requirement_id)
     return f"Evidence-backed requirement {index}"
+
+
+def _canonical_requirement_title(value: str) -> str:
+    title = _readable_title(value)
+    previous = ""
+    while title != previous:
+        previous = title
+        title = REQUIREMENT_TITLE_PREFIX.sub("", title).strip()
+    return title or _readable_title(value)
 
 
 def _origin_importance(origin: dict[str, Any]) -> str:
@@ -223,6 +128,25 @@ def _extract_requirement_origins(benchmark_context: dict[str, Any] | None, desir
             _origin_title(origin, 0).lower(),
         )
     )
+    deduped: dict[str, dict[str, Any]] = {}
+    for index, origin in enumerate(origins, start=1):
+        canonical_title = _canonical_requirement_title(_origin_title(origin, index))
+        key = _slugify(canonical_title)
+        if key not in deduped:
+            deduped[key] = {**origin, "title": canonical_title}
+            continue
+        row = deduped[key]
+        row_refs = row.setdefault("evidenceRefs", [])
+        for evidence_ref in origin.get("evidenceRefs") or []:
+            if isinstance(evidence_ref, str) and evidence_ref not in row_refs:
+                row_refs.append(evidence_ref)
+        row_benchmarks = row.setdefault("benchmarkIds", [])
+        for benchmark_id in origin.get("benchmarkIds") or []:
+            if isinstance(benchmark_id, str) and benchmark_id not in row_benchmarks:
+                row_benchmarks.append(benchmark_id)
+        row["frequency"] = max(float(row.get("frequency") or 0), float(origin.get("frequency") or 0))
+        row["score"] = max(float(row.get("score") or 0), float(origin.get("score") or 0))
+    origins = list(deduped.values())
     minimum = max(8, min(24, desired_course_count))
     return origins[: max(minimum, min(len(origins), desired_course_count))]
 
@@ -315,13 +239,20 @@ def _group_requirements(goal: str, course_requirements: list[dict[str, Any]]) ->
             {
                 "id": f"group-{index:02d}-{_slugify(label)}",
                 "title": label,
+                "displayName": label,
                 "description": f"Develops {label.lower()} needed for {goal}.",
                 "groupKind": "cluster",
                 "clusterType": "core" if index <= 2 else "specialization",
                 "purpose": f"Organize source-backed requirements into a coherent {label.lower()} cluster.",
                 "learningOutcomes": [
-                    f"Explain the important ideas in {label.lower()}.",
-                    f"Apply {label.lower()} work to authentic problems in {goal}.",
+                    {
+                        "id": f"outcome-{index:02d}-explain-{_slugify(label)}",
+                        "statement": f"Explain the important ideas in {label.lower()}.",
+                    },
+                    {
+                        "id": f"outcome-{index:02d}-apply-{_slugify(label)}",
+                        "statement": f"Apply {label.lower()} work to authentic problems in {goal}.",
+                    },
                 ],
                 "requirements": requirements,
                 "completionRule": {"type": "complete_all"},
@@ -336,11 +267,21 @@ def _checkpoint_group(goal: str, index: int) -> dict[str, Any]:
     return {
         "id": f"group-{index:02d}-checkpoint",
         "title": "Integrated Assessment",
+        "displayName": "Integrated Assessment",
         "description": f"Checks whether learners can connect the major requirements in {goal}.",
         "groupKind": "cluster",
         "clusterType": "lab",
         "purpose": "Require explicit assessment evidence before capstone work.",
-        "learningOutcomes": ["Synthesize required concepts across the program.", "Use assessment feedback to identify gaps."],
+        "learningOutcomes": [
+            {
+                "id": "outcome-integrated-synthesis",
+                "statement": "Synthesize required concepts across the program.",
+            },
+            {
+                "id": "outcome-integrated-feedback",
+                "statement": "Use assessment feedback to identify gaps.",
+            },
+        ],
         "requirements": [
             {
                 "id": "req-integrated-assessment",
@@ -363,11 +304,21 @@ def _capstone_group(goal: str, index: int) -> dict[str, Any]:
     return {
         "id": f"group-{index:02d}-capstone",
         "title": "Capstone and Portfolio Evidence",
+        "displayName": "Capstone and Portfolio Evidence",
         "description": f"Requires learners to produce reviewable evidence that they can use {goal} in practice.",
         "groupKind": "capstone",
         "clusterType": "capstone",
         "purpose": "Turn learning into a durable portfolio artifact.",
-        "learningOutcomes": ["Plan and complete an integrated capstone artifact.", "Explain evidence of mastery to reviewers."],
+        "learningOutcomes": [
+            {
+                "id": "outcome-capstone-plan",
+                "statement": "Plan and complete an integrated capstone artifact.",
+            },
+            {
+                "id": "outcome-capstone-evidence",
+                "statement": "Explain evidence of mastery to reviewers.",
+            },
+        ],
         "requirements": [
             {
                 "id": "req-capstone-project",
@@ -398,7 +349,7 @@ def _capstone_group(goal: str, index: int) -> dict[str, Any]:
 
 def _dependency_edges(groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [
-        {"fromNodeId": previous["id"], "toNodeId": current["id"], "type": "recommended_sequence"}
+        {"fromNodeId": previous["id"], "toNodeId": current["id"], "type": "recommended"}
         for previous, current in zip(groups, groups[1:])
     ]
 
@@ -408,6 +359,8 @@ def build_program_contract(
     level: str | None,
     desired_course_count: int,
     benchmark_context: dict[str, Any] | None = None,
+    known_course_ids: set[str] | None = None,
+    known_courses: list[dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     desired_course_count = max(4, min(32, desired_course_count))
     origins = _extract_requirement_origins(benchmark_context, desired_course_count)
@@ -420,6 +373,8 @@ def build_program_contract(
     groups = _group_requirements(goal, course_requirements)
     groups.append(_checkpoint_group(goal, len(groups) + 1))
     groups.append(_capstone_group(goal, len(groups) + 1))
+    course_scaffold_plan = build_course_scaffold_plan(groups, known_course_ids, known_courses)
+    linked_existing_requirement_count = apply_existing_course_links(groups, course_scaffold_plan)
     source_slots = benchmark_context.get("sourceSlots") if isinstance(benchmark_context, dict) else []
     benchmarks = benchmark_context.get("curriculumBenchmarks") if isinstance(benchmark_context, dict) else []
     estimated_hours = sum(int(group.get("estimatedHours") or 0) for group in groups)
@@ -432,14 +387,24 @@ def build_program_contract(
         "level": _normalize_program_level(level),
         "targetOutcome": f"Learners can demonstrate practical competence in {goal}.",
         "learningOutcomes": [
-            f"Explain the foundational concepts behind {goal}.",
-            "Complete source-backed courses that satisfy program requirements.",
-            "Pass integrated assessments and produce portfolio evidence.",
+            {
+                "id": "outcome-foundational-concepts",
+                "statement": f"Explain the foundational concepts behind {goal}.",
+            },
+            {
+                "id": "outcome-source-backed-requirements",
+                "statement": "Complete source-backed courses that satisfy program requirements.",
+            },
+            {
+                "id": "outcome-assessment-and-evidence",
+                "statement": "Pass integrated assessments and produce portfolio evidence.",
+            },
         ],
         "entryRequirements": [
             {
                 "id": "entry-general-readiness",
-                "type": "recommended",
+                "type": "demonstrate_competency",
+                "competencyId": "general-learning-readiness",
                 "title": "General learning readiness",
                 "description": "Learners should be ready to read source material, complete practice, and revise work from feedback.",
             }
@@ -448,15 +413,16 @@ def build_program_contract(
         "dependencyGraph": {"edges": _dependency_edges(groups)},
         "estimatedHours": estimated_hours,
         "masteryPolicy": {
-            "minimumAssessmentScorePercent": 80,
+            "minimumMasteryPercent": 80,
+            "minimumAssessmentPercent": 80,
             "requiresCapstone": True,
-            "requiresPortfolioEvidence": True,
-            "requiresSourceBackedRequirements": True,
+            "remediationPolicy": "recommended",
         },
         "credentialPolicy": {
-            "credentialType": "portfolio_certificate",
-            "awardWhen": "all_required_groups_complete",
-            "evidenceRequired": ["course completions", "integrated assessment", "capstone project", "portfolio review"],
+            "credentialType": "portfolio_record",
+            "title": f"{_readable_title(goal)} Portfolio Record",
+            "issuer": "Lycium",
+            "requiresHumanReview": True,
         },
         "sourceCoverage": {
             "benchmarkCount": len(benchmarks) if isinstance(benchmarks, list) else 0,
@@ -476,5 +442,7 @@ def build_program_contract(
         "field": program["field"],
         "programType": program["programType"],
         "estimatedHours": estimated_hours,
+        "linkedExistingRequirementCount": linked_existing_requirement_count,
+        "courseScaffoldPlan": course_scaffold_plan,
     }
     return program, course_requirements, synthesis

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.course_generation_flagships import CHEM_105_FLAGSHIP_BLUEPRINT
+from app.course_generation_premed_specs import PRE_MEDICAL_PREPARATION_PROGRAM_SCENARIO
 
 
 COURSE_SCENARIOS: dict[str, dict[str, Any]] = {
@@ -368,4 +369,5 @@ Assignments
             },
         ],
     },
+    "pre-medical-preparation-program": PRE_MEDICAL_PREPARATION_PROGRAM_SCENARIO,
 }

@@ -17,6 +17,7 @@ from tests.course_generation_fixture_builders import (
     source_backed_course_from_scenario,
     under_sourced_course_draft_from_scenario,
 )
+from tests.test_program_generation_eval_scenarios import _generated_program_from_scenario
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -43,6 +44,10 @@ def _fixed_generation_eval_reports() -> list[dict[str, Any]]:
         evaluate_course_generation_scenario(chem_105_flagship_course_from_scenario(), "chem-105-general-chemistry"),
         evaluate_course_generation_scenario(source_backed_course_from_scenario("intro-programming-foundations"), "intro-programming-foundations"),
         evaluate_program_generation_scenario(full_stack_program, "full-stack-software-engineer-program"),
+        evaluate_program_generation_scenario(
+            _generated_program_from_scenario("pre-medical-preparation-program"),
+            "pre-medical-preparation-program",
+        ),
         _noisy_source_report(),
         evaluate_course_generation_scenario(under_sourced_course_draft_from_scenario(), "under-sourced-course-prompt"),
     ]
@@ -77,12 +82,13 @@ def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> 
     assert len(loaded_runs) == 2
     assert loaded_runs[0]["runId"] == "eval-run-2"
     assert trend["latestRunId"] == "eval-run-2"
-    assert trend["latestSummary"]["scenarioCount"] == 5
+    assert trend["latestSummary"]["scenarioCount"] == 6
     assert trend["latestSummary"]["failedCount"] == 0
     assert {row["scenarioId"] for row in trend["scenarioTrends"]} >= {
         "chem-105-general-chemistry",
         "intro-programming-foundations",
         "full-stack-software-engineer-program",
+        "pre-medical-preparation-program",
         "multi-source-noisy-corpus",
         "under-sourced-course-prompt",
     }
@@ -106,5 +112,5 @@ def test_generation_eval_trend_route_reads_persisted_reports(client, tmp_path: P
     assert response.status_code == 200, response.text
     payload = response.json()
     assert payload["trend"]["latestRunId"] == "eval-route-run"
-    assert payload["trend"]["latestSummary"]["scenarioCount"] == 5
+    assert payload["trend"]["latestSummary"]["scenarioCount"] == 6
     assert payload["runs"][0]["runId"] == "eval-route-run"

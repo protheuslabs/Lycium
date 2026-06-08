@@ -4,6 +4,7 @@ import re
 from typing import Any, Literal
 
 from app.course_generation_scenario_specs import COURSE_SCENARIOS, PROGRAM_SCENARIOS
+from app.course_quality import assess_course_quality
 
 
 ScenarioStatus = Literal["passed", "needs_review", "failed"]
@@ -318,6 +319,24 @@ def _source_mapping_check(metrics: dict[str, Any], spec: dict[str, Any]) -> dict
     )
 
 
+def _publish_quality_check(course: dict[str, Any]) -> dict[str, Any]:
+    quality = assess_course_quality(course, gate="publish")
+    findings = [_finding("error", message) for message in quality.get("errors", [])[:8]]
+    return _check(
+        key="publish_quality_gate",
+        label="Publish quality gate",
+        score=float(quality.get("score") or 0),
+        findings=findings,
+        metrics={
+            "passed": int(bool(quality.get("passed"))),
+            "errorCount": len(quality.get("errors", [])),
+            "warningCount": len(quality.get("warnings", [])),
+            "qualityEvalFailedDimensionCount": quality.get("metrics", {}).get("qualityEvalFailedDimensionCount", 0),
+            "workflowFailedGateCount": quality.get("metrics", {}).get("workflowFailedGateCount", 0),
+        },
+    )
+
+
 def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str) -> dict[str, Any]:
     if scenario_id not in COURSE_SCENARIOS:
         raise ValueError(f"Unknown course generation scenario '{scenario_id}'")
@@ -378,6 +397,7 @@ def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str
             metrics={key: metrics[key] for key in ("sourceRecordCount", "moduleVideoCoverage", "benchmarkCount", "requirementOriginCount")},
         ),
         _specificity_check(metrics["textBlob"]),
+        _publish_quality_check(course),
     ]
     if any(
         key in spec

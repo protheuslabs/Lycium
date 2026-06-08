@@ -14,6 +14,7 @@ BENCHMARK_FIRST_PROGRAM_SCENARIOS = (
     "chemistry-foundations-program",
     "data-science-analytics-program",
     "public-health-foundations-program",
+    "pre-medical-preparation-program",
 )
 
 
@@ -88,8 +89,12 @@ def test_benchmark_first_program_generation_scenarios_pass_contract_quality_and_
         assert generated["contractValidation"]["passed"], scenario_id
         assert generated["qualityReport"]["passed"], scenario_id
         report = evaluate_program_generation_scenario(generated, scenario_id)
+        scaffold_plan = generated["generationTrace"]["programSynthesis"]["courseScaffoldPlan"]
         assert report["status"] == "passed", (scenario_id, report["recommendations"])
         assert report["metrics"]["failedCheckCount"] == 0
+        assert scaffold_plan["clusterCount"] >= 3
+        assert scaffold_plan["courseCount"] >= len(course_requirements := _course_requirements(generated["program"]))
+        assert {course["action"] for course in scaffold_plan["courses"]} <= {"create_empty_course", "link_existing_course"}
 
 
 def test_program_builder_falls_back_to_valid_generic_contract_without_benchmarks() -> None:
@@ -103,3 +108,20 @@ def test_program_builder_falls_back_to_valid_generic_contract_without_benchmarks
     assert validate_program_contract(program) == []
     assert synthesis["mode"] == "goal_token_fallback"
     assert len(course_requirements) >= 6
+    assert synthesis["courseScaffoldPlan"]["courseCount"] >= len(course_requirements)
+
+
+def test_program_scaffold_plan_links_known_courses_by_title() -> None:
+    _program, _course_requirements, synthesis = build_program_contract(
+        "biology portfolio pathway",
+        "undergraduate",
+        6,
+        benchmark_context={},
+        known_courses=[{"courseId": "local-existing-biology", "title": "Biology"}],
+    )
+    plan = synthesis["courseScaffoldPlan"]
+
+    assert any(course["action"] == "link_existing_course" for course in plan["courses"])
+    linked = next(course for course in plan["courses"] if course["action"] == "link_existing_course")
+    assert linked["existingCourseId"] == "local-existing-biology"
+    assert any(course["action"] == "create_empty_course" for course in plan["courses"])

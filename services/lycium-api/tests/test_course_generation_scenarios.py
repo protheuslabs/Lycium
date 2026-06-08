@@ -31,116 +31,14 @@ def _questions(topic: str) -> list[dict[str, Any]]:
 
 
 
-from tests.course_generation_fixture_builders import source_backed_course_from_scenario, under_sourced_course_draft_from_scenario
+from tests.course_generation_fixture_builders import (
+    chem_105_flagship_course_from_scenario,
+    source_backed_course_from_scenario,
+    under_sourced_course_draft_from_scenario,
+)
 
 def _course_for_scenario() -> dict[str, Any]:
-    topics = [
-        "matter and measurement",
-        "atomic structure",
-        "periodic trends",
-        "chemical formulas and nomenclature",
-        "stoichiometry",
-        "chemical reactions",
-        "aqueous solutions",
-        "thermochemistry",
-        "chemical bonding",
-        "molecular geometry",
-        "intermolecular forces",
-        "gases",
-        "solutions",
-        "kinetics",
-        "equilibrium",
-        "acid-base chemistry",
-        "laboratory safety",
-    ]
-    modules = []
-    primary_source_id = CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"][0]["id"]
-    for index, topic in enumerate(topics, start=1):
-        section_id = f"chem-105-{index}"
-        source_ids = [source["id"] for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]]
-        topic_source_ids = source_ids[:2]
-        modules.append(
-            {
-                "id": f"module-{index}",
-                "title": f"Week {index}: {topic.title()}",
-                "sourceIds": topic_source_ids,
-                "sections": [
-                    {
-                        "id": section_id,
-                        "title": topic.title(),
-                        "pageType": "learn",
-                        "sectionType": "lesson",
-                        "sourceIds": topic_source_ids,
-                        "content": [
-                            {
-                                "type": "text",
-                                "heading": "Explanation",
-                                "value": (
-                                    f"This CHEM 105 lesson teaches {topic}, laboratory safety, equilibrium, "
-                                    "and evidence-based chemical reasoning through worked examples and practice."
-                                ),
-                                "sourceIds": [topic_source_ids[0]],
-                            },
-                            {"type": "video", "title": f"{topic.title()} lecture", "url": "https://example.edu/video", "sourceIds": [topic_source_ids[1]]},
-                            {
-                                "type": "conceptCards",
-                                "title": "Concepts introduced",
-                                "sourceIds": [topic_source_ids[0]],
-                                "concepts": [{"name": topic.title(), "description": f"Core CHEM 105 concept: {topic}.", "sourceSectionId": section_id}],
-                            },
-                        ],
-                    },
-                    {
-                        "id": f"{section_id}-quiz",
-                        "title": f"Quiz: {topic.title()}",
-                        "pageType": "apply",
-                        "sectionType": "assessment",
-                        "sourceIds": [topic_source_ids[0]],
-                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": [topic_source_ids[0]]}],
-                    },
-                    {
-                        "id": f"{section_id}-summary",
-                        "title": f"Week {index} Summary",
-                        "pageType": "learn",
-                        "sectionType": "summary",
-                        "sourceIds": [topic_source_ids[0]],
-                        "content": [
-                            {
-                                "type": "conceptCards",
-                                "title": "Week concepts",
-                                "sourceIds": [topic_source_ids[0]],
-                                "concepts": [{"name": topic.title(), "description": f"Review concept for {topic}.", "sourceSectionId": section_id}],
-                            }
-                        ],
-                    },
-                ],
-            }
-        )
-    return {
-        "title": "CHEM 105 General Chemistry I",
-        "shortDescription": "A first-semester general chemistry course aligned to college CHEM 105 expectations.",
-        "difficultyLevel": "undergrad",
-        "category": "natural-sciences-mathematics",
-        "department": "chemistry",
-        "tags": ["chemistry", "stoichiometry", "thermochemistry", "equilibrium"],
-        "sourceIds": [source["id"] for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]],
-        "sourceRecords": [
-            {
-                "id": source["id"],
-                "type": source["type"],
-                "title": source["title"],
-                "url": source["url"],
-            }
-            for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]
-        ],
-        "metadata": {
-            "pacingLabel": "Week",
-            "curriculumBenchmarks": CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"],
-            "requirementOrigins": [{"requirementId": f"req-{index}", "title": topic.title()} for index, topic in enumerate(topics, start=1)],
-            "sourceSlots": chem_105_source_slots(),
-        },
-        "modules": modules,
-    }
+    return chem_105_flagship_course_from_scenario()
 
 
 def _teachable_publish_ready_course() -> dict[str, Any]:

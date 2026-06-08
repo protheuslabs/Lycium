@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.generation_helpers import _stable_id, _title_from_prompt
 from app.models import CourseSnapshot, Learner, ProgramSnapshot
 from app.program_contract_builder import build_program_contract
+from app.program_course_materialization import materialize_program_course_scaffold
 from app.curriculum_benchmarks import compile_curriculum_benchmark_context
 from app.program_quality import assess_program_quality
 from app.program_validation import validate_program_contract
@@ -321,6 +322,21 @@ def _build_program(goal: str, level: str | None, desired_course_count: int) -> t
     program, course_requirements, _synthesis = build_program_contract(goal, level, desired_course_count)
     return program, course_requirements
 
+
+def _known_course_records(session: Session) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for snapshot in session.query(CourseSnapshot).limit(500).all():
+        structure = snapshot.structure if isinstance(snapshot.structure, dict) else {}
+        course_id = structure.get("courseId") or structure.get("id") or structure.get("key")
+        records.append({
+            "courseId": str(course_id or f"snapshot-{snapshot.id}"),
+            "title": snapshot.title,
+            "snapshotId": snapshot.id,
+            "status": snapshot.status,
+        })
+    return records
+
+
 def _assemble_program_packet(
     session: Session,
     *,
@@ -378,6 +394,7 @@ def generate_program(
         level,
         desired_course_count,
         benchmark_context=benchmark_context,
+        known_courses=_known_course_records(session),
     )
     course_packets = []
     for requirement in course_requirements:
@@ -429,6 +446,15 @@ def generate_program(
         structure=structure,
     )
     session.add(program)
+    session.flush()
+    materialize_program_course_scaffold(
+        session,
+        program=program,
+        structure=structure,
+        learner_id=learner_id,
+        level=level,
+        source_policy=source_policy,
+    )
     session.flush()
     return program
 
