@@ -125,6 +125,60 @@
   color: #6f4700;
 }
 
+.path-readiness {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.path-readiness span,
+.path-readiness strong,
+.path-readiness em {
+  border-radius: 999px;
+  padding: 0.25rem 0.52rem;
+  color: #263448;
+  background: #f3f6fb;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.path-readiness strong {
+  color: #16304f;
+  background: #dfe8ff;
+  font-weight: 950;
+}
+
+.path-readiness em {
+  color: #30405d;
+  background: #eef3ff;
+}
+
+.path-readiness--ready strong {
+  color: #1f6f42;
+  background: rgba(47, 122, 79, 0.14);
+}
+
+.path-readiness--needs_sources strong,
+.path-readiness--needs_evidence strong {
+  color: #6f4700;
+  background: #fff2d9;
+}
+
+.path-readiness--missing_courses strong,
+.path-readiness--locked strong {
+  color: #8f1f1f;
+  background: #ffe2e2;
+}
+
+.path-readiness--needs_review strong {
+  color: #415dc1;
+  background: #e4ebff;
+}
+
 .catalog-requirements {
   display: grid;
   gap: 0.7rem;

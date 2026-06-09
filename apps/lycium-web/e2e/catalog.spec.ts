@@ -324,7 +324,7 @@ test("create-course modal reflects locked and unlocked AI states", async ({ page
   await page.goto("/Lycium/catalog");
 
   await openCreateCourseDialog(page);
-  await expect(page.getByText(/To unlock course creation/)).toBeVisible();
+  await expect(page.getByRole("note", { name: "AI course creation is locked." })).toBeVisible();
   await expect(page.getByPlaceholder("Describe the course you want to build...")).toBeDisabled();
   await expect(page.getByRole("button", { name: /add another link/i })).toBeDisabled();
   const lockedDialog = page.getByRole("dialog", { name: "Create Course" });
@@ -338,7 +338,7 @@ test("create-course modal reflects locked and unlocked AI states", async ({ page
   await expect(page.locator(".settings-key-preview").getByText("http://localhost:11434")).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await openCreateCourseDialog(page);
-  await expect(page.getByText(/To unlock course creation/)).toHaveCount(0);
+  await expect(page.getByRole("note", { name: "AI course creation is locked." })).toHaveCount(0);
 
   const description = page.getByPlaceholder("Describe the course you want to build...");
   await expect(description).toBeEnabled();

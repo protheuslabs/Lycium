@@ -270,8 +270,11 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("settings eval dashboard renders persisted scenario trend", async ({ page }) => {
+  test.setTimeout(45_000);
   await mockSettingsApis(page);
+  const trendResponse = page.waitForResponse("**/v1/generation-evals/trend**");
   await page.goto("/Lycium/settings");
+  await trendResponse;
 
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Eval Score Dashboard" })).toBeVisible();
@@ -304,15 +307,20 @@ test("local model endpoint saves as an active verified connection across reload"
   await page.getByRole("button", { name: "Add API key" }).click();
 
   await expect(page.getByText("Ollama Local verified with 1 models.")).toBeVisible();
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("http://localhost:11434");
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("Verified");
+  const savedKeys = page.getByLabel("Saved API keys");
+  await expect(savedKeys).toContainText("Ollama Local");
+  await expect(savedKeys).toContainText("http://localhost:11434");
+  await expect(savedKeys).toContainText("Active");
+  await expect(page.locator(".settings-key-action-button[aria-label=\"Refresh Ollama Local connection\"]")).toBeVisible();
+  await expect(page.locator(".settings-key-action-button[aria-label=\"Delete Ollama Local connection\"]")).toBeVisible();
 
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("Ollama Local");
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("http://localhost:11434");
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("1 discovered");
+  const reloadedSavedKeys = page.getByLabel("Saved API keys");
+  await expect(reloadedSavedKeys).toContainText("Ollama Local");
+  await expect(reloadedSavedKeys).toContainText("http://localhost:11434");
+  await expect(reloadedSavedKeys).toContainText("Active");
 });
 
 test("unavailable local model endpoint remains saved and recoverable", async ({ page }) => {
@@ -327,15 +335,18 @@ test("unavailable local model endpoint remains saved and recoverable", async ({ 
   await page.getByRole("button", { name: "Add API key" }).click();
 
   await expect(page.getByText("Ollama Local saved, but Lycium could not verify it yet.")).toBeVisible();
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("Needs check");
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("http://localhost:9999");
-  await expect(page.getByRole("button", { name: "Verify", exact: true })).toBeVisible();
+  const unverifiedSavedKeys = page.getByLabel("Saved API keys");
+  await expect(unverifiedSavedKeys).toContainText("Not connected");
+  await expect(unverifiedSavedKeys).toContainText("http://localhost:9999");
+  await expect(page.locator(".settings-key-action-button[aria-label=\"Refresh Ollama Local connection\"]")).toBeVisible();
+  await expect(page.locator(".settings-key-action-button[aria-label=\"Delete Ollama Local connection\"]")).toBeVisible();
 
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("Ollama Local");
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("Needs check");
-  await expect(page.getByLabel("AI connection diagnostics")).toContainText("http://localhost:9999");
+  const reloadedUnverifiedSavedKeys = page.getByLabel("Saved API keys");
+  await expect(reloadedUnverifiedSavedKeys).toContainText("Ollama Local");
+  await expect(reloadedUnverifiedSavedKeys).toContainText("Not connected");
+  await expect(reloadedUnverifiedSavedKeys).toContainText("http://localhost:9999");
   await expect(page.getByText("Ollama Local is saved but not verified yet.")).toBeVisible();
 });

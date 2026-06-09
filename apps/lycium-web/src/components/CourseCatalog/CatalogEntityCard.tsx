@@ -8,6 +8,7 @@ type CatalogEntityCardProps = {
   kicker: string;
   meta: string[];
   progress?: ReactNode;
+  readiness?: ReactNode;
   title: string;
   onActivate: () => void;
 };
@@ -19,6 +20,7 @@ export default function CatalogEntityCard({
   kicker,
   meta,
   progress,
+  readiness,
   title,
   onActivate,
 }: CatalogEntityCardProps) {
@@ -35,6 +37,7 @@ export default function CatalogEntityCard({
         ))}
       </div>
       {continuity}
+      {readiness}
       {progress}
     </CatalogActionCard>
   );

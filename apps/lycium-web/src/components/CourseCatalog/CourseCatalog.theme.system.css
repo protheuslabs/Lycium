@@ -100,6 +100,39 @@
     background: #222734;
   }
 
+  .path-readiness span,
+  .path-readiness em {
+    color: #dbeafe;
+    background: #222734;
+  }
+
+  .path-readiness strong {
+    color: #dbeafe;
+    background: #2f3542;
+  }
+
+  .path-readiness--ready strong {
+    color: #bbf7d0;
+    background: rgba(47, 122, 79, 0.28);
+  }
+
+  .path-readiness--needs_sources strong,
+  .path-readiness--needs_evidence strong {
+    color: #fde68a;
+    background: rgba(133, 95, 0, 0.28);
+  }
+
+  .path-readiness--missing_courses strong,
+  .path-readiness--locked strong {
+    color: #fecaca;
+    background: rgba(143, 31, 31, 0.3);
+  }
+
+  .path-readiness--needs_review strong {
+    color: #c7d2fe;
+    background: rgba(65, 93, 193, 0.28);
+  }
+
   .program-showcase-progress-bar {
     background: #262626;
   }

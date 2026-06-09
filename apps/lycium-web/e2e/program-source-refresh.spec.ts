@@ -163,6 +163,49 @@ async function seedRefreshableCourse(page: Page) {
   });
 }
 
+async function seedNonApiBackedCourse(page: Page) {
+  await page.addInitScript(() => {
+    const course = {
+      key: "e2e-non-api-refresh-course",
+      title: "E2E Non API Refresh Course",
+      source: "local",
+      status: "draft",
+      data: {
+        title: "E2E Non API Refresh Course",
+        shortDescription: "A seeded local draft without an API snapshot for section refresh lock coverage.",
+        category: "natural-sciences-mathematics",
+        department: "chemistry",
+        tags: ["e2e", "refresh", "local"],
+        sourceIds: [],
+        sourceRecords: [],
+        metadata: { pacingLabel: "Module", editPolicy: { editable: true, ownerCanEdit: true } },
+        modules: [
+          {
+            id: "non-api-module",
+            title: "Module 1",
+            sections: [
+              {
+                id: "non-api-section",
+                title: "Local section",
+                pageType: "learn",
+                sectionType: "lesson",
+                content: [
+                  {
+                    type: "text",
+                    heading: "Local section",
+                    value: "This local draft has no API snapshot, so section refresh must explain the lock.",
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    window.localStorage.setItem("lycium-local-course-drafts", JSON.stringify([course]));
+  });
+}
+
 async function seedProgramRequirementSourceGapCourse(page: Page) {
   await page.addInitScript(() => {
     const sourceGapCourse = {
@@ -226,10 +269,7 @@ test.beforeEach(async ({ page }) => {
 
 test("program requirement source warnings open the source-gap modal", async ({ page }) => {
   await seedProgramRequirementSourceGapCourse(page);
-  await page.goto("/Lycium/catalog/programs");
-  const firstProgram = page.locator(".program-showcase-card").filter({ hasText: "Full-Stack Engineer" }).first();
-  await expect(firstProgram).toBeVisible();
-  await firstProgram.click();
+  await page.goto("/Lycium/catalog/full-stack-engineer-program-full-stack-engineer");
 
   const firstCluster = page.locator(".program-showcase-card").filter({ hasText: "Foundations" }).first();
   await expect(firstCluster).toBeVisible();
@@ -246,13 +286,21 @@ test("program requirement source warnings open the source-gap modal", async ({ p
 });
 
 test("section refresh is blocked for non API-backed course pages", async ({ page }) => {
+  await seedNonApiBackedCourse(page);
   await page.goto("/Lycium/catalog");
-  await openFirstUsableCourse(page);
+  await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Non API Refresh Course");
+  await page.locator(".course-card").filter({ hasText: "E2E Non API Refresh Course" }).first().click();
+  await expect(page.locator(".content-view")).toBeVisible();
 
-  const refreshButton = page.getByRole("button", { name: "Refresh this section with AI" });
+  const refreshButton = page.getByRole("button", { name: "Why section refresh is unavailable" });
   await expect(refreshButton).toBeVisible();
-  await expect(refreshButton).toBeDisabled();
-  await expect(refreshButton).toHaveAttribute("title", /API-backed snapshot and verified AI model/);
+  await expect(refreshButton).toHaveAttribute("title", /API-backed course snapshots/);
+  await refreshButton.click();
+
+  const dialog = page.getByRole("dialog", { name: "Section refresh unavailable" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("AI section refresh is locked.");
+  await expect(dialog).toContainText("API-backed course snapshots");
 });
 
 test("section refresh is blocked when the active model is unverified", async ({ page }) => {
@@ -266,10 +314,16 @@ test("section refresh is blocked when the active model is unverified", async ({ 
   await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Refreshable Course");
   await page.locator(".course-card").filter({ hasText: "E2E Refreshable Course" }).first().click();
 
-  const refreshButton = page.getByRole("button", { name: "Refresh this section with AI" });
+  const refreshButton = page.getByRole("button", { name: "Why section refresh is unavailable" });
   await expect(refreshButton).toBeVisible();
-  await expect(refreshButton).toBeDisabled();
-  await expect(refreshButton).toHaveAttribute("title", /API-backed snapshot and verified AI model/);
+  await expect(refreshButton).toHaveAttribute("title", /saved but not connected/);
+  await refreshButton.click();
+
+  const dialog = page.getByRole("dialog", { name: "Section refresh unavailable" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("AI section refresh is locked.");
+  await expect(dialog).toContainText("Refresh the connection in Settings");
+  await expect(dialog.getByRole("link", { name: "Open Settings" })).toBeVisible();
 });
 
 test("section refresh modal opens when an API-backed course and verified model are available", async ({ page }) => {
@@ -287,9 +341,8 @@ test("section refresh modal opens when an API-backed course and verified model a
   await expect(refreshButton).toBeEnabled();
   await refreshButton.click();
 
-  const dialog = page.getByRole("dialog", { name: "Refresh this section" });
+  const dialog = page.getByRole("dialog", { name: "Regenerate section?" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText("Overall direction")).toBeVisible();
-  await expect(dialog.getByText("Sources to avoid")).toBeVisible();
-  await expect(dialog.getByText("[1] E2E Refresh Source")).toBeVisible();
+  await expect(dialog).toContainText("This will ask the selected model to regenerate the current section");
+  await expect(dialog.getByRole("button", { name: "Yes, regenerate" })).toBeEnabled();
 });

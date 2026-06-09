@@ -15,12 +15,14 @@ import {
 import { type CatalogActivityFilter, type CatalogPathSortMode, normalizeSearchText } from "./catalogUtils";
 import { scoreWeightedSearch } from "../../utils/weightedSearch";
 import { getUnmetCoursePrerequisites } from "./catalogPrerequisites";
+import { summarizeCatalogPathReadiness, type CatalogPathReadiness } from "./catalogPathReadiness";
 
 export type CatalogVisibleProgram = {
   program: LyciumProgram;
   estimate: TimeEstimate;
   progress: CatalogPathProgress;
   continuity: CatalogPathContinuity;
+  readiness: CatalogPathReadiness;
   searchScore: number;
 };
 
@@ -30,6 +32,7 @@ export type CatalogVisibleCluster = {
   estimate: TimeEstimate;
   progress: CatalogPathProgress;
   continuity: CatalogPathContinuity;
+  readiness: CatalogPathReadiness;
   searchScore: number;
 };
 
@@ -201,6 +204,12 @@ export function getVisibleCatalogPrograms({
         estimate: estimateProgramTime(program, courses),
         progress,
         continuity: programPathContinuity(program, courseMap, progressCache),
+        readiness: summarizeCatalogPathReadiness(
+          program.requirementGroups.flatMap((group) => group.requirements),
+          courseIds,
+          courseMap,
+          progressCache,
+        ),
         searchScore: programSearchScore(program, query),
         pathCourses: pathCourses(courseIds, courseMap),
       };
@@ -247,6 +256,7 @@ export function getVisibleCatalogClusters({
         estimate: estimateRequirementGroupTime(cluster, courseMap),
         progress: catalogGroupRollupProgress(cluster, courseMap, progressCache),
         continuity: groupPathContinuity(cluster, courseMap, progressCache),
+        readiness: summarizeCatalogPathReadiness(cluster.requirements, courseIds, courseMap, progressCache),
         searchScore: clusterSearchScore(cluster, query),
         pathCourses: pathCourses(courseIds, courseMap),
       };

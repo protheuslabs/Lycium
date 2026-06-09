@@ -4,6 +4,7 @@ import CatalogEntityCard from "./CatalogEntityCard";
 import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogPathContinuity } from "./catalogProgramProgress";
 import type { CatalogVisibleCluster, CatalogVisibleProgram } from "./catalogPathFiltering";
+import type { CatalogPathReadiness } from "./catalogPathReadiness";
 
 type CatalogProgramShowcaseProps = {
   viewLevel: "programs" | "clusters";
@@ -30,6 +31,22 @@ function CatalogPathContinuityStrip({ continuity }: { continuity: CatalogPathCon
   );
 }
 
+function CatalogPathReadinessStrip({ readiness }: { readiness: CatalogPathReadiness }) {
+  return (
+    <div className={`path-readiness path-readiness--${readiness.status}`} aria-label={`Path readiness: ${readiness.summaryLabel}`}>
+      <strong>{readiness.summaryLabel}</strong>
+      <span>{readiness.mappedRequirements}/{readiness.totalRequirements} requirements</span>
+      <span>{readiness.sourceEvidenceCount} sources</span>
+      {readiness.sourceSlotCount > 0 && (
+        <span>{readiness.backedSourceSlotCount}/{readiness.sourceSlotCount} source slots</span>
+      )}
+      {readiness.sourceGapCount > 0 && <span>{readiness.sourceGapCount} source gaps</span>}
+      {readiness.reviewCourseCount > 0 && <span>{readiness.reviewCourseCount} review drafts</span>}
+      <em>{readiness.nextActionLabel}</em>
+    </div>
+  );
+}
+
 export default function CatalogProgramShowcase({
   viewLevel,
   programs,
@@ -42,7 +59,7 @@ export default function CatalogProgramShowcase({
     return (
       <section className="program-showcase" aria-label="Learning programs">
         <div className="program-showcase-grid">
-          {programs.map(({ program, estimate, progress, continuity }) => {
+          {programs.map(({ program, estimate, progress, continuity, readiness }) => {
             return (
               <CatalogEntityCard
                 className="program-showcase-card"
@@ -66,6 +83,7 @@ export default function CatalogProgramShowcase({
                   ) : undefined
                 }
                 continuity={<CatalogPathContinuityStrip continuity={continuity} />}
+                readiness={<CatalogPathReadinessStrip readiness={readiness} />}
               />
             );
           })}
@@ -81,7 +99,7 @@ export default function CatalogProgramShowcase({
   return (
     <section className="program-showcase" aria-label={`Clusters in ${selectedProgram.title}`}>
       <div className="program-showcase-grid">
-        {clusters.map(({ cluster, courseIds, estimate, progress, continuity }) => {
+        {clusters.map(({ cluster, courseIds, estimate, progress, continuity, readiness }) => {
           return (
             <CatalogEntityCard
               className="program-showcase-card"
@@ -105,6 +123,7 @@ export default function CatalogProgramShowcase({
                 ) : undefined
               }
               continuity={<CatalogPathContinuityStrip continuity={continuity} />}
+              readiness={<CatalogPathReadinessStrip readiness={readiness} />}
             />
           );
         })}
