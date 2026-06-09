@@ -89,8 +89,7 @@ export default function SectionRefreshControl({
           iconOnly
           className={`section-refresh-button course-feedback-nav-button${canRegenerateSection ? "" : " section-refresh-button-locked"}`}
           title={canRegenerateSection ? "Refresh this section with AI" : lockedReason}
-          aria-label={canRegenerateSection ? "Refresh this section with AI" : "Refresh unavailable"}
-          aria-disabled={!canRegenerateSection}
+          aria-label={canRegenerateSection ? "Refresh this section with AI" : "Why section refresh is unavailable"}
           onClick={handleRefreshClick}
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
