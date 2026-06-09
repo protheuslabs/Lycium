@@ -28,6 +28,7 @@ from app.course_agent_types import CourseAgentError, CourseAgentResult
 from app.course_generation_service import validate_generation_taxonomy_input
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 from app.source_corpus import compile_generation_source_corpus
+from app.source_packet_quality_gate import source_packet_quality_gate
 
 
 def generate_course_with_agent_staged(
@@ -63,6 +64,20 @@ def generate_course_with_agent_staged(
         source_packet=source_packet,
     )
     effective_source_urls = source_corpus.source_urls
+    packet_gate = source_packet_quality_gate(source_corpus.synthesis)
+    if packet_gate:
+        raise CourseAgentError(
+            "Source packet concept coverage is below policy; add sources before staged LLM course generation.",
+            trace={
+                "status": "failed",
+                "failed_stage": "source_packet_quality",
+                "source_corpus_synthesis": source_corpus.synthesis,
+                "effective_source_urls": effective_source_urls,
+                "source_packet_quality_gate": packet_gate,
+                "source_packet_id": source_packet_id,
+                "source_packet_contract": source_packet.get("contract_version") if isinstance(source_packet, dict) else None,
+            },
+        )
     benchmark_context = compile_curriculum_benchmark_context(
         prompt=prompt,
         source_urls=effective_source_urls,

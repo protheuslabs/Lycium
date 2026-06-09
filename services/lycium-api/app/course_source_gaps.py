@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.generation_helpers import COURSE_GENERATION_RULES, _catalog_metadata_from_prompt, _title_from_prompt
 from app.models import CourseDraft, CourseSnapshot
+from app.course_source_gap_resume import summarize_concept_source_need_coverage
 
 
 SOURCE_COVERAGE_POLICY: dict[str, Any] = {
@@ -68,6 +69,68 @@ def _source_gate_issue_messages(source_gate: dict[str, Any] | None) -> list[str]
     return messages
 
 
+def _source_gate_artifacts(source_gate: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(source_gate, dict):
+        return {}
+    artifacts = source_gate.get("artifacts")
+    return artifacts if isinstance(artifacts, dict) else {}
+
+
+def _source_need_query(title: str, concept: str) -> list[str]:
+    clean_concept = concept.strip() or "course concept"
+    return [
+        f"{title} {clean_concept} open textbook",
+        f"{title} {clean_concept} lecture notes",
+        f"{title} {clean_concept} practice problems",
+    ]
+
+
+def _concept_source_needs(title: str, source_gate: dict[str, Any] | None) -> list[dict[str, Any]]:
+    artifacts = _source_gate_artifacts(source_gate)
+    rows = artifacts.get("conceptCoverage")
+    if not isinstance(rows, list):
+        return []
+    needs: list[dict[str, Any]] = []
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        status = str(row.get("status") or "missing")
+        if status == "direct":
+            continue
+        concept = str(row.get("concept") or row.get("title") or "").strip()
+        location = str(row.get("location") or row.get("sectionId") or "course").strip()
+        key = (concept, location)
+        if not concept or key in seen:
+            continue
+        seen.add(key)
+        needs.append(
+            {
+                "concept": concept,
+                "location": location,
+                "sectionId": row.get("sectionId"),
+                "sourceSectionId": row.get("sourceSectionId"),
+                "status": status,
+                "sourceTypeHints": ["open_textbook", "lecture_notes", "practice", "video", "simulation", "lab"],
+                "suggestedQueries": _source_need_query(title, concept),
+            }
+        )
+    return needs
+
+
+def _source_gap_content(description: str, gap: dict[str, Any]) -> list[dict[str, str]]:
+    needs = gap.get("conceptSourceNeeds")
+    if not isinstance(needs, list) or not needs:
+        return [{"type": "text", "heading": "Course generation is paused", "value": description}]
+    concept_lines = [
+        f"- {need.get('concept')} ({need.get('location')})"
+        for need in needs[:12]
+        if isinstance(need, dict) and need.get("concept")
+    ]
+    value = description + "\n\nMissing concept source coverage:\n" + "\n".join(concept_lines)
+    return [{"type": "text", "heading": "Course generation is paused", "value": value}]
+
+
 def _source_gap_description(current_count: int, source_gate: dict[str, Any] | None = None) -> str:
     if source_gate:
         return (
@@ -103,13 +166,17 @@ def _source_gap(title: str, current_count: int, source_gate: dict[str, Any] | No
         ],
     }
     if source_gate:
-        artifacts = source_gate.get("artifacts") if isinstance(source_gate.get("artifacts"), dict) else {}
+        artifacts = _source_gate_artifacts(source_gate)
+        concept_needs = _concept_source_needs(title, source_gate)
         gap["coverageGate"] = {
             "gate": source_gate.get("gate") or "source_analysis",
             "status": source_gate.get("status") or "failed",
             "issues": _source_gate_issue_messages(source_gate)[:8],
             "metrics": artifacts,
         }
+        gap["requiredConcepts"] = sorted({str(row.get("concept")) for row in artifacts.get("conceptCoverage", []) if isinstance(row, dict) and row.get("concept")})
+        gap["conceptSourceNeeds"] = concept_needs
+        gap["missingConceptSourceCount"] = len(concept_needs)
     return gap
 
 
@@ -137,6 +204,7 @@ def update_needs_sources_course_snapshot(
     *,
     source_urls: list[str] | None,
     source_gate: dict[str, Any] | None = None,
+    source_packet: dict[str, Any] | None = None,
 ) -> CourseSnapshot:
     title = snapshot.title
     clean_source_urls = _unique_source_urls(source_urls)
@@ -145,6 +213,8 @@ def update_needs_sources_course_snapshot(
     source_records = _source_records_from_input_urls(clean_source_urls, title)
     source_ids = [record["id"] for record in source_records]
     gap = _source_gap(title, current_count, source_gate)
+    if gap.get("conceptSourceNeeds"):
+        gap["sourceResumeCoverage"] = summarize_concept_source_need_coverage(gap["conceptSourceNeeds"], clean_source_urls, source_packet)
     description = str(gap["description"])
     structure = dict(snapshot.structure or {})
     metadata = dict(structure.get("metadata") or {})
@@ -177,7 +247,7 @@ def update_needs_sources_course_snapshot(
                             "sourceIds": source_ids,
                             "learningObjectives": ["Identify source gaps before generating course content."],
                             "estimatedMinutes": 5,
-                            "content": [{"type": "text", "heading": "Course generation is paused", "value": description}],
+                            "content": _source_gap_content(description, gap),
                             "citations": [],
                         }
                     ],
@@ -214,6 +284,7 @@ def create_needs_sources_course_snapshot(
     desired_module_count: int,
     expected_duration_minutes: int,
     source_urls: list[str] | None = None,
+    source_packet: dict[str, Any] | None = None,
     category: str | None = None,
     department: str | None = None,
     source_gate: dict[str, Any] | None = None,
@@ -228,6 +299,8 @@ def create_needs_sources_course_snapshot(
     source_records = _source_records_from_input_urls(clean_source_urls, title)
     source_ids = [record["id"] for record in source_records]
     gap = _source_gap(title, current_count, source_gate)
+    if gap.get("conceptSourceNeeds"):
+        gap["sourceResumeCoverage"] = summarize_concept_source_need_coverage(gap["conceptSourceNeeds"], clean_source_urls, source_packet)
     gap_id = str(gap["id"])
     description = str(gap["description"])
     draft_outline = {
@@ -300,7 +373,7 @@ def create_needs_sources_course_snapshot(
                         "sourceIds": source_ids,
                         "learningObjectives": ["Identify source gaps before generating course content."],
                         "estimatedMinutes": 5,
-                        "content": [{"type": "text", "heading": "Course generation is paused", "value": description}],
+                        "content": _source_gap_content(description, gap),
                         "citations": [],
                     }
                 ],

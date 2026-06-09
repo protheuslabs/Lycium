@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any, Literal
 
+from app.course_source_integrity import assess_course_source_integrity
 from app.course_structure import (
     block_text as _block_text,
     content_blocks as _content,
@@ -227,6 +228,8 @@ def _eval_concepts(course: dict[str, Any]) -> dict[str, Any]:
 
 def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, str]] = []
+    integrity = assess_course_source_integrity(course)
+    integrity_metrics = integrity["metrics"]
     declared = _source_record_ids(course)
     referenced: set[str] = set(_source_ids(course))
     sourced_sections = 0
@@ -249,10 +252,16 @@ def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
     missing = sorted(referenced - declared)
     if missing and declared:
         findings.append(_finding("error", f"Referenced sourceIds are missing sourceRecords: {', '.join(missing[:10])}."))
+    direct_concept_ratio = float(integrity_metrics.get("directConceptSourceCoveragePercent") or 0) / 100
+    direct_block_ratio = float(integrity_metrics.get("directBlockSourceCoveragePercent") or 0) / 100
+    if integrity_metrics.get("conceptCount", 0) and direct_concept_ratio < 0.85:
+        findings.append(_finding("warning", "Concept source coverage relies too heavily on inherited section/module sources."))
+    if integrity_metrics.get("sourceBearingBlockCount", 0) and direct_block_ratio < 0.6:
+        findings.append(_finding("warning", "Instructional blocks should carry more direct sourceIds."))
     source_ratio = sourced_sections / section_count if section_count else 0
     diversity_score = min(1.0, len(declared) / 3)
-    score = source_ratio * 0.45 + diversity_score * 0.4 + (0.15 if not missing else 0)
-    return _dimension(key="source_grounding", label="Source grounding", weight=0.16, score=score, findings=findings, metrics={"sourceRecordCount": len(declared), "referencedSourceIdCount": len(referenced), "sourcedSectionRatio": round(source_ratio, 2)})
+    score = source_ratio * 0.25 + diversity_score * 0.25 + direct_concept_ratio * 0.25 + direct_block_ratio * 0.15 + (0.1 if not missing else 0)
+    return _dimension(key="source_grounding", label="Source grounding", weight=0.16, score=score, findings=findings, metrics={"sourceRecordCount": len(declared), "referencedSourceIdCount": len(referenced), "sourcedSectionRatio": round(source_ratio, 2), "directConceptSourceCoveragePercent": integrity_metrics.get("directConceptSourceCoveragePercent"), "directBlockSourceCoveragePercent": integrity_metrics.get("directBlockSourceCoveragePercent")})
 
 
 def _eval_media(course: dict[str, Any]) -> dict[str, Any]:

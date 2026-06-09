@@ -150,6 +150,10 @@
     "staleVerificationCount": 0,
     "benchmarkSourceCount": 1,
     "benchmarkUsefulnessRatio": 1,
+    "conceptCandidateCount": 4,
+    "coveredConceptCandidateCount": 4,
+    "conceptCoverageRatio": 1,
+    "uncoveredConceptCandidates": [],
     "qualityWarnings": [],
     "warningCount": 0
   }

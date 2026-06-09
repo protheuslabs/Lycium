@@ -258,6 +258,10 @@ class SourcePacketQualityRead(BaseModel):
     staleVerificationCount: int
     benchmarkSourceCount: int
     benchmarkUsefulnessRatio: float
+    conceptCandidateCount: int
+    coveredConceptCandidateCount: int
+    conceptCoverageRatio: float
+    uncoveredConceptCandidates: list[str]
     qualityWarnings: list[str]
     warningCount: int
 

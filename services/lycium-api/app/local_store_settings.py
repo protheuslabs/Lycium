@@ -311,6 +311,20 @@ def activate_agent_api_key(key_id: str) -> dict[str, Any]:
     return local_settings_summary()
 
 
+def delete_agent_api_key(key_id: str) -> dict[str, Any]:
+    secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
+    original_count = len(secret["agent_keys"])
+    secret["agent_keys"] = [key for key in secret["agent_keys"] if key["id"] != key_id]
+    if len(secret["agent_keys"]) == original_count:
+        raise ValueError("API key not found.")
+
+    if secret.get("active_agent_key_id") == key_id:
+        secret["active_agent_key_id"] = secret["agent_keys"][0]["id"] if secret["agent_keys"] else None
+    secret["updated_at"] = _now()
+    _write_json(_agent_secret_path(), secret)
+    return local_settings_summary()
+
+
 def update_agent_key_model(key_id: str, model: str) -> dict[str, Any]:
     cleaned_model = model.strip()
     if not cleaned_model:

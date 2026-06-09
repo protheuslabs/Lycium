@@ -1,0 +1,109 @@
+.ai-connection-lock-callout {
+  margin: 0;
+  border-radius: 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 0.9rem;
+  color: #253049;
+  background: rgba(74, 108, 247, 0.1);
+}
+
+.ai-connection-lock-copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.ai-connection-lock-copy strong {
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.ai-connection-lock-copy span {
+  color: var(--lycium-text-muted, #667085);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.ai-connection-lock-button {
+  min-height: 2.2rem;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  color: #ffffff;
+  background: var(--lycium-brand-primary, #2f3542);
+  padding: 0 0.75rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-decoration: none;
+  transition: transform 180ms ease, background-color 180ms ease, box-shadow 180ms ease;
+}
+
+.ai-connection-lock-button:hover,
+.ai-connection-lock-button:focus-visible {
+  background: var(--lycium-brand-primary-hover, #171717);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.ai-connection-lock-button svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: currentColor;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .ai-connection-lock-callout {
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .ai-connection-lock-copy span {
+  color: #a1a1aa;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .ai-connection-lock-button {
+  background: #303033;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .ai-connection-lock-button:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .ai-connection-lock-button:focus-visible {
+  background: #3f3f46;
+}
+
+html[data-theme="light"] .ai-connection-lock-callout {
+  color: #253049;
+  background: rgba(74, 108, 247, 0.1);
+}
+
+html[data-theme="light"] .ai-connection-lock-copy span {
+  color: #667085;
+}
+
+html[data-theme="light"] .ai-connection-lock-button {
+  color: #ffffff;
+  background: #2f3542;
+}
+
+html[data-theme="light"] .ai-connection-lock-button:hover,
+html[data-theme="light"] .ai-connection-lock-button:focus-visible {
+  background: #171717;
+}
+
+@media (max-width: 560px) {
+  .ai-connection-lock-callout {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-connection-lock-button {
+    justify-self: start;
+  }
+}

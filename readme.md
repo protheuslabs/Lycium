@@ -6,7 +6,7 @@ Courses and programs are represented as portable JSON snapshots, rendered dynami
 
 The project is designed around one core idea: the internet already has enough educational information, but learners need coherent pathways, source evidence, and feedback loops to turn that information into capability.
 
-[Product Vision](./VISION.md) | [Product Principles](./docs/product-principles.md) | [Data Boundaries](./docs/data-boundaries.md) | [Data Use and Trust](./docs/data-use-and-trust.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Professional Readiness](./docs/professional-readiness.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+[Product Vision](./VISION.md) | [Product Principles](./docs/product-principles.md) | [V1 Vision Todo](./docs/v1-vision-todo.md) | [Data Boundaries](./docs/data-boundaries.md) | [Data Use and Trust](./docs/data-use-and-trust.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Professional Readiness](./docs/professional-readiness.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
 
 ## Mission and trust model
 

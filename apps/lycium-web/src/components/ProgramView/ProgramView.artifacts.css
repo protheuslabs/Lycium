@@ -1,0 +1,97 @@
+.program-artifact-toggle {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.32rem 0.66rem;
+  color: #ffffff;
+  background: #27324a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.program-artifact-submit {
+  width: fit-content;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.48rem 0.84rem;
+  color: #ffffff;
+  background: #27324a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.program-artifact-submission {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+}
+
+.program-artifact-form {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+}
+
+.program-artifact-form label {
+  display: grid;
+  gap: 0.3rem;
+  color: #30405d;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.program-artifact-form input,
+.program-artifact-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0.8rem;
+  padding: 0.68rem 0.78rem;
+  color: #111827;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(31, 46, 73, 0.08);
+  font: inherit;
+}
+
+.program-artifact-form textarea {
+  resize: vertical;
+}
+
+.program-artifact-evidence-list,
+.program-submitted-artifacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.program-artifact-evidence-list span {
+  border-radius: 999px;
+  padding: 0.3rem 0.58rem;
+  color: #30405d;
+  background: #eef3ff;
+  font-size: 0.75rem;
+  font-weight: 850;
+}
+
+.program-submitted-artifacts a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 0.36rem 0.62rem;
+  color: #0f5132;
+  background: #dff7e9;
+  font-size: 0.75rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.program-submitted-artifacts span {
+  opacity: 0.72;
+}

@@ -1,11 +1,16 @@
+import { useEffect, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
+import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import Dropdown from "../Dropdown/Dropdown";
-import AgentProviderDiagnostics from "./AgentProviderDiagnostics";
 import EvalScoreDashboard from "./EvalScoreDashboard";
 import GenerationRunsPanel from "./GenerationRunsPanel";
 import LocalStoragePanel from "./LocalStoragePanel";
 import Modal from "../Modal/Modal";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
+import {
+  describeAgentKeyConnectionDetail,
+  describeAgentKeyConnectionStatus,
+} from "../../utils/aiConnectionReadiness";
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -23,6 +28,7 @@ type SettingsModalProps = {
   onActivateAgentKey: (keyId: string) => void;
   onAgentModelChange: (keyId: string, model: string) => void;
   onVerifyAgentKey: (keyId: string) => void;
+  onDeleteAgentKey: (keyId: string) => void;
   onAgentProviderChange: (providerId: string) => void;
   onAgentApiKeyChange: (apiKey: string) => void;
   onApiKeySaveStatusChange: Dispatch<SetStateAction<"idle" | "loading" | "invalid">>;
@@ -46,12 +52,26 @@ export default function SettingsModal({
   onActivateAgentKey,
   onAgentModelChange,
   onVerifyAgentKey,
+  onDeleteAgentKey,
   onAgentProviderChange,
   onAgentApiKeyChange,
   onApiKeySaveStatusChange,
   onSettingsSubmit,
   onThemeModeChange,
 }: SettingsModalProps) {
+  const [keyPendingDelete, setKeyPendingDelete] = useState<AgentKeyRecord | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setKeyPendingDelete(null);
+      return;
+    }
+
+    if (keyPendingDelete && !agentKeys.some((key) => key.id === keyPendingDelete.id)) {
+      setKeyPendingDelete(null);
+    }
+  }, [agentKeys, isOpen, keyPendingDelete]);
+
   if (!isOpen) {
     return null;
   }
@@ -75,6 +95,14 @@ export default function SettingsModal({
     }
   };
 
+  const handleConfirmDelete = () => {
+    if (!keyPendingDelete) {
+      return;
+    }
+    onDeleteAgentKey(keyPendingDelete.id);
+    setKeyPendingDelete(null);
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -93,10 +121,13 @@ export default function SettingsModal({
                   {agentKeys.map((key) => {
                     const isVerifyingKey = verifyingAgentKeyId === key.id;
                     const isUnverified = key.connection_status === "unverified";
+                    const connectionStatus = describeAgentKeyConnectionStatus(key, { isChecking: isVerifyingKey });
+                    const connectionDetail = describeAgentKeyConnectionDetail(key, { isChecking: isVerifyingKey });
                     return (
                       <div
                         key={key.id}
                         className={`settings-key-row${key.is_active ? " settings-key-row-active" : ""}${isUnverified ? " settings-key-row-unverified" : ""}`}
+                        data-connection-status={connectionStatus.status}
                         role="button"
                         tabIndex={isSettingsBusy ? -1 : 0}
                         onClick={() => onActivateAgentKey(key.id)}
@@ -125,18 +156,35 @@ export default function SettingsModal({
                             placeholder="Model"
                           />
                         </label>
-                        <button
-                          className="settings-verify-button"
-                          type="button"
-                          disabled={isSettingsBusy}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onVerifyAgentKey(key.id);
-                          }}
-                        >
-                          {isVerifyingKey ? "Checking" : isUnverified ? "Verify" : "Recheck"}
-                        </button>
-                        <span className="settings-key-state">{key.is_active ? "Active" : "Use"}</span>
+                        <span className="settings-key-actions" onClick={(event) => event.stopPropagation()}>
+                          <button
+                            className="settings-key-action-button"
+                            type="button"
+                            disabled={isSettingsBusy}
+                            onClick={() => onVerifyAgentKey(key.id)}
+                            aria-label={`Refresh ${key.provider_label} connection`}
+                            title="Refresh connection"
+                          >
+                            {isVerifyingKey ? (
+                              <span className="settings-key-action-spinner" aria-hidden="true" />
+                            ) : (
+                              <RefreshIcon />
+                            )}
+                          </button>
+                          <button
+                            className="settings-key-action-button settings-key-delete-button"
+                            type="button"
+                            disabled={isSettingsBusy}
+                            onClick={() => setKeyPendingDelete(key)}
+                            aria-label={`Delete ${key.provider_label} connection`}
+                            title="Delete connection"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </span>
+                        <span className="settings-key-state" title={connectionDetail} aria-label={connectionDetail}>
+                          {connectionStatus.label}
+                        </span>
                       </div>
                     );
                   })}
@@ -185,13 +233,6 @@ export default function SettingsModal({
                 </button>
               </div>
             </form>
-            <AgentProviderDiagnostics
-              agentKeys={agentKeys}
-              agentProviders={agentProviders}
-              agentProviderId={agentProviderId}
-              verifyingAgentKeyId={verifyingAgentKeyId}
-              onVerifyAgentKey={onVerifyAgentKey}
-            />
           </div>
         </section>
         <section className="settings-section" aria-labelledby="settings-display">
@@ -212,6 +253,33 @@ export default function SettingsModal({
         <EvalScoreDashboard />
         <GenerationRunsPanel />
         {settingsMessage && <p className={`settings-status settings-status-${settingsStatus}`}>{settingsMessage}</p>}
+        <ConfirmModal
+          isOpen={Boolean(keyPendingDelete)}
+          title="Delete AI connection?"
+          eyebrow="Active AI"
+          labelledById="settings-delete-ai-title"
+          message={`Delete ${keyPendingDelete?.provider_label ?? "this AI"} connection? You can add it again later.`}
+          confirmLabel="Delete"
+          tone="danger"
+          onCancel={() => setKeyPendingDelete(null)}
+          onConfirm={handleConfirmDelete}
+        />
     </Modal>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M17.7 6.3A7.9 7.9 0 0 0 4.6 10a1 1 0 1 0 2 .2 5.9 5.9 0 0 1 9.8-2.7l-1.9 1.9A.9.9 0 0 0 15.1 11H20a.9.9 0 0 0 .9-.9V5.2a.9.9 0 0 0-1.6-.6l-1.6 1.7ZM6.3 17.7A7.9 7.9 0 0 0 19.4 14a1 1 0 1 0-2-.2 5.9 5.9 0 0 1-9.8 2.7l1.9-1.9A.9.9 0 0 0 8.9 13H4a.9.9 0 0 0-.9.9v4.9a.9.9 0 0 0 1.6.6l1.6-1.7Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+      <path d="M9 3.8A1.8 1.8 0 0 1 10.8 2h2.4A1.8 1.8 0 0 1 15 3.8V5h4a1 1 0 1 1 0 2h-1.1l-.8 12.1A3.1 3.1 0 0 1 14 22h-4a3.1 3.1 0 0 1-3.1-2.9L6.1 7H5a1 1 0 1 1 0-2h4V3.8Zm2 .2v1h2V4h-2Zm-1 6a1 1 0 0 0-1 1v6a1 1 0 1 0 2 0v-6a1 1 0 0 0-1-1Zm4 0a1 1 0 0 0-1 1v6a1 1 0 1 0 2 0v-6a1 1 0 0 0-1-1Z" />
+    </svg>
   );
 }

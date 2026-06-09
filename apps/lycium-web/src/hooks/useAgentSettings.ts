@@ -211,6 +211,27 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     }
   };
 
+  const handleDeleteAgentKey = async (keyId: string) => {
+    setSettingsStatus("loading");
+    setSettingsMessage("Deleting AI connection...");
+
+    try {
+      const settings = await lyciumApi.deleteAgentKey(keyId);
+      const activeKey = activeAgentKey(settings);
+      setAgentKeys(settings.agent_keys ?? []);
+      if (activeKey?.provider_id) {
+        setAgentProviderId(activeKey.provider_id);
+      }
+      setAgentApiKey(isLocalAgentKey(activeKey, agentProviders) ? activeKey?.key_preview ?? "" : "");
+      setSettingsStatus("success");
+      setSettingsMessage(activeKey ? `${activeKey.provider_label} is now active.` : "AI connection deleted.");
+    } catch (err) {
+      console.warn("Unable to delete key:", err);
+      setSettingsStatus("error");
+      setSettingsMessage(err instanceof Error ? err.message : "Could not delete that AI connection.");
+    }
+  };
+
   const handleThemeModeChange = (mode: ThemeMode) => {
     setThemeMode(mode);
     browserStorage.writeThemeMode(mode);
@@ -348,6 +369,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     handleActivateAgentKey,
     handleAgentModelChange,
     handleVerifyAgentKey,
+    handleDeleteAgentKey,
     handleSettingsSubmit,
     handleThemeModeChange,
     setAgentApiKey,

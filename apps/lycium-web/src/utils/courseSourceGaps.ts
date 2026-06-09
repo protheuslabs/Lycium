@@ -64,6 +64,34 @@ export function hasBlockingSourceGaps(course: CourseEntry): boolean {
   return course.status === "needs_sources" || getCourseSourceGaps(course).some((gap) => gap.severity === "blocking");
 }
 
+export function sourceGapNeededFor(gap: LyciumCourseSourceGap): string {
+  return gap.neededFor || gap.description || "Add source evidence before this draft can continue.";
+}
+
+export function sourceGapRecommendedTypes(gap: LyciumCourseSourceGap): string[] {
+  return Array.from(new Set([...(gap.recommendedSourceTypes ?? []), ...(gap.sourceTypeHints ?? [])].map(String).filter(Boolean)));
+}
+
+export function sourceGapMinimumUsefulSources(gap: LyciumCourseSourceGap): number {
+  return gap.minimumUsefulSources ?? gap.minimumSourceCount ?? DEFAULT_SOURCE_COVERAGE_POLICY.minimumCourseSources;
+}
+
+export function sourceGapConceptCoverage(gap: LyciumCourseSourceGap) {
+  const coverage = gap.sourceResumeCoverage;
+  const conceptNeeds = gap.conceptSourceNeeds ?? [];
+  const coveredConcepts = coverage?.coveredConcepts ?? [];
+  const uncoveredConcepts =
+    coverage?.uncoveredConcepts ??
+    conceptNeeds.filter((need) => need.status !== "direct").map((need) => need.concept).filter(Boolean);
+  return {
+    coveragePercent: coverage?.coveragePercent ?? (conceptNeeds.length ? 0 : 100),
+    coveredConcepts,
+    uncoveredConcepts,
+    requiredConceptCount: coverage?.requiredConceptCount ?? coveredConcepts.length + uncoveredConcepts.length,
+    coveredConceptCount: coverage?.coveredConceptCount ?? coveredConcepts.length,
+  };
+}
+
 export function sourceGapSummary(course: CourseEntry) {
   const gaps = getCourseSourceGaps(course);
   const blockingGaps = gaps.filter((gap) => gap.severity === "blocking");
@@ -71,11 +99,19 @@ export function sourceGapSummary(course: CourseEntry) {
   const requiredSourceCount = policy.minimumCourseSources ?? DEFAULT_SOURCE_COVERAGE_POLICY.minimumCourseSources;
   const currentSourceCount = new Set(course.data.sourceIds ?? []).size;
   const requiredConcepts = Array.from(
-    new Set(gaps.flatMap((gap) => gap.requiredConcepts ?? []).map((concept) => concept.trim()).filter(Boolean)),
+    new Set(
+      gaps
+        .flatMap((gap) => [...(gap.requiredConcepts ?? []), ...(gap.conceptSourceNeeds ?? []).map((need) => need.concept)])
+        .map((concept) => concept.trim())
+        .filter(Boolean),
+    ),
   );
   const suggestedSourceTypes = Array.from(
-    new Set(gaps.flatMap((gap) => gap.recommendedSourceTypes ?? []).map((sourceType) => sourceType.trim()).filter(Boolean)),
+    new Set(gaps.flatMap(sourceGapRecommendedTypes).map((sourceType) => sourceType.trim()).filter(Boolean)),
   );
+  const coverageRows = gaps.map(sourceGapConceptCoverage).filter((coverage) => coverage.requiredConceptCount > 0);
+  const totalRequiredConcepts = coverageRows.reduce((total, coverage) => total + coverage.requiredConceptCount, 0);
+  const totalCoveredConcepts = coverageRows.reduce((total, coverage) => total + coverage.coveredConceptCount, 0);
 
   return {
     gaps,
@@ -86,6 +122,9 @@ export function sourceGapSummary(course: CourseEntry) {
     requiredConcepts,
     suggestedSourceTypes,
     suggestionCount: getCourseSourceGapSuggestions(course).length,
+    conceptCoveragePercent: totalRequiredConcepts ? Math.round((totalCoveredConcepts / totalRequiredConcepts) * 100) : 100,
+    totalRequiredConcepts,
+    totalCoveredConcepts,
   };
 }
 

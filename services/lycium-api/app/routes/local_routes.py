@@ -36,6 +36,7 @@ from app.jobs import enqueue_job, list_jobs, run_job, run_pending_jobs
 from app.local_store import (
     activate_agent_api_key,
     create_local_data_backup,
+    delete_agent_api_key,
     ensure_local_data_dirs,
     export_local_data,
     get_active_agent_profile,
@@ -274,6 +275,14 @@ def register(app: FastAPI) -> None:
     def update_active_local_agent_key(payload: LocalActiveAgentKeyUpdate) -> dict[str, Any]:
         try:
             return activate_agent_api_key(payload.key_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+    @app.delete("/v1/local/settings/key/{key_id}", response_model=LocalSettingsRead)
+    def delete_local_agent_key(key_id: str) -> dict[str, Any]:
+        try:
+            return delete_agent_api_key(key_id)
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 

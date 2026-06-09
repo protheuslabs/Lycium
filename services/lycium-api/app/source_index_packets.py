@@ -356,7 +356,7 @@ def create_source_packet_response(
         warnings.append("Packet has included sources but no extracted source documents.")
     if packet_sources and len(packet_documents) < len(packet_sources):
         warnings.append("Packet is missing extracted documents for one or more included sources.")
-    quality = _packet_quality(packet_sources, packet_documents, warnings)
+    quality = _packet_quality(packet_sources, packet_documents, warnings, prompt=run.prompt, synthesis=preflight.synthesis)
     packet_source_urls = [str(source["source"]["canonical_url"]) for source in packet_sources]
     return {
         "contract_version": SOURCE_PACKET_CONTRACT_VERSION,

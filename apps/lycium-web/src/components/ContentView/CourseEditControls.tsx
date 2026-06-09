@@ -1,3 +1,6 @@
+import { createRoot } from "react-dom/client";
+import ConfirmModal from "../ConfirmModal/ConfirmModal";
+
 type EditPencilButtonProps = {
   label: string;
   onClick: () => void;
@@ -234,7 +237,7 @@ export function promptForBlockType(onSelect: (kind: CourseEditBlockKind, initial
   field.focus();
 }
 
-export function promptForDeleteBlock(
+export function promptForDeleteConfirmation(
   onConfirm: () => void,
   title = "Delete block",
   messageText = "Are you sure you want to delete this block?",
@@ -243,54 +246,33 @@ export function promptForDeleteBlock(
     return;
   }
 
-  const dialog = document.createElement("dialog");
-  const form = document.createElement("form");
-  const label = document.createElement("p");
-  const message = document.createElement("p");
-  const actions = document.createElement("div");
-  const cancelButton = document.createElement("button");
-  const deleteButton = document.createElement("button");
-
-  dialog.className = "lycium-modal lycium-modal-sm course-edit-native-dialog";
-  form.className = "course-edit-native-form";
-  label.className = "course-edit-native-label";
-  message.className = "course-edit-native-choice";
-  actions.className = "course-edit-native-actions";
-  cancelButton.className = "course-edit-native-button course-edit-native-button--secondary";
-  deleteButton.className = "course-edit-native-button course-edit-native-button--danger";
-
-  form.method = "dialog";
-  label.textContent = title;
-  message.textContent = messageText;
-  cancelButton.type = "button";
-  cancelButton.textContent = "Cancel";
-  deleteButton.type = "submit";
-  deleteButton.textContent = "Delete";
+  const container = document.createElement("div");
+  document.body.append(container);
+  const root = createRoot(container);
 
   const closeDialog = () => {
-    dialog.close();
-    dialog.remove();
+    root.unmount();
+    container.remove();
   };
 
-  cancelButton.addEventListener("click", closeDialog);
-  dialog.addEventListener("cancel", () => dialog.remove());
-  dialog.addEventListener("click", (event) => {
-    if (event.target === dialog) {
-      closeDialog();
-    }
-  });
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
+  const confirmDelete = () => {
     onConfirm();
     closeDialog();
-  });
+  };
 
-  actions.append(cancelButton, deleteButton);
-  form.append(label, message, actions);
-  dialog.append(form);
-  document.body.append(dialog);
-  dialog.showModal();
-  cancelButton.focus();
+  root.render(
+    <ConfirmModal
+      isOpen
+      title={title}
+      message={messageText}
+      eyebrow="Course editor"
+      labelledById="course-edit-delete-confirm-title"
+      confirmLabel="Delete"
+      tone="danger"
+      onCancel={closeDialog}
+      onConfirm={confirmDelete}
+    />,
+  );
 }
 
 export function EditPencilButton({ label, onClick }: EditPencilButtonProps) {

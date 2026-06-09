@@ -7,7 +7,9 @@ from pathlib import Path
 from app.contract_validation import validate_course_schema
 from app.course_agent_contract import validate_course_contract
 from app.course_generation_workflow import run_course_generation_workflow
+from app.course_source_integrity import assess_course_source_integrity
 from app.course_quality import assess_course_quality
+from app.course_quality_evals import run_course_quality_evals
 from app.program_quality import assess_program_quality
 from app.program_validation import validate_program_contract
 
@@ -36,6 +38,137 @@ def test_backend_rejects_shared_invalid_course_fixture() -> None:
     errors = validate_course_contract(course)
 
     assert any("mixes quiz blocks with non-quiz content" in error for error in errors)
+
+
+def test_source_integrity_counts_legacy_concept_card_block_source_ids_as_direct_coverage() -> None:
+    course = {
+        "title": "Source Coverage Test",
+        "sourceIds": ["source-openstax"],
+        "sourceRecords": [{"id": "source-openstax", "type": "textbook", "url": "https://example.edu/source"}],
+        "modules": [
+            {
+                "title": "Module 1",
+                "sourceIds": ["source-openstax"],
+                "sections": [
+                    {
+                        "id": "section-stoichiometry",
+                        "title": "Stoichiometry",
+                        "sourceIds": ["source-openstax"],
+                        "content": [
+                            {
+                                "type": "conceptCards",
+                                "title": "Concepts introduced",
+                                "sourceIds": ["source-openstax"],
+                                "concepts": [
+                                    {"name": "Stoichiometry", "description": "Quantitative relationships in chemical reactions."},
+                                ],
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    }
+
+    integrity = assess_course_source_integrity(course)
+
+    assert integrity["metrics"]["conceptCount"] == 1
+    assert integrity["metrics"]["directlyCoveredConceptCount"] == 1
+    assert integrity["metrics"]["directConceptSourceCoveragePercent"] == 100
+    assert integrity["conceptCoverage"][0]["status"] == "direct"
+    assert integrity["conceptCoverage"][0]["directSourceIds"] == ["source-openstax"]
+    assert integrity["metrics"]["sourceBearingBlockCount"] == 1
+    assert integrity["metrics"]["directlySourcedBlockCount"] == 1
+    assert integrity["blockCoverage"][0]["status"] == "direct"
+
+
+def test_source_integrity_can_require_direct_concept_source_mappings() -> None:
+    course = {
+        "title": "Inherited Source Coverage Test",
+        "sourceIds": ["source-openstax"],
+        "sourceRecords": [{"id": "source-openstax", "type": "textbook", "url": "https://example.edu/source"}],
+        "metadata": {"sourceCoveragePolicy": {"requireDirectConceptSourceMappings": True, "requireDirectBlockSourceMappings": True}},
+        "modules": [
+            {
+                "title": "Module 1",
+                "sourceIds": ["source-openstax"],
+                "sections": [
+                    {
+                        "id": "section-stoichiometry",
+                        "title": "Stoichiometry",
+                        "sourceIds": ["source-openstax"],
+                        "content": [
+                            {
+                                "type": "conceptCard",
+                                "title": "Stoichiometry",
+                                "description": "Quantitative relationships in chemical reactions.",
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    }
+
+    integrity = assess_course_source_integrity(course)
+
+    assert integrity["metrics"]["conceptCount"] == 1
+    assert integrity["metrics"]["directlyCoveredConceptCount"] == 0
+    assert integrity["conceptCoverage"][0]["status"] == "inherited"
+    assert integrity["conceptCoverage"][0]["sourceIds"] == ["source-openstax"]
+    assert integrity["blockCoverage"][0]["status"] == "inherited"
+    assert any("direct concept/block source mappings" in issue["message"] for issue in integrity["issues"])
+    assert any("direct block sourceIds" in issue["message"] for issue in integrity["issues"])
+
+
+def test_source_analysis_gate_exposes_concept_coverage_artifacts() -> None:
+    course = read_fixture("valid-course.json")
+
+    report = run_course_generation_workflow(course).model_dump()
+    source_gate = next(gate for gate in report["gates"] if gate["gate"] == "source_analysis")
+
+    assert source_gate["artifacts"]["conceptCoverage"]
+    assert source_gate["artifacts"]["blockCoverage"]
+    assert source_gate["artifacts"]["conceptCount"] >= len(source_gate["artifacts"]["conceptCoverage"])
+    assert {"concept", "status", "sourceIds", "directSourceIds"} <= set(source_gate["artifacts"]["conceptCoverage"][0])
+    assert {"block", "blockType", "status", "sourceIds", "directSourceIds"} <= set(source_gate["artifacts"]["blockCoverage"][0])
+
+
+def test_source_grounding_eval_scores_direct_concept_and_block_coverage() -> None:
+    course = {
+        "title": "Inherited Source Coverage Test",
+        "sourceIds": ["source-openstax"],
+        "sourceRecords": [{"id": "source-openstax", "type": "textbook", "url": "https://example.edu/source"}],
+        "modules": [
+            {
+                "title": "Module 1",
+                "sourceIds": ["source-openstax"],
+                "sections": [
+                    {
+                        "id": "section-stoichiometry",
+                        "title": "Stoichiometry",
+                        "sourceIds": ["source-openstax"],
+                        "content": [
+                            {"type": "text", "heading": "Explanation", "value": "A sourced explanation inherited from the section."},
+                            {
+                                "type": "conceptCard",
+                                "title": "Stoichiometry",
+                                "description": "Quantitative relationships in chemical reactions.",
+                            },
+                        ],
+                    },
+                ],
+            },
+        ],
+    }
+
+    evals = run_course_quality_evals(course)
+    source_dimension = next(dimension for dimension in evals["dimensions"] if dimension["key"] == "source_grounding")
+
+    assert source_dimension["metrics"]["directConceptSourceCoveragePercent"] == 0
+    assert source_dimension["metrics"]["directBlockSourceCoveragePercent"] == 0
+    assert any("inherited section/module sources" in finding["message"] for finding in source_dimension["findings"])
+    assert any("direct sourceIds" in finding["message"] for finding in source_dimension["findings"])
 
 
 def test_quality_gate_rejects_prompt_like_placeholder_lessons() -> None:

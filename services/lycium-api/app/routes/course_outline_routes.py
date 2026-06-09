@@ -250,6 +250,8 @@ def register(app: FastAPI) -> None:
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
                 source_urls=_generation_source_urls(payload),
+                source_packet_id=payload.source_packet_id,
+                source_packet=payload.source_packet,
                 category=payload.category,
                 department=payload.department,
             )

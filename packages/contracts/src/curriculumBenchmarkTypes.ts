@@ -152,3 +152,21 @@ export type LyciumPortfolioArtifactRequirement = {
   requiredEvidence: string[];
   rubricId?: string;
 };
+
+export type LyciumEvidenceArtifactStatus = "draft" | "submitted" | "accepted" | "needs_revision" | "rejected";
+
+export type LyciumEvidenceArtifactSubmission = {
+  id: string;
+  programId: string;
+  requirementId: string;
+  projectId?: string;
+  artifactRequirementId?: string;
+  title: string;
+  artifactType: LyciumPortfolioArtifactRequirement["artifactType"] | "project" | "assessment" | "other";
+  url?: string;
+  notes?: string;
+  submittedEvidence: string[];
+  status: LyciumEvidenceArtifactStatus;
+  createdAt: string;
+  updatedAt: string;
+};

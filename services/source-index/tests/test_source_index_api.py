@@ -129,6 +129,9 @@ def test_source_packet_builds_generation_ready_evidence_from_documents(client) -
     assert packet["quality"]["sourceTypeMix"]
     assert "averageTrustScore" in packet["quality"]
     assert "benchmarkUsefulnessRatio" in packet["quality"]
+    assert packet["quality"]["conceptCandidateCount"] >= 3
+    assert packet["quality"]["conceptCoverageRatio"] >= 0.7
+    assert packet["quality"]["uncoveredConceptCandidates"] == []
     assert packet["sources"][0]["decision"]["decision"] == "included"
     assert packet["sources"][0]["snapshots"][0]["public_id"]
     assert packet["source_documents"][0]["sourceIndexRef"]["snapshotPublicId"]
@@ -293,5 +296,4 @@ def test_source_snapshot_extracts_provided_html(client) -> None:
     assert snapshots.status_code == 200, snapshots.text
     assert len(snapshots.json()) == 1
     assert snapshots.json()[0]["content_hash"] == snapshot["content_hash"]
-
 

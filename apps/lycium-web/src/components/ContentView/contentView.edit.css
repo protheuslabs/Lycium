@@ -367,11 +367,6 @@ textarea.course-edit-native-field {
   background: var(--lycium-color-page);
 }
 
-.course-edit-native-button--danger {
-  color: #ffffff;
-  background: #dc2626;
-}
-
 @media (max-width: 640px) {
   .course-edit-toolbar {
     flex-direction: column;

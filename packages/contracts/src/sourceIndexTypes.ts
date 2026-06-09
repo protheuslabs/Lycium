@@ -167,6 +167,10 @@ export type LyciumSourcePacket = {
     staleVerificationCount: number;
     benchmarkSourceCount: number;
     benchmarkUsefulnessRatio: number;
+    conceptCandidateCount: number;
+    coveredConceptCandidateCount: number;
+    conceptCoverageRatio: number;
+    uncoveredConceptCandidates: string[];
     qualityWarnings: string[];
     warningCount: number;
   };

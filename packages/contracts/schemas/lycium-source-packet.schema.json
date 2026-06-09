@@ -221,6 +221,10 @@
         "staleVerificationCount",
         "benchmarkSourceCount",
         "benchmarkUsefulnessRatio",
+        "conceptCandidateCount",
+        "coveredConceptCandidateCount",
+        "conceptCoverageRatio",
+        "uncoveredConceptCandidates",
         "qualityWarnings",
         "warningCount"
       ],
@@ -242,6 +246,13 @@
         "staleVerificationCount": { "type": "number", "minimum": 0 },
         "benchmarkSourceCount": { "type": "number", "minimum": 0 },
         "benchmarkUsefulnessRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "conceptCandidateCount": { "type": "number", "minimum": 0 },
+        "coveredConceptCandidateCount": { "type": "number", "minimum": 0 },
+        "conceptCoverageRatio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "uncoveredConceptCandidates": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
         "qualityWarnings": {
           "type": "array",
           "items": { "type": "string" }

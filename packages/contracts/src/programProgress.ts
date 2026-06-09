@@ -1,3 +1,4 @@
+import type { LyciumEvidenceArtifactSubmission } from "./curriculumBenchmarkTypes";
 import type { LyciumProgram, LyciumProgramProgressInput, LyciumProgramProgressState, LyciumRequirement } from "./programTypes";
 
 function toSet(values?: Iterable<string>): Set<string> {
@@ -8,6 +9,16 @@ function flattenRequirements(requirements: LyciumRequirement[]): LyciumRequireme
   return requirements.flatMap((requirement) =>
     requirement.type === "requirement_set" ? [requirement, ...flattenRequirements(requirement.requirements)] : [requirement],
   );
+}
+
+function artifactSatisfiesRequirement(artifact: LyciumEvidenceArtifactSubmission, requirement: LyciumRequirement): boolean {
+  if (artifact.status !== "submitted" && artifact.status !== "accepted") {
+    return false;
+  }
+  if (artifact.requirementId === requirement.id) {
+    return true;
+  }
+  return requirement.type === "submit_project" && artifact.projectId === requirement.projectId;
 }
 
 function requirementSatisfied(requirement: LyciumRequirement, input: Required<LyciumProgramProgressInput>): boolean {
@@ -21,7 +32,10 @@ function requirementSatisfied(requirement: LyciumRequirement, input: Required<Ly
     return toSet(input.passedAssessmentIds).has(requirement.assessmentId);
   }
   if (requirement.type === "submit_project") {
-    return toSet(input.submittedProjectIds).has(requirement.projectId);
+    return (
+      toSet(input.submittedProjectIds).has(requirement.projectId) ||
+      Array.from(input.submittedArtifacts).some((artifact) => artifactSatisfiesRequirement(artifact, requirement))
+    );
   }
   if (requirement.type === "demonstrate_competency") {
     return toSet(input.masteredCompetencyIds).has(requirement.competencyId);
@@ -45,6 +59,7 @@ export function calculateProgramProgress(
     completedCourseIds: progressInput.completedCourseIds ?? [],
     passedAssessmentIds: progressInput.passedAssessmentIds ?? [],
     submittedProjectIds: progressInput.submittedProjectIds ?? [],
+    submittedArtifacts: progressInput.submittedArtifacts ?? [],
     masteredCompetencyIds: progressInput.masteredCompetencyIds ?? [],
     earnedHours: progressInput.earnedHours ?? 0,
   };

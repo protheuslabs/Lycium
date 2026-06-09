@@ -2,6 +2,7 @@ import type { FormEvent, MouseEvent } from "react";
 import Dropdown from "../Dropdown/Dropdown";
 import Modal from "../Modal/Modal";
 import { SETTINGS_PATH } from "../../utils/courseRouting";
+import AiConnectionLockCallout from "../AiConnectionLockCallout/AiConnectionLockCallout";
 import type { CreateCourseMode } from "./useCreateCourseModal";
 
 type SelectOption = {
@@ -14,6 +15,7 @@ type CreateCourseModalProps = {
   level: string;
   sourceLinks: string[];
   canCreateCourse: boolean;
+  aiLockedReason: string;
   generateStatus: "idle" | "loading" | "error" | "success";
   generateMessage: string;
   levelOptions: SelectOption[];
@@ -39,6 +41,7 @@ export default function CreateCourseModal({
   level,
   sourceLinks,
   canCreateCourse,
+  aiLockedReason,
   generateStatus,
   generateMessage,
   levelOptions,
@@ -93,15 +96,14 @@ export default function CreateCourseModal({
             </button>
           </div>
           {mode === "ai" && !canCreateCourse && (
-            <p className="create-course-unlock-message">
-              To unlock course creation, go to settings
-              <a href={SETTINGS_PATH} aria-label="Open settings" onClick={onOpenSettings}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                  <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.02-.66-.07-.98l2.06-1.6a.5.5 0 0 0 .12-.64l-1.95-3.37a.5.5 0 0 0-.6-.22l-2.43.98a7.3 7.3 0 0 0-1.69-.98l-.37-2.58A.5.5 0 0 0 14.08 2h-3.9a.5.5 0 0 0-.5.42L9.32 5a7.43 7.43 0 0 0-1.69.98L5.2 5a.5.5 0 0 0-.6.22L2.65 8.59a.5.5 0 0 0 .12.64l2.06 1.6c-.04.32-.08.65-.08.98s.03.66.08.98l-2.06 1.6a.5.5 0 0 0-.12.64l1.95 3.37c.13.22.39.31.6.22l2.43-.98c.52.4 1.08.73 1.69.98l.37 2.58c.04.24.25.42.5.42h3.9c.25 0 .46-.18.5-.42l.37-2.58a7.43 7.43 0 0 0 1.69-.98l2.43.98c.22.08.48 0 .6-.22l1.95-3.37a.5.5 0 0 0-.12-.64l-2.07-1.6ZM12.13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" />
-                </svg>
-              </a>
-              and connect an AI model.
-            </p>
+            <AiConnectionLockCallout
+              title="AI course creation is locked."
+              titleId="create-course-ai-lock-title"
+              message={`${aiLockedReason} You can also use the Manual tab to start with a blank editable course.`}
+              messageId="create-course-ai-lock-description"
+              href={SETTINGS_PATH}
+              onOpenSettings={onOpenSettings}
+            />
           )}
           {mode === "ai" ? (
           <div className={`create-course-controls ${canCreateCourse ? "" : "create-course-controls--locked"}`}>

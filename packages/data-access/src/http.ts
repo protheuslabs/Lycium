@@ -314,6 +314,13 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       });
       return readJsonResponse(response, "Connection verification failed");
     },
+
+    async deleteAgentKey(keyId) {
+      const response = await fetch(`${base}/v1/local/settings/key/${encodeURIComponent(keyId)}`, {
+        method: "DELETE",
+      });
+      return readJsonResponse(response, "Connection delete failed");
+    },
   };
 }
 

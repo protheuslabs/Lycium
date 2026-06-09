@@ -7,8 +7,14 @@ from sqlalchemy.orm import Session
 
 from app.course_generation_job_helpers import source_gap_job_result
 from app.course_source_gaps import (
+    SOURCE_COVERAGE_POLICY,
     source_urls_from_needs_sources_snapshot,
     update_needs_sources_course_snapshot,
+)
+from app.course_source_gap_resume import (
+    concept_source_needs_meet_resume_policy,
+    source_gate_from_needs_sources_snapshot,
+    source_urls_from_source_packet,
 )
 from app.db import get_session
 from app.generation import source_count_meets_minimum
@@ -50,7 +56,11 @@ def _snapshot_generation_payload(
 def _merged_source_urls(snapshot: CourseSnapshot, payload: CourseSourceGapResumeRequest) -> list[str]:
     merged: list[str] = []
     seen: set[str] = set()
-    for source_url in [*source_urls_from_needs_sources_snapshot(snapshot), *[str(url) for url in payload.source_urls]]:
+    for source_url in [
+        *source_urls_from_needs_sources_snapshot(snapshot),
+        *[str(url) for url in payload.source_urls],
+        *source_urls_from_source_packet(payload.source_packet),
+    ]:
         if source_url in seen:
             continue
         seen.add(source_url)
@@ -74,8 +84,19 @@ def register(app: FastAPI) -> None:
 
         draft = session.get(CourseDraft, snapshot.draft_id) if snapshot.draft_id else None
         merged_source_urls = _merged_source_urls(snapshot, payload)
-        if not source_count_meets_minimum(merged_source_urls):
-            update_needs_sources_course_snapshot(snapshot, source_urls=merged_source_urls)
+        concept_coverage_ready = concept_source_needs_meet_resume_policy(
+            snapshot,
+            merged_source_urls,
+            minimum_coverage_percent=int(SOURCE_COVERAGE_POLICY["minimumRequiredConceptCoveragePercent"]),
+            source_packet=payload.source_packet,
+        )
+        if not source_count_meets_minimum(merged_source_urls) or not concept_coverage_ready:
+            update_needs_sources_course_snapshot(
+                snapshot,
+                source_urls=merged_source_urls,
+                source_gate=source_gate_from_needs_sources_snapshot(snapshot),
+                source_packet=payload.source_packet,
+            )
             save_course_snapshot(snapshot)
             job = enqueue_job(
                 session,

@@ -87,6 +87,8 @@ def _run_generate_course(session: Session, payload: dict[str, Any]) -> dict[str,
         desired_module_count=int(payload.get("desired_module_count", 3)),
         expected_duration_minutes=int(payload.get("expected_duration_minutes", 180)),
         source_urls=[str(url) for url in payload.get("source_urls") or []],
+        source_packet_id=payload.get("source_packet_id"),
+        source_packet=payload.get("source_packet") if isinstance(payload.get("source_packet"), dict) else None,
         category=payload.get("category"),
         department=payload.get("department"),
     )

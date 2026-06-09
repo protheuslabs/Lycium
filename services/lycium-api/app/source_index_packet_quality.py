@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -36,6 +37,21 @@ BENCHMARK_SOURCE_TYPES = {
 }
 BROKEN_LINK_HEALTH_VALUES = {"broken", "dead", "failed", "unreachable"}
 STALE_VERIFICATION_DAYS = 365
+PACKET_CONCEPT_STOP_TERMS = {
+    "and",
+    "the",
+    "for",
+    "with",
+    "course",
+    "source",
+    "sources",
+    "learn",
+    "learning",
+    "open",
+    "intro",
+    "introduction",
+    "foundations",
+}
 
 
 def _as_source_record(packet_source: dict[str, Any]) -> dict[str, Any]:
@@ -62,7 +78,63 @@ def _parse_datetime(value: Any) -> datetime | None:
         return None
 
 
-def _packet_quality(packet_sources: list[dict[str, Any]], packet_documents: list[dict[str, Any]], warnings: list[str]) -> dict[str, Any]:
+def _normalized_terms(value: Any) -> list[str]:
+    normalized = re.sub(r"[^a-z0-9+#/]+", " ", str(value or "").lower()).strip()
+    return [term for term in normalized.split() if len(term) > 2 and not term.isdigit() and term not in PACKET_CONCEPT_STOP_TERMS]
+
+
+def _candidate_concepts(prompt: str, synthesis: dict[str, Any], packet_sources: list[dict[str, Any]]) -> list[str]:
+    candidates: list[str] = []
+    for key in ("commonThemes", "common_themes", "requiredConcepts", "required_concepts"):
+        value = synthesis.get(key)
+        if isinstance(value, list):
+            candidates.extend(" ".join(_normalized_terms(item)) for item in value)
+    for packet_source in packet_sources:
+        decision = packet_source.get("decision") if isinstance(packet_source.get("decision"), dict) else {}
+        matched_terms = decision.get("matched_terms")
+        if isinstance(matched_terms, list):
+            candidates.extend(" ".join(_normalized_terms(term)) for term in matched_terms)
+    if not candidates:
+        candidates.extend(_normalized_terms(prompt))
+    return sorted({candidate for candidate in candidates if candidate})[:40]
+
+
+def _packet_evidence_text(packet_sources: list[dict[str, Any]], packet_documents: list[dict[str, Any]]) -> str:
+    values: list[str] = []
+    for document in packet_documents:
+        values.extend(str(document.get(key) or "") for key in ("title", "url", "text", "text_digest"))
+    for packet_source in packet_sources:
+        source = packet_source.get("source") if isinstance(packet_source.get("source"), dict) else {}
+        source_document = packet_source.get("source_document") if isinstance(packet_source.get("source_document"), dict) else {}
+        values.extend(str(source.get(key) or "") for key in ("title", "canonical_url", "source_type"))
+        values.extend(str(source_document.get(key) or "") for key in ("title", "url", "text", "text_digest"))
+        for snapshot in packet_source.get("snapshots") or []:
+            if isinstance(snapshot, dict):
+                values.extend(str(snapshot.get(key) or "") for key in ("title", "text_digest", "extracted_text"))
+    return f" {' '.join(_normalized_terms(' '.join(values)))} "
+
+
+def _concept_coverage(prompt: str, synthesis: dict[str, Any], packet_sources: list[dict[str, Any]], packet_documents: list[dict[str, Any]]) -> dict[str, Any]:
+    candidates = _candidate_concepts(prompt, synthesis, packet_sources)
+    evidence = _packet_evidence_text(packet_sources, packet_documents)
+    covered = [candidate for candidate in candidates if all(f" {term} " in evidence for term in candidate.split())]
+    coverage = len(covered) / len(candidates) if candidates else (1 if packet_documents else 0)
+    return {
+        "conceptCandidateCount": len(candidates),
+        "coveredConceptCandidateCount": len(covered),
+        "conceptCoverageRatio": round(coverage, 3),
+        "uncoveredConceptCandidates": [candidate for candidate in candidates if candidate not in covered][:12],
+    }
+
+
+def _packet_quality(
+    packet_sources: list[dict[str, Any]],
+    packet_documents: list[dict[str, Any]],
+    warnings: list[str],
+    *,
+    prompt: str = "",
+    synthesis: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     source_count = len(packet_sources)
     document_count = len(packet_documents)
     snapshot_count = sum(1 for source in packet_sources if source.get("snapshots"))
@@ -100,6 +172,7 @@ def _packet_quality(packet_sources: list[dict[str, Any]], packet_documents: list
     benchmark_usefulness = benchmark_source_count / source_count if source_count else 0
     freshness_known = len(verification_dates) / source_count if source_count else 0
     average_trust = sum(trust_scores) / len(trust_scores) if trust_scores else 0
+    concept_coverage = _concept_coverage(prompt, synthesis or {}, packet_sources, packet_documents)
     quality_warnings = []
     if duplicate_source_count:
         quality_warnings.append("Packet contains duplicate canonical source URLs.")
@@ -111,6 +184,8 @@ def _packet_quality(packet_sources: list[dict[str, Any]], packet_documents: list
         quality_warnings.append("Most packet sources have no verification timestamp.")
     if stale_verification_count:
         quality_warnings.append("Packet contains sources that have not been verified recently.")
+    if concept_coverage["conceptCandidateCount"] and concept_coverage["conceptCoverageRatio"] < 0.7:
+        quality_warnings.append("Packet documents cover too few prompt or source-decision concept signals.")
     if not source_count:
         status = "empty"
     elif document_coverage >= 1 and evidence_coverage >= 1 and not broken_url_count:
@@ -132,6 +207,7 @@ def _packet_quality(packet_sources: list[dict[str, Any]], packet_documents: list
         "staleVerificationCount": stale_verification_count,
         "benchmarkSourceCount": benchmark_source_count,
         "benchmarkUsefulnessRatio": round(benchmark_usefulness, 3),
+        **concept_coverage,
         "qualityWarnings": quality_warnings,
         "warningCount": len(warnings) + len(quality_warnings),
     }

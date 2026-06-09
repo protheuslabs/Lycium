@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo, useRef, useState, type DragEvent } from "react";
 import type { SectionStatus } from "../../courseTypes";
 import { SidebarAddRow, SidebarEditControls, SidebarModuleHeader, SidebarSourceTab, SidebarStatusBadge, type DisplayStatus } from "./SidebarPrimitives";
-import { DeleteBlockButton, promptForDeleteBlock } from "../ContentView/CourseEditControls";
+import { DeleteBlockButton, promptForDeleteConfirmation } from "../ContentView/CourseEditControls";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
 
 type SidebarSection = {
@@ -141,7 +141,7 @@ const SidebarSectionItem = memo(function SidebarSectionItem({
       {isEditMode ? (
         <DeleteBlockButton
           label={`Delete ${section.displayNumber} ${section.title}`}
-          onClick={() => promptForDeleteBlock(() => onDeleteSection?.(section.id), "Delete section", "Are you sure you want to delete this section?")}
+          onClick={() => promptForDeleteConfirmation(() => onDeleteSection?.(section.id), "Delete section", "Are you sure you want to delete this section?")}
         />
       ) : (
         <SidebarStatusBadge status={status} />

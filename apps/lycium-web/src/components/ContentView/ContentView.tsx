@@ -46,6 +46,8 @@ type ContentViewProps = {
   onBlockMove?: (sectionId: string, fromIndex: number, toIndex: number) => void;
   onSourceCreate?: (sourceUrl: string) => SourceRecord | null;
   canRegenerateSection?: boolean;
+  sectionRefreshLockedReason?: string;
+  sectionRefreshLockedAction?: "settings" | null;
   onRegenerateSection?: (payload: {
     feedback?: string;
     positiveFeedback?: string[];
@@ -83,6 +85,8 @@ export default function ContentView({
   onBlockMove,
   onSourceCreate,
   canRegenerateSection = false,
+  sectionRefreshLockedReason,
+  sectionRefreshLockedAction = null,
   onRegenerateSection
 }: ContentViewProps) {
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
@@ -212,11 +216,6 @@ export default function ContentView({
   }
 
   const sectionSources = getSectionSources(section, sources, courseSourceIndex);
-  const sectionSourceRows = sectionSources.map((source) => ({
-    id: source.id,
-    title: source.title,
-    citationIndex: sourceCitationNumber(source.id, courseSourceIndex),
-  }));
   const pageType = getPageType(section);
 
   
@@ -261,13 +260,6 @@ export default function ContentView({
             />
           )}
         </h2>
-        {!isEditMode && onRegenerateSection && (
-          <SectionRefreshControl
-            canRegenerateSection={canRegenerateSection}
-            sourceRows={sectionSourceRows}
-            onRegenerateSection={onRegenerateSection}
-          />
-        )}
       </div>
       <div className="section-content">
         {Array.isArray(section.content)
@@ -342,7 +334,19 @@ export default function ContentView({
       </div>
 
       <CourseNav
-        centerControls={<CourseFeedback courseKey={courseKey} courseTitle={courseTitle} />}
+        centerControls={(
+          <>
+            <CourseFeedback courseKey={courseKey} courseTitle={courseTitle} />
+            {!isEditMode && onRegenerateSection && (
+              <SectionRefreshControl
+                canRegenerateSection={canRegenerateSection}
+                lockedReason={sectionRefreshLockedReason}
+                lockedAction={sectionRefreshLockedAction}
+                onRegenerateSection={onRegenerateSection}
+              />
+            )}
+          </>
+        )}
         nextSectionTitle={nextSectionTitle}
         isFirstSection={isFirstSection}
         isLastSection={isLastSection}

@@ -20,6 +20,8 @@ export type SectionRegenerationRequest = {
 
 type UseCourseSectionRegenerationActionsProps = {
   learnerId: number | null;
+  activeAiReady: boolean;
+  aiLockedReason: string;
   openCourseByEntry: (course: CourseEntry, replace?: boolean) => Promise<void>;
   setCourses: Dispatch<SetStateAction<CourseEntry[]>>;
 };
@@ -37,6 +39,8 @@ function courseEntryFromGeneratedRecord(record: LyciumGeneratedCourseRecord): Co
 
 export function useCourseSectionRegenerationActions({
   learnerId,
+  activeAiReady,
+  aiLockedReason,
   openCourseByEntry,
   setCourses,
 }: UseCourseSectionRegenerationActionsProps) {
@@ -53,6 +57,9 @@ export function useCourseSectionRegenerationActions({
     }: SectionRegenerationRequest) => {
       if (!course.snapshotId) {
         throw new Error("Section refresh needs an API-backed course snapshot.");
+      }
+      if (!activeAiReady) {
+        throw new Error(aiLockedReason || "Connect and verify an active AI model before refreshing a section.");
       }
 
       const record = await lyciumApi.regenerateCourseSection(course.snapshotId, {
@@ -83,7 +90,7 @@ export function useCourseSectionRegenerationActions({
       await openCourseByEntry(updatedCourse, true);
       return updatedCourse;
     },
-    [learnerId, openCourseByEntry, setCourses],
+    [activeAiReady, aiLockedReason, learnerId, openCourseByEntry, setCourses],
   );
 
   return { regenerateCourseSection };

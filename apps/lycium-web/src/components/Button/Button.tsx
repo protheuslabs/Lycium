@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import "./Button.css";
 
@@ -12,7 +13,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   iconOnly?: boolean;
 };
 
-export default function Button({
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({
   children,
   className = "",
   variant = "standard",
@@ -21,7 +22,7 @@ export default function Button({
   iconOnly = false,
   type = "button",
   ...props
-}: ButtonProps) {
+}: ButtonProps, ref) {
   const classes = [
     "lycium-button",
     `lycium-button-${variant}`,
@@ -34,8 +35,10 @@ export default function Button({
     .join(" ");
 
   return (
-    <button className={classes} type={type} {...props}>
+    <button ref={ref} className={classes} type={type} {...props}>
       {children}
     </button>
   );
-}
+});
+
+export default Button;

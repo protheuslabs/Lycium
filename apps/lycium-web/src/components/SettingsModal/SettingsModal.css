@@ -1,5 +1,5 @@
 @import "./SettingsModal.base.css";
-@import "./SettingsModal.diagnostics.css";
+@import "./SettingsModal.keys.css";
 @import "./SettingsModal.evals.css";
 @import "./SettingsModal.generation.css";
 @import "./SettingsModal.storage.css";

@@ -220,7 +220,7 @@ def _gate_source_analysis(course: dict[str, Any]) -> GateResult:
         issues,
         {
             "referencedSourceIdCount": len(referenced),
-            "sourceRecordCount": _source_record_count(course),
+            "sourceRecordCount": _source_record_count(course), "conceptCoverage": integrity.get("conceptCoverage", []), "blockCoverage": integrity.get("blockCoverage", []),
             **integrity["metrics"],
         },
     )

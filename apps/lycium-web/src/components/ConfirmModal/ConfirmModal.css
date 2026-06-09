@@ -1,0 +1,26 @@
+.confirm-modal-body {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.confirm-modal-body p {
+  margin: 0;
+  color: var(--lycium-text-muted, #6b7280);
+  line-height: 1.5;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.confirm-modal-danger.lycium-button {
+  background: #991b1b;
+}
+
+.confirm-modal-danger.lycium-button:hover:not(:disabled) {
+  background: #7f1d1d;
+}

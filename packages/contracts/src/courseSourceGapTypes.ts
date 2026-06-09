@@ -1,0 +1,73 @@
+export type LyciumCourseSourceGapScopeType = "course" | "module" | "section" | "requirement" | "assessment";
+export type LyciumCourseSourceGapSeverity = "blocking" | "recommended" | "optional";
+export type LyciumCourseSourceTypeHint =
+  | "textbook"
+  | "syllabus"
+  | "catalog"
+  | "university_catalog"
+  | "open_textbook"
+  | "lecture"
+  | "lecture_notes"
+  | "documentation"
+  | "paper"
+  | "exercise"
+  | "practice"
+  | "video"
+  | "simulation"
+  | "lab"
+  | "open_courseware"
+  | "other";
+
+export type LyciumCourseConceptSourceNeed = {
+  concept: string;
+  location?: string;
+  sectionId?: string;
+  sourceSectionId?: string;
+  status?: "direct" | "inherited" | "missing" | string;
+  sourceTypeHints?: LyciumCourseSourceTypeHint[] | string[];
+  suggestedQueries?: string[];
+};
+
+export type LyciumCourseSourceResumeCoverage = {
+  requiredConceptCount?: number;
+  coveredConceptCount?: number;
+  coveragePercent?: number;
+  coveredConcepts?: string[];
+  uncoveredConcepts?: string[];
+};
+
+export type LyciumCourseSourceGap = {
+  id: string;
+  scopeType: LyciumCourseSourceGapScopeType;
+  scopeId: string;
+  title: string;
+  neededFor?: string;
+  description?: string;
+  requiredConcepts?: string[];
+  conceptSourceNeeds?: LyciumCourseConceptSourceNeed[];
+  sourceResumeCoverage?: LyciumCourseSourceResumeCoverage;
+  recommendedSourceTypes?: LyciumCourseSourceTypeHint[] | string[];
+  sourceTypeHints?: LyciumCourseSourceTypeHint[] | string[];
+  minimumUsefulSources?: number;
+  minimumSourceCount?: number;
+  currentSourceCount: number;
+  missingConceptSourceCount?: number;
+  coverageGate?: Record<string, unknown>;
+  severity: LyciumCourseSourceGapSeverity;
+};
+
+export type LyciumCourseSourceCoveragePolicy = {
+  minimumCourseSources?: number;
+  minimumSourcesPerModule?: number;
+  minimumRequiredConceptCoveragePercent?: number;
+  requireBenchmarkEvidence?: boolean;
+  requireAssessmentCoverage?: boolean;
+};
+
+export type LyciumCourseSourceGapSuggestion = {
+  id?: string;
+  gapId: string;
+  url: string;
+  description?: string | null;
+  createdAt?: string;
+};

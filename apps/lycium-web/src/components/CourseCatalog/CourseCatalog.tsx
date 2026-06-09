@@ -33,6 +33,7 @@ type CourseCatalogProps = {
   prompt: string;
   level: string;
   canCreateCourse: boolean;
+  aiLockedReason: string;
   generateStatus: "idle" | "loading" | "error" | "success";
   generateMessage: string;
   onPromptChange: (value: string) => void;
@@ -70,6 +71,7 @@ export default function CourseCatalog({
   prompt,
   level,
   canCreateCourse,
+  aiLockedReason,
   generateStatus,
   generateMessage,
   onPromptChange,
@@ -258,6 +260,7 @@ export default function CourseCatalog({
           level={level}
           sourceLinks={createCourseModal.sourceLinks}
           canCreateCourse={canCreateCourse}
+          aiLockedReason={aiLockedReason}
           generateStatus={generateStatus}
           generateMessage={generateMessage}
           levelOptions={CATALOG_LEVEL_OPTIONS}

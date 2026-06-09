@@ -1,4 +1,8 @@
-import type { LyciumRequirementImportance, LyciumRequirementOrigin } from "./curriculumBenchmarkTypes";
+import type {
+  LyciumEvidenceArtifactSubmission,
+  LyciumRequirementImportance,
+  LyciumRequirementOrigin,
+} from "./curriculumBenchmarkTypes";
 
 export const LYCIUM_PROGRAM_CONTRACT_VERSION = "0.1.0" as const;
 
@@ -144,6 +148,7 @@ export type LyciumProgramProgressInput = {
   completedCourseIds?: Iterable<string>;
   passedAssessmentIds?: Iterable<string>;
   submittedProjectIds?: Iterable<string>;
+  submittedArtifacts?: Iterable<LyciumEvidenceArtifactSubmission>;
   masteredCompetencyIds?: Iterable<string>;
   earnedHours?: number;
 };

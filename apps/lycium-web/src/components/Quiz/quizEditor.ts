@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { promptForDeleteBlock, promptForText } from "../ContentView/CourseEditControls";
+import { promptForDeleteConfirmation, promptForText } from "../ContentView/CourseEditControls";
 import type { NormalizedQuestion, QuizPayload } from "./quizTypes";
 
 export type EditableQuizQuestion = {
@@ -53,7 +53,7 @@ export function useQuizEditor({
   );
   const deleteQuestion = useCallback(
     (questionIndex: number) => {
-      promptForDeleteBlock(
+      promptForDeleteConfirmation(
         () => updateRawQuestions(rawQuestions.filter((_, index) => index !== questionIndex)),
         "Delete question",
         "Are you sure you want to delete this question?",
@@ -88,7 +88,7 @@ export function useQuizEditor({
   );
   const deleteAnswer = useCallback(
     (questionIndex: number, answerIndex: number) => {
-      promptForDeleteBlock(
+      promptForDeleteConfirmation(
         () =>
           updateRawQuestions(
             rawQuestions.map((question, index) => {

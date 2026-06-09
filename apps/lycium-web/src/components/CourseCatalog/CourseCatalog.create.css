@@ -175,50 +175,6 @@
   line-height: 1.5;
 }
 
-.create-course-unlock-message {
-  margin: 0;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.8rem 0.9rem;
-  color: #253049;
-  background: rgba(74, 108, 247, 0.1);
-  font-size: 0.9rem;
-  font-weight: 760;
-}
-
-.create-course-unlock-message a {
-  width: 1.85rem;
-  height: 1.85rem;
-  box-sizing: border-box;
-  border: 1px solid rgba(248, 251, 255, 0.22);
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
-  text-decoration: none;
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
-}
-
-.create-course-unlock-message a:hover,
-.create-course-unlock-message a:focus-visible {
-  border-color: rgba(183, 246, 200, 0.76);
-  background: rgba(255, 255, 255, 0.14);
-  outline: none;
-  transform: rotate(22deg);
-}
-
-.create-course-unlock-message svg {
-  width: 1.05rem;
-  height: 1.05rem;
-  fill: currentColor;
-}
-
 .create-course-field {
   display: grid;
   gap: 0.45rem;
@@ -366,11 +322,6 @@
     background: #262626;
   }
 
-  .create-course-unlock-message {
-    color: #e5e7eb;
-    background: rgba(255, 255, 255, 0.06);
-  }
-
   .create-course-files span {
     color: #a1a1aa;
   }
@@ -386,13 +337,8 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-field,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-header h2,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-files,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-unlock-message {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-files {
   color: #e5e7eb;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-unlock-message {
-  background: rgba(255, 255, 255, 0.06);
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-textarea,
@@ -422,8 +368,7 @@ html[data-theme="light"] .create-course-modal {
 
 html[data-theme="light"] .create-course-field,
 html[data-theme="light"] .create-course-header h2,
-html[data-theme="light"] .create-course-files,
-html[data-theme="light"] .create-course-unlock-message {
+html[data-theme="light"] .create-course-files {
   color: #253049;
 }
 
@@ -443,23 +388,6 @@ html[data-theme="light"] .create-course-close {
 html[data-theme="light"] .create-course-files {
   border-color: #aeb8cc;
   background: #f8fafc;
-}
-
-html[data-theme="light"] .create-course-unlock-message {
-  background: rgba(74, 108, 247, 0.1);
-}
-
-html[data-theme="light"] .create-course-unlock-message a {
-  border-color: rgba(248, 251, 255, 0.2);
-  color: #f8fbff;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
-}
-
-html[data-theme="light"] .create-course-unlock-message a:hover,
-html[data-theme="light"] .create-course-unlock-message a:focus-visible {
-  border-color: rgba(183, 246, 200, 0.7);
-  background: rgba(255, 255, 255, 0.14);
 }
 
 @media (max-width: 620px) {

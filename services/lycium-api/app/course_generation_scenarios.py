@@ -4,6 +4,7 @@ import re
 from typing import Any, Literal
 
 from app.course_generation_scenario_specs import COURSE_SCENARIOS, PROGRAM_SCENARIOS
+from app.course_source_integrity import assess_course_source_integrity
 from app.course_quality import assess_course_quality
 
 
@@ -96,6 +97,8 @@ def _block_text(block: dict[str, Any]) -> str:
 
 
 def _course_metrics(course: dict[str, Any]) -> dict[str, Any]:
+    source_integrity = assess_course_source_integrity(course)
+    source_integrity_metrics = source_integrity["metrics"]
     modules = _items(course.get("modules"))
     learn_sections = 0
     sourced_sections = 0
@@ -161,6 +164,8 @@ def _course_metrics(course: dict[str, Any]) -> dict[str, Any]:
         "sourceSlotCount": len(source_slots),
         "sourceSlotPrimaryCoverageRatio": round(slots_with_primary / len(source_slots), 2) if source_slots else 0,
         "blockSourceCoverage": round(sourced_blocks / sourceable_blocks, 2) if sourceable_blocks else 0,
+        "directConceptSourceCoverage": round(float(source_integrity_metrics.get("directConceptSourceCoveragePercent") or 0) / 100, 2),
+        "directBlockSourceCoverage": round(float(source_integrity_metrics.get("directBlockSourceCoveragePercent") or 0) / 100, 2),
         "moduleVideoCoverage": round(video_modules / len(modules), 2) if modules else 0,
         "moduleSummaryCoverage": round(summary_modules / len(modules), 2) if modules else 0,
         "benchmarkCount": len(metadata.get("curriculumBenchmarks", [])) if isinstance(metadata.get("curriculumBenchmarks"), list) else 0,
@@ -298,23 +303,29 @@ def _source_mapping_check(metrics: dict[str, Any], spec: dict[str, Any]) -> dict
     min_slot_primary_coverage = float(spec.get("minSourceSlotPrimaryCoverageRatio") or 0)
     min_section_source_coverage = float(spec.get("minSectionSourceCoverage") or 0)
     min_block_source_coverage = float(spec.get("minBlockSourceCoverage") or 0)
+    min_direct_concept_source_coverage = float(spec.get("minDirectConceptSourceCoverage") or min_block_source_coverage)
+    min_direct_block_source_coverage = float(spec.get("minDirectBlockSourceCoverage") or min_block_source_coverage)
     slot_score = min(1.0, metrics["sourceSlotCount"] / max(1, min_slot_count))
     primary_score = min(1.0, metrics["sourceSlotPrimaryCoverageRatio"] / max(0.01, min_slot_primary_coverage))
     section_score = min(1.0, metrics["sectionSourceCoverage"] / max(0.01, min_section_source_coverage))
     block_score = min(1.0, metrics["blockSourceCoverage"] / max(0.01, min_block_source_coverage))
+    direct_concept_score = min(1.0, metrics["directConceptSourceCoverage"] / max(0.01, min_direct_concept_source_coverage))
+    direct_block_score = min(1.0, metrics["directBlockSourceCoverage"] / max(0.01, min_direct_block_source_coverage))
     return _check(
         key="source_mapping",
         label="Concept and block source mapping",
-        score=slot_score * 0.3 + primary_score * 0.2 + section_score * 0.2 + block_score * 0.3,
+        score=slot_score * 0.2 + primary_score * 0.15 + section_score * 0.15 + block_score * 0.2 + direct_concept_score * 0.15 + direct_block_score * 0.15,
         findings=[
             *([] if metrics["sourceSlotCount"] >= min_slot_count else [_finding("error", f"Expected at least {min_slot_count} source slots.", "metadata.sourceSlots")]),
             *([] if metrics["sourceSlotPrimaryCoverageRatio"] >= min_slot_primary_coverage else [_finding("error", "Every source slot should name a primary source.", "metadata.sourceSlots")]),
             *([] if metrics["sectionSourceCoverage"] >= min_section_source_coverage else [_finding("error", "Sections should carry local sourceIds instead of only course-level sources.")]),
             *([] if metrics["blockSourceCoverage"] >= min_block_source_coverage else [_finding("error", "Instructional and assessment blocks should carry sourceIds for citation grounding.")]),
+            *([] if metrics["directConceptSourceCoverage"] >= min_direct_concept_source_coverage else [_finding("error", "Concept cards should carry direct source mappings, not only inherited section sources.")]),
+            *([] if metrics["directBlockSourceCoverage"] >= min_direct_block_source_coverage else [_finding("error", "Source-bearing blocks should carry direct source mappings, not only inherited section sources.")]),
         ],
         metrics={
             key: metrics[key]
-            for key in ("sourceSlotCount", "sourceSlotPrimaryCoverageRatio", "sectionSourceCoverage", "blockSourceCoverage")
+            for key in ("sourceSlotCount", "sourceSlotPrimaryCoverageRatio", "sectionSourceCoverage", "blockSourceCoverage", "directConceptSourceCoverage", "directBlockSourceCoverage")
         },
     )
 
@@ -401,7 +412,14 @@ def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str
     ]
     if any(
         key in spec
-        for key in ("minSourceSlotCount", "minSourceSlotPrimaryCoverageRatio", "minSectionSourceCoverage", "minBlockSourceCoverage")
+        for key in (
+            "minSourceSlotCount",
+            "minSourceSlotPrimaryCoverageRatio",
+            "minSectionSourceCoverage",
+            "minBlockSourceCoverage",
+            "minDirectConceptSourceCoverage",
+            "minDirectBlockSourceCoverage",
+        )
     ):
         checks.insert(-1, _source_mapping_check(metrics, spec))
     return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course", checks=checks)

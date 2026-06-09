@@ -1,4 +1,10 @@
-import type { LyciumCompletionRule, LyciumProgram, LyciumRequirement, LyciumRequirementGroup } from "@lycium/contracts";
+import type {
+  LyciumCompletionRule,
+  LyciumEvidenceArtifactSubmission,
+  LyciumProgram,
+  LyciumRequirement,
+  LyciumRequirementGroup,
+} from "@lycium/contracts";
 import type { CourseEntry } from "../courseTypes";
 import { getCourseProgress } from "./courseRouting";
 
@@ -12,6 +18,7 @@ export type RequirementProgressEvaluation = {
   missingCourseIds: string[];
   evidenceIds: string[];
   benchmarkIds: string[];
+  artifactIds: string[];
 };
 
 export type ProgramProgressRollup = {
@@ -39,6 +46,15 @@ function sourceIdsForCourse(course: CourseEntry | undefined): string[] {
   const topLevel = Array.isArray(course.data.sourceIds) ? course.data.sourceIds : [];
   const courseLevel = Array.isArray(course.data.sourceRecords) ? course.data.sourceRecords.map((source) => source.id) : [];
   return unique([...topLevel, ...courseLevel]);
+}
+
+function artifactSupportsRequirement(artifact: LyciumEvidenceArtifactSubmission, requirement: LyciumRequirement): boolean {
+  if (artifact.requirementId === requirement.id) return true;
+  return requirement.type === "submit_project" && artifact.projectId === requirement.projectId;
+}
+
+function submittedArtifact(artifact: LyciumEvidenceArtifactSubmission): boolean {
+  return artifact.status === "submitted" || artifact.status === "accepted";
 }
 
 export function leafRequirements(requirements: LyciumRequirement[]): LyciumRequirement[] {
@@ -78,9 +94,10 @@ export function evaluateRequirementProgress(
   requirement: LyciumRequirement,
   courseMap: Map<string, CourseEntry>,
   progressLookup?: CourseProgressLookup,
+  artifacts: LyciumEvidenceArtifactSubmission[] = [],
 ): RequirementProgressEvaluation {
   if (requirement.type === "requirement_set") {
-    const nested = requirement.requirements.map((child) => evaluateRequirementProgress(child, courseMap, progressLookup));
+    const nested = requirement.requirements.map((child) => evaluateRequirementProgress(child, courseMap, progressLookup, artifacts));
     const targetCount = requirementTarget(requirement);
     const completedCount = nested.filter((row) => row.status === "complete").length;
     const viewedCount = nested.filter((row) => row.status === "complete" || row.status === "in_progress").length;
@@ -94,6 +111,7 @@ export function evaluateRequirementProgress(
       missingCourseIds: unique(nested.flatMap((row) => row.missingCourseIds)),
       evidenceIds: unique([...(requirement.origin?.evidenceRefs ?? []), ...nested.flatMap((row) => row.evidenceIds)]),
       benchmarkIds: unique([...(requirement.origin?.benchmarkIds ?? []), ...nested.flatMap((row) => row.benchmarkIds)]),
+      artifactIds: unique(nested.flatMap((row) => row.artifactIds)),
     };
   }
 
@@ -120,6 +138,24 @@ export function evaluateRequirementProgress(
       missingCourseIds,
       evidenceIds,
       benchmarkIds,
+      artifactIds: [],
+    };
+  }
+
+  if (requirement.type === "submit_project") {
+    const requirementArtifacts = artifacts.filter((artifact) => artifactSupportsRequirement(artifact, requirement));
+    const completedCount = requirementArtifacts.some(submittedArtifact) ? 1 : 0;
+    const viewedCount = requirementArtifacts.length > 0 ? 1 : 0;
+
+    return {
+      status: statusFromCounts(completedCount, viewedCount, 1, false),
+      completedCount,
+      targetCount: 1,
+      connectedCourseIds: [],
+      missingCourseIds: [],
+      evidenceIds: unique(originEvidence),
+      benchmarkIds: unique(benchmarkIds),
+      artifactIds: requirementArtifacts.map((artifact) => artifact.id),
     };
   }
 
@@ -131,6 +167,7 @@ export function evaluateRequirementProgress(
     missingCourseIds: [],
     evidenceIds: unique(originEvidence),
     benchmarkIds: unique(benchmarkIds),
+    artifactIds: [],
   };
 }
 
@@ -145,9 +182,10 @@ export function rollupRequirementListProgress(
   completionRule: LyciumCompletionRule,
   courseMap: Map<string, CourseEntry>,
   progressLookup?: CourseProgressLookup,
+  artifacts: LyciumEvidenceArtifactSubmission[] = [],
 ): ProgramProgressRollup {
   const requiredRequirements = requirements.filter((requirement) => requirement.required !== false);
-  const evaluations = requiredRequirements.map((requirement) => evaluateRequirementProgress(requirement, courseMap, progressLookup));
+  const evaluations = requiredRequirements.map((requirement) => evaluateRequirementProgress(requirement, courseMap, progressLookup, artifacts));
   const target = completionTarget(completionRule, requiredRequirements);
   const completed = Math.min(target, evaluations.filter((evaluation) => evaluation.status === "complete").length);
   const viewed = Math.min(
@@ -172,16 +210,18 @@ export function rollupRequirementGroupProgress(
   group: LyciumRequirementGroup,
   courseMap: Map<string, CourseEntry>,
   progressLookup?: CourseProgressLookup,
+  artifacts: LyciumEvidenceArtifactSubmission[] = [],
 ): ProgramProgressRollup {
-  return rollupRequirementListProgress(group.requirements, group.completionRule, courseMap, progressLookup);
+  return rollupRequirementListProgress(group.requirements, group.completionRule, courseMap, progressLookup, artifacts);
 }
 
 export function rollupProgramProgress(
   program: LyciumProgram,
   courseMap: Map<string, CourseEntry>,
   progressLookup?: CourseProgressLookup,
+  artifacts: LyciumEvidenceArtifactSubmission[] = [],
 ): ProgramProgressRollup {
-  const groupProgress = program.requirementGroups.map((group) => rollupRequirementGroupProgress(group, courseMap, progressLookup));
+  const groupProgress = program.requirementGroups.map((group) => rollupRequirementGroupProgress(group, courseMap, progressLookup, artifacts));
   const total = Math.max(1, groupProgress.length);
   const completed = groupProgress.filter((progress) => progress.status === "complete").length;
   const viewed = groupProgress.filter((progress) => progress.hasProgress).length;

@@ -16,6 +16,7 @@ const BENCHMARK_SOURCE_TYPES = new Set([
   "syllabus",
 ]);
 const BROKEN_LINK_HEALTH_VALUES = new Set(["broken", "dead", "failed", "unreachable"]);
+const PACKET_CONCEPT_STOP_TERMS = new Set(["and", "the", "for", "with", "course", "source", "sources", "learn", "learning", "open"]);
 
 function arrayValue(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
@@ -44,6 +45,47 @@ function numberRecordValue(value: unknown): Record<string, number> {
   return Object.fromEntries(
     Object.entries(objectValue(value)).filter((entry): entry is [string, number] => typeof entry[1] === "number" && Number.isFinite(entry[1])),
   );
+}
+
+function normalizedTerms(value: unknown): string[] {
+  return stringValue(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9+#/]+/g, " ")
+    .split(" ")
+    .map((term) => term.trim())
+    .filter((term) => term.length > 2 && !/^\d+$/.test(term) && !PACKET_CONCEPT_STOP_TERMS.has(term));
+}
+
+function conceptCoverage(packet: Record<string, unknown>, sources: unknown[], sourceDocuments: unknown[]): Pick<
+  SourcePacketQuality,
+  "conceptCandidateCount" | "coveredConceptCandidateCount" | "conceptCoverageRatio" | "uncoveredConceptCandidates"
+> {
+  const candidates = new Set<string>();
+  for (const source of sources) {
+    const matchedTerms = arrayValue(objectValue(objectValue(source).decision).matched_terms);
+    matchedTerms.forEach((term) => candidates.add(normalizedTerms(term).join(" ")));
+  }
+  if (!candidates.size) {
+    normalizedTerms(packet.prompt).forEach((term) => candidates.add(term));
+  }
+  const evidenceText = [
+    ...sourceDocuments.flatMap((document) => [objectValue(document).title, objectValue(document).url, objectValue(document).text]),
+    ...sources.flatMap((source) => {
+      const row = objectValue(source);
+      return [objectValue(row.source).title, objectValue(row.source).canonical_url, ...arrayValue(row.snapshots).flatMap((snapshot) => [objectValue(snapshot).title, objectValue(snapshot).extracted_text])];
+    }),
+  ]
+    .flatMap(normalizedTerms)
+    .join(" ");
+  const evidence = ` ${evidenceText} `;
+  const cleanCandidates = [...candidates].filter(Boolean).slice(0, 40);
+  const covered = cleanCandidates.filter((candidate) => normalizedTerms(candidate).every((term) => evidence.includes(` ${term} `)));
+  return {
+    conceptCandidateCount: cleanCandidates.length,
+    coveredConceptCandidateCount: covered.length,
+    conceptCoverageRatio: Number((cleanCandidates.length ? covered.length / cleanCandidates.length : sourceDocuments.length ? 1 : 0).toFixed(3)),
+    uncoveredConceptCandidates: cleanCandidates.filter((candidate) => !covered.includes(candidate)).slice(0, 12),
+  };
 }
 
 function fallbackPacketId(packet: Record<string, unknown>): string {
@@ -93,6 +135,7 @@ export function summarizeSourcePacketQuality(packet: Record<string, unknown>): S
   const averageTrustScore = trustScores.length ? trustScores.reduce((total, score) => total + score, 0) / trustScores.length : 0;
   const freshnessKnownRatio = includedSourceCount ? verificationDates.length / includedSourceCount : 0;
   const benchmarkUsefulnessRatio = includedSourceCount ? benchmarkSourceCount / includedSourceCount : 0;
+  const conceptQuality = conceptCoverage(packet, sources, sourceDocuments);
   const qualityWarnings = [
     ...(duplicateSourceCount ? ["Packet contains duplicate canonical source URLs."] : []),
     ...(brokenUrlCount ? ["Packet contains sources marked with broken link health."] : []),
@@ -120,6 +163,7 @@ export function summarizeSourcePacketQuality(packet: Record<string, unknown>): S
     staleVerificationCount,
     benchmarkSourceCount,
     benchmarkUsefulnessRatio: Number(benchmarkUsefulnessRatio.toFixed(3)),
+    ...conceptQuality,
     qualityWarnings,
     warningCount: warnings.length + qualityWarnings.length,
   };

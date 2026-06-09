@@ -7,6 +7,7 @@ from app.course_structure import content_blocks, modules, sections, source_ids
 
 LABEL_STOP_TOKENS = {"quiz", "summary", "module", "week", "lesson", "review"}
 INLINE_CITATION_PATTERN = re.compile(r"\[(\d+)\]")
+SOURCE_BEARING_BLOCK_TYPES = {"text", "video", "iframe", "quiz", "conceptCard", "concept_card", "conceptCards", "concept_cards"}
 
 
 def _items(value: Any) -> list[dict[str, Any]]:
@@ -148,6 +149,18 @@ def _coverage_tokens(row: dict[str, Any]) -> set[str]:
     return token_set
 
 
+def _sorted_sources(sources: set[str]) -> list[str]:
+    return sorted(source for source in sources if source)
+
+
+def _block_label(block: dict[str, Any], block_index: int) -> str:
+    for key in ("heading", "title", "name", "type"):
+        value = block.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return f"block {block_index}"
+
+
 def _section_coverage_sources(
     coverage_map: list[dict[str, Any]],
     section: dict[str, Any],
@@ -180,18 +193,32 @@ def _concepts_from_block(block: dict[str, Any]) -> list[dict[str, Any]]:
     concepts: list[dict[str, Any]] = []
     if block.get("type") == "conceptCard":
         concepts.append(block)
+    parent_source_ids = source_ids(block)
     for concept in _items(block.get("concepts")):
-        concepts.append(concept)
+        concept_sources = source_ids(concept)
+        concepts.append(
+            {
+                **concept,
+                "sourceIds": concept_sources or parent_source_ids,
+            }
+        )
     questions = block.get("questions") or block.get("questionBank") or block.get("question_bank")
     for question in _items(questions):
         for key in ("concept", "conceptId", "topic"):
             value = question.get(key)
             if isinstance(value, str) and value.strip():
-                concepts.append({"name": value})
+                concepts.append({"name": value, "sourceIds": parent_source_ids})
         concept_ids = question.get("conceptIds")
         if isinstance(concept_ids, list):
-            concepts.extend({"name": concept_id} for concept_id in concept_ids if isinstance(concept_id, str))
-        concepts.extend(_items(question.get("concepts")))
+            concepts.extend({"name": concept_id, "sourceIds": parent_source_ids} for concept_id in concept_ids if isinstance(concept_id, str))
+        for concept in _items(question.get("concepts")):
+            concept_sources = source_ids(concept)
+            concepts.append(
+                {
+                    **concept,
+                    "sourceIds": concept_sources or parent_source_ids,
+                }
+            )
     return concepts
 
 
@@ -259,15 +286,24 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
     raw_policy = metadata.get("sourceCoveragePolicy")
     policy = raw_policy if isinstance(raw_policy, dict) else {}
     min_concept_coverage = float((policy or {}).get("minimumRequiredConceptCoveragePercent") or 70)
+    require_direct_concept_coverage = policy.get("requireDirectConceptSourceMappings") is True
+    warn_on_inherited_concept_coverage = policy.get("warnOnInheritedConceptSourceCoverage") is True
+    require_direct_block_coverage = policy.get("requireDirectBlockSourceMappings") is True
+    warn_on_inherited_block_coverage = policy.get("warnOnInheritedBlockSourceCoverage") is True
     issues: list[dict[str, str]] = []
     section_allowed: dict[str, set[str]] = {}
     concept_count = 0
     covered_concept_count = 0
+    directly_covered_concept_count = 0
     section_count = 0
     blanket_section_count = 0
     citation_issue_count = 0
     unmapped_citation_count = 0
     inline_citation_issue_count = 0
+    concept_coverage_rows: list[dict[str, Any]] = []
+    block_coverage_rows: list[dict[str, Any]] = []
+    source_bearing_block_count = 0
+    directly_sourced_block_count = 0
 
     for module_index, module in enumerate(modules(course), start=1):
         module_sources = set(source_ids(module))
@@ -349,23 +385,72 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
 
             for concept in concepts:
                 concept_count += 1
-                concept_sources = (
+                concept_name = _concept_name(concept)
+                direct_concept_sources = (
                     set(source_ids(concept))
-                    | _matching_slot_sources(slots, requirement_context, _concept_name(concept), concept.get("sourceSectionId"))
+                    | _matching_slot_sources(slots, requirement_context, concept_name, concept.get("sourceSectionId"))
+                    | _section_coverage_sources(coverage_map, section, [concept])
+                )
+                concept_sources = (
+                    direct_concept_sources
+                    | _matching_slot_sources(slots, requirement_context, concept_name, concept.get("sourceSectionId"))
                     | inherited_sources
                     | label_sources
                     | coverage_sources
                 )
                 if not slots and not coverage_map:
                     concept_sources.update(source_ids(section))
+                if direct_concept_sources:
+                    directly_covered_concept_count += 1
                 if concept_sources:
                     covered_concept_count += 1
                 elif slots:
                     issues.append({
                         "severity": "error",
-                        "message": f"Concept has no accepted source mapping: {_concept_name(concept) or 'unnamed concept'}.",
+                        "message": f"Concept has no accepted source mapping: {concept_name or 'unnamed concept'}.",
                         "location": location,
                     })
+                concept_coverage_rows.append({
+                    "concept": concept_name or "unnamed concept",
+                    "location": location,
+                    "sectionId": section.get("id"),
+                    "sourceSectionId": concept.get("sourceSectionId"),
+                    "status": "direct" if direct_concept_sources else "inherited" if concept_sources else "missing",
+                    "sourceIds": _sorted_sources(concept_sources),
+                    "directSourceIds": _sorted_sources(direct_concept_sources),
+                    "inheritedSourceIds": _sorted_sources(concept_sources - direct_concept_sources),
+                })
+            for block_index, block in enumerate(content_blocks(section), start=1):
+                if block.get("type") not in SOURCE_BEARING_BLOCK_TYPES:
+                    continue
+                source_bearing_block_count += 1
+                direct_block_sources = set(source_ids(block))
+                inherited_block_sources = (set(source_ids(section)) | module_sources) - direct_block_sources
+                block_sources = direct_block_sources | inherited_block_sources
+                if direct_block_sources:
+                    directly_sourced_block_count += 1
+                elif block_sources and (require_direct_block_coverage or warn_on_inherited_block_coverage):
+                    issues.append({
+                        "severity": "error" if require_direct_block_coverage else "warning",
+                        "message": f"Instructional block relies on section/module source coverage instead of direct block sourceIds: {_block_label(block, block_index)}.",
+                        "location": f"{location}.content[{block_index - 1}]",
+                    })
+                elif not block_sources and (require_direct_block_coverage or warn_on_inherited_block_coverage):
+                    issues.append({
+                        "severity": "error" if require_direct_block_coverage else "warning",
+                        "message": f"Instructional block has no source coverage: {_block_label(block, block_index)}.",
+                        "location": f"{location}.content[{block_index - 1}]",
+                    })
+                block_coverage_rows.append({
+                    "block": _block_label(block, block_index),
+                    "blockType": block.get("type"),
+                    "location": f"{location}.content[{block_index - 1}]",
+                    "sectionId": section.get("id"),
+                    "status": "direct" if direct_block_sources else "inherited" if block_sources else "missing",
+                    "sourceIds": _sorted_sources(block_sources),
+                    "directSourceIds": _sorted_sources(direct_block_sources),
+                    "inheritedSourceIds": _sorted_sources(inherited_block_sources),
+                })
 
     if not slots and not coverage_map and concept_count:
         issues.append({
@@ -374,11 +459,20 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
             "location": "metadata.sourceSlots",
         })
     coverage_percent = round((covered_concept_count / concept_count) * 100, 2) if concept_count else 100.0
+    direct_coverage_percent = round((directly_covered_concept_count / concept_count) * 100, 2) if concept_count else 100.0
+    direct_block_coverage_percent = round((directly_sourced_block_count / source_bearing_block_count) * 100, 2) if source_bearing_block_count else 100.0
     if concept_count and coverage_percent < min_concept_coverage:
         issues.append({
             "severity": "error",
             "message": f"Required concept source coverage is {coverage_percent}%, below policy minimum {min_concept_coverage}%.",
             "location": "metadata.sourceCoveragePolicy.minimumRequiredConceptCoveragePercent",
+        })
+    if concept_count and directly_covered_concept_count < concept_count and (require_direct_concept_coverage or warn_on_inherited_concept_coverage):
+        inherited_count = concept_count - directly_covered_concept_count
+        issues.append({
+            "severity": "error" if require_direct_concept_coverage else "warning",
+            "message": f"{inherited_count} concepts rely on section-level or inherited source coverage instead of direct concept/block source mappings.",
+            "location": "metadata.conceptSourceCoverageMap",
         })
     return {
         "issues": issues,
@@ -386,6 +480,11 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
             "conceptCount": concept_count,
             "coveredConceptCount": covered_concept_count,
             "conceptSourceCoveragePercent": coverage_percent,
+            "directlyCoveredConceptCount": directly_covered_concept_count,
+            "directConceptSourceCoveragePercent": direct_coverage_percent,
+            "sourceBearingBlockCount": source_bearing_block_count,
+            "directlySourcedBlockCount": directly_sourced_block_count,
+            "directBlockSourceCoveragePercent": direct_block_coverage_percent,
             "sourceSlotCount": len(slots),
             "conceptCoverageMapCount": len(coverage_map),
             "sectionCount": section_count,
@@ -394,4 +493,6 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
             "unmappedCitationCount": unmapped_citation_count,
             "inlineCitationIssueCount": inline_citation_issue_count,
         },
+        "conceptCoverage": concept_coverage_rows,
+        "blockCoverage": block_coverage_rows,
     }

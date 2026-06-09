@@ -6,6 +6,7 @@ import type {
   LyciumCourseFeedbackPayload,
   LyciumCourseFeedbackRecord,
   LyciumCourseHealthRecord,
+  LyciumEvidenceArtifactSubmission,
   LyciumCourseGenerationExperiment,
   LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,
@@ -331,6 +332,7 @@ export type LyciumLocalApi = {
   activateAgentKey(payload: LocalActiveKeyPayload): Promise<LyciumLocalSettings>;
   updateAgentKeyModel(payload: LocalKeyModelPayload): Promise<LyciumLocalSettings>;
   verifyAgentKey(payload: LocalVerifyKeyPayload): Promise<LyciumLocalSettings>;
+  deleteAgentKey(keyId: string): Promise<LyciumLocalSettings>;
 };
 
 export type {
@@ -341,6 +343,7 @@ export type {
   LyciumCourseFeedbackPayload,
   LyciumCourseFeedbackRecord,
   LyciumCourseHealthRecord,
+  LyciumEvidenceArtifactSubmission,
   LyciumCourseGenerationExperiment,
   LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,

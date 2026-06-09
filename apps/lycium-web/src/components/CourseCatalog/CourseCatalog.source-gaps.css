@@ -102,6 +102,10 @@
   .course-source-gap-overview {
     grid-template-columns: 1fr;
   }
+
+  .course-source-gap-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -115,6 +119,7 @@
 
   .course-source-gap-policy div,
   .course-source-gap-overview article,
+  .course-source-gap-coverage,
   .course-source-gap-selected {
     background: #262626;
   }
@@ -132,6 +137,10 @@
   .course-source-gap-selected p {
     color: #cbd5e1;
   }
+
+  .course-source-gap-coverage strong {
+    color: #f8fafc;
+  }
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-policy h3,
@@ -144,6 +153,7 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-policy div,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-overview article,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-coverage,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-selected {
   background: #262626;
 }
@@ -162,6 +172,10 @@
   color: #cbd5e1;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-gap-coverage strong {
+  color: #f8fafc;
+}
+
 html[data-theme="light"] .course-source-gap-policy h3,
 html[data-theme="light"] .course-source-gap-overview h3,
 html[data-theme="light"] .course-source-gap-suggestions strong,
@@ -172,6 +186,7 @@ html[data-theme="light"] .course-source-gap-selected span {
 
 html[data-theme="light"] .course-source-gap-policy div,
 html[data-theme="light"] .course-source-gap-overview article,
+html[data-theme="light"] .course-source-gap-coverage,
 html[data-theme="light"] .course-source-gap-selected {
   background: #eef2f7;
 }

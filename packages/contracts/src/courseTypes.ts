@@ -3,6 +3,11 @@ import type {
   LyciumCourseEditPolicy,
   LyciumCourseSnapshotLifecycle,
 } from "./courseEditTypes";
+import type {
+  LyciumCourseSourceCoveragePolicy,
+  LyciumCourseSourceGap,
+  LyciumCourseSourceGapSuggestion,
+} from "./courseSourceGapTypes";
 
 export const LYCIUM_COURSE_CONTRACT_VERSION = "0.1.0" as const;
 
@@ -42,49 +47,6 @@ export type LyciumCourseEquivalency = {
   url?: string;
   catalogYear?: string;
   notes?: string;
-};
-
-export type LyciumCourseSourceGapScopeType = "course" | "module" | "section" | "requirement" | "assessment";
-export type LyciumCourseSourceGapSeverity = "blocking" | "recommended" | "optional";
-export type LyciumCourseSourceTypeHint =
-  | "textbook"
-  | "syllabus"
-  | "catalog"
-  | "lecture"
-  | "documentation"
-  | "paper"
-  | "exercise"
-  | "video"
-  | "open_courseware"
-  | "other";
-
-export type LyciumCourseSourceGap = {
-  id: string;
-  scopeType: LyciumCourseSourceGapScopeType;
-  scopeId: string;
-  title: string;
-  neededFor: string;
-  requiredConcepts?: string[];
-  recommendedSourceTypes?: LyciumCourseSourceTypeHint[];
-  minimumUsefulSources: number;
-  currentSourceCount: number;
-  severity: LyciumCourseSourceGapSeverity;
-};
-
-export type LyciumCourseSourceCoveragePolicy = {
-  minimumCourseSources?: number;
-  minimumSourcesPerModule?: number;
-  minimumRequiredConceptCoveragePercent?: number;
-  requireBenchmarkEvidence?: boolean;
-  requireAssessmentCoverage?: boolean;
-};
-
-export type LyciumCourseSourceGapSuggestion = {
-  id?: string;
-  gapId: string;
-  url: string;
-  description?: string | null;
-  createdAt?: string;
 };
 
 export type LyciumConcept = {

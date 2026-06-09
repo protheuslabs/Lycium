@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import httpx
+import pytest
 
+from app.course_agent_harness import generate_course_with_agent
+from app.course_agent_staged import generate_course_with_agent_staged
+from app.course_agent_types import CourseAgentError
 from app.source_corpus import compile_generation_source_corpus
 from app.source_index_client import SourceIndexClient, normalize_remote_source_payload
 
@@ -156,6 +160,19 @@ REMOTE_IMPORT_REPORT = {
 }
 
 
+def _low_concept_coverage_packet() -> dict:
+    return {
+        **REMOTE_SOURCE_PACKET,
+        "quality": {
+            **REMOTE_SOURCE_PACKET["quality"],
+            "conceptCandidateCount": 4,
+            "coveredConceptCandidateCount": 1,
+            "conceptCoverageRatio": 0.25,
+            "uncoveredConceptCandidates": ["stoichiometry", "bonding", "acid base chemistry"],
+        },
+    }
+
+
 def test_source_index_client_uses_http_contract_for_sources_and_snapshots() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "POST" and request.url.path == "/v1/index/sources":
@@ -271,6 +288,80 @@ def test_generation_source_corpus_accepts_source_packet_payload() -> None:
     assert preflight.synthesis["sourcePacket"]["quality"]["status"] == "usable"
 
 
+def test_direct_course_generation_blocks_low_concept_coverage_source_packet(client) -> None:
+    packet = {
+        **_low_concept_coverage_packet(),
+        "source_urls": [
+            "https://example.edu/catalog/chem105",
+            "https://example.edu/chem105-lab",
+            "https://example.edu/chem105-open-text",
+        ],
+    }
+
+    response = client.post(
+        "/v1/courses/generate",
+        json={
+            "prompt": "CHEM 105 general chemistry",
+            "level": "undergrad",
+            "source_packet": packet,
+            "category": "natural-sciences-mathematics",
+            "department": "chemistry",
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    snapshot = response.json()
+    gap = snapshot["structure"]["metadata"]["sourceGaps"][0]
+
+    assert snapshot["status"] == "needs_sources"
+    assert gap["id"] == "concept-source-coverage"
+    assert gap["coverageGate"]["gate"] == "source_packet_quality"
+    assert gap["missingConceptSourceCount"] == 3
+    assert gap["sourceResumeCoverage"]["coveragePercent"] < 70
+
+
+def test_llm_course_generation_blocks_low_concept_coverage_packet_before_model_call() -> None:
+    with pytest.raises(CourseAgentError) as exc_info:
+        generate_course_with_agent(
+            prompt="CHEM 105 general chemistry",
+            api_key="not-used",
+            provider_id="provider-should-not-be-needed",
+            level="undergrad",
+            language="en",
+            source_policy="balanced",
+            desired_module_count=3,
+            expected_duration_minutes=180,
+            source_packet=_low_concept_coverage_packet(),
+            category="natural-sciences-mathematics",
+            department="chemistry",
+        )
+
+    assert "Source packet concept coverage is below policy" in str(exc_info.value)
+    assert exc_info.value.trace["failed_stage"] == "source_packet_quality"
+    assert exc_info.value.trace["source_packet_quality_gate"]["gate"] == "source_packet_quality"
+
+
+def test_staged_llm_course_generation_blocks_low_concept_coverage_packet_before_model_call() -> None:
+    with pytest.raises(CourseAgentError) as exc_info:
+        generate_course_with_agent_staged(
+            prompt="CHEM 105 general chemistry",
+            api_key="not-used",
+            provider_id="provider-should-not-be-needed",
+            level="undergrad",
+            language="en",
+            source_policy="balanced",
+            desired_module_count=3,
+            expected_duration_minutes=180,
+            source_packet=_low_concept_coverage_packet(),
+            category="natural-sciences-mathematics",
+            department="chemistry",
+        )
+
+    assert "Source packet concept coverage is below policy" in str(exc_info.value)
+    assert exc_info.value.trace["failed_stage"] == "source_packet_quality"
+    assert exc_info.value.trace["source_packet_quality_gate"]["gate"] == "source_packet_quality"
+
+
 def test_index_source_upsert_canonicalizes_and_dedupes(client) -> None:
     first = client.post(
         "/v1/index/sources",
@@ -335,7 +426,7 @@ def test_index_bulk_import_feeds_generation_packet(client) -> None:
                     "title": "Stoichiometry Tutorial",
                     "source_type": "open_courseware",
                     "license": "cc-by",
-                    "raw_text": "Stoichiometry connects balanced equations, mole ratios, limiting reactants, and yields.",
+                    "raw_text": "General chemistry Stoichiometry connects balanced equations, mole ratios, limiting reactants, and yields.",
                 },
                 {
                     "url": "https://recipes.example.com/dinner/pasta",
@@ -373,6 +464,9 @@ def test_index_bulk_import_feeds_generation_packet(client) -> None:
     assert packet["quality"]["brokenUrlCount"] == 0
     assert packet["quality"]["sourceTypeMix"]
     assert "benchmarkUsefulnessRatio" in packet["quality"]
+    assert packet["quality"]["conceptCandidateCount"] >= 1
+    assert packet["quality"]["conceptCoverageRatio"] >= 0.7
+    assert packet["quality"]["uncoveredConceptCandidates"] == []
     assert packet["source_documents"][0]["snapshotId"]
     assert "Stoichiometry" in packet["source_documents"][0]["text"]
 

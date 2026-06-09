@@ -1,60 +1,52 @@
-.section-refresh-button.lycium-button {
-  width: 2.25rem;
-  min-width: 2.25rem;
-  height: 2.25rem;
-  min-height: 2.25rem;
+.section-refresh-button.lycium-button,
+.section-refresh-ring {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
   border-radius: 999px;
   padding: 0;
 }
 
 .section-refresh-button svg {
-  width: 1rem;
-  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.2;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
-.section-refresh-form {
+.section-refresh-button-locked.lycium-button {
+  opacity: 0.72;
+  cursor: help;
+}
+
+.section-refresh-button-locked.lycium-button:hover {
+  transform: none;
+}
+
+.section-refresh-ring {
+  --section-refresh-progress: 0%;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  background:
+    conic-gradient(#22c55e var(--section-refresh-progress), rgba(255, 255, 255, 0.22) 0),
+    rgba(39, 50, 74, 0.98);
+}
+
+.section-refresh-ring-core {
+  width: 1.72rem;
+  height: 1.72rem;
+  border-radius: 50%;
+  background: #27324a;
+}
+
+.section-refresh-locked {
   display: grid;
   gap: 0.85rem;
-}
-
-.section-refresh-form label,
-.section-refresh-source-fieldset {
-  display: grid;
-  gap: 0.35rem;
-  margin: 0;
-}
-
-.section-refresh-form textarea {
-  width: 100%;
-  min-width: 0;
-  min-height: 5rem;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
-.section-refresh-source-fieldset {
-  border: 0;
-  padding: 0;
-}
-
-.section-refresh-source-fieldset legend,
-.section-refresh-form label span {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--lycium-text-muted, #6b7280);
-}
-
-.section-refresh-source-row {
-  display: flex;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
 }
 
 .section-refresh-footer {
@@ -68,4 +60,17 @@
   margin: 0;
   color: var(--lycium-text-muted, #6b7280);
   font-size: 0.85rem;
+}
+
+.section-refresh-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+html[data-theme="dark"] .section-refresh-ring-core {
+  background: #242427;
 }

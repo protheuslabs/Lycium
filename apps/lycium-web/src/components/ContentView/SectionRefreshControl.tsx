@@ -1,16 +1,14 @@
-import { useCallback, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import Button from "../Button/Button";
+import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import Modal from "../Modal/Modal";
-
-type SourceRow = {
-  id: string;
-  title: string;
-  citationIndex: string | number | null;
-};
+import AiConnectionLockCallout from "../AiConnectionLockCallout/AiConnectionLockCallout";
+import { browserPathForRoute, SETTINGS_PATH } from "../../utils/courseRouting";
 
 type SectionRefreshControlProps = {
   canRegenerateSection: boolean;
-  sourceRows: SourceRow[];
+  lockedReason?: string;
+  lockedAction?: "settings" | null;
   onRegenerateSection?: (payload: {
     feedback?: string;
     positiveFeedback?: string[];
@@ -20,129 +18,127 @@ type SectionRefreshControlProps = {
   }) => Promise<unknown> | unknown;
 };
 
-const splitLines = (value: string) =>
-  value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
 export default function SectionRefreshControl({
   canRegenerateSection,
-  sourceRows,
+  lockedReason = "Section refresh needs an API-backed snapshot and verified AI model.",
+  lockedAction = null,
   onRegenerateSection,
 }: SectionRefreshControlProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [feedback, setFeedback] = useState("");
-  const [positiveFeedback, setPositiveFeedback] = useState("");
-  const [negativeFeedback, setNegativeFeedback] = useState("");
-  const [sourceUrls, setSourceUrls] = useState("");
-  const [badSourceIds, setBadSourceIds] = useState<Set<string>>(new Set());
+  const [isLockedOpen, setIsLockedOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState(0);
 
-  const handleSubmit = useCallback(
-    async (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+  useEffect(() => {
+    if (!isRefreshing) return;
+    const intervalId = window.setInterval(() => {
+      setRefreshProgress((current) => Math.min(95, current + Math.max(1, Math.round((96 - current) * 0.12))));
+    }, 420);
+
+    return () => window.clearInterval(intervalId);
+  }, [isRefreshing]);
+
+  const handleConfirmRegenerate = useCallback(
+    async () => {
       if (!onRegenerateSection) return;
 
       setIsRefreshing(true);
+      setRefreshProgress(8);
+      setIsOpen(false);
       setStatus("Refreshing this section...");
       try {
-        await onRegenerateSection({
-          feedback,
-          positiveFeedback: splitLines(positiveFeedback),
-          negativeFeedback: splitLines(negativeFeedback),
-          newSourceUrls: splitLines(sourceUrls),
-          badSourceIds: Array.from(badSourceIds),
-        });
-        setIsOpen(false);
+        await onRegenerateSection({});
+        setRefreshProgress(100);
         setStatus("");
       } catch (err) {
         setStatus(err instanceof Error ? err.message : "Section refresh failed.");
       } finally {
-        setIsRefreshing(false);
+        window.setTimeout(() => {
+          setIsRefreshing(false);
+          setRefreshProgress(0);
+        }, 420);
       }
     },
-    [badSourceIds, feedback, negativeFeedback, onRegenerateSection, positiveFeedback, sourceUrls],
+    [onRegenerateSection],
   );
 
-  const toggleBadSource = (sourceId: string, checked: boolean) => {
-    setBadSourceIds((current) => {
-      const next = new Set(current);
-      if (checked) next.add(sourceId);
-      else next.delete(sourceId);
-      return next;
-    });
+  const handleRefreshClick = () => {
+    if (!canRegenerateSection) {
+      setIsLockedOpen(true);
+      return;
+    }
+    setIsOpen(true);
   };
 
   return (
     <>
-      <Button
-        type="button"
-        variant="icon"
-        iconOnly
-        className="section-refresh-button"
-        disabled={!canRegenerateSection || isRefreshing}
-        title={canRegenerateSection ? "Refresh this section with AI" : "Section refresh needs an API-backed snapshot and verified AI model"}
-        aria-label="Refresh this section with AI"
-        onClick={() => setIsOpen(true)}
-      >
-        <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-          <path d="M20 6v5h-5" />
-          <path d="M4 18v-5h5" />
-          <path d="M18.5 9A7 7 0 0 0 6.4 6.7L4 9" />
-          <path d="M5.5 15a7 7 0 0 0 12.1 2.3L20 15" />
-        </svg>
-      </Button>
+      {isRefreshing ? (
+        <span
+          className="section-refresh-ring course-feedback-nav-button"
+          style={{ "--section-refresh-progress": `${refreshProgress}%` } as CSSProperties}
+          aria-label={`Regenerating section, ${refreshProgress}% complete`}
+          role="status"
+        >
+          <span className="section-refresh-ring-core" />
+        </span>
+      ) : (
+        <Button
+          type="button"
+          variant="icon"
+          iconOnly
+          className={`section-refresh-button course-feedback-nav-button${canRegenerateSection ? "" : " section-refresh-button-locked"}`}
+          title={canRegenerateSection ? "Refresh this section with AI" : lockedReason}
+          aria-label={canRegenerateSection ? "Refresh this section with AI" : "Refresh unavailable"}
+          aria-disabled={!canRegenerateSection}
+          onClick={handleRefreshClick}
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M20 6v5h-5" />
+            <path d="M4 18v-5h5" />
+            <path d="M18.5 9A7 7 0 0 0 6.4 6.7L4 9" />
+            <path d="M5.5 15a7 7 0 0 0 12.1 2.3L20 15" />
+          </svg>
+        </Button>
+      )}
+      {status && <span className="section-refresh-status" aria-live="polite">{status}</span>}
       <Modal
+        isOpen={isLockedOpen}
+        title="Section refresh unavailable"
+        eyebrow="AI connection needed"
+        labelledById="section-refresh-locked-modal-title"
+        describedById="section-refresh-locked-modal-description"
+        size="sm"
+        onClose={() => setIsLockedOpen(false)}
+      >
+        <div className="section-refresh-locked">
+          <AiConnectionLockCallout
+            title="AI section refresh is locked."
+            titleId="section-refresh-locked-callout-title"
+            message={lockedReason}
+            messageId="section-refresh-locked-modal-description"
+            href={browserPathForRoute(SETTINGS_PATH)}
+            showAction={lockedAction === "settings"}
+          />
+          <div className="section-refresh-footer">
+            <Button type="button" variant="standard" onClick={() => setIsLockedOpen(false)}>Close</Button>
+          </div>
+        </div>
+      </Modal>
+      <ConfirmModal
         isOpen={isOpen}
-        title="Refresh this section"
+        title="Regenerate section?"
         eyebrow="AI section revision"
         labelledById="section-refresh-modal-title"
-        size="md"
-        onClose={() => {
-          if (!isRefreshing) {
-            setIsOpen(false);
-            setStatus("");
-          }
+        message="This will ask the selected model to regenerate the current section using the course context and available sources."
+        confirmLabel="Yes, regenerate"
+        confirmDisabled={!canRegenerateSection}
+        onCancel={() => {
+          setIsOpen(false);
+          setStatus("");
         }}
-      >
-        <form className="section-refresh-form" onSubmit={handleSubmit}>
-          <label>
-            <span>Overall direction</span>
-            <textarea value={feedback} onChange={(event) => setFeedback(event.target.value)} placeholder="What should the model improve or preserve in this section?" disabled={isRefreshing} />
-          </label>
-          <label>
-            <span>Keep or strengthen</span>
-            <textarea value={positiveFeedback} onChange={(event) => setPositiveFeedback(event.target.value)} placeholder="One positive note per line" disabled={isRefreshing} />
-          </label>
-          <label>
-            <span>Fix or avoid</span>
-            <textarea value={negativeFeedback} onChange={(event) => setNegativeFeedback(event.target.value)} placeholder="One negative note per line" disabled={isRefreshing} />
-          </label>
-          <label>
-            <span>New sources</span>
-            <textarea value={sourceUrls} onChange={(event) => setSourceUrls(event.target.value)} placeholder={"https://example.edu/source\nhttps://openstax.org/..."} disabled={isRefreshing} />
-          </label>
-          {sourceRows.length > 0 && (
-            <fieldset className="section-refresh-source-fieldset">
-              <legend>Sources to avoid</legend>
-              {sourceRows.map((source) => (
-                <label className="section-refresh-source-row" key={source.id}>
-                  <input type="checkbox" checked={badSourceIds.has(source.id)} disabled={isRefreshing} onChange={(event) => toggleBadSource(source.id, event.target.checked)} />
-                  <span>[{source.citationIndex ?? "?"}] {source.title}</span>
-                </label>
-              ))}
-            </fieldset>
-          )}
-          <div className="section-refresh-footer">
-            {status && <p>{status}</p>}
-            <Button type="submit" variant="standard" disabled={isRefreshing || !canRegenerateSection}>
-              {isRefreshing ? "Refreshing..." : "Refresh section"}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        onConfirm={handleConfirmRegenerate}
+      />
     </>
   );
 }

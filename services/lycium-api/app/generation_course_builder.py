@@ -14,6 +14,8 @@ from app.generation_helpers import COURSE_GENERATION_RULES, _build_module_summar
 from app.generation_outline import create_draft
 from app.models import CourseDraft, CourseSnapshot
 from app.retrieval import tokenize
+from app.source_corpus import compile_generation_source_corpus
+from app.source_packet_quality_gate import source_packet_quality_gate
 
 
 def _source_record_urls(source_records: list[dict[str, Any]]) -> list[str]:
@@ -277,10 +279,21 @@ def generate_course_direct(
     desired_module_count: int,
     expected_duration_minutes: int,
     source_urls: list[str] | None = None,
+    source_packet_id: int | str | None = None,
+    source_packet: dict[str, Any] | None = None,
     category: str | None = None,
     department: str | None = None,
 ) -> CourseSnapshot:
-    if not source_count_meets_minimum(source_urls):
+    source_corpus = compile_generation_source_corpus(
+        prompt=prompt,
+        source_urls=source_urls,
+        fetch_sources=False,
+        source_packet_id=source_packet_id,
+        source_packet=source_packet,
+    )
+    effective_source_urls = source_corpus.source_urls or [str(url) for url in source_urls or []]
+    packet_gate = source_packet_quality_gate(source_corpus.synthesis)
+    if not source_count_meets_minimum(effective_source_urls) or packet_gate:
         return create_needs_sources_course_snapshot(
             session,
             prompt=prompt,
@@ -290,7 +303,9 @@ def generate_course_direct(
             source_policy=source_policy,
             desired_module_count=desired_module_count,
             expected_duration_minutes=expected_duration_minutes,
-            source_urls=source_urls,
+            source_urls=effective_source_urls,
+            source_packet=source_packet,
+            source_gate=packet_gate,
             category=category,
             department=department,
         )
@@ -308,7 +323,9 @@ def generate_course_direct(
             "source_policy": source_policy,
             "free_only": free_only,
             "trust_min": trust_min,
-            "source_urls": source_urls or [],
+            "source_urls": effective_source_urls,
+            "source_packet_id": source_packet_id,
+            "source_packet": source_packet,
             "category": category,
             "department": department,
         },

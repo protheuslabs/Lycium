@@ -63,9 +63,36 @@
   .program-meta-row span,
   .program-benchmark-topics span,
   .program-evidence-chip,
-  .program-action-chip {
+  .program-action-chip,
+  .program-artifact-evidence-list span {
     color: #dbeafe;
     background: #222734;
+  }
+
+  .program-artifact-toggle,
+  .program-artifact-submit {
+    color: #f8fafc;
+    background: #2f3b54;
+  }
+
+  .program-artifact-form {
+    background: #111112;
+  }
+
+  .program-artifact-form label {
+    color: #cbd5e1;
+  }
+
+  .program-artifact-form input,
+  .program-artifact-form textarea {
+    color: #f8fafc;
+    background: #0b0b0c;
+    box-shadow: inset 0 0 0 1px rgba(245, 245, 245, 0.08);
+  }
+
+  .program-submitted-artifacts a {
+    color: #a7f3d0;
+    background: #123626;
   }
 
   .program-requirement-eyebrow span {

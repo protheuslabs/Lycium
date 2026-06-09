@@ -2,6 +2,7 @@ import type {
   LyciumCompletionRule,
   LyciumCurriculumBenchmark,
   LyciumDependencyEdge,
+  LyciumEvidenceArtifactSubmission,
   LyciumPortfolioArtifactRequirement,
   LyciumProgram,
   LyciumRequirement,
@@ -9,6 +10,8 @@ import type {
 import type { CSSProperties } from "react";
 import Button from "../Button/Button";
 import type { CourseEntry } from "../../courseTypes";
+import type { ProgramArtifactDraft } from "../../hooks/useProgramArtifacts";
+import ProgramArtifactSubmission, { artifactSubmitted, artifactsForRequirement } from "./ProgramArtifactSubmission";
 import RequirementDetailPanel from "./RequirementDetailPanel";
 import { getCourseProgress } from "../../utils/courseRouting";
 import {
@@ -42,9 +45,11 @@ type ProgramViewProps = {
   courses: CourseEntry[];
   benchmarks: LyciumCurriculumBenchmark[];
   portfolioArtifacts: Map<string, LyciumPortfolioArtifactRequirement>;
+  submittedArtifacts: LyciumEvidenceArtifactSubmission[];
   sources: SourceRecord[];
   onOpenCourse: (course: CourseEntry) => void;
   onOpenCatalog: () => void;
+  onSubmitArtifact: (artifact: ProgramArtifactDraft) => void;
 };
 
 function unique(values: string[]): string[] {
@@ -113,29 +118,35 @@ function benchmarkTitle(benchmarkId: string, benchmarkMap: Map<string, LyciumCur
 }
 
 function RequirementRow({
+  programId,
   requirement,
   courseMap,
   sourceMap,
   benchmarkMap,
   portfolioArtifacts,
+  submittedArtifacts,
   evaluationMap,
   requirementTitleMap,
   dependencyEdges,
   onOpenCourse,
+  onSubmitArtifact,
   depth = 0,
 }: {
+  programId: string;
   requirement: LyciumRequirement;
   courseMap: Map<string, CourseEntry>;
   sourceMap: Map<string, SourceRecord>;
   benchmarkMap: Map<string, LyciumCurriculumBenchmark>;
   portfolioArtifacts: Map<string, LyciumPortfolioArtifactRequirement>;
+  submittedArtifacts: LyciumEvidenceArtifactSubmission[];
   evaluationMap: Map<string, RequirementProgressEvaluation>;
   requirementTitleMap: Map<string, string>;
   dependencyEdges: LyciumDependencyEdge[];
   onOpenCourse: (course: CourseEntry) => void;
+  onSubmitArtifact: (artifact: ProgramArtifactDraft) => void;
   depth?: number;
 }) {
-  const baseEvaluation = evaluationMap.get(requirement.id) ?? evaluateRequirementProgress(requirement, courseMap);
+  const baseEvaluation = evaluationMap.get(requirement.id) ?? evaluateRequirementProgress(requirement, courseMap, undefined, submittedArtifacts);
   const blockers = dependencyBlockers(requirement, dependencyEdges, evaluationMap, requirementTitleMap);
   const evaluation =
     blockers.length > 0 && baseEvaluation.status !== "complete" && baseEvaluation.status !== "missing"
@@ -144,8 +155,11 @@ function RequirementRow({
   const timeEstimate = estimateRequirementTime(requirement, courseMap);
   const courseIds = requirementCourseIds(requirement);
   const portfolioArtifact = requirement.type === "submit_project" ? portfolioArtifacts.get(requirement.projectId) : null;
+  const requirementArtifacts = artifactsForRequirement(requirement, submittedArtifacts);
+  const submittedCount = requirementArtifacts.filter(artifactSubmitted).length;
   const actionLabel = requirementActionLabel(requirement, portfolioArtifact);
   const title = requirement.title ?? requirement.id;
+  const canSubmitArtifact = requirement.type === "submit_project";
 
   return (
     <div className={`program-requirement program-requirement-status-${evaluation.status}`} style={{ "--program-depth": depth } as CSSProperties}>
@@ -187,8 +201,19 @@ function RequirementRow({
         <div className="program-action-chip-row">
           <span className="program-action-chip">{actionLabel}</span>
           {portfolioArtifact && <span className="program-action-chip">{portfolioArtifact.artifactType.replace(/_/g, " ")}</span>}
-          <span className="program-action-chip program-action-chip-placeholder">Evidence submission UI not connected yet</span>
+          {canSubmitArtifact && <span className="program-action-chip">{submittedCount} submitted</span>}
         </div>
+      )}
+
+      {canSubmitArtifact && (
+        <ProgramArtifactSubmission
+          programId={programId}
+          requirement={requirement}
+          title={title}
+          portfolioArtifact={portfolioArtifact}
+          artifacts={requirementArtifacts}
+          onSubmitArtifact={onSubmitArtifact}
+        />
       )}
 
       {blockers.length > 0 && (
@@ -227,6 +252,7 @@ function RequirementRow({
         sourceMap={sourceMap}
         benchmarkMap={benchmarkMap}
         portfolioArtifact={portfolioArtifact}
+        submittedArtifacts={requirementArtifacts}
         requirementTitleMap={requirementTitleMap}
       />
 
@@ -235,15 +261,18 @@ function RequirementRow({
           {requirement.requirements.map((nested) => (
             <RequirementRow
               key={nested.id}
+              programId={programId}
               requirement={nested}
               courseMap={courseMap}
                   sourceMap={sourceMap}
                   benchmarkMap={benchmarkMap}
                   portfolioArtifacts={portfolioArtifacts}
+                  submittedArtifacts={submittedArtifacts}
                   evaluationMap={evaluationMap}
                   requirementTitleMap={requirementTitleMap}
                   dependencyEdges={dependencyEdges}
                   onOpenCourse={onOpenCourse}
+                  onSubmitArtifact={onSubmitArtifact}
                   depth={depth + 1}
                 />
           ))}
@@ -253,9 +282,10 @@ function RequirementRow({
   );
 }
 
-export default function ProgramView({ program, courses, benchmarks, portfolioArtifacts, sources, onOpenCourse, onOpenCatalog }: ProgramViewProps) {
+export default function ProgramView({ program, courses, benchmarks, portfolioArtifacts, submittedArtifacts, sources, onOpenCourse, onOpenCatalog, onSubmitArtifact }: ProgramViewProps) {
   const courseMap = new Map(courses.map((course) => [course.key, course]));
-  const programProgress = rollupProgramProgress(program, courseMap);
+  const scopedArtifacts = submittedArtifacts.filter((artifact) => artifact.programId === program.id);
+  const programProgress = rollupProgramProgress(program, courseMap, undefined, scopedArtifacts);
   const programTimeEstimate = estimateProgramTime(program, courses);
   const sourceMap = new Map(sources.map((source) => [source.id, source]));
   const benchmarkMap = new Map(benchmarks.map((benchmark) => [benchmark.id, benchmark]));
@@ -265,10 +295,10 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
     ...program.requirementGroups.flatMap((group) => allRequirementNodes(group.requirements)),
   ];
   const requirementTitleMap = new Map(requirementNodes.map((requirement) => [requirement.id, requirement.title ?? requirement.id]));
-  const evaluationMap = new Map(requirementNodes.map((requirement) => [requirement.id, evaluateRequirementProgress(requirement, courseMap)]));
+  const evaluationMap = new Map(requirementNodes.map((requirement) => [requirement.id, evaluateRequirementProgress(requirement, courseMap, undefined, scopedArtifacts)]));
   const allRequirements = program.requirementGroups.flatMap((group) => leafRequirements(group.requirements));
   const requiredRequirements = allRequirements.filter((requirement) => requirement.required !== false);
-  const evaluations = requiredRequirements.map((requirement) => evaluateRequirementProgress(requirement, courseMap));
+  const evaluations = requiredRequirements.map((requirement) => evaluateRequirementProgress(requirement, courseMap, undefined, scopedArtifacts));
   const missingCourseRefs = unique(evaluations.flatMap((evaluation) => evaluation.missingCourseIds));
   const sourceCoveredCount = evaluations.filter((evaluation) => evaluation.evidenceIds.length > 0).length;
   const assessmentOrProjectCount = requiredRequirements.filter((requirement) => requirement.type === "pass_assessment" || requirement.type === "submit_project").length;
@@ -317,6 +347,10 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
         <div>
           <span className="program-quality-number">{assessmentOrProjectCount}</span>
           <span>assessment or portfolio gates</span>
+        </div>
+        <div>
+          <span className="program-quality-number">{scopedArtifacts.filter(artifactSubmitted).length}</span>
+          <span>submitted evidence artifacts</span>
         </div>
         <div>
           <span className="program-quality-number">{benchmarks.length}</span>
@@ -372,6 +406,8 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
             {capstoneRequirements.map((requirement) => (
               <span className="program-action-chip" key={requirement.id}>
                 {portfolioArtifacts.get(requirement.projectId)?.title ?? requirement.title ?? requirement.projectId}
+                {" · "}
+                {artifactsForRequirement(requirement, scopedArtifacts).filter(artifactSubmitted).length} submitted
               </span>
             ))}
           </div>
@@ -397,7 +433,7 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
 
       <section className="program-cluster-list" aria-label="Program requirement groups">
         {program.requirementGroups.map((group) => {
-          const progress = rollupRequirementGroupProgress(group, courseMap);
+          const progress = rollupRequirementGroupProgress(group, courseMap, undefined, scopedArtifacts);
           const groupTimeEstimate = estimateRequirementGroupTime(group, courseMap);
           return (
             <article className="program-cluster-card" key={group.id}>
@@ -432,15 +468,18 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
                 {group.requirements.map((requirement) => (
                   <RequirementRow
                     key={requirement.id}
+                    programId={program.id}
                     requirement={requirement}
                     courseMap={courseMap}
                   sourceMap={sourceMap}
                   benchmarkMap={benchmarkMap}
                   portfolioArtifacts={portfolioArtifacts}
+                  submittedArtifacts={scopedArtifacts}
                   evaluationMap={evaluationMap}
                   requirementTitleMap={requirementTitleMap}
                   dependencyEdges={dependencyEdges}
                   onOpenCourse={onOpenCourse}
+                  onSubmitArtifact={onSubmitArtifact}
                 />
               ))}
               </div>

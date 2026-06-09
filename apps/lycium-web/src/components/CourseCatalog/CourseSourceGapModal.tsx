@@ -2,7 +2,14 @@ import { useMemo, useState, type FormEvent } from "react";
 import type { CourseEntry } from "../../courseTypes";
 import Dropdown from "../Dropdown/Dropdown";
 import Modal from "../Modal/Modal";
-import { getCourseSourceGapSuggestions, sourceGapSummary } from "../../utils/courseSourceGaps";
+import {
+  getCourseSourceGapSuggestions,
+  sourceGapConceptCoverage,
+  sourceGapMinimumUsefulSources,
+  sourceGapNeededFor,
+  sourceGapRecommendedTypes,
+  sourceGapSummary,
+} from "../../utils/courseSourceGaps";
 
 type CourseSourceGapModalProps = {
   course: CourseEntry;
@@ -82,6 +89,10 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
           <strong>{suggestions.length + queuedCount}</strong>
           <span>queued suggestions</span>
         </article>
+        <article>
+          <strong>{summary.conceptCoveragePercent}%</strong>
+          <span>concept coverage</span>
+        </article>
       </div>
       <section className="course-source-gap-policy" aria-label="Source coverage policy">
         <h3>Coverage policy</h3>
@@ -124,14 +135,33 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
               <h3>{gap.title}</h3>
               <span>{gap.severity}</span>
             </div>
-            <p>{gap.neededFor}</p>
+            <p>{sourceGapNeededFor(gap)}</p>
             <div className="course-source-gap-meta">
-              <span>{gap.currentSourceCount}/{gap.minimumUsefulSources} useful sources</span>
+              <span>{gap.currentSourceCount}/{sourceGapMinimumUsefulSources(gap)} useful sources</span>
               {gap.scopeType && <span>{gap.scopeType}</span>}
-              {(gap.recommendedSourceTypes ?? []).slice(0, 4).map((sourceType) => (
+              {sourceGapRecommendedTypes(gap).slice(0, 4).map((sourceType) => (
                 <span key={sourceType}>{sourceType.replace(/_/g, " ")}</span>
               ))}
             </div>
+            {sourceGapConceptCoverage(gap).requiredConceptCount > 0 && (
+              <div className="course-source-gap-coverage" aria-label={`Concept coverage for ${gap.title}`}>
+                <strong>
+                  {sourceGapConceptCoverage(gap).coveredConceptCount}/{sourceGapConceptCoverage(gap).requiredConceptCount} concepts covered
+                </strong>
+                <div>
+                  {sourceGapConceptCoverage(gap).coveredConcepts.slice(0, 8).map((concept) => (
+                    <span className="course-source-gap-concept-covered" key={`covered-${concept}`}>
+                      {concept}
+                    </span>
+                  ))}
+                  {sourceGapConceptCoverage(gap).uncoveredConcepts.slice(0, 8).map((concept) => (
+                    <span className="course-source-gap-concept-missing" key={`missing-${concept}`}>
+                      {concept}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {Boolean(gap.requiredConcepts?.length) && (
               <div className="course-source-gap-concepts">
                 {gap.requiredConcepts?.map((concept) => <span key={concept}>{concept}</span>)}
@@ -155,7 +185,7 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
           <div className="course-source-gap-selected">
             <strong>Add source for</strong>
             <span>{selectedGap.title}</span>
-            <p>{selectedGap.neededFor}</p>
+            <p>{sourceGapNeededFor(selectedGap)}</p>
           </div>
         )}
         <Dropdown

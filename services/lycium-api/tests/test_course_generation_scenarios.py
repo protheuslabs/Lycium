@@ -270,6 +270,22 @@ def test_multi_source_noisy_corpus_fixture_excludes_irrelevant_material() -> Non
     assert "tomato sauce" not in rendered_text
 
 
+def test_intro_programming_scenario_rejects_inherited_only_concept_source_mappings() -> None:
+    course = source_backed_course_from_scenario("intro-programming-foundations")
+    for module in course["modules"]:
+        for section in module["sections"]:
+            for block in section["content"]:
+                if block.get("type") == "conceptCard":
+                    block.pop("sourceIds", None)
+
+    report = evaluate_course_generation_scenario(course, "intro-programming-foundations")
+
+    source_mapping = next(check for check in report["checks"] if check["key"] == "source_mapping")
+    assert report["status"] == "failed"
+    assert source_mapping["metrics"]["directConceptSourceCoverage"] < 1
+    assert any("Concept cards should carry direct source mappings" in finding["message"] for finding in source_mapping["findings"])
+
+
 def test_course_generation_scenario_rejects_prompt_like_filler() -> None:
     course = source_backed_course_from_scenario("intro-programming-foundations")
     course["modules"][0]["sections"][0]["content"][0]["value"] = (

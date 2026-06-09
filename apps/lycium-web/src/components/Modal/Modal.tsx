@@ -9,6 +9,7 @@ type ModalProps = {
   title: string;
   eyebrow?: string;
   labelledById: string;
+  describedById?: string;
   size?: ModalSize;
   className?: string;
   children: ReactNode;
@@ -20,6 +21,7 @@ export default function Modal({
   title,
   eyebrow,
   labelledById,
+  describedById,
   size = "md",
   className = "",
   children,
@@ -61,6 +63,7 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledById}
+        aria-describedby={describedById}
         onMouseDown={(event) => event.stopPropagation()}
       >
         <button className="lycium-modal-close" type="button" aria-label={`Close ${title}`} onClick={onClose}>

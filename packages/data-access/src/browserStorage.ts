@@ -2,6 +2,7 @@ import type {
   LyciumBookmarkRecord,
   LyciumCourseEntry,
   LyciumCourseFeedbackRecord,
+  LyciumEvidenceArtifactSubmission,
   LyciumProgressRecord,
   LyciumQuizProgressRecord,
   LyciumThemeMode,
@@ -59,6 +60,10 @@ export function getLocalCourseDraftsStorageKey(): string {
   return "lycium-local-course-drafts";
 }
 
+export function getProgramArtifactsStorageKey(): string {
+  return "lycium-program-artifacts";
+}
+
 export function createBrowserStorageRepository() {
   return {
     readLocalCourseDrafts(): LyciumCourseEntry[] {
@@ -78,6 +83,25 @@ export function createBrowserStorageRepository() {
       const current = this.readLocalCourseDrafts();
       const next = [course, ...current.filter((draft) => draft.key !== course.key)];
       this.writeLocalCourseDrafts(next);
+    },
+
+    readProgramArtifacts(): LyciumEvidenceArtifactSubmission[] {
+      return readJson<LyciumEvidenceArtifactSubmission[]>(getProgramArtifactsStorageKey()) ?? [];
+    },
+
+    writeProgramArtifacts(artifacts: LyciumEvidenceArtifactSubmission[]): void {
+      writeJson(getProgramArtifactsStorageKey(), artifacts);
+    },
+
+    upsertProgramArtifact(artifact: LyciumEvidenceArtifactSubmission): void {
+      const current = this.readProgramArtifacts();
+      const next = [artifact, ...current.filter((existing) => existing.id !== artifact.id)];
+      this.writeProgramArtifacts(next);
+    },
+
+    removeProgramArtifact(artifactId: string): void {
+      const next = this.readProgramArtifacts().filter((artifact) => artifact.id !== artifactId);
+      this.writeProgramArtifacts(next);
     },
 
     readProgress(courseKey: string): LyciumProgressRecord | null {

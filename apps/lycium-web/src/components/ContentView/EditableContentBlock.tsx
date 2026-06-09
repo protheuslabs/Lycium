@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import QuizBlock from "../Quiz/QuizBlock";
 import VideoBlock from "../Video/VideoBlock";
-import { DeleteBlockButton, EditPencilButton, promptForDeleteBlock, promptForText } from "./CourseEditControls";
+import { DeleteBlockButton, EditPencilButton, promptForDeleteConfirmation, promptForText } from "./CourseEditControls";
 import type {
   ConceptCard,
   ContentBlock,
@@ -78,7 +78,7 @@ export default function EditableContentBlock({
   const deleteAction = (
     <DeleteBlockButton
       label="Delete block"
-      onClick={() => promptForDeleteBlock(() => onBlockDelete?.(sectionId, blockIndex))}
+      onClick={() => promptForDeleteConfirmation(() => onBlockDelete?.(sectionId, blockIndex))}
     />
   );
   const blockCitation = (
@@ -147,7 +147,7 @@ export default function EditableContentBlock({
         block,
         isEditMode,
         updateBlock,
-        () => promptForDeleteBlock(() => onBlockDelete?.(sectionId, blockIndex)),
+        () => promptForDeleteConfirmation(() => onBlockDelete?.(sectionId, blockIndex)),
         blockCitation,
       );
 

@@ -1,6 +1,7 @@
 import type {
   LyciumCurriculumBenchmark,
   LyciumDependencyEdge,
+  LyciumEvidenceArtifactSubmission,
   LyciumPortfolioArtifactRequirement,
   LyciumRequirement,
 } from "@lycium/contracts";
@@ -28,6 +29,7 @@ type RequirementDetailPanelProps = {
   sourceMap: Map<string, SourceRecord>;
   benchmarkMap: Map<string, LyciumCurriculumBenchmark>;
   portfolioArtifact?: LyciumPortfolioArtifactRequirement | null;
+  submittedArtifacts: LyciumEvidenceArtifactSubmission[];
   requirementTitleMap: Map<string, string>;
 };
 
@@ -57,6 +59,7 @@ export default function RequirementDetailPanel({
   sourceMap,
   benchmarkMap,
   portfolioArtifact,
+  submittedArtifacts,
   requirementTitleMap,
 }: RequirementDetailPanelProps) {
   const downstreamEdges = dependencyEdges.filter((edge) => edge.fromNodeId === requirement.id);
@@ -98,6 +101,7 @@ export default function RequirementDetailPanel({
             <h5>Portfolio artifact</h5>
             <p>{portfolioArtifact.artifactType.replace(/_/g, " ")}</p>
             {portfolioArtifact.rubricId && <p>Rubric: {portfolioArtifact.rubricId}</p>}
+            <p>{submittedArtifacts.length} submitted artifact{submittedArtifacts.length === 1 ? "" : "s"}</p>
             <div className="program-requirement-detail-chip-row">
               {portfolioArtifact.requiredEvidence.map((item) => <span key={item}>{item}</span>)}
             </div>

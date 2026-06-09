@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CourseBlock, CourseData, CourseEntry, CourseModule, CourseSection, SectionStatus } from "../../courseTypes";
+import type { CourseBlock, CourseModule } from "../../courseTypes";
 import ContentView from "../ContentView/ContentView";
 import type { SourceRecord } from "../ContentView/ContentView";
 import type { ContentBlock } from "../ContentView/contentViewTypes";
-import type { SectionRegenerationRequest } from "../../hooks/useCourseSectionRegenerationActions";
 import Sidebar from "../Sidebar/Sidebar";
 import CourseSettingsModal, { type CourseSettingsDraft } from "./CourseSettingsModal";
+import type { CourseLearningLayoutProps } from "./CourseLearningLayout.types";
 import {
   cloneModules,
   courseAllowsLocalEdit,
@@ -24,28 +24,6 @@ import {
   stripSectionPrefix,
   titleFromUrl,
 } from "../CourseEditing/courseEditPrimitives";
-
-type DisplaySection = CourseSection & { moduleId?: string; moduleIndex: number; moduleTitle: string; displayNumber: string };
-type ProgressSummary = { percentage: number; viewedPercentage: number };
-
-type CourseLearningLayoutProps = {
-  sections: DisplaySection[];
-  visibleSectionIndex: number;
-  selectedCourse: CourseEntry | undefined;
-  currentSection: DisplaySection | null;
-  courseProgress: ProgressSummary;
-  moduleProgress: ProgressSummary;
-  resolvedSectionStatuses: Record<string, SectionStatus>;
-  completedSectionIds: Set<string>;
-  orderMandatory: boolean;
-  sources: SourceRecord[];
-  onSectionSelect: (index: number) => void;
-  onCompleteSection: (sectionId: string) => void;
-  onSectionTimedStatusChange: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
-  onSaveCourseDraft: (courseKey: string, data: CourseData) => void;
-  canUseAiRefresh?: boolean;
-  onRegenerateSection?: (request: SectionRegenerationRequest) => Promise<CourseEntry>;
-};
 export default function CourseLearningLayout({
   sections,
   visibleSectionIndex,
@@ -62,6 +40,7 @@ export default function CourseLearningLayout({
   onSectionTimedStatusChange,
   onSaveCourseDraft,
   canUseAiRefresh = false,
+  aiConnectionLockReason,
   onRegenerateSection,
 }: CourseLearningLayoutProps) {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -129,6 +108,12 @@ export default function CourseLearningLayout({
   );
   const effectiveSectionIndex = activeEditMode ? editSectionIndex ?? visibleSectionIndex : visibleSectionIndex;
   const displayedCurrentSection = displayedSections[effectiveSectionIndex] ?? displayedSections[0] ?? currentSection;
+  const sectionRefreshLockedReason = !selectedCourse?.snapshotId
+    ? "Section refresh is only available for generated or API-backed course snapshots. Fork or generate a local draft first."
+    : !canUseAiRefresh
+      ? aiConnectionLockReason ?? "Connect and verify an AI model in Settings before regenerating a section."
+      : undefined;
+  const sectionRefreshLockedAction = selectedCourse?.snapshotId && !canUseAiRefresh ? "settings" : null;
   const resetDraft = () => {
     setDraftCourseTitle("");
     setDraftCourseSettings({
@@ -471,6 +456,8 @@ export default function CourseLearningLayout({
           onBlockMove={handleBlockMove}
           onSourceCreate={handleSourceCreate}
           canRegenerateSection={Boolean(selectedCourse?.snapshotId) && canUseAiRefresh}
+          sectionRefreshLockedReason={sectionRefreshLockedReason}
+          sectionRefreshLockedAction={sectionRefreshLockedAction}
           onRegenerateSection={
             selectedCourse && displayedCurrentSection?.moduleId && onRegenerateSection
               ? (payload) =>

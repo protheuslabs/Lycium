@@ -7,19 +7,21 @@ import { usePathname, useRouter } from "next/navigation";
 import CourseCatalog from "./components/CourseCatalog/CourseCatalog";
 import CourseLearningLayout from "./components/CourseLearningLayout/CourseLearningLayout";
 import ProgramView from "./components/ProgramView/ProgramView";
-import SettingsModal from "./components/SettingsModal/SettingsModal";
+import AppSettingsModal from "./components/SettingsModal/AppSettingsModal";
 import TopBar from "./components/TopBar/TopBar";
 import { localCourses } from "./courseData/localCourses";
 import { localPortfolioArtifactMap, localPrograms, programBenchmarks } from "./courseData/programs";
 import sourceRecordsData from "./courseData/sourceRecords";
 import type { CourseEntry, CourseSection } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
+import { describeAiConnectionReadiness } from "./utils/aiConnectionReadiness";
 import { useConfiguredCourses } from "./hooks/useConfiguredCourses";
 import { useCourseEditingActions } from "./hooks/useCourseEditingActions";
 import { useCourseGenerationActions } from "./hooks/useCourseGenerationActions";
 import { useCourseProgressState } from "./hooks/useCourseProgressState";
 import { useCourseSectionRegenerationActions } from "./hooks/useCourseSectionRegenerationActions";
 import { useCourseSourceGapActions } from "./hooks/useCourseSourceGapActions";
+import { useProgramArtifacts } from "./hooks/useProgramArtifacts";
 import { API_BASE, browserStorage, localApiSyncEnabled, lyciumApi, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { summarizeCourseProgress } from "./utils/courseProgress";
 import { COURSE_CATALOG_PATH, COURSE_CATALOG_COURSES_PATH, COURSE_CATALOG_PROGRAMS_PATH, LYCIUM_ROUTE_ROOT, SETTINGS_PATH, browserPathForRoute, findBookmarkedSection, getCatalogClusterPath, getCatalogProgramPath, getCoursePath, getCoursePathSlug, getCourseSectionIndex, getCourseSectionPath, getFirstCourseSection, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug, parseCourseRoute } from "./utils/courseRouting";
@@ -50,6 +52,7 @@ function App() {
     [pageBehindSettingsPath, route],
   );
   const agentSettings = useAgentSettings(route.kind, API_BASE);
+  const { programArtifacts, submitProgramArtifact } = useProgramArtifacts();
 
   const coursesByPathSlug = useMemo(() => {
     const map = new Map<string, string>();
@@ -308,8 +311,6 @@ function App() {
   );
 
   const { createManualCourse, deleteCourseDraft, exportCourseDraft, forkCourse, importCourseDraft, resetCourseDraft, saveCourseDraft } = useCourseEditingActions({ openCourseByEntry, setCourses });
-  const { regenerateCourseSection } = useCourseSectionRegenerationActions({ learnerId, openCourseByEntry, setCourses });
-
   const goToSectionIndex = useCallback((index: number) => {
     setCurrentSectionIndex(index);
     const section = sections[index];
@@ -318,13 +319,26 @@ function App() {
     }
   }, [pushSectionPath, sections, selectedCourse]);
 
-  const activeAiReady = agentSettings.agentKeys.some((key) => key.is_active && Boolean(key.model) && key.connection_status !== "unverified");
+  const activeAiConnection = useMemo(
+    () => describeAiConnectionReadiness(agentSettings.agentKeys),
+    [agentSettings.agentKeys],
+  );
+  const activeAiReady = activeAiConnection.ready;
+
+  const { regenerateCourseSection } = useCourseSectionRegenerationActions({
+    learnerId,
+    activeAiReady,
+    aiLockedReason: activeAiConnection.lockedReason,
+    openCourseByEntry,
+    setCourses,
+  });
 
 const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCourse, handlePublishCourse, handleResumeCourseSourceGap } = useCourseGenerationActions({
   prompt,
   level,
   learnerId,
   activeAiReady,
+  aiLockedReason: activeAiConnection.lockedReason,
   setCourses,
   setPrompt,
   openCourseByEntry,
@@ -424,6 +438,7 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
           prompt={prompt}
           level={level}
           canCreateCourse={activeAiReady}
+          aiLockedReason={activeAiConnection.lockedReason}
           generateStatus={generateStatus}
           generateMessage={generateMessage}
           onPromptChange={setPrompt}
@@ -444,10 +459,8 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
           program={selectedProgram}
           courses={courses}
           benchmarks={programBenchmarks[selectedProgram.id as keyof typeof programBenchmarks] ?? []}
-          portfolioArtifacts={localPortfolioArtifactMap}
-          sources={sourceRecordsData.sources}
-          onOpenCourse={openCourseByEntry}
-          onOpenCatalog={routeToHome}
+          portfolioArtifacts={localPortfolioArtifactMap} submittedArtifacts={programArtifacts} sources={sourceRecordsData.sources}
+          onOpenCourse={openCourseByEntry} onOpenCatalog={routeToHome} onSubmitArtifact={submitProgramArtifact}
         />
       ) : (
         <CourseLearningLayout
@@ -466,32 +479,12 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
 	          onSectionTimedStatusChange={handleSectionTimedStatusChange}
 	          onSaveCourseDraft={saveCourseDraft}
             canUseAiRefresh={activeAiReady}
+            aiConnectionLockReason={activeAiConnection.lockedReason}
             onRegenerateSection={regenerateCourseSection}
 	        />
       )}
 
-      <SettingsModal
-        isOpen={route.kind === "settings"}
-        agentKeys={agentSettings.agentKeys}
-        agentProviders={agentSettings.agentProviders}
-        agentProviderId={agentSettings.agentProviderId}
-        agentApiKey={agentSettings.agentApiKey}
-        apiKeySaveStatus={agentSettings.apiKeySaveStatus}
-        verifyingAgentKeyId={agentSettings.verifyingAgentKeyId}
-        canAddAgentKey={agentSettings.canAddAgentKey}
-        themeMode={agentSettings.themeMode}
-        settingsMessage={agentSettings.settingsMessage}
-        settingsStatus={agentSettings.settingsStatus}
-        onClose={closeSettingsModal}
-        onActivateAgentKey={agentSettings.handleActivateAgentKey}
-        onAgentModelChange={agentSettings.handleAgentModelChange}
-        onVerifyAgentKey={agentSettings.handleVerifyAgentKey}
-        onAgentProviderChange={agentSettings.setAgentProviderId}
-        onAgentApiKeyChange={agentSettings.setAgentApiKey}
-        onApiKeySaveStatusChange={agentSettings.setApiKeySaveStatus}
-        onSettingsSubmit={agentSettings.handleSettingsSubmit}
-        onThemeModeChange={agentSettings.handleThemeModeChange}
-      />
+      <AppSettingsModal isOpen={route.kind === "settings"} agentSettings={agentSettings} onClose={closeSettingsModal} />
     </div>
   );
 }
