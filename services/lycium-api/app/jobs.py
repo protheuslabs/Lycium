@@ -247,6 +247,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
             department=payload.get("department"),
             desired_module_count=int(payload.get("desired_module_count") or 3),
             expected_duration_minutes=int(payload.get("expected_duration_minutes") or 180),
+            max_stage_timeout_seconds=payload.get("max_stage_timeout_seconds"),
             model=payload.get("model") or agent_profile.get("model"),
             source_urls=[str(url) for url in payload.get("source_urls") or []],
             source_packet_id=payload.get("source_packet_id"),

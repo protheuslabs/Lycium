@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CourseBlock, CourseModule } from "../../courseTypes";
 import ContentView from "../ContentView/ContentView";
 import type { SourceRecord } from "../ContentView/ContentView";
@@ -39,6 +39,8 @@ export default function CourseLearningLayout({
   onCompleteSection,
   onSectionTimedStatusChange,
   onSaveCourseDraft,
+  initialEditCourseKey,
+  onInitialEditModeConsumed,
   canUseAiRefresh = false,
   aiConnectionLockReason,
   onRegenerateSection,
@@ -57,6 +59,7 @@ export default function CourseLearningLayout({
   const [draftModules, setDraftModules] = useState<CourseModule[] | null>(null);
   const [draftSourceRecords, setDraftSourceRecords] = useState<SourceRecord[] | null>(null);
   const [editSectionIndex, setEditSectionIndex] = useState<number | null>(null);
+  const initialEditStartedCourseKeyRef = useRef<string | null>(null);
   const canEditCourse = courseAllowsLocalEdit(selectedCourse);
   const displayedCourseTitle = draftCourseTitle || selectedCourse?.data?.title || "Course";
   const activeEditMode = isEditMode && canEditCourse;
@@ -130,12 +133,7 @@ export default function CourseLearningLayout({
     setIsCourseSourcesPageActive(false);
   };
 
-  useEffect(() => {
-    setIsEditMode(false);
-    resetDraft();
-  }, [selectedCourse?.key]);
-
-  const handleStartEdit = () => {
+  const startDraftEdit = () => {
     setDraftModules(cloneModules(selectedCourse?.data.modules ?? []));
     setDraftSourceRecords(normalizeCourseSourceRecords(selectedCourse));
     setDraftCourseSettings({
@@ -144,6 +142,26 @@ export default function CourseLearningLayout({
     });
     setEditSectionIndex(visibleSectionIndex);
     setIsEditMode(true);
+  };
+
+  useEffect(() => {
+    setIsEditMode(false);
+    resetDraft();
+    const shouldOpenInEditMode =
+      selectedCourse?.key &&
+      selectedCourse.key === initialEditCourseKey &&
+      initialEditStartedCourseKeyRef.current !== selectedCourse.key &&
+      canEditCourse;
+
+    if (shouldOpenInEditMode) {
+      initialEditStartedCourseKeyRef.current = selectedCourse.key;
+      startDraftEdit();
+      onInitialEditModeConsumed?.();
+    }
+  }, [selectedCourse?.key]);
+
+  const handleStartEdit = () => {
+    startDraftEdit();
   };
 
   const handleSectionSelect = (index: number) => {

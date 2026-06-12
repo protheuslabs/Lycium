@@ -29,6 +29,8 @@ export type CourseLearningLayoutProps = {
   onCompleteSection: (sectionId: string) => void;
   onSectionTimedStatusChange: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
   onSaveCourseDraft: (courseKey: string, data: CourseData) => void;
+  initialEditCourseKey?: string | null;
+  onInitialEditModeConsumed?: () => void;
   canUseAiRefresh?: boolean;
   aiConnectionLockReason?: string;
   onRegenerateSection?: (request: SectionRegenerationRequest) => Promise<CourseEntry>;

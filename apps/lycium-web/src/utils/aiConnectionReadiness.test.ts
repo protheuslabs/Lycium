@@ -47,6 +47,25 @@ describe("describeAiConnectionReadiness", () => {
     expect(readiness.lockedReason).toBe(AI_CONNECTION_LOCK_REASONS.missingModel("Test Provider"));
   });
 
+  it("blocks active models below the recommended course-generation floor", () => {
+    const warning = "qwen2.5:3b appears to be about 3B parameters. Use a 70B+ model.";
+    const readiness = describeAiConnectionReadiness([
+      agentKey({
+        provider_label: "Ollama Local",
+        model: "qwen2.5:3b",
+        model_capability: {
+          estimated_parameters_billion: 3,
+          minimum_recommended_parameters_billion: 70,
+          meets_recommended_floor: false,
+          warning,
+        },
+      }),
+    ]);
+
+    expect(readiness.ready).toBe(false);
+    expect(readiness.lockedReason).toBe(warning);
+  });
+
   it("is ready when the active connection is verified and has a model", () => {
     const readiness = describeAiConnectionReadiness([agentKey()]);
 
@@ -67,6 +86,10 @@ describe("describeAiConnectionReadiness", () => {
     expect(describeAgentKeyConnectionStatus(agentKey({ model: null }))).toEqual({
       status: "missing_model",
       label: "Choose model",
+    });
+    expect(describeAgentKeyConnectionStatus(agentKey({ model_capability: { meets_recommended_floor: false } }))).toEqual({
+      status: "underpowered",
+      label: "Use 70B+",
     });
     expect(describeAgentKeyConnectionStatus(agentKey({ is_active: false }))).toEqual({
       status: "ready",

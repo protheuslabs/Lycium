@@ -225,7 +225,7 @@ export default function CreateCourseModal({
           ) : (
             <div className="create-course-controls create-course-manual-panel">
               <p className="create-course-manual-note">
-                Start with one blank module and one blank section. You can build the course in edit mode after it opens.
+                Start with one blank module and one blank section. The course will open directly in edit mode.
               </p>
               <button className="create-course-submit" type="submit" disabled={!canSubmitCourse}>
                 Create blank course

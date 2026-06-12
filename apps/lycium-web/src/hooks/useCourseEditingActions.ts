@@ -15,6 +15,7 @@ import {
 type UseCourseEditingActionsArgs = {
   setCourses: Dispatch<SetStateAction<CourseEntry[]>>;
   openCourseByEntry: (course: CourseEntry, replace?: boolean) => Promise<void>;
+  onManualCourseCreated?: (course: CourseEntry) => void;
 };
 
 function safeDraftFilename(course: CourseEntry): string {
@@ -28,7 +29,7 @@ function safeDraftFilename(course: CourseEntry): string {
   return `${stem || "lycium-course-draft"}.lycium-draft.json`;
 }
 
-export function useCourseEditingActions({ setCourses, openCourseByEntry }: UseCourseEditingActionsArgs) {
+export function useCourseEditingActions({ setCourses, openCourseByEntry, onManualCourseCreated }: UseCourseEditingActionsArgs) {
   const saveCourseDraft = useCallback(
     (courseKey: string, data: CourseData) => {
       let conflictCourseToOpen: CourseEntry | null = null;
@@ -81,8 +82,9 @@ export function useCourseEditingActions({ setCourses, openCourseByEntry }: UseCo
     const course = createManualCourseDraft();
     persistLocalCourseDraft(course);
     setCourses((currentCourses) => [course, ...currentCourses]);
+    onManualCourseCreated?.(course);
     void openCourseByEntry(course);
-  }, [openCourseByEntry, setCourses]);
+  }, [onManualCourseCreated, openCourseByEntry, setCourses]);
 
   const deleteCourseDraft = useCallback(
     (course: CourseEntry) => {

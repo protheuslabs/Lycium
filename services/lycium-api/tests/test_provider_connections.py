@@ -110,6 +110,43 @@ def test_local_key_can_be_saved_unverified_then_verified_later(client, monkeypat
     assert verified_key["last_error"] is None
     assert verified_key["model"] == "llama3.1:70b"
     assert verified_key["models"][0]["id"] == "llama3.1:70b"
+    assert verified_key["model_capability"]["minimum_recommended_parameters_billion"] == 70
+    assert verified_key["model_capability"]["estimated_parameters_billion"] == 70
+    assert verified_key["model_capability"]["meets_recommended_floor"] is True
+
+
+def test_underpowered_local_model_is_saved_but_blocks_course_generation(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr(
+        "app.routes.local_routes.validate_agent_api_key",
+        lambda *args, **kwargs: _mock_models("qwen2.5:3b", "llama3.1:70b"),
+    )
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_job", lambda job_id: None)
+
+    saved = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
+
+    assert saved.status_code == 200, saved.text
+    key = saved.json()["agent_keys"][0]
+    assert key["model"] == "qwen2.5:3b"
+    assert key["model_capability"]["estimated_parameters_billion"] == 3
+    assert key["model_capability"]["meets_recommended_floor"] is False
+    assert "70B+ model" in key["model_capability"]["warning"]
+
+    job = client.post(
+        "/v1/agent/courses/jobs",
+        json={
+            "prompt": "Create an undergrad chemistry course",
+            "level": "undergrad",
+            "desired_module_count": 1,
+            "source_urls": [
+                "https://example.edu/chemistry/syllabus",
+                "https://example.edu/chemistry/readings",
+                "https://example.edu/chemistry/lab",
+            ],
+        },
+    )
+
+    assert job.status_code == 400
+    assert "70B+ model" in job.text
 
 
 def test_local_endpoint_input_routes_to_local_provider_even_if_provider_dropdown_is_stale(
@@ -249,3 +286,28 @@ def test_unverified_active_local_key_blocks_generation(client, monkeypatch, isol
     assert "unverified" in experiment.text
     assert job.status_code == 400
     assert "unverified" in job.text
+
+
+def test_generation_job_preserves_bounded_stage_timeout(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", _provider_models)
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_job", lambda job_id: None)
+    client.put("/v1/local/settings", json={"provider_id": "openai", "agent_api_key": "sk-valid-openai"})
+
+    response = client.post(
+        "/v1/agent/courses/jobs",
+        json={
+            "prompt": "Create an undergrad chemistry course from bounded model-sweep inputs",
+            "level": "undergrad",
+            "desired_module_count": 1,
+            "expected_duration_minutes": 90,
+            "max_stage_timeout_seconds": 45,
+            "source_urls": [
+                "https://example.edu/chemistry/syllabus",
+                "https://example.edu/chemistry/readings",
+                "https://example.edu/chemistry/lab",
+            ],
+        },
+    )
+
+    assert response.status_code == 202, response.text
+    assert response.json()["request"]["max_stage_timeout_seconds"] == 45

@@ -40,6 +40,7 @@ function App() {
   const [level, setLevel] = useState("");
   const [learnerId, setLearnerId] = useState<number | null>(null);
   const [currentPath, setCurrentPath] = useState(() => pathname ?? COURSE_CATALOG_PATH);
+  const [courseKeyToOpenInEditMode, setCourseKeyToOpenInEditMode] = useState<string | null>(null);
   const [pageBehindSettingsPath, setPageBehindSettingsPath] = useState(() => {
     const initialPath = pathname ?? COURSE_CATALOG_PATH;
     return parseCourseRoute(initialPath).kind === "settings" ? readSettingsBackdropPath() : initialPath;
@@ -310,7 +311,17 @@ function App() {
     [pushSectionPath, router],
   );
 
-  const { createManualCourse, deleteCourseDraft, exportCourseDraft, forkCourse, importCourseDraft, resetCourseDraft, saveCourseDraft } = useCourseEditingActions({ openCourseByEntry, setCourses });
+  const handleManualCourseCreated = useCallback((course: CourseEntry) => {
+    setCourseKeyToOpenInEditMode(course.key);
+  }, []);
+  const handleInitialEditModeConsumed = useCallback(() => {
+    setCourseKeyToOpenInEditMode(null);
+  }, []);
+  const { createManualCourse, deleteCourseDraft, exportCourseDraft, forkCourse, importCourseDraft, resetCourseDraft, saveCourseDraft } = useCourseEditingActions({
+    openCourseByEntry,
+    setCourses,
+    onManualCourseCreated: handleManualCourseCreated,
+  });
   const goToSectionIndex = useCallback((index: number) => {
     setCurrentSectionIndex(index);
     const section = sections[index];
@@ -477,7 +488,9 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
           onSectionSelect={goToSectionIndex}
 	          onCompleteSection={handleCompleteSection}
 	          onSectionTimedStatusChange={handleSectionTimedStatusChange}
-	          onSaveCourseDraft={saveCourseDraft}
+          onSaveCourseDraft={saveCourseDraft}
+          initialEditCourseKey={courseKeyToOpenInEditMode}
+          onInitialEditModeConsumed={handleInitialEditModeConsumed}
             canUseAiRefresh={activeAiReady}
             aiConnectionLockReason={activeAiConnection.lockedReason}
             onRegenerateSection={regenerateCourseSection}

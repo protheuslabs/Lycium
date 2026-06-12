@@ -353,6 +353,15 @@ export type LyciumAgentKeyRecord = {
   credential_label?: string;
   credential_kind?: "api_key" | "local_endpoint";
   contract?: LyciumAgentProviderContract | null;
+  model_capability?: {
+    recommended_model?: string | null;
+    minimum_recommended_parameters_billion?: number | null;
+    estimated_parameters_billion?: number | null;
+    is_recommended_model?: boolean;
+    meets_recommended_floor?: boolean;
+    warning?: string | null;
+    [key: string]: unknown;
+  };
 };
 
 export type LyciumThemeMode = "light" | "auto" | "dark";
@@ -383,6 +392,7 @@ export type LyciumCourseGenerationRequest = {
   department?: string;
   desired_module_count?: number;
   expected_duration_minutes?: number;
+  max_stage_timeout_seconds?: number;
   source_urls?: string[];
   input_artifacts?: Record<string, unknown>[];
 };

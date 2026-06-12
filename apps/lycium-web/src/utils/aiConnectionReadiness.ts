@@ -6,7 +6,7 @@ export type AiConnectionReadiness = {
   activeKey: AgentKeyRecord | null;
 };
 
-export type AiConnectionStatus = "active" | "ready" | "checking" | "unverified" | "missing_model";
+export type AiConnectionStatus = "active" | "ready" | "checking" | "unverified" | "missing_model" | "underpowered";
 
 export type AiConnectionStatusSummary = {
   status: AiConnectionStatus;
@@ -19,6 +19,9 @@ export const AI_CONNECTION_LOCK_REASONS = {
     `${providerLabel} is saved but not connected. Refresh the connection in Settings before using AI features.`,
   missingModel: (providerLabel: string) =>
     `Choose a model for ${providerLabel} in Settings before using AI features.`,
+  belowRecommendedFloor: (providerLabel: string, warning?: string | null) =>
+    warning ||
+    `${providerLabel} is connected, but the selected model is below Lycium's recommended course-generation capacity. Choose a 70B+ model.`,
 };
 
 export function describeAiConnectionReadiness(agentKeys: AgentKeyRecord[]): AiConnectionReadiness {
@@ -48,6 +51,17 @@ export function describeAiConnectionReadiness(agentKeys: AgentKeyRecord[]): AiCo
     };
   }
 
+  if (activeKey.model_capability?.meets_recommended_floor === false) {
+    return {
+      ready: false,
+      lockedReason: AI_CONNECTION_LOCK_REASONS.belowRecommendedFloor(
+        activeKey.provider_label,
+        activeKey.model_capability.warning,
+      ),
+      activeKey,
+    };
+  }
+
   return {
     ready: true,
     lockedReason: "",
@@ -71,6 +85,10 @@ export function describeAgentKeyConnectionStatus(
     return { status: "missing_model", label: "Choose model" };
   }
 
+  if (key.model_capability?.meets_recommended_floor === false) {
+    return { status: "underpowered", label: "Use 70B+" };
+  }
+
   if (key.is_active) {
     return { status: "active", label: "Active" };
   }
@@ -92,6 +110,13 @@ export function describeAgentKeyConnectionDetail(
 
   if (!key.model) {
     return AI_CONNECTION_LOCK_REASONS.missingModel(key.provider_label);
+  }
+
+  if (key.model_capability?.meets_recommended_floor === false) {
+    return AI_CONNECTION_LOCK_REASONS.belowRecommendedFloor(
+      key.provider_label,
+      key.model_capability.warning,
+    );
   }
 
   if (key.is_active) {

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.config import SETTINGS
-from app.course_agent_providers import agent_provider_contract, get_agent_provider
+from app.course_agent_providers import agent_provider_contract, assess_agent_model_capability, get_agent_provider
 from app.local_store_core import _now, _read_json, _safe_key, _write_json, ensure_local_data_dirs
 
 
@@ -64,9 +64,39 @@ def _agent_provider_metadata(provider_id: str, provider_label: str | None = None
         }
 
 
+def _agent_model_capability(provider_id: str, model: str | None) -> dict[str, Any]:
+    if not model:
+        return {
+            "recommended_model": None,
+            "minimum_recommended_parameters_billion": None,
+            "estimated_parameters_billion": None,
+            "is_recommended_model": False,
+            "meets_recommended_floor": True,
+            "warning": None,
+        }
+    try:
+        return assess_agent_model_capability(get_agent_provider(provider_id), str(model))
+    except Exception:
+        return {
+            "recommended_model": None,
+            "minimum_recommended_parameters_billion": None,
+            "estimated_parameters_billion": None,
+            "is_recommended_model": False,
+            "meets_recommended_floor": True,
+            "warning": None,
+        }
+
+
 def _enrich_agent_key(key: dict[str, Any]) -> dict[str, Any]:
     metadata = _agent_provider_metadata(str(key.get("provider_id") or "openai"), str(key.get("provider_label") or ""))
-    return {**key, **metadata}
+    return {
+        **key,
+        **metadata,
+        "model_capability": _agent_model_capability(
+            str(key.get("provider_id") or "openai"),
+            str(key.get("model") or "") or None,
+        ),
+    }
 
 
 def _normalize_model_records(models: Any, selected_model: str | None = None) -> list[dict[str, str]]:
@@ -185,6 +215,7 @@ def local_settings_summary() -> dict[str, Any]:
                 "credential_label": enriched_key.get("credential_label") or "api key",
                 "credential_kind": enriched_key.get("credential_kind") or "api_key",
                 "contract": enriched_key.get("contract"),
+                "model_capability": enriched_key.get("model_capability"),
             }
             for enriched_key in [_enrich_agent_key(key) for key in keys]
         ],
@@ -364,6 +395,13 @@ def require_verified_active_agent_profile() -> dict[str, Any]:
         raise ValueError("Active AI connection is unverified. Verify it in Settings before generating a course.")
     if not str(active_key.get("model") or "").strip():
         raise ValueError("Choose an AI model in Settings before generating a course.")
+    model_capability = active_key.get("model_capability") if isinstance(active_key.get("model_capability"), dict) else {}
+    if model_capability.get("meets_recommended_floor") is False:
+        warning = str(model_capability.get("warning") or "").strip()
+        raise ValueError(
+            warning
+            or "The selected AI model is below Lycium's recommended course-generation capacity. Choose a 70B+ model."
+        )
     return active_key
 
 

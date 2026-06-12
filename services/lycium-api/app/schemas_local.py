@@ -62,6 +62,7 @@ class LocalAgentKeyRead(BaseModel):
     credential_label: str = "api key"
     credential_kind: Literal["api_key", "local_endpoint"] = "api_key"
     contract: LocalAiProviderContractRead | None = None
+    model_capability: dict[str, Any] = Field(default_factory=dict)
 
 
 class LocalSettingsRead(BaseModel):

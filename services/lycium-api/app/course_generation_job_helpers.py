@@ -64,6 +64,7 @@ def job_payload_from_course_request(
         "department": payload.department,
         "desired_module_count": payload.desired_module_count,
         "expected_duration_minutes": payload.expected_duration_minutes,
+        "max_stage_timeout_seconds": payload.max_stage_timeout_seconds,
         "source_urls": source_urls,
         "source_packet_id": payload.source_packet_id,
         "source_packet": payload.source_packet,
