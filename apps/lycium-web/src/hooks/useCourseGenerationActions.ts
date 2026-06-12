@@ -25,7 +25,7 @@ type CourseClassification = {
   department: string;
 };
 
-function fileToGenerationPayload(file: File): Promise<LyciumGenerationInputFilePayload> {
+export function fileToGenerationPayload(file: File): Promise<LyciumGenerationInputFilePayload> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));

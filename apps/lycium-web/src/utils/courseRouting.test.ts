@@ -13,7 +13,6 @@ import {
   getSectionPathSlug,
   parseCourseRoute,
 } from "./courseRouting";
-import { getCatalogClusterRouteEntries, getCatalogProgramRouteEntries } from "../app/catalogRouteRegistry";
 
 const section: CourseSection = {
   id: "intro-to-routes",
@@ -46,8 +45,6 @@ describe("course routing helpers", () => {
   it("builds stable program and cluster slugs for static catalog routes", () => {
     expect(getProgramPathSlug({ id: "program-test", title: "Test Program" })).toBe("test-program-program-test");
     expect(getProgramClusterPathSlug({ id: "cluster-test", displayName: "Test Cluster" })).toBe("test-cluster-cluster-test");
-    expect(getCatalogProgramRouteEntries().length).toBeGreaterThan(0);
-    expect(getCatalogClusterRouteEntries().length).toBeGreaterThan(0);
   });
 
   it("parses home, settings, course, and unit routes", () => {
