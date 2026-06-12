@@ -43,9 +43,11 @@ def _staged_quiz_messages(
     module_outline: dict,
     module_number: int,
     lesson_sections: list[dict],
-    source_urls: list[str] | None,
+    source_urls: list[str] | None = None,
+    available_source_ids: list[str] | None = None,
+    source_context: dict | None = None,
 ) -> list[dict[str, str]]:
-    source_ids = _source_ids_for_input(source_urls)
+    source_ids = available_source_ids or _source_ids_for_input(source_urls)
     return [
         {
             "role": "system",
@@ -65,6 +67,12 @@ def _staged_quiz_messages(
                     "lesson_section_titles": [section.get("title") for section in lesson_sections],
                     "concepts_to_assess": _concepts_from_sections(lesson_sections),
                     "available_source_ids": source_ids,
+                    "source_context": source_context or {},
+                    "source_context_rule": (
+                        "Use source_context.sources as bounded evidence for quiz questions. "
+                        "Do not assess details that are not taught in lesson_sections or supported by the bounded excerpts."
+                    ),
+                    "evidence_rule": "Only assess concepts taught in this module and cite/use sourceIds assigned to those concepts.",
                     "minimum_question_count": 10,
                     "required_shape": {
                         "id": f"module-{module_number}-quiz",
@@ -103,10 +111,12 @@ def _staged_summary_messages(
     module_outline: dict,
     module_number: int,
     lesson_sections: list[dict],
-    source_urls: list[str] | None,
+    source_urls: list[str] | None = None,
+    available_source_ids: list[str] | None = None,
     pacing_label: str = "Module",
+    source_context: dict | None = None,
 ) -> list[dict[str, str]]:
-    source_ids = _source_ids_for_input(source_urls)
+    source_ids = available_source_ids or _source_ids_for_input(source_urls)
     return [
         {
             "role": "system",
@@ -125,6 +135,11 @@ def _staged_summary_messages(
                     "module_outline": module_outline,
                     "concepts_to_include": _concepts_from_sections(lesson_sections),
                     "available_source_ids": source_ids,
+                    "source_context": source_context or {},
+                    "source_context_rule": (
+                        "Use source_context only to keep concept definitions source-grounded. "
+                        "The summary should still be a compact concept inventory copied from module Learn pages."
+                    ),
                     "required_shape": {
                         "id": f"module-{module_number}-summary",
                         "title": f"{pacing_label} {module_number} Concept Review",

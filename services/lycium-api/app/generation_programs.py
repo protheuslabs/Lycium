@@ -9,6 +9,7 @@ from app.models import CourseSnapshot, Learner, ProgramSnapshot
 from app.program_contract_builder import build_program_contract
 from app.program_course_materialization import materialize_program_course_scaffold
 from app.curriculum_benchmarks import compile_curriculum_benchmark_context
+from app.program_generation_timeline import build_program_generation_timeline
 from app.program_quality import assess_program_quality
 from app.program_validation import validate_program_contract
 from app.retrieval import assemble_learning_packet, tokenize
@@ -437,6 +438,7 @@ def generate_program(
     }
     quality_report = assess_program_quality(structure)
     structure["qualityReport"] = quality_report
+    structure["generationTrace"]["timeline"] = build_program_generation_timeline(structure)
     program = ProgramSnapshot(
         learner_id=learner_id,
         title=structure["program"]["title"],

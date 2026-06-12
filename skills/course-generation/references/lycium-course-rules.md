@@ -46,6 +46,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
    When many sources are submitted, first run source corpus preflight. Use included sources as the course corpus and exclude irrelevant sources from requirements, lessons, quizzes, and citations unless a reviewer restores them.
    If submitted sources do not satisfy the course's source coverage policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps` instead of generating learner-facing placeholder modules.
    Map accepted sources to required concepts before drafting. Course-level source records are the full inventory, but section and block `sourceIds` should only include sources supporting concepts taught or assessed on that page.
+   For uploaded files or long source documents, use bounded, stage-relevant excerpts for lesson, quiz, media, and summary prompts. Do not pass full extracted documents into every staged model call.
 
 7. Draft instruction.
    Turn sub-units into teachable content blocks with examples, transitions, practice prompts, and source references.

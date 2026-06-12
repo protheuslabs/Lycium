@@ -8,6 +8,58 @@ The operating principle is:
 source index -> curriculum evidence -> program/course generation -> editable learning artifact -> learner progress -> feedback/evals
 ```
 
+Long-term product direction:
+
+- Lycium may eventually replace Canvas-like course software for compatible learning environments.
+- Lycium may also become program planning and registration-adjacent software, including programs, requirement groups, electives, prerequisites, sections, cohorts, schedules, and transcript-like records.
+- Do not build institution-style bureaucracy early. Build the open education and pathway compiler first, then add LMS and registration primitives only when they help learners access free education and complete real learning paths.
+- The strategic shape is documented in `VISION.md` under "Long-Term Product Shape: Learning Operating System."
+
+## Clean-start rebuild guardrails
+
+Status: Active
+
+Context: Seed sample courses and sample programs were removed so Lycium can rebuild catalog content through the actual manual-authoring, source-index, and generation workflows instead of carrying hand-authored demo artifacts as product truth.
+
+Rule:
+
+- Do not add new seeded catalog courses or seeded programs unless they are explicitly marked as test fixtures, generated artifacts, or user-created local drafts.
+- Do not implement UI changes from this todo list without explicit user approval.
+- Keep source-index records separate from course/program seed content so the evidence layer can remain useful even when the learning catalog is reset.
+- Prefer generic primitives over course-specific hardcoding.
+
+Clean-start todo:
+
+- Define a `test-fixture` versus `catalog-content` policy so CI can use fixtures without polluting the learner catalog. Done: see `docs/catalog-content-policy.md` and `pnpm check:seed-content`.
+- Make source packets the required input for any generated full course that claims source-backed completeness. Partial: strict packet gating now exists and quality evals can block publishability when `metadata.sourceCoveragePolicy.requireSourcePacketForPublishableCourses` is enabled.
+- Require every generated course to report source gaps by concept before it can become publishable. Partial: source-packet quality gate reports uncovered concept candidates as source-gap rows.
+- Ensure under-sourced generation creates a draft shell with missing-source needs instead of weak lesson filler. Done as a tested generation-contract expectation.
+- Generate program skeletons from requirement groups, prerequisites, capstone/project requirements, and course shells before generating full course content. Partial: scaffold plans now carry prerequisite course IDs into later course shells, and materialized draft courses store those IDs in course metadata/top-level prerequisites.
+- Add explicit course-build tasks to generated program course shells so every shell records whether it needs source gathering, existing-course fit review, outline generation, section generation, or review.
+- Add a formal course-build task report to generated program scaffold plans so shell state, next actions, missing source packets, linked existing courses, and blocked tasks are auditable before course content exists. Done as `course-build-task-report-v1`.
+- Add a program-level course-shell readiness report so a generated pathway can summarize which course shells need sources, are outline-ready, section-generation-ready, review-ready, linked existing courses, blocked, or invalid. Done as `program-course-shell-readiness-report-v1`.
+- Add an agent-facing program course-shell action plan so generated pathways can deterministically list the next source, outline, section-generation, review, existing-course-fit, or repair action for each shell. Done as `program-course-shell-action-plan-v1`.
+- Add structured source requests to generated course shells so `attach_source_packet` actions carry required concepts, suggested queries, source type hints, coverage policy, and benchmark evidence refs. Done as `course-source-request-v1`.
+- Add a program-level source acquisition plan so generated pathways aggregate all course-shell source requests into prioritized requests, concepts, and suggested search queries before source packets are attached. Done as `program-source-acquisition-plan-v1`.
+- Add a Source Index batch search plan to source acquisition artifacts so generated pathways can hand primitive query tasks to the detachable index service before asking users for more sources. Done as `program-source-index-search-plan-v1`.
+- Add source request fulfillment reports so Source Index search results can be judged against `course-source-request-v1` concept coverage before a source packet is attached. Done as `course-source-request-fulfillment-report-v1` and `program-source-acquisition-fulfillment-report-v1`.
+- Add course-build task transitions so shells can advance from `source_gathering` to `outline_ready` when a usable source packet satisfies concept coverage policy.
+- Add a formal source-packet transition report so course shells explain why they can advance to `outline_ready` or remain blocked in `source_gathering`. Done as `source-packet-transition-report-v1`.
+- Add outline readiness transitions so shells can advance from `outline_ready` to `section_generation_ready` when an outline has module, section, objective, and concept structure.
+- Add a formal outline transition report so course shells explain why an outline can advance to `section_generation_ready` or remains blocked for missing module, section, objective, or concept structure. Done as `outline-transition-report-v1`.
+- Add review readiness transitions so shells can advance from `section_generation_ready` to `ready_for_review` only when generated sections pass quality, source, citation, and eval gates. Partial: deterministic course generation now records this transition from the generated quality report.
+- Add a formal review transition report so course shells explain why generated sections can advance to `ready_for_review` or remain blocked for quality, source, citation, or eval issues. Done as `review-transition-report-v1`.
+- Mirror course-build task state into generation run summaries and timeline events so source gathering, outline readiness, section generation readiness, and review readiness are auditable. Partial: program generation traces now include `program-generation-timeline-v1` events for benchmark context, contract validation, quality gates, scaffold planning, and course-build task summaries.
+- Centralize course-shell resume behavior so source packets, outlines, and quality reports advance build-task state through one backend primitive instead of scattered caller-specific transitions.
+- Add a formal course-build resume report so every resumed shell records the final stage, next action, transition counts, and compact transition reports in one metadata artifact. Done as `course-build-resume-report-v1`.
+- Add a source-packet-to-outline bridge so usable source packets can derive a non-learner-facing course outline and advance shells toward section generation without a separate manual outline step.
+- Add a source-index search step before asking the user for more sources. Partial: source-gap metadata now queries Source Index for missing-concept candidates and stores `sourceIndexCandidates` plus `metadata.sourceGapSuggestions`.
+- Keep manual course creation as a blank editable draft path, separate from AI-generated drafts.
+- Add repeatable eval scenarios that start from zero seeded courses and prove the system can create usable courses/programs through repo mechanics. Partial: clean-start generation contract tests now avoid catalog seeds.
+- Add reusable full-path program-generation drills that start from scenario sources, produce a valid `LyciumProgram`, verify quality gates, and confirm course-shell build tasks/source-packet handoff before catalog content exists. Done as `program-generation-drill-v1`.
+- Keep generated courses editable through the same block structure that manual authors use. Partial: generation contract tests now assert editor-native block types.
+- Add a clean-catalog smoke fixture that verifies the app behaves correctly when `localCourses` and `localPrograms` are empty. Done: see `apps/lycium-web/src/courseData/cleanCatalog.test.ts`.
+
 ## 1. Complete the generate-review-edit-publish loop
 
 Status: In progress
@@ -78,6 +130,7 @@ Todo:
 - Add noisy multi-source corpus scenarios with irrelevant sources that must be rejected.
 - Add under-sourced prompt scenarios that must produce source-gated drafts instead of weak full courses.
 - Add program-generation evals that verify clusters, requirements, prerequisites, capstones, and course placeholders.
+- Add full-path program-generation drills that verify program envelopes, quality gates, scenario expectations, course-shell build tasks, source-packet handoff, and prerequisite wiring.
 - Record eval trend artifacts for every CI run.
 - Add pass/fail thresholds for source coverage, quiz density, citation quality, and prompt-like filler.
 
@@ -152,13 +205,13 @@ Acceptance:
 
 ## 7. Build a course health dashboard
 
-Status: Not started
+Status: Partial
 
 Goal: Course health should combine generation quality, source coverage, learner feedback, source gaps, stale links, and review state.
 
 Todo:
 
-- Add a course health summary object to course metadata or local diagnostics.
+- Add a course health summary object to course metadata or local diagnostics. Done for backend snapshots and local diagnostics with `course-health-v1`.
 - Surface source gaps, missing citations, low quiz density, stale links, and negative feedback.
 - Combine thumbs up/down feedback with optional written feedback and source suggestions.
 - Add source replacement status for broken or low-quality sources.
@@ -238,13 +291,18 @@ Acceptance:
 
 Recommended next sequence:
 
-1. Complete source-to-concept coverage checks.
-2. Add source-index search into generation preflight.
-3. Add generation run detail records and a basic run detail UI.
-4. Strengthen source-gated drafts and catalog health states.
-5. Run a full Pre-Med program generation through repo mechanics.
-6. Add drag-and-drop edit-mode E2E coverage.
-7. Add course health summary objects.
-8. Add source packet import/export tests.
-9. Improve program/cluster requirement UX.
-10. Repeat generation evals with messy source corpora.
+1. Complete source-to-concept coverage checks. Done for source-gated course drafts and section citation validation.
+2. Add source-index search into generation preflight. Done for source gap suggestions and replacement candidates.
+3. Add generation run detail records and a basic run detail UI. Partially done for structured backend run/task events; UI remains explicit-permission only.
+4. Strengthen source-gated drafts and catalog health states. Done for needs-sources drafts, course-build tasks, and source-packet resume state transitions.
+5. Let staged generation consume source-packet-derived outlines. Done: resumed shells can use `metadata.courseBuildOutline` as the staged course plan.
+6. Preserve source-packet outline constraints during section generation. Done: outline concept keywords and scoped source IDs now flow into lesson prompts and section coercion.
+7. Persist section-level generation-outline evidence. Done: generated sections now carry `metadata.generationOutline` with planned concepts, objectives, source IDs, and outline IDs for review/eval comparison.
+8. Gate generated content against planned concepts. Done: course quality evals now include `generation_outline_coverage`, which compares section `metadata.generationOutline.plannedConceptKeywords` against final section text/concept cards.
+9. Derive real concept phrases from source packets before section generation. Done: source-packet outlines now extract reusable concept candidates from accepted source text and distribute them into modules/sections with scoped source IDs.
+10. Add source packet import/export tests. Done: Source Index now has CLI-level coverage for exported packet JSON, dry-run import, no-snapshot import, full snapshot import, and imported packet provenance after storage reset.
+11. Add course health summary objects. Done: backend generation snapshots and local diagnostics now use `course-health-v1` to combine quality, source integrity, lifecycle, feedback, and source suggestions.
+12. Run a full Pre-Med program generation through repo mechanics.
+13. Add drag-and-drop edit-mode E2E coverage.
+14. Improve program/cluster requirement UX only with explicit UI approval.
+15. Repeat generation evals with messy source corpora.

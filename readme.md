@@ -8,6 +8,8 @@ The project is designed around one core idea: the internet already has enough ed
 
 [Product Vision](./VISION.md) | [Product Principles](./docs/product-principles.md) | [V1 Vision Todo](./docs/v1-vision-todo.md) | [Data Boundaries](./docs/data-boundaries.md) | [Data Use and Trust](./docs/data-use-and-trust.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Professional Readiness](./docs/professional-readiness.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
 
+Long term, Lycium should grow from a source-backed open education platform into a learning operating system: course delivery, program planning, registration-like coordination, and reusable public knowledge infrastructure. The immediate priority remains free, local-first, source-backed learning paths before institutional LMS or registration features.
+
 ## Mission and trust model
 
 Lycium should make public internet knowledge usable for building real skills. The reusable data flywheel should come primarily from public source and curriculum infrastructure:

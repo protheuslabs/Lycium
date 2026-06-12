@@ -169,6 +169,13 @@ def test_source_gap_resume_uses_source_packet_text_for_concept_relevance(client,
             "source_packet": {
                 "contract_version": "source-packet-v1",
                 "source_urls": ["https://example.edu/resource-a", "https://example.edu/resource-b"],
+                "quality": {
+                    "status": "usable",
+                    "conceptCoverageRatio": 1,
+                    "conceptCandidateCount": 2,
+                    "coveredConceptCandidateCount": 2,
+                    "uncoveredConceptCandidates": [],
+                },
                 "source_documents": [
                     {"url": "https://example.edu/resource-a", "title": "Thermal notes", "text": "Thermal equilibrium defines balanced energy exchange."},
                     {"url": "https://example.edu/resource-b", "title": "Crystal notes", "text": "A crystal lattice describes repeating solid-state structure."},
@@ -181,6 +188,14 @@ def test_source_gap_resume_uses_source_packet_text_for_concept_relevance(client,
     job = queued.json()
     assert job["status"] == "queued"
     assert len(job["request"]["source_urls"]) == 3
+    with db.SessionLocal() as session:
+        snapshot = session.get(CourseSnapshot, snapshot_id)
+        assert snapshot is not None
+        task = snapshot.structure["metadata"]["courseBuildTask"]
+        assert task["status"] == "section_generation_ready"
+        assert task["nextAction"] == "generate_course_sections"
+        assert task["sourcePacketEvidence"]["qualityStatus"] == "usable"
+        assert snapshot.structure["metadata"]["courseBuildOutline"]["contractVersion"] == "course-outline-from-source-packet-v1"
 
 
 def test_generation_with_weak_concept_coverage_returns_needs_sources_draft(client) -> None:

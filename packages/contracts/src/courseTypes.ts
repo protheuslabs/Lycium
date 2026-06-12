@@ -8,6 +8,7 @@ import type {
   LyciumCourseSourceGap,
   LyciumCourseSourceGapSuggestion,
 } from "./courseSourceGapTypes";
+import type { LyciumCourseHealthRecord } from "./courseFeedbackTypes";
 
 export const LYCIUM_COURSE_CONTRACT_VERSION = "0.1.0" as const;
 
@@ -167,6 +168,7 @@ export type LyciumCourseData = {
     editPolicy?: LyciumCourseEditPolicy;
     snapshotLifecycle?: LyciumCourseSnapshotLifecycle;
     editHistory?: LyciumCourseEditHistoryEntry[];
+    courseHealth?: LyciumCourseHealthRecord;
     sourceGaps?: LyciumCourseSourceGap[];
     sourceCoveragePolicy?: LyciumCourseSourceCoveragePolicy;
     sourceGapSuggestions?: LyciumCourseSourceGapSuggestion[];
@@ -382,6 +384,23 @@ export type LyciumCourseGenerationRequest = {
   desired_module_count?: number;
   expected_duration_minutes?: number;
   source_urls?: string[];
+  input_artifacts?: Record<string, unknown>[];
+};
+
+export type LyciumGenerationInputFilePayload = {
+  filename: string;
+  mimeType?: string;
+  base64?: string;
+  text?: string;
+};
+
+export type LyciumGenerationInputArtifactReadResponse = {
+  contractVersion: string;
+  provider: string;
+  replaceableBy?: string | null;
+  artifactCount: number;
+  extractedArtifactCount: number;
+  artifacts: Record<string, unknown>[];
 };
 
 export type LyciumCourseGenerationExperiment = {

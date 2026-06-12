@@ -1,52 +1,16 @@
-import { validateLyciumProgram } from "@lycium/contracts";
-import fullStackEngineerBenchmarks from "./fullStackEngineerBenchmarks";
-import fullStackEngineerProgram from "./fullStackEngineerProgram";
-import { localPortfolioArtifactIds, localPortfolioArtifactMap, localPortfolioArtifacts } from "./portfolioArtifacts";
-import softwareEngineeringProgramBenchmarks from "./softwareEngineeringProgramBenchmarks";
-import softwareEngineeringProgram from "./softwareEngineeringProgram";
-import { softwareEngineeringCourseWrapperIds, softwareEngineeringCourseWrappers } from "./softwareEngineeringCourseWrappers";
+import type { LyciumEvidenceArtifactSubmission, LyciumProgram } from "@lycium/contracts";
 
-export const existingLocalCourseIds = [
-  "local-ai",
-  "local-web",
-  "local-python",
-  "local-mlsys",
-  "local-software-architecture",
-];
-
-export const localPrograms = [softwareEngineeringProgram, fullStackEngineerProgram];
-export const programBenchmarks = {
-  [softwareEngineeringProgram.id]: softwareEngineeringProgramBenchmarks,
-  [fullStackEngineerProgram.id]: fullStackEngineerBenchmarks,
-};
-export { localPortfolioArtifactIds, localPortfolioArtifactMap, localPortfolioArtifacts };
-export { softwareEngineeringCourseWrapperIds, softwareEngineeringCourseWrappers };
+export const existingLocalCourseIds: string[] = [];
+export const localPrograms: LyciumProgram[] = [];
+export const programBenchmarks: Record<string, []> = {};
+export const localPortfolioArtifacts: LyciumEvidenceArtifactSubmission[] = [];
+export const localPortfolioArtifactIds: string[] = [];
+export const localPortfolioArtifactMap: Record<string, LyciumEvidenceArtifactSubmission> = {};
+export const softwareEngineeringCourseWrapperIds: string[] = [];
+export const softwareEngineeringCourseWrappers = [];
 
 export function validateLocalPrograms() {
-  const courseIds = [...existingLocalCourseIds, ...softwareEngineeringCourseWrapperIds];
-
-  return localPrograms.map((program) => ({
-    programId: program.id,
-    ...validateLyciumProgram(program, {
-      courseIds,
-      assessmentIds: [
-        "full-stack-readiness-review",
-        "se-developer-workflow-readiness",
-        "se-cs-core-checkpoint",
-        "se-software-engineering-design-review",
-        "se-application-integration-review",
-        "se-data-model-review",
-        "se-operations-readiness-check",
-        "se-specialization-readiness-review",
-        "se-capstone-proposal-review",
-        "se-professional-readiness-review",
-      ],
-      projectIds: [
-        ...localPortfolioArtifactIds,
-      ],
-      competencyIds: ["basic-computer-literacy", "high-school-algebra-and-computer-literacy"],
-    }),
-  }));
+  return [];
 }
 
 export default localPrograms;

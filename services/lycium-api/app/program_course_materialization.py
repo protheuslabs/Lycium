@@ -68,6 +68,49 @@ def _course_taxonomy(title: str, cluster_title: str, field: str) -> tuple[str, s
     return "interdisciplinary-studies", "interdisciplinary-studies"
 
 
+def _prerequisite_course_ids(scaffold_course: dict[str, Any]) -> list[str]:
+    course_ids = scaffold_course.get("prerequisiteCourseIds")
+    if not isinstance(course_ids, list):
+        return []
+    unique: list[str] = []
+    for course_id in course_ids:
+        clean = str(course_id or "").strip()
+        if clean and clean not in unique:
+            unique.append(clean)
+    return unique
+
+
+def _course_prerequisites(scaffold_course: dict[str, Any]) -> list[dict[str, str]]:
+    return [
+        {
+            "type": "course",
+            "courseId": course_id,
+            "title": course_id.replace("-", " ").title(),
+        }
+        for course_id in _prerequisite_course_ids(scaffold_course)
+    ]
+
+
+def _course_build_task(scaffold_course: dict[str, Any]) -> dict[str, Any]:
+    task = scaffold_course.get("courseBuildTask")
+    if isinstance(task, dict):
+        return dict(task)
+    course_id = _text(scaffold_course.get("courseId"))
+    title = _course_title(scaffold_course)
+    return {
+        "contractVersion": "course-build-task-v1",
+        "courseId": course_id,
+        "title": title,
+        "status": "source_gathering",
+        "nextAction": "attach_source_packet",
+        "requiredInputs": ["source_packet", "concept_source_coverage"],
+        "prerequisiteCourseIds": _prerequisite_course_ids(scaffold_course),
+        "importance": _text(scaffold_course.get("importance")) or "required",
+        "stageOrder": ["source_gathering", "outline_ready", "section_generation_ready", "ready_for_review"],
+        "currentStage": "source_gathering",
+    }
+
+
 def _annotate_snapshot(
     snapshot: CourseSnapshot,
     *,
@@ -83,6 +126,8 @@ def _annotate_snapshot(
     title = _course_title(scaffold_course)
     cluster_title = _text(cluster.get("displayName") if cluster else scaffold_course.get("clusterId"))
     short_description = f"Draft course shell for the {cluster_title} cluster. Add sources before generating full content."
+    prerequisite_course_ids = _prerequisite_course_ids(scaffold_course)
+    course_build_task = _course_build_task(scaffold_course)
 
     metadata.update(
         {
@@ -93,6 +138,8 @@ def _annotate_snapshot(
             "clusterTitle": cluster_title,
             "requirementId": _text(scaffold_course.get("requirementId")),
             "scaffoldCourseId": _text(scaffold_course.get("courseId")),
+            "prerequisiteCourseIds": prerequisite_course_ids,
+            "courseBuildTask": course_build_task,
             "courseScaffoldAction": "create_empty_course",
             "courseScaffoldStatus": "needs_course_buildout",
         }
@@ -104,6 +151,7 @@ def _annotate_snapshot(
             "category": category,
             "department": department,
             "tags": tags,
+            "prerequisites": _course_prerequisites(scaffold_course),
             "metadata": metadata,
         }
     )
@@ -116,6 +164,8 @@ def _annotate_snapshot(
         "clusterId": metadata["clusterId"],
         "requirementId": metadata["requirementId"],
         "scaffoldCourseId": metadata["scaffoldCourseId"],
+        "prerequisiteCourseIds": prerequisite_course_ids,
+        "courseBuildTask": course_build_task,
     }
     flag_modified(snapshot, "structure")
     flag_modified(snapshot, "generation_trace")

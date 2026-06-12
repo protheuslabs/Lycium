@@ -5,6 +5,10 @@
 - FR-1: The system shall allow an instructor or learner to create a course from a natural-language prompt.
 - FR-2: The prompt flow shall collect at minimum topic, target audience, learning goals, difficulty level, expected duration, and preferred language.
 - FR-3: The system shall support optional constraints such as teaching style, prerequisite knowledge, desired number of modules, and preferred assessment style.
+- FR-3a: The system shall support course-generation inputs beyond URLs, including uploaded documents, PDFs, slide decks, text notes, transcripts, videos, source packets, and connector-provided knowledge sources when available.
+- FR-3b: The system shall preserve extraction metadata for user-submitted documents and media so generated courses can cite, review, refresh, or exclude those materials later.
+- FR-3c: The course-creation workflow shall collect a course type or course purpose when known, including at minimum academic course, practical training course, exam prep, self-study pathway, and program component.
+- FR-3d: The course-creation workflow shall collect learning method or modality preferences separately from course type, such as text-heavy, video-supported, project-first, flashcard-supported, tutor-guided, or assessment-heavy.
 - FR-4: The system shall generate a draft outline before generating full lesson content.
 - FR-5: The system shall allow the user to accept, edit, regenerate, or partially regenerate the draft outline.
 - FR-5a: The course-creation interface shall block generation and direct the user to settings when no verified active provider key and model are connected.
@@ -20,6 +24,10 @@
 ### 7.3 Lesson Scene and Content Generation
 
 - FR-11: The system shall generate lesson content that may include explanatory text, slides, code examples, guided exercises, media embeds, or discussion prompts. Quizzes shall be generated as separate assessment content, not mixed into instructional lesson sections.
+- FR-11a: The renderer and course schema shall support extensible block types, including at minimum text, heading, concept card, video, iframe or embed, quiz, visual, flashcard set, project, rubric, and submission prompt.
+- FR-11b: Visual blocks shall support manually uploaded assets and AI-generated assets, while preserving alt text, provenance, source references, and generation metadata when applicable.
+- FR-11c: Flashcard blocks shall use a structured flashcard object with prompt, answer, optional hint, explanation, source IDs, and concept tags.
+- FR-11d: Project blocks or project sections shall include instructions, expected artifact type, required evidence, source links, rubric reference, and completion or submission policy.
 - FR-12: The system shall display generation progress states, including outline generation and page-content generation, so the user understands what is happening.
 - FR-13: The system shall support partial regeneration of a single module, section, or scene without recreating the entire course.
 - FR-14: The system shall support a review state where generated content is visible before publication or learner delivery.
@@ -38,6 +46,9 @@
 - FR-21: Responses shall be grounded in the current course context and the current lesson section when possible.
 - FR-22: The system shall support at least three response modes: concise answer, deeper explanation, and example-based explanation.
 - FR-23: The instructor agent shall be able to summarize the current lesson, recap prior concepts, and preview upcoming material on request.
+- FR-23a: The system shall support a course-native tutor workflow that can be surfaced as contextual chat or another unobtrusive help surface.
+- FR-23b: Tutor responses shall be constrained to the active course, source records, source packets, curriculum benchmarks, learner progress state, and explicitly allowed model context unless a broader search mode is enabled.
+- FR-23c: Tutor conversations shall preserve enough context for continuity while respecting learner-data privacy and course-owner analytics permissions.
 
 ### 7.6 Adaptive Learning Behavior
 
@@ -54,6 +65,9 @@
 - FR-31: The system shall provide immediate correctness feedback for auto-gradable items.
 - FR-32: The system shall track section-level completion and mastery state separately.
 - FR-33: The system shall allow instructors to require mastery or completion before the learner advances when course settings demand ordered progression.
+- FR-33a: The system shall support rubric-based grading workflows for projects, submissions, practical tasks, and non-quiz assessments.
+- FR-33b: The system shall support an agent grader workflow that evaluates submissions against the rubric, source-backed expected learning outcomes, prerequisite material, and course context before returning feedback.
+- FR-33c: Human graders or authorized reviewers shall be able to inspect, override, or annotate agent grader feedback when grading permissions are enabled.
 
 ### 7.8 Persistence and Reuse
 
@@ -68,6 +82,8 @@
 - FR-38d: Learner progress shall remain attached to the snapshot version the learner used unless the learner or platform explicitly migrates progress to a newer published version.
 - FR-38e: The local-first web app shall support portable local draft export and import using JSON envelopes that preserve course data and local draft metadata.
 - FR-38f: Local draft saves shall be conflict-safe. If a persisted local draft is newer than the in-memory edited copy, the system shall preserve both versions by creating a conflict copy instead of silently overwriting the newer draft.
+- FR-38g: Course records shall identify an owner or creator lineage and shall distinguish owner-maintained canonical drafts from user forks.
+- FR-38h: Course forks shall preserve attribution, parent lineage, source evidence, and fork reason metadata where available.
 
 ### 7.9 Authoring and Review Controls
 
@@ -89,6 +105,9 @@
 - FR-43: The system shall capture learner events including section starts, section completions, quiz submissions, question asks, remediation inserts, and course exits.
 - FR-44: The system shall expose a basic analytics summary for instructors, including completion rate, quiz accuracy, and most-questioned sections.
 - FR-45: The system should surface generation diagnostics for failed or partial generations.
+- FR-45a: Course owners shall be able to configure whether learner analytics are collected or visible for a course, subject to platform privacy policy and deployment-level requirements.
+- FR-45b: Analytics permissions shall distinguish private learner progress, aggregate course-health signals, owner-facing analytics, and public popularity metrics.
+- FR-45c: The system should support unique course view counts by unique learner and course snapshot or lineage, without exposing personally identifiable learner data in public creator profiles.
 
 ### 7.11 Learner Modeling and Personalization
 
@@ -145,6 +164,9 @@
 - FR-79: The system shall support upload, external linking, or structured submission of project evidence.
 - FR-80: The system shall record completed projects and artifacts in a learner portfolio.
 - FR-80a: Career-path and degree-equivalent programs shall include portfolio artifact requirements unless a reviewer explicitly marks them not applicable.
+- FR-80b: Project sections shall be able to require a rubric, submission artifact, grading workflow, feedback record, and optional resubmission policy.
+- FR-80c: Project grading shall be able to use course sources, previous lesson content, expected outcomes, and rubric criteria as explicit grader context.
+- FR-80d: Practical training courses shall prefer applied tasks, simulations, tool walkthroughs, role-play scenarios, or project evidence when appropriate to the target skill.
 
 ### 7.16 Credentials, Progress Records, and Discovery
 
@@ -156,6 +178,8 @@
 - FR-85: The system shall support open or free filters and cost-aware path planning.
 - FR-86: The system shall support role-based, career-based, and credential-based learning paths.
 - FR-87: The system should support saved lists, bookmarks, and learning queues.
+- FR-87a: The system should support creator profiles that list public courses, programs, course forks, follower counts, aggregate unique course views, and other permitted public creator metrics.
+- FR-87b: Creator profiles shall not expose private learner progress, private submissions, tutor conversations, or personally identifiable analytics without explicit permission and policy support.
 
 ### 7.17 Social and Collaborative Learning
 

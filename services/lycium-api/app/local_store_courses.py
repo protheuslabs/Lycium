@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import uuid4
 
+from app.course_health import summarize_course_health
 from app.local_store_core import _now, _read_json, _safe_key, _write_json, ensure_local_data_dirs
 
 VALID_SECTION_STATUSES = {"completed", "locked", "seen", "timed"}
@@ -239,74 +240,7 @@ def save_course_feedback(
 
 def read_course_health(course_key: str) -> dict[str, Any]:
     feedback = read_course_feedback(course_key)
-    rating_events = [event for event in feedback.get("rating_events", []) if isinstance(event, dict)]
-    feedback_notes = [note for note in feedback.get("feedback_notes", []) if isinstance(note, dict)]
-    source_suggestions = [source for source in feedback.get("source_suggestions", []) if isinstance(source, dict)]
-    rating_counts = {"up": 0, "down": 0}
-    signals: list[str] = []
-
-    for event in rating_events:
-        event_rating = event.get("rating")
-        if event_rating in rating_counts:
-            rating_counts[event_rating] += 1
-
-    magnitudes = [
-        note.get("feedback_magnitude")
-        for note in feedback_notes
-        if isinstance(note.get("feedback_magnitude"), int) and note.get("feedback_magnitude") in {1, 2, 3}
-    ]
-    average_magnitude = round(sum(magnitudes) / len(magnitudes), 2) if magnitudes else None
-    latest_rating = feedback.get("rating") if feedback.get("rating") in {"up", "down"} else None
-    score: int | None
-
-    if not rating_events and not feedback_notes and not source_suggestions:
-        status = "unknown"
-        score = None
-        signals.append("No learner feedback has been recorded yet.")
-    else:
-        score = 72
-        score += min(rating_counts["up"] * 4, 16)
-        score -= min(rating_counts["down"] * 7, 28)
-        score -= min(len(source_suggestions) * 3, 12)
-        if latest_rating == "up":
-            score += 5
-        elif latest_rating == "down":
-            score -= 8
-        if average_magnitude is not None:
-            if latest_rating == "up":
-                score += int(round((average_magnitude - 2) * 4))
-            elif latest_rating == "down":
-                score -= int(round(average_magnitude * 3))
-        score = max(0, min(100, score))
-
-        if rating_counts["down"] > rating_counts["up"] or score < 55:
-            status = "needs_review"
-            signals.append("Negative feedback is outweighing positive feedback.")
-        elif source_suggestions or latest_rating == "down" or score < 72:
-            status = "watch"
-            signals.append("Learner feedback or source suggestions should be reviewed.")
-        else:
-            status = "healthy"
-            signals.append("Feedback signals are currently positive.")
-
-    if source_suggestions:
-        signals.append(f"{len(source_suggestions)} learner source suggestion(s) are waiting for review.")
-    if feedback_notes:
-        signals.append(f"{len(feedback_notes)} written feedback note(s) are available.")
-
-    return {
-        "course_key": course_key,
-        "course_title": feedback.get("course_title"),
-        "status": status,
-        "score": score,
-        "latest_rating": latest_rating,
-        "rating_counts": rating_counts,
-        "feedback_note_count": len(feedback_notes),
-        "source_suggestion_count": len(source_suggestions),
-        "average_feedback_magnitude": average_magnitude,
-        "signals": signals,
-        "updated_at": feedback.get("updated_at"),
-    }
+    return summarize_course_health(course_key=course_key, feedback=feedback)
 
 
 def read_completion(course_key: str) -> dict[str, Any]:

@@ -58,18 +58,29 @@ Lycium should retain JSON as its canonical content contract. The schema shall be
 Minimum schema additions:
 
 - Course metadata: prompt, target audience, duration, language, difficulty, generation status, version
+- Course type metadata: course purpose, academic or practical orientation, intended delivery context, and program role
+- Learning method metadata: modality preferences, modality mix, tutor mode, project-first flag, flashcard support, visual support, and assessment intensity
+- Input artifact metadata: uploaded document ids, source packet ids, URL inputs, transcript ids, media inputs, connector source refs, extraction status, exclusion decisions, and source-fit decisions
 - Agent roster: id, name, role, style, voice, enabled state
+- Tutor workflow metadata: allowed context scope, provider/model reference, active section context, conversation retention policy, learner privacy policy, and analytics permission
+- Grader workflow metadata: rubric id, submission id, grader provider/model reference, allowed source context, expected outcomes, feedback record, override state, and human review state
 - Learning objectives: course-level and section-level objectives
 - Scene metadata: scene type, narration text, estimated duration, mastery checkpoint
 - Assessment metadata: rubric, answer type, feedback, remediation hook
+- Block metadata: block type, source ids, inline citation ids, generated/manual origin, edit lock state, visual asset refs, flashcard refs, project refs, rubric refs, and submission refs
+- Flashcard metadata: card id, prompt, answer, hint, explanation, concept tags, source ids, and review state
+- Project metadata: project id, instructions, artifact type, required evidence, rubric id, source ids, submission policy, resubmission policy, grading workflow id, and portfolio visibility
+- Visual asset metadata: asset id, asset type, alt text, source id, generated asset prompt or manual upload ref, license, and provenance
 - Adaptation metadata: inserted recap, skipped section, regenerated explanation, confidence marker
 - Audit metadata: created by, reviewed by, last regenerated at, locked state
-- Course lineage metadata: lineage id, canonical slug, owner id, maintainer ids, current published snapshot id, active draft snapshot id, edit policy, and fork policy
+- Course lineage metadata: lineage id, canonical slug, owner id, creator id, maintainer ids, current published snapshot id, active draft snapshot id, edit policy, fork policy, and attribution policy
 - Course snapshot lifecycle metadata: snapshot id, lineage id, immutable version, status, based-on snapshot id, forked-from lineage id, parent snapshot hash, published-at timestamp, archived-at timestamp, and review state
 - Course edit policy metadata: owner edit permission, maintainer edit permission, learner fork permission, contributor suggestion permission, locked section ids, locked block ids, and publish gate requirements
 - Course edit history metadata: draft snapshot id, editor id, operation type, target element id, previous value reference, new value reference, timestamp, and validation state
 - Local course draft metadata: local draft id, schema version, origin, parent course key/title, forked-from title, conflict reference, conflict reason, created-at timestamp, updated-at timestamp, and revision number
 - Local course draft exchange envelope: artifact kind, schema version, exported-at timestamp, and embedded course entry aligned with the Lycium course data model
+- Creator profile metadata: creator id, display name, public course lineages, public program lineages, public forks, follower count, permitted aggregate view metrics, and privacy settings
+- Analytics permission metadata: collection policy, owner-visible metrics, public metrics, private learner-data exclusions, unique-view counting policy, retention period, and export/delete support
 - Program metadata: path id, parent program, milestone order, capstone flag, credential checkpoint
 - Knowledge object metadata: source id, canonical URL, publisher, license, modality, cost, freshness, trust score, corroboration state
 - Citation graph metadata: generated block id to source object mappings and generation recipe
@@ -88,6 +99,8 @@ Minimum schema additions:
 - Lycium backend services shall be the underlying knowledge-platform layer, including ingestion, extraction, cataloging, trust scoring, graph construction, retrieval, and generation orchestration.
 - Lycium web and backend services should remain in the same repository during the early product phase but shall be implemented as separate deployable applications or services with clear boundaries.
 - Shared schemas, contracts, and libraries shall be versioned and consumed by Lycium web and backend services through internal packages rather than ad hoc duplication.
+- Native Lycium primitives for file reading, source extraction, retrieval, grading, tutoring, or other AI-adjacent workflows shall be adapter-shaped and replaceable by Infring OS or other Protheus ecosystem primitives when those services become available.
+- When Lycium implements a temporary native primitive, it shall expose a stable contract, preserve provenance about the local adapter used, and avoid coupling course-generation logic directly to the primitive implementation.
 
 ### 10.2 Front End
 
@@ -110,6 +123,7 @@ Minimum schema additions:
 ### 10.4 Knowledge Platform Services
 
 - The platform shall include ingestion or indexing services for external learning resources.
+- The platform shall include a file-reader primitive for converting uploaded or local documents into normalized input artifacts. The initial Lycium-local reader may support a narrow file set, but its contract shall be compatible with future Infring OS file-reader delegation.
 - The platform shall include a connector framework for source-specific adapters and a fallback browser-based scraping service.
 - The platform shall include taxonomy, metadata extraction, and content-type classification services.
 - The platform shall include canonicalization, deduplication, and artifact-layer storage for raw, cleaned, and structured source data.

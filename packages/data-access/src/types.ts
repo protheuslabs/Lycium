@@ -10,6 +10,8 @@ import type {
   LyciumCourseGenerationExperiment,
   LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,
+  LyciumGenerationInputArtifactReadResponse,
+  LyciumGenerationInputFilePayload,
   LyciumCourseQualityReport,
   LyciumGeneratedCourseRecord,
   LyciumLocalSettings,
@@ -303,6 +305,7 @@ export type LyciumLocalApi = {
   generateCourse(request: LyciumCourseGenerationRequest): Promise<LyciumGeneratedCourseRecord>;
   experimentCourseGeneration(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationExperiment>;
   experimentStagedCourseGeneration(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationExperiment>;
+  readGenerationInputFiles(files: LyciumGenerationInputFilePayload[]): Promise<LyciumGenerationInputArtifactReadResponse>;
   createCourseGenerationJob(request: LyciumCourseGenerationRequest): Promise<LyciumCourseGenerationJob>;
   getCourseGenerationJob(jobId: string | number): Promise<LyciumCourseGenerationJob>;
   resumeCourseGenerationJob(jobId: string | number): Promise<LyciumCourseGenerationJob>;
@@ -347,6 +350,8 @@ export type {
   LyciumCourseGenerationExperiment,
   LyciumCourseGenerationJob,
   LyciumCourseGenerationRequest,
+  LyciumGenerationInputArtifactReadResponse,
+  LyciumGenerationInputFilePayload,
   LyciumCourseQualityReport,
   LyciumGeneratedCourseRecord,
   LyciumLocalSettings,

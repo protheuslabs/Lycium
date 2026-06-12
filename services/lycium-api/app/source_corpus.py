@@ -2,15 +2,18 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from dataclasses import dataclass, field
 from hashlib import sha256
-from typing import Any, NamedTuple
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
 
 from app.config import SETTINGS
+from app.source_input_artifacts import prepare_source_inputs
 from app.source_index_client import SourceIndexClient, SourceIndexClientError, source_index_client_configured
+from app.source_corpus_terms import AMBIGUOUS_RELEVANCE_TERMS, STOPWORDS, TOKEN_ALIASES
 from app.source_relevance import decide_source_relevance
 
 
@@ -18,188 +21,14 @@ MIN_RELEVANCE_SCORE = 0.12
 STRONG_RELEVANCE_SCORE = 0.35
 MAX_CORPUS_FETCHES = 40
 SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
-AMBIGUOUS_RELEVANCE_TERMS = {
-    "basis",
-    "covering",
-    "foundation",
-    "foundations",
-    "measurement",
-    "molecular",
-    "reaction",
-    "reactions",
-    "solution",
-    "solutions",
-    "structure",
-    "systems",
-    "trend",
-    "trends",
-}
-
-STOPWORDS = {
-    "the",
-    "and",
-    "for",
-    "you",
-    "your",
-    "with",
-    "from",
-    "that",
-    "this",
-    "into",
-    "onto",
-    "than",
-    "then",
-    "they",
-    "them",
-    "over",
-    "under",
-    "after",
-    "before",
-    "about",
-    "above",
-    "below",
-    "been",
-    "being",
-    "have",
-    "has",
-    "had",
-    "will",
-    "would",
-    "could",
-    "should",
-    "shall",
-    "may",
-    "might",
-    "must",
-    "can",
-    "are",
-    "was",
-    "were",
-    "is",
-    "be",
-    "as",
-    "at",
-    "by",
-    "in",
-    "of",
-    "on",
-    "or",
-    "to",
-    "a",
-    "an",
-    "about",
-    "after",
-    "also",
-    "and",
-    "any",
-    "are",
-    "around",
-    "because",
-    "based",
-    "basics",
-    "before",
-    "between",
-    "but",
-    "can",
-    "class",
-    "college",
-    "common",
-    "complete",
-    "concept",
-    "concepts",
-    "content",
-    "cover",
-    "covered",
-    "covering",
-    "covers",
-    "course",
-    "create",
-    "credit",
-    "cumulative",
-    "directly",
-    "each",
-    "first",
-    "for",
-    "from",
-    "general",
-    "guide",
-    "help",
-    "how",
-    "include",
-    "including",
-    "inside",
-    "into",
-    "its",
-    "least",
-    "learn",
-    "learners",
-    "learning",
-    "lesson",
-    "lessons",
-    "media",
-    "module",
-    "modules",
-    "must",
-    "not",
-    "one",
-    "online",
-    "only",
-    "planning",
-    "principle",
-    "principles",
-    "prompt",
-    "question",
-    "questions",
-    "quiz",
-    "quizzes",
-    "review",
-    "resources",
-    "right",
-    "science",
-    "should",
-    "resources",
-    "section",
-    "specific",
-    "source",
-    "source-backed",
-    "standard",
-    "student",
-    "students",
-    "style",
-    "such",
-    "summaries",
-    "summary",
-    "teach",
-    "that",
-    "their",
-    "this",
-    "through",
-    "undergraduate",
-    "undergraduates",
-    "use",
-    "available",
-    "when",
-    "week",
-    "weeks",
-    "with",
-    "year",
-}
-
-TOKEN_ALIASES = {
-    "chem": "chemistry",
-    "genchem": "chemistry",
-    "js": "javascript",
-    "ts": "typescript",
-    "ml": "machine-learning",
-    "ai": "artificial-intelligence",
-    "cs": "computer-science",
-}
 
 
-class SourceCorpusPreflight(NamedTuple):
+@dataclass(frozen=True)
+class SourceCorpusPreflight:
     synthesis: dict[str, Any]
     source_urls: list[str]
     source_documents: list[dict[str, Any]]
+    input_artifacts: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _canonical_token(value: str) -> str:
@@ -288,9 +117,13 @@ def compile_source_corpus_preflight(
     source_urls: list[str] | None,
     fetch_sources: bool = False,
     source_documents: list[dict[str, Any]] | None = None,
+    input_artifacts: list[dict[str, Any]] | None = None,
 ) -> SourceCorpusPreflight:
-    source_urls = [str(url) for url in source_urls or [] if str(url).strip()]
-    source_documents = list(source_documents or [])
+    source_urls, source_documents, input_artifact_metadata = prepare_source_inputs(
+        source_urls=source_urls,
+        source_documents=source_documents,
+        input_artifacts=input_artifacts,
+    )
     prompt_tokens = _tokens(prompt)
     fetched_documents: list[dict[str, Any]] = []
 
@@ -319,6 +152,9 @@ def compile_source_corpus_preflight(
         }
         if isinstance(document, dict) and document.get("fetchStatus"):
             row["fetchStatus"] = document.get("fetchStatus")
+        if isinstance(document, dict) and document.get("inputArtifactId"):
+            row["inputArtifactId"] = document.get("inputArtifactId")
+            row["inputArtifactKind"] = document.get("inputArtifactKind")
         decision = decide_source_relevance(
             score=score,
             matched_terms=matched_terms,
@@ -343,8 +179,20 @@ def compile_source_corpus_preflight(
             excluded.append(row)
 
     selected_urls = [str(source["url"]) for source in included]
+    selected_document_keys = {
+        "url",
+        "title",
+        "text",
+        "rawText",
+        "content",
+        "contentType",
+        "content_type",
+        "fetchStatus",
+        "inputArtifactId",
+        "inputArtifactKind",
+    }
     selected_documents = [
-        {key: value for key, value in document.items() if key in {"url", "text", "rawText", "content", "contentType", "content_type"}}
+        {key: value for key, value in document.items() if key in selected_document_keys}
         for document in documents
         if str(document.get("url") or "") in selected_urls
     ]
@@ -370,15 +218,25 @@ def compile_source_corpus_preflight(
             "excludedSourceCount": len(excluded),
             "fetchedSourceCount": len([document for document in documents if document.get("fetchStatus") == "fetched"]),
             "failedFetchCount": len([document for document in documents if document.get("fetchStatus") == "failed"]),
+            "submittedInputArtifactCount": len(input_artifact_metadata),
+            "usableInputArtifactCount": len([artifact for artifact in input_artifact_metadata if int(artifact.get("textLength") or 0) > 0]),
+            "includedInputArtifactCount": len([source for source in included if source.get("inputArtifactId")]),
             "ambiguousOverlapExcludedCount": exclusion_reasons.get("ambiguous_overlap_only", 0),
             "weakSingleAnchorExcludedCount": exclusion_reasons.get("weak_single_anchor_match", 0),
         },
     }
+    if input_artifact_metadata:
+        synthesis["inputArtifacts"] = input_artifact_metadata
     if source_urls and not included:
         synthesis["warning"] = "No submitted sources passed relevance preflight; course planning should not treat the source list as authoritative."
     elif excluded:
         synthesis["warning"] = "Some submitted sources were excluded before generation; use includedSources as the authoritative evidence set."
-    return SourceCorpusPreflight(synthesis=synthesis, source_urls=selected_urls, source_documents=selected_documents)
+    return SourceCorpusPreflight(
+        synthesis=synthesis,
+        source_urls=selected_urls,
+        source_documents=selected_documents,
+        input_artifacts=input_artifact_metadata,
+    )
 
 
 def _source_packet_context_id(prompt: str, source_urls: list[str]) -> str:
@@ -400,6 +258,21 @@ def _source_packet_to_preflight(packet: dict[str, Any]) -> SourceCorpusPreflight
             source_record = source.get("source") if isinstance(source, dict) else None
             if isinstance(source_record, dict) and str(source_record.get("canonical_url") or "").strip():
                 source_urls.append(str(source_record.get("canonical_url")))
+    input_artifacts = [
+        {
+            "id": str(document.get("inputArtifactId")),
+            "kind": str(document.get("inputArtifactKind") or "document"),
+            "title": str(document.get("title") or document.get("inputArtifactId") or "Input artifact"),
+            "filename": "",
+            "mimeType": str(document.get("contentType") or document.get("content_type") or ""),
+            "sourceUrl": "",
+            "sourceDocumentUrl": str(document.get("url") or ""),
+            "extractionStatus": "extracted",
+            "textLength": len(str(document.get("text") or document.get("rawText") or document.get("content") or "")),
+        }
+        for document in source_documents
+        if document.get("inputArtifactId")
+    ]
     synthesis["sourcePacket"] = {
         "contractVersion": str(packet.get("contract_version") or SOURCE_PACKET_CONTRACT_VERSION),
         "contextId": packet.get("context_id"),
@@ -408,7 +281,14 @@ def _source_packet_to_preflight(packet: dict[str, Any]) -> SourceCorpusPreflight
         "warnings": packet.get("warnings") if isinstance(packet.get("warnings"), list) else [],
         "quality": packet.get("quality") if isinstance(packet.get("quality"), dict) else {},
     }
-    return SourceCorpusPreflight(synthesis=synthesis, source_urls=source_urls, source_documents=source_documents)
+    if input_artifacts:
+        synthesis["inputArtifacts"] = input_artifacts
+    return SourceCorpusPreflight(
+        synthesis=synthesis,
+        source_urls=source_urls,
+        source_documents=source_documents,
+        input_artifacts=input_artifacts,
+    )
 
 
 def compile_generation_source_corpus(
@@ -420,11 +300,16 @@ def compile_generation_source_corpus(
     context_id: str | None = None,
     source_packet_id: int | str | None = None,
     source_packet: dict[str, Any] | None = None,
+    input_artifacts: list[dict[str, Any]] | None = None,
 ) -> SourceCorpusPreflight:
     if isinstance(source_packet, dict) and source_packet.get("contract_version") == SOURCE_PACKET_CONTRACT_VERSION:
         return _source_packet_to_preflight(source_packet)
 
-    normalized_urls = [str(url) for url in source_urls or [] if str(url).strip()]
+    normalized_urls, prepared_documents, _input_artifact_metadata = prepare_source_inputs(
+        source_urls=source_urls,
+        source_documents=source_documents,
+        input_artifacts=input_artifacts,
+    )
     if source_index_client_configured() and source_packet_id is not None:
         try:
             return _source_packet_to_preflight(SourceIndexClient().get_source_packet(source_packet_id))
@@ -434,6 +319,7 @@ def compile_generation_source_corpus(
                 source_urls=normalized_urls,
                 fetch_sources=fetch_sources,
                 source_documents=source_documents,
+                input_artifacts=input_artifacts,
             )
             synthesis = dict(fallback.synthesis)
             synthesis["sourcePacket"] = {
@@ -456,7 +342,7 @@ def compile_generation_source_corpus(
                 prompt=prompt,
                 source_urls=normalized_urls,
                 fetch_sources=fetch_sources,
-                source_documents=source_documents,
+                source_documents=prepared_documents,
                 snapshot_limit=1,
             )
             return _source_packet_to_preflight(packet)
@@ -466,6 +352,7 @@ def compile_generation_source_corpus(
                 source_urls=normalized_urls,
                 fetch_sources=fetch_sources,
                 source_documents=source_documents,
+                input_artifacts=input_artifacts,
             )
             synthesis = dict(fallback.synthesis)
             synthesis["sourcePacket"] = {
@@ -484,4 +371,5 @@ def compile_generation_source_corpus(
         source_urls=normalized_urls,
         fetch_sources=fetch_sources,
         source_documents=source_documents,
+        input_artifacts=input_artifacts,
     )

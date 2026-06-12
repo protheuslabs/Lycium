@@ -6,6 +6,66 @@ from typing import Any
 
 from app.course_agent_types import CourseAgentError
 
+PREVIEW_LIMIT = 500
+
+
+def _safe_preview(value: Any) -> str:
+    if value is None:
+        return ""
+    try:
+        if isinstance(value, (dict, list)):
+            text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+        else:
+            text = str(value)
+    except (TypeError, ValueError):
+        text = repr(value)
+    cleaned = re.sub(r"\s+", " ", text).strip()
+    return cleaned[:PREVIEW_LIMIT]
+
+
+def _response_keys(response: dict[str, Any]) -> list[str]:
+    return sorted(str(key) for key in response.keys())
+
+
+def _text_from_value(value: Any) -> str | None:
+    if isinstance(value, str) and value.strip():
+        return value
+    if isinstance(value, dict):
+        for key in ("content", "text", "response", "output", "message"):
+            text = _text_from_value(value.get(key))
+            if text:
+                return text
+    if isinstance(value, list):
+        text = "".join(_text_from_value(item) or "" for item in value)
+        if text.strip():
+            return text
+    return None
+
+
+def _raise_provider_error(response: dict[str, Any], adapter: str) -> None:
+    error = response.get("error")
+    detail = _safe_preview(error) or _safe_preview(response.get("message")) or "Provider returned an error response."
+    raise CourseAgentError(
+        f"LLM API returned an error response for adapter {adapter}: {detail}",
+        trace={
+            "adapter": adapter,
+            "response_keys": _response_keys(response),
+            "error_preview": detail,
+        },
+    )
+
+
+def _raise_unexpected_shape(response: dict[str, Any], adapter: str) -> None:
+    preview = _safe_preview(response)
+    raise CourseAgentError(
+        f"LLM API response did not include usable text content for adapter {adapter}.",
+        trace={
+            "adapter": adapter,
+            "response_keys": _response_keys(response),
+            "response_preview": preview,
+        },
+    )
+
 
 def json_from_model_text(text: str) -> dict[str, Any]:
     cleaned = text.strip()
@@ -29,11 +89,18 @@ def json_from_model_text(text: str) -> dict[str, Any]:
 
 
 def extract_message_content(response: dict[str, Any], adapter: str) -> str:
+    if isinstance(response.get("error"), (dict, list, str)):
+        _raise_provider_error(response, adapter)
+
     if adapter == "ollama-chat":
         message = response.get("message")
         content = message.get("content") if isinstance(message, dict) else None
         if isinstance(content, str) and content.strip():
             return content
+        for key in ("response", "content", "text", "output"):
+            content = _text_from_value(response.get(key))
+            if content:
+                return content
 
     if adapter == "anthropic-messages":
         content = response.get("content")
@@ -45,6 +112,9 @@ def extract_message_content(response: dict[str, Any], adapter: str) -> str:
             )
             if text.strip():
                 return text
+        content = _text_from_value(content)
+        if content:
+            return content
 
     if adapter == "gemini-generate-content":
         candidates = response.get("candidates")
@@ -54,13 +124,22 @@ def extract_message_content(response: dict[str, Any], adapter: str) -> str:
                 text = "".join(str(part.get("text") or "") for part in parts if isinstance(part, dict))
                 if text.strip():
                     return text
+        content = _text_from_value(response.get("text") or response.get("content") or response.get("response"))
+        if content:
+            return content
 
     choices = response.get("choices")
-    if not isinstance(choices, list) or not choices:
-        raise CourseAgentError("LLM API response did not include choices.")
+    if isinstance(choices, list) and choices:
+        choice = choices[0] if isinstance(choices[0], dict) else {}
+        message = choice.get("message") if isinstance(choice, dict) else None
+        content = _text_from_value(message)
+        if content:
+            return content
+        content = _text_from_value(choice.get("text") or choice.get("content") or choice.get("delta"))
+        if content:
+            return content
 
-    message = choices[0].get("message") if isinstance(choices[0], dict) else None
-    content = message.get("content") if isinstance(message, dict) else None
-    if not isinstance(content, str) or not content.strip():
-        raise CourseAgentError("LLM API response did not include JSON content.")
-    return content
+    content = _text_from_value(response.get("content") or response.get("response") or response.get("text") or response.get("output"))
+    if content:
+        return content
+    _raise_unexpected_shape(response, adapter)

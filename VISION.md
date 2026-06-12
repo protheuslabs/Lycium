@@ -45,6 +45,81 @@ The differentiator is a reliability-aware curriculum engine built on top of a mu
 - a certification-prep track
 - a degree-equivalent learning journey built from free or open resources where feasible
 
+## Long-Term Product Shape: Learning Operating System
+
+Lycium's long-term direction is broader than course generation. If the project succeeds, it can become a learning operating system: a single environment that combines open education, LMS-style course delivery, program planning, registration-like coordination, and reusable knowledge infrastructure.
+
+The near-term mission remains simple: make free internet knowledge usable for real skill development. The later institutional ambition should grow from that mission, not distract from it.
+
+### Open Education Layer
+
+Lycium should organize public and free educational material into coherent pathways:
+
+- source-backed lessons, courses, and programs
+- prerequisite chains and concept graphs
+- required, recommended, optional, remedial, and alternate-path content
+- projects, assessments, rubrics, and portfolio evidence
+- transparent provenance and source quality signals
+
+This layer is the spine of the product. It makes free education more practical by turning scattered material into vertical understanding.
+
+### LMS Layer
+
+Lycium should eventually be able to replace course software such as Canvas for compatible learning environments. That means supporting:
+
+- course delivery through modules, sections, blocks, assignments, quizzes, projects, and discussions or cohorts later
+- instructor, reviewer, or curator workflows
+- feedback, grading-like review, rubric evidence, announcements, and learner support
+- progress, mastery, submissions, and course health
+
+This should be built from Lycium's existing portable course artifacts rather than as a separate LMS silo.
+
+### Program Planning Layer
+
+Lycium should also support the planning functions usually split across advising, degree audit, and registration systems:
+
+- programs, requirement groups, clusters, tracks, electives, capstones, and bridge/remedial work
+- prerequisites and dependency graphs
+- equivalent courses or alternate course variants that satisfy the same requirement
+- requirement completion, remaining work, blocked courses, and recommended next courses
+- estimated time and effort at section, course, cluster, program, and learner-plan levels
+
+This layer is how Lycium moves from "course catalog" to "complete education path."
+
+### Registration and Cohort Layer
+
+Institution-style registration should be a later capability, not an early distraction. When needed, Lycium should support:
+
+- learner enrollment into programs, cohorts, course sections, or self-paced paths
+- schedules, pacing, deadlines, capacity, waitlists, and instructor/reviewer assignment
+- transcript-like records and portable achievement evidence
+
+The early product should avoid copying university bureaucracy. Registration primitives should exist only when they help learners access, sequence, and complete learning.
+
+### Knowledge Infrastructure Layer
+
+Lycium should feed and benefit from the broader Protheus ecosystem through public, reusable knowledge infrastructure:
+
+- Source Index records and snapshots
+- curriculum benchmarks and requirement origins
+- source slots, fallback sources, and source replacement signals
+- source request and source packet quality reports
+- concept and prerequisite graphs
+- generation evals, course health, and artifact quality signals
+
+Private learner data remains a separate trust zone. The clean ecosystem asset is public curriculum/source structure, not silent extraction from learner behavior.
+
+### Sequencing Principle
+
+Lycium should evolve in this order:
+
+1. Become excellent at turning sources into local, editable, source-backed courses and programs.
+2. Become excellent at planning full learning paths from requirements, prerequisites, and source evidence.
+3. Add LMS workflows for review, assignments, feedback, cohorts, and course operation.
+4. Add registration and institutional planning features only after the open education and planning primitives are solid.
+
+The product should not become "school administration software" before it becomes the best way to turn free knowledge into capability.
+
 ## What Lycium Should Feel Like
 
 For the learner:

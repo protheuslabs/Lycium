@@ -76,6 +76,21 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
                 "gates": [{"gate": "course_contract", "status": "passed"}],
             },
             course_snapshot_id=42,
+            course_build_task={
+                "contractVersion": "course-build-task-v1",
+                "courseId": "chem-105",
+                "status": "ready_for_review",
+                "currentStage": "ready_for_review",
+                "nextAction": "review_and_publish",
+                "transitionStatus": "advanced",
+                "transitionReason": "Generated course passed quality gates.",
+                "requiredInputs": ["human_review"],
+                "prerequisiteCourseIds": ["high-school-chemistry"],
+                "reviewReadiness": {
+                    "passed": True,
+                    "metrics": {"qualityPassed": True, "failedGateCount": 0, "score": 0.94},
+                },
+            },
         )
         session.commit()
 
@@ -98,8 +113,15 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
     assert payload["result_summary"]["gateSummary"]["passedGates"] == ["course_contract"]
     assert payload["result_summary"]["usage"]["totalTokens"] == 3000
     assert payload["result_summary"]["usage"]["estimatedCostUsd"] == 0.42
+    assert payload["result_summary"]["courseBuildTask"]["status"] == "ready_for_review"
+    assert payload["result_summary"]["courseBuildTask"]["nextAction"] == "review_and_publish"
+    assert payload["result_summary"]["courseBuildTask"]["reviewReadiness"]["passed"] is True
     assert [event["event_type"] for event in payload["events"]] == [
         "run_started",
         "stage_checkpoint",
+        "course_build_task_transition",
         "run_completed",
     ]
+    transition_event = payload["events"][2]
+    assert transition_event["stage"] == "ready_for_review"
+    assert transition_event["payload"]["courseBuildTask"]["prerequisiteCourseIds"] == ["high-school-chemistry"]

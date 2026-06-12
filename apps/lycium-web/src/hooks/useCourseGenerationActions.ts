@@ -5,7 +5,11 @@ import { useCallback, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import sourceRecordsData from "../courseData/sourceRecords";
 import type { CourseEntry } from "../courseTypes";
-import type { LyciumCourseGenerationJob, LyciumGeneratedCourseRecord } from "@lycium/contracts";
+import type {
+  LyciumCourseGenerationJob,
+  LyciumGeneratedCourseRecord,
+  LyciumGenerationInputFilePayload,
+} from "@lycium/contracts";
 import { lyciumApi } from "../runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "../utils/courseValidation";
 import {
@@ -20,6 +24,23 @@ type CourseClassification = {
   category: string;
   department: string;
 };
+
+function fileToGenerationPayload(file: File): Promise<LyciumGenerationInputFilePayload> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      const base64 = result.includes(",") ? result.split(",").pop() || "" : result;
+      resolve({
+        filename: file.name,
+        mimeType: file.type || "application/octet-stream",
+        base64,
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 type UseCourseGenerationActionsArgs = {
   prompt: string;
@@ -73,6 +94,7 @@ export function useCourseGenerationActions({
     evt: FormEvent<HTMLFormElement>,
     sourceLinks: string[] = [],
     classification?: CourseClassification,
+    sourceFiles: File[] = [],
   ) => {
     evt.preventDefault();
     if (!activeAiReady) {
@@ -81,13 +103,14 @@ export function useCourseGenerationActions({
       return;
     }
     if (!prompt.trim() || !classification?.category || !classification.department) return;
-    if (!sourceCountMeetsMinimum(sourceLinks)) {
-      const draft = createSourceGapDraftCourse({ prompt, level, sourceLinks, classification });
+    const sourceFileNames = sourceFiles.map((file) => file.name);
+    if (!sourceCountMeetsMinimum(sourceLinks, sourceFileNames)) {
+      const draft = createSourceGapDraftCourse({ prompt, level, sourceLinks, sourceFileNames, classification });
       setCourses((prev) => [draft, ...prev]);
       setPrompt("");
       setGenerateStatus("success");
       setGenerateMessage(
-        `Course draft needs more sources: ${submittedSourceCount(sourceLinks)}/${DEFAULT_SOURCE_COVERAGE_POLICY.minimumCourseSources} minimum sources attached.`,
+        `Course draft needs more sources: ${submittedSourceCount(sourceLinks, sourceFileNames)}/${DEFAULT_SOURCE_COVERAGE_POLICY.minimumCourseSources} minimum sources attached.`,
       );
       return;
     }
@@ -95,6 +118,9 @@ export function useCourseGenerationActions({
     setGenerateMessage("Starting course generation...");
 
     try {
+      const inputArtifacts = sourceFiles.length
+        ? (await lyciumApi.readGenerationInputFiles(await Promise.all(sourceFiles.map(fileToGenerationPayload)))).artifacts
+        : [];
       let job = await lyciumApi.createCourseGenerationJob({
         prompt,
         learner_id: learnerId ?? undefined,
@@ -105,6 +131,7 @@ export function useCourseGenerationActions({
         desired_module_count: 12,
         expected_duration_minutes: 2700,
         source_urls: sourceLinks,
+        input_artifacts: inputArtifacts,
       });
       while (job.status === "queued" || job.status === "running") {
         const percent = Math.round((job.progress ?? 0) * 100);

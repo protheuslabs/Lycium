@@ -45,6 +45,7 @@ export type LyciumCourseFeedbackPayload = {
 export type LyciumCourseHealthStatus = "unknown" | "healthy" | "watch" | "needs_review";
 
 export type LyciumCourseHealthRecord = {
+  contract_version?: "course-health-v1" | string;
   course_key: string;
   course_title?: string | null;
   status: LyciumCourseHealthStatus;
@@ -55,6 +56,6 @@ export type LyciumCourseHealthRecord = {
   source_suggestion_count: number;
   average_feedback_magnitude: number | null;
   signals: string[];
+  artifact_metrics?: Record<string, unknown>;
   updated_at?: string | null;
 };
-

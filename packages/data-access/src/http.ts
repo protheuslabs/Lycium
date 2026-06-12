@@ -103,6 +103,15 @@ export function createLyciumLocalApi(apiBase?: string): LyciumLocalApi {
       return readJsonResponse(response, "Staged course generation experiment failed");
     },
 
+    async readGenerationInputFiles(files) {
+      const response = await fetch(`${base}/v1/input-artifacts/read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ files }),
+      });
+      return readJsonResponse(response, "File input extraction failed");
+    },
+
     async createCourseGenerationJob(request) {
       const response = await fetch(`${base}/v1/agent/courses/jobs`, {
         method: "POST",

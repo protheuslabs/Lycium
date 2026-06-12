@@ -30,9 +30,32 @@ def _concept_rows(uncovered: list[Any]) -> list[dict[str, str]]:
     ]
 
 
-def source_packet_quality_gate(source_corpus_synthesis: dict[str, Any]) -> dict[str, Any] | None:
+def source_packet_quality_gate(
+    source_corpus_synthesis: dict[str, Any],
+    *,
+    require_source_packet: bool = False,
+) -> dict[str, Any] | None:
     quality = _quality_from_synthesis(source_corpus_synthesis)
     if not quality:
+        if require_source_packet:
+            return {
+                "gate": "source_packet_quality",
+                "status": "failed",
+                "issues": [
+                    _issue(
+                        "A source packet is required before this generated course can claim source-backed completeness."
+                    )
+                ],
+                "artifacts": {
+                    "conceptCoverageRatio": 0,
+                    "minimumConceptCoverageRatio": float(SOURCE_COVERAGE_POLICY["minimumRequiredConceptCoveragePercent"]) / 100,
+                    "conceptCandidateCount": 0,
+                    "coveredConceptCandidateCount": 0,
+                    "uncoveredConceptCandidates": [],
+                    "conceptCoverage": [],
+                    "sourcePacketQuality": {},
+                },
+            }
         return None
     if "conceptCoverageRatio" not in quality:
         return None

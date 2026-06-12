@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.course_build_task_resume import apply_course_build_resume_inputs
 from app.course_generation_job_helpers import source_gap_job_result
 from app.course_source_gaps import (
     SOURCE_COVERAGE_POLICY,
@@ -34,6 +35,7 @@ def _snapshot_generation_payload(
 ) -> dict[str, Any]:
     constraints = draft.constraints if draft and isinstance(draft.constraints, dict) else {}
     structure = snapshot.structure if isinstance(snapshot.structure, dict) else {}
+    generation_trace = snapshot.generation_trace if isinstance(snapshot.generation_trace, dict) else None
     return {
         "prompt": snapshot.prompt,
         "learner_id": snapshot.learner_id,
@@ -50,6 +52,8 @@ def _snapshot_generation_payload(
         "source_urls": source_urls,
         "source_packet_id": payload.source_packet_id,
         "source_packet": payload.source_packet,
+        "resume_course": structure,
+        "resume_trace": generation_trace,
     }
 
 
@@ -96,6 +100,7 @@ def register(app: FastAPI) -> None:
                 source_urls=merged_source_urls,
                 source_gate=source_gate_from_needs_sources_snapshot(snapshot),
                 source_packet=payload.source_packet,
+                session=session,
             )
             save_course_snapshot(snapshot)
             job = enqueue_job(
@@ -112,6 +117,16 @@ def register(app: FastAPI) -> None:
             agent_profile = require_verified_active_agent_profile()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+        if payload.source_packet:
+            constraints = draft.constraints if draft and isinstance(draft.constraints, dict) else {}
+            snapshot.structure = apply_course_build_resume_inputs(
+                snapshot.structure if isinstance(snapshot.structure, dict) else {},
+                prompt=snapshot.prompt,
+                source_packet=payload.source_packet,
+                desired_module_count=int(constraints.get("desired_module_count") or 4),
+            )
+            save_course_snapshot(snapshot)
 
         job = enqueue_job(
             session,

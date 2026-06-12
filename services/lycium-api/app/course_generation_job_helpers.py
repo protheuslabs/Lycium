@@ -12,6 +12,8 @@ from app.schemas import GenerateCourseRequest
 
 def source_gap_job_result(session: Session, job: Job, snapshot: CourseSnapshot) -> dict[str, Any]:
     quality_report = source_gap_quality_report(snapshot)
+    structure = snapshot.structure if isinstance(snapshot.structure, dict) else {}
+    metadata = structure.get("metadata") if isinstance(structure.get("metadata"), dict) else {}
     result = {
         "request": job.payload,
         "accepted": False,
@@ -39,6 +41,7 @@ def source_gap_job_result(session: Session, job: Job, snapshot: CourseSnapshot) 
         trace=result["trace"],
         quality_report=quality_report,
         course_snapshot_id=snapshot.id,
+        course_build_task=metadata.get("courseBuildTask") if isinstance(metadata.get("courseBuildTask"), dict) else None,
     )
     return result
 
@@ -64,4 +67,5 @@ def job_payload_from_course_request(
         "source_urls": source_urls,
         "source_packet_id": payload.source_packet_id,
         "source_packet": payload.source_packet,
+        "input_artifacts": payload.input_artifacts,
     }

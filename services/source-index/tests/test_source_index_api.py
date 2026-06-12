@@ -8,7 +8,8 @@ import httpx
 from source_index.crawl.contracts import CrawlTask, CrawlWorkerResult, ExtractionResult, FetchResult, PageClassification
 from source_index.crawl.policies import default_policy_payload, should_visit_url
 from source_index.crawl.worker import run_crawl_task
-from source_index.cli import service_contract_cli
+from source_index.cli import build_packet_cli, import_packet_cli
+from source_index.db import reset_db
 
 
 def test_health(client) -> None:
@@ -186,6 +187,74 @@ def test_source_packet_import_validates_and_imports_packet_contract(client) -> N
     assert invalid.json()["errors"]
 
 
+def test_source_packet_cli_exports_and_imports_portable_packet(client, tmp_path: Path) -> None:
+    import_response = client.post(
+        "/v1/index/source-imports",
+        json={
+            "batch_id": "portable-packet-batch",
+            "sources": [
+                {
+                    "url": "https://chem.example.edu/chemistry/stoichiometry",
+                    "title": "Stoichiometry Tutorial",
+                    "source_type": "open_courseware",
+                    "license": "cc-by",
+                    "raw_text": "Stoichiometry connects balanced equations, mole ratios, limiting reactants, and yields.",
+                }
+            ],
+        },
+    )
+    assert import_response.status_code == 201, import_response.text
+
+    packet_path = tmp_path / "source-packet.json"
+    dry_run_report_path = tmp_path / "packet-dry-run-report.json"
+    no_snapshot_report_path = tmp_path / "packet-no-snapshot-report.json"
+    import_report_path = tmp_path / "packet-import-report.json"
+
+    build_packet_cli(
+        [
+            "--consumer",
+            "lycium-course-generation",
+            "--context-id",
+            "portable-packet-export",
+            "--prompt",
+            "CHEM 105 chemistry stoichiometry mole ratios",
+            "--source-url",
+            "https://chem.example.edu/chemistry/stoichiometry",
+            "--no-fetch",
+            "--output",
+            str(packet_path),
+        ]
+    )
+    packet = json.loads(packet_path.read_text(encoding="utf-8"))
+    assert packet["contract_version"] == "source-packet-v1"
+    assert packet["source_documents"][0]["snapshotId"]
+    assert "Stoichiometry" in packet["source_documents"][0]["text"]
+
+    reset_db()
+    import_packet_cli([str(packet_path), "--dry-run", "--output", str(dry_run_report_path)])
+    dry_run_report = json.loads(dry_run_report_path.read_text(encoding="utf-8"))
+    assert dry_run_report["valid"] is True
+    assert dry_run_report["dry_run"] is True
+    assert dry_run_report["imported_source_count"] == 0
+    assert dry_run_report["imported_snapshot_count"] == 0
+
+    import_packet_cli([str(packet_path), "--no-snapshots", "--output", str(no_snapshot_report_path)])
+    no_snapshot_report = json.loads(no_snapshot_report_path.read_text(encoding="utf-8"))
+    assert no_snapshot_report["valid"] is True
+    assert no_snapshot_report["import_snapshots"] is False
+    assert no_snapshot_report["imported_source_count"] == 1
+    assert no_snapshot_report["imported_snapshot_count"] == 0
+
+    reset_db()
+    import_packet_cli([str(packet_path), "--output", str(import_report_path)])
+    import_report = json.loads(import_report_path.read_text(encoding="utf-8"))
+    assert import_report["valid"] is True
+    assert import_report["packet_id"] == packet["packet_id"]
+    assert import_report["imported_source_count"] == 1
+    assert import_report["imported_snapshot_count"] == 1
+    assert import_report["source_refs"][0]["snapshots"][0]["snapshot_metadata"]["imported_from_packet_id"] == packet["packet_id"]
+
+
 def test_bulk_source_import_feeds_generation_packet_eval(client) -> None:
     import_response = client.post(
         "/v1/index/source-imports",
@@ -296,4 +365,3 @@ def test_source_snapshot_extracts_provided_html(client) -> None:
     assert snapshots.status_code == 200, snapshots.text
     assert len(snapshots.json()) == 1
     assert snapshots.json()[0]["content_hash"] == snapshot["content_hash"]
-

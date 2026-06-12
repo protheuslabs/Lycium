@@ -5,6 +5,8 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.course_agent_types import CourseAgentResult
+from app.course_build_task_resume import apply_course_build_resume_inputs
+from app.course_health import summarize_course_health
 from app.course_taxonomy import COURSE_TAXONOMY
 from app.course_quality import assess_course_quality
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
@@ -39,17 +41,32 @@ def build_course_snapshot_from_agent_result(
     quality_report: dict[str, Any],
     status: str = "ready_for_review",
 ) -> CourseSnapshot:
+    structure = apply_course_build_resume_inputs(
+        generated.course,
+        quality_report=quality_report,
+    )
+    metadata = structure.get("metadata") if isinstance(structure.get("metadata"), dict) else {}
+    structure["metadata"] = {
+        **metadata,
+        "courseHealth": summarize_course_health(
+            course_key=str(generated.course.get("id") or generated.course.get("slug") or generated.course.get("title") or "generated-course"),
+            course_title=str(generated.course.get("title") or "Generated course"),
+            course=structure,
+            quality_report=quality_report,
+            lifecycle_status=status,
+        ),
+    }
     snapshot = CourseSnapshot(
         learner_id=learner_id,
         draft_id=None,
-        title=generated.course["title"],
+        title=structure["title"],
         prompt=prompt,
         language=language,
         level=level,
         source_policy=source_policy,
         status=status,
         version=1,
-        structure=generated.course,
+        structure=structure,
         generation_trace={**generated.trace, "quality_report": quality_report},
     )
     session.add(snapshot)

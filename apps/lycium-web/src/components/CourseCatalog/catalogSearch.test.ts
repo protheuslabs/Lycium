@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { LyciumProgram } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
-import { localCourses } from "../../courseData/localCourses";
-import { softwareEngineeringProgram } from "../../courseData/programs/softwareEngineeringProgram";
 import { getVisibleCatalogCourses } from "./catalogCourseFiltering";
 import { getVisibleCatalogClusters, getVisibleCatalogPrograms } from "./catalogPathFiltering";
 import { getCourseSearchScore, normalizeSearchText } from "./catalogUtils";
@@ -24,6 +23,45 @@ const baseCourse: CourseEntry = {
       },
     ],
   },
+};
+
+const pathCourse: CourseEntry = {
+  ...baseCourse,
+  key: "local-path-course",
+  title: "Path Course",
+  data: {
+    ...baseCourse.data,
+    title: "Path Course",
+    estimatedMinutes: 90,
+  },
+};
+
+const pathProgram: LyciumProgram = {
+  id: "test-path-program",
+  title: "Test Path Program",
+  description: "A generic test program fixture.",
+  programType: "skill_path",
+  field: "Test Field",
+  level: "foundational",
+  targetOutcome: "Validate catalog path behavior.",
+  learningOutcomes: [{ id: "outcome-1", statement: "Use the path fixture." }],
+  entryRequirements: [],
+  requirementGroups: [
+    {
+      id: "cluster-1",
+      displayName: "Cluster One",
+      groupKind: "cluster",
+      purpose: "Validate cluster behavior.",
+      learningOutcomes: [{ id: "cluster-outcome-1", statement: "Complete a test course." }],
+      requirements: [{ id: "requirement-1", title: "Complete path course", type: "complete_course", courseId: pathCourse.key }],
+      completionRule: { type: "complete_all" },
+      estimatedHours: 2,
+    },
+  ],
+  estimatedHours: 2,
+  masteryPolicy: {},
+  version: "0.1.0",
+  reviewStatus: "draft",
 };
 
 describe("catalog search scoring", () => {
@@ -120,10 +158,11 @@ describe("catalog search scoring", () => {
   });
 
   it("sorts programs and clusters through shared path sort rules", () => {
-    const courseMap = new Map(localCourses.map((course) => [course.key, course]));
+    const courses = [pathCourse];
+    const courseMap = new Map(courses.map((course) => [course.key, course]));
     const programs = getVisibleCatalogPrograms({
-      programs: [softwareEngineeringProgram],
-      courses: localCourses,
+      programs: [pathProgram],
+      courses,
       courseMap,
       activityFilter: "all",
       collegeFilter: "all",
@@ -134,7 +173,7 @@ describe("catalog search scoring", () => {
       sortMode: "name",
     });
     const clusters = getVisibleCatalogClusters({
-      program: softwareEngineeringProgram,
+      program: pathProgram,
       courseMap,
       activityFilter: "all",
       collegeFilter: "all",
@@ -146,7 +185,7 @@ describe("catalog search scoring", () => {
     });
     const clusterMinutes = clusters.map(({ estimate }) => estimate.minutes ?? Number.MAX_SAFE_INTEGER);
 
-    expect(programs[0]?.program.id).toBe(softwareEngineeringProgram.id);
+    expect(programs[0]?.program.id).toBe(pathProgram.id);
     expect(clusterMinutes).toEqual([...clusterMinutes].sort((a, b) => a - b));
   });
 });

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any, Literal
 
-from app.course_source_integrity import assess_course_source_integrity
+from app.course_quality_source_evals import _eval_generation_outline_coverage, _eval_sources
 from app.course_structure import (
     block_text as _block_text,
     content_blocks as _content,
@@ -15,8 +15,6 @@ from app.course_structure import (
     modules as _modules,
     section_text as _section_text,
     sections as _sections,
-    source_ids as _source_ids,
-    source_record_ids as _source_record_ids,
     word_count as _word_count,
 )
 
@@ -39,6 +37,19 @@ GENERIC_CONTENT_PATTERNS = [
         r"\bworking model studies\b",
     ]
 ]
+
+OUTLINE_GENERIC_CONCEPTS = {
+    "application",
+    "applications",
+    "applied_practice",
+    "core",
+    "core_concepts",
+    "extension",
+    "foundations",
+    "practice",
+    "review",
+    "summary",
+}
 
 
 def _finding(severity: EvalSeverity, message: str, location: str | None = None) -> dict[str, str]:
@@ -226,44 +237,6 @@ def _eval_concepts(course: dict[str, Any]) -> dict[str, Any]:
     return _dimension(key="concepts", label="Concept-card integrity", weight=0.14, score=score, findings=findings, metrics={"conceptCount": concept_count, "learnConceptCardRatio": round(card_ratio, 2), "summaryConceptCount": summary_concepts})
 
 
-def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
-    findings: list[dict[str, str]] = []
-    integrity = assess_course_source_integrity(course)
-    integrity_metrics = integrity["metrics"]
-    declared = _source_record_ids(course)
-    referenced: set[str] = set(_source_ids(course))
-    sourced_sections = 0
-    section_count = 0
-    for module in _modules(course):
-        referenced.update(_source_ids(module))
-        for section in _sections(module):
-            section_count += 1
-            section_ids = set(_source_ids(section))
-            if section_ids:
-                sourced_sections += 1
-            referenced.update(section_ids)
-            for block in _content(section):
-                referenced.update(_source_ids(block))
-
-    if not declared:
-        findings.append(_finding("error", "Course includes no sourceRecords."))
-    if not referenced:
-        findings.append(_finding("warning", "Course includes no sourceIds references."))
-    missing = sorted(referenced - declared)
-    if missing and declared:
-        findings.append(_finding("error", f"Referenced sourceIds are missing sourceRecords: {', '.join(missing[:10])}."))
-    direct_concept_ratio = float(integrity_metrics.get("directConceptSourceCoveragePercent") or 0) / 100
-    direct_block_ratio = float(integrity_metrics.get("directBlockSourceCoveragePercent") or 0) / 100
-    if integrity_metrics.get("conceptCount", 0) and direct_concept_ratio < 0.85:
-        findings.append(_finding("warning", "Concept source coverage relies too heavily on inherited section/module sources."))
-    if integrity_metrics.get("sourceBearingBlockCount", 0) and direct_block_ratio < 0.6:
-        findings.append(_finding("warning", "Instructional blocks should carry more direct sourceIds."))
-    source_ratio = sourced_sections / section_count if section_count else 0
-    diversity_score = min(1.0, len(declared) / 3)
-    score = source_ratio * 0.25 + diversity_score * 0.25 + direct_concept_ratio * 0.25 + direct_block_ratio * 0.15 + (0.1 if not missing else 0)
-    return _dimension(key="source_grounding", label="Source grounding", weight=0.16, score=score, findings=findings, metrics={"sourceRecordCount": len(declared), "referencedSourceIdCount": len(referenced), "sourcedSectionRatio": round(source_ratio, 2), "directConceptSourceCoveragePercent": integrity_metrics.get("directConceptSourceCoveragePercent"), "directBlockSourceCoveragePercent": integrity_metrics.get("directBlockSourceCoveragePercent")})
-
-
 def _eval_media(course: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, str]] = []
     module_count = len(_modules(course))
@@ -384,6 +357,7 @@ def run_course_quality_evals(course: dict[str, Any]) -> dict[str, Any]:
         _eval_instructional_substance(course),
         _eval_assessment(course),
         _eval_concepts(course),
+        _eval_generation_outline_coverage(course),
         _eval_sources(course),
         _eval_media(course),
         _eval_specificity(course),

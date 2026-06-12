@@ -27,6 +27,7 @@ from app.course_generation_service import (
 from app.course_generation_job_helpers import job_payload_from_course_request, source_gap_job_result
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
+from app.source_input_artifacts import usable_input_artifact_count
 from app.generation import (
     ask_instructor,
     create_needs_sources_course_snapshot,
@@ -125,6 +126,12 @@ def _generation_source_urls(payload: GenerateCourseRequest) -> list[str]:
     if not urls and isinstance(packet_urls, list):
         urls = [str(url) for url in packet_urls if str(url).strip()]
     return urls
+
+
+def _generation_source_evidence_meets_minimum(payload: GenerateCourseRequest, source_urls: list[str]) -> bool:
+    artifact_count = usable_input_artifact_count(payload.input_artifacts)
+    artifact_urls = [f"input-artifact://{index}" for index in range(1, artifact_count + 1)]
+    return source_count_meets_minimum([*source_urls, *artifact_urls])
 
 
 def register(app: FastAPI) -> None:
@@ -252,6 +259,7 @@ def register(app: FastAPI) -> None:
                 source_urls=_generation_source_urls(payload),
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
+                input_artifacts=payload.input_artifacts,
                 category=payload.category,
                 department=payload.department,
             )
@@ -276,7 +284,7 @@ def register(app: FastAPI) -> None:
             if taxonomy_errors:
                 raise ValueError("; ".join(taxonomy_errors))
             source_urls = _generation_source_urls(payload)
-            if not source_count_meets_minimum(source_urls):
+            if not _generation_source_evidence_meets_minimum(payload, source_urls):
                 snapshot = create_needs_sources_course_snapshot(
                     session,
                     prompt=payload.prompt,
@@ -311,6 +319,7 @@ def register(app: FastAPI) -> None:
                 source_urls=source_urls,
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
+                input_artifacts=payload.input_artifacts,
             )
             quality_report = assess_agent_generation_result(generated, gate="review")
             if not quality_report["passed"]:
@@ -363,6 +372,7 @@ def register(app: FastAPI) -> None:
                 source_urls=_generation_source_urls(payload),
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
+                input_artifacts=payload.input_artifacts,
                 enforce_contract=False,
             )
             quality_report = assess_course_quality(generated.course, gate="generation")
@@ -401,6 +411,7 @@ def register(app: FastAPI) -> None:
                 source_urls=_generation_source_urls(payload),
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
+                input_artifacts=payload.input_artifacts,
                 enforce_contract=False,
             )
             quality_report = assess_course_quality(generated.course, gate="generation")
@@ -427,7 +438,7 @@ def register(app: FastAPI) -> None:
             if taxonomy_errors:
                 raise ValueError("; ".join(taxonomy_errors))
             source_urls = _generation_source_urls(payload)
-            if not source_count_meets_minimum(source_urls):
+            if not _generation_source_evidence_meets_minimum(payload, source_urls):
                 active_agent_profile = get_active_agent_profile()
                 if active_agent_profile and active_agent_profile.get("connection_status") != "verified":
                     require_verified_active_agent_profile()

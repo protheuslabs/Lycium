@@ -42,6 +42,7 @@ type CourseCatalogProps = {
     event: FormEvent<HTMLFormElement>,
     sourceLinks: string[],
     classification: { category: string; department: string },
+    sourceFiles: File[],
   ) => void;
   onOpenCourse: (course: CourseEntry) => void;
   onQueueCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
@@ -259,6 +260,7 @@ export default function CourseCatalog({
           prompt={prompt}
           level={level}
           sourceLinks={createCourseModal.sourceLinks}
+          sourceFiles={createCourseModal.sourceFiles}
           canCreateCourse={canCreateCourse}
           aiLockedReason={aiLockedReason}
           generateStatus={generateStatus}
@@ -274,6 +276,8 @@ export default function CourseCatalog({
           onCollegeChange={createCourseModal.handleCollegeChange}
           onDepartmentChange={createCourseModal.setDepartment}
           onSourceLinkChange={createCourseModal.handleSourceLinkChange}
+          onSourceFilesChange={createCourseModal.handleSourceFilesChange}
+          onRemoveSourceFile={createCourseModal.handleRemoveSourceFile}
           onAddSourceLink={createCourseModal.addSourceLink}
           onModeChange={createCourseModal.setMode}
           onSubmit={createCourseModal.handleSubmit}

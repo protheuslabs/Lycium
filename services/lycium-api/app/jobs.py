@@ -200,8 +200,10 @@ def run_agent_course_generation_job(job_id: int) -> None:
             return
         payload = dict(job.payload or {})
         previous_result = dict(job.result or {}) if isinstance(job.result, dict) else {}
-        resume_course = previous_result.get("course") if isinstance(previous_result.get("course"), dict) else None
-        resume_trace = previous_result.get("trace") if isinstance(previous_result.get("trace"), dict) else None
+        payload_resume_course = payload.get("resume_course") if isinstance(payload.get("resume_course"), dict) else None
+        payload_resume_trace = payload.get("resume_trace") if isinstance(payload.get("resume_trace"), dict) else None
+        resume_course = previous_result.get("course") if isinstance(previous_result.get("course"), dict) else payload_resume_course
+        resume_trace = previous_result.get("trace") if isinstance(previous_result.get("trace"), dict) else payload_resume_trace
         job.status = "running"
         job.attempts += 1
         job.error = None
@@ -249,6 +251,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
             source_urls=[str(url) for url in payload.get("source_urls") or []],
             source_packet_id=payload.get("source_packet_id"),
             source_packet=payload.get("source_packet") if isinstance(payload.get("source_packet"), dict) else None,
+            input_artifacts=[artifact for artifact in payload.get("input_artifacts") or [] if isinstance(artifact, dict)],
             enforce_contract=False,
             on_checkpoint=checkpoint,
             resume_course=resume_course,
@@ -261,6 +264,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
             job = session.get(Job, job_id)
             if job is None:
                 return
+            course_build_task = None
             if quality_report["passed"]:
                 snapshot = build_course_snapshot_from_agent_result(
                     session,
@@ -275,6 +279,8 @@ def run_agent_course_generation_job(job_id: int) -> None:
                 session.refresh(snapshot)
                 save_course_snapshot(snapshot)
                 snapshot_payload = _course_snapshot_payload(snapshot)
+                snapshot_metadata = snapshot.structure.get("metadata") if isinstance(snapshot.structure, dict) else {}
+                course_build_task = snapshot_metadata.get("courseBuildTask") if isinstance(snapshot_metadata, dict) else None
 
             accepted = bool(quality_report["passed"])
             job.status = "completed" if accepted else "failed"
@@ -300,6 +306,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
                 trace=final_trace,
                 quality_report=quality_report,
                 course_snapshot_id=snapshot_payload["id"] if snapshot_payload else None,
+                course_build_task=course_build_task,
             )
             _trim_generation_job_logs(session)
             session.commit()

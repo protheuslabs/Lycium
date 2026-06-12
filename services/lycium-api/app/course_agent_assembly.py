@@ -120,10 +120,20 @@ def _partial_course_from_stages(
         "metadata": {
             "pacingLabel": pacing_label,
             "scope": (plan or {}).get("scope") if isinstance((plan or {}).get("scope"), dict) else {},
-            "generationPlan": {"status": ["failed_partial_generation"], "mode": "staged-llm-agent"},
+            "generationPlan": {
+                "status": ["failed_partial_generation"],
+                "mode": "staged-llm-agent",
+                "planningSource": (plan or {}).get("planningSource"),
+            },
         },
         "modules": modules,
     }
+    if isinstance((plan or {}).get("sourceOutline"), dict):
+        course_payload["metadata"]["courseBuildOutline"] = (plan or {})["sourceOutline"]
+    if isinstance((plan or {}).get("sourceCorpusSynthesis"), dict):
+        course_payload["metadata"]["sourceCorpusSynthesis"] = (plan or {})["sourceCorpusSynthesis"]
+    if isinstance((plan or {}).get("inputArtifacts"), list):
+        course_payload["metadata"]["inputArtifacts"] = (plan or {})["inputArtifacts"]
     if resolved_department:
         course_payload["department"] = resolved_department
     return normalize_course(course_payload)
@@ -156,6 +166,52 @@ def _module_lesson_titles(module_outline: dict) -> list[str]:
                 continue
             titles.append(title)
     return titles[:6] or ["Core concepts", "Worked examples", "Practice and applications"]
+
+
+def _source_ids_from_outline(outline: dict | None, fallback_source_ids: list[str]) -> list[str]:
+    if not isinstance(outline, dict):
+        return list(fallback_source_ids)
+    raw_source_ids = outline.get("sourceIds")
+    if not isinstance(raw_source_ids, list):
+        return list(fallback_source_ids)
+    allowed = {str(source_id) for source_id in fallback_source_ids}
+    source_ids = [
+        str(source_id)
+        for source_id in raw_source_ids
+        if str(source_id).strip() and (not allowed or str(source_id) in allowed)
+    ]
+    return source_ids or list(fallback_source_ids)
+
+
+def _module_lesson_outlines(module_outline: dict) -> list[dict[str, Any]]:
+    raw_sections = module_outline.get("sections")
+    lesson_outlines: list[dict[str, Any]] = []
+    if isinstance(raw_sections, list):
+        for section in raw_sections:
+            if not isinstance(section, dict):
+                continue
+            title = str(section.get("title") or "").strip()
+            lowered = title.lower()
+            section_type = str(section.get("sectionType") or section.get("section_type") or "").lower()
+            page_type = str(section.get("pageType") or section.get("page_type") or "").lower()
+            if not title or section_type in {"assessment", "summary"} or page_type == "apply":
+                continue
+            if any(marker in lowered for marker in ("quiz", "assessment", "summary", "review")):
+                continue
+            lesson_outlines.append(section)
+    if lesson_outlines:
+        return lesson_outlines[:6]
+    return [{"title": title} for title in _module_lesson_titles(module_outline)]
+
+
+def _valid_source_ids(raw_source_ids: Any, fallback_source_ids: list[str]) -> list[str]:
+    allowed = {str(source_id) for source_id in fallback_source_ids}
+    provided = [
+        str(source_id)
+        for source_id in raw_source_ids
+        if str(source_id).strip() and (not allowed or str(source_id) in allowed)
+    ] if isinstance(raw_source_ids, list) else []
+    return provided or list(fallback_source_ids)
 
 
 def _importance_rank(value: str) -> int:
@@ -296,7 +352,7 @@ def _coerce_generated_section(
         "title": str(section.get("title") or fallback_title),
         "pageType": str(section.get("pageType") or page_type),
         "sectionType": str(section.get("sectionType") or section_type),
-        "sourceIds": section.get("sourceIds") if isinstance(section.get("sourceIds"), list) else source_ids,
+        "sourceIds": _valid_source_ids(section.get("sourceIds"), source_ids),
         "content": content,
     }
 
@@ -317,7 +373,7 @@ def _coerce_media_block(raw_media: dict, source_ids: list[str]) -> tuple[dict[st
         **block,
         "type": "video",
         "url": url,
-        "sourceIds": block.get("sourceIds") if isinstance(block.get("sourceIds"), list) else source_ids,
+        "sourceIds": _valid_source_ids(block.get("sourceIds"), source_ids),
     }
     if block.get("title"):
         coerced["title"] = str(block.get("title"))

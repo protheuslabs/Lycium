@@ -42,6 +42,7 @@ def generate_course_with_agent(
     source_urls: list[str] | None = None,
     source_packet_id: int | str | None = None,
     source_packet: dict | None = None,
+    input_artifacts: list[dict] | None = None,
     category: str | None = None,
     department: str | None = None,
     enforce_contract: bool = True,
@@ -56,6 +57,7 @@ def generate_course_with_agent(
         fetch_sources=True,
         source_packet_id=source_packet_id,
         source_packet=source_packet,
+        input_artifacts=input_artifacts,
     )
     effective_source_urls = source_corpus.source_urls
     packet_gate = source_packet_quality_gate(source_corpus.synthesis)
@@ -112,6 +114,7 @@ def generate_course_with_agent(
     base_trace["effective_source_urls"] = effective_source_urls
     base_trace["source_packet_id"] = source_packet_id
     base_trace["source_packet_contract"] = source_packet.get("contract_version") if isinstance(source_packet, dict) else None
+    base_trace["input_artifacts"] = source_corpus.input_artifacts
     try:
         response = call_agent_model(provider, api_key, messages, selected_model)
     except CourseAgentError as exc:
@@ -127,6 +130,11 @@ def generate_course_with_agent(
             trace={**base_trace, "status": "failed", "failed_stage": "course_generation"},
         ) from exc
     course = attach_curriculum_context(_merge_input_sources(normalize_course(raw_course), effective_source_urls), benchmark_context)
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    metadata["sourceCorpusSynthesis"] = source_corpus.synthesis
+    if source_corpus.input_artifacts:
+        metadata["inputArtifacts"] = source_corpus.input_artifacts
+    course["metadata"] = metadata
     if category:
         course["category"] = category
     if department:

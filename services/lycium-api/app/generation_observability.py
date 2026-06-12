@@ -107,6 +107,83 @@ def _usage_summary(trace: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _course_build_task_summary(task: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(task, dict):
+        return {}
+    summary = {
+        "contractVersion": task.get("contractVersion"),
+        "courseId": task.get("courseId"),
+        "status": task.get("status"),
+        "currentStage": task.get("currentStage"),
+        "nextAction": task.get("nextAction"),
+        "transitionStatus": task.get("transitionStatus"),
+        "transitionReason": task.get("transitionReason"),
+        "requiredInputs": task.get("requiredInputs") if isinstance(task.get("requiredInputs"), list) else [],
+        "prerequisiteCourseIds": task.get("prerequisiteCourseIds") if isinstance(task.get("prerequisiteCourseIds"), list) else [],
+    }
+    source_packet = task.get("sourcePacketEvidence")
+    if isinstance(source_packet, dict):
+        summary["sourcePacketEvidence"] = {
+            "qualityStatus": source_packet.get("qualityStatus"),
+            "conceptCoverageRatio": source_packet.get("conceptCoverageRatio"),
+            "minimumConceptCoverageRatio": source_packet.get("minimumConceptCoverageRatio"),
+        }
+    transition_report = task.get("sourcePacketTransitionReport")
+    if isinstance(transition_report, dict):
+        metrics = transition_report.get("metrics") if isinstance(transition_report.get("metrics"), dict) else {}
+        summary["sourcePacketTransitionReport"] = {
+            "status": transition_report.get("status"),
+            "passed": transition_report.get("passed"),
+            "nextStage": transition_report.get("nextStage"),
+            "nextAction": transition_report.get("nextAction"),
+            "reasonCount": len(transition_report.get("reasons") or []) if isinstance(transition_report.get("reasons"), list) else 0,
+            "conceptCoverageRatio": metrics.get("conceptCoverageRatio"),
+        }
+    outline = task.get("outlineReadiness")
+    if isinstance(outline, dict):
+        metrics = outline.get("metrics") if isinstance(outline.get("metrics"), dict) else {}
+        summary["outlineReadiness"] = {
+            "passed": outline.get("passed"),
+            "moduleCount": metrics.get("moduleCount"),
+            "sectionCount": metrics.get("sectionCount"),
+        }
+    outline_transition = task.get("outlineTransitionReport")
+    if isinstance(outline_transition, dict):
+        metrics = outline_transition.get("metrics") if isinstance(outline_transition.get("metrics"), dict) else {}
+        summary["outlineTransitionReport"] = {
+            "status": outline_transition.get("status"),
+            "passed": outline_transition.get("passed"),
+            "nextStage": outline_transition.get("nextStage"),
+            "nextAction": outline_transition.get("nextAction"),
+            "reasonCount": len(outline_transition.get("reasons") or []) if isinstance(outline_transition.get("reasons"), list) else 0,
+            "moduleCount": metrics.get("moduleCount"),
+            "sectionCount": metrics.get("sectionCount"),
+        }
+    review = task.get("reviewReadiness")
+    if isinstance(review, dict):
+        metrics = review.get("metrics") if isinstance(review.get("metrics"), dict) else {}
+        summary["reviewReadiness"] = {
+            "passed": review.get("passed"),
+            "qualityPassed": metrics.get("qualityPassed"),
+            "failedGateCount": metrics.get("failedGateCount"),
+            "score": metrics.get("score"),
+        }
+    review_transition = task.get("reviewTransitionReport")
+    if isinstance(review_transition, dict):
+        metrics = review_transition.get("metrics") if isinstance(review_transition.get("metrics"), dict) else {}
+        summary["reviewTransitionReport"] = {
+            "status": review_transition.get("status"),
+            "passed": review_transition.get("passed"),
+            "nextStage": review_transition.get("nextStage"),
+            "nextAction": review_transition.get("nextAction"),
+            "reasonCount": len(review_transition.get("reasons") or []) if isinstance(review_transition.get("reasons"), list) else 0,
+            "failedGateCount": metrics.get("failedGateCount"),
+            "failedEvalCount": metrics.get("failedEvalCount"),
+            "score": metrics.get("score"),
+        }
+    return {key: value for key, value in summary.items() if value not in (None, "")}
+
+
 def _event_read(event: GenerationRunEvent) -> dict[str, Any]:
     return {
         "id": event.id,
@@ -259,6 +336,7 @@ def complete_generation_run(
     trace: dict[str, Any],
     quality_report: dict[str, Any],
     course_snapshot_id: int | None = None,
+    course_build_task: dict[str, Any] | None = None,
 ) -> None:
     run = generation_run_for_job(session, job_id)
     if run is None:
@@ -270,6 +348,7 @@ def complete_generation_run(
     run.course_snapshot_id = course_snapshot_id
     run.trace = _safe_trace(trace)
     usage_summary = _usage_summary(run.trace)
+    build_task_summary = _course_build_task_summary(course_build_task)
     run.result_summary = {
         "accepted": accepted,
         "providerId": run.provider_id,
@@ -283,7 +362,19 @@ def complete_generation_run(
         "errorCount": len(quality_report.get("errors") or []),
         "warningCount": len(quality_report.get("warnings") or []),
     }
+    if build_task_summary:
+        run.result_summary["courseBuildTask"] = build_task_summary
     run.completed_at = utcnow()
+    if build_task_summary:
+        add_generation_run_event(
+            session,
+            run,
+            event_type="course_build_task_transition",
+            stage=str(build_task_summary.get("currentStage") or build_task_summary.get("status") or run.current_stage),
+            status=str(build_task_summary.get("transitionStatus") or run.status),
+            message=str(build_task_summary.get("transitionReason") or "Course build task state recorded."),
+            payload=redact_sensitive_payload({"courseBuildTask": build_task_summary}),
+        )
     add_generation_run_event(
         session,
         run,

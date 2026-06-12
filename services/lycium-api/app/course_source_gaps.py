@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.generation_helpers import COURSE_GENERATION_RULES, _catalog_metadata_from_prompt, _title_from_prompt
 from app.models import CourseDraft, CourseSnapshot
 from app.course_source_gap_resume import summarize_concept_source_need_coverage
+from app.source_index_search import search_index_response
 
 
 SOURCE_COVERAGE_POLICY: dict[str, Any] = {
@@ -180,6 +181,83 @@ def _source_gap(title: str, current_count: int, source_gate: dict[str, Any] | No
     return gap
 
 
+def _candidate_source(candidate: dict[str, Any]) -> dict[str, Any] | None:
+    source = candidate.get("source") if isinstance(candidate.get("source"), dict) else {}
+    url = source.get("canonical_url") or source.get("canonicalUrl") or source.get("url") or candidate.get("url")
+    if not isinstance(url, str) or not url.strip():
+        return None
+    return {
+        "sourceId": source.get("public_id") or source.get("id") or candidate.get("sourceId"),
+        "title": source.get("title") or candidate.get("title") or url,
+        "url": url,
+        "sourceType": source.get("source_type") or source.get("sourceType") or candidate.get("sourceType"),
+        "score": candidate.get("score"),
+        "matchedTerms": candidate.get("matched_terms") or candidate.get("matchedTerms") or [],
+        "evidenceRefs": candidate.get("evidence_refs") or candidate.get("evidenceRefs") or [],
+        "summary": candidate.get("summary"),
+    }
+
+
+def _search_query_for_need(title: str, need: dict[str, Any]) -> str:
+    suggested = need.get("suggestedQueries")
+    if isinstance(suggested, list):
+        for query in suggested:
+            if isinstance(query, str) and query.strip():
+                return query.strip()
+    concept = str(need.get("concept") or "").strip()
+    return f"{title} {concept} open educational source".strip()
+
+
+def _attach_source_index_suggestions(
+    session: Session | None,
+    *,
+    title: str,
+    gap: dict[str, Any],
+    limit_per_need: int = 3,
+) -> list[dict[str, Any]]:
+    if session is None:
+        return []
+    needs = gap.get("conceptSourceNeeds")
+    if not isinstance(needs, list) or not needs:
+        return []
+    suggestions: list[dict[str, Any]] = []
+    for need in needs:
+        if not isinstance(need, dict):
+            continue
+        query = _search_query_for_need(title, need)
+        concept = str(need.get("concept") or "").strip()
+        try:
+            search = search_index_response(
+                session,
+                query=query,
+                filters={"free_only": True, "topics": [concept] if concept else []},
+                limit=limit_per_need,
+            )
+        except Exception as exc:  # pragma: no cover - defensive around detachable service availability
+            need["sourceIndexSearchStatus"] = "unavailable"
+            need["sourceIndexSearchError"] = str(exc)[:240]
+            continue
+        candidates = [
+            candidate
+            for result in search.get("results", [])
+            if isinstance(result, dict) and (candidate := _candidate_source(result))
+        ]
+        need["sourceIndexSearchStatus"] = "searched"
+        need["sourceIndexQuery"] = query
+        need["sourceIndexCandidates"] = candidates
+        if candidates:
+            suggestions.append(
+                {
+                    "concept": concept,
+                    "location": need.get("location"),
+                    "sectionId": need.get("sectionId"),
+                    "query": query,
+                    "candidates": candidates,
+                }
+            )
+    return suggestions
+
+
 def source_gap_quality_report(snapshot: CourseSnapshot) -> dict[str, Any]:
     trace = snapshot.generation_trace if isinstance(snapshot.generation_trace, dict) else {}
     gate = trace.get("source_coverage_gate") if isinstance(trace.get("source_coverage_gate"), dict) else {}
@@ -205,6 +283,7 @@ def update_needs_sources_course_snapshot(
     source_urls: list[str] | None,
     source_gate: dict[str, Any] | None = None,
     source_packet: dict[str, Any] | None = None,
+    session: Session | None = None,
 ) -> CourseSnapshot:
     title = snapshot.title
     clean_source_urls = _unique_source_urls(source_urls)
@@ -213,6 +292,7 @@ def update_needs_sources_course_snapshot(
     source_records = _source_records_from_input_urls(clean_source_urls, title)
     source_ids = [record["id"] for record in source_records]
     gap = _source_gap(title, current_count, source_gate)
+    source_gap_suggestions = _attach_source_index_suggestions(session, title=title, gap=gap)
     if gap.get("conceptSourceNeeds"):
         gap["sourceResumeCoverage"] = summarize_concept_source_need_coverage(gap["conceptSourceNeeds"], clean_source_urls, source_packet)
     description = str(gap["description"])
@@ -221,6 +301,7 @@ def update_needs_sources_course_snapshot(
     metadata["status"] = "needs_sources"
     metadata["sourceCoveragePolicy"] = SOURCE_COVERAGE_POLICY
     metadata["sourceGaps"] = [gap]
+    metadata["sourceGapSuggestions"] = source_gap_suggestions
     metadata["generationPlan"] = {
         **(metadata.get("generationPlan") if isinstance(metadata.get("generationPlan"), dict) else {}),
         "status": ["scoped", "needs_sources"],
@@ -299,6 +380,7 @@ def create_needs_sources_course_snapshot(
     source_records = _source_records_from_input_urls(clean_source_urls, title)
     source_ids = [record["id"] for record in source_records]
     gap = _source_gap(title, current_count, source_gate)
+    source_gap_suggestions = _attach_source_index_suggestions(session, title=title, gap=gap)
     if gap.get("conceptSourceNeeds"):
         gap["sourceResumeCoverage"] = summarize_concept_source_need_coverage(gap["conceptSourceNeeds"], clean_source_urls, source_packet)
     gap_id = str(gap["id"])
@@ -350,7 +432,7 @@ def create_needs_sources_course_snapshot(
             "durationMinutes": expected_duration_minutes,
             "sourceCoveragePolicy": SOURCE_COVERAGE_POLICY,
             "sourceGaps": [gap],
-            "sourceGapSuggestions": [],
+            "sourceGapSuggestions": source_gap_suggestions,
             "generationPlan": {
                 "status": ["scoped", "needs_sources"],
                 "mode": "source-gated-draft",

@@ -14,6 +14,7 @@ type CreateCourseModalProps = {
   prompt: string;
   level: string;
   sourceLinks: string[];
+  sourceFiles: File[];
   canCreateCourse: boolean;
   aiLockedReason: string;
   generateStatus: "idle" | "loading" | "error" | "success";
@@ -29,6 +30,8 @@ type CreateCourseModalProps = {
   onCollegeChange: (value: string) => void;
   onDepartmentChange: (value: string) => void;
   onSourceLinkChange: (index: number, value: string) => void;
+  onSourceFilesChange: (files: FileList | null) => void;
+  onRemoveSourceFile: (index: number) => void;
   onAddSourceLink: () => void;
   onModeChange: (mode: CreateCourseMode) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -40,6 +43,7 @@ export default function CreateCourseModal({
   prompt,
   level,
   sourceLinks,
+  sourceFiles,
   canCreateCourse,
   aiLockedReason,
   generateStatus,
@@ -55,6 +59,8 @@ export default function CreateCourseModal({
   onCollegeChange,
   onDepartmentChange,
   onSourceLinkChange,
+  onSourceFilesChange,
+  onRemoveSourceFile,
   onAddSourceLink,
   onModeChange,
   onSubmit,
@@ -176,14 +182,40 @@ export default function CreateCourseModal({
                 placeholder={college ? "Select department" : "Select college first"}
               />
             </label>
-            <div className="create-course-files" aria-label="Add files placeholder">
-              <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                <path d="M7.5 18.5a5 5 0 0 1 0-7.07l6.72-6.72a3.5 3.5 0 0 1 4.95 4.95l-7.08 7.07a2 2 0 0 1-2.83-2.83l6.37-6.36a1 1 0 1 1 1.41 1.41l-6.36 6.37 1.41 1.41 7.07-7.07a5.5 5.5 0 0 0-7.78-7.78l-6.72 6.72a7 7 0 0 0 9.9 9.9l5.31-5.3a1 1 0 0 0-1.42-1.42l-5.3 5.31a5 5 0 0 1-7.07 0Z" />
-              </svg>
-              <div>
-                <strong>Add Files</strong>
-                <span>File uploads are coming soon.</span>
-              </div>
+            <div className="create-course-files" aria-label="Add course generation files">
+              <label className="create-course-file-picker">
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.txt,.md,.markdown,.html,.htm,text/*,application/pdf"
+                  onChange={(event) => {
+                    onSourceFilesChange(event.currentTarget.files);
+                    event.currentTarget.value = "";
+                  }}
+                  disabled={!canCreateCourse}
+                />
+                <span className="create-course-file-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7.5 18.5a5 5 0 0 1 0-7.07l6.72-6.72a3.5 3.5 0 0 1 4.95 4.95l-7.08 7.07a2 2 0 0 1-2.83-2.83l6.37-6.36a1 1 0 1 1 1.41 1.41l-6.36 6.37 1.41 1.41 7.07-7.07a5.5 5.5 0 0 0-7.78-7.78l-6.72 6.72a7 7 0 0 0 9.9 9.9l5.31-5.3a1 1 0 0 0-1.42-1.42l-5.3 5.31a5 5 0 0 1-7.07 0Z" />
+                  </svg>
+                </span>
+                <span className="create-course-file-copy">
+                  <strong>Add files</strong>
+                  <span>PDF, text, markdown, or HTML sources for the LLM.</span>
+                </span>
+              </label>
+              {sourceFiles.length > 0 && (
+                <ul className="create-course-file-list" aria-label="Selected generation files">
+                  {sourceFiles.map((file, index) => (
+                    <li key={`${file.name}-${file.size}-${file.lastModified}`}>
+                      <span>{file.name}</span>
+                      <button type="button" onClick={() => onRemoveSourceFile(index)} disabled={!canCreateCourse}>
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <button className="create-course-submit" type="submit" disabled={!canSubmitCourse}>
               {generateStatus === "loading" ? "Generating..." : "Create course"}

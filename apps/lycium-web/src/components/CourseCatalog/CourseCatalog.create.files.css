@@ -1,0 +1,166 @@
+.create-course-files {
+  border: 1px dashed #aeb8cc;
+  border-radius: 18px;
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.95rem;
+  color: #253049;
+  background: #f8fafc;
+}
+
+.create-course-file-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  cursor: pointer;
+}
+
+.create-course-file-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.create-course-file-icon {
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #4a6cf7;
+  background: rgba(74, 108, 247, 0.1);
+}
+
+.create-course-file-icon svg {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: currentColor;
+}
+
+.create-course-file-copy {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.create-course-file-copy span {
+  color: #667085;
+  font-size: 0.85rem;
+}
+
+.create-course-file-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.create-course-file-list li {
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 100%;
+  padding: 0.35rem 0.45rem 0.35rem 0.7rem;
+  color: #253049;
+  background: #eef2f7;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.create-course-file-list li span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.create-course-file-list button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.22rem 0.45rem;
+  color: #253049;
+  background: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.create-course-file-list button:hover,
+.create-course-file-list button:focus-visible {
+  outline: none;
+  background: #e1e6ef;
+}
+
+@media (prefers-color-scheme: dark) {
+  .create-course-files {
+    color: #e5e7eb;
+    background: #262626;
+  }
+
+  .create-course-file-icon {
+    color: #e5e7eb;
+    background: #333333;
+  }
+
+  .create-course-file-copy span {
+    color: #a1a1aa;
+  }
+
+  .create-course-file-list li {
+    color: #e5e7eb;
+    background: #303033;
+  }
+
+  .create-course-file-list button {
+    color: #e5e7eb;
+    background: #171717;
+  }
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-files {
+  color: #e5e7eb;
+  background: #262626;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-file-icon {
+  color: #e5e7eb;
+  background: #333333;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-file-copy span {
+  color: #a1a1aa;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-file-list li {
+  color: #e5e7eb;
+  background: #303033;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .create-course-file-list button {
+  color: #e5e7eb;
+  background: #171717;
+}
+
+html[data-theme="light"] .create-course-files {
+  border-color: #aeb8cc;
+  color: #253049;
+  background: #f8fafc;
+}
+
+html[data-theme="light"] .create-course-file-copy span {
+  color: #667085;
+}
+
+@media (max-width: 620px) {
+  .create-course-files {
+    align-items: flex-start;
+  }
+}

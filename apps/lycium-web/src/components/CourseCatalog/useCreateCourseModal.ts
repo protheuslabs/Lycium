@@ -6,6 +6,7 @@ type CourseGenerationHandler = (
   event: FormEvent<HTMLFormElement>,
   sourceLinks: string[],
   classification: { category: string; department: string },
+  sourceFiles: File[],
 ) => void;
 
 type CreateCourseModalOptions = {
@@ -20,6 +21,7 @@ export function useCreateCourseModal({ canCreateCourse, onGenerateCourse, onCrea
   const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<CreateCourseMode>("ai");
   const [sourceLinks, setSourceLinks] = useState([""]);
+  const [sourceFiles, setSourceFiles] = useState<File[]>([]);
   const [college, setCollege] = useState("");
   const [department, setDepartment] = useState("");
 
@@ -41,6 +43,26 @@ export function useCreateCourseModal({ canCreateCourse, onGenerateCourse, onCrea
     setSourceLinks((currentLinks) => currentLinks.map((link, linkIndex) => (linkIndex === index ? value : link)));
   };
 
+  const handleSourceFilesChange = (files: FileList | null) => {
+    const nextFiles = Array.from(files ?? []);
+    setSourceFiles((currentFiles) => {
+      const seen = new Set(currentFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
+      return [
+        ...currentFiles,
+        ...nextFiles.filter((file) => {
+          const key = `${file.name}:${file.size}:${file.lastModified}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }),
+      ];
+    });
+  };
+
+  const handleRemoveSourceFile = (index: number) => {
+    setSourceFiles((currentFiles) => currentFiles.filter((_file, fileIndex) => fileIndex !== index));
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     if (mode === "manual") {
       event.preventDefault();
@@ -58,7 +80,9 @@ export function useCreateCourseModal({ canCreateCourse, onGenerateCourse, onCrea
       event,
       sourceLinks.map((link) => link.trim()).filter(Boolean),
       { category: college, department },
+      sourceFiles,
     );
+    setSourceFiles([]);
     setIsOpen(false);
   };
 
@@ -70,12 +94,15 @@ export function useCreateCourseModal({ canCreateCourse, onGenerateCourse, onCrea
     departmentOptions,
     handleCollegeChange,
     handleSourceLinkChange,
+    handleSourceFilesChange,
+    handleRemoveSourceFile,
     handleSubmit,
     isOpen,
     setMode,
     setDepartment,
     setIsOpen,
     sourceLinks,
+    sourceFiles,
     addSourceLink: () => setSourceLinks((currentLinks) => [...currentLinks, ""]),
   };
 }

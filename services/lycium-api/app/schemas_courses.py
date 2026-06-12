@@ -83,6 +83,20 @@ class GenerateCourseRequest(BaseModel):
     source_urls: list[HttpUrl] = Field(default_factory=list)
     source_packet_id: int | str | None = None
     source_packet: dict[str, Any] | None = None
+    input_artifacts: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class FileInputReadRequest(BaseModel):
+    files: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class FileInputReadResponse(BaseModel):
+    contractVersion: str
+    provider: str
+    replaceableBy: str | None = None
+    artifactCount: int
+    extractedArtifactCount: int
+    artifacts: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class CourseSourceGapResumeRequest(BaseModel):

@@ -10,7 +10,7 @@ import ProgramView from "./components/ProgramView/ProgramView";
 import AppSettingsModal from "./components/SettingsModal/AppSettingsModal";
 import TopBar from "./components/TopBar/TopBar";
 import { localCourses } from "./courseData/localCourses";
-import { localPortfolioArtifactMap, localPrograms, programBenchmarks } from "./courseData/programs";
+import { localPrograms, programBenchmarks } from "./courseData/programs";
 import sourceRecordsData from "./courseData/sourceRecords";
 import type { CourseEntry, CourseSection } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
@@ -459,7 +459,7 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
           program={selectedProgram}
           courses={courses}
           benchmarks={programBenchmarks[selectedProgram.id as keyof typeof programBenchmarks] ?? []}
-          portfolioArtifacts={localPortfolioArtifactMap} submittedArtifacts={programArtifacts} sources={sourceRecordsData.sources}
+          portfolioArtifacts={new Map()} submittedArtifacts={programArtifacts} sources={sourceRecordsData.sources}
           onOpenCourse={openCourseByEntry} onOpenCatalog={routeToHome} onSubmitArtifact={submitProgramArtifact}
         />
       ) : (

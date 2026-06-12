@@ -7,6 +7,8 @@ from app.db import get_session
 from app.schemas import (
     BulkSourceImportCreate,
     BulkSourceImportRead,
+    FileInputReadRequest,
+    FileInputReadResponse,
     IndexedSourceCreate,
     IndexedSourceRead,
     SourceCorpusRunCreate,
@@ -18,6 +20,7 @@ from app.schemas import (
     SourcePacketCreate,
     SourcePacketRead,
 )
+from app.file_input_reader import read_generation_input_files
 from app.source_index_client import SourceIndexClientError
 from app.source_index import (
     create_indexed_source_response,
@@ -31,6 +34,10 @@ from app.source_index_search import analyze_source_fit_response, search_index_re
 
 
 def register(app: FastAPI) -> None:
+    @app.post("/v1/input-artifacts/read", response_model=FileInputReadResponse)
+    def read_input_artifacts(payload: FileInputReadRequest) -> dict:
+        return read_generation_input_files(payload.files)
+
     @app.post("/v1/index/sources", response_model=IndexedSourceRead, status_code=status.HTTP_201_CREATED)
     def create_indexed_source(payload: IndexedSourceCreate, session: Session = Depends(get_session)) -> dict:
         try:

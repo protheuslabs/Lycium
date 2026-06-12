@@ -18,6 +18,7 @@ type SourceGapDraftInput = {
   prompt: string;
   level?: string;
   sourceLinks: string[];
+  sourceFileNames?: string[];
   classification: { category: string; department: string };
 };
 
@@ -42,12 +43,14 @@ function draftKeyFromPrompt(prompt: string): string {
   return `draft-needs-sources-${slug || "course"}-${Date.now()}`;
 }
 
-export function submittedSourceCount(sourceLinks: string[]): number {
-  return new Set(sourceLinks.map((link) => link.trim()).filter(Boolean)).size;
+export function submittedSourceCount(sourceLinks: string[], sourceFileNames: string[] = []): number {
+  const linkCount = new Set(sourceLinks.map((link) => link.trim()).filter(Boolean)).size;
+  const fileCount = new Set(sourceFileNames.map((name) => name.trim()).filter(Boolean)).size;
+  return linkCount + fileCount;
 }
 
-export function sourceCountMeetsMinimum(sourceLinks: string[]): boolean {
-  return submittedSourceCount(sourceLinks) >= DEFAULT_SOURCE_COVERAGE_POLICY.minimumCourseSources;
+export function sourceCountMeetsMinimum(sourceLinks: string[], sourceFileNames: string[] = []): boolean {
+  return submittedSourceCount(sourceLinks, sourceFileNames) >= DEFAULT_SOURCE_COVERAGE_POLICY.minimumCourseSources;
 }
 
 export function getCourseSourceGaps(course: CourseEntry): LyciumCourseSourceGap[] {
@@ -132,16 +135,24 @@ export function createSourceGapDraftCourse({
   prompt,
   level,
   sourceLinks,
+  sourceFileNames = [],
   classification,
 }: SourceGapDraftInput): CourseEntry {
   const title = cleanPromptTitle(prompt);
   const uniqueLinks = Array.from(new Set(sourceLinks.map((link) => link.trim()).filter(Boolean)));
-  const sourceRecords = uniqueLinks.map((url, index) => ({
+  const uniqueFileNames = Array.from(new Set(sourceFileNames.map((name) => name.trim()).filter(Boolean)));
+  const linkSourceRecords = uniqueLinks.map((url, index) => ({
     id: `submitted-source-${index + 1}`,
     type: "submitted_url",
     title: `Submitted source ${index + 1}`,
     url,
   }));
+  const fileSourceRecords = uniqueFileNames.map((filename, index) => ({
+    id: `submitted-file-${index + 1}`,
+    type: "submitted_file",
+    title: filename,
+  }));
+  const sourceRecords = [...linkSourceRecords, ...fileSourceRecords];
   const sourceIds = sourceRecords.map((source) => source.id);
   const sourceCount = sourceIds.length;
   const sourceGaps: LyciumCourseSourceGap[] = [

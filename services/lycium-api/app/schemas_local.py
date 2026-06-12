@@ -217,6 +217,7 @@ class LocalCourseFeedbackRead(BaseModel):
 
 
 class LocalCourseHealthRead(BaseModel):
+    contract_version: str | None = None
     course_key: str
     course_title: str | None = None
     status: Literal["unknown", "healthy", "watch", "needs_review"]
@@ -227,4 +228,5 @@ class LocalCourseHealthRead(BaseModel):
     source_suggestion_count: int = 0
     average_feedback_magnitude: float | None = None
     signals: list[str] = Field(default_factory=list)
+    artifact_metrics: dict[str, Any] = Field(default_factory=dict)
     updated_at: str | None = None

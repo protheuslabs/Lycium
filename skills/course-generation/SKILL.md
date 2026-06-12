@@ -30,6 +30,10 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - exclusions
    - assessment expectations
    - course short description for catalog cards
+   - course type or purpose, such as academic course, practical training course, exam prep, self-study pathway, or program component
+   - learning method profile, such as project-first, text-heavy, video-supported, flashcard-supported, tutor-guided, or assessment-heavy
+   - generation input artifacts, including URLs, uploaded documents, PDFs, slide decks, notes, transcripts, media, source packets, or connector-provided source refs
+   - any native Lycium primitive used for file reading, extraction, retrieval, tutoring, or grading must stay adapter-shaped and replaceable by Infring OS or other Protheus ecosystem primitives
 5. Plan the course hierarchy before drafting content:
    - 10-20 modules for a full course unless the user requests a shorter course
    - choose exactly one learner-facing pacing label, `Module` or `Week`, record it in `metadata.pacingLabel`, and use it consistently in module titles, summary titles, and summary concept-card titles
@@ -43,8 +47,13 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record course prerequisites in top-level `prerequisites` when applicable
    - record planned/wrapper course prerequisite IDs in `metadata.prerequisiteCourseIds`
    - record benchmark-derived requirements and their origins in program/course metadata when applicable
+   - record course purpose in `metadata.courseType` when known
+   - record learning method preferences in `metadata.learningMethod` when known
+   - record generation inputs in `metadata.inputArtifacts` when documents, media, source packets, or connector refs are used
    - record benchmark evidence in `metadata.curriculumBenchmarks`, `metadata.requirementOrigins`, `metadata.courseParityProfile`, and `metadata.sourceSlots` when applicable
    - record module, unit, idea, and source planning in `metadata.generationPlan`
+   - preserve generated section planning evidence in `sections[].metadata.generationOutline` when content is created from source-packet, benchmark, or staged outline inputs
+   - preserve `metadata.courseHealth` when backend review, generation, or source diagnostics have produced a course-health summary
    - record estimated learning time at the most specific reliable level available: prefer section-level `estimatedMinutes`, then course-level `estimatedMinutes` or `estimatedHours`, then requirement, cluster, and program `estimatedHours`
    - treat parent-level time estimates as authored fallbacks; when every child has an estimate, roll parent time up from children instead of manually duplicating totals
    - update progress markers as the plan becomes content
@@ -81,10 +90,13 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - descriptions should be concise definitions of the concept, not prose summaries of the page
 11. Use editor-native content blocks for generated output:
    - generated sections must be easy for a human to tweak in the course editor
-   - use atomic `text`, `heading`, `conceptCard`, `video`, `iframe`, and `quiz` blocks instead of monolithic markdown or large nested block payloads
+   - use atomic `text`, `heading`, `conceptCard`, `video`, `iframe`, `quiz`, `visual`, `flashcardSet`, `project`, `rubric`, and `submission` blocks or objects instead of monolithic markdown or large nested block payloads
    - use one `conceptCard` block per concept; do not generate a single `conceptCards` stack except when preserving or repairing a legacy course
    - video blocks should not include a filler title by default; use a separate `heading` block if the video needs a visible label
    - quiz questions should include `multiple: true` only when the UI should render checkboxes; single-answer questions should use `answers: [index]` and omit `multiple` or set it false
+   - visual blocks should include alt text, source IDs or generation provenance, and license/provenance metadata when applicable
+   - flashcard sets should use structured cards with prompt, answer, optional hint, explanation, concept tags, and source IDs
+   - project blocks or project sections should include instructions, artifact type, required evidence, rubric reference, source IDs, submission policy, and grader workflow metadata when applicable
 12. Record all sources centrally and reference them from the course:
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
    - use `sourceIds` in course, module, section, and block records
@@ -95,6 +107,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
    - if source coverage is below policy, create or preserve a `needs_sources` draft with `metadata.sourceGaps` instead of drafting hollow learner-facing modules
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
+   - when uploaded files or long source documents are used, pass bounded, stage-relevant excerpts into lesson, quiz, media, and summary prompts; do not dump full extracted documents into every model call
    - scope `sourceIds` locally while numbering citations globally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, and section/block `sourceIds` support only concepts taught or assessed there
    - text blocks may include inline citation markers such as `[1]`; these are 1-based indexes into the course-wide source index, while each section renders only the subset it uses sorted from lowest to highest citation number
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
@@ -117,7 +130,12 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - keep only a small ring buffer of full course-generation job logs so recent runs are inspectable without creating unbounded local churn
    - publish only after the quality report passes or a reviewer explicitly records a force-publish reason
    - locked sections should be represented in review metadata rather than by mutating lesson content
-17. Feed course-health records after learner use:
+17. Treat tutor, grader, and analytics support as explicit workflows:
+   - tutor workflows should be grounded in the active course, current section, source records, source packets, curriculum benchmarks, learner progress, and explicitly allowed context
+   - grader workflows should grade project or submission artifacts against a structured rubric, previous course material, expected outcomes, and supporting sources
+   - analytics policy should distinguish private learner data, owner-visible aggregate metrics, public popularity metrics, and unique-view counting
+   - course ownership metadata should support attribution, canonical drafts, forks, creator profiles, and owner-configured analytics permissions
+18. Feed course-health records after learner use:
    - combine learner ratings, feedback notes, source suggestions, quality evals, validation issues, and reviewer actions into course health
    - keep health data separate from course JSON
    - store feedback magnitude as a numeric 1-3 signal; emoji are presentation only

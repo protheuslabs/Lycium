@@ -4,6 +4,8 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.course_build_task_resume import apply_course_build_resume_inputs
+from app.course_health import summarize_course_health
 from app.course_quiz_blocks import normalize_quiz_block
 from app.course_generation_workflow import run_course_generation_workflow
 from app.course_source_gaps import create_needs_sources_course_snapshot, source_count_meets_minimum, update_needs_sources_course_snapshot
@@ -244,9 +246,26 @@ def generate_course_from_draft(
             snapshot,
             source_urls=[str(url) for url in submitted_source_urls],
             source_gate=source_gate.model_dump(),
+            session=session,
         )
 
     quality_report = assess_course_quality(structure, gate="review")
+    structure = apply_course_build_resume_inputs(
+        structure,
+        quality_report=quality_report,
+    )
+    snapshot_status = "ready_for_review" if quality_report["passed"] else "needs_revision"
+    metadata = structure.get("metadata") if isinstance(structure.get("metadata"), dict) else {}
+    structure["metadata"] = {
+        **metadata,
+        "courseHealth": summarize_course_health(
+            course_key=str(structure.get("id") or structure.get("slug") or draft.title),
+            course_title=draft.title,
+            course=structure,
+            quality_report=quality_report,
+            lifecycle_status=snapshot_status,
+        ),
+    }
     snapshot = CourseSnapshot(
         learner_id=learner_id,
         draft_id=draft.id,
@@ -255,7 +274,7 @@ def generate_course_from_draft(
         language=draft.language,
         level=draft.difficulty,
         source_policy=source_policy,
-        status="ready_for_review" if quality_report["passed"] else "needs_revision",
+        status=snapshot_status,
         version=1,
         structure=structure,
         generation_trace={**trace, "quality_report": quality_report},
@@ -281,6 +300,7 @@ def generate_course_direct(
     source_urls: list[str] | None = None,
     source_packet_id: int | str | None = None,
     source_packet: dict[str, Any] | None = None,
+    input_artifacts: list[dict[str, Any]] | None = None,
     category: str | None = None,
     department: str | None = None,
 ) -> CourseSnapshot:
@@ -290,6 +310,7 @@ def generate_course_direct(
         fetch_sources=False,
         source_packet_id=source_packet_id,
         source_packet=source_packet,
+        input_artifacts=input_artifacts,
     )
     effective_source_urls = source_corpus.source_urls or [str(url) for url in source_urls or []]
     packet_gate = source_packet_quality_gate(source_corpus.synthesis)
@@ -326,6 +347,7 @@ def generate_course_direct(
             "source_urls": effective_source_urls,
             "source_packet_id": source_packet_id,
             "source_packet": source_packet,
+            "input_artifacts": source_corpus.input_artifacts,
             "category": category,
             "department": department,
         },

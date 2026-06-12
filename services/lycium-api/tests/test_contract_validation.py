@@ -7,6 +7,7 @@ from pathlib import Path
 from app.contract_validation import validate_course_schema
 from app.course_agent_contract import validate_course_contract
 from app.course_generation_workflow import run_course_generation_workflow
+from app.course_health import summarize_course_health
 from app.course_source_integrity import assess_course_source_integrity
 from app.course_quality import assess_course_quality
 from app.course_quality_evals import run_course_quality_evals
@@ -298,3 +299,36 @@ def test_course_quality_reports_vertical_understanding_dimension() -> None:
     assert vertical["metrics"]["hasPrerequisiteSignal"] == 1
     assert vertical["metrics"]["requirementOriginCount"] == 1
     assert vertical["metrics"]["sourceSlotCount"] == 1
+
+
+def test_course_health_summary_combines_quality_sources_and_feedback() -> None:
+    course = deepcopy(read_fixture("valid-course.json"))
+    metadata = dict(course.get("metadata") or {})
+    metadata["sourceGaps"] = [{"id": "missing-source", "severity": "blocking"}]
+    course["metadata"] = metadata
+    quality_report = assess_course_quality(course, gate="publish")
+    feedback = {
+        "course_title": course["title"],
+        "rating": "down",
+        "rating_events": [{"rating": "down"}],
+        "feedback_notes": [{"rating": "down", "feedback_magnitude": 3, "text": "The source coverage is weak."}],
+        "source_suggestions": [{"url": "https://example.edu/replacement"}],
+        "updated_at": "2026-06-09T00:00:00+00:00",
+    }
+
+    health = summarize_course_health(
+        course_key="test-course",
+        course_title=course["title"],
+        feedback=feedback,
+        course=course,
+        quality_report=quality_report,
+        lifecycle_status="needs_revision",
+    )
+
+    assert health["contract_version"] == "course-health-v1"
+    assert health["status"] == "needs_review"
+    assert health["source_suggestion_count"] == 1
+    assert health["feedback_note_count"] == 1
+    assert health["artifact_metrics"]["source_gap_count"] == 1
+    assert health["artifact_metrics"]["quality_score"] == quality_report["score"]
+    assert any("source gap" in signal for signal in health["signals"])
