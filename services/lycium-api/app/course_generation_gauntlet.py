@@ -1,58 +1,67 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping, Sequence
+from pathlib import Path
 from typing import Any, Literal
 
 from app.course_generation_scenarios import (
     evaluate_course_generation_scenario,
     evaluate_program_generation_scenario,
 )
+from app.course_generation_scenario_specs import COURSE_SCENARIOS, PROGRAM_SCENARIOS
 
 
 GAUNTLET_VERSION = "course-generation-gauntlet-v1"
 GAUNTLET_INPUT_VERSION = "course-generation-gauntlet-input-v1"
+GAUNTLET_MANIFEST_VERSION = "course-generation-gauntlet-manifest-v1"
 
 GauntletKind = Literal["course", "program"]
 GauntletStatus = Literal["passed", "needs_review", "failed"]
 
 
-DEFAULT_GAUNTLET_CASES: tuple[dict[str, str], ...] = (
-    {
-        "kind": "course",
-        "scenarioId": "chem-105-general-chemistry",
-        "label": "CHEM 105 college course",
-        "domain": "natural sciences",
-        "inputMix": "prompt+urls+files",
-    },
-    {
-        "kind": "course",
-        "scenarioId": "intro-programming-foundations",
-        "label": "Intro programming course",
-        "domain": "software",
-        "inputMix": "prompt+urls",
-    },
-    {
-        "kind": "course",
-        "scenarioId": "software-engineering-methods",
-        "label": "Software engineering course",
-        "domain": "software engineering",
-        "inputMix": "prompt+benchmarks+urls",
-    },
-    {
-        "kind": "course",
-        "scenarioId": "under-sourced-course-prompt",
-        "label": "Under-sourced prompt",
-        "domain": "source readiness",
-        "inputMix": "prompt-only",
-    },
-    {
-        "kind": "program",
-        "scenarioId": "full-stack-software-engineer-program",
-        "label": "Full-stack software engineer program",
-        "domain": "program planning",
-        "inputMix": "program+clusters+course shells",
-    },
-)
+DEFAULT_GAUNTLET_MANIFEST_PATH = Path(__file__).with_name("course_generation_gauntlet_manifest.json")
+
+
+def load_generation_gauntlet_manifest(path: str | Path | None = None) -> dict[str, Any]:
+    manifest_path = Path(path) if path is not None else DEFAULT_GAUNTLET_MANIFEST_PATH
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("Generation gauntlet manifest must be a JSON object.")
+    if payload.get("contractVersion") != GAUNTLET_MANIFEST_VERSION:
+        raise ValueError(f"Generation gauntlet manifest must use {GAUNTLET_MANIFEST_VERSION}.")
+    cases = payload.get("cases")
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("Generation gauntlet manifest must include at least one case.")
+    return payload
+
+
+def _valid_case(case: Mapping[str, Any]) -> dict[str, str]:
+    kind = str(case.get("kind") or "")
+    scenario_id = str(case.get("scenarioId") or "")
+    if kind not in {"course", "program"}:
+        raise ValueError(f"Generation gauntlet case has unsupported kind: {kind}")
+    if not scenario_id:
+        raise ValueError("Generation gauntlet case is missing scenarioId.")
+    if kind == "course" and scenario_id not in COURSE_SCENARIOS:
+        raise ValueError(f"Generation gauntlet course scenario is not registered: {scenario_id}")
+    if kind == "program" and scenario_id not in PROGRAM_SCENARIOS:
+        raise ValueError(f"Generation gauntlet program scenario is not registered: {scenario_id}")
+    return {
+        "kind": kind,
+        "scenarioId": scenario_id,
+        "label": str(case.get("label") or scenario_id),
+        "domain": str(case.get("domain") or ""),
+        "inputMix": str(case.get("inputMix") or ""),
+    }
+
+
+def load_generation_gauntlet_cases(path: str | Path | None = None) -> tuple[dict[str, str], ...]:
+    manifest = load_generation_gauntlet_manifest(path)
+    return tuple(_valid_case(case) for case in manifest["cases"] if isinstance(case, Mapping))
+
+
+DEFAULT_GAUNTLET_CASES = load_generation_gauntlet_cases()
 
 
 def _scenario_key(kind: str, scenario_id: str) -> str:
@@ -246,9 +255,12 @@ def evaluate_generation_gauntlet_bundle(bundle: Mapping[str, Any]) -> dict[str, 
         raise ValueError("Gauntlet bundle courses must be an object keyed by scenario id.")
     if not isinstance(programs, Mapping):
         raise ValueError("Gauntlet bundle programs must be an object keyed by scenario id.")
+    raw_cases = bundle.get("cases")
+    cases = tuple(_valid_case(case) for case in raw_cases if isinstance(case, Mapping)) if isinstance(raw_cases, list) else DEFAULT_GAUNTLET_CASES
     report = evaluate_generation_gauntlet(
         course_artifacts={str(key): value for key, value in courses.items() if isinstance(value, Mapping) and bool(value)},
         program_artifacts={str(key): value for key, value in programs.items() if isinstance(value, Mapping) and bool(value)},
+        cases=cases,
     )
     metadata = bundle.get("metadata")
     if isinstance(metadata, Mapping):

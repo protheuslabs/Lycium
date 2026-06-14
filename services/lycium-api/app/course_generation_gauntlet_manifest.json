@@ -1,0 +1,41 @@
+{
+  "contractVersion": "course-generation-gauntlet-manifest-v1",
+  "description": "Default Lycium generation gauntlet cases for proving source-backed course and program generation across representative domains.",
+  "cases": [
+    {
+      "kind": "course",
+      "scenarioId": "chem-105-general-chemistry",
+      "label": "CHEM 105 college course",
+      "domain": "natural sciences",
+      "inputMix": "prompt+urls+files"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "intro-programming-foundations",
+      "label": "Intro programming course",
+      "domain": "software",
+      "inputMix": "prompt+urls"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "software-engineering-methods",
+      "label": "Software engineering course",
+      "domain": "software engineering",
+      "inputMix": "prompt+benchmarks+urls"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "under-sourced-course-prompt",
+      "label": "Under-sourced prompt",
+      "domain": "source readiness",
+      "inputMix": "prompt-only"
+    },
+    {
+      "kind": "program",
+      "scenarioId": "full-stack-software-engineer-program",
+      "label": "Full-stack software engineer program",
+      "domain": "program planning",
+      "inputMix": "program+clusters+course shells"
+    }
+  ]
+}

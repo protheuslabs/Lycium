@@ -7,6 +7,12 @@ from pathlib import Path
 from typing import Any
 
 
+SERVICE_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(SERVICE_ROOT))
+
+from app.course_generation_gauntlet import load_generation_gauntlet_cases, load_generation_gauntlet_manifest
+
+
 GAUNTLET_INPUT_VERSION = "course-generation-gauntlet-input-v1"
 
 
@@ -80,12 +86,21 @@ def _metadata(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def build_bundle(args: argparse.Namespace) -> dict[str, Any]:
-    return {
+    bundle = {
         "contractVersion": GAUNTLET_INPUT_VERSION,
         "metadata": _metadata(args),
         "courses": _artifact_map(args.course, kind="course"),
         "programs": _artifact_map(args.program, kind="program"),
     }
+    if args.manifest:
+        manifest = load_generation_gauntlet_manifest(args.manifest)
+        bundle["cases"] = list(load_generation_gauntlet_cases(args.manifest))
+        bundle["manifest"] = {
+            "path": args.manifest,
+            "contractVersion": manifest.get("contractVersion"),
+            "description": manifest.get("description"),
+        }
+    return bundle
 
 
 def main() -> None:
@@ -97,6 +112,7 @@ def main() -> None:
     parser.add_argument("--model", default=None, help="Model that generated the artifacts.")
     parser.add_argument("--prompt", default=None, help="Prompt or prompt summary used for the generation run.")
     parser.add_argument("--input-mix", default=None, help="Input mix label, such as prompt+urls+files.")
+    parser.add_argument("--manifest", default=None, help="Optional gauntlet manifest path. Defaults are used when omitted.")
     parser.add_argument("--output", default=None, help="Optional output path. Defaults to stdout.")
     args = parser.parse_args([argument for argument in sys.argv[1:] if argument != "--"])
 

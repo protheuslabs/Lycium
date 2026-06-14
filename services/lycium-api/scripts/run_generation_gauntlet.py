@@ -25,6 +25,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--model", default=None, help="Model that generated the artifacts.")
     parser.add_argument("--prompt", default=None, help="Prompt or prompt summary used for the generation run.")
     parser.add_argument("--input-mix", default=None, help="Input mix label, such as prompt+urls+files.")
+    parser.add_argument("--manifest", default=None, help="Optional gauntlet manifest path. Defaults are used when omitted.")
     parser.add_argument("--bundle-output", default=None, help="Optional path to persist the generated gauntlet input bundle.")
     parser.add_argument("--report-dir", default=None, help="Optional report directory. Defaults to LYCIUM_EVAL_REPORT_DIR or .lycium-local/eval-runs.")
     return parser

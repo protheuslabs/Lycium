@@ -6,7 +6,15 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from app.course_generation_gauntlet import evaluate_generation_gauntlet, evaluate_generation_gauntlet_bundle, gauntlet_eval_reports
+import pytest
+
+from app.course_generation_gauntlet import (
+    evaluate_generation_gauntlet,
+    evaluate_generation_gauntlet_bundle,
+    gauntlet_eval_reports,
+    load_generation_gauntlet_cases,
+    load_generation_gauntlet_manifest,
+)
 from tests.course_generation_fixture_builders import (
     chem_105_flagship_course_from_scenario,
     source_backed_course_from_scenario,
@@ -152,6 +160,45 @@ def test_generation_gauntlet_accepts_complete_artifacts() -> None:
     assert report["metrics"]["gapCounts"] == {}
 
 
+def test_generation_gauntlet_manifest_defines_default_cases() -> None:
+    manifest = load_generation_gauntlet_manifest()
+    cases = load_generation_gauntlet_cases()
+
+    assert manifest["contractVersion"] == "course-generation-gauntlet-manifest-v1"
+    assert {case["scenarioId"] for case in cases} >= {
+        "chem-105-general-chemistry",
+        "intro-programming-foundations",
+        "software-engineering-methods",
+        "under-sourced-course-prompt",
+        "full-stack-software-engineer-program",
+    }
+
+
+def test_generation_gauntlet_manifest_rejects_unregistered_scenarios(tmp_path: Path) -> None:
+    manifest_path = tmp_path / "bad-manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "contractVersion": "course-generation-gauntlet-manifest-v1",
+                "description": "Bad manifest.",
+                "cases": [
+                    {
+                        "kind": "course",
+                        "scenarioId": "not-a-real-course-scenario",
+                        "label": "Typo",
+                        "domain": "test",
+                        "inputMix": "prompt",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="not registered"):
+        load_generation_gauntlet_cases(manifest_path)
+
+
 def test_generation_gauntlet_marks_missing_artifacts_as_review_needed() -> None:
     report = evaluate_generation_gauntlet(
         course_artifacts={
@@ -252,8 +299,34 @@ def test_generation_gauntlet_bundle_builder_wraps_generated_artifacts(tmp_path: 
     course_path = tmp_path / "course-entry.json"
     program_path = tmp_path / "program.json"
     output_path = tmp_path / "gauntlet-input.json"
+    manifest_path = tmp_path / "manifest.json"
     course_path.write_text(json.dumps({"data": chem_105_flagship_course_from_scenario()}), encoding="utf-8")
     program_path.write_text(json.dumps(_program_fixture()["program"]), encoding="utf-8")
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "contractVersion": "course-generation-gauntlet-manifest-v1",
+                "description": "Focused fixture manifest.",
+                "cases": [
+                    {
+                        "kind": "course",
+                        "scenarioId": "chem-105-general-chemistry",
+                        "label": "CHEM 105",
+                        "domain": "chemistry",
+                        "inputMix": "prompt+urls+files",
+                    },
+                    {
+                        "kind": "program",
+                        "scenarioId": "full-stack-software-engineer-program",
+                        "label": "Full-stack program",
+                        "domain": "software",
+                        "inputMix": "program",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
 
     subprocess.run(
         [
@@ -269,6 +342,8 @@ def test_generation_gauntlet_bundle_builder_wraps_generated_artifacts(tmp_path: 
             "fixture-model",
             "--input-mix",
             "prompt+urls+files",
+            "--manifest",
+            str(manifest_path),
             "--output",
             str(output_path),
         ],
@@ -282,9 +357,11 @@ def test_generation_gauntlet_bundle_builder_wraps_generated_artifacts(tmp_path: 
 
     assert bundle["contractVersion"] == "course-generation-gauntlet-input-v1"
     assert bundle["metadata"]["provider"] == "fixture-provider"
+    assert bundle["manifest"]["path"] == str(manifest_path)
+    assert len(bundle["cases"]) == 2
     assert isinstance(bundle["courses"]["chem-105-general-chemistry"]["modules"], list)
     assert isinstance(bundle["programs"]["full-stack-software-engineer-program"]["program"]["requirementGroups"], list)
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 3
+    assert report["status"] == "passed"
 
 
 def test_generation_gauntlet_runner_builds_bundle_and_report(tmp_path: Path) -> None:

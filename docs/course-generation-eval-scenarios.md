@@ -180,6 +180,8 @@ It evaluates generated artifacts without caring whether they came from a human, 
 - Under-sourced prompt lifecycle.
 - Full-stack software engineer program.
 
+The default case list lives in `services/lycium-api/app/course_generation_gauntlet_manifest.json`. Add future domains by adding scenario gates and then extending or replacing this manifest; do not hardcode new domains into the evaluator.
+
 The report returns:
 
 - `status`: `passed`, `needs_review`, or `failed`.
@@ -229,6 +231,7 @@ corepack pnpm build:generation-gauntlet-bundle -- \
   --provider ollama \
   --model kimi-k2.6:cloud \
   --input-mix prompt+urls+files \
+  --manifest services/lycium-api/app/course_generation_gauntlet_manifest.json \
   --output .lycium-local/gauntlet-input.json
 ```
 
@@ -248,6 +251,7 @@ corepack pnpm run:generation-gauntlet -- \
   --provider ollama \
   --model kimi-k2.6:cloud \
   --input-mix prompt+urls+files \
+  --manifest services/lycium-api/app/course_generation_gauntlet_manifest.json \
   --bundle-output .lycium-local/gauntlet-input.json
 ```
 
