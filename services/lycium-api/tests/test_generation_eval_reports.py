@@ -106,6 +106,8 @@ def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> 
     assert trend["latestSummary"]["failedCount"] == 0
     assert trend["latestGauntlet"]["status"] == "passed"
     assert trend["latestGauntlet"]["caseCount"] == 6
+    assert trend["latestGauntlet"]["kindCounts"] == {"course": 4, "program": 2}
+    assert trend["latestGauntlet"]["domainCounts"]["health sciences"] == 1
     assert loaded_runs[0]["gauntlet"]["status"] == "passed"
     assert loaded_runs[0]["gauntletReport"]["contractVersion"] == "course-generation-gauntlet-v1"
     assert {row["scenarioId"] for row in trend["scenarioTrends"]} >= {

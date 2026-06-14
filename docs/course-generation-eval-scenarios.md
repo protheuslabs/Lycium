@@ -188,6 +188,7 @@ The report returns:
 - `status`: `passed`, `needs_review`, or `failed`.
 - `score`: average scenario score.
 - `cases`: per-scenario reports.
+- `metrics.kindCounts`, `metrics.domainCounts`, and `metrics.inputMixCounts`: coverage breadth across artifact types, learning domains, and input modes.
 - `metrics.gapCounts`: classified gaps such as `missing_artifact`, `source_readiness`, `source_grounding`, `assessment_quality`, `curriculum_coverage`, `instructional_substance`, and `program_structure`.
 
 This is the bridge between individual eval tests and the larger vision question: “Can Lycium repeatedly generate college-quality courses and programs from real inputs?” A local or CI run should treat missing artifacts as `needs_review`, not as silent success.

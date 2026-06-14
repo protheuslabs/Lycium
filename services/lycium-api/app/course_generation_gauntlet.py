@@ -83,6 +83,16 @@ def _score_from_children(children: Sequence[dict[str, Any]]) -> float:
     return round(sum(float(child.get("score") or 0) for child in children) / len(children), 2)
 
 
+def _count_by(children: Sequence[dict[str, Any]], key: str) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for child in children:
+        value = child.get(key)
+        if not isinstance(value, str) or not value:
+            value = "unknown"
+        counts[value] = counts.get(value, 0) + 1
+    return counts
+
+
 def _finding_text(report: Mapping[str, Any]) -> str:
     parts: list[str] = []
     checks = report.get("checks", [])
@@ -229,6 +239,9 @@ def evaluate_generation_gauntlet(
         "cases": results,
         "metrics": {
             "caseCount": len(results),
+            "kindCounts": _count_by(results, "kind"),
+            "domainCounts": _count_by(results, "domain"),
+            "inputMixCounts": _count_by(results, "inputMix"),
             "passedCount": sum(1 for result in results if result.get("status") == "passed"),
             "needsReviewCount": sum(1 for result in results if result.get("status") == "needs_review"),
             "failedCount": sum(1 for result in results if result.get("status") == "failed"),

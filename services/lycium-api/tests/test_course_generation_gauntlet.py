@@ -160,6 +160,9 @@ def test_generation_gauntlet_accepts_complete_artifacts() -> None:
     assert report["contractVersion"] == "course-generation-gauntlet-v1"
     assert report["status"] == "passed"
     assert report["metrics"]["caseCount"] == 6
+    assert report["metrics"]["kindCounts"] == {"course": 4, "program": 2}
+    assert report["metrics"]["domainCounts"]["health sciences"] == 1
+    assert report["metrics"]["inputMixCounts"]["prompt+urls+files"] == 1
     assert report["metrics"]["passedCount"] == 6
     assert report["metrics"]["gapCounts"] == {}
 
