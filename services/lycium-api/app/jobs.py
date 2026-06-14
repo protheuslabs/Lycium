@@ -259,6 +259,21 @@ def run_agent_course_generation_job(job_id: int) -> None:
             resume_trace=resume_trace,
         )
         quality_report = assess_course_quality(generated.course, gate="generation")
+        generated_readiness = generated.trace.get("generation_readiness")
+        if not isinstance(generated_readiness, dict):
+            generated_metadata = generated.course.get("metadata") if isinstance(generated.course, dict) else {}
+            generated_readiness = (
+                generated_metadata.get("generationReadiness")
+                if isinstance(generated_metadata, dict) and isinstance(generated_metadata.get("generationReadiness"), dict)
+                else None
+            )
+        effective_readiness = (
+            generated_readiness
+            if isinstance(generated_readiness, dict)
+            else payload.get("generation_readiness")
+            if isinstance(payload.get("generation_readiness"), dict)
+            else None
+        )
         snapshot_payload = None
 
         with db.SessionLocal() as session:
@@ -276,6 +291,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
                     source_policy=str(payload.get("source_policy") or "balanced"),
                     generated=generated,
                     quality_report=quality_report,
+                    generation_readiness=effective_readiness,
                 )
                 session.refresh(snapshot)
                 save_course_snapshot(snapshot)
@@ -287,6 +303,8 @@ def run_agent_course_generation_job(job_id: int) -> None:
             job.status = "completed" if accepted else "failed"
             job.error = None if accepted else "; ".join([*quality_report["errors"], *quality_report["warnings"]][:12])
             final_trace = {**generated.trace, "quality_report": quality_report}
+            if isinstance(effective_readiness, dict):
+                final_trace["generation_readiness"] = effective_readiness
             _persist_source_index_for_generation(session, job_id=job_id, payload=payload, trace=final_trace)
             job.result = {
                 "request": payload,

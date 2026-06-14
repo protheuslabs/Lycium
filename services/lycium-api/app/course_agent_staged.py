@@ -32,7 +32,9 @@ from app.course_agent_staged_outline import (
     _source_packet_for_outline,
 )
 from app.course_agent_types import CourseAgentError, CourseAgentResult
+from app.course_generation_readiness import build_generation_readiness_report
 from app.course_generation_service import validate_generation_taxonomy_input
+from app.course_quality_evals import run_course_quality_evals
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 from app.source_corpus import compile_generation_source_corpus
 from app.course_agent_source_context import build_source_context_index, source_context_index_summary
@@ -407,17 +409,34 @@ def generate_course_with_agent_staged(
     if resolved_department:
         course_payload["department"] = resolved_department
     course = attach_curriculum_context(normalize_course(course_payload), benchmark_context)
+    generation_readiness = build_generation_readiness_report(
+        source_urls=effective_source_urls,
+        input_artifacts=source_corpus.input_artifacts,
+        source_packet=source_packet,
+        source_corpus_synthesis=source_corpus.synthesis,
+    )
+    metadata = dict(course.get("metadata") if isinstance(course.get("metadata"), dict) else {})
+    metadata["generationReadiness"] = generation_readiness
+    course["metadata"] = metadata
+    quality_evals = run_course_quality_evals(course)
     validation_errors = validate_course_contract(course)
     if validation_errors and enforce_contract:
         raise CourseAgentError(
             "Generated course failed contract validation: " + "; ".join(validation_errors[:12]),
-            trace={**trace, "partial_course": course},
+            trace={
+                **trace,
+                "generation_readiness": generation_readiness,
+                "quality_evals": quality_evals,
+                "partial_course": course,
+            },
         )
 
     return CourseAgentResult(
         course=course,
         trace={
             **trace,
+            "generation_readiness": generation_readiness,
+            "quality_evals": quality_evals,
             "validation": {"status": "failed" if validation_errors else "passed", "errors": validation_errors},
             "usage": {"plan": plan_response.get("usage", {}), "modules": module_usage},
         },

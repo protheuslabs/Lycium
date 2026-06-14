@@ -4,19 +4,12 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.course_generation_readiness import build_generation_readiness_report
+from app.course_source_policy import SOURCE_COVERAGE_POLICY
 from app.generation_helpers import COURSE_GENERATION_RULES, _catalog_metadata_from_prompt, _title_from_prompt
 from app.models import CourseDraft, CourseSnapshot
 from app.course_source_gap_resume import summarize_concept_source_need_coverage
 from app.source_index_search import search_index_response
-
-
-SOURCE_COVERAGE_POLICY: dict[str, Any] = {
-    "minimumCourseSources": 3,
-    "minimumSourcesPerModule": 1,
-    "minimumRequiredConceptCoveragePercent": 70,
-    "requireBenchmarkEvidence": False,
-    "requireAssessmentCoverage": True,
-}
 
 
 def _unique_source_urls(source_urls: list[str] | None) -> list[str]:
@@ -369,9 +362,18 @@ def create_needs_sources_course_snapshot(
     category: str | None = None,
     department: str | None = None,
     source_gate: dict[str, Any] | None = None,
+    generation_readiness: dict[str, Any] | None = None,
 ) -> CourseSnapshot:
     title = _title_from_prompt(prompt)
     clean_source_urls = _unique_source_urls(source_urls)
+    effective_generation_readiness = (
+        generation_readiness
+        if isinstance(generation_readiness, dict)
+        else build_generation_readiness_report(
+            source_urls=clean_source_urls,
+            source_packet=source_packet,
+        )
+    )
     current_count = len(clean_source_urls)
     minimum_count = int(SOURCE_COVERAGE_POLICY["minimumCourseSources"])
     catalog_metadata = _catalog_metadata_from_prompt(prompt)
@@ -433,6 +435,7 @@ def create_needs_sources_course_snapshot(
             "sourceCoveragePolicy": SOURCE_COVERAGE_POLICY,
             "sourceGaps": [gap],
             "sourceGapSuggestions": source_gap_suggestions,
+            "generationReadiness": effective_generation_readiness,
             "generationPlan": {
                 "status": ["scoped", "needs_sources"],
                 "mode": "source-gated-draft",
@@ -483,6 +486,7 @@ def create_needs_sources_course_snapshot(
                 "failedGate": source_gate.get("gate") if source_gate else "source_coverage",
                 "sourceAnalysis": source_gate,
             },
+            "generation_readiness": effective_generation_readiness,
             "source_urls": clean_source_urls,
         },
     )

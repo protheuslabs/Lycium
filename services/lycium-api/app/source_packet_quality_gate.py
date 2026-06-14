@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.course_source_gaps import SOURCE_COVERAGE_POLICY
+from app.course_source_policy import SOURCE_COVERAGE_POLICY
 
 
 def _quality_from_synthesis(synthesis: dict[str, Any]) -> dict[str, Any]:

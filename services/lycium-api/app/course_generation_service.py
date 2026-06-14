@@ -29,6 +29,16 @@ def assess_agent_generation_result(generated: CourseAgentResult, *, gate: str) -
     return assess_course_quality(generated.course, gate=gate)
 
 
+def _generated_generation_readiness(generated: CourseAgentResult) -> dict[str, Any] | None:
+    trace_readiness = generated.trace.get("generation_readiness")
+    if isinstance(trace_readiness, dict):
+        return trace_readiness
+    metadata = generated.course.get("metadata") if isinstance(generated.course, dict) else None
+    if isinstance(metadata, dict) and isinstance(metadata.get("generationReadiness"), dict):
+        return metadata["generationReadiness"]
+    return None
+
+
 def build_course_snapshot_from_agent_result(
     session: Session,
     *,
@@ -39,15 +49,18 @@ def build_course_snapshot_from_agent_result(
     source_policy: str,
     generated: CourseAgentResult,
     quality_report: dict[str, Any],
+    generation_readiness: dict[str, Any] | None = None,
     status: str = "ready_for_review",
 ) -> CourseSnapshot:
     structure = apply_course_build_resume_inputs(
         generated.course,
         quality_report=quality_report,
     )
+    effective_readiness = _generated_generation_readiness(generated) or generation_readiness
     metadata = structure.get("metadata") if isinstance(structure.get("metadata"), dict) else {}
     structure["metadata"] = {
         **metadata,
+        **({"generationReadiness": effective_readiness} if isinstance(effective_readiness, dict) else {}),
         "courseHealth": summarize_course_health(
             course_key=str(generated.course.get("id") or generated.course.get("slug") or generated.course.get("title") or "generated-course"),
             course_title=str(generated.course.get("title") or "Generated course"),
@@ -67,7 +80,11 @@ def build_course_snapshot_from_agent_result(
         status=status,
         version=1,
         structure=structure,
-        generation_trace={**generated.trace, "quality_report": quality_report},
+        generation_trace={
+            **generated.trace,
+            **({"generation_readiness": effective_readiness} if isinstance(effective_readiness, dict) else {}),
+            "quality_report": quality_report,
+        },
     )
     session.add(snapshot)
     session.flush()
