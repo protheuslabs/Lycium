@@ -25,6 +25,13 @@
     },
     {
       "kind": "course",
+      "scenarioId": "academic-writing-research-composition",
+      "label": "Academic writing and research composition course",
+      "domain": "arts and humanities",
+      "inputMix": "prompt+benchmarks+urls"
+    },
+    {
+      "kind": "course",
       "scenarioId": "under-sourced-course-prompt",
       "label": "Under-sourced prompt",
       "domain": "source readiness",

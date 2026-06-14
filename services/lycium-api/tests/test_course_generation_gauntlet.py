@@ -157,6 +157,7 @@ def test_generation_gauntlet_accepts_complete_artifacts() -> None:
             "chem-105-general-chemistry": chem_105_flagship_course_from_scenario(),
             "intro-programming-foundations": source_backed_course_from_scenario("intro-programming-foundations"),
             "software-engineering-methods": source_backed_course_from_scenario("software-engineering-methods"),
+            "academic-writing-research-composition": source_backed_course_from_scenario("academic-writing-research-composition"),
             "under-sourced-course-prompt": under_sourced_course_draft_from_scenario(),
         },
         program_artifacts={
@@ -167,13 +168,14 @@ def test_generation_gauntlet_accepts_complete_artifacts() -> None:
 
     assert report["contractVersion"] == "course-generation-gauntlet-v1"
     assert report["status"] == "passed"
-    assert report["metrics"]["caseCount"] == 9
-    assert report["metrics"]["kindCounts"] == {"course": 4, "program": 5}
+    assert report["metrics"]["caseCount"] == 10
+    assert report["metrics"]["kindCounts"] == {"course": 5, "program": 5}
+    assert report["metrics"]["domainCounts"]["arts and humanities"] == 1
     assert report["metrics"]["domainCounts"]["data and analytics"] == 1
     assert report["metrics"]["domainCounts"]["health sciences"] == 1
     assert report["metrics"]["domainCounts"]["public health"] == 1
     assert report["metrics"]["inputMixCounts"]["prompt+urls+files"] == 1
-    assert report["metrics"]["passedCount"] == 9
+    assert report["metrics"]["passedCount"] == 10
     assert report["metrics"]["gapCounts"] == {}
 
 
@@ -186,6 +188,7 @@ def test_generation_gauntlet_manifest_defines_default_cases() -> None:
         "chem-105-general-chemistry",
         "intro-programming-foundations",
         "software-engineering-methods",
+        "academic-writing-research-composition",
         "under-sourced-course-prompt",
         "full-stack-software-engineer-program",
         "chemistry-foundations-program",
@@ -229,8 +232,8 @@ def test_generation_gauntlet_marks_missing_artifacts_as_review_needed() -> None:
     )
 
     assert report["status"] == "needs_review"
-    assert report["metrics"]["needsReviewCount"] == 8
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 8
+    assert report["metrics"]["needsReviewCount"] == 9
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 9
 
 
 def test_generation_gauntlet_bundle_preserves_run_metadata_and_case_reports() -> None:
@@ -253,7 +256,7 @@ def test_generation_gauntlet_bundle_preserves_run_metadata_and_case_reports() ->
     assert report["inputContractVersion"] == "course-generation-gauntlet-input-v1"
     assert report["metadata"]["provider"] == "fixture-provider"
     assert report["status"] == "needs_review"
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 8
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 9
     assert {case_report["scenarioId"] for case_report in reports} >= {
         "chem-105-general-chemistry",
         "intro-programming-foundations",
@@ -272,7 +275,7 @@ def test_generation_gauntlet_bundle_treats_empty_placeholders_as_missing() -> No
     )
 
     assert report["status"] == "needs_review"
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 9
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 10
     assert all(case["gapClass"] == "missing_artifact" for case in report["cases"])
 
 
@@ -310,7 +313,7 @@ def test_generation_gauntlet_report_script_writes_persistent_run(tmp_path: Path)
 
     assert Path(payload["runPath"]).exists()
     assert payload["gauntlet"]["status"] == "needs_review"
-    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 8
+    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 9
     assert (report_dir / "latest.json").exists()
     assert (report_dir / "index.json").exists()
 
@@ -420,4 +423,4 @@ def test_generation_gauntlet_runner_builds_bundle_and_report(tmp_path: Path) -> 
     assert Path(payload["runPath"]).exists()
     assert payload["bundlePath"] == str(bundle_path)
     assert payload["gauntlet"]["status"] == "needs_review"
-    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 8
+    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 9

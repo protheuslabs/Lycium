@@ -67,6 +67,7 @@ def _fixed_generation_gauntlet_report() -> dict[str, Any]:
             "chem-105-general-chemistry": chem_105_flagship_course_from_scenario(),
             "intro-programming-foundations": source_backed_course_from_scenario("intro-programming-foundations"),
             "software-engineering-methods": source_backed_course_from_scenario("software-engineering-methods"),
+            "academic-writing-research-composition": source_backed_course_from_scenario("academic-writing-research-composition"),
             "under-sourced-course-prompt": under_sourced_course_draft_from_scenario(),
         },
         program_artifacts={
@@ -111,8 +112,9 @@ def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> 
     assert trend["latestSummary"]["scenarioCount"] == 6
     assert trend["latestSummary"]["failedCount"] == 0
     assert trend["latestGauntlet"]["status"] == "passed"
-    assert trend["latestGauntlet"]["caseCount"] == 9
-    assert trend["latestGauntlet"]["kindCounts"] == {"course": 4, "program": 5}
+    assert trend["latestGauntlet"]["caseCount"] == 10
+    assert trend["latestGauntlet"]["kindCounts"] == {"course": 5, "program": 5}
+    assert trend["latestGauntlet"]["domainCounts"]["arts and humanities"] == 1
     assert trend["latestGauntlet"]["domainCounts"]["data and analytics"] == 1
     assert trend["latestGauntlet"]["domainCounts"]["health sciences"] == 1
     assert trend["latestGauntlet"]["domainCounts"]["public health"] == 1
@@ -150,4 +152,4 @@ def test_generation_eval_trend_route_reads_persisted_reports(client, tmp_path: P
     assert payload["trend"]["latestSummary"]["scenarioCount"] == 6
     assert payload["trend"]["latestGauntlet"]["status"] == "passed"
     assert payload["runs"][0]["runId"] == "eval-route-run"
-    assert payload["runs"][0]["gauntlet"]["caseCount"] == 9
+    assert payload["runs"][0]["gauntlet"]["caseCount"] == 10

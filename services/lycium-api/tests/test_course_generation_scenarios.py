@@ -219,6 +219,7 @@ def test_lists_fixed_course_and_program_scenarios() -> None:
     scenarios = list_generation_eval_scenarios()
 
     assert "chem-105-general-chemistry" in {scenario["id"] for scenario in scenarios["courses"]}
+    assert "academic-writing-research-composition" in {scenario["id"] for scenario in scenarios["courses"]}
     assert "under-sourced-course-prompt" in {scenario["id"] for scenario in scenarios["courses"]}
     assert "full-stack-software-engineer-program" in {scenario["id"] for scenario in scenarios["programs"]}
 
@@ -248,6 +249,16 @@ def test_software_engineering_scenario_accepts_source_backed_course_shape() -> N
     report = evaluate_course_generation_scenario(
         source_backed_course_from_scenario("software-engineering-methods"),
         "software-engineering-methods",
+    )
+
+    assert report["status"] == "passed"
+    assert report["metrics"]["failedCheckCount"] == 0
+
+
+def test_academic_writing_scenario_accepts_source_backed_course_shape() -> None:
+    report = evaluate_course_generation_scenario(
+        source_backed_course_from_scenario("academic-writing-research-composition"),
+        "academic-writing-research-composition",
     )
 
     assert report["status"] == "passed"
@@ -296,6 +307,43 @@ def test_course_generation_scenario_rejects_prompt_like_filler() -> None:
 
     assert report["status"] == "failed"
     assert any("Prompt-like" in recommendation for recommendation in report["recommendations"])
+
+
+def test_course_generation_scenario_rejects_ready_claim_with_low_concept_coverage() -> None:
+    course = source_backed_course_from_scenario("intro-programming-foundations")
+    course["metadata"]["generationReadiness"] = {
+        "contractVersion": "course-generation-readiness-v1",
+        "status": "ready",
+        "ready": True,
+        "sourceEvidence": {"submittedEvidenceCount": 4, "minimumCourseSources": 3},
+        "conceptCoverage": {
+            "status": "needs_sources",
+            "coverageRatio": 0.33,
+            "minimumCoverageRatio": 0.7,
+            "requiredConceptCount": 3,
+            "coveredConceptCount": 1,
+            "uncoveredConcepts": ["control flow", "functions"],
+        },
+    }
+
+    report = evaluate_course_generation_scenario(course, "intro-programming-foundations")
+
+    readiness = next(check for check in report["checks"] if check["key"] == "generation_readiness")
+    assert report["status"] == "failed"
+    assert readiness["status"] == "failed"
+    assert any("concept coverage is below policy" in finding["message"] for finding in readiness["findings"])
+
+
+def test_course_generation_scenario_requires_positive_readiness_for_full_courses() -> None:
+    course = source_backed_course_from_scenario("intro-programming-foundations")
+    course["metadata"].pop("generationReadiness", None)
+
+    report = evaluate_course_generation_scenario(course, "intro-programming-foundations")
+
+    readiness = next(check for check in report["checks"] if check["key"] == "generation_readiness")
+    assert report["status"] == "failed"
+    assert readiness["status"] == "failed"
+    assert any("must include metadata.generationReadiness" in finding["message"] for finding in readiness["findings"])
 
 
 def test_under_sourced_prompt_scenario_accepts_needs_sources_draft() -> None:

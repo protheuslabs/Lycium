@@ -177,6 +177,7 @@ It evaluates generated artifacts without caring whether they came from a human, 
 - CHEM 105 college course.
 - Intro programming course.
 - Software engineering methods course.
+- Academic writing and research composition course.
 - Under-sourced prompt lifecycle.
 - Full-stack software engineer program.
 - Chemistry foundations program.

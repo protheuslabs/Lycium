@@ -72,6 +72,7 @@ def _summary_blocks(topic: str, supporting: str, section_id: str, source_ids: li
 def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
     spec = COURSE_SCENARIOS[scenario_id]
     keywords = list(spec["requiredKeywords"])
+    discipline = str(spec.get("discipline") or "the course")
     source_records = [
         {"id": "source-primary", "type": "open_courseware", "title": "Primary open courseware", "url": "https://example.edu/courseware"},
         {"id": "source-video", "type": "video", "title": "Open lecture library", "url": "https://example.edu/videos"},
@@ -98,7 +99,7 @@ def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
                             {
                                 "type": "text",
                                 "heading": "Explanation",
-                                "value": _lesson_text(topic, supporting, "programming"),
+                                "value": _lesson_text(topic, supporting, discipline),
                                 "sourceIds": ["source-primary"],
                             },
                             {"type": "text", "heading": "Example", "value": _example_text(topic, supporting), "sourceIds": ["source-primary"]},
@@ -151,6 +152,26 @@ def source_backed_course_from_scenario(scenario_id: str) -> dict[str, Any]:
                 "commonThemes": keywords[:8],
             },
             "courseParityProfile": {"commonRequiredTopics": keywords[:8], "coveragePercent": 90, "parityStatus": "strong"},
+            "generationReadiness": {
+                "contractVersion": "course-generation-readiness-v1",
+                "status": "ready",
+                "ready": True,
+                "sourceEvidence": {
+                    "sourceUrlCount": 3,
+                    "usableInputArtifactCount": 0,
+                    "submittedEvidenceCount": 3,
+                    "minimumCourseSources": 3,
+                },
+                "conceptCoverage": {
+                    "status": "ready",
+                    "coverageRatio": 1,
+                    "minimumCoverageRatio": 0.7,
+                    "requiredConceptCount": len(keywords),
+                    "coveredConceptCount": len(keywords),
+                    "uncoveredConcepts": [],
+                },
+                "issues": [],
+            },
             "sourceSlots": [
                 {
                     "requiredConceptId": f"{scenario_id}-{keyword.replace(' ', '-')}",
@@ -284,6 +305,26 @@ def chem_105_flagship_course_from_scenario() -> dict[str, Any]:
                 "commonRequiredTopics": topics,
                 "coveragePercent": 92,
                 "parityStatus": "strong",
+            },
+            "generationReadiness": {
+                "contractVersion": "course-generation-readiness-v1",
+                "status": "ready",
+                "ready": True,
+                "sourceEvidence": {
+                    "sourceUrlCount": len(source_records),
+                    "usableInputArtifactCount": 0,
+                    "submittedEvidenceCount": len(source_records),
+                    "minimumCourseSources": 3,
+                },
+                "conceptCoverage": {
+                    "status": "ready",
+                    "coverageRatio": 1,
+                    "minimumCoverageRatio": 0.7,
+                    "requiredConceptCount": len(topics),
+                    "coveredConceptCount": len(topics),
+                    "uncoveredConcepts": [],
+                },
+                "issues": [],
             },
             "sourceSlots": chem_105_source_slots(),
             "scope": {
