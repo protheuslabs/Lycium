@@ -36,6 +36,13 @@
       "label": "Full-stack software engineer program",
       "domain": "program planning",
       "inputMix": "program+clusters+course shells"
+    },
+    {
+      "kind": "program",
+      "scenarioId": "pre-medical-preparation-program",
+      "label": "Pre-medical preparation program",
+      "domain": "health sciences",
+      "inputMix": "benchmarks+program+course shells"
     }
   ]
 }

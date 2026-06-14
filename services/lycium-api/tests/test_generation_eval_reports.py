@@ -63,7 +63,10 @@ def _fixed_generation_gauntlet_report() -> dict[str, Any]:
             "software-engineering-methods": source_backed_course_from_scenario("software-engineering-methods"),
             "under-sourced-course-prompt": under_sourced_course_draft_from_scenario(),
         },
-        program_artifacts={"full-stack-software-engineer-program": full_stack_program},
+        program_artifacts={
+            "full-stack-software-engineer-program": full_stack_program,
+            "pre-medical-preparation-program": _generated_program_from_scenario("pre-medical-preparation-program"),
+        },
     )
 
 
@@ -102,7 +105,7 @@ def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> 
     assert trend["latestSummary"]["scenarioCount"] == 6
     assert trend["latestSummary"]["failedCount"] == 0
     assert trend["latestGauntlet"]["status"] == "passed"
-    assert trend["latestGauntlet"]["caseCount"] == 5
+    assert trend["latestGauntlet"]["caseCount"] == 6
     assert loaded_runs[0]["gauntlet"]["status"] == "passed"
     assert loaded_runs[0]["gauntletReport"]["contractVersion"] == "course-generation-gauntlet-v1"
     assert {row["scenarioId"] for row in trend["scenarioTrends"]} >= {
@@ -137,4 +140,4 @@ def test_generation_eval_trend_route_reads_persisted_reports(client, tmp_path: P
     assert payload["trend"]["latestSummary"]["scenarioCount"] == 6
     assert payload["trend"]["latestGauntlet"]["status"] == "passed"
     assert payload["runs"][0]["runId"] == "eval-route-run"
-    assert payload["runs"][0]["gauntlet"]["caseCount"] == 5
+    assert payload["runs"][0]["gauntlet"]["caseCount"] == 6
