@@ -218,6 +218,8 @@ python3 scripts/write_generation_gauntlet_report.py --input path/to/gauntlet-inp
 
 The script writes the same persistent eval-run format as `corepack pnpm report:generation-evals`, but the reports are derived from the generated artifacts in the bundle. Missing gauntlet artifacts are recorded as `needs_review` with `missing_artifact` gap evidence.
 
+A copyable starting point lives at `docs/examples/course-generation-gauntlet-input.example.json`.
+
 ## Local Model Capability Sweeps
 
 Use the local model sweep scripts when judging whether a provider/model combination is strong enough for course generation work. These scripts are intentionally local evidence-gathering tools rather than CI requirements because they may call local or paid external models.

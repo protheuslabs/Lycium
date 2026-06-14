@@ -1,0 +1,21 @@
+{
+  "contractVersion": "course-generation-gauntlet-input-v1",
+  "metadata": {
+    "provider": "ollama",
+    "model": "kimi-k2.6:cloud",
+    "prompt": "Generate a source-backed CHEM 105 course from the attached syllabus, OpenStax chapters, and public lab resources.",
+    "inputMix": "prompt+urls+files",
+    "sourcePacketIds": ["source-packet-chem-105-openstax"],
+    "inputArtifactIds": ["uploaded-syllabus-pdf", "uploaded-lab-notes-pdf"],
+    "notes": "Replace each empty object below with the generated artifact for that scenario."
+  },
+  "courses": {
+    "chem-105-general-chemistry": {},
+    "intro-programming-foundations": {},
+    "software-engineering-methods": {},
+    "under-sourced-course-prompt": {}
+  },
+  "programs": {
+    "full-stack-software-engineer-program": {}
+  }
+}

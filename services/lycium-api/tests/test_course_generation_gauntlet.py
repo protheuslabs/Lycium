@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import json
+import subprocess
+import sys
+from pathlib import Path
 from typing import Any
 
 from app.course_generation_gauntlet import evaluate_generation_gauntlet, evaluate_generation_gauntlet_bundle, gauntlet_eval_reports
@@ -187,3 +191,57 @@ def test_generation_gauntlet_bundle_preserves_run_metadata_and_case_reports() ->
         "intro-programming-foundations",
         "full-stack-software-engineer-program",
     }
+
+
+def test_generation_gauntlet_bundle_treats_empty_placeholders_as_missing() -> None:
+    report = evaluate_generation_gauntlet_bundle(
+        {
+            "contractVersion": "course-generation-gauntlet-input-v1",
+            "metadata": {"provider": "fixture-provider", "model": "fixture-model"},
+            "courses": {"chem-105-general-chemistry": {}},
+            "programs": {"full-stack-software-engineer-program": {}},
+        }
+    )
+
+    assert report["status"] == "needs_review"
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 5
+    assert all(case["gapClass"] == "missing_artifact" for case in report["cases"])
+
+
+def test_generation_gauntlet_report_script_writes_persistent_run(tmp_path: Path) -> None:
+    service_root = Path(__file__).resolve().parents[1]
+    input_path = tmp_path / "gauntlet-input.json"
+    report_dir = tmp_path / "eval-runs"
+    input_path.write_text(
+        json.dumps(
+            {
+                "contractVersion": "course-generation-gauntlet-input-v1",
+                "metadata": {"provider": "fixture-provider", "model": "fixture-model"},
+                "courses": {"chem-105-general-chemistry": chem_105_flagship_course_from_scenario()},
+                "programs": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/write_generation_gauntlet_report.py",
+            "--input",
+            str(input_path),
+            "--report-dir",
+            str(report_dir),
+        ],
+        cwd=service_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert Path(payload["runPath"]).exists()
+    assert payload["gauntlet"]["status"] == "needs_review"
+    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 4
+    assert (report_dir / "latest.json").exists()
+    assert (report_dir / "index.json").exists()

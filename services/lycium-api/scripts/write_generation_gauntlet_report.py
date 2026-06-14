@@ -25,7 +25,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Write a Lycium generation gauntlet report for generated artifacts.")
     parser.add_argument("--input", required=True, help="Path to a course-generation-gauntlet-input-v1 JSON bundle.")
     parser.add_argument("--report-dir", default=None, help="Optional report directory. Defaults to LYCIUM_EVAL_REPORT_DIR or .lycium-local/eval-runs.")
-    args = parser.parse_args()
+    args = parser.parse_args([argument for argument in sys.argv[1:] if argument != "--"])
 
     bundle = _load_json(Path(args.input))
     gauntlet_report = evaluate_generation_gauntlet_bundle(bundle)

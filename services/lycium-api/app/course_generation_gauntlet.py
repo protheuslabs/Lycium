@@ -247,8 +247,8 @@ def evaluate_generation_gauntlet_bundle(bundle: Mapping[str, Any]) -> dict[str, 
     if not isinstance(programs, Mapping):
         raise ValueError("Gauntlet bundle programs must be an object keyed by scenario id.")
     report = evaluate_generation_gauntlet(
-        course_artifacts={str(key): value for key, value in courses.items() if isinstance(value, Mapping)},
-        program_artifacts={str(key): value for key, value in programs.items() if isinstance(value, Mapping)},
+        course_artifacts={str(key): value for key, value in courses.items() if isinstance(value, Mapping) and bool(value)},
+        program_artifacts={str(key): value for key, value in programs.items() if isinstance(value, Mapping) and bool(value)},
     )
     metadata = bundle.get("metadata")
     if isinstance(metadata, Mapping):
