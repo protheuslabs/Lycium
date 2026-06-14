@@ -105,6 +105,7 @@ class CourseSourceGapResumeRequest(BaseModel):
     model: str | None = None
     source_packet_id: int | str | None = None
     source_packet: dict[str, Any] | None = None
+    input_artifacts: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class GenerateCourseFromOutlineRequest(BaseModel):
@@ -146,6 +147,42 @@ class CourseQualityReportRead(BaseModel):
     contractVersion: str | None = None
 
 
+class CourseGenerationReadinessSourceEvidenceRead(BaseModel):
+    sourceUrlCount: int | None = None
+    usableInputArtifactCount: int | None = None
+    submittedEvidenceCount: int | None = None
+    minimumCourseSources: int | None = None
+    model_config = ConfigDict(extra="allow")
+
+
+class CourseGenerationReadinessConceptCoverageRead(BaseModel):
+    status: str | None = None
+    coverageRatio: float | None = None
+    minimumCoverageRatio: float | None = None
+    requiredConceptCount: int | None = None
+    coveredConceptCount: int | None = None
+    uncoveredConcepts: list[str] = Field(default_factory=list)
+    coverageRows: list[dict[str, Any]] = Field(default_factory=list)
+    model_config = ConfigDict(extra="allow")
+
+
+class CourseGenerationReadinessIssueRead(BaseModel):
+    code: str | None = None
+    message: str
+    model_config = ConfigDict(extra="allow")
+
+
+class CourseGenerationReadinessRead(BaseModel):
+    contractVersion: str | None = None
+    status: str | None = None
+    ready: bool | None = None
+    sourceEvidence: CourseGenerationReadinessSourceEvidenceRead | None = None
+    conceptCoverage: CourseGenerationReadinessConceptCoverageRead | None = None
+    sourceGate: dict[str, Any] | None = None
+    issues: list[CourseGenerationReadinessIssueRead] = Field(default_factory=list)
+    model_config = ConfigDict(extra="allow")
+
+
 class CourseGenerationExperimentRead(BaseModel):
     accepted: bool
     course: dict[str, Any]
@@ -162,6 +199,7 @@ class CourseGenerationJobRead(BaseModel):
     message: str | None = None
     course: dict[str, Any] | None = None
     quality_report: CourseQualityReportRead | None = None
+    generation_readiness: CourseGenerationReadinessRead | None = None
     trace: dict[str, Any] = Field(default_factory=dict)
     course_snapshot: dict[str, Any] | None = None
     error: str | None = None

@@ -81,6 +81,7 @@ def test_source_gap_resume_updates_draft_then_queues_generation(client, monkeypa
     snapshot_id = initial_job["course_snapshot"]["id"]
     assert initial_job["status"] == "ready"
     assert initial_job["current_stage"] == "source_coverage"
+    assert initial_job["generation_readiness"]["status"] == "needs_sources"
     assert initial_job["course"]["metadata"]["sourceGaps"][0]["currentSourceCount"] == 1
 
     still_blocked = client.post(
@@ -117,6 +118,7 @@ def test_source_gap_resume_updates_draft_then_queues_generation(client, monkeypa
     assert queued_job["request"]["department"] == "epidemiology"
     assert len(queued_job["request"]["source_urls"]) == 4
     assert queued_job["request"]["generation_readiness"]["status"] == "ready"
+    assert queued_job["generation_readiness"]["status"] == "ready"
     assert queued_job["request"]["resume_course"]["metadata"]["generationReadiness"]["status"] == "ready"
     assert queued_job["request"]["resume_trace"]["generation_readiness"]["status"] == "ready"
     assert queued_job["request"]["generation_readiness"]["sourceEvidence"]["submittedEvidenceCount"] == 4
@@ -230,6 +232,7 @@ def test_source_gap_resume_uses_source_packet_text_for_concept_relevance(client,
     assert job["status"] == "queued"
     assert len(job["request"]["source_urls"]) == 3
     assert job["request"]["generation_readiness"]["status"] == "ready"
+    assert job["generation_readiness"]["status"] == "ready"
     assert job["request"]["resume_course"]["metadata"]["generationReadiness"]["status"] == "ready"
     assert job["request"]["resume_trace"]["generation_readiness"]["status"] == "ready"
     assert job["request"]["generation_readiness"]["conceptCoverage"]["coverageRatio"] == 1
@@ -289,6 +292,7 @@ def test_source_gap_resume_accepts_input_artifacts_for_concept_relevance(client,
     assert len(job["request"]["source_urls"]) == 2
     assert job["request"]["input_artifacts"] == artifacts
     assert job["request"]["generation_readiness"]["status"] == "ready"
+    assert job["generation_readiness"]["status"] == "ready"
     assert job["request"]["resume_course"]["metadata"]["generationReadiness"]["status"] == "ready"
     assert job["request"]["resume_trace"]["generation_readiness"]["status"] == "ready"
     assert job["request"]["generation_readiness"]["sourceEvidence"]["usableInputArtifactCount"] == 2
