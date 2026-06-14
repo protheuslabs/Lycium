@@ -39,6 +39,27 @@
     },
     {
       "kind": "program",
+      "scenarioId": "chemistry-foundations-program",
+      "label": "Chemistry foundations program",
+      "domain": "natural sciences",
+      "inputMix": "benchmarks+program+course shells"
+    },
+    {
+      "kind": "program",
+      "scenarioId": "data-science-analytics-program",
+      "label": "Data science analytics program",
+      "domain": "data and analytics",
+      "inputMix": "benchmarks+program+course shells"
+    },
+    {
+      "kind": "program",
+      "scenarioId": "public-health-foundations-program",
+      "label": "Public health foundations program",
+      "domain": "public health",
+      "inputMix": "benchmarks+program+course shells"
+    },
+    {
+      "kind": "program",
       "scenarioId": "pre-medical-preparation-program",
       "label": "Pre-medical preparation program",
       "domain": "health sciences",

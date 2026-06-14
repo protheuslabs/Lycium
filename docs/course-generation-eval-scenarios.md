@@ -179,6 +179,9 @@ It evaluates generated artifacts without caring whether they came from a human, 
 - Software engineering methods course.
 - Under-sourced prompt lifecycle.
 - Full-stack software engineer program.
+- Chemistry foundations program.
+- Data science analytics program.
+- Public health foundations program.
 - Pre-medical preparation program.
 
 The default case list lives in `services/lycium-api/app/course_generation_gauntlet_manifest.json`. Add future domains by adding scenario gates and then extending or replacing this manifest; do not hardcode new domains into the evaluator.

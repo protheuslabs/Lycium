@@ -23,6 +23,14 @@ from tests.course_generation_fixture_builders import (
 from tests.test_program_generation_eval_scenarios import _generated_program_from_scenario
 
 
+GAUNTLET_PROGRAM_SCENARIOS = (
+    "chemistry-foundations-program",
+    "data-science-analytics-program",
+    "public-health-foundations-program",
+    "pre-medical-preparation-program",
+)
+
+
 def _program_fixture() -> dict[str, Any]:
     requirement_groups = [
         {
@@ -153,17 +161,19 @@ def test_generation_gauntlet_accepts_complete_artifacts() -> None:
         },
         program_artifacts={
             "full-stack-software-engineer-program": _program_fixture(),
-            "pre-medical-preparation-program": _generated_program_from_scenario("pre-medical-preparation-program"),
+            **{scenario_id: _generated_program_from_scenario(scenario_id) for scenario_id in GAUNTLET_PROGRAM_SCENARIOS},
         },
     )
 
     assert report["contractVersion"] == "course-generation-gauntlet-v1"
     assert report["status"] == "passed"
-    assert report["metrics"]["caseCount"] == 6
-    assert report["metrics"]["kindCounts"] == {"course": 4, "program": 2}
+    assert report["metrics"]["caseCount"] == 9
+    assert report["metrics"]["kindCounts"] == {"course": 4, "program": 5}
+    assert report["metrics"]["domainCounts"]["data and analytics"] == 1
     assert report["metrics"]["domainCounts"]["health sciences"] == 1
+    assert report["metrics"]["domainCounts"]["public health"] == 1
     assert report["metrics"]["inputMixCounts"]["prompt+urls+files"] == 1
-    assert report["metrics"]["passedCount"] == 6
+    assert report["metrics"]["passedCount"] == 9
     assert report["metrics"]["gapCounts"] == {}
 
 
@@ -178,6 +188,9 @@ def test_generation_gauntlet_manifest_defines_default_cases() -> None:
         "software-engineering-methods",
         "under-sourced-course-prompt",
         "full-stack-software-engineer-program",
+        "chemistry-foundations-program",
+        "data-science-analytics-program",
+        "public-health-foundations-program",
         "pre-medical-preparation-program",
     }
 
@@ -216,8 +229,8 @@ def test_generation_gauntlet_marks_missing_artifacts_as_review_needed() -> None:
     )
 
     assert report["status"] == "needs_review"
-    assert report["metrics"]["needsReviewCount"] == 5
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 5
+    assert report["metrics"]["needsReviewCount"] == 8
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 8
 
 
 def test_generation_gauntlet_bundle_preserves_run_metadata_and_case_reports() -> None:
@@ -240,7 +253,7 @@ def test_generation_gauntlet_bundle_preserves_run_metadata_and_case_reports() ->
     assert report["inputContractVersion"] == "course-generation-gauntlet-input-v1"
     assert report["metadata"]["provider"] == "fixture-provider"
     assert report["status"] == "needs_review"
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 5
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 8
     assert {case_report["scenarioId"] for case_report in reports} >= {
         "chem-105-general-chemistry",
         "intro-programming-foundations",
@@ -259,7 +272,7 @@ def test_generation_gauntlet_bundle_treats_empty_placeholders_as_missing() -> No
     )
 
     assert report["status"] == "needs_review"
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 6
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 9
     assert all(case["gapClass"] == "missing_artifact" for case in report["cases"])
 
 
@@ -297,7 +310,7 @@ def test_generation_gauntlet_report_script_writes_persistent_run(tmp_path: Path)
 
     assert Path(payload["runPath"]).exists()
     assert payload["gauntlet"]["status"] == "needs_review"
-    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 5
+    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 8
     assert (report_dir / "latest.json").exists()
     assert (report_dir / "index.json").exists()
 
@@ -407,4 +420,4 @@ def test_generation_gauntlet_runner_builds_bundle_and_report(tmp_path: Path) -> 
     assert Path(payload["runPath"]).exists()
     assert payload["bundlePath"] == str(bundle_path)
     assert payload["gauntlet"]["status"] == "needs_review"
-    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 5
+    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 8

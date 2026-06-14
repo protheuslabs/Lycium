@@ -22,6 +22,12 @@ from tests.test_program_generation_eval_scenarios import _generated_program_from
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+GAUNTLET_PROGRAM_SCENARIOS = (
+    "chemistry-foundations-program",
+    "data-science-analytics-program",
+    "public-health-foundations-program",
+    "pre-medical-preparation-program",
+)
 
 
 def _noisy_source_report() -> dict[str, Any]:
@@ -65,7 +71,7 @@ def _fixed_generation_gauntlet_report() -> dict[str, Any]:
         },
         program_artifacts={
             "full-stack-software-engineer-program": full_stack_program,
-            "pre-medical-preparation-program": _generated_program_from_scenario("pre-medical-preparation-program"),
+            **{scenario_id: _generated_program_from_scenario(scenario_id) for scenario_id in GAUNTLET_PROGRAM_SCENARIOS},
         },
     )
 
@@ -105,9 +111,11 @@ def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> 
     assert trend["latestSummary"]["scenarioCount"] == 6
     assert trend["latestSummary"]["failedCount"] == 0
     assert trend["latestGauntlet"]["status"] == "passed"
-    assert trend["latestGauntlet"]["caseCount"] == 6
-    assert trend["latestGauntlet"]["kindCounts"] == {"course": 4, "program": 2}
+    assert trend["latestGauntlet"]["caseCount"] == 9
+    assert trend["latestGauntlet"]["kindCounts"] == {"course": 4, "program": 5}
+    assert trend["latestGauntlet"]["domainCounts"]["data and analytics"] == 1
     assert trend["latestGauntlet"]["domainCounts"]["health sciences"] == 1
+    assert trend["latestGauntlet"]["domainCounts"]["public health"] == 1
     assert loaded_runs[0]["gauntlet"]["status"] == "passed"
     assert loaded_runs[0]["gauntletReport"]["contractVersion"] == "course-generation-gauntlet-v1"
     assert {row["scenarioId"] for row in trend["scenarioTrends"]} >= {
@@ -142,4 +150,4 @@ def test_generation_eval_trend_route_reads_persisted_reports(client, tmp_path: P
     assert payload["trend"]["latestSummary"]["scenarioCount"] == 6
     assert payload["trend"]["latestGauntlet"]["status"] == "passed"
     assert payload["runs"][0]["runId"] == "eval-route-run"
-    assert payload["runs"][0]["gauntlet"]["caseCount"] == 6
+    assert payload["runs"][0]["gauntlet"]["caseCount"] == 9
