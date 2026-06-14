@@ -65,12 +65,41 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _gauntlet_summary(report: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not isinstance(report, dict):
+        return None
+    metrics = report.get("metrics") if isinstance(report.get("metrics"), dict) else {}
+    cases = [
+        {
+            "key": str(case.get("key") or "unknown"),
+            "scenarioId": str(case.get("scenarioId") or "unknown"),
+            "kind": str(case.get("kind") or "unknown"),
+            "status": str(case.get("status") or "unknown"),
+            "score": round(_number(case.get("score")), 4),
+            "gapClass": case.get("gapClass"),
+        }
+        for case in _items(report.get("cases"))
+    ]
+    return {
+        "contractVersion": report.get("contractVersion"),
+        "status": str(report.get("status") or "unknown"),
+        "score": round(_number(report.get("score")), 4),
+        "caseCount": int(metrics.get("caseCount") or len(cases)),
+        "passedCount": int(metrics.get("passedCount") or 0),
+        "needsReviewCount": int(metrics.get("needsReviewCount") or 0),
+        "failedCount": int(metrics.get("failedCount") or 0),
+        "gapCounts": metrics.get("gapCounts") if isinstance(metrics.get("gapCounts"), dict) else {},
+        "cases": cases,
+    }
+
+
 def build_generation_eval_run(
     reports: list[dict[str, Any]],
     *,
     run_id: str | None = None,
     created_at: str | None = None,
     metadata: dict[str, Any] | None = None,
+    gauntlet_report: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     scenario_rows = [_scenario_row(report) for report in reports]
     return {
@@ -81,6 +110,8 @@ def build_generation_eval_run(
         "summary": _summary(scenario_rows),
         "scenarios": scenario_rows,
         "reports": reports,
+        "gauntlet": _gauntlet_summary(gauntlet_report),
+        "gauntletReport": gauntlet_report,
         "metadata": metadata or {},
     }
 
@@ -137,6 +168,7 @@ def _write_index(report_dir: Path, *, keep: int) -> None:
                     "runId": run.get("runId"),
                     "createdAt": run.get("createdAt"),
                     "summary": run.get("summary"),
+                    "gauntlet": run.get("gauntlet"),
                     "path": path.name,
                 }
             )
@@ -189,5 +221,6 @@ def build_generation_eval_trend(runs: list[dict[str, Any]]) -> dict[str, Any]:
         "latestRunId": latest.get("runId"),
         "previousRunId": previous.get("runId"),
         "latestSummary": latest.get("summary", {}),
+        "latestGauntlet": latest.get("gauntlet") or {},
         "scenarioTrends": scenario_trends,
     }

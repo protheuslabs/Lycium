@@ -117,6 +117,7 @@ Assertions:
 
 - Output remains a `needs_sources` draft.
 - `metadata.sourceGaps` includes a blocking gap.
+- `metadata.generationReadiness` preserves the non-ready source-readiness report with submitted evidence counts, uncovered concepts, and readiness issues.
 - The gap includes source type hints and suggested queries.
 - The draft contains only source-planning scaffolding, not a full set of generated lessons, quizzes, or summaries.
 - The draft can collect additional sources before generation resumes.
@@ -135,6 +136,7 @@ Current automated coverage includes:
 - Full-stack program requirement-shape checks.
 - Actual full-stack fixture scenario validation.
 - Under-sourced prompt acceptance and hollow-course rejection checks.
+- Source-backed fixture checks require a positive `metadata.generationReadiness` report; evals fail if readiness is missing, non-ready, below concept coverage policy, or still contains blocking issues.
 - Publish-gate acceptance for a teachable source-backed course.
 - Publish-gate rejection for placeholder or prompt-like generated content.
 
@@ -165,3 +167,87 @@ corepack pnpm report:generation-evals
 ```
 
 The current persistent report test covers CHEM 105, Intro Programming, Full-Stack Software Engineer Program, multi-source noisy corpus, and under-sourced prompt scenarios.
+
+## Native Generation Gauntlet
+
+The native gauntlet primitive lives in `services/lycium-api/app/course_generation_gauntlet.py`.
+
+It evaluates generated artifacts without caring whether they came from a human, Ollama, a cloud provider, a fixture, a source packet, or a future Infring primitive. The default gauntlet cases are:
+
+- CHEM 105 college course.
+- Intro programming course.
+- Software engineering methods course.
+- Under-sourced prompt lifecycle.
+- Full-stack software engineer program.
+
+The report returns:
+
+- `status`: `passed`, `needs_review`, or `failed`.
+- `score`: average scenario score.
+- `cases`: per-scenario reports.
+- `metrics.gapCounts`: classified gaps such as `missing_artifact`, `source_readiness`, `source_grounding`, `assessment_quality`, `curriculum_coverage`, `instructional_substance`, and `program_structure`.
+
+This is the bridge between individual eval tests and the larger vision question: “Can Lycium repeatedly generate college-quality courses and programs from real inputs?” A local or CI run should treat missing artifacts as `needs_review`, not as silent success.
+
+To evaluate artifacts from a real local/cloud generation attempt, write a bundle:
+
+```json
+{
+  "contractVersion": "course-generation-gauntlet-input-v1",
+  "metadata": {
+    "provider": "ollama",
+    "model": "kimi-k2.6:cloud",
+    "prompt": "Generate CHEM 105 from these sources",
+    "inputMix": "prompt+urls+files"
+  },
+  "courses": {
+    "chem-105-general-chemistry": {}
+  },
+  "programs": {
+    "full-stack-software-engineer-program": {}
+  }
+}
+```
+
+Then run:
+
+```bash
+cd services/lycium-api
+python3 scripts/write_generation_gauntlet_report.py --input path/to/gauntlet-input.json
+```
+
+The script writes the same persistent eval-run format as `corepack pnpm report:generation-evals`, but the reports are derived from the generated artifacts in the bundle. Missing gauntlet artifacts are recorded as `needs_review` with `missing_artifact` gap evidence.
+
+## Local Model Capability Sweeps
+
+Use the local model sweep scripts when judging whether a provider/model combination is strong enough for course generation work. These scripts are intentionally local evidence-gathering tools rather than CI requirements because they may call local or paid external models.
+
+The runner is:
+
+```bash
+python3 services/lycium-api/scripts/run_model_param_sweep.py
+```
+
+Supported task levels:
+
+- `plan`: ask the model for a compact source-backed course plan.
+- `section`: ask the model for one editor-native sourced Learn section.
+- `quiz`: ask the model for one valid 10-question quiz section.
+- `all-micro`: run `plan`, `section`, and `quiz` as the primitive capability gate.
+- `one-module`: run `all-micro`, then deterministically compose a one-module course from the validated primitives and run the normal course quality gate.
+- `full-course`: call the real staged course generation experiment path.
+
+Recommended diagnostic order:
+
+```bash
+python3 services/lycium-api/scripts/run_model_param_sweep.py --task all-micro --models kimi-k2.6:cloud
+python3 services/lycium-api/scripts/run_model_param_sweep.py --task one-module --models kimi-k2.6:cloud
+python3 services/lycium-api/scripts/run_model_param_sweep.py --task full-course --models kimi-k2.6:cloud
+```
+
+Interpretation:
+
+- If small local models fail `all-micro`, they are not suitable for review-ready course generation.
+- If a high-tier model fails `plan`, `section`, or `quiz`, improve the prompt or contract.
+- If a high-tier model passes `all-micro` but fails `one-module` or `full-course`, improve workflow orchestration, deterministic assembly, source scaffolding, or quality-gate alignment.
+- The current preferred architecture is validated primitive generation followed by deterministic assembly, because the composed one-module benchmark can isolate model capability from orchestration overhead.

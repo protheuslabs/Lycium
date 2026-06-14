@@ -22,7 +22,7 @@
     "test:contracts": "corepack pnpm --filter @lycium/contracts test",
     "test:api": "cd services/lycium-api && python3 -m pytest -q",
     "test:program-evals": "cd services/lycium-api && python3 -m pytest tests/test_program_generation_eval_scenarios.py -q",
-    "test:generation-evals": "cd services/lycium-api && python3 -m pytest tests/test_generation_eval_reports.py tests/test_course_generation_scenarios.py tests/test_program_generation_eval_scenarios.py -q",
+    "test:generation-evals": "cd services/lycium-api && python3 -m pytest tests/test_generation_eval_reports.py tests/test_course_generation_gauntlet.py tests/test_course_generation_scenarios.py tests/test_program_generation_eval_scenarios.py -q",
     "report:generation-evals": "cd services/lycium-api && python3 scripts/write_generation_eval_report.py",
     "test:source-index": "cd services/source-index && python3 -m pytest -q",
     "test:workers": "cd services/lycium-workers && PYTHONPATH=src pytest -q",

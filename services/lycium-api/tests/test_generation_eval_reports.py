@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from app.course_generation_gauntlet import evaluate_generation_gauntlet
 from app.course_generation_scenarios import evaluate_course_generation_scenario, evaluate_program_generation_scenario
 from app.generation_eval_reports import (
     build_generation_eval_run,
@@ -53,13 +54,28 @@ def _fixed_generation_eval_reports() -> list[dict[str, Any]]:
     ]
 
 
+def _fixed_generation_gauntlet_report() -> dict[str, Any]:
+    full_stack_program = json.loads((REPO_ROOT / "packages/contracts/fixtures/full-stack-engineer-program.json").read_text())
+    return evaluate_generation_gauntlet(
+        course_artifacts={
+            "chem-105-general-chemistry": chem_105_flagship_course_from_scenario(),
+            "intro-programming-foundations": source_backed_course_from_scenario("intro-programming-foundations"),
+            "software-engineering-methods": source_backed_course_from_scenario("software-engineering-methods"),
+            "under-sourced-course-prompt": under_sourced_course_draft_from_scenario(),
+        },
+        program_artifacts={"full-stack-software-engineer-program": full_stack_program},
+    )
+
+
 def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> None:
     reports = _fixed_generation_eval_reports()
+    gauntlet_report = _fixed_generation_gauntlet_report()
     first_run = build_generation_eval_run(
         reports,
         run_id="eval-run-1",
         created_at="2026-06-06T00:00:00Z",
         metadata={"trigger": "pytest"},
+        gauntlet_report=gauntlet_report,
     )
     second_reports = copy.deepcopy(reports)
     second_reports[0]["score"] = 0.97
@@ -68,6 +84,7 @@ def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> 
         run_id="eval-run-2",
         created_at="2026-06-06T00:01:00Z",
         metadata={"trigger": "pytest"},
+        gauntlet_report=gauntlet_report,
     )
 
     first_path = write_generation_eval_run(first_run, tmp_path, keep=5)
@@ -84,6 +101,10 @@ def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> 
     assert trend["latestRunId"] == "eval-run-2"
     assert trend["latestSummary"]["scenarioCount"] == 6
     assert trend["latestSummary"]["failedCount"] == 0
+    assert trend["latestGauntlet"]["status"] == "passed"
+    assert trend["latestGauntlet"]["caseCount"] == 5
+    assert loaded_runs[0]["gauntlet"]["status"] == "passed"
+    assert loaded_runs[0]["gauntletReport"]["contractVersion"] == "course-generation-gauntlet-v1"
     assert {row["scenarioId"] for row in trend["scenarioTrends"]} >= {
         "chem-105-general-chemistry",
         "intro-programming-foundations",
@@ -104,6 +125,7 @@ def test_generation_eval_trend_route_reads_persisted_reports(client, tmp_path: P
         run_id="eval-route-run",
         created_at="2026-06-06T00:02:00Z",
         metadata={"trigger": "route-test"},
+        gauntlet_report=_fixed_generation_gauntlet_report(),
     )
     write_generation_eval_run(run, tmp_path, keep=5)
 
@@ -113,4 +135,6 @@ def test_generation_eval_trend_route_reads_persisted_reports(client, tmp_path: P
     payload = response.json()
     assert payload["trend"]["latestRunId"] == "eval-route-run"
     assert payload["trend"]["latestSummary"]["scenarioCount"] == 6
+    assert payload["trend"]["latestGauntlet"]["status"] == "passed"
     assert payload["runs"][0]["runId"] == "eval-route-run"
+    assert payload["runs"][0]["gauntlet"]["caseCount"] == 5
