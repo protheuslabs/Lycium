@@ -245,3 +245,81 @@ def test_generation_gauntlet_report_script_writes_persistent_run(tmp_path: Path)
     assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 4
     assert (report_dir / "latest.json").exists()
     assert (report_dir / "index.json").exists()
+
+
+def test_generation_gauntlet_bundle_builder_wraps_generated_artifacts(tmp_path: Path) -> None:
+    service_root = Path(__file__).resolve().parents[1]
+    course_path = tmp_path / "course-entry.json"
+    program_path = tmp_path / "program.json"
+    output_path = tmp_path / "gauntlet-input.json"
+    course_path.write_text(json.dumps({"data": chem_105_flagship_course_from_scenario()}), encoding="utf-8")
+    program_path.write_text(json.dumps(_program_fixture()["program"]), encoding="utf-8")
+
+    subprocess.run(
+        [
+            sys.executable,
+            "scripts/build_generation_gauntlet_bundle.py",
+            "--course",
+            f"chem-105-general-chemistry={course_path}",
+            "--program",
+            f"full-stack-software-engineer-program={program_path}",
+            "--provider",
+            "fixture-provider",
+            "--model",
+            "fixture-model",
+            "--input-mix",
+            "prompt+urls+files",
+            "--output",
+            str(output_path),
+        ],
+        cwd=service_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    bundle = json.loads(output_path.read_text(encoding="utf-8"))
+    report = evaluate_generation_gauntlet_bundle(bundle)
+
+    assert bundle["contractVersion"] == "course-generation-gauntlet-input-v1"
+    assert bundle["metadata"]["provider"] == "fixture-provider"
+    assert isinstance(bundle["courses"]["chem-105-general-chemistry"]["modules"], list)
+    assert isinstance(bundle["programs"]["full-stack-software-engineer-program"]["program"]["requirementGroups"], list)
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 3
+
+
+def test_generation_gauntlet_runner_builds_bundle_and_report(tmp_path: Path) -> None:
+    service_root = Path(__file__).resolve().parents[1]
+    course_path = tmp_path / "course.json"
+    bundle_path = tmp_path / "gauntlet-input.json"
+    report_dir = tmp_path / "eval-runs"
+    course_path.write_text(json.dumps({"course": chem_105_flagship_course_from_scenario()}), encoding="utf-8")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/run_generation_gauntlet.py",
+            "--course",
+            f"chem-105-general-chemistry={course_path}",
+            "--provider",
+            "fixture-provider",
+            "--model",
+            "fixture-model",
+            "--input-mix",
+            "prompt+urls+files",
+            "--bundle-output",
+            str(bundle_path),
+            "--report-dir",
+            str(report_dir),
+        ],
+        cwd=service_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    payload = json.loads(result.stdout)
+
+    assert bundle_path.exists()
+    assert Path(payload["runPath"]).exists()
+    assert payload["bundlePath"] == str(bundle_path)
+    assert payload["gauntlet"]["status"] == "needs_review"
+    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 4

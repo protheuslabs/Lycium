@@ -220,6 +220,37 @@ The script writes the same persistent eval-run format as `corepack pnpm report:g
 
 A copyable starting point lives at `docs/examples/course-generation-gauntlet-input.example.json`.
 
+To build that bundle from generated artifact files:
+
+```bash
+corepack pnpm build:generation-gauntlet-bundle -- \
+  --course chem-105-general-chemistry=.lycium-local/generated/chem-105.json \
+  --program full-stack-software-engineer-program=.lycium-local/generated/full-stack-program.json \
+  --provider ollama \
+  --model kimi-k2.6:cloud \
+  --input-mix prompt+urls+files \
+  --output .lycium-local/gauntlet-input.json
+```
+
+Then score it:
+
+```bash
+corepack pnpm report:generation-gauntlet -- \
+  --input ../../.lycium-local/gauntlet-input.json
+```
+
+Or build and score in one step:
+
+```bash
+corepack pnpm run:generation-gauntlet -- \
+  --course chem-105-general-chemistry=.lycium-local/generated/chem-105.json \
+  --program full-stack-software-engineer-program=.lycium-local/generated/full-stack-program.json \
+  --provider ollama \
+  --model kimi-k2.6:cloud \
+  --input-mix prompt+urls+files \
+  --bundle-output .lycium-local/gauntlet-input.json
+```
+
 ## Local Model Capability Sweeps
 
 Use the local model sweep scripts when judging whether a provider/model combination is strong enough for course generation work. These scripts are intentionally local evidence-gathering tools rather than CI requirements because they may call local or paid external models.
