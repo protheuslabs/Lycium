@@ -11,6 +11,7 @@ const nextConfig = {
   typedRoutes: false,
   reactStrictMode: true,
   poweredByHeader: false,
+  devIndicators: false,
   outputFileTracingRoot: new URL("../..", import.meta.url).pathname,
   images: {
     unoptimized: true,

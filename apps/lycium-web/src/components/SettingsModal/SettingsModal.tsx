@@ -2,9 +2,6 @@ import { useEffect, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import Dropdown from "../Dropdown/Dropdown";
-import EvalScoreDashboard from "./EvalScoreDashboard";
-import GenerationRunsPanel from "./GenerationRunsPanel";
-import LocalStoragePanel from "./LocalStoragePanel";
 import Modal from "../Modal/Modal";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
 import {
@@ -22,8 +19,6 @@ type SettingsModalProps = {
   verifyingAgentKeyId: string | null;
   canAddAgentKey: boolean;
   themeMode: ThemeMode;
-  settingsMessage: string;
-  settingsStatus: "idle" | "loading" | "error" | "success";
   onClose: () => void;
   onActivateAgentKey: (keyId: string) => void;
   onAgentModelChange: (keyId: string, model: string) => void;
@@ -46,8 +41,6 @@ export default function SettingsModal({
   verifyingAgentKeyId,
   canAddAgentKey,
   themeMode,
-  settingsMessage,
-  settingsStatus,
   onClose,
   onActivateAgentKey,
   onAgentModelChange,
@@ -249,10 +242,6 @@ export default function SettingsModal({
             </button>
           </div>
         </section>
-        <LocalStoragePanel />
-        <EvalScoreDashboard />
-        <GenerationRunsPanel />
-        {settingsMessage && <p className={`settings-status settings-status-${settingsStatus}`}>{settingsMessage}</p>}
         <ConfirmModal
           isOpen={Boolean(keyPendingDelete)}
           title="Delete AI connection?"

@@ -1,6 +1,7 @@
 import type {
   CourseEntry,
   CourseData,
+  LyciumCourseGenerationReadiness,
   LyciumCourseSourceCoveragePolicy,
   LyciumCourseSourceGap,
   LyciumCourseSourceGapSuggestion,
@@ -61,6 +62,11 @@ export function getCourseSourceGaps(course: CourseEntry): LyciumCourseSourceGap[
 export function getCourseSourceGapSuggestions(course: CourseEntry): LyciumCourseSourceGapSuggestion[] {
   const suggestions = course.data.metadata?.sourceGapSuggestions;
   return Array.isArray(suggestions) ? suggestions : [];
+}
+
+export function getCourseGenerationReadiness(course: CourseEntry): LyciumCourseGenerationReadiness | null {
+  const readiness = course.data.metadata?.generationReadiness;
+  return readiness && typeof readiness === "object" ? readiness : null;
 }
 
 export function hasBlockingSourceGaps(course: CourseEntry): boolean {

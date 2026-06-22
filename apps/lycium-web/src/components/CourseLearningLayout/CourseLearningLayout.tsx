@@ -24,6 +24,7 @@ import {
   stripSectionPrefix,
   titleFromUrl,
 } from "../CourseEditing/courseEditPrimitives";
+import { collectReferencedCourseSourceIds } from "./sourceReferences";
 export default function CourseLearningLayout({
   sections,
   visibleSectionIndex,
@@ -66,25 +67,15 @@ export default function CourseLearningLayout({
   const effectiveOrderMandatory = activeEditMode ? draftCourseSettings.orderMandatory : orderMandatory;
   const sourceModules = draftModules ?? selectedCourse?.data.modules ?? [];
   const courseSourceRecords = useMemo(() => normalizeCourseSourceRecords(selectedCourse), [selectedCourse]);
-  const referencedSourceIds = useMemo(() => {
-    const ids = new Set<string>();
-    const addIds = (sourceIds?: string[]) => sourceIds?.forEach((sourceId) => ids.add(sourceId));
-
-    addIds((selectedCourse?.data as { sourceIds?: string[] } | undefined)?.sourceIds);
-    sourceModules.forEach((module) => {
-      addIds((module as { sourceIds?: string[] }).sourceIds);
-      module.sections.forEach((section) => {
-        addIds((section as { sourceIds?: string[] }).sourceIds);
-        section.content.forEach((block) => addIds((block as { sourceIds?: string[] }).sourceIds));
-      });
-    });
-
-    return ids;
-  }, [selectedCourse?.data, sourceModules]);
+  const referencedSourceIds = useMemo(
+    () => collectReferencedCourseSourceIds(selectedCourse?.data, sourceModules),
+    [selectedCourse?.data, sourceModules],
+  );
   const referencedCentralSources = useMemo(
     () => sources.filter((source) => referencedSourceIds.has(source.id)),
     [referencedSourceIds, sources],
   );
+  const shouldOpenDraftInEditMode = selectedCourse?.status === "draft" && canEditCourse;
   const displayedSources = useMemo(
     () => mergeSourceRecords(referencedCentralSources, draftSourceRecords ?? courseSourceRecords),
     [courseSourceRecords, draftSourceRecords, referencedCentralSources],
@@ -149,7 +140,7 @@ export default function CourseLearningLayout({
     resetDraft();
     const shouldOpenInEditMode =
       selectedCourse?.key &&
-      selectedCourse.key === initialEditCourseKey &&
+      (shouldOpenDraftInEditMode || selectedCourse.key === initialEditCourseKey) &&
       initialEditStartedCourseKeyRef.current !== selectedCourse.key &&
       canEditCourse;
 

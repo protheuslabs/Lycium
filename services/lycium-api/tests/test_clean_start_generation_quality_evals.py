@@ -408,6 +408,52 @@ def test_course_quality_evals_require_sections_to_keep_planned_source_ids() -> N
     assert passed_outline["metrics"]["sourceAlignmentRatio"] == 1
 
 
+def test_course_quality_evals_fail_inline_citations_without_local_source_support() -> None:
+    course = {
+        "title": "Inline Citation Source Course",
+        "sourceRecords": [{"id": "source-1"}, {"id": "source-2"}],
+        "sourceIds": ["source-1", "source-2"],
+        "modules": [{"sections": [{"sourceIds": ["source-1"], "content": [{"type": "text", "value": "Stoichiometry uses mole ratios [2].", "sourceIds": ["source-1"]}]}]}],
+    }
+
+    report = run_course_quality_evals(course)
+    sources = next(dimension for dimension in report["dimensions"] if dimension["key"] == "source_grounding")
+
+    assert sources["status"] == "failed"
+    assert sources["metrics"]["inlineCitationIssueCount"] == 1
+    assert any("Inline citation markers" in finding["message"] for finding in sources["findings"])
+
+
+def test_course_quality_evals_fail_sources_not_mapped_to_section_concepts() -> None:
+    course = {
+        "title": "Mapped Section Source Course",
+        "sourceRecords": [{"id": "source-1"}, {"id": "source-2"}],
+        "sourceIds": ["source-1", "source-2"],
+        "metadata": {"sourceSlots": [{"requiredConceptId": "stoichiometry", "primarySourceId": "source-1"}]},
+        "modules": [
+            {
+                "sections": [
+                    {
+                        "id": "stoichiometry-section",
+                        "title": "Stoichiometry",
+                        "sourceIds": ["source-2"],
+                        "content": [
+                            {"type": "text", "value": "Stoichiometry uses balanced equations.", "sourceIds": ["source-2"]},
+                            {"type": "conceptCard", "title": "Stoichiometry", "description": "Mole-ratio reasoning.", "sourceIds": ["source-1"]},
+                        ],
+                    }
+                ]
+            }
+        ],
+    }
+
+    report = run_course_quality_evals(course)
+    sources = next(dimension for dimension in report["dimensions"] if dimension["key"] == "source_grounding")
+
+    assert sources["status"] == "failed"
+    assert any("not mapped to its concepts" in finding["message"] for finding in sources["findings"])
+
+
 def test_agent_response_accepts_local_provider_response_fallback_text() -> None:
     content = extract_message_content(
         {"model": "kimi-k2.6:cloud", "response": '{"title":"Generated Course"}', "done": True},
@@ -415,4 +461,3 @@ def test_agent_response_accepts_local_provider_response_fallback_text() -> None:
     )
 
     assert content == '{"title":"Generated Course"}'
-

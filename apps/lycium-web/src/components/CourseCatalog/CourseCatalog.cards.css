@@ -42,6 +42,22 @@
   transform: none;
 }
 
+.catalog-empty-state {
+  grid-column: 1 / -1;
+  min-height: min(42dvh, 26rem);
+  display: grid;
+  place-items: center;
+  color: #4f5d76;
+  font-size: 0.96rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.catalog-empty-state p {
+  max-width: 34rem;
+  margin: 0;
+}
+
 .course-card--generating {
   grid-template-rows: minmax(3.15rem, auto) minmax(0, 1fr) auto;
   cursor: progress;

@@ -33,8 +33,9 @@ export function useQuizEditor({
   const updateQuizData = useCallback((nextData: QuizPayload) => onDataChange?.(nextData), [onDataChange]);
   const updateRawQuestions = useCallback(
     (questions: EditableQuizQuestion[]) => {
+      const nextData = withAdjustedQuestionsPerAttempt(data, rawQuestions.length, questions.length);
       updateQuizData({
-        ...data,
+        ...nextData,
         questions: questions.map((question) => ({
           question: question.question,
           options: question.options,
@@ -43,7 +44,7 @@ export function useQuizEditor({
         })),
       });
     },
-    [data, updateQuizData],
+    [data, rawQuestions.length, updateQuizData],
   );
   const editQuestion = useCallback(
     (questionIndex: number, question: string) => {
@@ -155,6 +156,44 @@ export function useQuizEditor({
     toggleQuestionMultiple,
     updateQuizData,
   };
+}
+
+function withAdjustedQuestionsPerAttempt(payload: QuizPayload, previousCount: number, nextCount: number): QuizPayload {
+  const explicitLimit = readQuestionLimit(payload);
+  if (explicitLimit === null || nextCount <= 0) {
+    return payload;
+  }
+
+  const nextLimit = explicitLimit >= previousCount ? nextCount : Math.min(explicitLimit, nextCount);
+  return {
+    ...payload,
+    questionsPerAttempt: Math.max(1, nextLimit),
+  };
+}
+
+function readQuestionLimit(payload: QuizPayload): number | null {
+  const record = payload as Record<string, unknown>;
+  const candidates = [
+    record.questionsPerAttempt,
+    record.questions_per_attempt,
+    record.questionCount,
+    record.question_count,
+    record.displayCount,
+    record.display_count,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate === "" || candidate === null || candidate === undefined) {
+      continue;
+    }
+
+    const parsed = Number(candidate);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return Math.floor(parsed);
+    }
+  }
+
+  return null;
 }
 
 function editableQuestionsFromPayload(payload: QuizPayload, fallbackQuestions: NormalizedQuestion[]): EditableQuizQuestion[] {

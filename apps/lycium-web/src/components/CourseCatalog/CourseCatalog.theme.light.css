@@ -89,6 +89,21 @@ html[data-theme="light"] .program-showcase-card p:not(.program-showcase-kicker) 
   color: #4f5d76;
 }
 
+html[data-theme="light"] .catalog-create-button {
+  border-color: #d8deea;
+  color: #27324a;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+html[data-theme="light"] .catalog-create-button:hover {
+  background: #eef3ff;
+}
+
+html[data-theme="light"] .catalog-create-button-icon {
+  color: #ffffff;
+  background: #27324a;
+}
+
 html[data-theme="light"] .program-showcase-meta span {
   color: #30405d;
   background: #eef3ff;

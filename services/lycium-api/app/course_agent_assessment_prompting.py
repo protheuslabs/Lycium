@@ -53,7 +53,8 @@ def _staged_quiz_messages(
             "role": "system",
             "content": (
                 f"{load_behavioral_contract()}\n\n"
-                "Return only one JSON object for one Apply quiz section. Do not include instructional prose outside the quiz block."
+                "Return only one JSON object for one Apply quiz or longer-test section. Do not include instructional prose outside the quiz block. "
+                "When the course needs a project, lab, simulation, portfolio task, or submission instead, generate it through the project-section workflow rather than mixing project instructions into a quiz section."
             ),
         },
         {
@@ -73,6 +74,10 @@ def _staged_quiz_messages(
                         "Do not assess details that are not taught in lesson_sections or supported by the bounded excerpts."
                     ),
                     "evidence_rule": "Only assess concepts taught in this module and cite/use sourceIds assigned to those concepts.",
+                    "assessment_scope_rule": (
+                        "This stage is for question-bank assessments, including longer tests. "
+                        "Other mastery evidence belongs in an Apply section with a project block, rubric, submission policy, and graderWorkflow metadata."
+                    ),
                     "minimum_question_count": 10,
                     "required_shape": {
                         "id": f"module-{module_number}-quiz",

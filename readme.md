@@ -31,9 +31,9 @@ The current product loop is intentionally local-first before cloud services are 
 1. A learner or author provides a goal, description, source URLs, pasted source text, or a source packet.
 2. Source Index imports or fetches sources, creates snapshots, runs source-corpus preflight, records include/exclude reasons, and emits a `source-packet-v1` payload with packet quality evidence.
 3. Lycium extracts curriculum benchmarks, requirement origins, source slots, and concept-to-source coverage from accepted evidence.
-4. If coverage is too weak, Lycium creates a `needs_sources` draft card instead of hollow lessons, records missing concepts/source types, and lets the user add sources before resuming.
+4. If coverage is too weak, Lycium creates a `needs_sources` draft card instead of hollow lessons, records missing concepts/source types, preserves the non-ready `generationReadiness` report, and lets the user add sources before resuming.
 5. If coverage is sufficient, generation produces a structured course or program snapshot with modules, Learn/Apply sections, concept cards, quizzes, summaries, citations, and review metadata.
-6. Validation, quality evals, source coverage checks, citation checks, quiz checks, and review/publish gates decide whether the snapshot can appear as catalog-ready.
+6. Validation, quality evals, source readiness checks, citation checks, quiz checks, and review/publish gates decide whether the snapshot can appear as catalog-ready. Full source-backed courses preserve a positive `metadata.generationReadiness` report for review, observability, and evals.
 7. Local learner state records progress, bookmarks, quiz attempts, feedback, provider settings, generation runs, local editable drafts, and eval dashboard signals separately from portable course/source artifacts.
 
 This loop is the bridge between the immediate local app and the long-term internet curriculum compiler: source evidence improves the reusable index, while learner state stays in a separate trust boundary.
@@ -49,7 +49,7 @@ This loop is the bridge between the immediate local app and the long-term intern
 - Catalog search, pagination, sorting, college and department filters, and an internal college-to-department taxonomy for course classification
 - Program and cluster catalog views with requirement-based progress rollups, prerequisite continuity, requirement detail panels, and portfolio/capstone evidence records
 - Quiz attempts with shuffled question/answer order, timers, pass percentages, max attempts, review flags, and attempt history
-- Course edit mode with structured element editors, local fork creation, explicit local draft metadata, conflict-safe saves, and portable local draft JSON import/export
+- Course edit mode with structured element editors, manual blank courses that open directly into edit mode, local fork creation, explicit local draft metadata, conflict-safe saves, and portable local draft JSON import/export
 - Settings modal for local AI provider keys, model selection, and light/dark/auto display preferences
 - Course creation modal that stays locked until a valid active AI provider key and model are connected
 - Local user-data storage for completion, bookmarks, secrets, source links, and other machine-specific data
@@ -57,6 +57,7 @@ This loop is the bridge between the immediate local app and the long-term intern
 - Software engineering program/catalog scaffolds with prerequisite metadata, college-course parity metadata, requirement origins, portfolio artifacts, and generated module/quiz/summary structure
 - Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
 - Course-generation eval scenarios for CHEM 105, intro programming, software engineering methods, noisy source corpora, under-sourced prompts, and full-stack program paths
+- Local model capability sweep scripts for comparing provider/model behavior across primitive plan, section, quiz, composed one-module, and full-course generation tasks
 - Durable generation run records, source-gap resume flow, eval score dashboard, and local storage diagnostics for debugging generated artifacts
 - Source Index source packets with coverage, duplicate, broken-link, source-type, trust, freshness, and benchmark-usefulness quality reports
 - Source Index service contract endpoint and CLI manifest so the index can remain detachable from Lycium UI code
@@ -213,6 +214,8 @@ When `LYCIUM_SOURCE_INDEX_API_URL` is set on the Lycium API, Lycium routes `/v1/
 | `cd services/lycium-api && pytest -q` | Run API tests |
 | `cd services/source-index && pytest -q` | Run source index tests |
 | `cd services/lycium-workers && PYTHONPATH=src pytest -q` | Run worker tests |
+| `python3 services/lycium-api/scripts/run_model_param_sweep.py --task all-micro --models kimi-k2.6:cloud` | Run a local model capability sweep for plan, section, and quiz primitives |
+| `python3 services/lycium-api/scripts/run_model_param_sweep.py --task one-module --models kimi-k2.6:cloud` | Run the composed one-module benchmark after the primitive micro-gate passes |
 
 Use `corepack pnpm test:e2e:manual-editing` when touching manual course authoring, local draft persistence, citations, quiz editing, or sidebar edit controls. Use `corepack pnpm validate:mvp` before considering a broader MVP-facing change ready, because it combines the core repo guards, generated-schema checks, web validation, focused authoring E2E, export checks, API tests, source-index tests, and worker tests.
 

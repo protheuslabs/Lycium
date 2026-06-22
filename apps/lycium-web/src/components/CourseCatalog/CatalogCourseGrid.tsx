@@ -1,19 +1,16 @@
 import type { RefObject } from "react";
 import type { CourseEntry } from "../../courseTypes";
-import CatalogActionCard from "./CatalogActionCard";
 import CatalogCourseCard from "./CatalogCourseCard";
 import type { CatalogVisibleCourse } from "./catalogUtils";
 
 type CatalogCourseGridProps = {
   courseGridRef: RefObject<HTMLDivElement | null>;
   isGeneratingCourse: boolean;
-  canCreateCourseInScope: boolean;
   generatingCourseTitle: string;
   generateMessage: string;
   visibleCourses: CatalogVisibleCourse[];
   catalogPageCourses: CatalogVisibleCourse[];
   publishingCourseKey: string | null;
-  onCreateCourse: () => void;
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
   onOpenSourceGaps: (course: CourseEntry) => void;
@@ -23,13 +20,11 @@ type CatalogCourseGridProps = {
 export default function CatalogCourseGrid({
   courseGridRef,
   isGeneratingCourse,
-  canCreateCourseInScope,
   generatingCourseTitle,
   generateMessage,
   visibleCourses,
   catalogPageCourses,
   publishingCourseKey,
-  onCreateCourse,
   onOpenCourse,
   onOpenInfo,
   onOpenSourceGaps,
@@ -37,19 +32,6 @@ export default function CatalogCourseGrid({
 }: CatalogCourseGridProps) {
   return (
     <div className="course-grid" ref={courseGridRef}>
-      {canCreateCourseInScope && (
-        <CatalogActionCard
-          className="course-card create-course-card"
-          onActivate={onCreateCourse}
-        >
-          <div className="create-course-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
-            </svg>
-          </div>
-          <h3>Create Course</h3>
-        </CatalogActionCard>
-      )}
       {isGeneratingCourse && (
         <article className="course-card course-card--generating" aria-live="polite" aria-busy="true">
           <h3>{generatingCourseTitle}</h3>
@@ -58,10 +40,9 @@ export default function CatalogCourseGrid({
         </article>
       )}
       {visibleCourses.length === 0 && (
-        <article className="course-card course-card--empty" aria-live="polite">
-          <h3>No matching courses</h3>
-          <p className="course-short-description">Try a different search term, college, or sort option.</p>
-        </article>
+        <div className="catalog-empty-state" aria-live="polite">
+          <p>No matching courses. Try a different search term, college, or sort option.</p>
+        </div>
       )}
       {catalogPageCourses.map((visibleCourse) => (
         <CatalogCourseCard

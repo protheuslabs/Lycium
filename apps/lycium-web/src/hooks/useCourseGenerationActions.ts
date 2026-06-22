@@ -205,7 +205,7 @@ export function useCourseGenerationActions({
   );
 
   const handleResumeCourseSourceGap = useCallback(
-    async (course: CourseEntry, gapId: string, url: string, description: string) => {
+    async (course: CourseEntry, gapId: string, url: string, description: string, sourceFiles: File[] = []) => {
       const queuedCourse = queueCourseSourceGapSuggestion(course, { gapId, url, description });
       setCourses((prev) => prev.map((current) => (current.key === course.key ? queuedCourse : current)));
       if (!course.snapshotId) {
@@ -217,7 +217,13 @@ export function useCourseGenerationActions({
       setGenerateStatus("loading");
       setGenerateMessage("Adding source and checking whether generation can resume...");
       try {
-        const job = await lyciumApi.resumeCourseSourceGaps(course.snapshotId, { source_urls: [url] });
+        const inputArtifacts = sourceFiles.length
+          ? (await lyciumApi.readGenerationInputFiles(await Promise.all(sourceFiles.map(fileToGenerationPayload)))).artifacts
+          : [];
+        const job = await lyciumApi.resumeCourseSourceGaps(course.snapshotId, {
+          source_urls: url ? [url] : [],
+          input_artifacts: inputArtifacts,
+        });
         const updatedCourse = replaceCourseFromJob(queuedCourse, job);
         setCourses((prev) => prev.map((current) => (current.key === course.key ? updatedCourse : current)));
         if (job.status === "queued" || job.status === "running") {

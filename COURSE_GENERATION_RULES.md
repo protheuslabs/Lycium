@@ -49,6 +49,12 @@ Use the repo-local course generation skill as the starting point:
 
 Course generation is a gated workflow. Each gate should produce inspectable artifacts and issues before the next stage is trusted:
 
+- Program, cluster, course-wrapper, and course-content generation are separate workflows.
+  Program generation creates the requirement graph and cluster plan. Cluster generation searches the available course inventory, inspects course titles plus internal evidence such as module titles, section titles, concept cards, tags, and descriptions, then links only courses with recorded fit evidence. If a needed course is missing or fit is uncertain, the workflow creates a course wrapper instead of generating a complete course immediately.
+- Course wrappers are real planning artifacts, not hollow learner pages.
+  A wrapper should preserve the course title, cluster, requirement id, prerequisites, source needs, generation prompt, estimated time, and active-generation plan. Wrappers may appear as drafts or source-gapped shells, but they should not pretend to be complete courses.
+- Active generation should generate course content in small batches.
+  Prefer generating the bottom-level requisite courses first, then materialize course modules on demand, usually two modules at a time. Ungenerated sections should be represented as an explicit state such as `not_generated` with learner text like `Section not yet generated`, plus a generate action that opens the source/source-gap flow when source coverage is incomplete.
 - `intake`: parse the prompt, links, files, level, goals, constraints, and intended course type.
   Course generation should accept source inputs beyond URLs, including uploaded documents, PDFs, slide decks, notes, transcripts, media, source packets, and connector-provided source refs. Preserve extraction status and inclusion/exclusion decisions for each input artifact.
   Native Lycium file-reading, extraction, retrieval, tutoring, grading, and other AI-adjacent primitives must stay adapter-shaped. They are temporary local implementations that should be replaceable by Infring OS or other Protheus ecosystem primitives without rewriting course-generation logic.
@@ -61,6 +67,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 - `source_analysis`: inspect provided sources, extract topics, claims, examples, media, exercises, prerequisites, and source metadata, then verify concept-level source coverage and section citation integrity.
 - `source_enrichment`: query Source Index with `source-index-search-v1` before asking the user for more sources, then add reputable supplemental sources when coverage is weak.
 - `source_coverage_gate`: allow planning with sparse sources, but block full learner-facing generation or publication when required concept coverage is below policy. Emit structured `metadata.sourceGaps` and set lifecycle status `needs_sources` instead of drafting hollow modules.
+- `generation_readiness_gate`: preserve a `course-generation-readiness-v1` report for every full source-backed generation attempt. Full learner-facing courses must carry `metadata.generationReadiness` with `status: "ready"`, `ready: true`, adequate submitted evidence, adequate concept coverage, and no blocking readiness issues. Sparse-source drafts must preserve the non-ready report in both `metadata.generationReadiness` and `generation_trace.generation_readiness`.
 - `classification`: assign college/school category, selected department metadata, tags, difficulty, parity metadata, and prerequisites.
   Select the college/category first, then select the department only from the departments nested under that college/category. Classify by the course's primary learning domain, learner purpose, and program role. Do not mechanically map `courseEquivalencies[].department` into top-level `category` or `department`; parity records are reference metadata and may describe a service department, cross-listed analogue, or catalog source rather than the best Lycium catalog home.
 - `scope`: define audience, outcomes, duration, exclusions, workload, assessment model, and `Module` vs `Week` pacing.
@@ -68,8 +75,8 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 - `section_structure`: create Learn and Apply sections, keeping instruction and assessment separate.
 - `content_draft`: fill sections with actual learner-facing explanation, examples, practice, source references, and editor-native concept card blocks.
   When uploaded files or long source documents are used, staged generation must pass bounded, stage-relevant excerpts into lesson, quiz, media, and summary prompts. Do not dump full extracted documents into every model call.
-- `assessment`: create assessment-only quiz sections that test previously taught or sourced concepts.
-- `projects`: create project, lab, simulation, or practical-task sections when the course type or program requirements call for applied evidence. Projects should include instructions, required evidence, source context, rubric criteria, submission policy, and grader workflow metadata.
+- `assessment`: create mastery-evidence sections that test or verify previously taught or sourced concepts. Evidence may be a quiz, longer test/exam-style question bank, project, lab, simulation, portfolio task, or rubric-graded submission. Quiz sections remain quiz-only.
+- `projects`: create project, lab, simulation, portfolio, or practical-task sections when the course type, learning method, or program requirements call for applied evidence. Projects should include instructions, required evidence, source context, rubric criteria, submission policy, and grader workflow metadata.
 - `tutor_grader`: when tutor or grader support is requested, define allowed context explicitly. Tutor and grader workflows should use course content, source records, source packets, learner progress, project submissions, and rubrics as bounded inputs rather than unrestricted web or model memory.
 - `media`: best-effort source-backed video/media discovery. Log skipped or failed media stages, but do not fail an otherwise valid course solely because reputable video support is unavailable.
 - Video sources should be recorded as full source records. Reuse a video in a section with a `video` block and optional `clip: { "startSeconds": n, "endSeconds": n }` when the learner should watch only the relevant slice. Omit `clip` to use the whole video.
@@ -82,6 +89,8 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 
 - Maintain a small fixed eval suite before expanding generation features. The current minimum scenarios are documented in `docs/course-generation-eval-scenarios.md`.
 - Treat eval scenarios as product contracts: a model/provider combination is not trusted for full course generation until it can pass the flagship scenarios with source evidence, benchmark evidence, valid contracts, assessments, summaries, and review/publish gates.
+- Use local model capability sweeps before blaming or trusting a model. A model should first pass primitive `plan`, `section`, and `quiz` tasks, then a composed one-module benchmark, before being used for full-course generation confidence.
+- Prefer validated primitive generation plus deterministic course assembly over monolithic long-running course generation calls when the task can be decomposed. If high-tier models pass primitives but fail full generation, treat the workflow, source packing, assembly, or gates as the likely bottleneck.
 - The flagship software engineering program should remain the primary program-quality fixture because it exercises requirement groups, prerequisite graphs, capstones, portfolio evidence, source parity, and course wrappers.
 - CHEM 105 should remain the primary full-course eval because it tests whether Lycium can generate a real undergraduate course from free reputable sources rather than a software-only demo.
 - Messy source-corpus evals must prove that irrelevant or weak sources are excluded before generation. The generator should not silently use excluded sources.
@@ -107,6 +116,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
    If benchmark curricula are available, map sources to benchmark-derived requirements rather than letting the source list define the curriculum.
    When many sources are submitted, run source corpus preflight first and do not use excluded sources as course evidence unless a reviewer restores them.
    If submitted sources do not meet the course's source coverage policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps` rather than generating placeholder course pages.
+   Preserve the source-readiness decision as `metadata.generationReadiness`. Full generated courses must keep the positive readiness report that allowed generation to proceed, and the same report should be copied into `generation_trace.generation_readiness` so review, observability, and eval tooling can explain why the course was considered source-ready.
    Source IDs should narrow as the course narrows: course-level `sourceIds` are the full accepted inventory, module-level `sourceIds` support the module, and section/block `sourceIds` must only reference sources that support concepts in that section. Citation numbers are assigned from the course-wide source inventory.
    Text blocks may include inline citation markers such as `[1]`; each marker must be a 1-based index into the course-wide source inventory and must resolve to a supporting source for the nearby claim.
 
@@ -115,7 +125,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
    Write learner-facing content directly. Do not write prompts, outlines, or instructions for a future model to fill in later.
 
 8. Generate assessments separately.
-   Quizzes must be their own assessment sections after the relevant lesson/unit content.
+   Assessment means mastery evidence, not only quizzes. Quizzes and longer tests must be their own assessment sections after the relevant lesson/unit content. Projects, labs, simulations, portfolio tasks, and submissions should be their own Apply sections with project blocks, rubrics, submission policy, and grader workflow metadata.
 
 9. Generate module/week concept inventories.
    End every module/week with a summary section that aggregates the raw concept names introduced on that module/week's Learn pages. Use one heading block followed by one editable `conceptCard` block per concept. Do not turn the summary into interpretive prose categories.
@@ -165,6 +175,7 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `metadata.sourceGaps`: optional structured source requests attached to course, module, section, requirement, or assessment scopes. Blocking gaps should prevent full learner-facing generation and publication.
 - `metadata.sourceGapSuggestions`: optional source URLs queued against `metadata.sourceGaps` for review before generation resumes.
 - `metadata.courseHealth`: optional `course-health-v1` summary combining lifecycle status, generation quality, source integrity, source gaps, learner feedback, and source suggestions. Treat this as review/diagnostic metadata, not learner-facing lesson content.
+- `metadata.generationReadiness`: required for full source-backed generated courses and `needs_sources` drafts. Ready courses must use `status: "ready"` and `ready: true`; under-sourced drafts must preserve a non-ready status with source evidence counts, concept coverage rows, uncovered concepts, and readiness issues.
 - `metadata.tutorWorkflow`: optional tutor workflow contract, including allowed context, model/provider reference, section context, learner privacy policy, retention policy, and analytics permission.
 - `metadata.graderWorkflows`: optional grader workflow contracts for projects or submissions, including rubric id, allowed source context, expected learning outcomes, feedback policy, override policy, and human review state.
 - `metadata.analyticsPolicy`: optional owner-configurable analytics policy distinguishing private learner data, owner-visible aggregate metrics, public popularity metrics, and unique-view counting.
@@ -178,6 +189,7 @@ Agents should use the course JSON as a progress ledger while building. Add or pr
 - `metadata.generationPlan.sourceMap`: source IDs mapped to units or ideas.
 - `metadata.generationPlan.status`: progress markers such as `scoped`, `modules_planned`, `units_planned`, `sources_mapped`, `content_drafted`, and `validated`.
 - `sections[].metadata.generationOutline`: optional section-level planning evidence for generated content. When a section is generated from a source-packet or benchmark-derived outline, preserve the planned outline IDs, concept keywords, learning objectives, source IDs, planning source, and role so review/eval gates can compare intended coverage against final content.
+- `generation_trace.generation_readiness`: backend-generated readiness evidence copied from the pre-generation source-readiness gate. It must stay in sync with `metadata.generationReadiness` for generated courses and source-gap drafts.
 - `generation_trace.quality_report`: backend-generated validation, warning, metric, and score data used by review and publish gates.
 - `generation_trace.quality_report.evals`: deterministic quality-eval dimensions and recommendations for judging course usefulness before review or publish. The `generation_outline_coverage` dimension should compare section `metadata.generationOutline.plannedConceptKeywords` against the final section text and concept cards when outline metadata exists.
 
@@ -194,7 +206,7 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Use either `Module` or `Week` consistently in learner-facing titles. If module titles use `Week 1: ...`, summary titles and summary concept-card titles should use `Week`; if module titles use `Module 1: ...`, they should use `Module`.
 - Balance theory, examples, practice, and assessment.
 - Catalog-visible courses must contain actual learner-facing explanations, examples, activities, concept cards, summaries, and assessment sections. They must not read like placeholders or model instructions.
-- Generated courses must use the same atomic block format as the course editor: `text`, `heading`, `conceptCard`, `video`, `iframe`, and `quiz`. Do not generate monolithic markdown, plain-string section content, or large nested concept-card payloads when smaller editable blocks are possible.
+- Generated courses must use the same atomic block format as the course editor: `text`, `heading`, `conceptCard`, `video`, `iframe`, `quiz`, and `project`. Project blocks may include nested rubric, submission, and grader workflow objects. Do not generate monolithic markdown, plain-string section content, or large nested concept-card payloads when smaller editable blocks are possible.
 - Prefer deeper coverage of fewer ideas over shallow lists of loosely related topics.
 - Cite sources for claims, readings, videos, examples, and imported content.
 - Do not blanket-cite the same full course source list on every section. Section source lists should be derived from that section's concept-source mapping, then sorted by course-wide citation number.
@@ -203,6 +215,7 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 
 ## Assessment Rules
 
+- Assessment can be satisfied by quizzes, longer tests, projects, labs, simulations, portfolio tasks, or rubric-graded submissions.
 - Quizzes must be assessment-only sections.
 - A quiz section must contain quiz blocks only.
 - Do not include instructional text, videos, readings, examples, source summaries, remediation, or project instructions inside a quiz section.
@@ -236,9 +249,9 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Use `quiz` blocks only in assessment Apply sections.
 - Use `visual` blocks for diagrams, images, charts, or AI-generated visuals. Visual blocks should include alt text, source IDs or generation provenance, and license/provenance metadata when applicable.
 - Use `flashcardSet` blocks for structured recall practice. Flashcards should include prompt, answer, optional hint, explanation, concept tags, and source IDs.
-- Use `project` blocks or dedicated project sections for applied work. Projects should include instructions, artifact type, required evidence, rubric reference, source IDs, and submission policy.
+- Use `project` blocks or dedicated project sections for applied work, including projects, labs, simulations, portfolio tasks, and practical exams. Projects should include instructions, artifact type, required evidence, source IDs, a rubric object, a submission policy, and grader workflow metadata.
 - Use rubric objects for project or non-quiz assessment grading. Rubrics should define criteria, performance levels, point or mastery rules, and feedback expectations.
-- Use submission objects for learner artifacts that may later be graded by an agent or human reviewer.
+- Use submission objects for learner artifacts that may later be graded by an agent or human reviewer. Submission policies should list accepted input types such as `text`, `link`, `pdf`, `docx`, or `image`.
 - Treat legacy `conceptCards` stacks as backward-compatible input only. New generated courses should prefer atomic `conceptCard` blocks so concepts can be dragged, edited, and deleted individually.
 
 ## Tutor, Grader, and Analytics Rules
@@ -246,6 +259,7 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Tutor workflows should be grounded in the active course, current section, source records, source packets, curriculum benchmarks, learner progress state, and explicitly allowed context.
 - Tutor workflows should not answer from unrestricted web context unless the course or deployment explicitly enables broader search mode.
 - Grader workflows should grade against a structured rubric, the project instructions, expected outcomes, previous course material, and supporting sources.
+- Submission grading should be represented as a bounded workflow request containing the project block, submission payload, rubric, required evidence, source records, learner/course identifiers when available, and explicit grader mode. The grader response should include criterion-level scores, evidence notes, feedback, next steps, bounded context, and human-review status without mutating course JSON.
 - Agent grader feedback should be inspectable and overridable by authorized human graders when the deployment supports human grading.
 - Analytics should be permissioned by course owner or deployment policy. Keep private learner progress, private submissions, and tutor conversations separate from aggregate course-health metrics.
 - Creator-facing or public metrics should use aggregate and unique-view counts without exposing personally identifiable learner data.
@@ -294,14 +308,14 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 - Frontend catalog intake must validate generated and remote courses before adding them to the learner catalog.
 - Backend publication must compute a quality report and set the snapshot to `published` only after the gate passes.
 - Course creation UI should remain locked until an active AI provider key and selected model are available.
-- Validation should reject missing modules, missing sections, missing `pageType`, mixed quiz/instruction sections, missing concept cards on Learn pages, missing summary sections, and unresolved source IDs.
+- Validation should reject missing modules, missing sections, missing `pageType`, mixed quiz/instruction sections, malformed project/rubric/submission blocks, missing concept cards on Learn pages, missing summary sections, and unresolved source IDs.
 - Validation errors should be surfaced as generation failures rather than silently accepting broken course data.
 
 ## Quality Eval Dimensions
 
 - `structure`: modules, section counts, and terminal module concept reviews.
 - `instructional_substance`: direct explanation, examples, practice prompts, and learn-page depth.
-- `assessment`: quiz-only assessment sections, one quiz per module, at least 10 questions, and valid answer indexes.
+- `assessment`: mastery evidence per module through quiz-only question banks, longer tests, projects, labs, simulations, portfolio tasks, or rubric-graded submissions. Quiz-style assessments need at least 10 questions and valid answer indexes.
 - `concepts`: concept-card presence, concept descriptions, and summary concepts linked back to source sections.
 - `source_grounding`: source records, source IDs, unresolved references, and section-level source coverage.
 - `media`: source-backed video coverage when reputable video material is available.

@@ -339,6 +339,13 @@ def _readiness_bucket(summary: dict[str, Any]) -> str:
     return "unknown"
 
 
+def _active_generation_status(course: dict[str, Any]) -> str:
+    plan = course.get("activeGenerationPlan")
+    if not isinstance(plan, dict):
+        return "not_applicable"
+    return str(plan.get("status") or "unknown")
+
+
 def build_program_course_shell_readiness_report(
     *,
     clusters: list[dict[str, Any]],
@@ -374,6 +381,10 @@ def build_program_course_shell_readiness_report(
     for summary in summaries:
         bucket = _readiness_bucket(summary)
         buckets.setdefault(bucket, []).append(summary["courseId"])
+    active_generation_counts = _count_by_key(
+        [{"status": _active_generation_status(course)} for course in course_rows],
+        "status",
+    )
 
     cluster_summaries: list[dict[str, Any]] = []
     for cluster in cluster_rows:
@@ -417,5 +428,6 @@ def build_program_course_shell_readiness_report(
         "missingTaskCourseIds": [course_id for course_id in missing_task_course_ids if course_id],
         "readinessCounts": {key: len(value) for key, value in buckets.items() if value},
         "readinessCourseIds": {key: value for key, value in buckets.items() if value},
+        "activeGenerationCounts": active_generation_counts,
         "clusterSummaries": cluster_summaries,
     }

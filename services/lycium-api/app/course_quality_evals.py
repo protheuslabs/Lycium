@@ -152,14 +152,17 @@ def _eval_assessment(course: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, str]] = []
     module_count = len(_modules(course))
     quiz_count = 0
+    project_count = 0
     total_questions = 0
     valid_questions = 0
 
     for module_index, module in enumerate(_modules(course), start=1):
         module_quiz_count = 0
+        module_project_count = 0
         for section_index, section in enumerate(_sections(module), start=1):
             blocks = _content(section)
             quiz_blocks = [block for block in blocks if _is_quiz(block)]
+            project_blocks = [block for block in blocks if _is_project(block)]
             if quiz_blocks and len(quiz_blocks) != len(blocks):
                 findings.append(_finding("error", "Quiz section mixes assessment and instructional content.", f"modules[{module_index}].sections[{section_index}]"))
             for block_index, quiz in enumerate(quiz_blocks, start=1):
@@ -188,14 +191,52 @@ def _eval_assessment(course: dict[str, Any]) -> dict[str, Any]:
                         valid_questions += 1
                     else:
                         findings.append(_finding("error", "Quiz question is missing text, unique options, or valid answer indexes.", f"modules[{module_index}].sections[{section_index}].questions[{question_index}]"))
-        if module_quiz_count == 0:
-            findings.append(_finding("warning", "Module has no quiz assessment.", f"modules[{module_index}]"))
+            for block_index, project in enumerate(project_blocks, start=1):
+                project_count += 1
+                module_project_count += 1
+                location = f"modules[{module_index}].sections[{section_index}].content[{block_index}]"
+                if section.get("pageType") != "apply":
+                    findings.append(_finding("error", "Project assessment must use pageType apply.", location))
+                if not _project_is_gradeable(project):
+                    findings.append(_finding("error", "Project assessment is missing instructions, rubric criteria, or submission policy.", location))
+        if module_quiz_count == 0 and module_project_count == 0:
+            findings.append(_finding("warning", "Module has no mastery evidence such as a quiz, longer test, project, lab, simulation, or submission.", f"modules[{module_index}]"))
 
-    quiz_coverage = quiz_count / module_count if module_count else 0
+    evidence_count = quiz_count + project_count
+    evidence_coverage = evidence_count / module_count if module_count else 0
     valid_ratio = valid_questions / total_questions if total_questions else 0
     ten_question_ratio = min(1.0, total_questions / max(1, quiz_count * 10)) if quiz_count else 0
-    score = min(1.0, quiz_coverage) * 0.35 + valid_ratio * 0.4 + ten_question_ratio * 0.25
-    return _dimension(key="assessment", label="Assessment quality", weight=0.18, score=score, findings=findings, metrics={"quizCount": quiz_count, "questionCount": total_questions, "validQuestionRatio": round(valid_ratio, 2)})
+    quiz_quality = valid_ratio * 0.55 + ten_question_ratio * 0.45 if quiz_count else 0
+    project_quality = 1.0 if project_count else 0
+    evidence_quality = max(quiz_quality, project_quality)
+    score = min(1.0, evidence_coverage) * 0.4 + evidence_quality * 0.6
+    return _dimension(
+        key="assessment",
+        label="Assessment quality",
+        weight=0.18,
+        score=score,
+        findings=findings,
+        metrics={
+            "quizCount": quiz_count,
+            "projectCount": project_count,
+            "questionCount": total_questions,
+            "validQuestionRatio": round(valid_ratio, 2),
+            "masteryEvidenceCoverage": round(evidence_coverage, 2),
+        },
+    )
+
+
+def _is_project(block: Any) -> bool:
+    return isinstance(block, dict) and str(block.get("type") or "").strip() == "project"
+
+
+def _project_is_gradeable(project: dict[str, Any]) -> bool:
+    instructions = str(project.get("instructions") or project.get("description") or "").strip()
+    rubric = project.get("rubric")
+    submission = project.get("submission")
+    criteria = rubric.get("criteria") if isinstance(rubric, dict) else None
+    accepted_types = submission.get("acceptedTypes") or submission.get("acceptedInputTypes") if isinstance(submission, dict) else None
+    return bool(instructions) and isinstance(criteria, list) and bool(criteria) and isinstance(accepted_types, list) and bool(accepted_types)
 
 
 def _eval_concepts(course: dict[str, Any]) -> dict[str, Any]:

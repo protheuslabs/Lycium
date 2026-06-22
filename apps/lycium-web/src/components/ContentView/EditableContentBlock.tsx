@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import QuizBlock from "../Quiz/QuizBlock";
 import VideoBlock from "../Video/VideoBlock";
 import { DeleteBlockButton, EditPencilButton, promptForDeleteConfirmation, promptForText } from "./CourseEditControls";
+import ProjectBlock from "./ProjectBlock";
 import type {
   ConceptCard,
   ContentBlock,
@@ -272,6 +273,18 @@ export default function EditableContentBlock({
         />,
       );
     }
+
+    case "project":
+      return editShell(
+        <ProjectBlock
+          block={block}
+          isEditMode={isEditMode}
+          onChange={updateBlock}
+          sectionId={sectionId}
+          sourceRecords={blockSources}
+        />,
+        undefined,
+      );
 
     case "game":
       return editShell(

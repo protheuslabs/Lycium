@@ -172,6 +172,7 @@ export type SourceGapResumePayload = {
   model?: string | null;
   source_packet_id?: string | number | null;
   source_packet?: Record<string, unknown> | null;
+  input_artifacts?: Record<string, unknown>[];
 };
 
 export type SectionRegenerationPayload = {

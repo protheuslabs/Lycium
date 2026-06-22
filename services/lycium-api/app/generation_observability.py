@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.models import GenerationRun, GenerationRunEvent, Job, utcnow
 from app.security import redact_sensitive_payload
 from app.local_store_generation_runs import write_generation_run_record
+from app.generation_readiness_summary import generation_readiness_summary
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
@@ -39,12 +40,43 @@ def _event_payload(*, progress: float | None = None, trace: dict[str, Any] | Non
 
 def _input_summary(payload: dict[str, Any]) -> dict[str, Any]:
     source_urls = payload.get("source_urls")
+    input_artifacts = payload.get("input_artifacts")
+    artifacts = [artifact for artifact in input_artifacts if isinstance(artifact, dict)] if isinstance(input_artifacts, list) else []
+    usable_artifacts = [
+        artifact
+        for artifact in artifacts
+        if str(artifact.get("text") or artifact.get("extractedText") or "").strip()
+    ]
+    source_url_count = len(source_urls) if isinstance(source_urls, list) else 0
+    artifact_count = len(artifacts)
+    source_packet = payload.get("source_packet") if isinstance(payload.get("source_packet"), dict) else {}
+    raw_source_documents = source_packet.get("source_documents") if isinstance(source_packet.get("source_documents"), list) else []
+    source_documents = [source_document for source_document in raw_source_documents if isinstance(source_document, dict)]
+    source_packet_input_artifact_documents = [
+        source_document
+        for source_document in source_documents
+        if str(source_document.get("inputArtifactId") or source_document.get("input_artifact_id") or "").strip()
+    ]
+    is_resume = isinstance(payload.get("resume_course"), dict)
     return {
         "promptLength": len(str(payload.get("prompt") or "")),
         "level": payload.get("level"),
         "language": payload.get("language"),
         "sourcePolicy": payload.get("source_policy"),
-        "sourceUrlCount": len(source_urls) if isinstance(source_urls, list) else 0,
+        "sourceUrlCount": source_url_count,
+        "inputArtifactCount": artifact_count,
+        "usableInputArtifactCount": len(usable_artifacts),
+        "submittedEvidenceCount": source_url_count + artifact_count,
+        "isResume": is_resume,
+        "hasResumeTrace": isinstance(payload.get("resume_trace"), dict),
+        "sourcePacketDocumentCount": len(source_documents),
+        "sourcePacketInputArtifactDocumentCount": len(source_packet_input_artifact_documents),
+        "sourceGapResumeFileBacked": is_resume and bool(usable_artifacts or source_packet_input_artifact_documents),
+        "inputArtifactFilenames": [
+            str(artifact.get("filename") or artifact.get("title") or artifact.get("id"))
+            for artifact in artifacts[:8]
+            if str(artifact.get("filename") or artifact.get("title") or artifact.get("id") or "").strip()
+        ],
         "sourcePacketId": payload.get("source_packet_id"),
         "desiredModuleCount": payload.get("desired_module_count"),
         "expectedDurationMinutes": payload.get("expected_duration_minutes"),
@@ -55,18 +87,25 @@ def _source_corpus_summary(trace: dict[str, Any]) -> dict[str, Any]:
     candidates = (
         trace.get("source_corpus_preflight"),
         trace.get("sourceCorpusPreflight"),
+        trace.get("source_corpus_synthesis"),
+        trace.get("sourceCorpusSynthesis"),
         trace.get("source_corpus"),
         trace.get("sourceCorpus"),
     )
     preflight = next((candidate for candidate in candidates if isinstance(candidate, dict)), {})
+    metrics = preflight.get("metrics") if isinstance(preflight.get("metrics"), dict) else {}
     included = preflight.get("includedSources") or preflight.get("included") or preflight.get("acceptedSources") or []
     excluded = preflight.get("excludedSources") or preflight.get("excluded") or preflight.get("rejectedSources") or []
     failures = preflight.get("fetchFailures") or preflight.get("fetch_failures") or preflight.get("failures") or []
     themes = preflight.get("commonThemes") or preflight.get("common_themes") or preflight.get("themes") or []
     return {
-        "includedSourceCount": len(included) if isinstance(included, list) else 0,
-        "excludedSourceCount": len(excluded) if isinstance(excluded, list) else 0,
-        "fetchFailureCount": len(failures) if isinstance(failures, list) else 0,
+        "submittedSourceCount": metrics.get("submittedSourceCount"),
+        "submittedInputArtifactCount": metrics.get("submittedInputArtifactCount"),
+        "usableInputArtifactCount": metrics.get("usableInputArtifactCount"),
+        "includedInputArtifactCount": metrics.get("includedInputArtifactCount"),
+        "includedSourceCount": metrics.get("includedSourceCount") or (len(included) if isinstance(included, list) else 0),
+        "excludedSourceCount": metrics.get("excludedSourceCount") or (len(excluded) if isinstance(excluded, list) else 0),
+        "fetchFailureCount": metrics.get("fetchFailureCount") or (len(failures) if isinstance(failures, list) else 0),
         "commonThemes": themes[:8] if isinstance(themes, list) else [],
     }
 
@@ -349,12 +388,14 @@ def complete_generation_run(
     run.trace = _safe_trace(trace)
     usage_summary = _usage_summary(run.trace)
     build_task_summary = _course_build_task_summary(course_build_task)
+    readiness_summary = generation_readiness_summary(run.trace)
     run.result_summary = {
         "accepted": accepted,
         "providerId": run.provider_id,
         "model": run.model,
         "inputs": _input_summary(_as_dict(run.request_payload)),
         "sourceCorpus": _source_corpus_summary(run.trace),
+        "generationReadiness": readiness_summary,
         "gateSummary": _quality_gate_summary(quality_report, run.trace),
         "usage": {key: value for key, value in usage_summary.items() if value is not None},
         "qualityScore": quality_report.get("score"),

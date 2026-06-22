@@ -4,6 +4,7 @@ import type {
   LyciumCourseSnapshotLifecycle,
 } from "./courseEditTypes";
 import type {
+  LyciumCourseGenerationReadiness,
   LyciumCourseSourceCoveragePolicy,
   LyciumCourseSourceGap,
   LyciumCourseSourceGapSuggestion,
@@ -66,6 +67,43 @@ export type LyciumQuizQuestion = {
   timed?: "t" | "f" | boolean;
 };
 
+export type LyciumProjectRubricLevel = {
+  label?: string;
+  description?: string;
+  points?: number | string;
+};
+
+export type LyciumProjectRubricCriterion = {
+  id?: string;
+  title?: string;
+  criterion?: string;
+  description?: string;
+  points?: number | string;
+  levels?: LyciumProjectRubricLevel[];
+};
+
+export type LyciumProjectRubric = {
+  id?: string;
+  title?: string;
+  criteria?: LyciumProjectRubricCriterion[];
+};
+
+export type LyciumProjectSubmissionPolicy = {
+  acceptedTypes?: string[];
+  acceptedFileTypes?: string[];
+  instructions?: string;
+  maxFiles?: number;
+  maxFileSizeMb?: number;
+};
+
+export type LyciumProjectGraderWorkflow = {
+  grader?: "agent" | "admin" | "human" | string;
+  rubricId?: string;
+  status?: "ready" | "queued" | "graded" | "needs_review" | string;
+  allowedContext?: string[];
+  feedbackPolicy?: string;
+};
+
 export type LyciumVideoClip = {
   startSeconds?: number | string;
   endSeconds?: number | string;
@@ -115,6 +153,12 @@ export type LyciumCourseBlock = {
   show_answers?: boolean | string;
   showCorrectAnswers?: boolean | string;
   show_correct_answers?: boolean | string;
+  instructions?: string;
+  artifactType?: string;
+  requiredEvidence?: string[];
+  rubric?: LyciumProjectRubric | LyciumProjectRubricCriterion[];
+  submission?: LyciumProjectSubmissionPolicy;
+  graderWorkflow?: LyciumProjectGraderWorkflow;
 };
 
 export type LyciumCourseCitation = {
@@ -172,6 +216,7 @@ export type LyciumCourseData = {
     sourceGaps?: LyciumCourseSourceGap[];
     sourceCoveragePolicy?: LyciumCourseSourceCoveragePolicy;
     sourceGapSuggestions?: LyciumCourseSourceGapSuggestion[];
+    generationReadiness?: LyciumCourseGenerationReadiness | null;
     [key: string]: unknown;
   };
   modules: LyciumCourseModule[];

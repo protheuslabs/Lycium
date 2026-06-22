@@ -1,6 +1,7 @@
 /* ContentView styles */
 @import "./contentView.sources.css";
 @import "./contentView.refresh.css";
+@import "./ProjectBlock.css";
 
 .content-view {
   flex: 1;

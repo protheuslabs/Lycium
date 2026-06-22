@@ -11,7 +11,7 @@ Each scenario should produce:
 - Curriculum benchmark evidence when syllabi, catalogs, standards, or employer profiles are present.
 - Required, recommended, optional, remedial, alternate, or enrichment classifications where benchmark comparison is possible.
 - Source slots for required concepts with at least one primary source and a fallback policy.
-- Assessment-only quiz sections with at least 10 questions for real module quizzes.
+- Mastery-evidence sections that may use quiz-only question banks, longer tests, projects, labs, simulations, portfolio tasks, or rubric-graded submissions. Real quiz/test banks should include at least 10 questions.
 - Module or week summaries made from raw concept cards, not prose recap categories.
 - A quality report that explains pass/fail gate evidence.
 - A review/publish decision that does not publish failed artifacts unless a reviewer records an explicit override reason.
@@ -66,7 +66,7 @@ Inputs:
 
 Assertions:
 
-- Course includes code examples, practice tasks, quizzes, and a final project.
+- Course includes code examples, practice tasks, mastery evidence, and a final project or equivalent rubric-graded applied submission.
 - Concepts build from variables/control flow to functions, data structures, files/APIs, testing, and project structure.
 - Assessments test taught concepts only.
 - Portfolio artifact requirements are present when the course belongs to a career-path program.

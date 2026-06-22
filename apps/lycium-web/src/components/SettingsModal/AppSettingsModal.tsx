@@ -21,8 +21,6 @@ export default function AppSettingsModal({ isOpen, agentSettings, onClose }: App
       verifyingAgentKeyId={agentSettings.verifyingAgentKeyId}
       canAddAgentKey={agentSettings.canAddAgentKey}
       themeMode={agentSettings.themeMode}
-      settingsMessage={agentSettings.settingsMessage}
-      settingsStatus={agentSettings.settingsStatus}
       onClose={onClose}
       onActivateAgentKey={agentSettings.handleActivateAgentKey}
       onAgentModelChange={agentSettings.handleAgentModelChange}

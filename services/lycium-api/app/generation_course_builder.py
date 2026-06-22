@@ -8,9 +8,11 @@ from app.course_build_task_resume import apply_course_build_resume_inputs
 from app.course_health import summarize_course_health
 from app.course_quiz_blocks import normalize_quiz_block
 from app.course_generation_workflow import run_course_generation_workflow
-from app.course_source_gaps import create_needs_sources_course_snapshot, source_count_meets_minimum, update_needs_sources_course_snapshot
+from app.course_source_gaps import create_needs_sources_course_snapshot, update_needs_sources_course_snapshot
+from app.course_generation_readiness import build_generation_readiness_report
 from app.course_quality import assess_course_quality
 from app.course_section_generation import _build_section_content, _source_ids_from_citations, _source_records_from_citations, _source_records_from_input_urls, _source_slot_for_section, _with_source_ids
+from app.course_source_packet_mapping import fallback_source_ids_for_section, source_document_records
 from app.generation_curriculum_context import with_generated_curriculum_context
 from app.generation_helpers import COURSE_GENERATION_RULES, _build_module_summary_section, _build_quiz_for_section, _catalog_metadata_from_prompt, _ensure_minimum_outline_modules, _stable_id
 from app.generation_outline import create_draft
@@ -45,6 +47,9 @@ def generate_course_from_draft(
     section_source_map: dict[str, list[int]] = {}
     citation_map: dict[str, list[dict[str, Any]]] = {}
     source_slots: list[dict[str, Any]] = []
+    source_documents = draft.constraints.get("source_documents")
+    if not isinstance(source_documents, list):
+        source_documents = []
 
     for module in _ensure_minimum_outline_modules(outline.get("modules", [])):
         section_rows: list[dict[str, Any]] = []
@@ -59,6 +64,8 @@ def generate_course_from_draft(
             )
             section_id = section["id"]
             source_ids = _source_ids_from_citations(citations)
+            if not source_ids:
+                source_ids = fallback_source_ids_for_section(section["title"], source_documents)
             source_slot = _source_slot_for_section(section_id, section["title"], source_ids)
             if source_slot:
                 source_slots.append(source_slot)
@@ -139,7 +146,10 @@ def generate_course_from_draft(
     submitted_source_urls = draft.constraints.get("source_urls")
     if not isinstance(submitted_source_urls, list):
         submitted_source_urls = []
-    input_source_records = _source_records_from_input_urls([str(url) for url in submitted_source_urls], draft.title)
+    input_source_records = source_document_records(source_documents, draft.title) or _source_records_from_input_urls(
+        [str(url) for url in submitted_source_urls],
+        draft.title,
+    )
     source_records_by_id = {
         source_record["id"]: source_record
         for source_record in [*_source_records_from_citations(citation_map, draft.title), *input_source_records]
@@ -149,6 +159,7 @@ def generate_course_from_draft(
     catalog_metadata = _catalog_metadata_from_prompt(draft.prompt)
     requested_category = draft.constraints.get("category")
     requested_department = draft.constraints.get("department")
+    generation_readiness = draft.constraints.get("generation_readiness") if isinstance(draft.constraints.get("generation_readiness"), dict) else None
     structure = {
         "title": draft.title,
         "shortDescription": outline.get("shortDescription") or outline.get("summary") or f"A generated Lycium course for {draft.title}.",
@@ -168,6 +179,10 @@ def generate_course_from_draft(
                 "levelFallback": "strict-then-unscoped",
             },
             "sourceSlots": source_slots,
+            "generationReadiness": generation_readiness,
+            "sourceCorpusSynthesis": draft.constraints.get("source_corpus_synthesis")
+            if isinstance(draft.constraints.get("source_corpus_synthesis"), dict)
+            else {},
             "sourceCoverageTrace": {
                 "sourceSlotCount": len(source_slots),
                 "sectionSourceMap": {
@@ -220,6 +235,7 @@ def generate_course_from_draft(
         "free_only": free_only,
         "trust_min": trust_min,
         "outline_provenance": outline.get("provenance", {}),
+        "generation_readiness": generation_readiness,
         "section_source_map": section_source_map,
         "citation_map": citation_map,
     }
@@ -313,8 +329,13 @@ def generate_course_direct(
         input_artifacts=input_artifacts,
     )
     effective_source_urls = source_corpus.source_urls or [str(url) for url in source_urls or []]
-    packet_gate = source_packet_quality_gate(source_corpus.synthesis)
-    if not source_count_meets_minimum(effective_source_urls) or packet_gate:
+    readiness = build_generation_readiness_report(
+        source_urls=effective_source_urls,
+        input_artifacts=source_corpus.input_artifacts,
+        source_packet=source_packet,
+        source_corpus_synthesis=source_corpus.synthesis,
+    )
+    if not bool(readiness["ready"]):
         return create_needs_sources_course_snapshot(
             session,
             prompt=prompt,
@@ -326,7 +347,8 @@ def generate_course_direct(
             expected_duration_minutes=expected_duration_minutes,
             source_urls=effective_source_urls,
             source_packet=source_packet,
-            source_gate=packet_gate,
+            source_gate=readiness.get("sourceGate"),
+            generation_readiness=readiness,
             category=category,
             department=department,
         )
@@ -348,6 +370,9 @@ def generate_course_direct(
             "source_packet_id": source_packet_id,
             "source_packet": source_packet,
             "input_artifacts": source_corpus.input_artifacts,
+            "source_documents": source_corpus.source_documents,
+            "source_corpus_synthesis": source_corpus.synthesis,
+            "generation_readiness": readiness,
             "category": category,
             "department": department,
         },

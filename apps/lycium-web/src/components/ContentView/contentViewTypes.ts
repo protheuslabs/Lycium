@@ -9,6 +9,45 @@ export type ConceptCard = {
   sourceIds?: string[];
 };
 
+export type ProjectRubricLevel = {
+  label?: string;
+  description?: string;
+  points?: number | string;
+};
+
+export type ProjectRubricCriterion = {
+  id?: string;
+  title?: string;
+  criterion?: string;
+  description?: string;
+  points?: number | string;
+  levels?: ProjectRubricLevel[];
+};
+
+export type ProjectRubric = {
+  id?: string;
+  title?: string;
+  criteria?: ProjectRubricCriterion[];
+};
+
+export type ProjectSubmissionInputType = "pdf" | "docx" | "image" | "text" | "link" | "file" | string;
+
+export type ProjectSubmissionPolicy = {
+  acceptedTypes?: ProjectSubmissionInputType[];
+  acceptedFileTypes?: string[];
+  instructions?: string;
+  maxFiles?: number;
+  maxFileSizeMb?: number;
+};
+
+export type ProjectGraderWorkflow = {
+  grader?: "agent" | "admin" | "human" | string;
+  rubricId?: string;
+  status?: "ready" | "queued" | "graded" | "needs_review" | string;
+  allowedContext?: string[];
+  feedbackPolicy?: string;
+};
+
 export type ContentBlock = {
   type: string;
   value?: string;
@@ -68,6 +107,12 @@ export type ContentBlock = {
   show_answers?: boolean | string;
   showCorrectAnswers?: boolean | string;
   show_correct_answers?: boolean | string;
+  instructions?: string;
+  artifactType?: string;
+  requiredEvidence?: string[];
+  rubric?: ProjectRubric | ProjectRubricCriterion[];
+  submission?: ProjectSubmissionPolicy;
+  graderWorkflow?: ProjectGraderWorkflow;
 };
 
 export type Section = {

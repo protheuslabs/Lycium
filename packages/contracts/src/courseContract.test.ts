@@ -50,6 +50,53 @@ describe("Lycium contract fixtures", () => {
     expect(validateCourseEntry(entry, { requireSources: true })).toEqual({ valid: true, errors: [] });
   });
 
+  it("validates generation readiness metadata when present", () => {
+    const course = readFixture<LyciumCourseData>("valid-course.json");
+    const validateSchema = ajv.compile(schemas.course);
+    const readyCourse: LyciumCourseData = {
+      ...course,
+      metadata: {
+        ...(course.metadata ?? {}),
+        generationReadiness: {
+          contractVersion: "course-generation-readiness-v1",
+          status: "ready",
+          ready: true,
+          sourceEvidence: {
+            sourceUrlCount: 3,
+            usableInputArtifactCount: 0,
+            submittedEvidenceCount: 3,
+            minimumCourseSources: 3,
+          },
+          conceptCoverage: {
+            status: "ready",
+            coverageRatio: 1,
+            minimumCoverageRatio: 0.8,
+            requiredConceptCount: 2,
+            coveredConceptCount: 2,
+            uncoveredConcepts: [],
+            coverageRows: [],
+          },
+          sourceGate: null,
+          issues: [],
+        },
+      },
+    };
+    const invalidCourse = {
+      ...readyCourse,
+      metadata: {
+        ...(readyCourse.metadata ?? {}),
+        generationReadiness: {
+          ...readyCourse.metadata?.generationReadiness,
+          issues: [{ code: "missing_message" }],
+        },
+      },
+    } as unknown as LyciumCourseData;
+
+    expect(validateSchema(readyCourse), JSON.stringify(validateSchema.errors, null, 2)).toBe(true);
+    expect(validateSchema(invalidCourse)).toBe(false);
+    expect(validateSchema.errors?.some((error) => error.instancePath.includes("/metadata/generationReadiness/issues/0"))).toBe(true);
+  });
+
   it("rejects courses that do not end modules with summary concept cards", () => {
     const course = readFixture<LyciumCourseData>("invalid-course-missing-summary.json");
     const entry: LyciumCourseEntry = {

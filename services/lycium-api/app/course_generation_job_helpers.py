@@ -50,8 +50,9 @@ def job_payload_from_course_request(
     payload: GenerateCourseRequest,
     source_urls: list[str],
     model: str | None = None,
+    generation_readiness: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return {
+    job_payload = {
         "prompt": payload.prompt,
         "learner_id": payload.learner_id,
         "level": payload.level,
@@ -70,3 +71,6 @@ def job_payload_from_course_request(
         "source_packet": payload.source_packet,
         "input_artifacts": payload.input_artifacts,
     }
+    if isinstance(generation_readiness, dict):
+        job_payload["generation_readiness"] = generation_readiness
+    return job_payload

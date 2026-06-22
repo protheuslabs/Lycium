@@ -58,7 +58,7 @@ export const SidebarStatusBadge = memo(function SidebarStatusBadge({
   );
 });
 
-function SidebarIcon({ name }: { name: "pencil" | "save" | "cancel" | "settings" }) {
+function SidebarIcon({ name }: { name: "pencil" | "save" | "cancel" | "settings" | "finish" }) {
   if (name === "pencil") {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -79,6 +79,14 @@ function SidebarIcon({ name }: { name: "pencil" | "save" | "cancel" | "settings"
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M19.4 13.5c.1-.5.1-1 .1-1.5s0-1-.1-1.5l2-1.5-2-3.4-2.4 1a7.8 7.8 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.6A7.8 7.8 0 0 0 7 6.6l-2.4-1-2 3.4 2 1.5c-.1.5-.1 1-.1 1.5s0 1 .1 1.5l-2 1.5 2 3.4 2.4-1a7.8 7.8 0 0 0 2.6 1.5l.4 2.6h4l.4-2.6a7.8 7.8 0 0 0 2.6-1.5l2.4 1 2-3.4-2-1.5ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z" />
+      </svg>
+    );
+  }
+
+  if (name === "finish") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M5 4h9.8l.4 2H19v9h-5.8l-.4-2H7v7H5V4Zm2 2v5h7.4l.4 2H17V8h-3.4l-.4-2H7Z" />
       </svg>
     );
   }
@@ -152,6 +160,21 @@ export function SidebarEditControls({
         <SidebarIcon name="settings" />
       </button>
     </div>
+  );
+}
+
+export function SidebarFinishButton({
+  isCollapsed,
+  onFinish,
+}: {
+  isCollapsed: boolean;
+  onFinish?: () => void;
+}) {
+  return (
+    <button type="button" className="sidebar-finish-button" aria-label="Finish course draft" onClick={onFinish}>
+      <SidebarIcon name="finish" />
+      {!isCollapsed && <span>Finish</span>}
+    </button>
   );
 }
 

@@ -102,6 +102,19 @@
 	    background: #303034;
 	  }
 
+	  .sidebar-finish-button {
+	    border-color: #303033;
+	    color: #ffffff;
+	    background: #2b2b2d;
+	    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+	  }
+
+	  .sidebar-finish-button:hover,
+	  .sidebar-finish-button:focus-visible {
+	    border-color: #3a3a3d;
+	    background: #303034;
+	  }
+
   .progress-bar {
     background: #262626;
   }
@@ -219,6 +232,19 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-edit-button--settings:hover,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-edit-button--settings:focus-visible {
+  background: #303034;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-finish-button {
+  border-color: #303033;
+  color: #ffffff;
+  background: #2b2b2d;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-finish-button:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .sidebar-finish-button:focus-visible {
+  border-color: #3a3a3d;
   background: #303034;
 }
 

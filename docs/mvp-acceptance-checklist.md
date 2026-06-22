@@ -28,7 +28,7 @@ Lycium reaches MVP when a local user can reliably turn source-backed material in
 
 ## 4. Manual course creation and editing
 
-- A user can create a blank manual course.
+- A user can create a blank manual course that opens directly in edit mode.
 - Editable courses support adding, editing, deleting, and reordering modules, sections, and blocks.
 - Course settings are editable in edit mode.
 - Save and cancel behave predictably.

@@ -22,6 +22,22 @@ function remoteCourseKey(row: { id: string | number; structure: { metadata?: unk
   return typeof scaffoldCourseId === "string" && scaffoldCourseId.trim() ? scaffoldCourseId : `remote-${row.id}`;
 }
 
+function shouldTryLocalApiSync(): boolean {
+  if (localApiSyncEnabled) {
+    return true;
+  }
+
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return ["localhost", "127.0.0.1", "0.0.0.0"].includes(window.location.hostname);
+}
+
+function remoteCourseRequiresSourceValidation(row: { status?: string }): boolean {
+  return row.status !== "needs_sources";
+}
+
 export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: UseConfiguredCoursesOptions) {
   useEffect(() => {
     const mergePersistedLocalCourses = (courses: CourseEntry[]) => {
@@ -51,7 +67,9 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
       return;
     }
 
-    if (!localApiSyncEnabled) {
+    const tryLocalApiSync = shouldTryLocalApiSync();
+
+    if (!tryLocalApiSync) {
       const stored = browserStorage.readLearnerId();
       if (stored) {
         setLearnerId(stored);
@@ -76,9 +94,13 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
             generation_trace: row.generation_trace,
             qualityReport: row.qualityReport,
           };
+          if (row.status === "needs_sources") {
+            remoteCourses.push(entry);
+            continue;
+          }
           const validation = validateCourseEntry(entry, {
             centralSourceRecords: sourceRecordsData.sources,
-            requireSources: true,
+            requireSources: remoteCourseRequiresSourceValidation(row),
           });
           if (validation.valid) {
             remoteCourses.push(entry);
@@ -90,7 +112,9 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
           mergePersistedLocalCourses([...remoteCourses, ...prev.filter((course) => course.source === "local")]),
         );
       } catch (err) {
-        console.warn("Remote courses unavailable:", err);
+        if (localApiSyncEnabled) {
+          console.warn("Remote courses unavailable:", err);
+        }
       }
     };
 
@@ -120,7 +144,9 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
           });
         }
       } catch (err) {
-        console.warn("Remote programs unavailable:", err);
+        if (localApiSyncEnabled) {
+          console.warn("Remote programs unavailable:", err);
+        }
       }
     };
 
@@ -140,12 +166,21 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
         browserStorage.writeLearnerId(learner.id);
         setLearnerId(Number(learner.id));
       } catch (err) {
-        console.warn("Unable to create learner:", err);
+        if (localApiSyncEnabled) {
+          console.warn("Unable to create learner:", err);
+        }
       }
     };
 
     fetchRemoteCourses();
     fetchRemotePrograms();
-    ensureLearner();
+    if (localApiSyncEnabled) {
+      ensureLearner();
+    } else {
+      const stored = browserStorage.readLearnerId();
+      if (stored) {
+        setLearnerId(stored);
+      }
+    }
   }, [setCourses, setLearnerId, setPrograms]);
 }

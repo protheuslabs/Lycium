@@ -22,6 +22,10 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - prefer benchmark-derived requirements over topic-prompt outlines when catalogs, syllabi, certification outlines, or employer profiles are available
    - record requirement origins so generated paths can explain why a requirement exists
    - validate missing course, assessment, project, or competency references before publishing program data
+   - separate program generation, cluster generation, course-wrapper generation, and active course-content generation
+   - cluster generation should search existing courses and inspect internal fit evidence such as module titles, section titles, concept cards, tags, and descriptions before linking an existing course
+   - missing or uncertain courses should become course wrappers with source needs and generation prompts rather than hollow full courses
+   - use active generation for large paths: generate bottom-level prerequisite course wrappers first, then generate course modules or sections in small batches as needed
 4. Determine course scope before writing lesson content:
    - learner level
    - prerequisites
@@ -52,12 +56,14 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record generation inputs in `metadata.inputArtifacts` when documents, media, source packets, or connector refs are used
    - record benchmark evidence in `metadata.curriculumBenchmarks`, `metadata.requirementOrigins`, `metadata.courseParityProfile`, and `metadata.sourceSlots` when applicable
    - record module, unit, idea, and source planning in `metadata.generationPlan`
+   - record active generation state in `metadata.activeGenerationPlan` when a course is only partially materialized or should be generated in module batches
+   - record wrapper lineage in `metadata.courseWrapper` when a catalog entry was created as a program or cluster course shell
    - preserve generated section planning evidence in `sections[].metadata.generationOutline` when content is created from source-packet, benchmark, or staged outline inputs
    - preserve `metadata.courseHealth` when backend review, generation, or source diagnostics have produced a course-health summary
    - record estimated learning time at the most specific reliable level available: prefer section-level `estimatedMinutes`, then course-level `estimatedMinutes` or `estimatedHours`, then requirement, cluster, and program `estimatedHours`
    - treat parent-level time estimates as authored fallbacks; when every child has an estimate, roll parent time up from children instead of manually duplicating totals
    - update progress markers as the plan becomes content
-   - align progress markers with the backend gate names in `services/lycium-api/app/course_generation_gates.py`: `intake`, `source_corpus_preflight`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`
+   - align progress markers with the backend gate names in `services/lycium-api/app/course_generation_gates.py`: `intake`, `source_corpus_preflight`, `benchmark_intake`, `requirement_extraction`, `commonality_analysis`, `source_analysis`, `source_enrichment`, `classification`, `scope`, `module_structure`, `section_structure`, `content_draft`, `assessment`, `projects`, `media`, `summary`, `validation`, `quality_eval`, and `review_publish`
    - inspect `quality_report.evals` after backend LLM generation experiments to tune prompts, source coverage, and course structure before review or publish
 7. Build or revise the course around modules and sections, not a single long page.
    - write learner-facing instruction directly in the course, not prompts or directions for a future model to fill in later
@@ -65,6 +71,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
 8. Keep instruction and assessment separate:
    - Learn pages use `pageType: "learn"` and contain text, video, code, projects, labs, summaries, or other instructional blocks
    - Apply pages use `pageType: "apply"` and contain assessment or practice interactions
+   - assessment means mastery evidence, not only quizzes; it may be a quiz, longer test, project, lab, simulation, portfolio task, or rubric-graded submission
    - quiz sections contain quiz blocks only and should be Apply pages
    - quiz blocks may use `maxAttempts` and `timeLimitSeconds`; omit or leave blank for unlimited attempts or unlimited time
    - quiz blocks may use `passPercentage`; omit or leave blank for neutral score display without pass/fail coloring
@@ -97,6 +104,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - visual blocks should include alt text, source IDs or generation provenance, and license/provenance metadata when applicable
    - flashcard sets should use structured cards with prompt, answer, optional hint, explanation, concept tags, and source IDs
    - project blocks or project sections should include instructions, artifact type, required evidence, rubric reference, source IDs, submission policy, and grader workflow metadata when applicable
+   - use project blocks for projects, labs, simulations, portfolio tasks, practical exams, or other non-quiz evidence that should be graded against a rubric
 12. Record all sources centrally and reference them from the course:
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
    - use `sourceIds` in course, module, section, and block records
@@ -106,6 +114,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - when a new source is submitted, use source-fit analysis against abstract course/program/concept descriptors to create review candidates; do not auto-attach the source to course sections
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
    - if source coverage is below policy, create or preserve a `needs_sources` draft with `metadata.sourceGaps` instead of drafting hollow learner-facing modules
+   - preserve `metadata.generationReadiness` on source-ready generated courses and `needs_sources` drafts; full courses must carry a positive `course-generation-readiness-v1` report, while sparse drafts must carry the non-ready report
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
    - when uploaded files or long source documents are used, pass bounded, stage-relevant excerpts into lesson, quiz, media, and summary prompts; do not dump full extracted documents into every model call
    - scope `sourceIds` locally while numbering citations globally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, and section/block `sourceIds` support only concepts taught or assessed there
@@ -118,6 +127,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
 15. Treat validation as a catalog gate:
    - generated courses must not enter the catalog until structural validation passes
    - sparse-source drafts may appear only as incomplete `needs_sources` artifacts that collect missing sources before full generation resumes
+   - copy readiness evidence into `generation_trace.generation_readiness` whenever backend generation or source-gap resume is involved so review, observability, and eval tools can explain the source-readiness decision
    - every referenced `sourceId` must resolve to a central or course-level source record
    - every section citation must point to a source that supports at least one concept taught or assessed in that section
    - every inline `[n]` citation marker in a text block must resolve to a course-wide source index entry that is also connected to the section or nearby block through `sourceIds`

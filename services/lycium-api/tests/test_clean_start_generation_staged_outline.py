@@ -393,5 +393,3 @@ def test_file_reader_primitive_returns_generation_input_artifacts() -> None:
     assert artifact["extractionStatus"] == "extracted"
     assert artifact["sourceDocumentUrl"].startswith("artifact://")
     assert "Stoichiometry" in artifact["extractedText"]
-
-

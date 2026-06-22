@@ -108,6 +108,12 @@ class CourseSourceGapResumeRequest(BaseModel):
     input_artifacts: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class ActiveCourseGenerationBatchRequest(BaseModel):
+    batch_index: int | None = Field(default=None, ge=1)
+    module_count: int = Field(default=2, ge=1, le=4)
+    source_packet: dict[str, Any] | None = None
+
+
 class GenerateCourseFromOutlineRequest(BaseModel):
     learner_id: int | None = None
     source_policy: Literal["balanced", "high-trust", "free-only"] = "balanced"

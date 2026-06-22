@@ -91,6 +91,8 @@ def build_program_generation_timeline(payload: dict[str, Any]) -> dict[str, Any]
     shell_readiness = scaffold_plan.get("courseShellReadinessReport") if isinstance(scaffold_plan.get("courseShellReadinessReport"), dict) else {}
     action_plan = scaffold_plan.get("courseShellActionPlan") if isinstance(scaffold_plan.get("courseShellActionPlan"), dict) else {}
     source_acquisition = scaffold_plan.get("sourceAcquisitionPlan") if isinstance(scaffold_plan.get("sourceAcquisitionPlan"), dict) else {}
+    active_generation_course_count = int(scaffold_plan.get("activeGenerationCourseCount") or 0)
+    generation_policy = scaffold_plan.get("generationPolicy") if isinstance(scaffold_plan.get("generationPolicy"), dict) else {}
     quality_gates = _items(quality.get("gates"))
     task_metrics = _course_task_metrics(scaffold_plan)
     benchmark_count = len(_items(benchmark_context.get("curriculumBenchmarks")))
@@ -159,6 +161,8 @@ def build_program_generation_timeline(payload: dict[str, Any]) -> dict[str, Any]
                 "courseShellReadinessReport": shell_readiness,
                 "courseShellActionPlan": action_plan,
                 "sourceAcquisitionPlan": source_acquisition,
+                "activeGenerationCourseCount": active_generation_course_count,
+                "generationPolicy": generation_policy,
                 **task_metrics,
             },
         ),
@@ -173,6 +177,8 @@ def build_program_generation_timeline(payload: dict[str, Any]) -> dict[str, Any]
                 "courseShellReadinessReport": shell_readiness,
                 "courseShellActionPlan": action_plan,
                 "sourceAcquisitionPlan": source_acquisition,
+                "activeGenerationCourseCount": active_generation_course_count,
+                "generationPolicy": generation_policy,
                 **task_metrics,
             },
         ),

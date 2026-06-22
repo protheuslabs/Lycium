@@ -48,6 +48,31 @@ def _staged_module_messages(
                         "Those numbers are 1-based indexes into the course-wide source inventory; this section will render only its locally used sources sorted by that course-wide number. "
                         "Do not cite sources that are not assigned to the section."
                     ),
+                    "assessment_instruction": (
+                        "Assessment does not always mean quiz. Use quiz blocks for short or longer tests, and use project blocks for projects, labs, simulations, portfolio tasks, or rubric-graded applied evidence. "
+                        "Project blocks must live in Apply sections and include instructions, requiredEvidence, rubric.criteria, submission.acceptedTypes, and graderWorkflow metadata."
+                    ),
+                    "project_section_shape_when_needed": {
+                        "id": f"module-{module_number}-project",
+                        "title": "Project: Applied module task",
+                        "pageType": "apply",
+                        "sectionType": "project",
+                        "sourceIds": source_ids,
+                        "content": [
+                            {
+                                "type": "project",
+                                "instructions": "Concrete learner-facing project, lab, simulation, or portfolio task.",
+                                "requiredEvidence": ["Submission artifact or answer evidence."],
+                                "rubric": {
+                                    "criteria": [
+                                        {"id": "criterion-1", "label": "Criterion", "points": 4, "description": "What strong work demonstrates."}
+                                    ]
+                                },
+                                "submission": {"acceptedTypes": ["text", "link"]},
+                                "graderWorkflow": {"mode": "agent", "allowedContext": ["course", "sources", "rubric", "submission"]},
+                            }
+                        ],
+                    },
                     "required_shape": {
                         "id": module_outline.get("id") or f"module-{module_number}",
                         "title": module_outline.get("title") or f"{pacing_label} {module_number}",

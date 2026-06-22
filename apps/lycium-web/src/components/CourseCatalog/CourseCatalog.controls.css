@@ -7,6 +7,10 @@
   min-width: 0;
 }
 
+.catalog-toolbar--with-create {
+  grid-template-columns: minmax(8.5rem, max-content) minmax(8rem, max-content) minmax(16rem, 1fr) minmax(0, 28rem);
+}
+
 .catalog-toolbar h2 {
   margin: 0;
   justify-self: start;
@@ -85,6 +89,57 @@
 
 .catalog-dropdown-field .dropdown-trigger {
   min-width: 0;
+}
+
+.catalog-create-button {
+  width: 100%;
+  max-width: 12rem;
+  min-width: 0;
+  min-height: 2.55rem;
+  border: 1px solid #d8deea;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.48rem;
+  padding: 0 0.86rem;
+  white-space: nowrap;
+  color: #27324a;
+  background: rgba(255, 255, 255, 0.94);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 850;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+.catalog-create-button:hover {
+  background: #eef3ff;
+}
+
+.catalog-create-button:focus,
+.catalog-create-button:focus-visible,
+.catalog-create-button:active {
+  outline: none;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+.catalog-create-button-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #ffffff;
+  background: #27324a;
+}
+
+.catalog-create-button-icon svg {
+  width: 0.78rem;
+  height: 0.78rem;
+  fill: currentColor;
 }
 
 .create-course-dropdown {

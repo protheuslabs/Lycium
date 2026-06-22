@@ -224,6 +224,21 @@ async function seedProgramRequirementSourceGapCourse(page: Page) {
         metadata: {
           status: "needs_sources",
           scaffoldCourseId: "local-se-computing-systems",
+          generationReadiness: {
+            contractVersion: "course-generation-readiness-v1",
+            status: "needs_sources",
+            ready: false,
+            sourceEvidence: { sourceUrlCount: 0, usableInputArtifactCount: 0, submittedEvidenceCount: 0, minimumCourseSources: 3 },
+            conceptCoverage: {
+              status: "needs_sources",
+              coverageRatio: 0,
+              minimumCoverageRatio: 0.7,
+              requiredConceptCount: 2,
+              coveredConceptCount: 0,
+              uncoveredConcepts: ["operating systems", "computer architecture"],
+            },
+            issues: [{ code: "minimum_source_evidence", message: "Add at least 3 relevant source evidence items before generation." }],
+          },
           sourceGaps: [
             {
               id: "gap-computing-systems",
@@ -260,6 +275,60 @@ async function seedProgramRequirementSourceGapCourse(page: Page) {
   });
 }
 
+async function seedApiBackedSourceGapCourse(page: Page) {
+  await page.addInitScript(() => {
+    const sourceGapCourse = {
+      key: "e2e-source-gap-resume-files",
+      title: "E2E Source Gap Resume Files Course",
+      source: "local",
+      status: "needs_sources",
+      snapshotId: 616161,
+      data: {
+        title: "E2E Source Gap Resume Files Course",
+        shortDescription: "A seeded API-backed draft that can resume from uploaded source files.",
+        category: "natural-sciences-mathematics",
+        department: "chemistry",
+        tags: ["e2e", "source gap", "files"],
+        sourceIds: [],
+        sourceRecords: [],
+        metadata: {
+          status: "needs_sources",
+          sourceGaps: [
+            {
+              id: "gap-solid-state",
+              scopeType: "course",
+              scopeId: "e2e-source-gap-resume-files",
+              title: "Add solid-state chemistry files",
+              neededFor: "Concept source coverage",
+              requiredConcepts: ["thermal equilibrium", "crystal lattice"],
+              recommendedSourceTypes: ["syllabus", "open_textbook", "lecture_notes"],
+              minimumUsefulSources: 3,
+              currentSourceCount: 1,
+              severity: "blocking",
+            },
+          ],
+        },
+        modules: [
+          {
+            id: "source-gap-module",
+            title: "Source coverage needed",
+            sections: [
+              {
+                id: "source-gap-section",
+                title: "Add sources to continue",
+                pageType: "learn",
+                sectionType: "source-gap",
+                content: [{ type: "text", value: "Add source evidence before this course is generated." }],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    window.localStorage.setItem("lycium-local-course-drafts", JSON.stringify([sourceGapCourse]));
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.clear();
@@ -269,20 +338,90 @@ test.beforeEach(async ({ page }) => {
 
 test("program requirement source warnings open the source-gap modal", async ({ page }) => {
   await seedProgramRequirementSourceGapCourse(page);
-  await page.goto("/Lycium/catalog/full-stack-engineer-program-full-stack-engineer");
-
-  const firstCluster = page.locator(".program-showcase-card").filter({ hasText: "Foundations" }).first();
-  await expect(firstCluster).toBeVisible();
-  await firstCluster.click();
-
-  const addSourceButton = page.locator(".catalog-requirement-source-warning").getByRole("button", { name: "Add source" }).first();
-  await expect(addSourceButton).toBeVisible();
-  await addSourceButton.click();
+  await page.goto("/Lycium/catalog");
+  await page.getByPlaceholder("Search names, tags, and departments").fill("Computing Systems Foundations");
+  await page.locator(".course-card").filter({ hasText: "Computing Systems Foundations" }).first().click();
 
   const dialog = page.getByRole("dialog").first();
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("Sources needed");
+  const readiness = dialog.getByLabel("Generation readiness");
+  await expect(readiness).toContainText("Needs sources");
+  await expect(readiness).toContainText("0/3");
+  await expect(readiness).toContainText("operating systems");
+  await expect(readiness).toContainText("computer architecture");
   await expect(page.getByLabel("Source URL")).toBeVisible();
+});
+
+test("source-gap modal resumes API-backed draft with uploaded files", async ({ page }) => {
+  await seedApiBackedSourceGapCourse(page);
+  const returnedArtifacts = [
+    {
+      id: "solid-state-notes",
+      kind: "text",
+      filename: "solid-state-notes.txt",
+      title: "solid-state-notes.txt",
+      mimeType: "text/plain",
+      sourceUrl: "",
+      sourceDocumentUrl: "artifact://solid-state-notes",
+      extractedText: "Thermal equilibrium and crystal lattice concepts for solid-state chemistry.",
+      extractionStatus: "extracted",
+      extractionWarnings: [],
+      textLength: 73,
+      contentHash: "hash-solid-state-notes",
+      reader: { contractVersion: "lycium-file-reader-v1", adapter: "lycium-local" },
+    },
+  ];
+  let fileReaderPayload: { files?: Array<{ filename?: string; base64?: string }> } | null = null;
+  let resumePayload: { source_urls?: string[]; input_artifacts?: unknown[] } | null = null;
+
+  await page.route("**/v1/input-artifacts/read", async (route) => {
+    fileReaderPayload = route.request().postDataJSON();
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        contractVersion: "lycium-file-reader-v1",
+        provider: "lycium-local",
+        replaceableBy: "infring-os-file-reader",
+        artifactCount: returnedArtifacts.length,
+        extractedArtifactCount: returnedArtifacts.length,
+        artifacts: returnedArtifacts,
+      }),
+    });
+  });
+  await page.route("**/v1/courses/616161/source-gaps/resume", async (route) => {
+    resumePayload = route.request().postDataJSON();
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 616162,
+        status: "queued",
+        progress: 0,
+        message: "Course generation resumed.",
+        request: resumePayload,
+      }),
+    });
+  });
+
+  await page.goto("/Lycium/catalog");
+  await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Source Gap Resume Files Course");
+  await page.locator(".course-card").filter({ hasText: "E2E Source Gap Resume Files Course" }).first().click();
+
+  const dialog = page.getByRole("dialog", { name: "E2E Source Gap Resume Files Course" });
+  await expect(dialog).toBeVisible();
+  await page.getByLabel("Source files").setInputFiles({
+    name: "solid-state-notes.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("Thermal equilibrium and crystal lattice concepts for solid-state chemistry."),
+  });
+  await expect(page.getByText("solid-state-notes.txt")).toBeVisible();
+  await dialog.getByRole("button", { name: "Add source and resume" }).click();
+
+  await expect.poll(() => resumePayload).not.toBeNull();
+  expect(fileReaderPayload?.files?.map((file) => file.filename)).toEqual(["solid-state-notes.txt"]);
+  expect(fileReaderPayload?.files?.every((file) => Boolean(file.base64))).toBe(true);
+  expect(resumePayload?.source_urls).toEqual([]);
+  expect(resumePayload?.input_artifacts).toEqual(returnedArtifacts);
 });
 
 test("section refresh is blocked for non API-backed course pages", async ({ page }) => {

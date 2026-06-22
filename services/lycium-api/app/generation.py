@@ -7,8 +7,8 @@ from app.generation_course_builder import (
     generate_course_from_draft,
     refresh_course,
     regenerate_section,
-    source_count_meets_minimum,
 )
+from app.course_source_gaps import source_count_meets_minimum
 from app.generation_helpers import COURSE_GENERATION_RULES
 from app.generation_outline import build_outline, create_draft
 from app.generation_programs import ask_instructor, generate_program, validate_learner_exists

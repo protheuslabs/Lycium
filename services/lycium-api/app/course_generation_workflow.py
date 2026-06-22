@@ -294,7 +294,10 @@ def _gate_section_structure(course: dict[str, Any]) -> GateResult:
                 issues.append(_issue("error", "Quiz sections must not mix quiz blocks with instructional content.", location))
             if has_quiz and section.get("pageType") != "apply":
                 issues.append(_issue("error", "Quiz sections must use pageType apply.", location))
-    return _gate("section_structure", "Learn/Apply sections and quiz separation were checked.", issues)
+            has_project = any(_is_project_block(block) for block in blocks)
+            if has_project and section.get("pageType") != "apply":
+                issues.append(_issue("error", "Project, lab, simulation, and submission sections must use pageType apply.", location))
+    return _gate("section_structure", "Learn/Apply sections, quiz separation, and applied-evidence placement were checked.", issues)
 
 
 def _gate_content_draft(course: dict[str, Any]) -> GateResult:
@@ -318,22 +321,106 @@ def _gate_content_draft(course: dict[str, Any]) -> GateResult:
 def _gate_assessment(course: dict[str, Any]) -> GateResult:
     issues: list[GateIssue] = []
     quiz_count = 0
+    project_count = 0
     for module_index, module in enumerate(_modules(course), start=1):
         module_quiz_count = 0
+        module_project_count = 0
         for section_index, section in enumerate(_sections(module), start=1):
             for block_index, block in enumerate(_content(section), start=1):
-                if not _is_quiz_block(block):
+                if _is_quiz_block(block):
+                    quiz_count += 1
+                    module_quiz_count += 1
+                    question_count = _question_count(block)
+                    if question_count == 0:
+                        issues.append(_issue("error", "Quiz or exam block must include questions.", f"modules[{module_index}].sections[{section_index}].content[{block_index}]"))
+                    elif question_count < 10:
+                        issues.append(_issue("warning", "Quiz or exam block has fewer than 10 questions.", f"modules[{module_index}].sections[{section_index}].content[{block_index}]"))
+                elif _is_project_block(block):
+                    project_count += 1
+                    module_project_count += 1
+        if module_quiz_count == 0 and module_project_count == 0:
+            issues.append(_issue("warning", "Module should include mastery evidence such as a quiz, longer test, project, lab, simulation, or rubric-graded submission.", f"modules[{module_index}]"))
+    return _gate(
+        "assessment",
+        "Mastery evidence was checked across quizzes, longer tests, projects, labs, simulations, and submissions.",
+        issues,
+        {"quizCount": quiz_count, "projectCount": project_count},
+    )
+
+
+def _is_project_block(block: Any) -> bool:
+    return isinstance(block, dict) and str(block.get("type") or "").strip() == "project"
+
+
+def _has_nonempty_text(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _project_has_rubric(project: dict[str, Any]) -> bool:
+    rubric = project.get("rubric")
+    if isinstance(rubric, dict):
+        criteria = rubric.get("criteria")
+        return isinstance(criteria, list) and bool(criteria)
+    return False
+
+
+def _project_has_submission_policy(project: dict[str, Any]) -> bool:
+    submission = project.get("submission")
+    if not isinstance(submission, dict):
+        return False
+    accepted_types = submission.get("acceptedTypes") or submission.get("acceptedInputTypes")
+    return isinstance(accepted_types, list) and bool(accepted_types)
+
+
+def _project_has_grader_workflow(project: dict[str, Any]) -> bool:
+    workflow = project.get("graderWorkflow")
+    return isinstance(workflow, dict) and bool(workflow)
+
+
+def _gate_projects(course: dict[str, Any]) -> GateResult:
+    issues: list[GateIssue] = []
+    project_count = 0
+    rubric_count = 0
+    submission_policy_count = 0
+    grader_workflow_count = 0
+    for module_index, module in enumerate(_modules(course), start=1):
+        for section_index, section in enumerate(_sections(module), start=1):
+            for block_index, block in enumerate(_content(section), start=1):
+                if not _is_project_block(block):
                     continue
-                quiz_count += 1
-                module_quiz_count += 1
-                question_count = _question_count(block)
-                if question_count == 0:
-                    issues.append(_issue("error", "Quiz block must include questions.", f"modules[{module_index}].sections[{section_index}].content[{block_index}]"))
-                elif question_count < 10:
-                    issues.append(_issue("warning", "Quiz block has fewer than 10 questions.", f"modules[{module_index}].sections[{section_index}].content[{block_index}]"))
-        if module_quiz_count == 0:
-            issues.append(_issue("warning", "Module should include at least one quiz.", f"modules[{module_index}]"))
-    return _gate("assessment", "Quiz presence, separation, and minimum question counts were checked.", issues, {"quizCount": quiz_count})
+                project = block
+                project_count += 1
+                location = f"modules[{module_index}].sections[{section_index}].content[{block_index}]"
+                if section.get("pageType") != "apply":
+                    issues.append(_issue("error", "Project blocks must live in Apply sections.", location))
+                if not _has_nonempty_text(project.get("instructions") or project.get("description")):
+                    issues.append(_issue("error", "Project block must include learner-facing instructions.", location))
+                required_evidence = project.get("requiredEvidence")
+                if not isinstance(required_evidence, list) or not required_evidence:
+                    issues.append(_issue("warning", "Project block should list required evidence artifacts.", location))
+                if _project_has_rubric(project):
+                    rubric_count += 1
+                else:
+                    issues.append(_issue("error", "Project block must include a rubric with criteria.", location))
+                if _project_has_submission_policy(project):
+                    submission_policy_count += 1
+                else:
+                    issues.append(_issue("error", "Project block must include a submission policy with accepted input types.", location))
+                if _project_has_grader_workflow(project):
+                    grader_workflow_count += 1
+                else:
+                    issues.append(_issue("warning", "Project block should include grader workflow metadata.", location))
+    return _gate(
+        "projects",
+        "Applied project, lab, simulation, and submission blocks were checked for rubric-gradeable structure.",
+        issues,
+        {
+            "projectCount": project_count,
+            "rubricCount": rubric_count,
+            "submissionPolicyCount": submission_policy_count,
+            "graderWorkflowCount": grader_workflow_count,
+        },
+    )
 
 
 def _gate_media(course: dict[str, Any]) -> GateResult:
@@ -471,6 +558,7 @@ _COURSE_GATE_RUNNERS = {
     "section_structure": _gate_section_structure,
     "content_draft": _gate_content_draft,
     "assessment": _gate_assessment,
+    "projects": _gate_projects,
     "media": _gate_media,
     "summary": _gate_summary,
     "validation": _gate_validation,

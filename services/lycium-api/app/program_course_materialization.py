@@ -128,6 +128,8 @@ def _annotate_snapshot(
     short_description = f"Draft course shell for the {cluster_title} cluster. Add sources before generating full content."
     prerequisite_course_ids = _prerequisite_course_ids(scaffold_course)
     course_build_task = _course_build_task(scaffold_course)
+    active_generation_plan = scaffold_course.get("activeGenerationPlan")
+    course_wrapper = scaffold_course.get("courseWrapper")
 
     metadata.update(
         {
@@ -140,8 +142,10 @@ def _annotate_snapshot(
             "scaffoldCourseId": _text(scaffold_course.get("courseId")),
             "prerequisiteCourseIds": prerequisite_course_ids,
             "courseBuildTask": course_build_task,
+            "activeGenerationPlan": active_generation_plan if isinstance(active_generation_plan, dict) else None,
+            "courseWrapper": course_wrapper if isinstance(course_wrapper, dict) else None,
             "courseScaffoldAction": "create_empty_course",
-            "courseScaffoldStatus": "needs_course_buildout",
+            "courseScaffoldStatus": "course_wrapper_needs_sources",
         }
     )
     structure.update(
@@ -166,6 +170,8 @@ def _annotate_snapshot(
         "scaffoldCourseId": metadata["scaffoldCourseId"],
         "prerequisiteCourseIds": prerequisite_course_ids,
         "courseBuildTask": course_build_task,
+        "activeGenerationPlan": active_generation_plan if isinstance(active_generation_plan, dict) else None,
+        "courseWrapper": course_wrapper if isinstance(course_wrapper, dict) else None,
     }
     flag_modified(snapshot, "structure")
     flag_modified(snapshot, "generation_trace")

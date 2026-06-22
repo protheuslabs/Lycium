@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.analytics import analytics_summary, record_event, upsert_progress
+from app.active_course_generation import generate_active_course_batch
 from app.coverage import recompute_coverage
 from app.course_agent_harness import (
     CourseAgentError,
@@ -65,6 +66,7 @@ from app.retrieval import assemble_learning_packet, search_knowledge_objects
 from app.schemas import (
     AnalyticsSummaryRead,
     ApproveOutlineRequest,
+    ActiveCourseGenerationBatchRequest,
     AskInstructorRequest,
     AskInstructorResponse,
     CourseDraftRead,
@@ -293,6 +295,31 @@ def register(app: FastAPI) -> None:
         except CourseAgentError as exc:
             session.rollback()
             raise HTTPException(status_code=502, detail=str(exc)) from exc
+        except ValueError as exc:
+            session.rollback()
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+    @app.post("/v1/courses/{course_snapshot_id}/active-generation/generate-next-batch", response_model=CourseSnapshotRead)
+    def generate_active_course_batch_endpoint(
+        course_snapshot_id: int,
+        payload: ActiveCourseGenerationBatchRequest,
+        session: Session = Depends(get_session),
+    ) -> CourseSnapshot:
+        row = session.get(CourseSnapshot, course_snapshot_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Course snapshot not found")
+        try:
+            updated = generate_active_course_batch(
+                row,
+                source_packet=payload.source_packet,
+                batch_index=payload.batch_index,
+                module_count=payload.module_count,
+            )
+            session.commit()
+            session.refresh(updated)
+            save_course_snapshot(updated)
+            return updated
         except ValueError as exc:
             session.rollback()
             raise HTTPException(status_code=400, detail=str(exc)) from exc

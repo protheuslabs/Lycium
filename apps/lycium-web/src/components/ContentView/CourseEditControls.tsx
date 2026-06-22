@@ -11,7 +11,7 @@ type DeleteBlockButtonProps = {
   onClick: () => void;
 };
 
-export type CourseEditBlockKind = "text" | "card" | "video" | "iframe" | "heading" | "quiz";
+export type CourseEditBlockKind = "text" | "card" | "video" | "iframe" | "heading" | "quiz" | "project";
 
 const blockTypeOptions: Array<{
   kind: CourseEditBlockKind;
@@ -75,6 +75,15 @@ const blockTypeOptions: Array<{
     placeholder: "Write the quiz title.",
     defaultValue: "Quiz title",
     rows: 2,
+  },
+  {
+    kind: "project",
+    label: "Project",
+    description: "Applied project page with instructions, rubric, submission policy, and agent grading metadata.",
+    fieldLabel: "Project instructions",
+    placeholder: "Describe what the learner should build, submit, or prove.",
+    defaultValue: "Create a project artifact that applies the ideas from this course section.",
+    rows: 7,
   },
 ];
 

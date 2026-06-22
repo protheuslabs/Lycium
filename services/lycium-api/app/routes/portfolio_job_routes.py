@@ -251,7 +251,6 @@ def register(app: FastAPI) -> None:
         courses = list(
             session.scalars(
                 select(CourseSnapshot)
-                .where(CourseSnapshot.status == "published")
                 .order_by(CourseSnapshot.created_at.desc())
                 .limit(12)
             )

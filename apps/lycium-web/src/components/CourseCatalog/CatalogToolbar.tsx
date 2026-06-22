@@ -21,6 +21,7 @@ type CatalogToolbarProps = {
   searchQuery: string;
   sortMode: CatalogSortMode;
   pathSortMode: CatalogPathSortMode;
+  canCreateCourseInScope: boolean;
   activeFilterCount: number;
   showLockedCourses: boolean;
   collegeFilter: string;
@@ -34,6 +35,7 @@ type CatalogToolbarProps = {
   onSearchQueryChange: (value: string) => void;
   onSortModeChange: (value: string) => void;
   onPathSortModeChange: (value: string) => void;
+  onCreateCourse: () => void;
   onShowLockedCoursesChange: (checked: boolean) => void;
   onCollegeFilterChange: (value: string) => void;
   onDepartmentFilterChange: (value: string) => void;
@@ -47,6 +49,7 @@ export default function CatalogToolbar({
   searchQuery,
   sortMode,
   pathSortMode,
+  canCreateCourseInScope,
   activeFilterCount,
   showLockedCourses,
   collegeFilter,
@@ -60,6 +63,7 @@ export default function CatalogToolbar({
   onSearchQueryChange,
   onSortModeChange,
   onPathSortModeChange,
+  onCreateCourse,
   onShowLockedCoursesChange,
   onCollegeFilterChange,
   onDepartmentFilterChange,
@@ -79,7 +83,17 @@ export default function CatalogToolbar({
   const handleSortChange = isCourseView ? onSortModeChange : onPathSortModeChange;
 
   return (
-    <div className="catalog-toolbar">
+    <div className={`catalog-toolbar${canCreateCourseInScope ? " catalog-toolbar--with-create" : ""}`}>
+      {canCreateCourseInScope && (
+        <button className="catalog-create-button" type="button" onClick={onCreateCourse}>
+          <span className="catalog-create-button-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
+            </svg>
+          </span>
+          <span>Add Course</span>
+        </button>
+      )}
       <label className="catalog-view-field">
         <Dropdown
           className="catalog-view-dropdown"

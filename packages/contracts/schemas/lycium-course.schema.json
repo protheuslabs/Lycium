@@ -27,7 +27,55 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "pacingLabel": { "enum": ["Module", "Week"] }
+        "pacingLabel": { "enum": ["Module", "Week"] },
+        "generationReadiness": {
+          "type": ["object", "null"],
+          "additionalProperties": true,
+          "properties": {
+            "contractVersion": { "type": "string" },
+            "status": { "type": "string" },
+            "ready": { "type": "boolean" },
+            "sourceEvidence": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "sourceUrlCount": { "type": "number", "minimum": 0 },
+                "usableInputArtifactCount": { "type": "number", "minimum": 0 },
+                "submittedEvidenceCount": { "type": "number", "minimum": 0 },
+                "minimumCourseSources": { "type": "number", "minimum": 0 }
+              }
+            },
+            "conceptCoverage": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "status": { "type": "string" },
+                "coverageRatio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "minimumCoverageRatio": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+                "requiredConceptCount": { "type": ["number", "null"], "minimum": 0 },
+                "coveredConceptCount": { "type": ["number", "null"], "minimum": 0 },
+                "uncoveredConcepts": { "type": "array", "items": { "type": "string" } },
+                "coverageRows": { "type": "array", "items": { "type": "object", "additionalProperties": true } }
+              }
+            },
+            "sourceGate": {
+              "type": ["object", "null"],
+              "additionalProperties": true
+            },
+            "issues": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": true,
+                "required": ["message"],
+                "properties": {
+                  "code": { "type": "string" },
+                  "message": { "type": "string", "minLength": 1 }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "modules": {

@@ -269,6 +269,13 @@ def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
     missing = sorted(referenced - declared)
     if missing and declared:
         findings.append(_finding("error", f"Referenced sourceIds are missing sourceRecords: {', '.join(missing[:10])}."))
+    for issue in integrity.get("issues", []):
+        if not isinstance(issue, dict):
+            continue
+        severity = "error" if issue.get("severity") == "error" else "warning"
+        message = str(issue.get("message") or "").strip()
+        if message:
+            findings.append(_finding(severity, message, str(issue.get("location") or "") or None))
     direct_concept_ratio = float(integrity_metrics.get("directConceptSourceCoveragePercent") or 0) / 100
     direct_block_ratio = float(integrity_metrics.get("directBlockSourceCoveragePercent") or 0) / 100
     if integrity_metrics.get("conceptCount", 0) and direct_concept_ratio < 0.85:
@@ -294,6 +301,5 @@ def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
     source_ratio = sourced_sections / section_count if section_count else 0
     diversity_score = min(1.0, len(declared) / 3)
     score = source_ratio * 0.25 + diversity_score * 0.25 + direct_concept_ratio * 0.25 + direct_block_ratio * 0.15 + (0.1 if not missing else 0)
-    return _dimension(key="source_grounding", label="Source grounding", weight=0.16, score=score, findings=findings, metrics={"sourceRecordCount": len(declared), "referencedSourceIdCount": len(referenced), "sourcedSectionRatio": round(source_ratio, 2), "directConceptSourceCoveragePercent": integrity_metrics.get("directConceptSourceCoveragePercent"), "directBlockSourceCoveragePercent": integrity_metrics.get("directBlockSourceCoveragePercent")})
-
+    return _dimension(key="source_grounding", label="Source grounding", weight=0.16, score=score, findings=findings, metrics={"sourceRecordCount": len(declared), "referencedSourceIdCount": len(referenced), "sourcedSectionRatio": round(source_ratio, 2), "directConceptSourceCoveragePercent": integrity_metrics.get("directConceptSourceCoveragePercent"), "directBlockSourceCoveragePercent": integrity_metrics.get("directBlockSourceCoveragePercent"), "citationIssueCount": integrity_metrics.get("citationIssueCount"), "inlineCitationIssueCount": integrity_metrics.get("inlineCitationIssueCount"), "blanketSourceSectionCount": integrity_metrics.get("blanketSourceSectionCount")})
 

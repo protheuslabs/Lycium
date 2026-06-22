@@ -64,6 +64,32 @@ export type LyciumCourseSourceCoveragePolicy = {
   requireAssessmentCoverage?: boolean;
 };
 
+export type LyciumCourseGenerationReadiness = {
+  contractVersion?: "course-generation-readiness-v1" | string;
+  status?: "ready" | "needs_sources" | string;
+  ready?: boolean;
+  sourceEvidence?: {
+    sourceUrlCount?: number;
+    usableInputArtifactCount?: number;
+    submittedEvidenceCount?: number;
+    minimumCourseSources?: number;
+    [key: string]: unknown;
+  };
+  conceptCoverage?: {
+    status?: "ready" | "needs_sources" | string;
+    coverageRatio?: number | null;
+    minimumCoverageRatio?: number | null;
+    requiredConceptCount?: number | null;
+    coveredConceptCount?: number | null;
+    uncoveredConcepts?: string[];
+    coverageRows?: Record<string, unknown>[];
+    [key: string]: unknown;
+  };
+  sourceGate?: Record<string, unknown> | null;
+  issues?: { code?: string; message: string }[];
+  [key: string]: unknown;
+};
+
 export type LyciumCourseSourceGapSuggestion = {
   id?: string;
   gapId: string;

@@ -22,6 +22,11 @@
   gap: 1.35rem;
 }
 
+.lycium-modal.settings-modal-content {
+  max-height: none;
+  overflow: visible;
+}
+
 .settings-modal-backdrop {
   position: fixed;
   inset: 0;

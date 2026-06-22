@@ -1,8 +1,9 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import type { CourseEntry } from "../../courseTypes";
 import Dropdown from "../Dropdown/Dropdown";
 import Modal from "../Modal/Modal";
 import {
+  getCourseGenerationReadiness,
   getCourseSourceGapSuggestions,
   sourceGapConceptCoverage,
   sourceGapMinimumUsefulSources,
@@ -14,15 +15,17 @@ import {
 type CourseSourceGapModalProps = {
   course: CourseEntry;
   onClose: () => void;
-  onQueueSource: (course: CourseEntry, gapId: string, url: string, description: string) => void | Promise<void>;
+  onQueueSource: (course: CourseEntry, gapId: string, url: string, description: string, files: File[]) => void | Promise<void>;
 };
 
 export default function CourseSourceGapModal({ course, onClose, onQueueSource }: CourseSourceGapModalProps) {
   const summary = sourceGapSummary(course);
+  const readiness = getCourseGenerationReadiness(course);
   const suggestions = getCourseSourceGapSuggestions(course);
   const firstGapId = summary.gaps[0]?.id ?? "";
   const [selectedGapId, setSelectedGapId] = useState(firstGapId);
   const [sourceUrl, setSourceUrl] = useState("");
+  const [sourceFiles, setSourceFiles] = useState<File[]>([]);
   const [description, setDescription] = useState("");
   const [queuedCount, setQueuedCount] = useState(0);
   const [submitError, setSubmitError] = useState("");
@@ -48,12 +51,13 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedUrl = sourceUrl.trim();
-    if (!selectedGap || !trimmedUrl) return;
+    if (!selectedGap || (!trimmedUrl && sourceFiles.length === 0)) return;
     setIsSubmitting(true);
     setSubmitError("");
     try {
-      await onQueueSource(course, selectedGap.id, trimmedUrl, description);
+      await onQueueSource(course, selectedGap.id, trimmedUrl, description, sourceFiles);
       setSourceUrl("");
+      setSourceFiles([]);
       setDescription("");
       setQueuedCount((count) => count + 1);
     } catch (err) {
@@ -62,6 +66,13 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
       setIsSubmitting(false);
     }
   };
+  const handleSourceFilesChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setSourceFiles(Array.from(event.target.files ?? []));
+  };
+  const canSubmit = Boolean(selectedGap) && (Boolean(sourceUrl.trim()) || (Boolean(course.snapshotId) && sourceFiles.length > 0));
+  const readinessCoverage = readiness?.conceptCoverage;
+  const readinessEvidence = readiness?.sourceEvidence;
+  const readinessUncoveredConcepts = readinessCoverage?.uncoveredConcepts ?? [];
 
   return (
     <Modal
@@ -104,6 +115,46 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
           <span>Benchmark evidence: {summary.policy.requireBenchmarkEvidence ? "required" : "optional"}</span>
         </div>
       </section>
+      {readiness && (
+        <section className="course-source-gap-readiness" aria-label="Generation readiness">
+          <div>
+            <h3>Generation readiness</h3>
+            <strong>{readiness.ready ? "Ready" : "Needs sources"}</strong>
+          </div>
+          <div className="course-source-gap-readiness-grid">
+            <article>
+              <span>Evidence</span>
+              <strong>
+                {readinessEvidence?.submittedEvidenceCount ?? summary.currentSourceCount}/
+                {readinessEvidence?.minimumCourseSources ?? summary.requiredSourceCount}
+              </strong>
+            </article>
+            <article>
+              <span>Files</span>
+              <strong>{readinessEvidence?.usableInputArtifactCount ?? 0}</strong>
+            </article>
+            <article>
+              <span>Concepts</span>
+              <strong>
+                {readinessCoverage?.coveredConceptCount ?? summary.totalCoveredConcepts}/
+                {readinessCoverage?.requiredConceptCount ?? summary.totalRequiredConcepts}
+              </strong>
+            </article>
+          </div>
+          {Boolean(readinessUncoveredConcepts.length) && (
+            <div className="course-source-gap-readiness-concepts">
+              {readinessUncoveredConcepts.slice(0, 12).map((concept) => (
+                <span key={concept}>{concept}</span>
+              ))}
+            </div>
+          )}
+          {Boolean(readiness.issues?.length) && (
+            <ul className="course-source-gap-readiness-issues">
+              {readiness.issues?.slice(0, 4).map((issue) => <li key={`${issue.code ?? "issue"}-${issue.message}`}>{issue.message}</li>)}
+            </ul>
+          )}
+        </section>
+      )}
       {Boolean(summary.requiredConcepts.length || summary.suggestedSourceTypes.length) && (
         <section className="course-source-gap-overview" aria-label="Required concept and source type overview">
           {Boolean(summary.requiredConcepts.length) && (
@@ -204,6 +255,23 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
           placeholder="https://example.edu/source"
           aria-label="Source URL"
         />
+        <label className="course-source-gap-file-picker">
+          <span>Add files</span>
+          <input
+            type="file"
+            multiple
+            disabled={isSubmitting || !course.snapshotId}
+            onChange={handleSourceFilesChange}
+            aria-label="Source files"
+          />
+        </label>
+        {Boolean(sourceFiles.length) && (
+          <ul className="course-source-gap-file-list" aria-label="Selected source files">
+            {sourceFiles.map((file) => (
+              <li key={`${file.name}-${file.size}`}>{file.name}</li>
+            ))}
+          </ul>
+        )}
         <textarea
           value={description}
           disabled={isSubmitting}
@@ -212,7 +280,7 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
           aria-label="Source fit note"
           rows={3}
         />
-        <button type="submit" disabled={isSubmitting || !selectedGap || !sourceUrl.trim()}>
+        <button type="submit" disabled={isSubmitting || !canSubmit}>
           {isSubmitting ? "Adding..." : course.snapshotId ? "Add source and resume" : "Queue source"}
         </button>
         {submitError && <p className="course-source-gap-error">{submitError}</p>}

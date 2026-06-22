@@ -12,7 +12,7 @@ import TopBar from "./components/TopBar/TopBar";
 import { localCourses } from "./courseData/localCourses";
 import { localPrograms, programBenchmarks } from "./courseData/programs";
 import sourceRecordsData from "./courseData/sourceRecords";
-import type { CourseEntry, CourseSection } from "./courseTypes";
+import type { CourseEntry } from "./courseTypes";
 import { useAgentSettings } from "./hooks/useAgentSettings";
 import { describeAiConnectionReadiness } from "./utils/aiConnectionReadiness";
 import { useConfiguredCourses } from "./hooks/useConfiguredCourses";
@@ -22,11 +22,12 @@ import { useCourseProgressState } from "./hooks/useCourseProgressState";
 import { useCourseSectionRegenerationActions } from "./hooks/useCourseSectionRegenerationActions";
 import { useCourseSourceGapActions } from "./hooks/useCourseSourceGapActions";
 import { useProgramArtifacts } from "./hooks/useProgramArtifacts";
-import { API_BASE, browserStorage, localApiSyncEnabled, lyciumApi, scrollCoursePageToTop } from "./runtime/appRuntime";
+import { API_BASE, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { summarizeCourseProgress } from "./utils/courseProgress";
-import { COURSE_CATALOG_PATH, COURSE_CATALOG_COURSES_PATH, COURSE_CATALOG_PROGRAMS_PATH, LYCIUM_ROUTE_ROOT, SETTINGS_PATH, browserPathForRoute, findBookmarkedSection, getCatalogClusterPath, getCatalogProgramPath, getCoursePath, getCoursePathSlug, getCourseSectionIndex, getCourseSectionPath, getFirstCourseSection, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug, parseCourseRoute } from "./utils/courseRouting";
+import { COURSE_CATALOG_PATH, COURSE_CATALOG_COURSES_PATH, COURSE_CATALOG_PROGRAMS_PATH, LYCIUM_ROUTE_ROOT, SETTINGS_PATH, browserPathForRoute, getCatalogClusterPath, getCatalogProgramPath, getCoursePathSlug, getCourseSectionPath, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug, parseCourseRoute } from "./utils/courseRouting";
 import { mergeCourseEntriesByKey, readPersistedLocalCourseEntries } from "./utils/localCourseDrafts";
 import { readSettingsBackdropPath, writeSettingsBackdropPath } from "./utils/settingsRouteState";
+import { useCourseRouteNavigation } from "./hooks/useCourseRouteNavigation";
 
 function App() {
   const router = useRouter();
@@ -242,74 +243,13 @@ function App() {
     setPageBehindSettingsPath(targetPath);
   }, [pageBehindSettingsPath, router]);
 
-  const rememberCourseSection = useCallback((course: CourseEntry, section: CourseSection, path: string) => {
-    const bookmark = {
-      course_key: course.key,
-      course_title: course.title,
-      section_id: section.id,
-      section_title: section.title,
-      path,
-    };
-    browserStorage.writeBookmark(course.key, bookmark);
-    if (localApiSyncEnabled) {
-      lyciumApi.saveBookmark(bookmark).catch((err) => console.warn("Failed to save course bookmark:", err));
-    }
-  }, []);
-
-  const pushSectionPath = useCallback(
-    (course: CourseEntry, section: CourseSection, replace = false) => {
-      const nextPath = getCourseSectionPath(course, section);
-      if (currentPathRef.current !== nextPath) {
-        if (typeof window !== "undefined") {
-          window.history[replace ? "replaceState" : "pushState"](null, "", browserPathForRoute(nextPath));
-        } else if (replace) {
-          router.replace(nextPath);
-        } else {
-          router.push(nextPath);
-        }
-      }
-      currentPathRef.current = nextPath;
-      setCurrentPath(nextPath);
-      rememberCourseSection(course, section, nextPath);
-      scrollCoursePageToTop();
-    },
-    [rememberCourseSection, router],
-  );
-
-  const openCourseByEntry = useCallback(
-    async (course: CourseEntry, replace = false) => {
-      setCurrentCourseKey(course.key);
-      let targetSection = findBookmarkedSection(course, browserStorage.readBookmark(course.key));
-      if (!targetSection && localApiSyncEnabled) {
-        try {
-          targetSection = findBookmarkedSection(course, await lyciumApi.loadBookmark(course.key));
-        } catch (err) {
-          console.warn("Local bookmark unavailable:", err);
-        }
-      }
-
-      const sectionToOpen = targetSection ?? getFirstCourseSection(course);
-      if (sectionToOpen) {
-        const sectionIndex = getCourseSectionIndex(course, sectionToOpen);
-        setCurrentSectionIndex(sectionIndex >= 0 ? sectionIndex : 0);
-        pushSectionPath(course, sectionToOpen, replace);
-        return;
-      }
-
-      const nextPath = getCoursePath(course);
-      if (typeof window !== "undefined") {
-        window.history[replace ? "replaceState" : "pushState"](null, "", browserPathForRoute(nextPath));
-      } else if (replace) {
-        router.replace(nextPath);
-      } else {
-        router.push(nextPath);
-      }
-      currentPathRef.current = nextPath;
-      setCurrentPath(nextPath);
-      scrollCoursePageToTop();
-    },
-    [pushSectionPath, router],
-  );
+  const { openCourseByEntry, pushSectionPath, rememberCourseSection } = useCourseRouteNavigation({
+    router,
+    currentPathRef,
+    setCurrentPath,
+    setCurrentCourseKey,
+    setCurrentSectionIndex,
+  });
 
   const handleManualCourseCreated = useCallback((course: CourseEntry) => {
     setCourseKeyToOpenInEditMode(course.key);

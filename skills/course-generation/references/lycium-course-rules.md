@@ -15,6 +15,10 @@
 - Treat course equivalency records as reference/parity metadata, not as formal transfer credit or articulation agreements unless the source explicitly supports that claim.
 - Planned catalog-visible course wrappers should also include `metadata.prerequisiteCourseIds`.
 - Empty planned course wrappers may use `modules: []` until the course is built out.
+- Program generation, cluster generation, course-wrapper generation, and course-content generation should be separate workflows.
+- Cluster generation should search existing courses and inspect internal fit evidence such as module titles, section titles, concept cards, tags, descriptions, and taxonomy before linking an existing course to a requirement.
+- Missing or uncertain courses should become explicit wrappers with source needs, prerequisite metadata, generation prompts, and active-generation plans instead of hollow full courses.
+- Active generation may materialize large courses in module batches, usually two modules at a time, while ungenerated sections remain explicit `not_generated` states with learner-facing placeholder text such as `Section not yet generated`.
 
 ## Pseudo Workflow
 

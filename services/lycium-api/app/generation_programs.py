@@ -329,11 +329,40 @@ def _known_course_records(session: Session) -> list[dict[str, Any]]:
     for snapshot in session.query(CourseSnapshot).limit(500).all():
         structure = snapshot.structure if isinstance(snapshot.structure, dict) else {}
         course_id = structure.get("courseId") or structure.get("id") or structure.get("key")
+        modules = structure.get("modules") if isinstance(structure.get("modules"), list) else []
+        module_titles: list[str] = []
+        section_titles: list[str] = []
+        concept_titles: list[str] = []
+        for module in modules:
+            if not isinstance(module, dict):
+                continue
+            if isinstance(module.get("title"), str):
+                module_titles.append(module["title"])
+            sections = module.get("sections") if isinstance(module.get("sections"), list) else []
+            for section in sections:
+                if not isinstance(section, dict):
+                    continue
+                if isinstance(section.get("title"), str):
+                    section_titles.append(section["title"])
+                content = section.get("content") if isinstance(section.get("content"), list) else []
+                for block in content:
+                    if not isinstance(block, dict) or block.get("type") != "conceptCard":
+                        continue
+                    concept_title = block.get("title") or block.get("name")
+                    if isinstance(concept_title, str):
+                        concept_titles.append(concept_title)
         records.append({
             "courseId": str(course_id or f"snapshot-{snapshot.id}"),
             "title": snapshot.title,
             "snapshotId": snapshot.id,
             "status": snapshot.status,
+            "shortDescription": structure.get("shortDescription"),
+            "category": structure.get("category"),
+            "department": structure.get("department"),
+            "tags": structure.get("tags") if isinstance(structure.get("tags"), list) else [],
+            "moduleTitles": module_titles[:40],
+            "sectionTitles": section_titles[:120],
+            "conceptTitles": concept_titles[:120],
         })
     return records
 

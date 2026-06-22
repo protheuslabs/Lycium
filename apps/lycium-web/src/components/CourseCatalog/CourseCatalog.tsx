@@ -46,7 +46,7 @@ type CourseCatalogProps = {
   ) => void;
   onOpenCourse: (course: CourseEntry) => void;
   onQueueCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
-  onResumeCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
+  onResumeCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string, files: File[]) => void;
   onCatalogDrilldown: (
     viewLevel: CatalogViewLevel,
     program?: LyciumProgram | null,
@@ -147,7 +147,7 @@ export default function CourseCatalog({
       const rowsPerPage = window.matchMedia("(max-width: 860px)").matches
         ? CATALOG_MOBILE_ROWS_PER_PAGE
         : CATALOG_DESKTOP_ROWS_PER_PAGE;
-      const leadingCatalogCards = (canCreateCourseInScope ? 1 : 0) + (isGeneratingCourse ? 1 : 0);
+      const leadingCatalogCards = isGeneratingCourse ? 1 : 0;
       const nextCoursesPerPage = Math.max(1, columns * rowsPerPage - leadingCatalogCards);
       setCoursesPerPage(nextCoursesPerPage);
     };
@@ -161,7 +161,7 @@ export default function CourseCatalog({
       observer.disconnect();
       window.removeEventListener("resize", updateCoursesPerPage);
     };
-  }, [canCreateCourseInScope, catalogControls.catalogViewLevel, isGeneratingCourse]);
+  }, [catalogControls.catalogViewLevel, isGeneratingCourse]);
 
   return (
     <div className="catalog-shell">
@@ -172,6 +172,7 @@ export default function CourseCatalog({
             searchQuery={catalogControls.searchQuery}
             sortMode={catalogControls.sortMode}
             pathSortMode={catalogControls.pathSortMode}
+            canCreateCourseInScope={canCreateCourseInScope}
             activeFilterCount={catalogControls.activeFilterCount}
             showLockedCourses={catalogControls.showLockedCourses}
             collegeFilter={catalogControls.collegeFilter}
@@ -185,6 +186,7 @@ export default function CourseCatalog({
             onSearchQueryChange={catalogControls.handleSearchQueryChange}
             onSortModeChange={catalogControls.handleSortModeChange}
             onPathSortModeChange={catalogControls.handlePathSortModeChange}
+            onCreateCourse={() => createCourseModal.setIsOpen(true)}
             onShowLockedCoursesChange={catalogControls.handleShowLockedCoursesChange}
             onCollegeFilterChange={catalogControls.handleCollegeFilterChange}
             onDepartmentFilterChange={catalogControls.handleDepartmentFilterChange}
@@ -228,13 +230,11 @@ export default function CourseCatalog({
               <CatalogCourseGrid
                 courseGridRef={courseGridRef}
                 isGeneratingCourse={isGeneratingCourse}
-                canCreateCourseInScope={canCreateCourseInScope}
                 generatingCourseTitle={generatingCourseTitle}
                 generateMessage={generateMessage}
                 visibleCourses={catalogControls.visibleCourses}
                 catalogPageCourses={catalogPageCourses}
                 publishingCourseKey={publishingCourseKey}
-                onCreateCourse={() => createCourseModal.setIsOpen(true)}
                 onOpenCourse={onOpenCourse}
                 onOpenInfo={setInfoCourse}
                 onOpenSourceGaps={setSourceGapCourse}
@@ -321,9 +321,9 @@ export default function CourseCatalog({
       {sourceGapCourse && (
         <CourseSourceGapModal
           course={sourceGapCourse}
-          onQueueSource={async (course, gapId, url, description) => {
+          onQueueSource={async (course, gapId, url, description, files) => {
             if (course.snapshotId) {
-              await onResumeCourseSourceGap(course, gapId, url, description);
+              await onResumeCourseSourceGap(course, gapId, url, description, files);
               return;
             }
             onQueueCourseSourceGap(course, gapId, url, description);

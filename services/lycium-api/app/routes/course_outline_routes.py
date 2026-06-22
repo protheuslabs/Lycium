@@ -25,9 +25,9 @@ from app.course_generation_service import (
     validate_generation_taxonomy_input,
 )
 from app.course_generation_job_helpers import job_payload_from_course_request, source_gap_job_result
+from app.course_generation_route_inputs import generation_readiness_for_request, generation_source_urls
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
-from app.source_input_artifacts import usable_input_artifact_count
 from app.generation import (
     ask_instructor,
     create_needs_sources_course_snapshot,
@@ -38,7 +38,6 @@ from app.generation import (
     generate_program,
     refresh_course,
     regenerate_section,
-    source_count_meets_minimum,
     validate_learner_exists,
 )
 from app.ingestion import ingest_source
@@ -118,20 +117,6 @@ from app.schemas import (
     SourceRead,
     UpdateOutlineRequest,
 )
-
-
-def _generation_source_urls(payload: GenerateCourseRequest) -> list[str]:
-    urls = [str(url) for url in payload.source_urls]
-    packet_urls = payload.source_packet.get("source_urls") if isinstance(payload.source_packet, dict) else None
-    if not urls and isinstance(packet_urls, list):
-        urls = [str(url) for url in packet_urls if str(url).strip()]
-    return urls
-
-
-def _generation_source_evidence_meets_minimum(payload: GenerateCourseRequest, source_urls: list[str]) -> bool:
-    artifact_count = usable_input_artifact_count(payload.input_artifacts)
-    artifact_urls = [f"input-artifact://{index}" for index in range(1, artifact_count + 1)]
-    return source_count_meets_minimum([*source_urls, *artifact_urls])
 
 
 def register(app: FastAPI) -> None:
@@ -256,7 +241,7 @@ def register(app: FastAPI) -> None:
                 trust_min=payload.trust_min,
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
-                source_urls=_generation_source_urls(payload),
+                source_urls=generation_source_urls(payload),
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
                 input_artifacts=payload.input_artifacts,
@@ -283,8 +268,9 @@ def register(app: FastAPI) -> None:
             taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
             if taxonomy_errors:
                 raise ValueError("; ".join(taxonomy_errors))
-            source_urls = _generation_source_urls(payload)
-            if not _generation_source_evidence_meets_minimum(payload, source_urls):
+            source_urls = generation_source_urls(payload)
+            readiness = generation_readiness_for_request(payload, source_urls)
+            if not bool(readiness["ready"]):
                 snapshot = create_needs_sources_course_snapshot(
                     session,
                     prompt=payload.prompt,
@@ -295,6 +281,9 @@ def register(app: FastAPI) -> None:
                     desired_module_count=payload.desired_module_count,
                     expected_duration_minutes=payload.expected_duration_minutes,
                     source_urls=source_urls,
+                    source_packet=payload.source_packet,
+                    source_gate=readiness.get("sourceGate"),
+                    generation_readiness=readiness,
                     category=payload.category,
                     department=payload.department,
                 )
@@ -337,6 +326,7 @@ def register(app: FastAPI) -> None:
                 source_policy=payload.source_policy,
                 generated=generated,
                 quality_report=quality_report,
+                generation_readiness=readiness,
             )
             session.commit()
             session.refresh(snapshot)
@@ -371,7 +361,7 @@ def register(app: FastAPI) -> None:
                 expected_duration_minutes=payload.expected_duration_minutes,
                 max_stage_timeout_seconds=payload.max_stage_timeout_seconds,
                 model=payload.model or agent_profile.get("model"),
-                source_urls=_generation_source_urls(payload),
+                source_urls=generation_source_urls(payload),
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
                 input_artifacts=payload.input_artifacts,
@@ -410,7 +400,7 @@ def register(app: FastAPI) -> None:
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
                 model=payload.model or agent_profile.get("model"),
-                source_urls=_generation_source_urls(payload),
+                source_urls=generation_source_urls(payload),
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
                 input_artifacts=payload.input_artifacts,
@@ -439,15 +429,16 @@ def register(app: FastAPI) -> None:
             taxonomy_errors = validate_generation_taxonomy_input(payload.category, payload.department)
             if taxonomy_errors:
                 raise ValueError("; ".join(taxonomy_errors))
-            source_urls = _generation_source_urls(payload)
-            if not _generation_source_evidence_meets_minimum(payload, source_urls):
+            source_urls = generation_source_urls(payload)
+            readiness = generation_readiness_for_request(payload, source_urls)
+            if not bool(readiness["ready"]):
                 active_agent_profile = get_active_agent_profile()
                 if active_agent_profile and active_agent_profile.get("connection_status") != "verified":
                     require_verified_active_agent_profile()
                 job = enqueue_job(
                     session,
                     job_type="agent_generate_course_staged",
-                    payload=job_payload_from_course_request(payload, source_urls),
+                    payload=job_payload_from_course_request(payload, source_urls, generation_readiness=readiness),
                 )
                 snapshot = create_needs_sources_course_snapshot(
                     session,
@@ -459,6 +450,9 @@ def register(app: FastAPI) -> None:
                     desired_module_count=payload.desired_module_count,
                     expected_duration_minutes=payload.expected_duration_minutes,
                     source_urls=source_urls,
+                    source_packet=payload.source_packet,
+                    source_gate=readiness.get("sourceGate"),
+                    generation_readiness=readiness,
                     category=payload.category,
                     department=payload.department,
                 )
@@ -473,7 +467,12 @@ def register(app: FastAPI) -> None:
         job = enqueue_job(
             session,
             job_type="agent_generate_course_staged",
-            payload=job_payload_from_course_request(payload, source_urls, model=payload.model or agent_profile.get("model")),
+            payload=job_payload_from_course_request(
+                payload,
+                source_urls,
+                model=payload.model or agent_profile.get("model"),
+                generation_readiness=readiness,
+            ),
         )
         session.commit()
         session.refresh(job)

@@ -3,6 +3,7 @@ import type {
   LyciumCourseData,
   LyciumCourseEditHistoryEntry,
   LyciumCourseEditPolicy,
+  LyciumCourseGenerationReadiness,
   LyciumCourseEntry,
   LyciumCourseSourceCoveragePolicy,
   LyciumCourseSourceGap,
@@ -26,6 +27,7 @@ export type CourseData = LyciumCourseData;
 export type {
   LyciumCourseEditHistoryEntry,
   LyciumCourseEditPolicy,
+  LyciumCourseGenerationReadiness,
   LyciumCourseSnapshotLifecycle,
   LyciumCourseSourceCoveragePolicy,
   LyciumCourseSourceGap,

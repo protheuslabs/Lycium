@@ -324,3 +324,96 @@ test("uploaded files entered in the create-course UI reach course generation as 
   expect(generationPayload?.input_artifacts).toEqual(returnedArtifacts);
   expect(generationPayload?.source_urls).toEqual([]);
 });
+
+test("course creation submits mixed URL and file inputs to generation", async ({ page }) => {
+  await mockQuietCatalogApis(page);
+  await mockVerifiedAiConnection(page);
+
+  const returnedArtifacts = [
+    {
+      id: "file-chem-lab",
+      kind: "text",
+      filename: "chem-lab-notes.txt",
+      title: "chem-lab-notes.txt",
+      mimeType: "text/plain",
+      sourceUrl: "",
+      sourceDocumentUrl: "artifact://file-chem-lab",
+      extractedText: "General chemistry lab notes covering safety, titration, and measurement uncertainty.",
+      extractionStatus: "extracted",
+      extractionWarnings: [],
+      textLength: 82,
+      contentHash: "hash-lab",
+      reader: { contractVersion: "lycium-file-reader-v1", adapter: "lycium-local" },
+    },
+  ];
+  const sourceUrls = ["https://example.edu/chem105/syllabus", "https://openstax.org/books/chemistry-2e"];
+  let fileReaderPayload: { files?: Array<{ filename?: string; base64?: string }> } | null = null;
+  let generationPayload: { input_artifacts?: unknown[]; source_urls?: string[] } | null = null;
+
+  await page.route("**/v1/input-artifacts/read", async (route) => {
+    fileReaderPayload = route.request().postDataJSON();
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        contractVersion: "lycium-file-reader-v1",
+        provider: "lycium-local",
+        replaceableBy: "infring-os-file-reader",
+        artifactCount: returnedArtifacts.length,
+        extractedArtifactCount: returnedArtifacts.length,
+        artifacts: returnedArtifacts,
+      }),
+    });
+  });
+  await page.route("**/v1/agent/courses/jobs", async (route) => {
+    generationPayload = route.request().postDataJSON();
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 828282,
+        status: "completed",
+        progress: 1,
+        message: "Course generated from mixed URL and file evidence.",
+        course_snapshot: {
+          id: 828282,
+          title: "Mixed Input Chemistry Course",
+          status: "draft",
+          generation_trace: { input_artifacts: returnedArtifacts, source_urls: sourceUrls },
+          structure: {
+            ...generatedFileBackedCourse(),
+            title: "Mixed Input Chemistry Course",
+            shortDescription: "A generated chemistry course grounded in URLs and uploaded source files.",
+          },
+        },
+      }),
+    });
+  });
+
+  await page.goto("/Lycium/catalog");
+  await page.getByLabel("Settings").click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+  await page.getByRole("button", { name: /close settings/i }).click();
+  await page.getByRole("button", { name: /^Create Course$/i }).click();
+  const dialog = page.getByRole("dialog", { name: "Create Course" });
+  await expect(dialog).toBeVisible();
+
+  await page.getByPlaceholder("Describe the course you want to build...").fill("Mixed evidence chemistry course");
+  await dialog.getByPlaceholder("https://example.com/source").first().fill(sourceUrls[0]);
+  await dialog.getByRole("button", { name: /add another link/i }).click();
+  await dialog.getByPlaceholder("https://example.com/source").nth(1).fill(sourceUrls[1]);
+  await chooseDropdownOption(page, "College", "College of Natural Sciences and Mathematics");
+  await chooseDropdownOption(page, "Department", "Chemistry");
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "chem-lab-notes.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("General chemistry lab notes covering safety, titration, and measurement uncertainty."),
+  });
+  await expect(page.getByText("chem-lab-notes.txt")).toBeVisible();
+  await dialog.getByRole("button", { name: /^Create course$/i }).click();
+
+  await expect(page).toHaveURL(/\/Lycium\/courses\//);
+  await expect(page.locator(".course-name")).toHaveText("Mixed Input Chemistry Course");
+  expect(fileReaderPayload?.files?.map((file) => file.filename)).toEqual(["chem-lab-notes.txt"]);
+  expect(fileReaderPayload?.files?.every((file) => Boolean(file.base64))).toBe(true);
+  expect(generationPayload?.source_urls).toEqual(sourceUrls);
+  expect(generationPayload?.input_artifacts).toEqual(returnedArtifacts);
+});

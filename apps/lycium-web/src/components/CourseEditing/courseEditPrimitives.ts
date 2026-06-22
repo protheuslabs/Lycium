@@ -284,8 +284,71 @@ export function createBlockTemplate(kind: CourseEditBlockKind, initialValue: str
             answer: 0,
           },
         ],
-        questionsPerAttempt: 1,
         showAnswers: false,
+      };
+    case "project":
+      return {
+        type: "project",
+        title: "Project title",
+        instructions: value || "Create a project artifact that applies the ideas from this course section.",
+        artifactType: "applied_project",
+        requiredEvidence: [
+          "A short explanation of the approach and decisions made.",
+          "A submitted artifact in one accepted format.",
+        ],
+        rubric: {
+          id: "project-rubric",
+          title: "Project rubric",
+          criteria: [
+            {
+              id: "criterion-understanding",
+              title: "Concept understanding",
+              description: "Uses the relevant course concepts accurately and explains key decisions.",
+              points: 40,
+              levels: [
+                { label: "Strong", description: "Accurate, specific, and connected to the source-backed material.", points: 40 },
+                { label: "Developing", description: "Mostly accurate but missing specificity or source-backed reasoning.", points: 25 },
+                { label: "Needs work", description: "Important concepts are missing, unclear, or incorrectly applied.", points: 10 },
+              ],
+            },
+            {
+              id: "criterion-evidence",
+              title: "Required evidence",
+              description: "Includes the requested artifact, supporting explanation, and enough detail to grade.",
+              points: 35,
+              levels: [
+                { label: "Complete", description: "All required evidence is present and reviewable.", points: 35 },
+                { label: "Partial", description: "Some evidence is present but important pieces are missing.", points: 20 },
+                { label: "Incomplete", description: "The submission cannot be graded reliably from the evidence provided.", points: 5 },
+              ],
+            },
+            {
+              id: "criterion-reflection",
+              title: "Reflection and improvement",
+              description: "Identifies tradeoffs, limitations, and concrete next improvements.",
+              points: 25,
+              levels: [
+                { label: "Strong", description: "Names realistic tradeoffs and actionable improvements.", points: 25 },
+                { label: "Developing", description: "Includes some reflection but lacks detail or next steps.", points: 15 },
+                { label: "Needs work", description: "Little reflection or improvement plan is provided.", points: 5 },
+              ],
+            },
+          ],
+        },
+        submission: {
+          acceptedTypes: ["text", "link", "pdf", "docx", "image"],
+          acceptedFileTypes: [".pdf", ".docx", "image/*"],
+          instructions: "Submit text, a link, or an accepted file for agent grading.",
+          maxFiles: 1,
+        },
+        graderWorkflow: {
+          grader: "agent",
+          rubricId: "project-rubric",
+          status: "ready",
+          allowedContext: ["project", "rubric", "course_content", "source_records"],
+          feedbackPolicy: "Return criterion-level scores, evidence notes, and concrete revision feedback.",
+        },
+        sourceIds: [],
       };
     case "text":
     default:

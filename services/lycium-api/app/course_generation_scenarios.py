@@ -330,6 +330,41 @@ def _source_mapping_check(metrics: dict[str, Any], spec: dict[str, Any]) -> dict
     )
 
 
+def _generation_readiness_check(course: dict[str, Any]) -> dict[str, Any]:
+    readiness = _metadata(course).get("generationReadiness")
+    if not isinstance(readiness, dict):
+        return _check(
+            key="generation_readiness",
+            label="Generation readiness consistency",
+            score=0.0,
+            findings=[_finding("error", "Source-backed full course scenario must include metadata.generationReadiness.", "metadata.generationReadiness")],
+            metrics={"present": 0},
+        )
+    coverage = readiness.get("conceptCoverage") if isinstance(readiness.get("conceptCoverage"), dict) else {}
+    ratio = coverage.get("coverageRatio")
+    minimum = coverage.get("minimumCoverageRatio")
+    try:
+        coverage_ratio = float(ratio) if ratio is not None else 1.0
+        minimum_ratio = float(minimum) if minimum is not None else 0.0
+    except (TypeError, ValueError):
+        coverage_ratio = 0.0
+        minimum_ratio = 0.0
+    ready_claimed = bool(readiness.get("ready")) or str(readiness.get("status") or "").lower() == "ready"
+    issues = readiness.get("issues") if isinstance(readiness.get("issues"), list) else []
+    findings = [
+        *([] if ready_claimed else [_finding("error", "Full course scenario still carries a non-ready generation readiness report.", "metadata.generationReadiness")]),
+        *([] if coverage_ratio >= minimum_ratio else [_finding("error", "Generation readiness claims ready but concept coverage is below policy.", "metadata.generationReadiness.conceptCoverage")]),
+        *([] if not issues else [_finding("error", "Generation readiness still has blocking issues.", "metadata.generationReadiness.issues")]),
+    ]
+    return _check(
+        key="generation_readiness",
+        label="Generation readiness consistency",
+        score=0.34 * ready_claimed + 0.33 * (coverage_ratio >= minimum_ratio) + 0.33 * (not issues),
+        findings=findings,
+        metrics={"present": 1, "readyClaimed": int(ready_claimed), "coverageRatio": coverage_ratio, "minimumCoverageRatio": minimum_ratio, "issueCount": len(issues)},
+    )
+
+
 def _publish_quality_check(course: dict[str, Any]) -> dict[str, Any]:
     quality = assess_course_quality(course, gate="publish")
     findings = [_finding("error", message) for message in quality.get("errors", [])[:8]]
@@ -408,6 +443,7 @@ def evaluate_course_generation_scenario(course: dict[str, Any], scenario_id: str
             metrics={key: metrics[key] for key in ("sourceRecordCount", "moduleVideoCoverage", "benchmarkCount", "requirementOriginCount")},
         ),
         _specificity_check(metrics["textBlob"]),
+        _generation_readiness_check(course),
         _publish_quality_check(course),
     ]
     if any(

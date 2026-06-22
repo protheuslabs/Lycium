@@ -169,6 +169,47 @@
   height: 1.9rem;
 }
 
+.sidebar-finish-button {
+  width: 100%;
+  min-height: 2.35rem;
+  border: 1px solid #d8deea;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  padding: 0.45rem 0.75rem;
+  color: #ffffff;
+  background: #253049;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 850;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.sidebar-finish-button svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.sidebar-finish-button:hover,
+.sidebar-finish-button:focus-visible {
+  border-color: #253049;
+  background: #4a6cf7;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.sidebar--collapsed .sidebar-finish-button {
+  width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  align-self: center;
+  padding: 0;
+}
+
 .sidebar-title {
   margin: 0 0 0.75rem 0;
   font-size: 1.1rem;

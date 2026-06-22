@@ -59,6 +59,11 @@ export default function CatalogProgramShowcase({
     return (
       <section className="program-showcase" aria-label="Learning programs">
         <div className="program-showcase-grid">
+          {programs.length === 0 && (
+            <div className="catalog-empty-state" aria-live="polite">
+              <p>No matching programs. Try a different search term or filter.</p>
+            </div>
+          )}
           {programs.map(({ program, estimate, progress, continuity, readiness }) => {
             return (
               <CatalogEntityCard
@@ -99,6 +104,11 @@ export default function CatalogProgramShowcase({
   return (
     <section className="program-showcase" aria-label={`Clusters in ${selectedProgram.title}`}>
       <div className="program-showcase-grid">
+        {clusters.length === 0 && (
+          <div className="catalog-empty-state" aria-live="polite">
+            <p>No matching clusters. Try a different search term or filter.</p>
+          </div>
+        )}
         {clusters.map(({ cluster, courseIds, estimate, progress, continuity, readiness }) => {
           return (
             <CatalogEntityCard

@@ -69,6 +69,21 @@
     box-shadow: 0 0 0 3px rgba(128, 150, 255, 0.14), 0 14px 32px rgba(0, 0, 0, 0.24);
   }
 
+  .catalog-create-button {
+    border-color: #303033;
+    color: #f8fafc;
+    background: #171717;
+  }
+
+  .catalog-create-button:hover {
+    background: #1f1f20;
+  }
+
+  .catalog-create-button-icon {
+    color: #f8fafc;
+    background: #2f3542;
+  }
+
   .catalog-search-field input::placeholder {
     color: #7f8da3;
   }

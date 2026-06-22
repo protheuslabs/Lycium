@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useRef, useState, type DragEvent } from "react";
 import type { SectionStatus } from "../../courseTypes";
-import { SidebarAddRow, SidebarEditControls, SidebarModuleHeader, SidebarSourceTab, SidebarStatusBadge, type DisplayStatus } from "./SidebarPrimitives";
+import { SidebarAddRow, SidebarEditControls, SidebarFinishButton, SidebarModuleHeader, SidebarSourceTab, SidebarStatusBadge, type DisplayStatus } from "./SidebarPrimitives";
 import { DeleteBlockButton, promptForDeleteConfirmation } from "../ContentView/CourseEditControls";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
 
@@ -373,7 +373,7 @@ export default function Sidebar({
           {isEditMode && <SidebarAddRow label="Add module" isCollapsed={isCollapsed} onClick={onAddModule} />}
 	      </div>
 
-      
+      {isEditMode && <SidebarFinishButton isCollapsed={isCollapsed} onFinish={onSaveEdit} />}
     </aside>
   )
 }
