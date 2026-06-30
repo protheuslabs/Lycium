@@ -1,11 +1,12 @@
 :root {
-  --lycium-topbar-height: 3.5rem;
+  --lycium-topbar-height: 2.65rem;
 }
 
 .top-bar {
+  position: relative;
   width: 100%;
   box-sizing: border-box;
-  padding: 0.55rem 0.85rem;
+  padding: 2px 0.85rem;
   border-bottom: 0;
   display: flex;
   align-items: center;
@@ -50,16 +51,16 @@
   width: 2.4rem;
   height: 2.4rem;
   box-sizing: border-box;
-  border: 1px solid rgba(248, 251, 255, 0.22);
-  border-radius: 999px;
+  border: 0;
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #f8fbff;
   text-decoration: none;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  background: transparent;
+  box-shadow: none;
+  transition: color 180ms ease;
 }
 
 .catalog-link {
@@ -72,25 +73,40 @@
   margin-left: auto;
 }
 
+.top-bar-catalog-slot {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  z-index: 35;
+  width: min(44rem, calc(100% - 14rem));
+  min-width: 0;
+  transform: translateX(-50%);
+}
+
 .top-bar-icon-button svg {
   width: 1.45rem;
   height: 1.45rem;
   display: block;
   fill: currentColor;
+  transform-origin: center;
+  transition: transform 180ms ease, filter 180ms ease;
 }
 
 .top-bar-icon-button:hover,
 .top-bar-icon-button:focus-visible {
-  border-color: rgba(183, 246, 200, 0.76);
-  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
   outline: none;
-  transform: translateY(-1px);
 }
 
-.settings-link:hover,
-.settings-link:focus-visible {
-  transform: rotate(22deg);
+.top-bar-icon-button:hover svg,
+.top-bar-icon-button:focus-visible svg {
+  filter: drop-shadow(0 0 8px rgba(183, 246, 200, 0.46));
+  transform: scale(1.08);
+}
+
+.settings-link:hover svg,
+.settings-link:focus-visible svg {
+  transform: rotate(22deg) scale(1.06);
 }
 
 html[data-theme="light"] .top-bar {
@@ -109,27 +125,24 @@ html[data-theme="light"] .top-bar-title::after {
 }
 
 html[data-theme="light"] .top-bar-icon-button {
-  border-color: rgba(248, 251, 255, 0.2);
   color: #f8fbff;
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-theme="light"] .top-bar-icon-button:hover,
 html[data-theme="light"] .top-bar-icon-button:focus-visible {
-  border-color: rgba(183, 246, 200, 0.7);
-  background: rgba(255, 255, 255, 0.14);
   color: #ffffff;
 }
 
 @media (max-width: 560px) {
   :root {
-    --lycium-topbar-height: 3.05rem;
+    --lycium-topbar-height: 2.4rem;
   }
 
   .top-bar {
     gap: 0.55rem;
-    padding: 0.45rem 0.6rem;
+    padding: 2px 0.6rem;
   }
 
   .top-bar-title {
@@ -145,5 +158,9 @@ html[data-theme="light"] .top-bar-icon-button:focus-visible {
   .top-bar-icon-button svg {
     width: 1.25rem;
     height: 1.25rem;
+  }
+
+  .top-bar-catalog-slot {
+    width: min(35rem, calc(100% - 7.4rem));
   }
 }

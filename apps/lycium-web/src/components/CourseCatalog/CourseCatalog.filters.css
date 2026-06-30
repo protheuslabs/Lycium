@@ -3,6 +3,7 @@
   display: grid;
   gap: 0.35rem;
   min-width: 0;
+  width: 7.8rem;
 }
 
 .catalog-filter-button {
@@ -42,6 +43,22 @@
   background: #27324a;
   font-size: 0.75rem;
   line-height: 1;
+}
+
+.catalog-filter-chevron {
+  fill: none;
+  flex: 0 0 auto;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transition: transform 180ms ease;
+  width: 1rem;
+}
+
+.catalog-filter-button--active .catalog-filter-chevron {
+  transform: rotate(180deg);
 }
 
 .catalog-filter-panel {

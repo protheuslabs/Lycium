@@ -1,6 +1,7 @@
 import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import { formatTimeEstimate, timeEstimateSourceLabel } from "../../utils/curriculumTime";
 import CatalogEntityCard from "./CatalogEntityCard";
+import CatalogEmptyState from "./CatalogEmptyState";
 import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogPathContinuity } from "./catalogProgramProgress";
 import type { CatalogVisibleCluster, CatalogVisibleProgram } from "./catalogPathFiltering";
@@ -60,9 +61,7 @@ export default function CatalogProgramShowcase({
       <section className="program-showcase" aria-label="Learning programs">
         <div className="program-showcase-grid">
           {programs.length === 0 && (
-            <div className="catalog-empty-state" aria-live="polite">
-              <p>No matching programs. Try a different search term or filter.</p>
-            </div>
+            <CatalogEmptyState level="programs" />
           )}
           {programs.map(({ program, estimate, progress, continuity, readiness }) => {
             return (
@@ -97,19 +96,13 @@ export default function CatalogProgramShowcase({
     );
   }
 
-  if (!selectedProgram) {
-    return null;
-  }
-
   return (
-    <section className="program-showcase" aria-label={`Clusters in ${selectedProgram.title}`}>
+    <section className="program-showcase" aria-label={selectedProgram ? `Clusters in ${selectedProgram.title}` : "Learning clusters"}>
       <div className="program-showcase-grid">
-        {clusters.length === 0 && (
-          <div className="catalog-empty-state" aria-live="polite">
-            <p>No matching clusters. Try a different search term or filter.</p>
-          </div>
+        {(!selectedProgram || clusters.length === 0) && (
+          <CatalogEmptyState level="clusters" />
         )}
-        {clusters.map(({ cluster, courseIds, estimate, progress, continuity, readiness }) => {
+        {selectedProgram && clusters.map(({ cluster, courseIds, estimate, progress, continuity, readiness }) => {
           return (
             <CatalogEntityCard
               className="program-showcase-card"

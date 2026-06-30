@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import type { CourseEntry } from "../../courseTypes";
 import CatalogCourseCard from "./CatalogCourseCard";
+import CatalogEmptyState from "./CatalogEmptyState";
 import type { CatalogVisibleCourse } from "./catalogUtils";
 
 type CatalogCourseGridProps = {
@@ -40,9 +41,7 @@ export default function CatalogCourseGrid({
         </article>
       )}
       {visibleCourses.length === 0 && (
-        <div className="catalog-empty-state" aria-live="polite">
-          <p>No matching courses. Try a different search term, college, or sort option.</p>
-        </div>
+        <CatalogEmptyState level="courses" />
       )}
       {catalogPageCourses.map((visibleCourse) => (
         <CatalogCourseCard

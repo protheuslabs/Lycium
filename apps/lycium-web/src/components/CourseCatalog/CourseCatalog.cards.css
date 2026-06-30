@@ -8,7 +8,7 @@
 .course-card {
   position: relative;
   border: 1px solid #d8deea;
-  border-radius: 10px;
+  border-radius: 0;
   padding: 0.9rem;
   display: grid;
   grid-template-rows: minmax(3.15rem, auto) auto minmax(0, 1fr) auto;

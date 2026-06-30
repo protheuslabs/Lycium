@@ -28,6 +28,12 @@ export const CATALOG_COURSE_CARD_MIN_WIDTH = 220;
 export const CATALOG_DESKTOP_ROWS_PER_PAGE = 3;
 export const CATALOG_MOBILE_ROWS_PER_PAGE = 4;
 
+export const CATALOG_VIEW_LEVEL_OPTIONS = [
+  { value: "programs", label: "Programs" },
+  { value: "clusters", label: "Clusters" },
+  { value: "courses", label: "Courses" },
+];
+
 export const CATALOG_LEVEL_OPTIONS = [
   { value: "", label: "Any level" },
   { value: "elementary", label: "Elementary" },

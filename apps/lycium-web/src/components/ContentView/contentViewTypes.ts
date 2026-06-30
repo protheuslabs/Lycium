@@ -145,6 +145,7 @@ export type QuizProgressStatus = {
   submitted: boolean;
   inProgress: boolean;
   timed: boolean;
+  passed: boolean;
 };
 
 export type QuizProgressStatusHandler = (quizKey: string, status: QuizProgressStatus) => void;

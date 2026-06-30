@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
+import Dropdown from "../Dropdown/Dropdown";
 import type { CourseEntry } from "../../courseTypes";
 import CatalogCourseGrid from "./CatalogCourseGrid";
 import CatalogPagination from "./CatalogPagination";
@@ -17,6 +19,7 @@ import {
   CATALOG_DESKTOP_ROWS_PER_PAGE,
   CATALOG_LEVEL_OPTIONS,
   CATALOG_MOBILE_ROWS_PER_PAGE,
+  CATALOG_VIEW_LEVEL_OPTIONS,
   type CatalogViewLevel,
   canCreateCourseInCatalogScope,
   getGeneratingCourseTitle,
@@ -95,6 +98,7 @@ export default function CourseCatalog({
   const [infoCourse, setInfoCourse] = useState<CourseEntry | null>(null);
   const [sourceGapCourse, setSourceGapCourse] = useState<CourseEntry | null>(null);
   const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE * 4);
+  const [topbarControlsHost, setTopbarControlsHost] = useState<HTMLElement | null>(null);
   const courseGridRef = useRef<HTMLDivElement | null>(null);
   const isGeneratingCourse = generateStatus === "loading";
   const generatingCourseTitle = getGeneratingCourseTitle(prompt);
@@ -125,6 +129,10 @@ export default function CourseCatalog({
   const firstVisibleResult = catalogControls.visibleCourses.length === 0 ? 0 : catalogPageStartIndex + 1;
   const lastVisibleResult = Math.min(catalogPageStartIndex + coursesPerPage, catalogControls.visibleCourses.length);
   const shouldShowCatalogPagination = catalogControls.visibleCourses.length > coursesPerPage;
+
+  useEffect(() => {
+    setTopbarControlsHost(document.getElementById("top-bar-catalog-controls"));
+  }, []);
 
   useEffect(() => {
     if (catalogControls.catalogViewLevel !== "courses") {
@@ -165,11 +173,32 @@ export default function CourseCatalog({
 
   return (
     <div className="catalog-shell">
+      {topbarControlsHost &&
+        createPortal(
+          <div className="catalog-topbar-search" role="search">
+            <Dropdown
+              className="catalog-topbar-level-dropdown"
+              value={catalogControls.catalogViewLevel}
+              options={CATALOG_VIEW_LEVEL_OPTIONS}
+              onChange={catalogControls.handleCatalogViewLevelChange}
+              ariaLabel="Select catalog view level"
+            />
+            <label className="catalog-topbar-search-field">
+              <input
+                type="search"
+                aria-label={`Search ${catalogControls.catalogViewLevel}`}
+                placeholder={`Search ${catalogControls.catalogViewLevel}`}
+                value={catalogControls.searchQuery}
+                onChange={(event) => catalogControls.handleSearchQueryChange(event.target.value)}
+              />
+            </label>
+          </div>,
+          topbarControlsHost,
+        )}
       <main className="home-page">
         <section className="catalog-page">
           <CatalogToolbar
             catalogViewLevel={catalogControls.catalogViewLevel}
-            searchQuery={catalogControls.searchQuery}
             sortMode={catalogControls.sortMode}
             pathSortMode={catalogControls.pathSortMode}
             canCreateCourseInScope={canCreateCourseInScope}
@@ -182,8 +211,6 @@ export default function CourseCatalog({
             difficultyFilter={catalogControls.difficultyFilter}
             difficultyFilterOptions={catalogControls.difficultyFilterOptions}
             activityFilter={catalogControls.activityFilter}
-            onCatalogViewLevelChange={catalogControls.handleCatalogViewLevelChange}
-            onSearchQueryChange={catalogControls.handleSearchQueryChange}
             onSortModeChange={catalogControls.handleSortModeChange}
             onPathSortModeChange={catalogControls.handlePathSortModeChange}
             onCreateCourse={() => createCourseModal.setIsOpen(true)}

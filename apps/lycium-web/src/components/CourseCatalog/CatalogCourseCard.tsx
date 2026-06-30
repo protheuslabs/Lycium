@@ -34,7 +34,7 @@ export default function CatalogCourseCard({
   const requiresPrerequisites = !hasCourseActivity && unmetPrerequisites.length > 0;
   const requiredCourseLabel = `Requires ${unmetPrerequisites.length} course${unmetPrerequisites.length === 1 ? "" : "s"}`;
   const canActivateCard = lifecycle.needsSourceInput || (!requiresPrerequisites && lifecycle.canOpen);
-  const shouldShowLifecycleAction = lifecycle.needsSourceInput || lifecycle.isPublishCandidate || lifecycle.status === "failed";
+  const shouldShowLifecycleAction = lifecycle.needsSourceInput || lifecycle.status === "failed";
   const requirementLabel = requirementContexts.map((context) => context.title).join("; ");
 
   const handleCourseOpen = () => {

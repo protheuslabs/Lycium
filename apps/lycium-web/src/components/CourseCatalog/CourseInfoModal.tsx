@@ -5,6 +5,7 @@ import Button from "../Button/Button";
 import Modal from "../Modal/Modal";
 import CourseReviewPanel from "./CourseReviewPanel";
 import { getLocalDraftMetadata } from "../../utils/localCourseDrafts";
+import { getCourseLifecycleSummary } from "../../utils/courseLifecycle";
 
 type CourseInfoModalProps = {
   course: CourseEntry;
@@ -33,7 +34,8 @@ export default function CourseInfoModal({
   const tagLabels = getCourseTagLabels(course.data.tags);
   const learningTypes = course.data.learningTypes ?? [];
   const courseEquivalencies = course.data.courseEquivalencies ?? [];
-  const isGeneratedCourse = course.source === "remote" || Boolean(course.generation_trace);
+  const lifecycle = getCourseLifecycleSummary(course);
+  const shouldShowReviewPanel = lifecycle.isReviewable && lifecycle.status !== "published";
   const learnersCanFork = course.data.metadata?.editPolicy?.learnersCanFork !== false;
   const localDraft = getLocalDraftMetadata(course);
   const localDraftDescription = localDraft
@@ -48,7 +50,7 @@ export default function CourseInfoModal({
       title={course.title}
       eyebrow="Course info"
       labelledById="course-info-title"
-      size={isGeneratedCourse ? "lg" : "md"}
+      size={shouldShowReviewPanel ? "lg" : "md"}
       onClose={onClose}
     >
         {course.data.shortDescription && <p className="course-info-description">{course.data.shortDescription}</p>}
@@ -121,7 +123,7 @@ export default function CourseInfoModal({
             </div>
             </section>
         )}
-        {isGeneratedCourse && (
+        {shouldShowReviewPanel && (
           <CourseReviewPanel course={course} isPublishing={isPublishing} onPublishCourse={onPublishCourse} />
         )}
         <section className="course-info-section course-draft-section">

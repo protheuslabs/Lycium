@@ -79,6 +79,9 @@ export default function CatalogFilterPanel({
       >
         <span>Filters</span>
         {activeFilterCount > 0 && <span className="catalog-filter-count">{activeFilterCount}</span>}
+        <svg className="catalog-filter-chevron" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M4 6l4 4 4-4" />
+        </svg>
       </button>
       {isFilterOpen && (
         <div className="catalog-filter-panel" role="dialog" aria-label="Catalog filters">

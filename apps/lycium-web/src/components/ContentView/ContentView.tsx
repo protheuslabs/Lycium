@@ -102,7 +102,12 @@ export default function ContentView({
     completeButtonTitle,
     handleQuizProgressChange,
     handleQuizSubmissionChange,
-  } = useSectionQuizStatus({ section, isComplete, onSectionTimedStatusChange });
+  } = useSectionQuizStatus({
+    section,
+    isComplete,
+    onQuizSectionPassed: markComplete,
+    onSectionTimedStatusChange,
+  });
 
   useEffect(() => {
     setSourcesExpanded(false);

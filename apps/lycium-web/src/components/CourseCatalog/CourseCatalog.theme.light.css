@@ -238,7 +238,8 @@ html[data-theme="light"] .catalog-pagination-page {
   .catalog-search-field,
   .catalog-view-field,
   .catalog-dropdown-row {
-    width: min(100%, 34rem);
+    width: max-content;
+    max-width: 100%;
     justify-self: center;
   }
 
@@ -248,8 +249,8 @@ html[data-theme="light"] .catalog-pagination-page {
   }
 
   .catalog-dropdown-row {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
-    max-width: 38rem;
+    grid-template-columns: max-content max-content;
+    max-width: 100%;
   }
 
   .catalog-dropdown-field {
@@ -257,6 +258,11 @@ html[data-theme="light"] .catalog-pagination-page {
   }
 
   .catalog-dropdown-field .dropdown {
+    max-width: 14rem;
+    width: 14rem;
+  }
+
+  .catalog-filter-panel .catalog-dropdown-field .dropdown {
     max-width: 100%;
     width: 100%;
   }
@@ -264,7 +270,7 @@ html[data-theme="light"] .catalog-pagination-page {
   .catalog-dropdown,
   .catalog-view-dropdown,
   .catalog-sort-dropdown {
-    max-width: 100%;
+    max-width: 14rem;
   }
 
   .course-grid {
@@ -292,7 +298,8 @@ html[data-theme="light"] .catalog-pagination-page {
     grid-column: 2;
     grid-row: 1;
     justify-self: end;
-    width: min(100%, 38rem);
+    width: max-content;
+    max-width: 100%;
   }
 }
 
@@ -306,10 +313,11 @@ html[data-theme="light"] .catalog-pagination-page {
   }
 
   .catalog-dropdown-row {
-    justify-self: stretch;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    justify-self: end;
+    grid-template-columns: minmax(0, 7.8rem) minmax(0, 14rem);
     gap: 0.4rem;
-    width: 100%;
+    width: max-content;
+    max-width: 100%;
   }
 
   .catalog-filter-shell,
