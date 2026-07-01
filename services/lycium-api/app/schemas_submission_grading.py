@@ -42,5 +42,6 @@ class ProjectSubmissionGradeRead(BaseModel):
     criterionResults: list[ProjectCriterionGradeRead]
     feedback: str
     nextSteps: list[str] = Field(default_factory=list)
+    errors: list[dict[str, Any]] = Field(default_factory=list)
     boundedContext: dict[str, Any] = Field(default_factory=dict)
     trace: dict[str, Any] = Field(default_factory=dict)

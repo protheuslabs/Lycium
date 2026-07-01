@@ -349,8 +349,8 @@ export type LyciumAgentModelRecord = {
 };
 
 export type LyciumAgentProviderContract = {
-  provider_kind: "cloud" | "local";
-  credential_kind: "api_key" | "local_endpoint";
+  provider_kind: "cloud" | "local" | "agent_runtime";
+  credential_kind: "api_key" | "local_endpoint" | "local_runtime";
   generation_adapter: string;
   requires_verified_connection: boolean;
   supports_model_list: boolean;
@@ -358,7 +358,7 @@ export type LyciumAgentProviderContract = {
   supports_streaming: boolean;
   supports_tool_use: boolean;
   supports_usage_metadata: boolean;
-  model_source: "provider_api" | "static_default";
+  model_source: "provider_api" | "static_default" | "runtime_bridge";
   capabilities?: Record<string, unknown>;
 };
 
@@ -376,7 +376,7 @@ export type LyciumAgentProviderRecord = {
   credential_placeholder?: string;
   credential_default?: string;
   local_endpoint_candidates?: string[];
-  credential_kind?: "api_key" | "local_endpoint";
+  credential_kind?: "api_key" | "local_endpoint" | "local_runtime";
   contract?: LyciumAgentProviderContract | null;
 };
 
@@ -396,7 +396,7 @@ export type LyciumAgentKeyRecord = {
   generation_adapter?: string | null;
   local_provider?: boolean;
   credential_label?: string;
-  credential_kind?: "api_key" | "local_endpoint";
+  credential_kind?: "api_key" | "local_endpoint" | "local_runtime";
   contract?: LyciumAgentProviderContract | null;
   model_capability?: {
     recommended_model?: string | null;
@@ -513,6 +513,7 @@ export type LyciumQuizProgressRecord = {
   startedAt?: string;
   submittedAt?: string;
   submitted?: boolean;
+  attemptStarted?: boolean;
   attemptCount?: number;
   attemptHistory?: LyciumQuizAttemptHistoryItem[];
   elapsedSeconds?: number;

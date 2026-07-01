@@ -15,6 +15,11 @@ export function generateStaticParams() {
   return params.length || process.env.NEXT_OUTPUT !== "export" ? params : [{ courseSlug: EMPTY_COURSE_SLUG, unitSlug: EMPTY_UNIT_SLUG }];
 }
 
-export default function CourseUnitPage() {
-  return <LyciumClientShell />;
+type CourseUnitPageProps = {
+  params: Promise<{ courseSlug: string; unitSlug: string }>;
+};
+
+export default async function CourseUnitPage({ params }: CourseUnitPageProps) {
+  const resolvedParams = await params;
+  return <LyciumClientShell initialPath={`/Lycium/courses/${resolvedParams.courseSlug}/units/${resolvedParams.unitSlug}`} />;
 }

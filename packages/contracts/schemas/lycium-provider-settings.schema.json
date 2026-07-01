@@ -34,6 +34,16 @@
           "connection_message": { "type": ["string", "null"] },
           "last_verified_at": { "type": ["string", "null"] },
           "last_error": { "type": ["string", "null"] },
+          "credential_kind": { "type": "string", "enum": ["api_key", "local_endpoint", "local_runtime"] },
+          "contract": {
+            "type": ["object", "null"],
+            "additionalProperties": true,
+            "properties": {
+              "provider_kind": { "type": "string", "enum": ["cloud", "local", "agent_runtime"] },
+              "credential_kind": { "type": "string", "enum": ["api_key", "local_endpoint", "local_runtime"] },
+              "model_source": { "type": "string", "enum": ["provider_api", "static_default", "runtime_bridge"] }
+            }
+          },
           "is_active": { "type": "boolean" }
         }
       }

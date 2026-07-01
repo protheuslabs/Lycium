@@ -1,6 +1,6 @@
+const staticExport = process.env.NEXT_OUTPUT === "export";
 const configuredBasePath = process.env.NEXT_PUBLIC_LYCIUM_BASE_PATH ?? "/Lycium";
 const basePath = configuredBasePath === "/" ? "" : configuredBasePath.replace(/\/$/, "");
-const staticExport = process.env.NEXT_OUTPUT === "export";
 const prefixedPath = (path) => `${basePath}${path}`;
 
 /** @type {import('next').NextConfig} */
@@ -10,6 +10,7 @@ const nextConfig = {
   trailingSlash: staticExport ? true : undefined,
   typedRoutes: false,
   reactStrictMode: true,
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   poweredByHeader: false,
   devIndicators: false,
   outputFileTracingRoot: new URL("../..", import.meta.url).pathname,

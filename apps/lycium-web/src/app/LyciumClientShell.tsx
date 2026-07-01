@@ -2,6 +2,10 @@
 
 import LyciumApp from "../App";
 
-export default function LyciumClientShell() {
-  return <LyciumApp />;
+type LyciumClientShellProps = {
+  initialPath?: string;
+};
+
+export default function LyciumClientShell({ initialPath }: LyciumClientShellProps) {
+  return <LyciumApp initialPath={initialPath} />;
 }

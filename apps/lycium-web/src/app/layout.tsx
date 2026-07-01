@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import "../styles/tokens.css";
 import "../index.css";
 import "../App.css";
@@ -45,12 +44,13 @@ const themeBootstrapScript = `
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>
-        <Script
+      <head>
+        <script
           id="lycium-theme-bootstrap"
-          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: themeBootstrapScript }}
         />
+      </head>
+      <body>
         {children}
       </body>
     </html>

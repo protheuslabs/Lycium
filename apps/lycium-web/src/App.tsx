@@ -29,9 +29,14 @@ import { mergeCourseEntriesByKey, readPersistedLocalCourseEntries } from "./util
 import { readSettingsBackdropPath, writeSettingsBackdropPath } from "./utils/settingsRouteState";
 import { useCourseRouteNavigation } from "./hooks/useCourseRouteNavigation";
 
-function App() {
+type AppProps = {
+  initialPath?: string;
+};
+
+function App({ initialPath }: AppProps = {}) {
   const router = useRouter();
   const pathname = usePathname();
+  const resolvedInitialPath = initialPath ?? pathname ?? COURSE_CATALOG_PATH;
   const settingsReturnPathRef = useRef(COURSE_CATALOG_PATH);
   const [courses, setCourses] = useState<CourseEntry[]>(localCourses);
   const [programs, setPrograms] = useState<LyciumProgram[]>(localPrograms);
@@ -40,11 +45,10 @@ function App() {
   const [prompt, setPrompt] = useState("");
   const [level, setLevel] = useState("");
   const [learnerId, setLearnerId] = useState<number | null>(null);
-  const [currentPath, setCurrentPath] = useState(() => pathname ?? COURSE_CATALOG_PATH);
+  const [currentPath, setCurrentPath] = useState(() => resolvedInitialPath);
   const [courseKeyToOpenInEditMode, setCourseKeyToOpenInEditMode] = useState<string | null>(null);
   const [pageBehindSettingsPath, setPageBehindSettingsPath] = useState(() => {
-    const initialPath = pathname ?? COURSE_CATALOG_PATH;
-    return parseCourseRoute(initialPath).kind === "settings" ? readSettingsBackdropPath() : initialPath;
+    return parseCourseRoute(resolvedInitialPath).kind === "settings" ? readSettingsBackdropPath() : resolvedInitialPath;
   });
   const currentPathRef = useRef(currentPath);
 

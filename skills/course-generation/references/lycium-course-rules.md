@@ -139,6 +139,7 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 - `video`: embedded material. Prefer `sourceIds` that resolve to a source record with `embedUrl`. Use optional `clip.startSeconds` and `clip.endSeconds` when only a slice of the video supports the section; omit `clip` for the full video. Do not add filler video titles; use a separate `heading` block if a visible title is needed.
 - `iframe`: generic embedded web resource for interactive or external material.
 - `quiz`: assessment only. Use nested `questions` for multi-question quizzes.
+- `project`: applied work such as a project, lab, simulation, portfolio task, or practical exam. Use one canonical `submissionType`, such as `text`, `link`, `doc`, `image`, or `file`; if that type supports multiple methods, record those separately as `submissionMethods`.
 - `game`: hands-on practice placeholder or project-like activity.
 - `conceptCards`: legacy render-compatible concept stack. Do not generate this for new courses unless preserving or repairing a legacy course.
 - `summary`: not a block type. Use a section marked `sectionType: "summary"` and represent reviewed concepts with `heading` plus one `conceptCard` block per concept.

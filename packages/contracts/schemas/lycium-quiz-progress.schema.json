@@ -8,6 +8,7 @@
     "startedAt": { "type": "string" },
     "submittedAt": { "type": "string" },
     "submitted": { "type": "boolean" },
+    "attemptStarted": { "type": "boolean" },
     "attemptCount": { "type": "number" },
     "attemptHistory": {
       "type": "array",

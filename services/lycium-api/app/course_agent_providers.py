@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import re
+import shlex
+import shutil
+import subprocess
 import time
 from pathlib import Path
 from typing import Any
@@ -12,6 +15,7 @@ from app.config import SETTINGS
 from app.course_agent_types import CourseAgentError
 
 PROVIDERS_PATH = Path(__file__).with_name("ai_providers.json")
+RUNTIME_BRIDGE_PATH = Path(__file__).parents[1] / "scripts" / "agent_runtime_bridge.py"
 RETRYABLE_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 TRANSIENT_ERROR_MARKERS = (
     "connection reset",
@@ -40,13 +44,19 @@ def get_agent_provider(provider_id: str) -> dict[str, Any]:
 
 def agent_provider_contract(provider: dict[str, Any]) -> dict[str, Any]:
     adapter = str(provider.get("generationAdapter") or "openai-chat-completions")
-    local_provider = bool(provider.get("localProvider") or adapter == "ollama-chat")
-    model_fetch_supported = bool(provider.get("modelsPath"))
-    json_mode_supported = adapter in {"openai-chat-completions", "gemini-generate-content", "ollama-chat"}
+    agent_runtime_provider = bool(provider.get("localRuntime") or adapter == "local-agent-runtime")
+    local_provider = bool(provider.get("localProvider") or adapter == "ollama-chat" or agent_runtime_provider)
+    model_fetch_supported = bool(provider.get("modelsPath") or provider.get("staticModels"))
+    json_mode_supported = adapter in {
+        "openai-chat-completions",
+        "gemini-generate-content",
+        "ollama-chat",
+        "local-agent-runtime",
+    }
 
     return {
-        "provider_kind": "local" if local_provider else "cloud",
-        "credential_kind": "local_endpoint" if local_provider else "api_key",
+        "provider_kind": "agent_runtime" if agent_runtime_provider else ("local" if local_provider else "cloud"),
+        "credential_kind": "local_runtime" if agent_runtime_provider else ("local_endpoint" if local_provider else "api_key"),
         "generation_adapter": adapter,
         "requires_verified_connection": True,
         "supports_model_list": model_fetch_supported,
@@ -54,16 +64,30 @@ def agent_provider_contract(provider: dict[str, Any]) -> dict[str, Any]:
         "supports_streaming": False,
         "supports_tool_use": False,
         "supports_usage_metadata": False,
-        "model_source": "provider_api" if model_fetch_supported else "static_default",
+        "model_source": "runtime_bridge" if agent_runtime_provider else ("provider_api" if provider.get("modelsPath") else "static_default"),
         "capabilities": {
+            "agent_runtime": agent_runtime_provider,
             "json_mode": json_mode_supported,
             "local_execution": local_provider,
             "model_list": model_fetch_supported,
+            "runtime_bridge": agent_runtime_provider,
             "streaming": False,
             "tool_use": False,
             "usage_metadata": False,
         },
     }
+
+
+def _default_credential(provider: dict[str, Any]) -> str:
+    configured_default = str(provider.get("credentialDefault") or "").strip()
+    if configured_default:
+        return configured_default
+    if provider.get("generationAdapter") != "local-agent-runtime":
+        return ""
+    runtime_kind = str(provider.get("runtimeKind") or provider.get("id") or "").strip()
+    if not runtime_kind:
+        return ""
+    return f"python3 {shlex.quote(str(RUNTIME_BRIDGE_PATH))} --runtime {shlex.quote(runtime_kind)}"
 
 
 def list_agent_provider_summaries() -> list[dict[str, Any]]:
@@ -75,12 +99,12 @@ def list_agent_provider_summaries() -> list[dict[str, Any]]:
             "recommended_model": provider.get("recommendedModel") or provider.get("defaultModel") or None,
             "minimum_recommended_parameters_billion": provider.get("minimumRecommendedParametersBillion") or None,
             "model_recommendation_note": provider.get("modelRecommendationNote") or None,
-            "model_fetch_supported": bool(provider.get("modelsPath")),
+            "model_fetch_supported": agent_provider_contract(provider)["supports_model_list"],
             "generation_adapter": str(provider.get("generationAdapter") or ""),
             "local_provider": bool(provider.get("localProvider")),
             "credential_label": str(provider.get("credentialLabel") or "api key"),
             "credential_placeholder": str(provider.get("credentialPlaceholder") or "api key"),
-            "credential_default": str(provider.get("credentialDefault") or ""),
+            "credential_default": _default_credential(provider),
             "local_endpoint_candidates": provider.get("localEndpointCandidates") if isinstance(provider.get("localEndpointCandidates"), list) else [],
             "credential_kind": agent_provider_contract(provider)["credential_kind"],
             "contract": agent_provider_contract(provider),
@@ -185,6 +209,26 @@ def _normalize_model_response(provider: dict[str, Any], payload: dict[str, Any])
     return _prioritize_models(provider, models)
 
 
+def _static_agent_models(provider: dict[str, Any]) -> list[dict[str, str]]:
+    raw_models = provider.get("staticModels")
+    if not isinstance(raw_models, list):
+        return []
+
+    models: list[dict[str, str]] = []
+    for raw_model in raw_models:
+        if isinstance(raw_model, str):
+            model_id = raw_model.strip()
+            label = model_id
+        elif isinstance(raw_model, dict):
+            model_id = str(raw_model.get("id") or raw_model.get("name") or "").strip()
+            label = str(raw_model.get("label") or raw_model.get("displayName") or model_id).strip()
+        else:
+            continue
+        if model_id:
+            models.append({"id": model_id, "label": label or model_id})
+    return _prioritize_models(provider, models)
+
+
 def _prioritize_models(provider: dict[str, Any], models: list[dict[str, str]]) -> list[dict[str, str]]:
     recommended_model = str(provider.get("recommendedModel") or provider.get("defaultModel") or "").strip()
     if not recommended_model:
@@ -250,7 +294,7 @@ def assess_agent_model_capability(provider: dict[str, Any], model: str) -> dict[
 def fetch_agent_models(provider_id: str, api_key: str) -> list[dict[str, str]]:
     provider = get_agent_provider(provider_id)
     if not provider.get("modelsPath"):
-        return []
+        return _static_agent_models(provider)
 
     if provider.get("generationAdapter") == "ollama-chat":
         base_url = _local_endpoint(provider, api_key)
@@ -280,6 +324,74 @@ def fetch_agent_models(provider_id: str, api_key: str) -> list[dict[str, str]]:
         raise CourseAgentError(f"Model fetch failed: {detail}") from exc
     except httpx.HTTPError as exc:
             raise CourseAgentError(f"Model fetch failed: {exc}") from exc
+
+
+def _runtime_command_parts(command: str, provider: dict[str, Any]) -> list[str]:
+    cleaned = command.strip()
+    label = str(provider.get("label") or provider.get("id") or "agent runtime")
+    if not cleaned:
+        raise CourseAgentError(f"Add a {label} bridge command before verifying this runtime.")
+    try:
+        parts = shlex.split(cleaned)
+    except ValueError as exc:
+        raise CourseAgentError(f"{label} bridge command could not be parsed: {exc}") from exc
+    if not parts:
+        raise CourseAgentError(f"Add a {label} bridge command before verifying this runtime.")
+
+    executable = parts[0]
+    executable_path = Path(executable).expanduser()
+    if not executable_path.exists() and shutil.which(executable) is None:
+        raise CourseAgentError(f"{label} bridge command was not found: {executable}")
+    return parts
+
+
+def _parse_runtime_bridge_output(provider: dict[str, Any], stdout: str) -> dict[str, Any]:
+    cleaned = stdout.strip()
+    if not cleaned:
+        return {"ok": True}
+    try:
+        payload = json.loads(cleaned)
+    except json.JSONDecodeError:
+        return {"content": cleaned}
+    if not isinstance(payload, dict):
+        raise CourseAgentError(f"{provider.get('label') or 'Agent runtime'} bridge returned non-object JSON.")
+    return payload
+
+
+def _validate_local_agent_runtime(provider: dict[str, Any], command: str) -> list[dict[str, str]]:
+    parts = _runtime_command_parts(command, provider)
+    label = str(provider.get("label") or provider.get("id") or "Agent runtime")
+    probe_payload = {
+        "type": "lycium-agent-runtime-probe-v1",
+        "providerId": provider.get("id"),
+        "runtimeKind": provider.get("runtimeKind"),
+        "requiredCapabilities": ["generate-json"],
+    }
+    try:
+        result = subprocess.run(
+            parts,
+            input=json.dumps(probe_payload, ensure_ascii=False),
+            text=True,
+            capture_output=True,
+            timeout=min(10, SETTINGS.agent_timeout_seconds),
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise CourseAgentError(f"{label} bridge probe timed out.") from exc
+    except OSError as exc:
+        raise CourseAgentError(f"{label} bridge could not be started: {exc}") from exc
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()[:500]
+        raise CourseAgentError(f"{label} bridge probe failed: {detail or f'exit code {result.returncode}'}")
+
+    payload = _parse_runtime_bridge_output(provider, result.stdout)
+    if payload.get("ok") is False:
+        detail = payload.get("error") or payload.get("message") or "Bridge reported that it is not ready."
+        raise CourseAgentError(f"{label} bridge is not ready: {detail}")
+
+    models = _normalize_model_response(provider, payload)
+    return models or _static_agent_models(provider)
 
 
 def detect_local_agent_endpoint(provider_id: str) -> tuple[str, list[dict[str, str]]] | None:
@@ -386,6 +498,46 @@ def _call_ollama_chat(
     return _post_json(provider, "", url, payload, timeout_seconds=timeout_seconds)
 
 
+def _call_local_agent_runtime(
+    provider: dict[str, Any],
+    runtime_command: str,
+    messages: list[dict[str, str]],
+    model: str,
+    *,
+    timeout_seconds: float | None = None,
+) -> dict[str, Any]:
+    parts = _runtime_command_parts(runtime_command, provider)
+    label = str(provider.get("label") or provider.get("id") or "Agent runtime")
+    selected_model = str(model or provider.get("defaultModel") or "").strip()
+    payload = {
+        "type": "lycium-agent-runtime-generate-v1",
+        "providerId": provider.get("id"),
+        "runtimeKind": provider.get("runtimeKind"),
+        "model": selected_model,
+        "messages": messages,
+        "responseFormat": "json_object",
+        "temperature": 0.2,
+    }
+    try:
+        result = subprocess.run(
+            parts,
+            input=json.dumps(payload, ensure_ascii=False),
+            text=True,
+            capture_output=True,
+            timeout=timeout_seconds or SETTINGS.agent_timeout_seconds,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise CourseAgentError(f"{label} bridge generation timed out.") from exc
+    except OSError as exc:
+        raise CourseAgentError(f"{label} bridge could not be started: {exc}") from exc
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout or "").strip()[:500]
+        raise CourseAgentError(f"{label} bridge generation failed: {detail or f'exit code {result.returncode}'}")
+    return _parse_runtime_bridge_output(provider, result.stdout)
+
+
 def _post_json(
     provider: dict[str, Any],
     api_key: str,
@@ -441,6 +593,8 @@ def call_agent_model(
     adapter = provider.get("generationAdapter")
     if adapter == "ollama-chat":
         return _call_ollama_chat(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
+    if adapter == "local-agent-runtime":
+        return _call_local_agent_runtime(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
     if adapter == "anthropic-messages":
         return _call_anthropic_messages(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
     if adapter == "gemini-generate-content":
@@ -450,6 +604,13 @@ def call_agent_model(
 
 def validate_agent_api_key(api_key: str, provider_id: str = "openai", model: str | None = None) -> list[dict[str, str]]:
     provider = get_agent_provider(provider_id)
+    if provider.get("generationAdapter") == "local-agent-runtime":
+        models = _validate_local_agent_runtime(provider, api_key)
+        selected_model = model or provider.get("defaultModel") or (models[0]["id"] if models else SETTINGS.agent_model)
+        if selected_model and not any(record["id"] == selected_model for record in models):
+            models.insert(0, {"id": str(selected_model), "label": str(selected_model)})
+        return models
+
     models = fetch_agent_models(provider_id, api_key)
     if provider.get("generationAdapter") == "ollama-chat":
         selected_model = model or (models[0]["id"] if models else str(provider.get("defaultModel") or SETTINGS.agent_model))

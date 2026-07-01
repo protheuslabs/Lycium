@@ -183,10 +183,18 @@ def register(app: FastAPI) -> None:
     def update_local_settings(payload: LocalSettingsUpdate) -> dict[str, Any]:
         try:
             provider_id = payload.provider_id
-            if provider_id != "local-model" and looks_like_local_agent_endpoint(payload.agent_api_key):
+            requested_provider = get_agent_provider(provider_id)
+            if (
+                provider_id != "local-model"
+                and not bool(requested_provider.get("localProvider"))
+                and looks_like_local_agent_endpoint(payload.agent_api_key)
+            ):
                 provider_id = "local-model"
-            provider = get_agent_provider(provider_id)
-            is_local_provider = provider.get("generationAdapter") == "ollama-chat"
+                provider = get_agent_provider(provider_id)
+            else:
+                provider = requested_provider
+            adapter = str(provider.get("generationAdapter") or "")
+            is_local_provider = adapter in {"ollama-chat", "local-agent-runtime"} or bool(provider.get("localProvider"))
             connection_status = "verified"
             connection_message = None
             try:
@@ -194,12 +202,16 @@ def register(app: FastAPI) -> None:
             except CourseAgentError as exc:
                 if not is_local_provider:
                     raise
-                detected = detect_local_agent_endpoint(provider_id)
+                detected = detect_local_agent_endpoint(provider_id) if adapter == "ollama-chat" else None
                 if detected:
                     payload.agent_api_key, models = detected
                     connection_message = f"Auto-detected local model endpoint at {payload.agent_api_key}."
                 else:
-                    models = []
+                    models = [
+                        {"id": str(model.get("id") or model.get("name") or ""), "label": str(model.get("label") or model.get("id") or model.get("name") or "")}
+                        for model in provider.get("staticModels", [])
+                        if isinstance(model, dict) and str(model.get("id") or model.get("name") or "").strip()
+                    ]
                     connection_status = "unverified"
                     connection_message = str(exc)
             default_model = str(provider.get("defaultModel") or "")
@@ -256,7 +268,7 @@ def register(app: FastAPI) -> None:
                 connection_message="Connection verified.",
             )
         except CourseAgentError as exc:
-            is_local_provider = str(profile.get("provider_id") or "") == "local-model"
+            is_local_provider = str(provider.get("generationAdapter") or "") in {"ollama-chat", "local-agent-runtime"} or bool(provider.get("localProvider"))
             update_agent_key_verification(
                 payload.key_id,
                 models=profile.get("models", []),

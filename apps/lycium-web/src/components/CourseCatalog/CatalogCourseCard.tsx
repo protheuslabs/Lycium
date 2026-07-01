@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CourseEntry } from "../../courseTypes";
 import Modal from "../Modal/Modal";
 import CatalogActionCard from "./CatalogActionCard";
@@ -28,6 +28,7 @@ export default function CatalogCourseCard({
   const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites, requirementContexts } =
     visibleCourse;
   const [isPrerequisiteModalOpen, setIsPrerequisiteModalOpen] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const localDraft = getLocalDraftMetadata(course);
   const lifecycle = getCourseLifecycleSummary(course);
   const sourceSummary = sourceGapSummary(course);
@@ -36,6 +37,11 @@ export default function CatalogCourseCard({
   const canActivateCard = lifecycle.needsSourceInput || (!requiresPrerequisites && lifecycle.canOpen);
   const shouldShowLifecycleAction = lifecycle.needsSourceInput || lifecycle.status === "failed";
   const requirementLabel = requirementContexts.map((context) => context.title).join("; ");
+  const canShowActivity = hasMounted && hasCourseActivity;
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const handleCourseOpen = () => {
     if (lifecycle.needsSourceInput) {
@@ -87,7 +93,7 @@ export default function CatalogCourseCard({
         <p className="course-progress-percentage course-progress-empty course-progress-required course-progress-needs-sources">
           <span>Needs sources: {sourceSummary.blockingGaps.length} blocking gap{sourceSummary.blockingGaps.length === 1 ? "" : "s"}</span>
         </p>
-      ) : !hasCourseActivity ? (
+      ) : !canShowActivity ? (
         <p className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}>
           {requiresPrerequisites ? (
             <button

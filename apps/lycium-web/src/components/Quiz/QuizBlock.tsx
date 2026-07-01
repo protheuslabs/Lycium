@@ -435,7 +435,7 @@ export default function QuizBlock({
         attemptStarted: true,
         attemptOrder: nextAttemptOrder,
         attemptSignature: attemptSignature(nextAttemptOrder),
-        previousAttemptSignature,
+        previousAttemptSignature: previousAttemptSignature ?? undefined,
       }
     );
     onSubmissionChange?.(name, false);

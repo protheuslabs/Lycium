@@ -48,6 +48,70 @@ const DEFAULT_AGENT_PROVIDERS: AgentProviderRecord[] = [
     model_fetch_supported: true,
     generation_adapter: "gemini-generate-content",
   },
+  {
+    id: "claude-code-runtime",
+    label: "Claude Code",
+    default_model: "claude-code",
+    recommended_model: "claude-code",
+    model_recommendation_note:
+      "Uses a local Lycium agent-runtime bridge. Add a bridge command that can read Lycium JSON requests from stdin.",
+    model_fetch_supported: true,
+    generation_adapter: "local-agent-runtime",
+    local_provider: true,
+    credential_label: "bridge command",
+    credential_placeholder: "Auto-filled Lycium bridge command",
+    credential_default: "python3 services/lycium-api/scripts/agent_runtime_bridge.py --runtime claude-code",
+    credential_kind: "local_runtime",
+    contract: {
+      provider_kind: "agent_runtime",
+      credential_kind: "local_runtime",
+      generation_adapter: "local-agent-runtime",
+      requires_verified_connection: true,
+      supports_model_list: true,
+      supports_json_mode: true,
+      supports_streaming: false,
+      supports_tool_use: false,
+      supports_usage_metadata: false,
+      model_source: "runtime_bridge",
+      capabilities: {
+        agent_runtime: true,
+        local_execution: true,
+        runtime_bridge: true,
+      },
+    },
+  },
+  {
+    id: "codex-runtime",
+    label: "Codex",
+    default_model: "codex",
+    recommended_model: "codex",
+    model_recommendation_note:
+      "Uses a local Lycium agent-runtime bridge. Add a bridge command that can read Lycium JSON requests from stdin.",
+    model_fetch_supported: true,
+    generation_adapter: "local-agent-runtime",
+    local_provider: true,
+    credential_label: "bridge command",
+    credential_placeholder: "Auto-filled Lycium bridge command",
+    credential_default: "python3 services/lycium-api/scripts/agent_runtime_bridge.py --runtime codex",
+    credential_kind: "local_runtime",
+    contract: {
+      provider_kind: "agent_runtime",
+      credential_kind: "local_runtime",
+      generation_adapter: "local-agent-runtime",
+      requires_verified_connection: true,
+      supports_model_list: true,
+      supports_json_mode: true,
+      supports_streaming: false,
+      supports_tool_use: false,
+      supports_usage_metadata: false,
+      model_source: "runtime_bridge",
+      capabilities: {
+        agent_runtime: true,
+        local_execution: true,
+        runtime_bridge: true,
+      },
+    },
+  },
 ];
 
 const browserStorage = createBrowserStorageRepository();
@@ -103,7 +167,9 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     setSettingsMessage("");
 
     try {
+      const selectedProvider = agentProviders.find((provider) => provider.id === agentProviderId);
       const providerIdForCredential =
+        !selectedProvider?.local_provider &&
         localEndpointPattern.test(trimmedKey) &&
         agentProviders.some((provider) => provider.id === "local-model")
           ? "local-model"

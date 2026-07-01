@@ -8,8 +8,8 @@ from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class LocalAiProviderContractRead(BaseModel):
-    provider_kind: Literal["cloud", "local"]
-    credential_kind: Literal["api_key", "local_endpoint"]
+    provider_kind: Literal["cloud", "local", "agent_runtime"]
+    credential_kind: Literal["api_key", "local_endpoint", "local_runtime"]
     generation_adapter: str
     requires_verified_connection: bool = True
     supports_model_list: bool = False
@@ -17,7 +17,7 @@ class LocalAiProviderContractRead(BaseModel):
     supports_streaming: bool = False
     supports_tool_use: bool = False
     supports_usage_metadata: bool = False
-    model_source: Literal["provider_api", "static_default"] = "static_default"
+    model_source: Literal["provider_api", "static_default", "runtime_bridge"] = "static_default"
     capabilities: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -35,7 +35,7 @@ class LocalAiProviderRead(BaseModel):
     credential_placeholder: str = "api key"
     credential_default: str = ""
     local_endpoint_candidates: list[str] = Field(default_factory=list)
-    credential_kind: Literal["api_key", "local_endpoint"] = "api_key"
+    credential_kind: Literal["api_key", "local_endpoint", "local_runtime"] = "api_key"
     contract: LocalAiProviderContractRead | None = None
 
 
@@ -60,7 +60,7 @@ class LocalAgentKeyRead(BaseModel):
     generation_adapter: str | None = None
     local_provider: bool = False
     credential_label: str = "api key"
-    credential_kind: Literal["api_key", "local_endpoint"] = "api_key"
+    credential_kind: Literal["api_key", "local_endpoint", "local_runtime"] = "api_key"
     contract: LocalAiProviderContractRead | None = None
     model_capability: dict[str, Any] = Field(default_factory=dict)
 

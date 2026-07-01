@@ -16,6 +16,7 @@ import { sourceCitationNumber } from "./sourceCitationUtils";
 type EditableContentBlockProps = {
   block: ContentBlock;
   blockIndex: number;
+  courseKey: string;
   sources: SourceRecord[];
   courseSourceIndex: CourseSourceIndex;
   sectionId: string;
@@ -62,6 +63,7 @@ function asConceptCard(card: ConceptCard | string): ConceptCard {
 export default function EditableContentBlock({
   block,
   blockIndex,
+  courseKey,
   sources,
   courseSourceIndex,
   sectionId,
@@ -278,6 +280,7 @@ export default function EditableContentBlock({
       return editShell(
         <ProjectBlock
           block={block}
+          courseKey={courseKey}
           isEditMode={isEditMode}
           onChange={updateBlock}
           sectionId={sectionId}

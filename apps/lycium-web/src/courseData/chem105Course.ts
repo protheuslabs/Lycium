@@ -53,7 +53,7 @@ function conceptCard(concept: ConceptSpec, sourceIds: string[], sourceSectionId?
   return { type: "conceptCard", title: concept.title, description: concept.description, sourceIds, ...(sourceSectionId ? { sourceSectionId } : {}) } as CourseBlock;
 }
 
-function makeQuizQuestions(moduleIndex: number, concepts: ConceptSpec[]) {
+function makeQuizQuestions(concepts: ConceptSpec[]) {
   const questionConcepts = concepts.length >= 10
     ? concepts.slice(0, 10)
     : Array.from({ length: 10 }, (_, index) => concepts[index % concepts.length]);
@@ -152,7 +152,7 @@ function buildModule(spec: ModuleSpec, moduleIndex: number): CourseModule {
       {
         type: "quiz",
         sourceIds: spec.sourceIds,
-        questions: makeQuizQuestions(moduleIndex, conceptsWithSections.map(({ concept }) => concept)),
+        questions: makeQuizQuestions(conceptsWithSections.map(({ concept }) => concept)),
         passPercentage: 70,
         maxAttempts: "",
         timeLimitSeconds: "",

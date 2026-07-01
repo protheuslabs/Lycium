@@ -68,6 +68,8 @@
 - FR-33a: The system shall support rubric-based grading workflows for projects, submissions, practical tasks, and non-quiz assessments.
 - FR-33b: The system shall support an agent grader workflow that evaluates submissions against the rubric, source-backed expected learning outcomes, prerequisite material, and course context before returning feedback.
 - FR-33c: Human graders or authorized reviewers shall be able to inspect, override, or annotate agent grader feedback when grading permissions are enabled.
+- FR-33d: Project grading workflows shall return structured error states when required tools, readable submission content, rubric data, source context, or grading providers are unavailable.
+- FR-33e: The initial native grading workflow may grade plain text submissions through deterministic text extraction, but it shall mark unsupported artifact inspection such as unreadable files or unfetched links as requiring review rather than pretending to inspect them.
 
 ### 7.8 Persistence and Reuse
 

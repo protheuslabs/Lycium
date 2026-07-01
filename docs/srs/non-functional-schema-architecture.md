@@ -136,6 +136,8 @@ Minimum schema additions:
 - The AI layer shall be provider-agnostic where practical.
 - The generation pipeline should separate outline generation from full content generation.
 - The tutoring pipeline should use course context and learner state as explicit inputs.
+- The grading pipeline shall be workflow-driven and adapter-shaped, with explicit tool calls for submission reading, course-context retrieval, rubric evaluation, source checking, sandbox execution where appropriate, grade-report writing, and learner feedback comments.
+- Native Lycium grading tools are temporary primitives. They shall preserve adapter provenance and be replaceable by Infring OS or other Protheus ecosystem primitives without changing the project/course authoring contract.
 - Agent personas should be configuration-driven rather than hard-coded into prompts only.
 - The generation pipeline should treat the knowledge base and learner profile as first-class inputs.
 - The AI layer should be able to assemble both canonical course templates and individualized course forks.

@@ -33,6 +33,8 @@ export type ProjectRubric = {
 export type ProjectSubmissionInputType = "pdf" | "docx" | "image" | "text" | "link" | "file" | string;
 
 export type ProjectSubmissionPolicy = {
+  submissionType?: ProjectSubmissionInputType;
+  submissionMethods?: string[];
   acceptedTypes?: ProjectSubmissionInputType[];
   acceptedFileTypes?: string[];
   instructions?: string;

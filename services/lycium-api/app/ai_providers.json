@@ -83,6 +83,50 @@
       "auth": {
         "type": "x-goog-api-key"
       }
+    },
+    {
+      "id": "claude-code-runtime",
+      "label": "Claude Code",
+      "generationAdapter": "local-agent-runtime",
+      "defaultModel": "claude-code",
+      "recommendedModel": "claude-code",
+      "modelRecommendationNote": "Uses a local Lycium agent-runtime bridge. The bridge reads Lycium JSON requests from stdin and writes JSON responses to stdout.",
+      "staticModels": [
+        {
+          "id": "claude-code",
+          "label": "Claude Code runtime"
+        }
+      ],
+      "localProvider": true,
+      "localRuntime": true,
+      "runtimeKind": "claude-code",
+      "credentialLabel": "bridge command",
+      "credentialPlaceholder": "Auto-filled Lycium bridge command",
+      "auth": {
+        "type": "none"
+      }
+    },
+    {
+      "id": "codex-runtime",
+      "label": "Codex",
+      "generationAdapter": "local-agent-runtime",
+      "defaultModel": "codex",
+      "recommendedModel": "codex",
+      "modelRecommendationNote": "Uses a local Lycium agent-runtime bridge. The bridge reads Lycium JSON requests from stdin and writes JSON responses to stdout.",
+      "staticModels": [
+        {
+          "id": "codex",
+          "label": "Codex runtime"
+        }
+      ],
+      "localProvider": true,
+      "localRuntime": true,
+      "runtimeKind": "codex",
+      "credentialLabel": "bridge command",
+      "credentialPlaceholder": "Auto-filled Lycium bridge command",
+      "auth": {
+        "type": "none"
+      }
     }
   ]
 }

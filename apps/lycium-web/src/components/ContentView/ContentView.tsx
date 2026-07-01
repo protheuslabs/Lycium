@@ -316,6 +316,7 @@ export default function ContentView({
                 <EditableContentBlock
                   block={block}
                   blockIndex={idx}
+                  courseKey={courseKey}
                   sources={sources}
                   courseSourceIndex={courseSourceIndex}
                   sectionId={section.id}

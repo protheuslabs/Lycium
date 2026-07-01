@@ -22,7 +22,8 @@ def _mask_key(api_key: str) -> str:
 
 def _credential_preview(key: dict[str, Any]) -> str:
     credential = str(key.get("agent_api_key") or "")
-    if key.get("provider_id") == "local-model":
+    provider_metadata = _agent_provider_metadata(str(key.get("provider_id") or ""))
+    if provider_metadata.get("credential_kind") != "api_key":
         return credential
     return _mask_key(credential)
 
@@ -40,8 +41,11 @@ def _agent_provider_metadata(provider_id: str, provider_label: str | None = None
             "contract": contract,
         }
     except Exception:
-        local_provider = provider_id == "local-model"
+        local_provider = provider_id == "local-model" or provider_id.endswith("-runtime")
+        agent_runtime_provider = provider_id.endswith("-runtime")
         credential_kind = "local_endpoint" if local_provider else "api_key"
+        if agent_runtime_provider:
+            credential_kind = "local_runtime"
         return {
             "provider_label": provider_label or provider_id,
             "generation_adapter": "",
@@ -49,7 +53,7 @@ def _agent_provider_metadata(provider_id: str, provider_label: str | None = None
             "credential_label": "local path" if local_provider else "api key",
             "credential_kind": credential_kind,
             "contract": {
-                "provider_kind": "local" if local_provider else "cloud",
+                "provider_kind": "agent_runtime" if agent_runtime_provider else ("local" if local_provider else "cloud"),
                 "credential_kind": credential_kind,
                 "generation_adapter": "",
                 "requires_verified_connection": True,
@@ -58,7 +62,7 @@ def _agent_provider_metadata(provider_id: str, provider_label: str | None = None
                 "supports_streaming": False,
                 "supports_tool_use": False,
                 "supports_usage_metadata": False,
-                "model_source": "static_default",
+                "model_source": "runtime_bridge" if agent_runtime_provider else "static_default",
                 "capabilities": {},
             },
         }

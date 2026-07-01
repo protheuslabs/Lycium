@@ -103,7 +103,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - quiz questions should include `multiple: true` only when the UI should render checkboxes; single-answer questions should use `answers: [index]` and omit `multiple` or set it false
    - visual blocks should include alt text, source IDs or generation provenance, and license/provenance metadata when applicable
    - flashcard sets should use structured cards with prompt, answer, optional hint, explanation, concept tags, and source IDs
-   - project blocks or project sections should include instructions, artifact type, required evidence, rubric reference, source IDs, submission policy, and grader workflow metadata when applicable
+   - project blocks or project sections should include instructions, artifact type, required evidence, rubric reference, source IDs, one canonical submission type, optional submission methods, and grader workflow metadata when applicable
    - use project blocks for projects, labs, simulations, portfolio tasks, practical exams, or other non-quiz evidence that should be graded against a rubric
 12. Record all sources centrally and reference them from the course:
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
