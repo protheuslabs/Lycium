@@ -13,7 +13,7 @@ The first native workflow is intentionally narrow:
 5. Return a structured grade report and optional review-needed errors.
 6. Add grader feedback to the project comment flow.
 
-The native workflow can grade plain text submissions enough to test the product loop. It can also extract text from TXT, PDF, and DOCX uploads submitted through the course UI. Link-only submissions are recorded, but marked as requiring review until a fetcher can inspect the linked artifact content. Unsupported uploads, image-only uploads, corrupt files, or files without extractable text fail closed with a visible tool/extraction error.
+The native workflow can grade plain text submissions enough to test the product loop. It can also extract text from TXT, PDF, and DOCX uploads submitted through the course UI. Link-only submissions are recorded, but marked as requiring review until a fetcher can inspect the linked artifact content. Image submissions are accepted as artifacts, but marked as requiring review until a vision-capable agent grader or human reviewer can inspect the image. Unsupported uploads, corrupt files, or files without extractable text fail closed with a visible tool/extraction error.
 
 Native grading is not an Ollama/cloud-LLM call. Until an agent-grader adapter is added, Lycium returns `grader: native_text_grader` and records the requested grader separately in the trace. This avoids presenting deterministic local scoring as a connected model result.
 

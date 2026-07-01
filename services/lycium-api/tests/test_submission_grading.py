@@ -151,10 +151,19 @@ def test_docx_file_submission_can_be_extracted_and_graded() -> None:
     assert report["trace"]["toolCalls"][0]["extractedFileWordCount"] > 20
 
 
-def test_unsupported_file_submission_returns_clear_error() -> None:
+def test_image_file_submission_is_accepted_but_requires_vision_review() -> None:
     report = _grade_file("diagram.png", b"not an inspectable image", "image/png")
 
     assert report["status"] == "needs_review"
     assert report["score"] == 0
+    assert report["errors"][0]["code"] == "image_inspection_unavailable"
+    assert "vision-capable agent grader" in report["errors"][0]["message"]
+
+
+def test_unsupported_file_submission_returns_clear_error() -> None:
+    report = _grade_file("archive.zip", b"not inspectable", "application/zip")
+
+    assert report["status"] == "needs_review"
+    assert report["score"] == 0
     assert report["errors"][0]["code"] == "unsupported_file_type"
-    assert "TXT, PDF, and DOCX" in report["errors"][0]["message"]
+    assert "TXT, PDF, DOCX, and image" in report["errors"][0]["message"]

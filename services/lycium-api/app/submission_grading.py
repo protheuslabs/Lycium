@@ -194,12 +194,29 @@ def _extract_file_text(submission: dict[str, Any]) -> dict[str, str]:
         return _extract_pdf_file(file_bytes)
     if lower_name.endswith(".docx"):
         return _extract_docx_file(file_bytes)
+    if _is_image_submission(submission):
+        return {
+            "status": "image_inspection_unavailable",
+            "text": "",
+            "message": "Image submissions are accepted, but the native grader cannot inspect image content yet. Use a vision-capable agent grader or human review.",
+        }
 
     return {
         "status": "unsupported_file_type",
         "text": "",
-        "message": "The native grader can only inspect TXT, PDF, and DOCX uploads right now.",
+        "message": "The native grader can only inspect TXT, PDF, DOCX, and image artifact uploads right now.",
     }
+
+
+def _is_image_submission(submission: dict[str, Any]) -> bool:
+    file_name = str(submission.get("fileName") or "").strip().lower()
+    file_mime_type = str(submission.get("fileMimeType") or "").strip().lower()
+    submission_type = str(submission.get("submissionType") or "").strip().lower()
+    return (
+        submission_type == "image"
+        or file_mime_type.startswith("image/")
+        or file_name.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".tif", ".tiff"))
+    )
 
 
 def _strip_data_url_prefix(value: str) -> str:
