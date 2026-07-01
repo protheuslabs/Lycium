@@ -158,6 +158,7 @@ class CourseGenerationReadinessSourceEvidenceRead(BaseModel):
     usableInputArtifactCount: int | None = None
     submittedEvidenceCount: int | None = None
     minimumCourseSources: int | None = None
+    minimumSourceStrengthScore: int | None = None
     model_config = ConfigDict(extra="allow")
 
 
@@ -184,6 +185,7 @@ class CourseGenerationReadinessRead(BaseModel):
     ready: bool | None = None
     sourceEvidence: CourseGenerationReadinessSourceEvidenceRead | None = None
     conceptCoverage: CourseGenerationReadinessConceptCoverageRead | None = None
+    sourceStrength: dict[str, Any] | None = None
     sourceGate: dict[str, Any] | None = None
     issues: list[CourseGenerationReadinessIssueRead] = Field(default_factory=list)
     model_config = ConfigDict(extra="allow")

@@ -11,11 +11,13 @@ export function useSectionQuizStatus({
   isComplete,
   onQuizSectionPassed,
   onSectionTimedStatusChange,
+  autoCompleteEnabled = true,
 }: {
   section: Section | null;
   isComplete: boolean;
   onQuizSectionPassed?: (sectionId: string) => void;
   onSectionTimedStatusChange?: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
+  autoCompleteEnabled?: boolean;
 }) {
   const quizBlockKeys = useMemo(() => {
     if (!section) {
@@ -95,10 +97,10 @@ export function useSectionQuizStatus({
   });
 
   useEffect(() => {
-    if (section?.id && requiresQuizSubmission && allRequiredQuizzesPassed && !isComplete) {
+    if (section?.id && autoCompleteEnabled && requiresQuizSubmission && allRequiredQuizzesPassed && !isComplete) {
       onQuizSectionPassed?.(section.id);
     }
-  }, [allRequiredQuizzesPassed, isComplete, onQuizSectionPassed, requiresQuizSubmission, section?.id]);
+  }, [allRequiredQuizzesPassed, autoCompleteEnabled, isComplete, onQuizSectionPassed, requiresQuizSubmission, section?.id]);
 
   useEffect(() => {
     if (section?.id) {
@@ -118,5 +120,6 @@ export function useSectionQuizStatus({
         : "Mark section complete",
     handleQuizProgressChange,
     handleQuizSubmissionChange,
+    requiresQuizSubmission,
   };
 }

@@ -334,6 +334,7 @@ def generate_course_direct(
         input_artifacts=source_corpus.input_artifacts,
         source_packet=source_packet,
         source_corpus_synthesis=source_corpus.synthesis,
+        source_documents=source_corpus.source_documents,
     )
     if not bool(readiness["ready"]):
         return create_needs_sources_course_snapshot(

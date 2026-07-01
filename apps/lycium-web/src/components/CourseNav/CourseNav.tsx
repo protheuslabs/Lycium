@@ -10,7 +10,7 @@ type CourseNavProps = {
   nextDisabled: boolean;
   isComplete: boolean;
   canMarkComplete: boolean;
-  allRequiredQuizzesSubmitted: boolean;
+  completionRequirementsMet: boolean;
   completeButtonTitle: string;
   onPrev: () => void;
   onNext: () => void;
@@ -25,7 +25,7 @@ export default function CourseNav({
   nextDisabled,
   isComplete,
   canMarkComplete,
-  allRequiredQuizzesSubmitted,
+  completionRequirementsMet,
   completeButtonTitle,
   onPrev,
   onNext,
@@ -50,7 +50,7 @@ export default function CourseNav({
         <div className="nav-button-wrapper course-nav-right">
           <Button
             className={`nav-button complete-button ${isComplete ? "complete-button--checked" : ""} ${
-              !isComplete && !allRequiredQuizzesSubmitted ? "complete-button--blocked" : ""
+              !isComplete && !completionRequirementsMet ? "complete-button--blocked" : ""
             }`}
             variant="complete"
             onClick={() => {
@@ -58,7 +58,7 @@ export default function CourseNav({
                 onComplete();
               }
             }}
-            aria-disabled={isComplete || !allRequiredQuizzesSubmitted}
+            aria-disabled={isComplete || !completionRequirementsMet}
             aria-label={isComplete ? "Section complete" : "Mark section complete"}
             title={completeButtonTitle}
           >

@@ -60,6 +60,7 @@ export type LyciumCourseSourceCoveragePolicy = {
   minimumCourseSources?: number;
   minimumSourcesPerModule?: number;
   minimumRequiredConceptCoveragePercent?: number;
+  minimumSourceStrengthScore?: number;
   requireBenchmarkEvidence?: boolean;
   requireAssessmentCoverage?: boolean;
 };
@@ -83,6 +84,13 @@ export type LyciumCourseGenerationReadiness = {
     coveredConceptCount?: number | null;
     uncoveredConcepts?: string[];
     coverageRows?: Record<string, unknown>[];
+    [key: string]: unknown;
+  };
+  sourceStrength?: {
+    score?: number;
+    minimumScore?: number;
+    status?: string;
+    ready?: boolean;
     [key: string]: unknown;
   };
   sourceGate?: Record<string, unknown> | null;

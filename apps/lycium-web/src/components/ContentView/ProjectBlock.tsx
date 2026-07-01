@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { API_BASE } from "../../runtime/appRuntime";
+import Dropdown from "../Dropdown/Dropdown";
 import { EditPencilButton, promptForText } from "./CourseEditControls";
 import type {
   ContentBlock,
@@ -9,6 +10,7 @@ import type {
   ProjectSubmissionPolicy,
   SourceRecord,
 } from "./contentViewTypes";
+import { projectKeyFor, readProjectSubmissionRecord, writeProjectSubmissionRecord } from "./projectSubmissionStatus";
 import { useProjectComments } from "./useProjectComments";
 
 type ProjectBlockProps = {
@@ -19,6 +21,7 @@ type ProjectBlockProps = {
   sectionId?: string;
   sectionTitle?: string;
   sourceRecords?: SourceRecord[];
+  onSubmissionChange?: (projectKey: string, submitted: boolean) => void;
 };
 
 type ProjectSubmissionDraft = {
@@ -66,7 +69,26 @@ const SUBMISSION_TYPE_LABELS: Record<string, string> = {
   text: "Text",
 };
 
-export default function ProjectBlock({ block, courseKey, isEditMode, onChange, sectionId, sectionTitle, sourceRecords = [] }: ProjectBlockProps) {
+const SUBMISSION_TYPE_OPTIONS = [
+  { value: "text", label: "Text" },
+  { value: "link", label: "Link" },
+  { value: "doc", label: "Document" },
+  { value: "pdf", label: "PDF" },
+  { value: "docx", label: "DOCX" },
+  { value: "image", label: "Image" },
+  { value: "file", label: "File" },
+];
+
+export default function ProjectBlock({
+  block,
+  courseKey,
+  isEditMode,
+  onChange,
+  sectionId,
+  sectionTitle,
+  sourceRecords = [],
+  onSubmissionChange,
+}: ProjectBlockProps) {
   const [submission, setSubmission] = useState<ProjectSubmissionDraft>({ text: "", link: "", fileName: "" });
   const [submitted, setSubmitted] = useState(false);
   const [gradeMessage, setGradeMessage] = useState("");
@@ -82,9 +104,15 @@ export default function ProjectBlock({ block, courseKey, isEditMode, onChange, s
   const title = block.title ?? "Project title";
   const instructions = block.instructions ?? block.description ?? block.value ?? block.text ?? "Complete the project and submit the required evidence.";
   const requiredEvidence = Array.isArray(block.requiredEvidence) ? block.requiredEvidence : [];
-  const projectKey = `${courseKey}:${sectionId ?? "unknown-section"}:${title}`;
+  const projectKey = projectKeyFor(courseKey, sectionId, block);
   const { addComment, comments, draftComment, setDraftComment } = useProjectComments(projectKey);
   const submitButtonLabel = isGrading ? "Submitting..." : submitted ? "Resubmit" : "Submit";
+
+  useEffect(() => {
+    const savedSubmitted = readProjectSubmissionRecord(projectKey)?.submitted === true;
+    setSubmitted(savedSubmitted);
+    onSubmissionChange?.(projectKey, savedSubmitted);
+  }, [onSubmissionChange, projectKey]);
 
   const updateBlock = (patch: Partial<ContentBlock>) => onChange?.({ ...block, ...patch });
   const updateSubmissionPolicy = (patch: Partial<ProjectSubmissionPolicy>) =>
@@ -152,7 +180,15 @@ export default function ProjectBlock({ block, courseKey, isEditMode, onChange, s
     }
     setSubmission(currentSubmission);
     setSubmitted(true);
-    addComment("learner", submissionCommentBody(currentSubmission, submissionType));
+    const commentBody = submissionCommentBody(currentSubmission, submissionType);
+    writeProjectSubmissionRecord(projectKey, {
+      submitted: true,
+      submittedAt: new Date().toISOString(),
+      submissionType,
+      summary: commentBody,
+    });
+    onSubmissionChange?.(projectKey, true);
+    addComment("learner", commentBody);
     setGradeMessage((graderWorkflow.grader ?? "agent") === "agent" ? "Submission received. Grading..." : "Submission received.");
     setGradeReport(null);
     if ((graderWorkflow.grader ?? "agent") === "agent") await gradeSubmission(currentSubmission);
@@ -266,14 +302,18 @@ export default function ProjectBlock({ block, courseKey, isEditMode, onChange, s
             <div className="project-block-section-title">
               <h4>Submission</h4>
               {isEditMode && (
-                <EditPencilButton
-                  label="Edit submission type"
-                  onClick={() =>
-                    promptForText("Edit submission type", submissionType, (value) => {
-                      const nextType = value.trim().toLowerCase() || "text";
-                      updateSubmissionPolicy({ submissionType: nextType, acceptedTypes: [nextType] });
+                <Dropdown
+                  className="project-submission-type-dropdown"
+                  value={submissionType}
+                  options={SUBMISSION_TYPE_OPTIONS}
+                  onChange={(nextType) =>
+                    updateSubmissionPolicy({
+                      submissionType: nextType,
+                      acceptedTypes: [nextType],
+                      acceptedFileTypes: defaultAcceptedFileTypesFor(nextType),
                     })
                   }
+                  ariaLabel="Project submission type"
                 />
               )}
             </div>
@@ -465,20 +505,23 @@ function normalizeGraderWorkflow(rawWorkflow: ContentBlock["graderWorkflow"]): P
 function acceptedFileTypesFor(policy: ProjectSubmissionPolicy) {
   const explicit = policy.acceptedFileTypes ?? [];
   const submissionType = resolveSubmissionType(policy);
-  const fromType = (() => {
-    if (submissionType === "doc" || submissionType === "document") return [".pdf", ".doc", ".docx"];
-    if (submissionType === "pdf") return [".pdf"];
-    if (submissionType === "docx") return [".docx"];
-    if (submissionType === "image") return ["image/*"];
-    if (submissionType === "file") return ["*/*"];
-    return [];
-  })();
+  const fromType = defaultAcceptedFileTypesFor(submissionType);
 
   return Array.from(new Set([...explicit, ...fromType]));
 }
 
+function defaultAcceptedFileTypesFor(submissionType: string) {
+  if (submissionType === "doc" || submissionType === "document") return [".pdf", ".docx"];
+  if (submissionType === "pdf") return [".pdf"];
+  if (submissionType === "docx") return [".docx"];
+  if (submissionType === "image") return ["image/*"];
+  if (submissionType === "file") return [".txt", ".md", ".csv", ".pdf", ".docx", "image/*"];
+  return [];
+}
+
 function resolveSubmissionType(policy: ProjectSubmissionPolicy) {
-  return (policy.submissionType ?? policy.acceptedTypes?.[0] ?? "text").toLowerCase();
+  const submissionType = (policy.submissionType ?? policy.acceptedTypes?.[0] ?? "text").toLowerCase();
+  return submissionType === "document" ? "doc" : submissionType;
 }
 
 function isFileSubmissionType(submissionType: string) {

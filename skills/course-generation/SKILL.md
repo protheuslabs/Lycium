@@ -97,11 +97,11 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - descriptions should be concise definitions of the concept, not prose summaries of the page
 11. Use editor-native content blocks for generated output:
    - generated sections must be easy for a human to tweak in the course editor
-   - use atomic `text`, `heading`, `conceptCard`, `video`, `iframe`, `quiz`, `visual`, `flashcardSet`, `project`, `rubric`, and `submission` blocks or objects instead of monolithic markdown or large nested block payloads
+   - use atomic `text`, `heading`, `conceptCard`, `image`, `visual`, `video`, `iframe`, `quiz`, `flashcardSet`, `project`, `rubric`, and `submission` blocks or objects instead of monolithic markdown or large nested block payloads
    - use one `conceptCard` block per concept; do not generate a single `conceptCards` stack except when preserving or repairing a legacy course
    - video blocks should not include a filler title by default; use a separate `heading` block if the video needs a visible label
    - quiz questions should include `multiple: true` only when the UI should render checkboxes; single-answer questions should use `answers: [index]` and omit `multiple` or set it false
-   - visual blocks should include alt text, source IDs or generation provenance, and license/provenance metadata when applicable
+   - image and visual blocks should include `url` or `src`, `alt`, optional `caption`, source IDs or generation provenance, and license/provenance metadata when applicable
    - flashcard sets should use structured cards with prompt, answer, optional hint, explanation, concept tags, and source IDs
    - project blocks or project sections should include instructions, artifact type, required evidence, rubric reference, source IDs, one canonical submission type, optional submission methods, and grader workflow metadata when applicable
    - use project blocks for projects, labs, simulations, portfolio tasks, practical exams, or other non-quiz evidence that should be graded against a rubric
@@ -113,8 +113,9 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - during source enrichment, query Source Index search (`source-index-search-v1`) for missing concepts, replacement sources, benchmark evidence, and media candidates before asking the user for more sources
    - when a new source is submitted, use source-fit analysis against abstract course/program/concept descriptors to create review candidates; do not auto-attach the source to course sections
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
-   - if source coverage is below policy, create or preserve a `needs_sources` draft with `metadata.sourceGaps` instead of drafting hollow learner-facing modules
+   - if source coverage or source strength is below policy, create or preserve a `needs_sources` draft with `metadata.sourceGaps` instead of drafting hollow learner-facing modules
    - preserve `metadata.generationReadiness` on source-ready generated courses and `needs_sources` drafts; full courses must carry a positive `course-generation-readiness-v1` report, while sparse drafts must carry the non-ready report
+   - use `metadata.generationReadiness.sourceStrength` (`source-strength-v1`) as the readiness primitive; source count is not the readiness decision, and one comprehensive textbook, extracted file, or source packet can be enough when it covers the required concepts with strong depth, relevance, authority, and extractability
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
    - when uploaded files or long source documents are used, pass bounded, stage-relevant excerpts into lesson, quiz, media, and summary prompts; do not dump full extracted documents into every model call
    - scope `sourceIds` locally while numbering citations globally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, and section/block `sourceIds` support only concepts taught or assessed there

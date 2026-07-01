@@ -20,7 +20,6 @@ from app.course_source_gap_resume import (
     source_urls_from_source_packet,
 )
 from app.db import get_session
-from app.generation import source_count_meets_minimum
 from app.jobs import enqueue_job, run_agent_course_generation_job
 from app.local_store import require_verified_active_agent_profile, save_course_snapshot
 from app.models import CourseDraft, CourseSnapshot
@@ -45,6 +44,7 @@ def _snapshot_generation_payload(
         source_urls=_resume_source_evidence_urls(source_urls, payload),
         input_artifacts=payload.input_artifacts,
         source_packet=effective_source_packet,
+        source_documents=source_documents_from_input_artifacts(payload.input_artifacts),
     )
     return {
         "prompt": snapshot.prompt,
@@ -153,12 +153,19 @@ def register(app: FastAPI) -> None:
             minimum_coverage_percent=int(SOURCE_COVERAGE_POLICY["minimumRequiredConceptCoveragePercent"]),
             source_packet=resume_source_packet,
         )
-        if not source_count_meets_minimum(_resume_source_evidence_urls(merged_source_urls, payload)) or not concept_coverage_ready:
+        resume_readiness = build_generation_readiness_report(
+            source_urls=_resume_source_evidence_urls(merged_source_urls, payload),
+            input_artifacts=payload.input_artifacts,
+            source_packet=resume_source_packet,
+            source_documents=source_documents_from_input_artifacts(payload.input_artifacts),
+        )
+        if not bool(resume_readiness.get("ready")) or not concept_coverage_ready:
             update_needs_sources_course_snapshot(
                 snapshot,
                 source_urls=merged_source_urls,
-                source_gate=source_gate_from_needs_sources_snapshot(snapshot),
+                source_gate=resume_readiness.get("sourceGate") or source_gate_from_needs_sources_snapshot(snapshot),
                 source_packet=resume_source_packet,
+                generation_readiness=resume_readiness,
                 session=session,
             )
             save_course_snapshot(snapshot)

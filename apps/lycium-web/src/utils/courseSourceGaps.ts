@@ -11,6 +11,7 @@ export const DEFAULT_SOURCE_COVERAGE_POLICY: Required<LyciumCourseSourceCoverage
   minimumCourseSources: 3,
   minimumSourcesPerModule: 1,
   minimumRequiredConceptCoveragePercent: 70,
+  minimumSourceStrengthScore: 65,
   requireBenchmarkEvidence: false,
   requireAssessmentCoverage: true,
 };

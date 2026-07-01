@@ -127,15 +127,20 @@ def _source_gap_content(description: str, gap: dict[str, Any]) -> list[dict[str,
 
 def _source_gap_description(current_count: int, source_gate: dict[str, Any] | None = None) -> str:
     if source_gate:
+        artifacts = _source_gate_artifacts(source_gate)
+        strength = artifacts.get("sourceStrength") if isinstance(artifacts.get("sourceStrength"), dict) else {}
+        score = strength.get("score")
+        minimum = strength.get("minimumScore")
+        score_text = f" Source strength is {score}/{minimum}." if score is not None and minimum is not None else ""
         return (
             f"This draft has {current_count} submitted source{'' if current_count == 1 else 's'}, "
-            "but Lycium could not verify enough concept-level source coverage for the generated sections. "
+            "but Lycium could not verify enough source strength for full learner-facing generation."
+            f"{score_text} "
             "Add targeted benchmark, textbook, lecture, lab, video, simulation, or assignment sources for the uncovered concepts."
         )
-    minimum_count = int(SOURCE_COVERAGE_POLICY["minimumCourseSources"])
     return (
         f"This draft has {current_count} submitted source"
-        f"{'' if current_count == 1 else 's'}, but Lycium requires at least {minimum_count} course-level sources "
+        f"{'' if current_count == 1 else 's'}, but Lycium could not verify enough source strength "
         "before full course generation. Add benchmark, textbook, lecture, lab, video, simulation, or assignment sources."
     )
 
@@ -276,6 +281,7 @@ def update_needs_sources_course_snapshot(
     source_urls: list[str] | None,
     source_gate: dict[str, Any] | None = None,
     source_packet: dict[str, Any] | None = None,
+    generation_readiness: dict[str, Any] | None = None,
     session: Session | None = None,
 ) -> CourseSnapshot:
     title = snapshot.title
@@ -295,6 +301,8 @@ def update_needs_sources_course_snapshot(
     metadata["sourceCoveragePolicy"] = SOURCE_COVERAGE_POLICY
     metadata["sourceGaps"] = [gap]
     metadata["sourceGapSuggestions"] = source_gap_suggestions
+    if isinstance(generation_readiness, dict):
+        metadata["generationReadiness"] = generation_readiness
     metadata["generationPlan"] = {
         **(metadata.get("generationPlan") if isinstance(metadata.get("generationPlan"), dict) else {}),
         "status": ["scoped", "needs_sources"],
@@ -344,6 +352,8 @@ def update_needs_sources_course_snapshot(
         },
         "source_urls": clean_source_urls,
     }
+    if isinstance(generation_readiness, dict):
+        snapshot.generation_trace["generation_readiness"] = generation_readiness
     return snapshot
 
 

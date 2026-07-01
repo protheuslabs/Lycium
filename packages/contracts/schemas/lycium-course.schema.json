@@ -42,7 +42,8 @@
                 "sourceUrlCount": { "type": "number", "minimum": 0 },
                 "usableInputArtifactCount": { "type": "number", "minimum": 0 },
                 "submittedEvidenceCount": { "type": "number", "minimum": 0 },
-                "minimumCourseSources": { "type": "number", "minimum": 0 }
+                "minimumCourseSources": { "type": "number", "minimum": 0 },
+                "minimumSourceStrengthScore": { "type": "number", "minimum": 0 }
               }
             },
             "conceptCoverage": {
@@ -59,6 +60,10 @@
               }
             },
             "sourceGate": {
+              "type": ["object", "null"],
+              "additionalProperties": true
+            },
+            "sourceStrength": {
               "type": ["object", "null"],
               "additionalProperties": true
             },
@@ -133,6 +138,13 @@
                       "title": { "type": "string" },
                       "value": { "type": "string" },
                       "url": { "type": "string" },
+                      "src": { "type": "string" },
+                      "imageUrl": { "type": "string" },
+                      "alt": { "type": "string" },
+                      "caption": { "type": "string" },
+                      "credit": { "type": "string" },
+                      "license": { "type": "string" },
+                      "generatedBy": { "type": "string" },
                       "clip": {
                         "type": "object",
                         "additionalProperties": true,

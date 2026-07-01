@@ -48,7 +48,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 6. Source each idea.
    Find reputable sources for the idea level, not only the course level. Prefer primary docs, textbooks, academic sources, standards bodies, established university material, and reputable technical talks.
    When many sources are submitted, first run source corpus preflight. Use included sources as the course corpus and exclude irrelevant sources from requirements, lessons, quizzes, and citations unless a reviewer restores them.
-   If submitted sources do not satisfy the course's source coverage policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps` instead of generating learner-facing placeholder modules.
+   If submitted sources do not satisfy the course's source coverage and source-strength policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps` instead of generating learner-facing placeholder modules. Do not gate full generation by raw source count; one comprehensive textbook, extracted document, or source packet may be sufficient when it covers the required concepts with strong depth, relevance, authority, and extractability.
    Map accepted sources to required concepts before drafting. Course-level source records are the full inventory, but section and block `sourceIds` should only include sources supporting concepts taught or assessed on that page.
    For uploaded files or long source documents, use bounded, stage-relevant excerpts for lesson, quiz, media, and summary prompts. Do not pass full extracted documents into every staged model call.
 
@@ -136,6 +136,7 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 - `text`: instructional prose in `value`, optionally with `heading`.
 - `heading`: standalone section/block label such as `Concepts introduced`.
 - `conceptCard`: one raw concept card with `title` or `name`, `description`, optional `sourceSectionId`, and local `sourceIds`.
+- `image` / `visual`: instructional image, chart, or diagram. Use `url` or `src`, required `alt`, optional `caption`, optional `credit`, optional `license`, optional `generatedBy`, and local `sourceIds`.
 - `video`: embedded material. Prefer `sourceIds` that resolve to a source record with `embedUrl`. Use optional `clip.startSeconds` and `clip.endSeconds` when only a slice of the video supports the section; omit `clip` for the full video. Do not add filler video titles; use a separate `heading` block if a visible title is needed.
 - `iframe`: generic embedded web resource for interactive or external material.
 - `quiz`: assessment only. Use nested `questions` for multi-question quizzes.

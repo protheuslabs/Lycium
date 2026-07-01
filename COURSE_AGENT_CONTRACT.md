@@ -72,7 +72,21 @@ Canonical Learn section block pattern:
 ]
 ```
 
-Generated courses must use the same atomic block grammar the course editor creates. Prefer `text`, `heading`, `conceptCard`, `video`, `iframe`, and `quiz` blocks. Do not generate monolithic markdown, plain-string content, or large `conceptCards` stacks except when repairing legacy courses.
+Generated courses must use the same atomic block grammar the course editor creates. Prefer `text`, `heading`, `conceptCard`, `image`/`visual`, `video`, `iframe`, `quiz`, and `project` blocks. Do not generate monolithic markdown, plain-string content, or large `conceptCards` stacks except when repairing legacy courses.
+
+Canonical image/visual block pattern:
+
+```json
+{
+  "type": "image",
+  "url": "https://example.edu/diagram.png",
+  "alt": "Plain-language description of the diagram for screen readers.",
+  "caption": "Short caption explaining what the learner should notice.",
+  "credit": "Source or creator name",
+  "license": "License or usage note",
+  "sourceIds": ["source-1"]
+}
+```
 
 Canonical quiz section block pattern:
 

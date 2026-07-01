@@ -11,7 +11,7 @@ type DeleteBlockButtonProps = {
   onClick: () => void;
 };
 
-export type CourseEditBlockKind = "text" | "card" | "video" | "iframe" | "heading" | "quiz" | "project";
+export type CourseEditBlockKind = "text" | "card" | "image" | "video" | "iframe" | "heading" | "quiz" | "project";
 
 const blockTypeOptions: Array<{
   kind: CourseEditBlockKind;
@@ -39,6 +39,15 @@ const blockTypeOptions: Array<{
     placeholder: "Describe the concept this card should introduce.",
     defaultValue: "Lorem ipsum dolor sit amet. Replace this with a concise concept definition.",
     rows: 5,
+  },
+  {
+    kind: "image",
+    label: "Image",
+    description: "Instructional image or diagram with alt text, caption, and source citation support.",
+    fieldLabel: "Image URL",
+    placeholder: "Paste an image URL.",
+    defaultValue: "",
+    rows: 2,
   },
   {
     kind: "video",

@@ -83,8 +83,6 @@ def _run_codex(executable: str, prompt: str, model: str | None) -> str:
         "--skip-git-repo-check",
         "--sandbox",
         "read-only",
-        "--ask-for-approval",
-        "never",
         "--output-last-message",
         str(output_path),
     ]

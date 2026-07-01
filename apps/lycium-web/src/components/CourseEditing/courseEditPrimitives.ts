@@ -260,6 +260,14 @@ export function createBlockTemplate(kind: CourseEditBlockKind, initialValue: str
         url: value,
         sourceIds: [],
       };
+    case "image":
+      return {
+        type: "image",
+        url: value,
+        alt: "Describe the instructional image for learners using screen readers.",
+        caption: "Image caption",
+        sourceIds: [],
+      };
     case "iframe":
       return {
         type: "iframe",

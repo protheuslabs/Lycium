@@ -14,6 +14,7 @@ import type { ContentBlock, Section, SourceRecord } from "./contentViewTypes";
 import { buildCourseSourceIndex, getSectionSources, sourceCitationNumber } from "./sourceCitationUtils";
 import { createBlockTemplate, stripModulePrefix } from "../CourseEditing/courseEditPrimitives";
 import { useSectionQuizStatus } from "./useSectionQuizStatus";
+import { hasSubmittedProject, projectKeyFor } from "./projectSubmissionStatus";
 
 export type { SourceRecord } from "./contentViewTypes";
 
@@ -96,18 +97,40 @@ export default function ContentView({
   const [sourceStatus, setSourceStatus] = useState("");
   const citationFocusTimer = useRef<number | null>(null);
   const courseSourceIndex = useMemo(() => buildCourseSourceIndex(sources), [sources]);
+  const projectBlockKeys = useMemo(() => {
+    if (!section) {
+      return [];
+    }
+
+    return section.content
+      .map((block) => (block.type === "project" ? projectKeyFor(courseKey, section.id, block) : null))
+      .filter((projectKey): projectKey is string => projectKey !== null);
+  }, [courseKey, section?.content, section?.id]);
+  const [submittedProjectKeys, setSubmittedProjectKeys] = useState<Set<string>>(() => new Set());
+  const requiresProjectSubmission = projectBlockKeys.length > 0;
+  const allRequiredProjectsSubmitted =
+    !requiresProjectSubmission || projectBlockKeys.every((projectKey) => submittedProjectKeys.has(projectKey));
   const {
     allRequiredQuizzesSubmitted,
     canMarkComplete,
     completeButtonTitle,
     handleQuizProgressChange,
     handleQuizSubmissionChange,
+    requiresQuizSubmission,
   } = useSectionQuizStatus({
     section,
     isComplete,
     onQuizSectionPassed: markComplete,
     onSectionTimedStatusChange,
+    autoCompleteEnabled: allRequiredProjectsSubmitted,
   });
+  const completionRequirementsMet = allRequiredQuizzesSubmitted && allRequiredProjectsSubmitted;
+  const canMarkSectionComplete = canMarkComplete && allRequiredProjectsSubmitted;
+  const sectionCompleteButtonTitle = isComplete
+    ? "Section complete"
+    : !allRequiredProjectsSubmitted
+      ? "Submit the project to complete this page"
+      : completeButtonTitle;
 
   useEffect(() => {
     setSourcesExpanded(false);
@@ -116,6 +139,32 @@ export default function ContentView({
     setSourceUrl("");
     setSourceStatus("");
   }, [section?.id]);
+
+  useEffect(() => {
+    setSubmittedProjectKeys(new Set(projectBlockKeys.filter(hasSubmittedProject)));
+  }, [projectBlockKeys]);
+
+  useEffect(() => {
+    if (section?.id && requiresProjectSubmission && allRequiredProjectsSubmitted && !requiresQuizSubmission && !isComplete) {
+      markComplete(section.id);
+    }
+  }, [allRequiredProjectsSubmitted, isComplete, markComplete, requiresProjectSubmission, requiresQuizSubmission, section?.id]);
+
+  const handleProjectSubmissionChange = useCallback((projectKey: string, submitted: boolean) => {
+    setSubmittedProjectKeys((previous) => {
+      if (submitted === previous.has(projectKey)) {
+        return previous;
+      }
+
+      const next = new Set(previous);
+      if (submitted) {
+        next.add(projectKey);
+      } else {
+        next.delete(projectKey);
+      }
+      return next;
+    });
+  }, []);
 
   const handleInlineCitationClick = useCallback((citationIndex: number) => {
     if (!section?.id) {
@@ -327,6 +376,7 @@ export default function ContentView({
                   onMissingCitationClick={() => setSourceTarget({ sectionId: section.id, blockIndex: idx })}
                   onQuizSubmissionChange={handleQuizSubmissionChange}
                   onQuizProgressChange={handleQuizProgressChange}
+                  onProjectSubmissionChange={handleProjectSubmissionChange}
                 />
               </div>
             ))
@@ -358,9 +408,9 @@ export default function ContentView({
         isLastSection={isLastSection}
         nextDisabled={Boolean(orderMandatory) && !isComplete}
         isComplete={isComplete}
-        canMarkComplete={canMarkComplete}
-        allRequiredQuizzesSubmitted={allRequiredQuizzesSubmitted}
-        completeButtonTitle={completeButtonTitle}
+        canMarkComplete={canMarkSectionComplete}
+        completionRequirementsMet={completionRequirementsMet}
+        completeButtonTitle={sectionCompleteButtonTitle}
         onPrev={onPrev}
         onNext={onNext}
         onComplete={() => markComplete(section.id)}

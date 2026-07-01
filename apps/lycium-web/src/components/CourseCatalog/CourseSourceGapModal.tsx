@@ -72,6 +72,7 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
   const canSubmit = Boolean(selectedGap) && (Boolean(sourceUrl.trim()) || (Boolean(course.snapshotId) && sourceFiles.length > 0));
   const readinessCoverage = readiness?.conceptCoverage;
   const readinessEvidence = readiness?.sourceEvidence;
+  const readinessStrength = readiness?.sourceStrength as { score?: number; minimumScore?: number } | undefined;
   const readinessUncoveredConcepts = readinessCoverage?.uncoveredConcepts ?? [];
 
   return (
@@ -111,6 +112,7 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
           <span>Course sources: {summary.currentSourceCount}/{summary.requiredSourceCount}</span>
           <span>Module minimum: {summary.policy.minimumSourcesPerModule ?? "not set"}</span>
           <span>Concept coverage: {summary.policy.minimumRequiredConceptCoveragePercent ?? "not set"}%</span>
+          <span>Source strength: {summary.policy.minimumSourceStrengthScore ?? "not set"} min</span>
           <span>Assessment evidence: {summary.policy.requireAssessmentCoverage ? "required" : "optional"}</span>
           <span>Benchmark evidence: {summary.policy.requireBenchmarkEvidence ? "required" : "optional"}</span>
         </div>
@@ -123,10 +125,15 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
           </div>
           <div className="course-source-gap-readiness-grid">
             <article>
+              <span>Strength</span>
+              <strong>
+                {readinessStrength?.score ?? "-"}/{readinessStrength?.minimumScore ?? readinessEvidence?.minimumSourceStrengthScore ?? "-"}
+              </strong>
+            </article>
+            <article>
               <span>Evidence</span>
               <strong>
-                {readinessEvidence?.submittedEvidenceCount ?? summary.currentSourceCount}/
-                {readinessEvidence?.minimumCourseSources ?? summary.requiredSourceCount}
+                {readinessEvidence?.submittedEvidenceCount ?? summary.currentSourceCount}
               </strong>
             </article>
             <article>

@@ -58,6 +58,13 @@ export type ContentBlock = {
   heading?: string;
   title?: string;
   url?: string;
+  src?: string;
+  imageUrl?: string;
+  alt?: string;
+  caption?: string;
+  credit?: string;
+  license?: string;
+  generatedBy?: string;
   clip?: {
     startSeconds?: number | string;
     endSeconds?: number | string;
@@ -142,6 +149,7 @@ export type SourceRecord = {
 };
 
 export type QuizSubmissionStatusHandler = (quizKey: string, submitted: boolean) => void;
+export type ProjectSubmissionStatusHandler = (projectKey: string, submitted: boolean) => void;
 
 export type QuizProgressStatus = {
   submitted: boolean;

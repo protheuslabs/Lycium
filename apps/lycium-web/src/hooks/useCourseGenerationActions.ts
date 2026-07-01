@@ -12,13 +12,7 @@ import type {
 } from "@lycium/contracts";
 import { lyciumApi } from "../runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "../utils/courseValidation";
-import {
-  DEFAULT_SOURCE_COVERAGE_POLICY,
-  createSourceGapDraftCourse,
-  queueCourseSourceGapSuggestion,
-  sourceCountMeetsMinimum,
-  submittedSourceCount,
-} from "../utils/courseSourceGaps";
+import { queueCourseSourceGapSuggestion } from "../utils/courseSourceGaps";
 
 type CourseClassification = {
   category: string;
@@ -103,17 +97,6 @@ export function useCourseGenerationActions({
       return;
     }
     if (!prompt.trim() || !classification?.category || !classification.department) return;
-    const sourceFileNames = sourceFiles.map((file) => file.name);
-    if (!sourceCountMeetsMinimum(sourceLinks, sourceFileNames)) {
-      const draft = createSourceGapDraftCourse({ prompt, level, sourceLinks, sourceFileNames, classification });
-      setCourses((prev) => [draft, ...prev]);
-      setPrompt("");
-      setGenerateStatus("success");
-      setGenerateMessage(
-        `Course draft needs more sources: ${submittedSourceCount(sourceLinks, sourceFileNames)}/${DEFAULT_SOURCE_COVERAGE_POLICY.minimumCourseSources} minimum sources attached.`,
-      );
-      return;
-    }
     setGenerateStatus("loading");
     setGenerateMessage("Starting course generation...");
 

@@ -51,7 +51,7 @@ def _llm_messages(
         "critical_renderer_rules": [
             "Every section.content MUST be an array of block objects, never a plain string.",
             "Text blocks use {\"type\":\"text\",\"heading\":\"...\",\"value\":\"...\"}.",
-            "Use the same editable blocks a human can add in the UI: text, heading, conceptCard, video, iframe, and quiz.",
+            "Use the same editable blocks a human can add in the UI: text, heading, conceptCard, image/visual, video, iframe, quiz, and project.",
             "Every non-summary Learn section ends with {\"type\":\"heading\",\"title\":\"Concepts introduced\"} followed by one {\"type\":\"conceptCard\",\"title\":\"...\",\"description\":\"...\"} block per concept.",
             "Every module has one Apply assessment section containing only one quiz block.",
             "Each quiz block contains at least 10 questions.",

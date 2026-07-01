@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = process.cwd();
@@ -27,6 +27,22 @@ for (const seedFile of seedFiles) {
   if (!seedFile.emptyExportPattern.test(source)) {
     failures.push(`${seedFile.path} must keep ${seedFile.label} empty unless a new catalog seed is explicitly approved.`);
   }
+}
+
+const allowedCourseDataTsFiles = new Set([
+  "cleanCatalog.test.ts",
+  "courseTaxonomy.ts",
+  "fullCourseScaffold.ts",
+  "localCourses.test.ts",
+  "localCourses.ts",
+]);
+const courseDataDir = join(ROOT, "apps/lycium-web/src/courseData");
+for (const entry of readdirSync(courseDataDir, { withFileTypes: true })) {
+  if (!entry.isFile() || !entry.name.endsWith(".ts")) continue;
+  if (allowedCourseDataTsFiles.has(entry.name)) continue;
+  failures.push(
+    `apps/lycium-web/src/courseData/${entry.name} looks like committed course seed code. Courses must be structured data artifacts, not TypeScript modules.`
+  );
 }
 
 if (failures.length) {

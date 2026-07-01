@@ -74,6 +74,56 @@
   background: var(--lycium-color-surface);
 }
 
+.image-block {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1.25rem auto;
+  width: min(100%, 52rem);
+}
+
+.image-block img,
+.image-block-placeholder {
+  width: 100%;
+  border: 1px solid var(--lycium-color-border);
+  border-radius: 1rem;
+  background: var(--lycium-color-surface);
+}
+
+.image-block img {
+  display: block;
+  height: auto;
+  object-fit: contain;
+}
+
+.image-block-placeholder {
+  min-height: 14rem;
+  display: grid;
+  place-items: center;
+  color: var(--lycium-color-muted);
+  font-weight: 800;
+}
+
+.image-block figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  color: var(--lycium-color-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.image-block figcaption small {
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.image-block-citation-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .progress-percentage {
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
@@ -393,6 +443,12 @@
 
   .concept-card p {
     color: #cbd5e1;
+  }
+
+  .image-block img,
+  .image-block-placeholder {
+    border-color: #303033;
+    background: #171717;
   }
 
   .nav-button:disabled {

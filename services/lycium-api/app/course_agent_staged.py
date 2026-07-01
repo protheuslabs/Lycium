@@ -79,16 +79,23 @@ def generate_course_with_agent_staged(
         input_artifacts=input_artifacts,
     )
     effective_source_urls = source_corpus.source_urls
-    packet_gate = source_packet_quality_gate(source_corpus.synthesis)
+    packet_gate = source_packet_quality_gate(
+        source_corpus.synthesis,
+        require_source_strength=True,
+        source_documents=source_corpus.source_documents,
+        input_artifacts=source_corpus.input_artifacts,
+        source_urls=effective_source_urls,
+    )
     if packet_gate:
         raise CourseAgentError(
-            "Source packet concept coverage is below policy; add sources before staged LLM course generation.",
+            "Source strength is below policy; add stronger or more relevant sources before staged LLM course generation.",
             trace={
                 "status": "failed",
-                "failed_stage": "source_packet_quality",
+                "failed_stage": packet_gate.get("gate") or "source_strength",
                 "source_corpus_synthesis": source_corpus.synthesis,
                 "effective_source_urls": effective_source_urls,
                 "source_packet_quality_gate": packet_gate,
+                "source_strength": packet_gate.get("artifacts", {}).get("sourceStrength") if isinstance(packet_gate.get("artifacts"), dict) else None,
                 "source_packet_id": source_packet_id,
                 "source_packet_contract": source_packet.get("contract_version") if isinstance(source_packet, dict) else None,
             },

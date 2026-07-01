@@ -116,6 +116,13 @@ export type LyciumCourseBlock = {
   title?: string;
   value?: string;
   url?: string;
+  src?: string;
+  imageUrl?: string;
+  alt?: string;
+  caption?: string;
+  credit?: string;
+  license?: string;
+  generatedBy?: string;
   clip?: LyciumVideoClip;
   startSeconds?: number | string;
   endSeconds?: number | string;
