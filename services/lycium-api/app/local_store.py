@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from app.local_store_core import (
@@ -11,13 +10,56 @@ from app.local_store_core import (
     run_local_data_migrations,
 )
 from app.local_store_courses import (
-    save_course_snapshot, save_learner_record, read_course_bookmark, save_course_bookmark, read_course_feedback, save_course_feedback, read_course_health, read_completion, save_completion,
-)
-from app.local_store_settings import (
-    local_settings_summary, save_agent_api_key, activate_agent_api_key, update_agent_key_model,
-    get_active_agent_profile, get_active_agent_api_key, get_agent_profile_by_id, update_agent_key_verification,
-    delete_agent_api_key, require_verified_active_agent_profile,
+    read_completion,
+    read_course_bookmark,
+    read_course_feedback,
+    read_course_health,
+    save_completion,
+    save_course_bookmark,
+    save_course_feedback,
+    save_course_snapshot,
+    save_learner_record,
 )
 from app.local_store_generation_runs import write_generation_run_record
+from app.local_store_settings import (
+    activate_agent_api_key,
+    delete_agent_api_key,
+    get_active_agent_api_key,
+    get_active_agent_profile,
+    get_agent_profile_by_id,
+    local_settings_summary,
+    require_verified_active_agent_profile,
+    save_agent_api_key,
+    update_agent_key_model,
+    update_agent_key_verification,
+)
 
-__all__ = ['ensure_local_data_dirs', 'local_data_migration_status', 'local_data_security_status', 'local_data_storage_status', 'export_local_data', 'create_local_data_backup', 'run_local_data_migrations', 'local_settings_summary', 'save_agent_api_key', 'activate_agent_api_key', 'update_agent_key_model', 'delete_agent_api_key', 'get_active_agent_profile', 'get_active_agent_api_key', 'get_agent_profile_by_id', 'update_agent_key_verification', 'require_verified_active_agent_profile', 'write_generation_run_record', 'save_course_snapshot', 'save_learner_record', 'read_course_bookmark', 'save_course_bookmark', 'read_course_feedback', 'save_course_feedback', 'read_course_health', 'read_completion', 'save_completion']
+__all__ = [
+    "activate_agent_api_key",
+    "create_local_data_backup",
+    "delete_agent_api_key",
+    "ensure_local_data_dirs",
+    "export_local_data",
+    "get_active_agent_api_key",
+    "get_active_agent_profile",
+    "get_agent_profile_by_id",
+    "local_data_migration_status",
+    "local_data_security_status",
+    "local_data_storage_status",
+    "local_settings_summary",
+    "read_completion",
+    "read_course_bookmark",
+    "read_course_feedback",
+    "read_course_health",
+    "require_verified_active_agent_profile",
+    "run_local_data_migrations",
+    "save_agent_api_key",
+    "save_completion",
+    "save_course_bookmark",
+    "save_course_feedback",
+    "save_course_snapshot",
+    "save_learner_record",
+    "update_agent_key_model",
+    "update_agent_key_verification",
+    "write_generation_run_record",
+]

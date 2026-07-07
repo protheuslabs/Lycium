@@ -28,7 +28,11 @@ async function createBlankManualCourse(page: Page) {
 
   await expect(page).toHaveURL(/\/Lycium\/courses\//);
   await expect(page.locator(".course-name")).toHaveText("Untitled course");
-  await page.getByRole("button", { name: "Edit course" }).click();
+  const editCourseButton = page.getByRole("button", { name: "Edit course", exact: true });
+  if (await editCourseButton.isVisible()) {
+    await editCourseButton.click();
+  }
+  await expect(page.getByRole("button", { name: "Save course edits" })).toBeVisible();
 }
 
 async function addBlock(page: Page, tabName: string, body: string) {
@@ -74,7 +78,7 @@ test("manual course editing saves title and added block content as a local draft
   expect(persistedDraft).toBe(true);
 
   await page.goto("/Lycium/catalog");
-  await page.getByPlaceholder("Search names, tags, and departments").fill(manualCourseTitle);
+  await page.getByRole("searchbox", { name: "Search courses" }).fill(manualCourseTitle);
   await page.locator(".course-card").filter({ hasText: manualCourseTitle }).first().click();
   await expect(page.locator(".course-name")).toHaveText(manualCourseTitle);
 });
@@ -152,6 +156,28 @@ test("manual course editing persists quiz question and answer edits", async ({ p
   expect(persistedQuiz).toBe(true);
 });
 
+test("project text submissions survive a page reload", async ({ page }) => {
+  await createBlankManualCourse(page);
+  await addBlock(page, "Project", "Create a concise evidence-backed project.");
+  await page.getByRole("button", { name: "Save course edits" }).click();
+
+  await page.getByRole("textbox", { name: "Text submission" }).fill("A concise project submission.");
+  await page.getByRole("button", { name: "Submit", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Resubmit", exact: true })).toBeVisible();
+
+  const storedSubmission = await page.evaluate(() =>
+    Object.keys(window.localStorage).some((key) => {
+      if (!key.startsWith("lycium:project-submission:")) return false;
+      const record = JSON.parse(window.localStorage.getItem(key) ?? "null") as { submitted?: boolean } | null;
+      return record?.submitted === true;
+    }),
+  );
+  expect(storedSubmission).toBe(true);
+
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Resubmit", exact: true })).toBeVisible();
+});
+
 test("manual course editing persists sidebar section and module changes", async ({ page }) => {
   await createBlankManualCourse(page);
 
@@ -159,9 +185,9 @@ test("manual course editing persists sidebar section and module changes", async 
   await expect(page.getByText("1.2 Section title")).toBeVisible();
 
   await page.getByRole("button", { name: "Delete 1.2 Section title" }).click();
-  const deleteDialog = page.locator("dialog.course-edit-native-dialog");
+  const deleteDialog = page.getByRole("dialog", { name: "Delete section" });
   await expect(deleteDialog).toBeVisible();
-  await deleteDialog.getByRole("button", { name: "Delete" }).click();
+  await deleteDialog.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(page.getByText("1.2 Section title")).toHaveCount(0);
 
   await page.getByRole("button", { name: "Add module" }).click();

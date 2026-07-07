@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import Dropdown from "../Dropdown/Dropdown";
@@ -53,17 +53,9 @@ export default function SettingsModal({
   onThemeModeChange,
 }: SettingsModalProps) {
   const [keyPendingDelete, setKeyPendingDelete] = useState<AgentKeyRecord | null>(null);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setKeyPendingDelete(null);
-      return;
-    }
-
-    if (keyPendingDelete && !agentKeys.some((key) => key.id === keyPendingDelete.id)) {
-      setKeyPendingDelete(null);
-    }
-  }, [agentKeys, isOpen, keyPendingDelete]);
+  const pendingDelete = keyPendingDelete && agentKeys.some((key) => key.id === keyPendingDelete.id)
+    ? keyPendingDelete
+    : null;
 
   if (!isOpen) {
     return null;
@@ -89,11 +81,16 @@ export default function SettingsModal({
   };
 
   const handleConfirmDelete = () => {
-    if (!keyPendingDelete) {
+    if (!pendingDelete) {
       return;
     }
-    onDeleteAgentKey(keyPendingDelete.id);
+    onDeleteAgentKey(pendingDelete.id);
     setKeyPendingDelete(null);
+  };
+
+  const handleClose = () => {
+    setKeyPendingDelete(null);
+    onClose();
   };
 
   return (
@@ -103,7 +100,7 @@ export default function SettingsModal({
       labelledById="settings-title"
       size="lg"
       className="settings-modal-content"
-      onClose={onClose}
+      onClose={handleClose}
     >
         <section className="settings-section" aria-labelledby="settings-active-ai">
           <h2 id="settings-active-ai">Active AI</h2>
@@ -243,11 +240,11 @@ export default function SettingsModal({
           </div>
         </section>
         <ConfirmModal
-          isOpen={Boolean(keyPendingDelete)}
+          isOpen={Boolean(pendingDelete)}
           title="Delete AI connection?"
           eyebrow="Active AI"
           labelledById="settings-delete-ai-title"
-          message={`Delete ${keyPendingDelete?.provider_label ?? "this AI"} connection? You can add it again later.`}
+          message={`Delete ${pendingDelete?.provider_label ?? "this AI"} connection? You can add it again later.`}
           confirmLabel="Delete"
           tone="danger"
           onCancel={() => setKeyPendingDelete(null)}

@@ -67,6 +67,11 @@ def build_generation_readiness_report(
     evidence_count = len(urls) + max(0, usable_artifact_count - artifact_url_count)
     minimum_sources = int(SOURCE_COVERAGE_POLICY["minimumCourseSources"])
     synthesis = _packet_synthesis(source_packet, source_corpus_synthesis)
+    has_assessed_evidence = bool(
+        source_documents
+        or (isinstance(source_packet, dict) and source_packet)
+        or (isinstance(source_corpus_synthesis, dict) and source_corpus_synthesis)
+    )
     source_strength = calculate_source_strength(
         synthesis,
         source_documents=source_documents,
@@ -75,7 +80,7 @@ def build_generation_readiness_report(
     )
     source_gate = source_packet_quality_gate(
         synthesis,
-        require_source_strength=True,
+        require_source_strength=has_assessed_evidence,
         source_documents=source_documents,
         input_artifacts=input_artifacts,
         source_urls=urls,
@@ -88,6 +93,13 @@ def build_generation_readiness_report(
         if str(concept).strip()
     ] if isinstance(concept_artifacts.get("uncoveredConceptCandidates"), list) else []
     issues = []
+    if evidence_count < minimum_sources and not (has_assessed_evidence and source_strength["ready"]):
+        issues.append(
+            {
+                "code": "minimum_source_evidence",
+                "message": f"Add at least {minimum_sources} relevant source evidence items before generation.",
+            }
+        )
     if source_gate:
         for issue in source_gate.get("issues", []):
             message = str(issue.get("message") or "") if isinstance(issue, dict) else str(issue)

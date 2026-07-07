@@ -400,12 +400,13 @@ def _source_gap_description(current_count: int, source_gate: dict[str, Any] | No
 
 def _source_gap(title: str, current_count: int, source_gate: dict[str, Any] | None = None) -> dict[str, Any]:
     minimum_count = int(SOURCE_COVERAGE_POLICY["minimumCourseSources"])
-    gap_id = "concept-source-coverage" if source_gate else "course-source-minimum"
+    concept_needs = _concept_source_needs(title, source_gate)
+    gap_id = "concept-source-coverage" if concept_needs else "source-strength" if source_gate else "course-source-minimum"
     gap = {
         "id": gap_id,
         "scopeType": "course",
         "scopeId": "course",
-        "title": "Add concept sources" if source_gate else "Add course sources",
+        "title": "Add concept sources" if concept_needs else "Strengthen course sources" if source_gate else "Add course sources",
         "description": _source_gap_description(current_count, source_gate),
         "severity": "blocking",
         "minimumSourceCount": minimum_count,
@@ -419,7 +420,6 @@ def _source_gap(title: str, current_count: int, source_gate: dict[str, Any] | No
     }
     if source_gate:
         artifacts = _source_gate_artifacts(source_gate)
-        concept_needs = _concept_source_needs(title, source_gate)
         gap["coverageGate"] = {
             "gate": source_gate.get("gate") or "source_analysis",
             "status": source_gate.get("status") or "failed",

@@ -129,6 +129,17 @@ export function areProgressRecordsEqual(a: CourseProgressRecord, b: CourseProgre
   return areSectionStatusMapsEqual(a.sectionStatuses, b.sectionStatuses);
 }
 
+export function markSectionSeen(progress: CourseProgressRecord, sectionId?: string | null): CourseProgressRecord {
+  if (!sectionId || progress.completedSectionIds.includes(sectionId)) return progress;
+  const currentStatus = progress.sectionStatuses[sectionId];
+  const nextStatus = resolveSectionStatusTransition(currentStatus, "seen");
+  if (currentStatus === nextStatus) return progress;
+  return {
+    completedSectionIds: progress.completedSectionIds,
+    sectionStatuses: { ...progress.sectionStatuses, [sectionId]: nextStatus },
+  };
+}
+
 /**
  * Resolves persisted statuses against the current course structure.
  * Locked status is derived from course ordering rules, not trusted from stale storage.

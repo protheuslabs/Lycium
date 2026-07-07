@@ -15,7 +15,6 @@ type CatalogToolbarProps = {
   catalogViewLevel: CatalogViewLevel;
   sortMode: CatalogSortMode;
   pathSortMode: CatalogPathSortMode;
-  canCreateCourseInScope: boolean;
   activeFilterCount: number;
   showLockedCourses: boolean;
   collegeFilter: string;
@@ -27,7 +26,15 @@ type CatalogToolbarProps = {
   activityFilter: CatalogActivityFilter;
   onSortModeChange: (value: string) => void;
   onPathSortModeChange: (value: string) => void;
-  onCreateCourse: () => void;
+  showPrimaryAction: boolean;
+  primaryActionLabel: string;
+  primaryActionDisabled: boolean;
+  onPrimaryAction: () => void;
+  showContextAction: boolean;
+  contextActionLabel: string;
+  onContextAction: () => void;
+  showCancelSelection: boolean;
+  onCancelSelection: () => void;
   onShowLockedCoursesChange: (checked: boolean) => void;
   onCollegeFilterChange: (value: string) => void;
   onDepartmentFilterChange: (value: string) => void;
@@ -40,7 +47,6 @@ export default function CatalogToolbar({
   catalogViewLevel,
   sortMode,
   pathSortMode,
-  canCreateCourseInScope,
   activeFilterCount,
   showLockedCourses,
   collegeFilter,
@@ -52,7 +58,15 @@ export default function CatalogToolbar({
   activityFilter,
   onSortModeChange,
   onPathSortModeChange,
-  onCreateCourse,
+  showPrimaryAction,
+  primaryActionLabel,
+  primaryActionDisabled,
+  onPrimaryAction,
+  showContextAction,
+  contextActionLabel,
+  onContextAction,
+  showCancelSelection,
+  onCancelSelection,
   onShowLockedCoursesChange,
   onCollegeFilterChange,
   onDepartmentFilterChange,
@@ -65,18 +79,27 @@ export default function CatalogToolbar({
   const sortOptions = isCourseView ? CATALOG_SORT_OPTIONS : CATALOG_PATH_SORT_OPTIONS;
   const sortLabel = isCourseView ? "Sort courses" : `Sort ${catalogViewLevel}`;
   const handleSortChange = isCourseView ? onSortModeChange : onPathSortModeChange;
-  const addLabel = `Add ${catalogViewLevel}`;
 
   return (
-    <div className={`catalog-toolbar${canCreateCourseInScope ? " catalog-toolbar--with-create" : ""}`}>
-      {canCreateCourseInScope && (
-        <button className="catalog-create-button" type="button" onClick={onCreateCourse}>
+    <div className={`catalog-toolbar${showPrimaryAction ? " catalog-toolbar--with-create" : ""}`}>
+      {showPrimaryAction && (
+        <button className="catalog-create-button" type="button" disabled={primaryActionDisabled} onClick={onPrimaryAction}>
           <span className="catalog-create-button-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false">
               <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
             </svg>
           </span>
-          <span>{addLabel}</span>
+          <span>{primaryActionLabel}</span>
+        </button>
+      )}
+      {showContextAction && (
+        <button className="catalog-create-button catalog-create-button--secondary" type="button" onClick={onContextAction}>
+          <span>{contextActionLabel}</span>
+        </button>
+      )}
+      {showCancelSelection && (
+        <button className="catalog-create-button catalog-create-button--secondary" type="button" onClick={onCancelSelection}>
+          <span>Cancel</span>
         </button>
       )}
       <div className="catalog-dropdown-row">

@@ -1,6 +1,6 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createBrowserStorageRepository } from "@lycium/data-access";
+import { useClientMounted } from "../../hooks/useClientMounted";
 import QuizMetaRows from "./QuizMetaRows";
 import QuizQuestionList from "./QuizQuestionList";
 import { useQuizEditor } from "./quizEditor";
@@ -10,10 +10,7 @@ import {
   buildAttemptQuestions,
   createAttemptOrder,
   formatDuration,
-  parseAttemptHistory,
-  parseAttemptOrder,
   secondsSince,
-  timestampToMs,
 } from "./quizAttempts";
 import {
   extractMaxAttempts,
@@ -24,16 +21,11 @@ import {
   normalizePayload,
   shouldShowAnswersFromPayload,
 } from "./quizNormalization";
-import type { AttemptHistoryItem, AttemptOrderItem, QuizPayload } from "./quizTypes";
+import { restoreQuizSession } from "./quizSession";
+import type { QuizPayload } from "./quizTypes";
 const browserStorage = createBrowserStorageRepository();
-export default function QuizBlock({
-  data,
-  name,
-  isEditMode = false,
-  onDataChange,
-  onSubmissionChange,
-  onProgressChange,
-}: {
+
+type QuizBlockProps = {
   data: QuizPayload;
   name: string;
   isEditMode?: boolean;
@@ -48,13 +40,45 @@ export default function QuizBlock({
       passed: boolean;
     }
   ) => void;
-}) {
+};
+
+export default function QuizBlock(props: QuizBlockProps) {
+  const isClientMounted = useClientMounted();
+  if (!isClientMounted) {
+    return <div className="quiz-block" />;
+  }
+
+  const sessionKey = `${props.name}:${props.isEditMode === true}:${JSON.stringify(props.data)}`;
+  return <ClientQuizBlock key={sessionKey} {...props} />;
+}
+
+function ClientQuizBlock({
+  data,
+  name,
+  isEditMode = false,
+  onDataChange,
+  onSubmissionChange,
+  onProgressChange,
+}: QuizBlockProps) {
   const questionBank = useMemo(() => normalizePayload(data), [data]);
   const questionsPerAttempt = useMemo(
     () => extractQuestionsPerAttempt(data, questionBank.length),
     [data, questionBank.length]
   );
-  const [attemptOrder, setAttemptOrder] = useState<AttemptOrderItem[]>([]);
+  const [initialSession] = useState(() => {
+    try {
+      return restoreQuizSession({
+        isEditMode,
+        questionBank,
+        questionsPerAttempt,
+        persistedProgress: browserStorage.readQuizProgress(name),
+        persistedMarkers: browserStorage.readQuizMarkers(name),
+      });
+    } catch {
+      return restoreQuizSession({ isEditMode, questionBank, questionsPerAttempt });
+    }
+  });
+  const [attemptOrder, setAttemptOrder] = useState(initialSession.attemptOrder);
   const questionsWithTiming = useMemo(
     () =>
       buildAttemptQuestions(questionBank, attemptOrder).map((question) => ({
@@ -64,186 +88,39 @@ export default function QuizBlock({
     [attemptOrder, data.timed, questionBank]
   );
   const isTimed = questionsWithTiming.some((question) => question.timed);
-  const timeLimit = extractTimeLimit(data);
+  const timerDuration = extractTimeLimit(data);
   const maxAttempts = extractMaxAttempts(data);
   const passPercentage = extractPassPercentage(data);
   const showAnswers = shouldShowAnswersFromPayload(data);
-  const timerDuration = useMemo(() => {
-    if ((!isTimed && timeLimit === null) || timeLimit === null) {
-      return null;
-    }
-    return timeLimit;
-  }, [isTimed, timeLimit]);
-  const [selectedByQuestion, setSelectedByQuestion] = useState<number[][]>(questionsWithTiming.map(() => []));
-  const [submitted, setSubmitted] = useState(false);
-  const [questionCorrectness, setQuestionCorrectness] = useState<boolean[]>([]);
-  const [questionMarked, setQuestionMarked] = useState<boolean[]>([]);
-  const [attemptCount, setAttemptCount] = useState(0);
-  const [attemptHistory, setAttemptHistory] = useState<AttemptHistoryItem[]>([]);
-  const [reviewAttemptNumber, setReviewAttemptNumber] = useState<number | null>(null);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [startedAtMs, setStartedAtMs] = useState(() => Date.now());
-  const [attemptStarted, setAttemptStarted] = useState(false);
+  const [selectedByQuestion, setSelectedByQuestion] = useState(initialSession.selectedByQuestion);
+  const [submitted, setSubmitted] = useState(initialSession.submitted);
+  const [questionCorrectness, setQuestionCorrectness] = useState(initialSession.questionCorrectness);
+  const [questionMarked, setQuestionMarked] = useState(initialSession.questionMarked);
+  const [attemptCount, setAttemptCount] = useState(initialSession.attemptCount);
+  const [attemptHistory, setAttemptHistory] = useState(initialSession.attemptHistory);
+  const [reviewAttemptNumber, setReviewAttemptNumber] = useState(initialSession.reviewAttemptNumber);
+  const [elapsedSeconds, setElapsedSeconds] = useState(initialSession.elapsedSeconds);
+  const [startedAtMs, setStartedAtMs] = useState(initialSession.startedAtMs);
+  const [attemptStarted, setAttemptStarted] = useState(initialSession.attemptStarted);
 
   useEffect(() => {
-    if (isEditMode) {
-      const editorAttemptOrder = questionBank.map((question, questionIndex) => ({
-        questionIndex,
-        optionOrder: question.options.map((_, optionIndex) => optionIndex),
-      }));
-      setAttemptOrder(editorAttemptOrder);
-      setSelectedByQuestion(editorAttemptOrder.map(() => []));
-      setQuestionCorrectness([]);
-      setSubmitted(false);
-      setQuestionMarked(Array(editorAttemptOrder.length).fill(false));
-      setReviewAttemptNumber(null);
-      setStartedAtMs(Date.now());
-      setAttemptStarted(true);
-      setAttemptCount(0);
-      setAttemptHistory([]);
-      setElapsedSeconds(0);
-      onSubmissionChange?.(name, false);
-      return;
-    }
-
-    let nextAttemptOrder: AttemptOrderItem[] = [];
-    let nextSelectedByQuestion: number[][] = [];
-    let nextQuestionCorrectness: boolean[] = [];
-    let nextSubmitted = false;
-    let nextStartedAtMs = Date.now();
-    let nextAttemptCount = 0;
-    let nextAttemptHistory: AttemptHistoryItem[] = [];
-    let nextElapsedSeconds = 0;
-    let nextAttemptStarted = false;
-
-    try {
-      const parsed = browserStorage.readQuizProgress(name);
-      const storedStartedAtMs = timestampToMs(parsed?.startedAt);
-      const hasSubmittedAttempt = parsed?.submitted === true && typeof parsed?.submittedAt === "string";
-      const hasExplicitStartedAttempt = parsed?.attemptStarted === true;
-      const storedAttemptOrder = parseAttemptOrder(parsed?.attemptOrder, questionBank);
-      const previousAttemptSignature =
-        typeof parsed?.attemptSignature === "string"
-          ? parsed.attemptSignature
-          : typeof parsed?.previousAttemptSignature === "string"
-            ? parsed.previousAttemptSignature
-            : null;
-
-      if (storedStartedAtMs !== null) {
-        nextStartedAtMs = storedStartedAtMs;
-      }
-
-      if (Number.isFinite(Number(parsed?.attemptCount))) {
-        nextAttemptCount = Math.max(0, Math.floor(Number(parsed?.attemptCount)));
-      }
-
-      nextAttemptHistory = parseAttemptHistory(parsed?.attemptHistory, questionBank);
-
-      if (hasSubmittedAttempt) {
-        nextSubmitted = true;
-        nextAttemptStarted = true;
-        nextAttemptOrder =
-          storedAttemptOrder ?? createAttemptOrder(questionBank, questionsPerAttempt, previousAttemptSignature);
-        nextElapsedSeconds = Number.isFinite(Number(parsed?.elapsedSeconds))
-          ? Math.max(0, Math.floor(Number(parsed.elapsedSeconds)))
-          : secondsSince(nextStartedAtMs);
-        nextQuestionCorrectness = Array.isArray(parsed?.questionCorrectness)
-          ? parsed.questionCorrectness.slice(0, nextAttemptOrder.length).map((value: unknown) => value === true)
-          : [];
-
-        if (Array.isArray(parsed?.selectedByQuestion)) {
-          const restoredSelectedByQuestion = parsed.selectedByQuestion
-            .slice(0, nextAttemptOrder.length)
-            .map((selection: unknown) =>
-              Array.isArray(selection)
-                ? selection.filter((item) => Number.isInteger(item)).map((item) => Number(item))
-                : []
-            );
-          nextSelectedByQuestion = nextAttemptOrder.map((_, index) => restoredSelectedByQuestion[index] ?? []);
-        }
-
-        if (nextAttemptHistory.length === 0) {
-          const correctCount = nextQuestionCorrectness.filter(Boolean).length;
-          const totalQuestions = nextAttemptOrder.length;
-          const scorePercentage = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
-          nextAttemptHistory = [
-            {
-              attemptNumber: Math.max(1, nextAttemptCount),
-              elapsedSeconds: nextElapsedSeconds,
-              scorePercentage,
-              correctCount,
-              totalQuestions,
-              submittedAt: typeof parsed?.submittedAt === "string" ? parsed.submittedAt : new Date().toISOString(),
-              attemptOrder: nextAttemptOrder,
-              selectedByQuestion: nextSelectedByQuestion,
-              questionCorrectness: nextQuestionCorrectness,
-            },
-          ];
-        }
-      } else if (hasExplicitStartedAttempt && storedStartedAtMs !== null && storedAttemptOrder) {
-        nextAttemptStarted = true;
-        nextAttemptOrder = storedAttemptOrder;
-        nextElapsedSeconds = secondsSince(nextStartedAtMs);
-      }
-    } catch {
-      // Ignore invalid progress data and keep the quiz waiting for an explicit attempt start.
-    }
-
-    if (nextSelectedByQuestion.length === 0) {
-      nextSelectedByQuestion = nextAttemptOrder.map(() => []);
-    }
-
-    setAttemptOrder(nextAttemptOrder);
-    setSelectedByQuestion(nextSelectedByQuestion);
-    setQuestionCorrectness(nextQuestionCorrectness);
-    setSubmitted(nextSubmitted);
-    setQuestionMarked(Array(nextAttemptOrder.length).fill(false));
-    setReviewAttemptNumber(null);
-    setStartedAtMs(nextStartedAtMs);
-    setAttemptStarted(nextAttemptStarted);
-    setAttemptCount(nextAttemptCount);
-    setAttemptHistory(nextAttemptHistory);
-    setElapsedSeconds(nextElapsedSeconds);
-
-    if (nextAttemptStarted && !nextSubmitted) {
+    if (initialSession.attemptStarted && !initialSession.submitted && !isEditMode) {
       browserStorage.writeQuizProgress(
         name,
         {
-          startedAt: new Date(nextStartedAtMs).toISOString(),
-          attemptCount: nextAttemptCount,
-          attemptHistory: nextAttemptHistory,
+          startedAt: new Date(initialSession.startedAtMs).toISOString(),
+          attemptCount: initialSession.attemptCount,
+          attemptHistory: initialSession.attemptHistory,
           submitted: false,
           attemptStarted: true,
-          attemptOrder: nextAttemptOrder,
-          attemptSignature: attemptSignature(nextAttemptOrder),
+          attemptOrder: initialSession.attemptOrder,
+          attemptSignature: attemptSignature(initialSession.attemptOrder),
         }
       );
     }
 
-    onSubmissionChange?.(name, nextSubmitted);
-  }, [isEditMode, name, onSubmissionChange, questionBank, questionsPerAttempt, timerDuration]);
-
-  useEffect(() => {
-    if (isEditMode) {
-      setQuestionMarked(Array(questionsWithTiming.length).fill(false));
-      return;
-    }
-
-    const stored = browserStorage.readQuizMarkers(name);
-    if (!stored) {
-      setQuestionMarked(Array(questionsWithTiming.length).fill(false));
-      return;
-    }
-
-    if (Array.isArray(stored)) {
-      const normalized = stored.slice(0, questionsWithTiming.length).map((value) => value === true);
-      const padded = normalized.concat(Array(Math.max(0, questionsWithTiming.length - normalized.length)).fill(false));
-      setQuestionMarked(padded);
-      return;
-    }
-
-    setQuestionMarked(Array(questionsWithTiming.length).fill(false));
-  }, [isEditMode, name, questionsWithTiming.length]);
+    onSubmissionChange?.(name, initialSession.submitted);
+  }, [initialSession, isEditMode, name, onSubmissionChange]);
 
   const handleSubmit = useCallback(() => {
     if (!attemptStarted) {
@@ -310,20 +187,18 @@ export default function QuizBlock({
       return;
     }
 
-    if (timerDuration !== null && elapsedSeconds >= timerDuration) {
-      handleSubmit();
-      return;
-    }
-
     const interval = setInterval(() => {
-      setElapsedSeconds(() => {
-        const next = secondsSince(startedAtMs);
-        return timerDuration !== null ? Math.min(next, timerDuration) : next;
-      });
+      const elapsed = secondsSince(startedAtMs);
+      const next = timerDuration !== null ? Math.min(elapsed, timerDuration) : elapsed;
+      setElapsedSeconds(next);
+      if (timerDuration !== null && next >= timerDuration) {
+        clearInterval(interval);
+        handleSubmit();
+      }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [attemptStarted, isEditMode, timerDuration, elapsedSeconds, submitted, handleSubmit, startedAtMs]);
+  }, [attemptStarted, handleSubmit, isEditMode, startedAtMs, submitted, timerDuration]);
 
   const allQuestionsAnswered = questionsWithTiming.every((_, idx) => (selectedByQuestion[idx] ?? []).length > 0);
   const attemptLimitReached = maxAttempts !== null && attemptCount >= maxAttempts;
@@ -530,19 +405,19 @@ export default function QuizBlock({
 
       {!shouldShowAttemptStart && !shouldShowTopNextAttempt && (
         <div className="quiz-actions">
-        <button
-          type="button"
-          className="quiz-button"
-          onClick={handlePrimaryButton}
-          disabled={isEditMode || (!isReviewingPastAttempt && !canSubmit && !canTryAgain)}
-        >
-          {isReviewingPastAttempt
-            ? "Back to current attempt"
-            : submitted
-              ? (canTryAgain ? `Begin attempt #${attemptCount + 1}` : "Attempts used")
-              : "Submit"}
-        </button>
-      </div>
+          <button
+            type="button"
+            className="quiz-button"
+            onClick={handlePrimaryButton}
+            disabled={isEditMode || (!isReviewingPastAttempt && !canSubmit && !canTryAgain)}
+          >
+            {isReviewingPastAttempt
+              ? "Back to current attempt"
+              : submitted
+                ? (canTryAgain ? `Begin attempt #${attemptCount + 1}` : "Attempts used")
+                : "Submit"}
+          </button>
+        </div>
       )}
     </div>
   );

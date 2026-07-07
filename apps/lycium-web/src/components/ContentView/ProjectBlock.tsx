@@ -2,14 +2,28 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent 
 import { API_BASE } from "../../runtime/appRuntime";
 import Dropdown from "../Dropdown/Dropdown";
 import { EditPencilButton, promptForText } from "./CourseEditControls";
-import type {
-  ContentBlock,
-  ProjectGraderWorkflow,
-  ProjectRubric,
-  ProjectRubricCriterion,
-  ProjectSubmissionPolicy,
-  SourceRecord,
-} from "./contentViewTypes";
+import type { ContentBlock, ProjectSubmissionPolicy, SourceRecord } from "./contentViewTypes";
+import {
+  SUBMISSION_TYPE_LABELS,
+  SUBMISSION_TYPE_OPTIONS,
+  acceptedFileTypesFor,
+  defaultAcceptedFileTypesFor,
+  formatGradeScore,
+  gradingErrorMessage,
+  gradingHttpErrorMessage,
+  hasSubmissionForType,
+  isFileSubmissionType,
+  normalizeGraderWorkflow,
+  normalizeRubric,
+  normalizeSubmissionPolicy,
+  parseRubricText,
+  resolveSubmissionType,
+  rubricToEditableText,
+  splitLines,
+  submissionCommentBody,
+  type ProjectGradeReport,
+  type ProjectSubmissionDraft,
+} from "./projectBlockUtils";
 import { projectKeyFor, readProjectSubmissionRecord, writeProjectSubmissionRecord } from "./projectSubmissionStatus";
 import { useProjectComments } from "./useProjectComments";
 
@@ -24,61 +38,6 @@ type ProjectBlockProps = {
   onSubmissionChange?: (projectKey: string, submitted: boolean) => void;
 };
 
-type ProjectSubmissionDraft = {
-  text: string;
-  link: string;
-  fileName: string;
-  fileMimeType?: string;
-  fileDataBase64?: string;
-};
-
-type ProjectGradeReport = {
-  status?: string;
-  grader?: string;
-  score?: number;
-  maxScore?: number;
-  scorePercentage?: number;
-  passed?: boolean;
-  summary?: string;
-  feedback?: string;
-  criterionResults?: Array<{
-    criterionId: string;
-    title: string;
-    score: number;
-    maxScore: number;
-    level: string;
-    feedback: string;
-  }>;
-  nextSteps?: string[];
-  errors?: Array<{
-    code: string;
-    message: string;
-    severity?: string;
-    retryable?: boolean;
-  }>;
-};
-
-const SUBMISSION_TYPE_LABELS: Record<string, string> = {
-  doc: "Document",
-  document: "Document",
-  docx: "DOCX",
-  file: "File",
-  image: "Image",
-  link: "Link",
-  pdf: "PDF",
-  text: "Text",
-};
-
-const SUBMISSION_TYPE_OPTIONS = [
-  { value: "text", label: "Text" },
-  { value: "link", label: "Link" },
-  { value: "doc", label: "Document" },
-  { value: "pdf", label: "PDF" },
-  { value: "docx", label: "DOCX" },
-  { value: "image", label: "Image" },
-  { value: "file", label: "File" },
-];
-
 export default function ProjectBlock({
   block,
   courseKey,
@@ -90,7 +49,7 @@ export default function ProjectBlock({
   onSubmissionChange,
 }: ProjectBlockProps) {
   const [submission, setSubmission] = useState<ProjectSubmissionDraft>({ text: "", link: "", fileName: "" });
-  const [submitted, setSubmitted] = useState(false);
+  const [submitted, setSubmitted] = useState(() => readProjectSubmissionRecord(projectKeyFor(courseKey, sectionId, block))?.submitted === true);
   const [gradeMessage, setGradeMessage] = useState("");
   const [gradeReport, setGradeReport] = useState<ProjectGradeReport | null>(null);
   const [isGrading, setIsGrading] = useState(false);
@@ -109,10 +68,8 @@ export default function ProjectBlock({
   const submitButtonLabel = isGrading ? "Submitting..." : submitted ? "Resubmit" : "Submit";
 
   useEffect(() => {
-    const savedSubmitted = readProjectSubmissionRecord(projectKey)?.submitted === true;
-    setSubmitted(savedSubmitted);
-    onSubmissionChange?.(projectKey, savedSubmitted);
-  }, [onSubmissionChange, projectKey]);
+    onSubmissionChange?.(projectKey, submitted);
+  }, [onSubmissionChange, projectKey, submitted]);
 
   const updateBlock = (patch: Partial<ContentBlock>) => onChange?.({ ...block, ...patch });
   const updateSubmissionPolicy = (patch: Partial<ProjectSubmissionPolicy>) =>
@@ -187,7 +144,6 @@ export default function ProjectBlock({
       submissionType,
       summary: commentBody,
     });
-    onSubmissionChange?.(projectKey, true);
     addComment("learner", commentBody);
     setGradeMessage((graderWorkflow.grader ?? "agent") === "agent" ? "Submission received. Grading..." : "Submission received.");
     setGradeReport(null);
@@ -336,10 +292,6 @@ export default function ProjectBlock({
                         const nextValue = event.currentTarget.value;
                         setSubmission((current) => ({ ...current, text: nextValue }));
                       }}
-                      onInput={(event) => {
-                        const nextValue = event.currentTarget.value;
-                        setSubmission((current) => ({ ...current, text: nextValue }));
-                      }}
                       placeholder="Write or paste the project submission text."
                     />
                   </label>
@@ -353,10 +305,6 @@ export default function ProjectBlock({
                       type="url"
                       value={submission.link}
                       onChange={(event) => {
-                        const nextValue = event.currentTarget.value;
-                        setSubmission((current) => ({ ...current, link: nextValue }));
-                      }}
-                      onInput={(event) => {
                         const nextValue = event.currentTarget.value;
                         setSubmission((current) => ({ ...current, link: nextValue }));
                       }}
@@ -436,7 +384,6 @@ export default function ProjectBlock({
                 disabled={isEditMode}
                 value={draftComment}
                 onChange={(event) => setDraftComment(event.currentTarget.value)}
-                onInput={(event) => setDraftComment(event.currentTarget.value)}
                 placeholder="Add comment"
               />
             </label>
@@ -448,98 +395,6 @@ export default function ProjectBlock({
       </div>
     </section>
   );
-}
-
-function formatGradeScore(report: ProjectGradeReport) {
-  const score = report.score;
-  const maxScore = report.maxScore;
-  const hasPointScore = typeof score === "number" && typeof maxScore === "number";
-  const points = hasPointScore ? `${formatGradeNumber(score)}/${formatGradeNumber(maxScore)}` : "Score unavailable";
-  const percent = typeof report.scorePercentage === "number" ? ` ${report.scorePercentage}%` : "";
-  const status = report.status === "needs_review" ? " needs review" : report.passed === undefined ? "" : report.passed ? " passed" : " needs revision";
-  return `${points}${percent}${status}`;
-}
-
-function formatGradeNumber(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-function normalizeRubric(rawRubric: ContentBlock["rubric"]): Required<ProjectRubric> {
-  if (Array.isArray(rawRubric)) {
-    return {
-      id: "project-rubric",
-      title: "Project rubric",
-      criteria: rawRubric.length > 0 ? rawRubric : defaultCriteria(),
-    };
-  }
-
-  return {
-    id: rawRubric?.id ?? "project-rubric",
-    title: rawRubric?.title ?? "Project rubric",
-    criteria: Array.isArray(rawRubric?.criteria) && rawRubric.criteria.length > 0 ? rawRubric.criteria : defaultCriteria(),
-  };
-}
-
-function normalizeSubmissionPolicy(rawPolicy: ContentBlock["submission"]): ProjectSubmissionPolicy {
-  return {
-    submissionType: rawPolicy?.submissionType,
-    submissionMethods: rawPolicy?.submissionMethods,
-    acceptedTypes: rawPolicy?.acceptedTypes?.length ? rawPolicy.acceptedTypes : ["text"],
-    acceptedFileTypes: rawPolicy?.acceptedFileTypes ?? [],
-    instructions: rawPolicy?.instructions ?? "Submit the artifact in the accepted format.",
-    maxFiles: rawPolicy?.maxFiles,
-    maxFileSizeMb: rawPolicy?.maxFileSizeMb,
-  };
-}
-
-function normalizeGraderWorkflow(rawWorkflow: ContentBlock["graderWorkflow"]): ProjectGraderWorkflow {
-  return {
-    grader: rawWorkflow?.grader ?? "agent",
-    rubricId: rawWorkflow?.rubricId,
-    status: rawWorkflow?.status ?? "ready",
-    allowedContext: rawWorkflow?.allowedContext,
-    feedbackPolicy: rawWorkflow?.feedbackPolicy,
-  };
-}
-
-function acceptedFileTypesFor(policy: ProjectSubmissionPolicy) {
-  const explicit = policy.acceptedFileTypes ?? [];
-  const submissionType = resolveSubmissionType(policy);
-  const fromType = defaultAcceptedFileTypesFor(submissionType);
-
-  return Array.from(new Set([...explicit, ...fromType]));
-}
-
-function defaultAcceptedFileTypesFor(submissionType: string) {
-  if (submissionType === "doc" || submissionType === "document") return [".pdf", ".docx"];
-  if (submissionType === "pdf") return [".pdf"];
-  if (submissionType === "docx") return [".docx"];
-  if (submissionType === "image") return ["image/*"];
-  if (submissionType === "file") return [".txt", ".md", ".csv", ".pdf", ".docx", "image/*"];
-  return [];
-}
-
-function resolveSubmissionType(policy: ProjectSubmissionPolicy) {
-  const submissionType = (policy.submissionType ?? policy.acceptedTypes?.[0] ?? "text").toLowerCase();
-  return submissionType === "document" ? "doc" : submissionType;
-}
-
-function isFileSubmissionType(submissionType: string) {
-  return ["doc", "document", "docx", "file", "image", "pdf"].includes(submissionType);
-}
-
-function hasSubmissionForType(submission: ProjectSubmissionDraft, submissionType: string) {
-  if (submissionType === "text") return Boolean(submission.text.trim());
-  if (submissionType === "link") return Boolean(submission.link.trim());
-  if (isFileSubmissionType(submissionType)) return Boolean(submission.fileName.trim());
-  return Boolean(submission.text.trim() || submission.link.trim() || submission.fileName.trim());
-}
-
-function submissionCommentBody(submission: ProjectSubmissionDraft, submissionType: string) {
-  if (submissionType === "link" && submission.link.trim()) return `Submitted link: ${submission.link.trim()}`;
-  if (isFileSubmissionType(submissionType) && submission.fileName.trim()) return `Submitted file: ${submission.fileName.trim()}`;
-  if (submissionType === "text" && submission.text.trim()) return "Submitted text response.";
-  return "Submitted project.";
 }
 
 async function fileToBase64(file: File) {
@@ -565,64 +420,4 @@ function formatCommentTime(value: string) {
     parsed.getDate() === now.getDate();
 
   return new Intl.DateTimeFormat(undefined, isToday ? { hour: "numeric", minute: "2-digit" } : { month: "short", day: "numeric", year: "numeric" }).format(parsed);
-}
-
-function gradingHttpErrorMessage(status: number) {
-  if (status === 400 || status === 422) return "The grading request is missing required submission or rubric data.";
-  if (status === 503) return "The grading service is unavailable. Try again after the grader is connected.";
-  if (status >= 500) return "The grader failed while evaluating this submission. Try again or request review.";
-  return `The grader returned status ${status}.`;
-}
-
-function gradingErrorMessage(error: unknown) {
-  if (error instanceof TypeError) return "The grading service could not be reached. Check that the Lycium API is running.";
-  if (error instanceof Error) return error.message;
-  return "Agent grading workflow unavailable.";
-}
-
-function splitLines(value: string) {
-  return value.split(/\n+/).map((line) => line.trim()).filter(Boolean);
-}
-
-function rubricToEditableText(rubric: ProjectRubric) {
-  return (rubric.criteria ?? [])
-    .map((criterion) =>
-      [criterion.title ?? criterion.criterion ?? "Criterion", criterion.description ?? "", criterion.points ?? ""].join(" | "),
-    )
-    .join("\n");
-}
-
-function parseRubricText(value: string): ProjectRubricCriterion[] {
-  return splitLines(value).map((line, index) => {
-    const [title, description, points] = line.split("|").map((part) => part.trim());
-    return {
-      id: `criterion-${index + 1}`,
-      title: title || `Criterion ${index + 1}`,
-      description: description || "Describe what successful work should show.",
-      points: points || undefined,
-    };
-  });
-}
-
-function defaultCriteria(): ProjectRubricCriterion[] {
-  return [
-    {
-      id: "criterion-understanding",
-      title: "Concept understanding",
-      description: "Applies the relevant course concepts accurately.",
-      points: 40,
-    },
-    {
-      id: "criterion-evidence",
-      title: "Required evidence",
-      description: "Includes enough artifact evidence for grading.",
-      points: 35,
-    },
-    {
-      id: "criterion-reflection",
-      title: "Reflection",
-      description: "Explains tradeoffs, limitations, and next improvements.",
-      points: 25,
-    },
-  ];
 }

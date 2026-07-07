@@ -27,6 +27,7 @@ export type CatalogVisibleProgram = {
 };
 
 export type CatalogVisibleCluster = {
+  program: LyciumProgram;
   cluster: LyciumRequirementGroup;
   courseIds: string[];
   estimate: TimeEstimate;
@@ -52,6 +53,7 @@ type VisibleProgramOptions = {
 
 type VisibleClusterOptions = {
   program: LyciumProgram | null;
+  programs?: LyciumProgram[];
   courseMap: Map<string, CourseEntry>;
   progressCache?: CatalogProgressCache;
   activityFilter: CatalogActivityFilter;
@@ -234,6 +236,7 @@ export function getVisibleCatalogPrograms({
 
 export function getVisibleCatalogClusters({
   program,
+  programs,
   courseMap,
   progressCache,
   activityFilter,
@@ -245,12 +248,20 @@ export function getVisibleCatalogClusters({
   sortMode,
 }: VisibleClusterOptions): CatalogVisibleCluster[] {
   const query = normalizeSearchText(searchQuery);
+  const sourcePrograms = programs && programs.length > 0 ? programs : program ? [program] : [];
 
-  return (program?.requirementGroups ?? [])
-    .map((cluster) => {
+  return sourcePrograms
+    .flatMap((sourceProgram) =>
+      sourceProgram.requirementGroups.map((cluster) => ({
+        program: sourceProgram,
+        cluster,
+      })),
+    )
+    .map(({ program: sourceProgram, cluster }) => {
       const courseIds = groupCourseIds(cluster);
 
       return {
+        program: sourceProgram,
         cluster,
         courseIds,
         estimate: estimateRequirementGroupTime(cluster, courseMap),

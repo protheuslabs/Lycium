@@ -1,5 +1,4 @@
 import { expect, test, type Page } from "@playwright/test";
-
 async function chooseDropdownOption(page: Page, label: string, optionName: string | RegExp) {
   const trigger = page.getByLabel(label);
   const currentText = (await trigger.textContent()) ?? "";
@@ -13,14 +12,14 @@ async function chooseDropdownOption(page: Page, label: string, optionName: strin
 
 function firstUsableCourseCard(page: Page) {
   return page
-    .locator(".course-card:not(.create-course-card):not(.course-card--empty):not(.course-card--generating):not(.course-card--locked)")
+    .locator(".course-card:not(.create-course-card):not(.course-card--empty):not(.course-card--generating):not(.course-card--locked):not(.course-card--lifecycle-source)")
     .first();
 }
 
 async function openCreateCourseDialog(page: Page) {
-  const createCard = page.locator(".create-course-card").first();
-  await expect(createCard).toBeVisible();
-  await createCard.click({ force: true });
+  const createButton = page.getByRole("button", { name: "Create course", exact: true });
+  await expect(createButton).toBeVisible();
+  await createButton.click();
   await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();
 }
 
@@ -78,7 +77,8 @@ async function mockEmptyAiConnection(page: Page) {
 }
 
 async function seedReadyForReviewCourse(page: Page) {
-  await page.addInitScript(() => {
+  await page.goto("/Lycium/catalog");
+  await page.evaluate(() => {
     const sourceRecord = {
       id: "source-e2e-review",
       type: "syllabus",
@@ -166,7 +166,51 @@ async function seedReadyForReviewCourse(page: Page) {
         ],
       },
     };
-    window.localStorage.setItem("lycium-local-course-drafts", JSON.stringify([readyCourse]));
+    const publishedCourse = {
+      ...readyCourse,
+      key: "e2e-published-course",
+      title: "E2E Published Course",
+      status: "published",
+      snapshotId: 987655,
+      data: {
+        ...readyCourse.data,
+        title: "E2E Published Course",
+        shortDescription: "A seeded published course for catalog lifecycle coverage.",
+      },
+    };
+    const existingCourses = JSON.parse(window.localStorage.getItem("lycium-local-course-drafts") ?? "[]");
+    window.localStorage.setItem("lycium-local-course-drafts", JSON.stringify([readyCourse, publishedCourse, ...existingCourses.filter((course: { key?: string }) => course.key !== readyCourse.key && course.key !== publishedCourse.key)]));
+  });
+}
+
+async function seedCatalogProgram(page: Page) {
+  await page.goto("/Lycium/catalog");
+  await page.evaluate(() => {
+    const program = {
+      id: "e2e-catalog-program",
+      title: "E2E Catalog Program",
+      description: "A deterministic program fixture for catalog navigation.",
+      programType: "skill_path",
+      field: "Quality engineering",
+      level: "professional",
+      targetOutcome: "Navigate a source-backed program path.",
+      learningOutcomes: [],
+      entryRequirements: [],
+      requirementGroups: [{
+        id: "e2e-foundations",
+        displayName: "E2E Foundations",
+        groupKind: "foundation",
+        purpose: "Exercise cluster navigation and linked course evidence.",
+        learningOutcomes: [],
+        requirements: [{ id: "e2e-course-requirement", type: "complete_course", courseId: "e2e-published-course" }],
+        completionRule: { type: "complete_all" },
+      }],
+      estimatedHours: 10,
+      masteryPolicy: { minimumMasteryPercent: 80 },
+      version: "1.0.0",
+      reviewStatus: "published",
+    };
+    window.localStorage.setItem("lycium-local-program-drafts", JSON.stringify([program]));
   });
 }
 
@@ -180,7 +224,6 @@ test.beforeEach(async ({ page }) => {
     window.sessionStorage.setItem("lycium-e2e-storage-cleared", "1");
   });
 });
-
 test("manual course creation opens a blank editable draft", async ({ page }) => {
   await page.goto("/Lycium/catalog");
 
@@ -217,7 +260,7 @@ test("under-sourced AI creation produces a source-gated draft card", async ({ pa
 
   await expect(page.getByRole("dialog", { name: "Lifecycle Needs Sources Course" })).toBeVisible();
   await expect(page.getByText("Sources needed")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Queue source" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Add source and resume" })).toBeDisabled();
   await expect(page).toHaveURL(/\/Lycium\/catalog$/);
 });
 
@@ -225,19 +268,19 @@ test("catalog lifecycle badges expose review-ready and published states", async 
   await seedReadyForReviewCourse(page);
   await page.goto("/Lycium/catalog");
 
-  await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Ready Review Course");
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Ready Review Course");
   const readyCard = page.locator(".course-card").filter({ hasText: "E2E Ready Review Course" }).first();
   await expect(readyCard).toBeVisible();
   await expect(readyCard.locator(".course-lifecycle-badge-review")).toHaveText("Publish ready");
-  await readyCard.getByRole("button", { name: "Review and publish" }).click();
+  await readyCard.getByRole("button", { name: "More info about E2E Ready Review Course" }).click();
   await expect(page.getByRole("dialog", { name: "E2E Ready Review Course" })).toBeVisible();
   await expect(page.getByText("Generation review")).toBeVisible();
   await expect(page.getByText("Publish gate")).toBeVisible();
   await expect(page.getByRole("button", { name: "Publish course" })).toBeEnabled();
   await page.keyboard.press("Escape");
 
-  await page.getByPlaceholder("Search names, tags, and departments").fill("CHEM 105");
-  const publishedCard = page.locator(".course-card").filter({ hasText: "CHEM 105" }).first();
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Published Course");
+  const publishedCard = page.locator(".course-card").filter({ hasText: "E2E Published Course" }).first();
   await expect(publishedCard).toBeVisible();
   await expect(publishedCard.locator(".course-lifecycle-badge-published")).toHaveText("Published");
   await publishedCard.click();
@@ -246,13 +289,13 @@ test("catalog lifecycle badges expose review-ready and published states", async 
 });
 
 test("catalog loads, exposes create flow, and opens a course", async ({ page }) => {
+  await seedReadyForReviewCourse(page);
   await page.goto("/Lycium/catalog");
-
   await expect(page.getByRole("button", { name: /create course/i })).toBeVisible();
-
   await openCreateCourseDialog(page);
   await expect(page.getByPlaceholder("Describe the course you want to build...")).toBeVisible();
   await page.getByRole("button", { name: /close create course/i }).click();
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Published Course");
 
   const firstCourse = firstUsableCourseCard(page);
   await expect(firstCourse).toBeVisible();
@@ -262,6 +305,8 @@ test("catalog loads, exposes create flow, and opens a course", async ({ page }) 
 });
 
 test("catalog program and cluster navigation is data-driven", async ({ page }) => {
+  await seedReadyForReviewCourse(page);
+  await seedCatalogProgram(page);
   await page.goto("/Lycium/catalog/programs");
   await expect(page.getByLabel("Select catalog view level")).toContainText("Programs");
 
@@ -291,16 +336,16 @@ test("catalog program and cluster navigation is data-driven", async ({ page }) =
   await expect(firstClusterCourse).toBeVisible();
   await expect(firstClusterCourse).toContainText("Satisfies:");
 });
-
 test("catalog search, filters, sort, and locked card behavior are generic", async ({ page }) => {
+  await seedReadyForReviewCourse(page);
   await page.goto("/Lycium/catalog");
-
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Published Course");
   const firstCourse = firstUsableCourseCard(page);
   await expect(firstCourse).toBeVisible();
   const firstCourseTitle = (await firstCourse.locator("h3").innerText()).trim();
   const searchToken = firstCourseTitle.split(/\s+/).find((token) => token.length > 2) ?? firstCourseTitle;
 
-  await page.getByPlaceholder("Search names, tags, and departments").fill(searchToken);
+  await page.getByRole("searchbox", { name: "Search courses" }).fill(searchToken);
   await expect(page.locator(".course-card").filter({ hasText: firstCourseTitle }).first()).toBeVisible();
 
   await chooseDropdownOption(page, "Sort courses", /Sort by Completion/);
@@ -318,8 +363,6 @@ test("catalog search, filters, sort, and locked card behavior are generic", asyn
     await expect(page).toHaveURL(currentUrl);
   }
 });
-
-
 test("create-course modal reflects locked and unlocked AI states", async ({ page }) => {
   await page.goto("/Lycium/catalog");
 
@@ -366,17 +409,17 @@ test("catalog controls support keyboard navigation and modal focus", async ({ pa
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "Create Course" })).toHaveCount(0);
 });
-
 test("settings modal and course shell survive route changes", async ({ page }) => {
   await mockEmptyAiConnection(page);
+  await seedReadyForReviewCourse(page);
   await page.goto("/Lycium/catalog");
-
   await page.getByLabel("Settings").click();
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("radio", { name: "Dark mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.getByRole("button", { name: /close settings/i }).click();
   await expect(page).toHaveURL(/\/Lycium\/catalog$/);
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Published Course");
 
   const firstCourse = firstUsableCourseCard(page);
   await firstCourse.click();
@@ -386,10 +429,11 @@ test("settings modal and course shell survive route changes", async ({ page }) =
   await page.getByRole("button", { name: /close settings/i }).click();
   await expect(page).toHaveURL(/\/Lycium\/courses\//);
 });
-
 test("forked courses expose stable edit-mode controls", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
+  await seedReadyForReviewCourse(page);
   await page.goto("/Lycium/catalog");
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Published Course");
 
   const firstCourse = firstUsableCourseCard(page);
   await expect(firstCourse).toBeVisible();
@@ -409,7 +453,8 @@ test("forked courses expose stable edit-mode controls", async ({ page }) => {
     forkCourseName.toLowerCase(),
   );
 
-  await page.getByRole("button", { name: "Edit course" }).click();
+  const editCourseButton = page.getByRole("button", { name: "Edit course", exact: true });
+  if (await editCourseButton.isVisible()) await editCourseButton.click();
   await expect(page.getByRole("button", { name: "Cancel course edits" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save course edits" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open course settings" })).toBeVisible();

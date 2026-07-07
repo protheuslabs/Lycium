@@ -6,6 +6,7 @@ import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogPathContinuity } from "./catalogProgramProgress";
 import type { CatalogVisibleCluster, CatalogVisibleProgram } from "./catalogPathFiltering";
 import type { CatalogPathReadiness } from "./catalogPathReadiness";
+import { getCatalogClusterSelectionKey, type CatalogSelectionMode } from "../../utils/catalogSelection";
 
 type CatalogProgramShowcaseProps = {
   viewLevel: "programs" | "clusters";
@@ -13,7 +14,9 @@ type CatalogProgramShowcaseProps = {
   clusters: CatalogVisibleCluster[];
   selectedProgram: LyciumProgram | null;
   onProgramSelect: (program: LyciumProgram) => void;
-  onClusterSelect: (cluster: LyciumRequirementGroup) => void;
+  onClusterSelect: (cluster: LyciumRequirementGroup, program?: LyciumProgram | null) => void;
+  onToggleClusterSelection: (programId: string, clusterId: string) => void;
+  selectionMode: CatalogSelectionMode;
 };
 
 function CatalogPathContinuityStrip({ continuity }: { continuity: CatalogPathContinuity }) {
@@ -55,6 +58,8 @@ export default function CatalogProgramShowcase({
   selectedProgram,
   onProgramSelect,
   onClusterSelect,
+  onToggleClusterSelection,
+  selectionMode,
 }: CatalogProgramShowcaseProps) {
   if (viewLevel === "programs") {
     return (
@@ -102,7 +107,12 @@ export default function CatalogProgramShowcase({
         {(!selectedProgram || clusters.length === 0) && (
           <CatalogEmptyState level="clusters" />
         )}
-        {selectedProgram && clusters.map(({ cluster, courseIds, estimate, progress, continuity, readiness }) => {
+        {clusters.map(({ program: sourceProgram, cluster, courseIds, estimate, progress, continuity, readiness }) => {
+          const isSelected =
+            selectionMode?.kind === "program" &&
+            selectionMode.selectedClusterKeys.includes(
+              getCatalogClusterSelectionKey(sourceProgram.id, cluster.id),
+            );
           return (
             <CatalogEntityCard
               className="program-showcase-card"
@@ -111,12 +121,18 @@ export default function CatalogProgramShowcase({
               title={cluster.displayName}
               description={cluster.purpose}
               meta={[
+                ...(selectionMode?.kind === "program" ? [sourceProgram.title] : []),
                 `${cluster.requirements.length} requirements`,
                 `${courseIds.length} courses`,
                 formatTimeEstimate(estimate),
                 timeEstimateSourceLabel(estimate),
               ]}
-              onActivate={() => onClusterSelect(cluster)}
+              onActivate={() =>
+                selectionMode?.kind === "program"
+                  ? onToggleClusterSelection(sourceProgram.id, cluster.id)
+                  : onClusterSelect(cluster, sourceProgram ?? selectedProgram)
+              }
+              selected={isSelected}
               progress={
                 progress.hasProgress ? (
                 <CatalogProgressMeter

@@ -339,7 +339,7 @@ test.beforeEach(async ({ page }) => {
 test("program requirement source warnings open the source-gap modal", async ({ page }) => {
   await seedProgramRequirementSourceGapCourse(page);
   await page.goto("/Lycium/catalog");
-  await page.getByPlaceholder("Search names, tags, and departments").fill("Computing Systems Foundations");
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("Computing Systems Foundations");
   await page.locator(".course-card").filter({ hasText: "Computing Systems Foundations" }).first().click();
 
   const dialog = page.getByRole("dialog").first();
@@ -404,7 +404,7 @@ test("source-gap modal resumes API-backed draft with uploaded files", async ({ p
   });
 
   await page.goto("/Lycium/catalog");
-  await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Source Gap Resume Files Course");
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Source Gap Resume Files Course");
   await page.locator(".course-card").filter({ hasText: "E2E Source Gap Resume Files Course" }).first().click();
 
   const dialog = page.getByRole("dialog", { name: "E2E Source Gap Resume Files Course" });
@@ -427,7 +427,7 @@ test("source-gap modal resumes API-backed draft with uploaded files", async ({ p
 test("section refresh is blocked for non API-backed course pages", async ({ page }) => {
   await seedNonApiBackedCourse(page);
   await page.goto("/Lycium/catalog");
-  await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Non API Refresh Course");
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Non API Refresh Course");
   await page.locator(".course-card").filter({ hasText: "E2E Non API Refresh Course" }).first().click();
   await expect(page.locator(".content-view")).toBeVisible();
 
@@ -450,7 +450,7 @@ test("section refresh is blocked when the active model is unverified", async ({ 
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await expect(page.getByText("Ollama Local is saved but not verified yet.")).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
-  await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Refreshable Course");
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Refreshable Course");
   await page.locator(".course-card").filter({ hasText: "E2E Refreshable Course" }).first().click();
 
   const refreshButton = page.getByRole("button", { name: "Why section refresh is unavailable" });
@@ -473,7 +473,7 @@ test("section refresh modal opens when an API-backed course and verified model a
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await expect(page.locator(".settings-key-preview").getByText("http://localhost:11434")).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
-  await page.getByPlaceholder("Search names, tags, and departments").fill("E2E Refreshable Course");
+  await page.getByRole("searchbox", { name: "Search courses" }).fill("E2E Refreshable Course");
   await page.locator(".course-card").filter({ hasText: "E2E Refreshable Course" }).first().click();
 
   const refreshButton = page.getByRole("button", { name: "Refresh this section with AI" });

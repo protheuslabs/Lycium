@@ -315,6 +315,9 @@ test("uploaded files entered in the create-course UI reach course generation as 
 
   await expect(page).toHaveURL(/\/Lycium\/courses\//);
   await expect(page.locator(".course-name")).toHaveText("File Backed Chemistry Course");
+  const conceptStack = page.getByRole("region", { name: "Concepts introduced" });
+  await expect(conceptStack).toBeVisible();
+  await expect(conceptStack.getByRole("heading", { name: "Stoichiometry" })).toBeVisible();
   expect(fileReaderPayload?.files?.map((file) => file.filename)).toEqual([
     "stoichiometry-notes.txt",
     "equilibrium-notes.txt",

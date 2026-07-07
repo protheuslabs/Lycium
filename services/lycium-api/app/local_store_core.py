@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from app.agent_model_records import normalize_model_records
 from app.config import SETTINGS
 from app.security import PRIVATE_DIR_MODE, PRIVATE_FILE_MODE, chmod_private, permission_mode, permissions_are_private
 
@@ -165,33 +166,6 @@ def _read_json_strict(path: Path) -> tuple[Any | None, str | None]:
         return None, f"{path}: {exc}"
 
 
-def _normalize_model_records(models: Any, selected_model: str | None = None) -> list[dict[str, str]]:
-    normalized: list[dict[str, str]] = []
-    if isinstance(models, list):
-        for model in models:
-            if isinstance(model, str):
-                model_id = model.strip()
-                label = model_id
-            elif isinstance(model, dict):
-                model_id = str(model.get("id") or model.get("name") or "").strip()
-                label = str(model.get("label") or model.get("display_name") or model.get("displayName") or model_id)
-            else:
-                continue
-            if model_id:
-                normalized.append({"id": model_id, "label": label or model_id})
-    if selected_model and not any(model["id"] == selected_model for model in normalized):
-        normalized.insert(0, {"id": selected_model, "label": selected_model})
-
-    deduped: list[dict[str, str]] = []
-    seen: set[str] = set()
-    for model in normalized:
-        if model["id"] in seen:
-            continue
-        seen.add(model["id"])
-        deduped.append(model)
-    return deduped
-
-
 def _normalize_agent_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
     keys = secret.get("agent_keys")
     now = _now()
@@ -213,7 +187,7 @@ def _normalize_agent_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
                     "provider_label": provider_label,
                     "agent_api_key": str(key.get("agent_api_key") or ""),
                     "model": selected_model,
-                    "models": _normalize_model_records(key.get("models"), selected_model),
+                    "models": normalize_model_records(key.get("models"), selected_model),
                     "models_fetched_at": key.get("models_fetched_at"),
                     "connection_status": connection_status,
                     "connection_message": key.get("connection_message"),
@@ -245,7 +219,7 @@ def _normalize_agent_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
                     "provider_label": "OpenAI",
                     "agent_api_key": legacy_key,
                     "model": selected_model,
-                    "models": _normalize_model_records(secret.get("models"), selected_model),
+                    "models": normalize_model_records(secret.get("models"), selected_model),
                     "models_fetched_at": secret.get("updated_at"),
                     "connection_status": "verified",
                     "connection_message": None,

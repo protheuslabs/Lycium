@@ -72,7 +72,7 @@ export default function CourseSourceGapModal({ course, onClose, onQueueSource }:
   const canSubmit = Boolean(selectedGap) && (Boolean(sourceUrl.trim()) || (Boolean(course.snapshotId) && sourceFiles.length > 0));
   const readinessCoverage = readiness?.conceptCoverage;
   const readinessEvidence = readiness?.sourceEvidence;
-  const readinessStrength = readiness?.sourceStrength as { score?: number; minimumScore?: number } | undefined;
+  const readinessStrength = readiness?.sourceStrength;
   const readinessUncoveredConcepts = readinessCoverage?.uncoveredConcepts ?? [];
 
   return (

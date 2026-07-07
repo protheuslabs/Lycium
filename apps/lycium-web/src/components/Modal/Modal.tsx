@@ -1,5 +1,6 @@
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react";
+import { useEffect, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useClientMounted } from "../../hooks/useClientMounted";
 import "./Modal.css";
 
 type ModalSize = "sm" | "md" | "lg";
@@ -27,11 +28,7 @@ export default function Modal({
   children,
   onClose,
 }: ModalProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useClientMounted();
 
   useEffect(() => {
     if (!isOpen) return undefined;

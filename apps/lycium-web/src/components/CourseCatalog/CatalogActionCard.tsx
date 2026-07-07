@@ -5,6 +5,7 @@ type CatalogActionCardProps = {
   children: ReactNode;
   disabled?: boolean;
   onActivate: () => void;
+  pressed?: boolean;
 };
 
 export default function CatalogActionCard({
@@ -12,6 +13,7 @@ export default function CatalogActionCard({
   children,
   disabled = false,
   onActivate,
+  pressed,
 }: CatalogActionCardProps) {
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== "Enter" && event.key !== " ") {
@@ -30,6 +32,7 @@ export default function CatalogActionCard({
       role="button"
       tabIndex={0}
       aria-disabled={disabled || undefined}
+      aria-pressed={pressed}
       onClick={disabled ? undefined : onActivate}
       onKeyDown={handleKeyDown}
     >

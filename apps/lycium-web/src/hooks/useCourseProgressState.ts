@@ -4,6 +4,7 @@ import type { CourseEntry, CourseProgressRecord, CourseSection, SectionStatus } 
 import {
   areProgressRecordsEqual,
   DEFAULT_PROGRESS,
+  markSectionSeen,
   normalizeCompletedSectionIds,
   normalizeProgressRecord,
   normalizeSectionStatuses,
@@ -95,11 +96,14 @@ export function useCourseProgressState({
     [sections],
   );
 
+  const cachedProgress = readCachedCourseProgress(courseKey);
   const sourceProgress =
-    progressState.courseKey === courseKey ? progressState.progress : readCachedCourseProgress(courseKey);
+    progressState.courseKey === courseKey && areProgressRecordsEqual(progressState.progress, cachedProgress)
+      ? progressState.progress
+      : cachedProgress;
   const visibleProgress = useMemo(
-    () => normalizeProgressForCourse(sourceProgress),
-    [normalizeProgressForCourse, sourceProgress],
+    () => markSectionSeen(normalizeProgressForCourse(sourceProgress), currentSectionId),
+    [currentSectionId, normalizeProgressForCourse, sourceProgress],
   );
 
   const persistProgress = useCallback(
@@ -213,16 +217,11 @@ export function useCourseProgressState({
           .catch((err) => console.warn("Failed to post progress:", err));
       }
     },
-    [courseKey, learnerId, normalizeProgressForCourse, persistProgress, selectedCourse?.key, selectedCourse?.snapshotId],
+    [courseKey, learnerId, normalizeProgressForCourse, persistProgress, selectedCourse],
   );
 
   useEffect(() => {
     const normalizedInitialProgress = normalizeProgressForCourse(readCachedCourseProgress(courseKey));
-    setProgressState((prev) =>
-      prev.courseKey === courseKey && areProgressRecordsEqual(prev.progress, normalizedInitialProgress)
-        ? prev
-        : { courseKey, progress: normalizedInitialProgress },
-    );
     if (!courseKey || !localApiSyncEnabled) {
       return;
     }
@@ -268,34 +267,11 @@ export function useCourseProgressState({
     if (!courseKey || !currentSectionId) {
       return;
     }
-
-    setProgressState((prev) => {
-      const baseProgress = normalizeProgressForCourse(
-        prev.courseKey === courseKey ? prev.progress : readCachedCourseProgress(courseKey),
-      );
-      if (baseProgress.completedSectionIds.includes(currentSectionId)) {
-        return prev;
-      }
-
-      const currentStatus = baseProgress.sectionStatuses[currentSectionId];
-      const nextStatus = resolveSectionStatusTransition(currentStatus, "seen");
-      if (currentStatus === nextStatus) {
-        return prev;
-      }
-
-      const nextProgress = normalizeProgressForCourse({
-        completedSectionIds: baseProgress.completedSectionIds,
-        sectionStatuses: { ...baseProgress.sectionStatuses, [currentSectionId]: nextStatus },
-      });
-
-      if (areProgressRecordsEqual(baseProgress, nextProgress)) {
-        return prev;
-      }
-
-      persistProgress(nextProgress, currentSectionId);
-      return { courseKey, progress: nextProgress };
-    });
-  }, [courseKey, currentSectionId, normalizeProgressForCourse, persistProgress]);
+    const persistedProgress = normalizeProgressForCourse(readCachedCourseProgress(courseKey));
+    if (!areProgressRecordsEqual(persistedProgress, visibleProgress)) {
+      persistProgress(visibleProgress, currentSectionId);
+    }
+  }, [courseKey, currentSectionId, normalizeProgressForCourse, persistProgress, visibleProgress]);
 
   return {
     progress: visibleProgress,

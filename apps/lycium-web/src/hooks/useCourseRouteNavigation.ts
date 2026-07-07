@@ -19,7 +19,6 @@ type RouterLike = {
 type UseCourseRouteNavigationArgs = {
   router: RouterLike;
   currentPathRef: MutableRefObject<string>;
-  setCurrentPath: Dispatch<SetStateAction<string>>;
   setCurrentCourseKey: Dispatch<SetStateAction<string>>;
   setCurrentSectionIndex: Dispatch<SetStateAction<number>>;
 };
@@ -27,7 +26,6 @@ type UseCourseRouteNavigationArgs = {
 export function useCourseRouteNavigation({
   router,
   currentPathRef,
-  setCurrentPath,
   setCurrentCourseKey,
   setCurrentSectionIndex,
 }: UseCourseRouteNavigationArgs) {
@@ -58,11 +56,10 @@ export function useCourseRouteNavigation({
         }
       }
       currentPathRef.current = nextPath;
-      setCurrentPath(nextPath);
       rememberCourseSection(course, section, nextPath);
       scrollCoursePageToTop();
     },
-    [currentPathRef, rememberCourseSection, router, setCurrentPath],
+    [currentPathRef, rememberCourseSection, router],
   );
 
   const openCourseByEntry = useCallback(
@@ -94,10 +91,9 @@ export function useCourseRouteNavigation({
         router.push(nextPath);
       }
       currentPathRef.current = nextPath;
-      setCurrentPath(nextPath);
       scrollCoursePageToTop();
     },
-    [currentPathRef, pushSectionPath, router, setCurrentCourseKey, setCurrentPath, setCurrentSectionIndex],
+    [currentPathRef, pushSectionPath, router, setCurrentCourseKey, setCurrentSectionIndex],
   );
 
   return { openCourseByEntry, pushSectionPath, rememberCourseSection };

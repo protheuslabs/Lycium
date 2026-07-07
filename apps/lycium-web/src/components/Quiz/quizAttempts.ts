@@ -16,8 +16,8 @@ export function timestampToMs(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function secondsSince(startedAtMs: number): number {
-  return Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000));
+export function secondsSince(startedAtMs: number, nowMs = Date.now()): number {
+  return Math.max(0, Math.floor((nowMs - startedAtMs) / 1000));
 }
 
 function shuffleArray<T>(items: T[]): T[] {

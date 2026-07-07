@@ -75,3 +75,23 @@ def test_generation_readiness_blocks_too_little_evidence() -> None:
     assert report["sourceEvidence"]["submittedEvidenceCount"] == 1
     assert report["sourceEvidence"]["minimumCourseSources"] == 3
     assert report["issues"][0]["code"] == "minimum_source_evidence"
+
+
+def test_generation_readiness_accepts_one_assessed_strong_source() -> None:
+    source_url = "https://example.edu/catalog/epidemiology"
+    report = build_generation_readiness_report(
+        source_urls=[source_url],
+        source_corpus_synthesis={
+            "includedSources": [{"url": source_url, "relevanceScore": 0.8}],
+        },
+        source_documents=[
+            {
+                "url": source_url,
+                "text": "A source-backed epidemiology course covering outbreak investigation, surveillance, risk, and prevention.",
+            }
+        ],
+    )
+
+    assert report["sourceEvidence"]["submittedEvidenceCount"] == 1
+    assert report["sourceStrength"]["ready"] is True
+    assert report["ready"] is True

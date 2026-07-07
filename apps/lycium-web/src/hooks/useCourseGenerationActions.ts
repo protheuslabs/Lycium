@@ -12,7 +12,8 @@ import type {
 } from "@lycium/contracts";
 import { lyciumApi } from "../runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "../utils/courseValidation";
-import { queueCourseSourceGapSuggestion } from "../utils/courseSourceGaps";
+import { hasBlockingSourceGaps, queueCourseSourceGapSuggestion } from "../utils/courseSourceGaps";
+import { generatedCourseRecordFromJob } from "../utils/courseGenerationJobs";
 
 type CourseClassification = {
   category: string;
@@ -73,15 +74,8 @@ export function useCourseGenerationActions({
   }), []);
 
   const replaceCourseFromJob = useCallback((course: CourseEntry, job: LyciumCourseGenerationJob) => {
-    const snapshot = job.course_snapshot;
-    if (!snapshot?.structure) {
-      return course;
-    }
-    return entryFromGeneratedRecord({
-      ...snapshot,
-      generation_trace: snapshot.generation_trace ?? job.trace,
-      qualityReport: snapshot.qualityReport ?? job.quality_report ?? undefined,
-    });
+    const record = generatedCourseRecordFromJob(job);
+    return record ? entryFromGeneratedRecord(record) : course;
   }, [entryFromGeneratedRecord]);
 
   const handleGenerateCourse = async (
@@ -127,8 +121,8 @@ export function useCourseGenerationActions({
         throw new Error(job.error || job.message || "Course generation failed.");
       }
 
-      const generatedSnapshot = job.course_snapshot;
-      if (!generatedSnapshot?.structure) {
+      const generatedSnapshot = generatedCourseRecordFromJob(job);
+      if (!generatedSnapshot) {
         throw new Error("Course generation finished without a ready course snapshot.");
       }
 
@@ -144,7 +138,9 @@ export function useCourseGenerationActions({
       setPrompt("");
       setGenerateStatus("success");
       setGenerateMessage("Course generated and ready for review.");
-      void openCourseByEntry(entry);
+      if (!hasBlockingSourceGaps(entry)) {
+        void openCourseByEntry(entry);
+      }
     } catch (err) {
       console.warn("Course generation failed:", err);
       setGenerateStatus("error");
@@ -184,7 +180,7 @@ export function useCourseGenerationActions({
         setPublishingCourseKey(null);
       }
     },
-    [entryFromGeneratedRecord, setCourses],
+    [setCourses],
   );
 
   const handleResumeCourseSourceGap = useCallback(

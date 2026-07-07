@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { CourseEntry } from "../../courseTypes";
+import { useClientMounted } from "../../hooks/useClientMounted";
 import Modal from "../Modal/Modal";
 import CatalogActionCard from "./CatalogActionCard";
 import CatalogProgressMeter from "./CatalogProgressMeter";
@@ -15,6 +16,9 @@ type CatalogCourseCardProps = {
   onOpenSourceGaps: (course: CourseEntry) => void;
   onSearchPrerequisite: (query: string) => void;
   isPublishing: boolean;
+  selected?: boolean;
+  selectionMode?: boolean;
+  onToggleSelect?: (courseKey: string) => void;
 };
 
 export default function CatalogCourseCard({
@@ -24,26 +28,29 @@ export default function CatalogCourseCard({
   onOpenSourceGaps,
   onSearchPrerequisite,
   isPublishing,
+  selected = false,
+  selectionMode = false,
+  onToggleSelect,
 }: CatalogCourseCardProps) {
   const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites, requirementContexts } =
     visibleCourse;
   const [isPrerequisiteModalOpen, setIsPrerequisiteModalOpen] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false);
+  const hasMounted = useClientMounted();
   const localDraft = getLocalDraftMetadata(course);
   const lifecycle = getCourseLifecycleSummary(course);
   const sourceSummary = sourceGapSummary(course);
   const requiresPrerequisites = !hasCourseActivity && unmetPrerequisites.length > 0;
   const requiredCourseLabel = `Requires ${unmetPrerequisites.length} course${unmetPrerequisites.length === 1 ? "" : "s"}`;
-  const canActivateCard = lifecycle.needsSourceInput || (!requiresPrerequisites && lifecycle.canOpen);
+  const canActivateCard = selectionMode || lifecycle.needsSourceInput || (!requiresPrerequisites && lifecycle.canOpen);
   const shouldShowLifecycleAction = lifecycle.needsSourceInput || lifecycle.status === "failed";
   const requirementLabel = requirementContexts.map((context) => context.title).join("; ");
   const canShowActivity = hasMounted && hasCourseActivity;
 
-  useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
   const handleCourseOpen = () => {
+    if (selectionMode) {
+      onToggleSelect?.(course.key);
+      return;
+    }
     if (lifecycle.needsSourceInput) {
       onOpenSourceGaps(course);
       return;
@@ -55,11 +62,12 @@ export default function CatalogCourseCard({
 
   return (
     <CatalogActionCard
-      className={`course-card course-card--lifecycle-${lifecycle.tone} ${requiresPrerequisites ? "course-card--locked" : ""}`}
+      className={`course-card course-card--lifecycle-${lifecycle.tone} ${requiresPrerequisites && !selectionMode ? "course-card--locked" : ""} ${selectionMode ? "course-card--select-mode" : ""} ${selected ? "course-card--selected" : ""}`}
       disabled={!canActivateCard}
       onActivate={handleCourseOpen}
+      pressed={selected || undefined}
     >
-      {requiresPrerequisites && <span className="course-card-lock-watermark" aria-hidden="true" />}
+      {requiresPrerequisites && !selectionMode && <span className="course-card-lock-watermark" aria-hidden="true" />}
       <button
         className="course-info-button"
         type="button"
@@ -95,7 +103,7 @@ export default function CatalogCourseCard({
         </p>
       ) : !canShowActivity ? (
         <p className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}>
-          {requiresPrerequisites ? (
+          {requiresPrerequisites && !selectionMode ? (
             <button
               className="course-card-requires-button"
               type="button"
@@ -135,7 +143,7 @@ export default function CatalogCourseCard({
           {isPublishing ? "Publishing..." : lifecycle.actionLabel}
         </button>
       )}
-      {requiresPrerequisites && (
+      {requiresPrerequisites && !selectionMode && (
         <Modal
           isOpen={isPrerequisiteModalOpen}
           title={course.title}

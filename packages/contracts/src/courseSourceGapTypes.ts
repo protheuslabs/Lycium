@@ -74,6 +74,7 @@ export type LyciumCourseGenerationReadiness = {
     usableInputArtifactCount?: number;
     submittedEvidenceCount?: number;
     minimumCourseSources?: number;
+    minimumSourceStrengthScore?: number;
     [key: string]: unknown;
   };
   conceptCoverage?: {

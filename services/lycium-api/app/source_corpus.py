@@ -190,6 +190,9 @@ def compile_source_corpus_preflight(
         "fetchStatus",
         "inputArtifactId",
         "inputArtifactKind",
+        "sourceIndexRef",
+        "sourceType",
+        "trustBaseline",
     }
     selected_documents = [
         {key: value for key, value in document.items() if key in selected_document_keys}

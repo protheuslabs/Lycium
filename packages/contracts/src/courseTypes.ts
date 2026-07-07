@@ -484,7 +484,7 @@ export type LyciumCourseGenerationJob = {
   course?: LyciumCourseData | null;
   quality_report?: LyciumCourseQualityReport | null;
   trace?: Record<string, unknown>;
-  course_snapshot?: LyciumGeneratedCourseRecord | null;
+  course_snapshot?: (Omit<LyciumGeneratedCourseRecord, "structure"> & Partial<Pick<LyciumGeneratedCourseRecord, "structure">> & { version?: number }) | null;
   error?: string | null;
   courseKey?: string;
   createdAt?: string;

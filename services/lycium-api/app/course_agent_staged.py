@@ -38,7 +38,7 @@ from app.course_quality_evals import run_course_quality_evals
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 from app.source_corpus import compile_generation_source_corpus
 from app.course_agent_source_context import build_source_context_index, source_context_index_summary
-from app.source_packet_quality_gate import source_packet_quality_gate
+from app.source_packet_quality_gate import source_packet_gate_message, source_packet_quality_gate
 
 
 
@@ -88,7 +88,10 @@ def generate_course_with_agent_staged(
     )
     if packet_gate:
         raise CourseAgentError(
-            "Source strength is below policy; add stronger or more relevant sources before staged LLM course generation.",
+            source_packet_gate_message(
+                packet_gate,
+                "Source evidence is below policy; add stronger or more relevant sources before staged LLM course generation.",
+            ),
             trace={
                 "status": "failed",
                 "failed_stage": packet_gate.get("gate") or "source_strength",

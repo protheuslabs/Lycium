@@ -33,12 +33,6 @@ export function useSectionQuizStatus({
   const [passedQuizKeys, setPassedQuizKeys] = useState<Set<string>>(() => new Set());
   const [quizProgressByKey, setQuizProgressByKey] = useState<Record<string, QuizProgressStatus>>({});
 
-  useEffect(() => {
-    setSubmittedQuizKeys(new Set());
-    setPassedQuizKeys(new Set());
-    setQuizProgressByKey({});
-  }, [section?.id]);
-
   const handleQuizSubmissionChange = useCallback<QuizSubmissionStatusHandler>((quizKey, submitted) => {
     setSubmittedQuizKeys((previous) => {
       if (submitted === previous.has(quizKey)) {

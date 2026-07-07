@@ -7,6 +7,7 @@ import type { CourseEntry } from "../courseTypes";
 import { browserStorage, localApiSyncEnabled, lyciumApi, repositorySet } from "../runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "../utils/courseValidation";
 import { mergeCourseEntriesByKey, readPersistedLocalCourseEntries } from "../utils/localCourseDrafts";
+import { mergeProgramsById, readPersistedLocalPrograms } from "../utils/localProgramDrafts";
 
 type UseConfiguredCoursesOptions = {
   setCourses: Dispatch<SetStateAction<CourseEntry[]>>;
@@ -49,6 +50,15 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
       return mergeCourseEntriesByKey(persisted, courses);
     };
 
+    const mergePersistedLocalPrograms = (programs: LyciumProgram[]) => {
+      const persisted = readPersistedLocalPrograms();
+      if (persisted.length === 0) {
+        return programs;
+      }
+
+      return mergeProgramsById(persisted, programs);
+    };
+
     if (repositorySet.mode !== "local") {
       repositorySet.courses
         .listCourses()
@@ -73,6 +83,9 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
       const stored = browserStorage.readLearnerId();
       if (stored) {
         setLearnerId(stored);
+      }
+      if (setPrograms) {
+        setPrograms((current) => mergePersistedLocalPrograms(current));
       }
       setCourses((current) => mergePersistedLocalCourses(current));
       return;
@@ -140,13 +153,19 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
         if (remotePrograms.length > 0) {
           setPrograms((current) => {
             const remoteIds = new Set(remotePrograms.map((program) => program.id));
-            return [...remotePrograms, ...current.filter((program) => !remoteIds.has(program.id))];
+            return mergePersistedLocalPrograms([
+              ...remotePrograms,
+              ...current.filter((program) => !remoteIds.has(program.id)),
+            ]);
           });
+          return;
         }
+        setPrograms((current) => mergePersistedLocalPrograms(current));
       } catch (err) {
         if (localApiSyncEnabled) {
           console.warn("Remote programs unavailable:", err);
         }
+        setPrograms((current) => mergePersistedLocalPrograms(current));
       }
     };
 

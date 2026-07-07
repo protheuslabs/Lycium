@@ -157,9 +157,9 @@
 }
 
 .catalog-create-button {
-  width: 9.6rem;
-  max-width: 9.6rem;
-  min-width: 0;
+  width: auto;
+  max-width: 100%;
+  min-width: 8.6rem;
   min-height: 2.55rem;
   border: 1px solid #d8deea;
   border-radius: 999px;
@@ -178,8 +178,17 @@
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
 }
 
+.catalog-create-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .catalog-create-button:hover {
   background: #eef3ff;
+}
+
+.catalog-create-button:disabled:hover {
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .catalog-create-button:focus,
@@ -205,6 +214,10 @@
   width: 0.78rem;
   height: 0.78rem;
   fill: currentColor;
+}
+
+.catalog-create-button--secondary {
+  min-width: 6.4rem;
 }
 
 .create-course-dropdown {

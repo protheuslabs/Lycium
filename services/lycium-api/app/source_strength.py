@@ -60,14 +60,39 @@ def _source_documents(
     source_documents: list[dict[str, Any]] | None,
     input_artifacts: list[dict[str, Any]] | None,
 ) -> list[dict[str, Any]]:
-    documents = _items(source_documents)
-    documents.extend(_items(synthesis.get("sourceDocuments")))
+    documents = [*_items(source_documents), *_items(synthesis.get("sourceDocuments"))]
     packet = _source_packet(synthesis)
     for index in range(int(packet.get("sourceDocumentCount") or _quality(synthesis).get("sourceDocumentCount") or 0)):
         documents.append({"sourceDocumentIndex": index + 1})
+
+    accepted_artifact_ids = {
+        str(source.get("inputArtifactId"))
+        for source in _items(synthesis.get("includedSources"))
+        if source.get("inputArtifactId")
+    }
     artifacts = _items(input_artifacts) or _items(synthesis.get("inputArtifacts"))
-    documents.extend(artifact for artifact in artifacts if _text_length(artifact) > 0)
-    return documents
+    documents.extend(
+        artifact
+        for artifact in artifacts
+        if _text_length(artifact) > 0
+        and (not accepted_artifact_ids or str(artifact.get("id") or "") in accepted_artifact_ids)
+    )
+
+    deduped: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for index, document in enumerate(documents):
+        key = str(
+            document.get("url")
+            or document.get("sourceDocumentUrl")
+            or document.get("inputArtifactId")
+            or document.get("id")
+            or f"document-{index}"
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(document)
+    return deduped
 
 
 def _source_urls(synthesis: dict[str, Any], source_urls: list[str] | None) -> list[str]:
@@ -113,15 +138,17 @@ def _depth_dimension(documents: list[dict[str, Any]], source_count: int) -> floa
         return 0.75
     if longest >= 8_000 or total_length >= 16_000:
         return 0.55
+    if len(documents) >= 2:
+        return 0.6
     if documents:
-        return 0.45
+        return 0.55
     return 0.4 if source_count >= 3 else 0.2 if source_count else 0.0
 
 
 def _relevance_dimension(synthesis: dict[str, Any], quality: dict[str, Any], has_evidence: bool) -> float:
     scores = [_float(row.get("relevanceScore")) for row in _items(synthesis.get("includedSources")) if "relevanceScore" in row]
     if scores:
-        return _clamp(sum(scores) / len(scores))
+        return max(0.55, _clamp(sum(scores) / len(scores)))
     status = str(quality.get("status") or "").lower()
     if status == "usable":
         return 0.85
@@ -130,7 +157,12 @@ def _relevance_dimension(synthesis: dict[str, Any], quality: dict[str, Any], has
     return 0.5 if has_evidence else 0.0
 
 
-def _authority_dimension(synthesis: dict[str, Any], quality: dict[str, Any], urls: list[str]) -> float:
+def _authority_dimension(
+    synthesis: dict[str, Any],
+    quality: dict[str, Any],
+    urls: list[str],
+    documents: list[dict[str, Any]],
+) -> float:
     trust = _float(quality.get("averageTrustScore"), -1)
     if trust >= 0:
         return _clamp(trust)
@@ -141,6 +173,10 @@ def _authority_dimension(synthesis: dict[str, Any], quality: dict[str, Any], url
         return 0.75
     if any(term in text for term in (".org", "documentation", "docs")):
         return 0.65
+    if any(url.startswith(("artifact://", "input-artifact://")) for url in urls):
+        return 0.65
+    if any(isinstance(document.get("sourceIndexRef"), dict) for document in documents):
+        return 0.55
     return 0.45 if urls or packet else 0.0
 
 
@@ -178,7 +214,7 @@ def calculate_source_strength(
     coverage = _clamp(_float(concept_coverage.get("coverageRatio")))
     depth = _depth_dimension(documents, source_count)
     relevance = _relevance_dimension(synthesis, quality, has_evidence)
-    authority = _authority_dimension(synthesis, quality, urls)
+    authority = _authority_dimension(synthesis, quality, urls, documents)
     extractability = _extractability_dimension(quality, documents, source_count)
     diversity = _diversity_dimension(source_count, quality)
     score = round((coverage * 0.35 + depth * 0.25 + relevance * 0.2 + authority * 0.1 + extractability * 0.08 + diversity * 0.02) * 100)

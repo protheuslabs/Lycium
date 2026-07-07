@@ -100,6 +100,15 @@ function getBlockTypeOption(kind: CourseEditBlockKind) {
   return blockTypeOptions.find((option) => option.kind === kind) ?? blockTypeOptions[0]!;
 }
 
+function showNativeDialog(dialog: HTMLDialogElement, field: HTMLInputElement | HTMLTextAreaElement) {
+  document.body.append(dialog);
+  requestAnimationFrame(() => {
+    if (!dialog.isConnected) return;
+    dialog.showModal();
+    field.focus();
+  });
+}
+
 export function promptForText(label: string, currentValue: string | undefined, onSave: (value: string) => void) {
   if (typeof document === "undefined") {
     return;
@@ -158,9 +167,7 @@ export function promptForText(label: string, currentValue: string | undefined, o
   actions.append(cancelButton, saveButton);
   form.append(fieldLabel, field, actions);
   dialog.append(form);
-  document.body.append(dialog);
-  dialog.showModal();
-  field.focus();
+  showNativeDialog(dialog, field);
 }
 
 export function promptForBlockType(onSelect: (kind: CourseEditBlockKind, initialValue: string) => void) {
@@ -250,9 +257,7 @@ export function promptForBlockType(onSelect: (kind: CourseEditBlockKind, initial
   actions.append(cancelButton, addButton);
   form.append(label, tabs, description, fieldLabel, field, actions);
   dialog.append(form);
-  document.body.append(dialog);
-  dialog.showModal();
-  field.focus();
+  showNativeDialog(dialog, field);
 }
 
 export function promptForDeleteConfirmation(

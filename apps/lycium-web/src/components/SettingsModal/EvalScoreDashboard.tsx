@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { LyciumGenerationEvalTrend, LyciumGenerationRun } from "@lycium/data-access";
-import { lyciumApi } from "../../runtime/appRuntime";
+import { useEvalDashboard } from "./useEvalDashboard";
 
-type LoadState = "idle" | "loading" | "error" | "success";
 type EvalStatus = "passed" | "needs_review" | "failed" | "unknown";
 
 type EvalDashboardRow = {
@@ -18,8 +17,6 @@ type EvalDashboardRow = {
   citationValidity: number | null;
   updatedAt?: string | null;
 };
-
-const MAX_EVAL_RUNS = 12;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -311,10 +308,7 @@ function TrendRow({ row }: { row: LyciumGenerationEvalTrend["scenarioTrends"][nu
 }
 
 export default function EvalScoreDashboard() {
-  const [runs, setRuns] = useState<LyciumGenerationRun[]>([]);
-  const [evalTrend, setEvalTrend] = useState<LyciumGenerationEvalTrend | null>(null);
-  const [loadState, setLoadState] = useState<LoadState>("idle");
-  const [message, setMessage] = useState("");
+  const { runs, evalTrend, loadState, message, refresh } = useEvalDashboard();
 
   const rows = useMemo(() => runs.map(rowFromRun), [runs]);
   const scoredRows = useMemo(() => rows.filter((row) => row.score !== null), [rows]);
@@ -322,36 +316,6 @@ export default function EvalScoreDashboard() {
   const passCount = rows.filter((row) => row.status === "passed").length;
   const reviewCount = rows.filter((row) => row.status === "needs_review" || row.status === "unknown").length;
   const failCount = rows.filter((row) => row.status === "failed").length;
-
-  const loadRuns = async () => {
-    setLoadState("loading");
-    setMessage("");
-    const [runResult, trendResult] = await Promise.allSettled([
-      lyciumApi.listGenerationRuns({ limit: MAX_EVAL_RUNS }),
-      lyciumApi.loadGenerationEvalTrend({ limit: MAX_EVAL_RUNS }),
-    ]);
-    if (runResult.status === "fulfilled") {
-      setRuns(runResult.value);
-    }
-    if (trendResult.status === "fulfilled") {
-      setEvalTrend(trendResult.value.trend);
-    }
-    if (runResult.status === "fulfilled" || trendResult.status === "fulfilled") {
-      setLoadState("success");
-      if (runResult.status === "rejected" || trendResult.status === "rejected") {
-        const error = runResult.status === "rejected" ? runResult.reason : trendResult.status === "rejected" ? trendResult.reason : null;
-        setMessage(error instanceof Error ? error.message : "Some eval data is unavailable.");
-      }
-      return;
-    }
-    setLoadState("error");
-    const error = runResult.status === "rejected" ? runResult.reason : trendResult.status === "rejected" ? trendResult.reason : null;
-    setMessage(error instanceof Error ? error.message : "Eval dashboard unavailable.");
-  };
-
-  useEffect(() => {
-    void loadRuns();
-  }, []);
 
   return (
     <section className="settings-section" aria-labelledby="settings-eval-dashboard">
@@ -361,7 +325,7 @@ export default function EvalScoreDashboard() {
           className="settings-run-refresh-button"
           type="button"
           disabled={loadState === "loading"}
-          onClick={() => void loadRuns()}
+          onClick={() => void refresh()}
         >
           Refresh
         </button>

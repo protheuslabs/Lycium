@@ -431,14 +431,19 @@ def register(app: FastAPI) -> None:
                 raise ValueError("; ".join(taxonomy_errors))
             source_urls = generation_source_urls(payload)
             readiness = generation_readiness_for_request(payload, source_urls)
+            agent_profile = get_active_agent_profile()
+            if agent_profile is not None:
+                agent_profile = require_verified_active_agent_profile()
             if not bool(readiness["ready"]):
-                active_agent_profile = get_active_agent_profile()
-                if active_agent_profile and active_agent_profile.get("connection_status") != "verified":
-                    require_verified_active_agent_profile()
                 job = enqueue_job(
                     session,
                     job_type="agent_generate_course_staged",
-                    payload=job_payload_from_course_request(payload, source_urls, generation_readiness=readiness),
+                    payload=job_payload_from_course_request(
+                        payload,
+                        source_urls,
+                        model=payload.model or (agent_profile or {}).get("model"),
+                        generation_readiness=readiness,
+                    ),
                 )
                 snapshot = create_needs_sources_course_snapshot(
                     session,
@@ -461,7 +466,7 @@ def register(app: FastAPI) -> None:
                 session.commit()
                 session.refresh(job)
                 return course_generation_job_response(job)
-            agent_profile = require_verified_active_agent_profile()
+            agent_profile = agent_profile or require_verified_active_agent_profile()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         job = enqueue_job(

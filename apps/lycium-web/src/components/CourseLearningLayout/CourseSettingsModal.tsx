@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Modal from "../Modal/Modal";
 import "./CourseSettingsModal.css";
 
@@ -8,7 +8,6 @@ export type CourseSettingsDraft = {
 };
 
 type CourseSettingsModalProps = {
-  isOpen: boolean;
   settings: CourseSettingsDraft;
   canEditCourse: boolean;
   onClose: () => void;
@@ -16,7 +15,6 @@ type CourseSettingsModalProps = {
 };
 
 export default function CourseSettingsModal({
-  isOpen,
   settings,
   canEditCourse,
   onClose,
@@ -24,15 +22,9 @@ export default function CourseSettingsModal({
 }: CourseSettingsModalProps) {
   const [draftSettings, setDraftSettings] = useState<CourseSettingsDraft>(settings);
 
-  useEffect(() => {
-    if (isOpen) {
-      setDraftSettings(settings);
-    }
-  }, [isOpen, settings]);
-
   return (
     <Modal
-      isOpen={isOpen}
+      isOpen
       title="Course settings"
       eyebrow="Edit mode"
       labelledById="course-settings-modal-title"

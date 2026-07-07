@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+from urllib.parse import urlparse
 
 import httpx
 from bs4 import BeautifulSoup
@@ -16,16 +16,7 @@ from app.config import SETTINGS
 from app.models import Claim, GraphEdge, KnowledgeObject, Snapshot, Source
 from app.scoring import accessibility_score, baseline_trust, combine_scores, freshness_score, pedagogy_score
 from app.source_identity import stable_snapshot_public_id, stable_source_public_id
-
-TRACKING_PREFIXES = (
-    "utm_",
-    "fbclid",
-    "gclid",
-    "mc_",
-    "ref",
-    "source",
-    "igshid",
-)
+from app.source_url_utils import canonicalize_url
 
 CLAIM_PATTERN = re.compile(r"[^.?!]+(?:is|are|can|must|should|does) [^.?!]+[.?!]", re.IGNORECASE)
 
@@ -37,17 +28,6 @@ class IngestionResult:
     topic: str
     new_snapshot: bool
     knowledge_objects_created: int
-
-
-def canonicalize_url(url: str) -> str:
-    parsed = urlparse(url)
-    clean_query = [
-        (key, value)
-        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
-        if not any(key.lower().startswith(prefix) for prefix in TRACKING_PREFIXES)
-    ]
-    normalized = parsed._replace(fragment="", query=urlencode(sorted(clean_query), doseq=True))
-    return urlunparse(normalized)
 
 
 def fetch_url(url: str) -> tuple[str, str]:

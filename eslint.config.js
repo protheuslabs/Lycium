@@ -7,6 +7,15 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores(['dist', '.next', 'out']),
   {
+    files: ['scripts/**/*.{js,mjs}'],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: globals.node,
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
@@ -19,6 +28,19 @@ export default defineConfig([
         ...globals.browser,
         ...globals.node,
       },
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
+      'react-hooks/preserve-manual-memoization': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
 ])

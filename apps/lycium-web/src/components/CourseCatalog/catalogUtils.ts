@@ -95,6 +95,22 @@ export function canCreateCourseInCatalogScope(
   return program?.reviewStatus === "draft";
 }
 
+export function canCreateEntityInCatalogScope(
+  viewLevel: CatalogViewLevel,
+  program: LyciumProgram | null,
+  cluster: LyciumRequirementGroup | null,
+): boolean {
+  if (viewLevel === "programs") {
+    return true;
+  }
+
+  if (viewLevel === "clusters") {
+    return !program || program.reviewStatus === "draft";
+  }
+
+  return canCreateCourseInCatalogScope(program, cluster);
+}
+
 export function getCourseSearchScore(course: CourseEntry, query: string): number {
   return scoreWeightedSearch(
     [

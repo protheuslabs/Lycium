@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import type { LyciumProgram, LyciumRequirementGroup } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryDepartments, getCourseCategoryLabel } from "../../courseData/courseTaxonomy";
@@ -13,6 +13,7 @@ import {
   type CatalogViewLevel,
   getCollegeFilterLabel,
 } from "./catalogUtils";
+import type { CatalogSelectionMode } from "../../utils/catalogSelection";
 
 type CatalogControlsOptions = {
   courses: CourseEntry[];
@@ -25,7 +26,45 @@ type CatalogControlsOptions = {
     program?: LyciumProgram | null,
     cluster?: LyciumRequirementGroup | null,
   ) => void;
+  selectionMode: CatalogSelectionMode;
 };
+
+type CatalogNavigationState = {
+  routeKey: string;
+  catalogViewLevel: CatalogViewLevel;
+  selectedProgramId: string;
+  selectedClusterId: string;
+  catalogPage: number;
+};
+
+type CatalogNavigationAction = {
+  routeKey: string;
+  base: CatalogNavigationState;
+  patch: Partial<Omit<CatalogNavigationState, "routeKey">>;
+};
+
+function navigationFromRoute(
+  catalogView: CatalogControlsOptions["catalogView"],
+  catalogProgramId: string | null,
+  catalogClusterId: string | null,
+  fallbackProgramId: string,
+): CatalogNavigationState {
+  return {
+    routeKey: [catalogView ?? "", catalogProgramId ?? "", catalogClusterId ?? ""].join(":"),
+    catalogViewLevel: catalogProgramId ? (catalogClusterId ? "courses" : "clusters") : catalogView ?? "courses",
+    selectedProgramId: catalogProgramId ?? fallbackProgramId,
+    selectedClusterId: catalogProgramId ? catalogClusterId ?? "" : "",
+    catalogPage: 1,
+  };
+}
+
+function catalogNavigationReducer(
+  state: CatalogNavigationState,
+  action: CatalogNavigationAction,
+): CatalogNavigationState {
+  const current = state.routeKey === action.routeKey ? state : action.base;
+  return { ...current, ...action.patch, routeKey: action.routeKey };
+}
 
 function courseMapAliases(course: CourseEntry): string[] {
   const aliases = new Set<string>([course.key]);
@@ -57,10 +96,18 @@ export function useCatalogControls({
   catalogProgramId,
   catalogClusterId,
   onCatalogDrilldown,
+  selectionMode,
 }: CatalogControlsOptions) {
-  const [catalogViewLevel, setCatalogViewLevel] = useState<CatalogViewLevel>("courses");
-  const [selectedProgramId, setSelectedProgramId] = useState(programs[0]?.id ?? "");
-  const [selectedClusterId, setSelectedClusterId] = useState("");
+  const routeNavigation = navigationFromRoute(catalogView, catalogProgramId, catalogClusterId, programs[0]?.id ?? "");
+  const [navigationState, dispatchNavigation] = useReducer(catalogNavigationReducer, routeNavigation);
+  const navigation = navigationState.routeKey === routeNavigation.routeKey ? navigationState : routeNavigation;
+  const { catalogPage, selectedClusterId, selectedProgramId } = navigation;
+  const updateNavigation = (patch: CatalogNavigationAction["patch"]) =>
+    dispatchNavigation({ routeKey: routeNavigation.routeKey, base: navigation, patch });
+  const setCatalogViewLevel = (catalogViewLevel: CatalogViewLevel) => updateNavigation({ catalogViewLevel });
+  const setSelectedProgramId = (nextProgramId: string) => updateNavigation({ selectedProgramId: nextProgramId });
+  const setSelectedClusterId = (nextClusterId: string) => updateNavigation({ selectedClusterId: nextClusterId });
+  const setCatalogPage = (nextPage: number) => updateNavigation({ catalogPage: nextPage });
   const [searchQuery, setSearchQuery] = useState("");
   const [collegeFilter, setCollegeFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
@@ -69,7 +116,12 @@ export function useCatalogControls({
   const [showLockedCourses, setShowLockedCourses] = useState(true);
   const [sortMode, setSortMode] = useState<CatalogSortMode>("college");
   const [pathSortMode, setPathSortMode] = useState<CatalogPathSortMode>("name");
-  const [catalogPage, setCatalogPage] = useState(1);
+  const catalogViewLevel =
+    selectionMode?.kind === "program"
+      ? "clusters"
+      : selectionMode?.kind === "cluster"
+        ? "courses"
+        : navigation.catalogViewLevel;
 
   const selectedProgram = useMemo(
     () => programs.find((program) => program.id === selectedProgramId) ?? programs[0] ?? null,
@@ -93,20 +145,6 @@ export function useCatalogControls({
     () => programs.map((program) => ({ value: program.id, label: program.title })),
     [programs],
   );
-
-  useEffect(() => {
-    if (catalogProgramId) {
-      setSelectedProgramId(catalogProgramId);
-      setSelectedClusterId(catalogClusterId ?? "");
-      setCatalogViewLevel(catalogClusterId ? "courses" : "clusters");
-      setCatalogPage(1);
-      return;
-    }
-
-    setSelectedClusterId("");
-    setCatalogViewLevel(catalogView ?? "courses");
-    setCatalogPage(1);
-  }, [catalogClusterId, catalogProgramId, catalogView]);
 
   const collegeFilterOptions = useMemo(() => {
     const categories = new Map<string, string>();
@@ -164,7 +202,7 @@ export function useCatalogControls({
         courses,
         departmentFilter,
         difficultyFilter,
-        isClusterScoped: Boolean(selectedCluster),
+        isClusterScoped: selectionMode?.kind !== "cluster" && Boolean(selectedCluster),
         searchQuery,
         selectedClusterCourseIds,
         selectedClusterRequirementContexts,
@@ -179,6 +217,7 @@ export function useCatalogControls({
       departmentFilter,
       difficultyFilter,
       searchQuery,
+      selectionMode,
       selectedCluster,
       selectedClusterCourseIds,
       selectedClusterRequirementContexts,
@@ -206,7 +245,8 @@ export function useCatalogControls({
   const visibleClusters = useMemo(
     () =>
       getVisibleCatalogClusters({
-        program: selectedProgram,
+        program: selectionMode?.kind === "program" ? null : selectedProgram,
+        programs: selectionMode?.kind === "program" ? programs : undefined,
         courseMap: catalogCourseMap,
         progressCache: catalogProgressCache,
         activityFilter,
@@ -217,7 +257,7 @@ export function useCatalogControls({
         showLockedCourses,
         sortMode: pathSortMode,
       }),
-    [activityFilter, catalogCourseMap, catalogProgressCache, collegeFilter, departmentFilter, difficultyFilter, pathSortMode, searchQuery, selectedProgram, showLockedCourses],
+    [activityFilter, catalogCourseMap, catalogProgressCache, collegeFilter, departmentFilter, difficultyFilter, pathSortMode, programs, searchQuery, selectedProgram, selectionMode, showLockedCourses],
   );
 
   const resetCatalogPage = () => setCatalogPage(1);
@@ -296,11 +336,11 @@ export function useCatalogControls({
     onCatalogDrilldown("clusters", program);
   };
 
-  const handleClusterSelect = (cluster: LyciumRequirementGroup) => {
+  const handleClusterSelect = (cluster: LyciumRequirementGroup, program?: LyciumProgram | null) => {
     setSelectedClusterId(cluster.id);
     setCatalogViewLevel("courses");
     setCatalogPage(1);
-    onCatalogDrilldown("courses", selectedProgram, cluster);
+    onCatalogDrilldown("courses", program ?? selectedProgram, cluster);
   };
 
   return {

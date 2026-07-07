@@ -364,7 +364,7 @@ def test_source_gap_resume_blocks_irrelevant_input_artifacts(client, monkeypatch
     assert len(job["request"]["input_artifacts"]) == 3
 
 
-def test_generation_with_weak_concept_coverage_returns_needs_sources_draft(client) -> None:
+def test_generation_with_weak_source_strength_returns_needs_sources_draft(client) -> None:
     response = client.post(
         "/v1/courses/generate",
         json={
@@ -387,10 +387,10 @@ def test_generation_with_weak_concept_coverage_returns_needs_sources_draft(clien
 
     assert snapshot["status"] == "needs_sources"
     assert course["metadata"]["status"] == "needs_sources"
-    assert course["metadata"]["generationPlan"]["mode"] == "source-gated-draft"
-    assert gap["id"] == "concept-source-coverage"
-    assert gap["coverageGate"]["gate"] == "source_analysis"
+    assert course["metadata"]["generationPlan"]["mode"] == "outline_first_source_gated_draft"
+    assert gap["id"] == "source-strength"
+    assert gap["coverageGate"]["gate"] == "source_strength"
     assert gap["missingConceptSourceCount"] == len(gap["conceptSourceNeeds"])
-    assert gap["conceptSourceNeeds"]
-    assert "Missing concept source coverage" in course["modules"][0]["sections"][0]["content"][0]["value"]
-    assert course["modules"][0]["id"] == "source-planning"
+    assert gap["conceptSourceNeeds"] == []
+    assert "source strength" in course["modules"][0]["sections"][0]["content"][0]["value"].lower()
+    assert course["modules"][0]["id"] == course["metadata"]["courseBuildOutline"]["modules"][0]["id"]

@@ -3,45 +3,20 @@ from __future__ import annotations
 import hashlib
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import urlparse
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ingestion import canonicalize_url
 from app.models import Snapshot, Source, SourceCorpusRun, SourceDecision
 from app.scoring import baseline_trust
 from app.source_corpus import compile_source_corpus_preflight
 from app.source_index_client import SourceIndexClient, normalize_remote_source_payload, source_index_client_configured
 from app.source_identity import stable_snapshot_public_id, stable_source_public_id
+from app.source_url_utils import canonicalize_url, infer_source_type, normalized_domain
 
 SOURCE_CORPUS_WORKFLOW_VERSION = "source-corpus-preflight-v1"
 SOURCE_PACKET_CONTRACT_VERSION = "source-packet-v1"
 SOURCE_IMPORT_BATCH_CONTRACT_VERSION = "source-import-batch-v1"
-
-
-def _domain(url: str) -> str:
-    parsed = urlparse(url)
-    return (parsed.netloc or parsed.path).lower().replace("www.", "")
-
-
-def _infer_source_type(url: str) -> str:
-    lowered = url.lower()
-    if lowered.endswith(".pdf") or "/pdf" in lowered:
-        return "pdf"
-    if any(host in lowered for host in ("youtube.com", "youtu.be", "vimeo.com")):
-        return "video"
-    if any(token in lowered for token in ("syllabus", "course-outline")):
-        return "syllabus"
-    if any(token in lowered for token in ("catalog", ".edu/courses", "/courses/")):
-        return "catalog"
-    if any(token in lowered for token in ("docs.", "/docs/", "documentation")):
-        return "docs"
-    if any(token in lowered for token in ("arxiv.org", "doi.org", "pubmed", "journal")):
-        return "paper"
-    if any(token in lowered for token in ("openstax.org/details/books", "bookshelves")):
-        return "book"
-    return "web"
 
 
 def source_payload(source: Source) -> dict[str, Any]:
@@ -230,9 +205,9 @@ def upsert_indexed_source(
         source = Source(
             public_id=source_public_id,
             canonical_url=canonical_url,
-            normalized_domain=_domain(canonical_url),
+            normalized_domain=normalized_domain(canonical_url),
             title=title,
-            source_type=source_type or _infer_source_type(canonical_url),
+            source_type=source_type or infer_source_type(canonical_url),
             license=license,
             is_free=is_free,
             trust_baseline=baseline_trust(canonical_url),
@@ -321,6 +296,8 @@ def source_documents_from_index_snapshots(
                 "text": text,
                 "sourceId": source_public_id,
                 "snapshotId": snapshot_public_id,
+                "sourceType": source.source_type,
+                "trustBaseline": source.trust_baseline,
                 "sourceIndexRef": {
                     "service": "lycium-api-transitional-index",
                     "sourcePublicId": source_public_id,

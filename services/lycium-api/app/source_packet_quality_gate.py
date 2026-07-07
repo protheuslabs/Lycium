@@ -18,6 +18,16 @@ def _issue(message: str) -> dict[str, str]:
     return {"severity": "error", "message": message}
 
 
+def source_packet_gate_message(gate: dict[str, Any], fallback: str) -> str:
+    issues = gate.get("issues")
+    if isinstance(issues, list):
+        for issue in issues:
+            message = issue.get("message") if isinstance(issue, dict) else issue
+            if str(message or "").strip():
+                return str(message).strip()
+    return fallback
+
+
 def _concept_rows(uncovered: list[Any]) -> list[dict[str, str]]:
     return [
         {
@@ -91,11 +101,13 @@ def source_packet_quality_gate(
         return None
     threshold = float(SOURCE_COVERAGE_POLICY["minimumRequiredConceptCoveragePercent"]) / 100
     ratio = float(quality.get("conceptCoverageRatio") or 0)
-    if ratio >= threshold and (not require_source_strength or source_strength["ready"]):
+    concept_coverage_ready = ratio >= threshold
+    source_strength_ready = not require_source_strength or source_strength["ready"]
+    if concept_coverage_ready and source_strength_ready:
         return None
     uncovered = quality.get("uncoveredConceptCandidates")
     uncovered_concepts = uncovered if isinstance(uncovered, list) else []
-    gate_name = "source_strength" if require_source_strength and not source_strength["ready"] else "source_packet_quality"
+    gate_name = "source_packet_quality" if not concept_coverage_ready else "source_strength"
     return {
         "gate": gate_name,
         "status": "failed",

@@ -4,11 +4,12 @@ import CatalogActionCard from "./CatalogActionCard";
 type CatalogEntityCardProps = {
   className: string;
   continuity?: ReactNode;
-  description?: string;
+  description?: ReactNode;
   kicker: string;
   meta: string[];
   progress?: ReactNode;
   readiness?: ReactNode;
+  selected?: boolean;
   title: string;
   onActivate: () => void;
 };
@@ -21,11 +22,16 @@ export default function CatalogEntityCard({
   meta,
   progress,
   readiness,
+  selected = false,
   title,
   onActivate,
 }: CatalogEntityCardProps) {
   return (
-    <CatalogActionCard className={className} onActivate={onActivate}>
+    <CatalogActionCard
+      className={`${className} ${selected ? "program-showcase-card--selected" : ""}`.trim()}
+      onActivate={onActivate}
+      pressed={selected || undefined}
+    >
       <div className="program-showcase-copy">
         <p className="program-showcase-kicker">{kicker}</p>
         <h3>{title}</h3>

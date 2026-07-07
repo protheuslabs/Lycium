@@ -19,6 +19,7 @@ from app.generation_outline import create_draft
 from app.models import CourseDraft, CourseSnapshot
 from app.retrieval import tokenize
 from app.source_corpus import compile_generation_source_corpus
+from app.source_index import source_documents_from_index_snapshots
 from app.source_packet_quality_gate import source_packet_quality_gate
 
 
@@ -320,10 +321,15 @@ def generate_course_direct(
     category: str | None = None,
     department: str | None = None,
 ) -> CourseSnapshot:
+    indexed_source_documents = source_documents_from_index_snapshots(
+        session,
+        source_urls=[str(url) for url in source_urls or []],
+    )
     source_corpus = compile_generation_source_corpus(
         prompt=prompt,
         source_urls=source_urls,
         fetch_sources=False,
+        source_documents=indexed_source_documents,
         source_packet_id=source_packet_id,
         source_packet=source_packet,
         input_artifacts=input_artifacts,

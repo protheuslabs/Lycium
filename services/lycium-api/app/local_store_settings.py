@@ -1,8 +1,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
+from app.agent_model_records import normalize_model_records
 from app.config import SETTINGS
 from app.course_agent_providers import agent_provider_contract, assess_agent_model_capability, get_agent_provider
 from app.local_store_core import _now, _read_json, _safe_key, _write_json, ensure_local_data_dirs
@@ -103,34 +105,6 @@ def _enrich_agent_key(key: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _normalize_model_records(models: Any, selected_model: str | None = None) -> list[dict[str, str]]:
-    normalized: list[dict[str, str]] = []
-    if isinstance(models, list):
-        for model in models:
-            if isinstance(model, str):
-                model_id = model.strip()
-                label = model_id
-            elif isinstance(model, dict):
-                model_id = str(model.get("id") or model.get("name") or "").strip()
-                label = str(model.get("label") or model.get("display_name") or model.get("displayName") or model_id)
-            else:
-                continue
-            if model_id:
-                normalized.append({"id": model_id, "label": label or model_id})
-
-    if selected_model and not any(model["id"] == selected_model for model in normalized):
-        normalized.insert(0, {"id": selected_model, "label": selected_model})
-
-    deduped: list[dict[str, str]] = []
-    seen: set[str] = set()
-    for model in normalized:
-        if model["id"] in seen:
-            continue
-        seen.add(model["id"])
-        deduped.append(model)
-    return deduped
-
-
 def _normalize_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
     keys = secret.get("agent_keys")
     if isinstance(keys, list):
@@ -148,7 +122,7 @@ def _normalize_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
                     "provider_label": provider_label,
                     "agent_api_key": str(key.get("agent_api_key") or ""),
                     "model": selected_model,
-                    "models": _normalize_model_records(key.get("models"), selected_model),
+                    "models": normalize_model_records(key.get("models"), selected_model),
                     "models_fetched_at": key.get("models_fetched_at"),
                     "connection_status": str(key.get("connection_status") or "verified"),
                     "connection_message": key.get("connection_message"),
@@ -173,7 +147,7 @@ def _normalize_secret_payload(secret: dict[str, Any]) -> dict[str, Any]:
                     "provider_label": "OpenAI",
                     "agent_api_key": legacy_key,
                     "model": SETTINGS.agent_model,
-                    "models": _normalize_model_records([], SETTINGS.agent_model),
+                    "models": normalize_model_records([], SETTINGS.agent_model),
                     "models_fetched_at": secret.get("updated_at"),
                     "connection_status": "verified",
                     "connection_message": None,
@@ -246,7 +220,7 @@ def save_agent_api_key(
 
     secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
     selected_model = model or (models[0]["id"] if models else SETTINGS.agent_model)
-    normalized_models = _normalize_model_records(models, selected_model)
+    normalized_models = normalize_model_records(models, selected_model)
     verified_at = _now() if connection_status == "verified" else None
     for key in secret["agent_keys"]:
         if key.get("provider_id") != cleaned_provider_id or key.get("agent_api_key") != cleaned:
@@ -317,7 +291,7 @@ def update_agent_key_verification(
         if key["id"] != key_id:
             continue
         selected_model = model or key.get("model") or (models[0]["id"] if models else SETTINGS.agent_model)
-        key["models"] = _normalize_model_records(models, selected_model)
+        key["models"] = normalize_model_records(models, selected_model)
         key["model"] = selected_model
         key["models_fetched_at"] = _now()
         key["connection_status"] = connection_status

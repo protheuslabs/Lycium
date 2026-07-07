@@ -239,6 +239,7 @@ corepack pnpm --filter @lycium/contracts docs:schemas:check
 | `attemptHistory` | array | optional |
 | `attemptOrder` | array | optional |
 | `attemptSignature` | string | optional |
+| `attemptStarted` | boolean | optional |
 | `elapsedSeconds` | number | optional |
 | `previousAttemptSignature` | string | optional |
 | `questionCorrectness` | array | optional |

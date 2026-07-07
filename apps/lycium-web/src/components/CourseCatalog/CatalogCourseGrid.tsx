@@ -3,6 +3,7 @@ import type { CourseEntry } from "../../courseTypes";
 import CatalogCourseCard from "./CatalogCourseCard";
 import CatalogEmptyState from "./CatalogEmptyState";
 import type { CatalogVisibleCourse } from "./catalogUtils";
+import type { CatalogSelectionMode } from "../../utils/catalogSelection";
 
 type CatalogCourseGridProps = {
   courseGridRef: RefObject<HTMLDivElement | null>;
@@ -16,6 +17,8 @@ type CatalogCourseGridProps = {
   onOpenInfo: (course: CourseEntry) => void;
   onOpenSourceGaps: (course: CourseEntry) => void;
   onSearchPrerequisite: (query: string) => void;
+  selectionMode: CatalogSelectionMode;
+  onToggleCourseSelection: (courseKey: string) => void;
 };
 
 export default function CatalogCourseGrid({
@@ -30,7 +33,11 @@ export default function CatalogCourseGrid({
   onOpenInfo,
   onOpenSourceGaps,
   onSearchPrerequisite,
+  selectionMode,
+  onToggleCourseSelection,
 }: CatalogCourseGridProps) {
+  const selectedCourseKeys = selectionMode?.kind === "cluster" ? new Set(selectionMode.selectedCourseKeys) : null;
+
   return (
     <div className="course-grid" ref={courseGridRef}>
       {isGeneratingCourse && (
@@ -52,6 +59,9 @@ export default function CatalogCourseGrid({
           onOpenSourceGaps={onOpenSourceGaps}
           onSearchPrerequisite={onSearchPrerequisite}
           isPublishing={publishingCourseKey === visibleCourse.course.key}
+          selectionMode={selectionMode?.kind === "cluster"}
+          selected={selectedCourseKeys?.has(visibleCourse.course.key) ?? false}
+          onToggleSelect={onToggleCourseSelection}
         />
       ))}
     </div>

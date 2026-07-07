@@ -28,11 +28,13 @@ import { COURSE_CATALOG_PATH, COURSE_CATALOG_COURSES_PATH, COURSE_CATALOG_PROGRA
 import { mergeCourseEntriesByKey, readPersistedLocalCourseEntries } from "./utils/localCourseDrafts";
 import { readSettingsBackdropPath, writeSettingsBackdropPath } from "./utils/settingsRouteState";
 import { useCourseRouteNavigation } from "./hooks/useCourseRouteNavigation";
+import { useCatalogSelectionBuilder } from "./hooks/useCatalogSelectionBuilder";
+import { useProgramCatalogEditor } from "./hooks/useProgramCatalogEditor";
+import { useClientMounted } from "./hooks/useClientMounted";
 
 type AppProps = {
   initialPath?: string;
 };
-
 function App({ initialPath }: AppProps = {}) {
   const router = useRouter();
   const pathname = usePathname();
@@ -45,7 +47,7 @@ function App({ initialPath }: AppProps = {}) {
   const [prompt, setPrompt] = useState("");
   const [level, setLevel] = useState("");
   const [learnerId, setLearnerId] = useState<number | null>(null);
-  const [currentPath, setCurrentPath] = useState(() => resolvedInitialPath);
+  const currentPath = pathname ?? resolvedInitialPath;
   const [courseKeyToOpenInEditMode, setCourseKeyToOpenInEditMode] = useState<string | null>(null);
   const [pageBehindSettingsPath, setPageBehindSettingsPath] = useState(() => {
     return parseCourseRoute(resolvedInitialPath).kind === "settings" ? readSettingsBackdropPath() : resolvedInitialPath;
@@ -59,14 +61,19 @@ function App({ initialPath }: AppProps = {}) {
   );
   const agentSettings = useAgentSettings(route.kind, API_BASE);
   const { programArtifacts, submitProgramArtifact } = useProgramArtifacts();
+  const clientMounted = useClientMounted();
+  const routeCourses = useMemo(
+    () => clientMounted ? mergeCourseEntriesByKey(readPersistedLocalCourseEntries(), courses) : courses,
+    [clientMounted, courses],
+  );
 
   const coursesByPathSlug = useMemo(() => {
     const map = new Map<string, string>();
-    for (const course of courses) {
+    for (const course of routeCourses) {
       map.set(getCoursePathSlug(course), course.key);
     }
     return map;
-  }, [courses]);
+  }, [routeCourses]);
 
   const programsByPathSlug = useMemo(() => {
     const map = new Map<string, string>();
@@ -86,8 +93,8 @@ function App({ initialPath }: AppProps = {}) {
       return null;
     }
     const key = resolveCourseKeyFromPath(viewRoute.courseSlug);
-    return key ? courses.find((course) => course.key === key) ?? null : null;
-  }, [courses, resolveCourseKeyFromPath, viewRoute.courseSlug, viewRoute.kind]);
+    return key ? routeCourses.find((course) => course.key === key) ?? null : null;
+  }, [resolveCourseKeyFromPath, routeCourses, viewRoute.courseSlug, viewRoute.kind]);
 
   const selectedCourse = useMemo(() => {
     if (viewRoute.kind === "course") {
@@ -179,7 +186,6 @@ function App({ initialPath }: AppProps = {}) {
       router.push(COURSE_CATALOG_PATH);
     }
     currentPathRef.current = COURSE_CATALOG_PATH;
-    setCurrentPath(COURSE_CATALOG_PATH);
   }, [currentPath, router]);
 
   const routeToCatalogDrilldown = useCallback(
@@ -203,11 +209,43 @@ function App({ initialPath }: AppProps = {}) {
         }
       }
       currentPathRef.current = nextPath;
-      setCurrentPath(nextPath);
       scrollCoursePageToTop();
     },
     [router],
   );
+  const navigateCatalogPath = useCallback(
+    (path: string) => {
+      if (currentPathRef.current !== path) {
+        if (typeof window === "undefined") {
+          router.push(path);
+        } else {
+          window.history.pushState(null, "", browserPathForRoute(path));
+        }
+      }
+      currentPathRef.current = path;
+      scrollCoursePageToTop();
+    },
+    [router],
+  );
+  const {
+    cancelCatalogSelection,
+    catalogSelectionMode,
+    commitCatalogSelection,
+    setCatalogSelectionMode,
+    startClusterSelection,
+    startProgramSelection,
+    toggleClusterSelection,
+    toggleCourseSelection,
+  } = useCatalogSelectionBuilder({
+    courses,
+    programs,
+    setPrograms,
+  });
+  const programEditor = useProgramCatalogEditor({
+    programs,
+    setPrograms,
+    onCatalogNavigate: navigateCatalogPath,
+  });
 
   const { queueCourseSourceGap } = useCourseSourceGapActions({ setCourses });
 
@@ -216,7 +254,6 @@ function App({ initialPath }: AppProps = {}) {
       event?.preventDefault();
       if (currentPath === SETTINGS_PATH) {
         currentPathRef.current = SETTINGS_PATH;
-        setCurrentPath(SETTINGS_PATH);
         return;
       }
       const returnPath = currentPath === SETTINGS_PATH ? pageBehindSettingsPath : currentPath;
@@ -229,7 +266,6 @@ function App({ initialPath }: AppProps = {}) {
         router.push(SETTINGS_PATH);
       }
       currentPathRef.current = SETTINGS_PATH;
-      setCurrentPath(SETTINGS_PATH);
     },
     [currentPath, pageBehindSettingsPath, router],
   );
@@ -243,14 +279,12 @@ function App({ initialPath }: AppProps = {}) {
       router.replace(targetPath);
     }
     currentPathRef.current = targetPath;
-    setCurrentPath(targetPath);
     setPageBehindSettingsPath(targetPath);
   }, [pageBehindSettingsPath, router]);
 
   const { openCourseByEntry, pushSectionPath, rememberCourseSection } = useCourseRouteNavigation({
     router,
     currentPathRef,
-    setCurrentPath,
     setCurrentCourseKey,
     setCurrentSectionIndex,
   });
@@ -304,10 +338,8 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
   useEffect(() => {
     if (pathname) {
       currentPathRef.current = pathname;
-      setCurrentPath(pathname);
       if (parseCourseRoute(pathname).kind !== "settings") {
         settingsReturnPathRef.current = pathname;
-        setPageBehindSettingsPath(pathname);
         writeSettingsBackdropPath(pathname);
       }
     }
@@ -320,7 +352,6 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
 
     router.replace(COURSE_CATALOG_PATH);
     currentPathRef.current = COURSE_CATALOG_PATH;
-    setCurrentPath(COURSE_CATALOG_PATH);
   }, [currentPath, router]);
 
   useEffect(() => {
@@ -328,31 +359,24 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
     if (route.programSlug && programsByPathSlug.has(route.programSlug)) return;
     router.replace(COURSE_CATALOG_PATH);
     currentPathRef.current = COURSE_CATALOG_PATH;
-    setCurrentPath(COURSE_CATALOG_PATH);
   }, [programsByPathSlug, route.kind, route.programSlug, router]);
+
+  useEffect(() => {
+    if (viewRoute.kind === "home") {
+      return;
+    }
+    setCatalogSelectionMode(null);
+  }, [setCatalogSelectionMode, viewRoute.kind]);
 
   useEffect(() => {
     if (route.kind !== "course" || !route.courseSlug) return;
     const resolvedKey = resolveCourseKeyFromPath(route.courseSlug);
-    const routeCourse = resolvedKey ? courses.find((course) => course.key === resolvedKey) ?? null : null;
-    if (!routeCourse) {
-      const persistedCourse = readPersistedLocalCourseEntries().find(
-        (course) => getCoursePathSlug(course) === route.courseSlug,
-      );
-      if (persistedCourse) {
-        setCourses((current) => mergeCourseEntriesByKey([persistedCourse], current));
-        setCurrentCourseKey(persistedCourse.key);
-      }
-      return;
-    }
-    if (routeCourse.key !== currentCourseKey) setCurrentCourseKey(routeCourse.key);
+    const routeCourse = resolvedKey ? routeCourses.find((course) => course.key === resolvedKey) ?? null : null;
+    if (!routeCourse) return;
 
     const routeSections = routeCourse.data.modules.flatMap((module) => module.sections);
     const firstSection = routeSections[0];
-    if (!firstSection) {
-      setCurrentSectionIndex(0);
-      return;
-    }
+    if (!firstSection) return;
     if (!route.unitSlug) {
       void openCourseByEntry(routeCourse, true);
       return;
@@ -361,19 +385,16 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
     const sectionIndex = routeSections.findIndex((section) => getSectionPathSlug(section) === route.unitSlug);
     if (sectionIndex >= 0) {
       const routeSection = routeSections[sectionIndex];
-      setCurrentSectionIndex(sectionIndex);
       if (routeSection) rememberCourseSection(routeCourse, routeSection, getCourseSectionPath(routeCourse, routeSection));
       return;
     }
-    setCurrentSectionIndex(0);
     pushSectionPath(routeCourse, firstSection, true);
   }, [
     route.kind,
     route.courseSlug,
     route.unitSlug,
     resolveCourseKeyFromPath,
-    courses,
-    currentCourseKey,
+    routeCourses,
     openCourseByEntry,
     pushSectionPath,
     rememberCourseSection,
@@ -402,6 +423,14 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
           onOpenCourse={openCourseByEntry}
           onQueueCourseSourceGap={queueCourseSourceGap}
           onResumeCourseSourceGap={handleResumeCourseSourceGap}
+          catalogSelectionMode={catalogSelectionMode}
+          programEditor={programEditor}
+          onStartProgramSelection={startProgramSelection}
+          onStartClusterSelection={startClusterSelection}
+          onToggleProgramClusterSelection={toggleClusterSelection}
+          onToggleClusterCourseSelection={toggleCourseSelection}
+          onCommitCatalogSelection={commitCatalogSelection}
+          onCancelCatalogSelection={cancelCatalogSelection}
           onCatalogDrilldown={routeToCatalogDrilldown} onPublishCourse={handlePublishCourse}
           onForkCourse={forkCourse} onCreateManualCourse={createManualCourse}
           onDeleteCourseDraft={deleteCourseDraft} onExportCourseDraft={exportCourseDraft}
@@ -419,6 +448,7 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
         />
       ) : (
         <CourseLearningLayout
+          key={selectedCourse?.key ?? "no-course"}
           sections={sections}
           visibleSectionIndex={visibleSectionIndex}
           selectedCourse={selectedCourse}

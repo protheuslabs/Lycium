@@ -1,0 +1,45 @@
+.program-structure-editor-body,
+.program-structure-delete-body {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.program-structure-editor-field {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.program-structure-editor-field span {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--lycium-color-text-muted, #556070);
+}
+
+.program-structure-editor-field input,
+.program-structure-editor-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--lycium-color-border, #d8deea);
+  border-radius: 1rem;
+  background: var(--lycium-color-surface, rgba(255, 255, 255, 0.96));
+  color: var(--lycium-color-text, #171717);
+  font: inherit;
+  padding: 0.8rem 0.95rem;
+}
+
+.program-structure-editor-field textarea {
+  resize: vertical;
+  min-height: 7rem;
+}
+
+.program-structure-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+}
+
+.program-structure-delete-body p {
+  margin: 0;
+  text-align: center;
+}

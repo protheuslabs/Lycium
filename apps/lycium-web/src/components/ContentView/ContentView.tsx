@@ -7,7 +7,7 @@ import CourseNav from "../CourseNav/CourseNav";
 import Button from "../Button/Button";
 import Modal from "../Modal/Modal";
 import CourseSourcesPage from "./CourseSourcesPage";
-import EditableContentBlock from "./EditableContentBlock";
+import EditableSectionContent from "./EditableSectionContent";
 import SectionRefreshControl from "./SectionRefreshControl";
 import { EditPencilButton, promptForBlockType, promptForText } from "./CourseEditControls";
 import type { ContentBlock, Section, SourceRecord } from "./contentViewTypes";
@@ -91,7 +91,6 @@ export default function ContentView({
   onRegenerateSection
 }: ContentViewProps) {
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
-  const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
   const [sourceTarget, setSourceTarget] = useState<{ sectionId: string; blockIndex: number } | null>(null);
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceStatus, setSourceStatus] = useState("");
@@ -105,8 +104,10 @@ export default function ContentView({
     return section.content
       .map((block) => (block.type === "project" ? projectKeyFor(courseKey, section.id, block) : null))
       .filter((projectKey): projectKey is string => projectKey !== null);
-  }, [courseKey, section?.content, section?.id]);
-  const [submittedProjectKeys, setSubmittedProjectKeys] = useState<Set<string>>(() => new Set());
+  }, [courseKey, section]);
+  const [submittedProjectKeys, setSubmittedProjectKeys] = useState<Set<string>>(
+    () => new Set(projectBlockKeys.filter(hasSubmittedProject)),
+  );
   const requiresProjectSubmission = projectBlockKeys.length > 0;
   const allRequiredProjectsSubmitted =
     !requiresProjectSubmission || projectBlockKeys.every((projectKey) => submittedProjectKeys.has(projectKey));
@@ -131,18 +132,6 @@ export default function ContentView({
     : !allRequiredProjectsSubmitted
       ? "Submit the project to complete this page"
       : completeButtonTitle;
-
-  useEffect(() => {
-    setSourcesExpanded(false);
-    setDraggedBlockIndex(null);
-    setSourceTarget(null);
-    setSourceUrl("");
-    setSourceStatus("");
-  }, [section?.id]);
-
-  useEffect(() => {
-    setSubmittedProjectKeys(new Set(projectBlockKeys.filter(hasSubmittedProject)));
-  }, [projectBlockKeys]);
 
   useEffect(() => {
     if (section?.id && requiresProjectSubmission && allRequiredProjectsSubmitted && !requiresQuizSubmission && !isComplete) {
@@ -183,7 +172,7 @@ export default function ContentView({
       target.scrollIntoView({ behavior: "smooth", block: "center" });
       target.focus({ preventScroll: true });
     }, 0);
-  }, [section?.id]);
+  }, [section]);
 
   const handleAddBlock = useCallback(() => {
     if (!section?.id) {
@@ -191,7 +180,7 @@ export default function ContentView({
     }
 
     promptForBlockType((kind, initialValue) => onBlockAdd?.(section.id, createBlockTemplate(kind, initialValue)));
-  }, [onBlockAdd, section?.id]);
+  }, [onBlockAdd, section]);
 
   const handleAttachSource = useCallback(
     (sourceId: string) => {
@@ -315,79 +304,26 @@ export default function ContentView({
           )}
         </h2>
       </div>
-      <div className="section-content">
-        {Array.isArray(section.content)
-          ? section.content.map((block, idx) => (
-              <div
-                className={`content-block-editor-row ${draggedBlockIndex === idx ? "content-block-editor-row--dragging" : ""}`}
-                key={`${block.type}-${idx}`}
-                onDragOver={(event) => {
-                  if (isEditMode) {
-                    event.preventDefault();
-                    event.dataTransfer.dropEffect = "move";
-                    if (draggedBlockIndex !== null && draggedBlockIndex !== idx) {
-                      const bounds = event.currentTarget.getBoundingClientRect();
-                      let targetIndex = idx + (event.clientY > bounds.top + bounds.height / 2 ? 1 : 0);
-                      if (draggedBlockIndex < targetIndex) {
-                        targetIndex -= 1;
-                      }
-                      if (targetIndex !== draggedBlockIndex) {
-                        onBlockMove?.(section.id, draggedBlockIndex, targetIndex);
-                        setDraggedBlockIndex(targetIndex);
-                      }
-                    }
-                  }
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  setDraggedBlockIndex(null);
-                }}
-              >
-                {isEditMode && (
-                  <button
-                    className="content-block-drag-handle"
-                    type="button"
-                    draggable
-                    aria-label={`Move block ${idx + 1}`}
-                    title="Drag to reorder block"
-                    onDragStart={(event) => {
-                      setDraggedBlockIndex(idx);
-                      event.dataTransfer.effectAllowed = "move";
-                      event.dataTransfer.setData("text/plain", String(idx));
-                    }}
-                    onDragEnd={() => setDraggedBlockIndex(null)}
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-                      <path d="M8 6h.01M12 6h.01M16 6h.01M8 12h.01M12 12h.01M16 12h.01M8 18h.01M12 18h.01M16 18h.01" />
-                    </svg>
-                  </button>
-                )}
-                <EditableContentBlock
-                  block={block}
-                  blockIndex={idx}
-                  courseKey={courseKey}
-                  sources={sources}
-                  courseSourceIndex={courseSourceIndex}
-                  sectionId={section.id}
-                  isEditMode={isEditMode}
-                  onBlockChange={onBlockChange}
-                  onBlockDelete={onBlockDelete}
-                  onCitationClick={handleInlineCitationClick}
-                  onMissingCitationClick={() => setSourceTarget({ sectionId: section.id, blockIndex: idx })}
-                  onQuizSubmissionChange={handleQuizSubmissionChange}
-                  onQuizProgressChange={handleQuizProgressChange}
-                  onProjectSubmissionChange={handleProjectSubmissionChange}
-                />
-              </div>
-            ))
-          : <p>{section.content}</p> /* fallback for old data */}
-        {isEditMode && (
-          <button className="course-edit-add-block" type="button" onClick={handleAddBlock}>
-            <span className="course-edit-add-block-icon" aria-hidden="true">+</span>
-            <span>Add block</span>
-          </button>
-        )}
-      </div>
+      {Array.isArray(section.content) ? (
+        <EditableSectionContent
+          courseKey={courseKey}
+          courseSourceIndex={courseSourceIndex}
+          isEditMode={isEditMode}
+          section={section}
+          sources={sources}
+          onAddBlock={handleAddBlock}
+          onBlockChange={onBlockChange}
+          onBlockDelete={onBlockDelete}
+          onBlockMove={onBlockMove}
+          onCitationClick={handleInlineCitationClick}
+          onMissingCitationClick={(blockIndex) => setSourceTarget({ sectionId: section.id, blockIndex })}
+          onProjectSubmissionChange={handleProjectSubmissionChange}
+          onQuizProgressChange={handleQuizProgressChange}
+          onQuizSubmissionChange={handleQuizSubmissionChange}
+        />
+      ) : (
+        <div className="section-content"><p>{section.content}</p></div>
+      )}
 
       <CourseNav
         centerControls={(

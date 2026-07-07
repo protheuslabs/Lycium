@@ -6,7 +6,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ingestion import canonicalize_url
+from app.source_url_utils import canonicalize_url
 from app.models import Snapshot, Source
 from app.source_identity import stable_snapshot_public_id, stable_source_public_id
 from app.source_index import source_payload

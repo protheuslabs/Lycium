@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useRef, useState, type DragEvent } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import type { SectionStatus } from "../../courseTypes";
 import { SidebarAddRow, SidebarEditControls, SidebarFinishButton, SidebarModuleHeader, SidebarSourceTab, SidebarStatusBadge, type DisplayStatus } from "./SidebarPrimitives";
 import { DeleteBlockButton, promptForDeleteConfirmation } from "../ContentView/CourseEditControls";
@@ -174,11 +174,15 @@ export default function Sidebar({
 }: SidebarProps) {
   const activeModuleIndex = isSourcesActive ? -1 : sections[currentSectionIndex]?.moduleIndex ?? 0;
   const activeModuleIndexRef = useRef(activeModuleIndex);
-  activeModuleIndexRef.current = activeModuleIndex;
   const [expandedModules, setExpandedModules] = useState<Set<number>>(() => new Set());
   const [isCollapsed, setIsCollapsed] = useState(() => persistedSidebarCollapsed);
   const [isContentFading, setIsContentFading] = useState(false);
   const [draggingSectionId, setDraggingSectionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    activeModuleIndexRef.current = activeModuleIndex;
+  }, [activeModuleIndex]);
+
   const moduleGroups = useMemo(() => {
     const groups: Array<{
       moduleIndex: number;

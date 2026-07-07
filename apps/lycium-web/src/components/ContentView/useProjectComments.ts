@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 export type ProjectComment = {
   id: string;
@@ -30,13 +30,8 @@ function writeComments(projectKey: string, comments: ProjectComment[]) {
 }
 
 export function useProjectComments(projectKey: string) {
-  const [comments, setComments] = useState<ProjectComment[]>([]);
+  const [comments, setComments] = useState<ProjectComment[]>(() => readComments(projectKey));
   const [draftComment, setDraftComment] = useState("");
-
-  useEffect(() => {
-    setComments(readComments(projectKey));
-    setDraftComment("");
-  }, [projectKey]);
 
   const addComment = useCallback(
     (authorRole: ProjectComment["authorRole"], body: string) => {

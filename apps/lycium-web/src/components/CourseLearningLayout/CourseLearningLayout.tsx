@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { CourseBlock, CourseModule } from "../../courseTypes";
 import ContentView from "../ContentView/ContentView";
 import type { SourceRecord } from "../ContentView/ContentView";
@@ -25,6 +25,9 @@ import {
   titleFromUrl,
 } from "../CourseEditing/courseEditPrimitives";
 import { collectReferencedCourseSourceIds } from "./sourceReferences";
+
+const EMPTY_MODULES: CourseModule[] = [];
+
 export default function CourseLearningLayout({
   sections,
   visibleSectionIndex,
@@ -46,26 +49,36 @@ export default function CourseLearningLayout({
   aiConnectionLockReason,
   onRegenerateSection,
 }: CourseLearningLayoutProps) {
-  const [isEditMode, setIsEditMode] = useState(false);
+  const canEditCourse = courseAllowsLocalEdit(selectedCourse);
+  const shouldStartInEditMode = Boolean(
+    selectedCourse?.key &&
+      canEditCourse &&
+      (selectedCourse.status === "draft" || selectedCourse.key === initialEditCourseKey),
+  );
+  const [isEditMode, setIsEditMode] = useState(shouldStartInEditMode);
   const [isCourseSettingsOpen, setIsCourseSettingsOpen] = useState(false);
   const [isCourseSourcesPageActive, setIsCourseSourcesPageActive] = useState(false);
   const [draftCourseTitle, setDraftCourseTitle] = useState("");
-  const [draftCourseSettings, setDraftCourseSettings] = useState<CourseSettingsDraft>({
-    orderMandatory: false,
-    learnersCanFork: true,
-  });
+  const [draftCourseSettings, setDraftCourseSettings] = useState<CourseSettingsDraft>(() => ({
+    orderMandatory: selectedCourse?.data.orderMandatory ?? false,
+    learnersCanFork: courseLearnersCanFork(selectedCourse),
+  }));
   const [draftModuleTitles, setDraftModuleTitles] = useState<Record<number, string>>({});
   const [draftSectionTitles, setDraftSectionTitles] = useState<Record<string, string>>({});
   const [draftBlocks, setDraftBlocks] = useState<Record<string, Record<number, ContentBlock>>>({});
-  const [draftModules, setDraftModules] = useState<CourseModule[] | null>(null);
-  const [draftSourceRecords, setDraftSourceRecords] = useState<SourceRecord[] | null>(null);
-  const [editSectionIndex, setEditSectionIndex] = useState<number | null>(null);
-  const initialEditStartedCourseKeyRef = useRef<string | null>(null);
-  const canEditCourse = courseAllowsLocalEdit(selectedCourse);
+  const [draftModules, setDraftModules] = useState<CourseModule[] | null>(() =>
+    shouldStartInEditMode ? cloneModules(selectedCourse?.data.modules ?? []) : null,
+  );
+  const [draftSourceRecords, setDraftSourceRecords] = useState<SourceRecord[] | null>(() =>
+    shouldStartInEditMode ? normalizeCourseSourceRecords(selectedCourse) : null,
+  );
+  const [editSectionIndex, setEditSectionIndex] = useState<number | null>(() =>
+    shouldStartInEditMode ? visibleSectionIndex : null,
+  );
   const displayedCourseTitle = draftCourseTitle || selectedCourse?.data?.title || "Course";
   const activeEditMode = isEditMode && canEditCourse;
   const effectiveOrderMandatory = activeEditMode ? draftCourseSettings.orderMandatory : orderMandatory;
-  const sourceModules = draftModules ?? selectedCourse?.data.modules ?? [];
+  const sourceModules = draftModules ?? selectedCourse?.data.modules ?? EMPTY_MODULES;
   const courseSourceRecords = useMemo(() => normalizeCourseSourceRecords(selectedCourse), [selectedCourse]);
   const referencedSourceIds = useMemo(
     () => collectReferencedCourseSourceIds(selectedCourse?.data, sourceModules),
@@ -75,7 +88,6 @@ export default function CourseLearningLayout({
     () => sources.filter((source) => referencedSourceIds.has(source.id)),
     [referencedSourceIds, sources],
   );
-  const shouldOpenDraftInEditMode = selectedCourse?.status === "draft" && canEditCourse;
   const displayedSources = useMemo(
     () => mergeSourceRecords(referencedCentralSources, draftSourceRecords ?? courseSourceRecords),
     [courseSourceRecords, draftSourceRecords, referencedCentralSources],
@@ -136,20 +148,10 @@ export default function CourseLearningLayout({
   };
 
   useEffect(() => {
-    setIsEditMode(false);
-    resetDraft();
-    const shouldOpenInEditMode =
-      selectedCourse?.key &&
-      (shouldOpenDraftInEditMode || selectedCourse.key === initialEditCourseKey) &&
-      initialEditStartedCourseKeyRef.current !== selectedCourse.key &&
-      canEditCourse;
-
-    if (shouldOpenInEditMode) {
-      initialEditStartedCourseKeyRef.current = selectedCourse.key;
-      startDraftEdit();
+    if (shouldStartInEditMode) {
       onInitialEditModeConsumed?.();
     }
-  }, [selectedCourse?.key]);
+  }, [onInitialEditModeConsumed, shouldStartInEditMode]);
 
   const handleStartEdit = () => {
     startDraftEdit();
@@ -437,6 +439,7 @@ export default function CourseLearningLayout({
       />
       <div className="course-content-host">
         <ContentView
+          key={`${selectedCourse?.key ?? ""}:${displayedCurrentSection?.id ?? "none"}`}
           courseKey={selectedCourse?.key ?? ""}
           courseTitle={displayedCourseTitle}
           section={displayedCurrentSection}
@@ -480,13 +483,14 @@ export default function CourseLearningLayout({
           }
         />
       </div>
-      <CourseSettingsModal
-        isOpen={isCourseSettingsOpen && activeEditMode}
-        settings={draftCourseSettings}
-        canEditCourse={canEditCourse}
-        onClose={() => setIsCourseSettingsOpen(false)}
-        onSave={handleCourseSettingsSave}
-      />
+      {isCourseSettingsOpen && activeEditMode && (
+        <CourseSettingsModal
+          settings={draftCourseSettings}
+          canEditCourse={canEditCourse}
+          onClose={() => setIsCourseSettingsOpen(false)}
+          onSave={handleCourseSettingsSave}
+        />
+      )}
     </div>
   );
 }
