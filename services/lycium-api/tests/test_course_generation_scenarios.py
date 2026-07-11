@@ -369,7 +369,7 @@ def test_under_sourced_prompt_scenario_rejects_hollow_course() -> None:
 
     assert report["status"] == "failed"
     assert any("Expected course status needs_sources" in recommendation for recommendation in report["recommendations"])
-    assert any("full course module set" in recommendation for recommendation in report["recommendations"])
+    assert any("metadata.sourceGaps" in recommendation for recommendation in report["recommendations"])
 
 def test_chem_105_flagship_blueprint_has_real_benchmarks_sources_and_slots() -> None:
     assert len(CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"]) >= 3

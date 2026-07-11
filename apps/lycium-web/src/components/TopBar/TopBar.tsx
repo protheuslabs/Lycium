@@ -10,7 +10,10 @@ type TopBarProps = {
 export default function TopBar({ onOpenCatalog, onOpenSettings }: TopBarProps) {
   return (
     <header className="top-bar">
-      <span className="top-bar-title">Lycium</span>
+      <span className="top-bar-title" role="img" aria-label="Lycium">
+        <span className="top-bar-title-full" aria-hidden="true">Lycium</span>
+        <span className="top-bar-title-compact" aria-hidden="true">L</span>
+      </span>
       <a
         href={COURSE_CATALOG_PATH}
         className="catalog-link top-bar-icon-button"
@@ -24,6 +27,7 @@ export default function TopBar({ onOpenCatalog, onOpenSettings }: TopBarProps) {
             : undefined
         }
       >
+        <span className="catalog-link-label">Catalog</span>
         <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
           <path d="M4.5 4h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm10 0h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm-10 10h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Zm10 0h5a.5.5 0 0 1 .5.5v5a.5.5 0 0 1-.5.5h-5a.5.5 0 0 1-.5-.5v-5a.5.5 0 0 1 .5-.5Z" />
         </svg>

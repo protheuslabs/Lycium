@@ -20,8 +20,9 @@ COURSE_GENERATION_RULES = (
     "Do not use interpretive prose categories as concept cards. Quiz blocks may include maxAttempts "
     "and timeLimitSeconds; omitted or blank values mean unlimited. showAnswers defaults to false, "
     "but answers are shown after submission on the final allowed attempt. If source coverage is below "
-    "the course source policy, create or preserve a needs_sources draft with metadata.sourceGaps instead "
-    "of generating hollow course pages. Source IDs and citations must be scoped to the concepts actually "
+    "the course source policy, still generate a coherent module and section outline plus distinct best-effort "
+    "lesson scaffolds. Mark the draft needs_sources with metadata.sourceGaps, and reserve source readiness as "
+    "a review and publication gate rather than an outline or course-access gate. Source IDs and citations must be scoped to the concepts actually "
     "taught or assessed in that section; do not blanket-cite the full course source list on every page."
 )
 
@@ -34,6 +35,19 @@ def _stable_id(prefix: str, *parts: str) -> str:
 
 def _title_from_prompt(prompt: str) -> str:
     cleaned = re.sub(r"\s+", " ", prompt).strip()
+    cleaned = re.sub(
+        r"\b(?:needs?|needing|missing|requires?|requiring)\s+sources?\b|\bsource[- ](?:gaps?|gated)\b",
+        " ",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"^(?:please\s+)?(?:create|build|generate|make|design)(?:\s+me)?\s+(?:an?\s+|the\s+)?",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -:,.\t") or "Untitled Course"
     if len(cleaned) <= 64:
         return cleaned.title()
     return f"{cleaned[:61].strip().title()}..."
@@ -49,7 +63,11 @@ def _extract_goals(prompt: str, explicit_goals: list[str], tokens: list[str]) ->
 
 
 def _catalog_metadata_from_prompt(prompt: str) -> dict[str, Any]:
-    tokens = [token for token in re.findall(r"[a-zA-Z][a-zA-Z0-9]+", prompt.lower()) if len(token) > 3]
+    tokens = [
+        token
+        for token in re.findall(r"[a-zA-Z][a-zA-Z0-9]+", _title_from_prompt(prompt).lower())
+        if len(token) > 3
+    ]
     tags = list(dict.fromkeys(tokens))[:6] or ["generated-course"]
     return {
         "category": "computing-information-sciences",

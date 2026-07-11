@@ -170,7 +170,7 @@ export default function CourseCatalog({
         ? "Create program"
         : catalogControls.catalogViewLevel === "clusters"
           ? "Create cluster"
-          : "Create course";
+          : "Create";
   const primaryActionDisabled =
     isProgramSelectionMode
       ? catalogSelectionMode.selectedClusterKeys.length === 0
@@ -375,7 +375,6 @@ export default function CourseCatalog({
                 publishingCourseKey={publishingCourseKey}
                 onOpenCourse={onOpenCourse}
                 onOpenInfo={setInfoCourse}
-                onOpenSourceGaps={setSourceGapCourse}
                 onSearchPrerequisite={catalogControls.handlePrerequisiteSearch}
                 selectionMode={catalogSelectionMode}
                 onToggleCourseSelection={onToggleClusterCourseSelection}

@@ -340,9 +340,42 @@ def chem_105_flagship_course_from_scenario() -> dict[str, Any]:
 
 def under_sourced_course_draft_from_scenario() -> dict[str, Any]:
     spec = COURSE_SCENARIOS["under-sourced-course-prompt"]
+    modules = []
+    for module_index, focus in enumerate(("Foundations", "Core Concepts", "Applied Practice", "Integration"), start=1):
+        sections = []
+        for section_index, section_focus in enumerate(("Explanation", "Guided Practice"), start=1):
+            section_title = f"{focus}: {section_focus}"
+            sections.append(
+                {
+                    "id": f"best-effort-m{module_index:02d}-s{section_index:02d}",
+                    "title": section_title,
+                    "sectionType": "lesson",
+                    "pageType": "learn",
+                    "content": [
+                        {
+                            "type": "text",
+                            "heading": "Explanation",
+                            "value": f"This preliminary lesson develops {section_title.lower()} through a focused explanation, example, and practice decision that still requires source review.",
+                        },
+                        {"type": "heading", "title": "Concepts introduced"},
+                        {
+                            "type": "conceptCard",
+                            "title": focus,
+                            "description": f"A working concept for the {focus.lower()} portion of the course.",
+                        },
+                    ],
+                }
+            )
+        modules.append(
+            {
+                "id": f"best-effort-m{module_index:02d}",
+                "title": f"Module {module_index}: {focus}",
+                "sections": sections,
+            }
+        )
     return {
         "title": spec["label"],
-        "shortDescription": "Draft course waiting for source coverage.",
+        "shortDescription": "A best-effort course draft with preliminary content awaiting source review.",
         "status": "needs_sources",
         "difficultyLevel": "undergrad",
         "category": "computing-information-sciences",
@@ -370,29 +403,9 @@ def under_sourced_course_draft_from_scenario() -> dict[str, Any]:
             ],
             "generationPlan": {
                 "status": ["scoped", "needs_sources"],
-                "mode": "source-gated-draft",
-                "message": "Add enough relevant sources before generating learner-facing course content.",
+                "mode": "outline_first_best_effort_draft",
+                "message": "Review and strengthen the preliminary content with relevant sources.",
             },
         },
-        "modules": [
-            {
-                "id": "source-planning",
-                "title": "Source planning",
-                "sections": [
-                    {
-                        "id": "source-planning-overview",
-                        "title": "Add sources to continue",
-                        "sectionType": "source-gap",
-                        "pageType": "learn",
-                        "content": [
-                            {
-                                "type": "text",
-                                "heading": "Course generation is paused",
-                                "value": "Add benchmark, textbook, lecture, lab, video, simulation, or assignment sources before course generation continues.",
-                            }
-                        ],
-                    }
-                ],
-            }
-        ],
+        "modules": modules,
     }

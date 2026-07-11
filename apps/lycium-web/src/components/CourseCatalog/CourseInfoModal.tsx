@@ -38,11 +38,16 @@ export default function CourseInfoModal({
   const shouldShowReviewPanel = lifecycle.isReviewable && lifecycle.status !== "published";
   const learnersCanFork = course.data.metadata?.editPolicy?.learnersCanFork !== false;
   const localDraft = getLocalDraftMetadata(course);
-  const localDraftDescription = localDraft
-    ? localDraft.origin === "fork"
+  const isBrowserLocalCourse = course.source === "local";
+  const canManageLocalDraft = Boolean(localDraft) || isBrowserLocalCourse;
+  let localDraftDescription = "";
+  if (localDraft) {
+    localDraftDescription = localDraft.origin === "fork"
       ? `Forked from ${localDraft.parentCourseTitle ?? localDraft.forkedFromTitle ?? "another course"}.`
-      : "Local editable draft."
-    : "";
+      : "Local editable draft.";
+  } else if (isBrowserLocalCourse) {
+    localDraftDescription = "Saved in this browser.";
+  }
 
   return (
     <Modal
@@ -127,16 +132,18 @@ export default function CourseInfoModal({
           <CourseReviewPanel course={course} isPublishing={isPublishing} onPublishCourse={onPublishCourse} />
         )}
         <section className="course-info-section course-draft-section">
-            <h3>{localDraft ? "Local draft" : "Local drafts"}</h3>
+            <h3>{canManageLocalDraft ? "Local draft" : "Local drafts"}</h3>
             <p className="course-info-muted">
-              {localDraft
-                ? `${localDraftDescription} Revision ${localDraft.revision}.${
+              {canManageLocalDraft
+                ? localDraft
+                  ? `${localDraftDescription} Revision ${localDraft.revision}.${
                     localDraft.updatedAt ? ` Last saved ${new Date(localDraft.updatedAt).toLocaleString()}.` : ""
                   }`
+                  : localDraftDescription
                 : "Import a portable Lycium local draft file."}
             </p>
             <div className="course-draft-actions">
-              {localDraft && (
+              {canManageLocalDraft && (
                 <Button type="button" variant="nav" onClick={() => onExportCourseDraft(course)}>
                   Export draft
                 </Button>
@@ -149,7 +156,7 @@ export default function CourseInfoModal({
                   Reset to original
                 </Button>
               )}
-              {localDraft && (
+              {canManageLocalDraft && (
                 <Button type="button" variant="nav" onClick={() => onDeleteCourseDraft(course)}>
                   Delete draft
                 </Button>

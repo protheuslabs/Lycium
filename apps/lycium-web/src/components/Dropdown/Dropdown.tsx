@@ -1,11 +1,19 @@
 import { useState } from "react";
 import type { FocusEvent } from "react";
 
-export type DropdownOption = {
+type DropdownValueOption = {
+  kind?: "option";
   value: string;
   label: string;
   disabled?: boolean;
 };
+
+type DropdownSeparatorOption = {
+  kind: "separator";
+  label: string;
+};
+
+export type DropdownOption = DropdownValueOption | DropdownSeparatorOption;
 
 type DropdownProps = {
   value: string;
@@ -29,7 +37,9 @@ export default function Dropdown({
   placeholder = "Select",
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const selectedOption = options.find((option) => option.value === value);
+  const selectedOption = options.find((option): option is DropdownValueOption =>
+    option.kind !== "separator" && option.value === value
+  );
 
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -69,26 +79,36 @@ export default function Dropdown({
       {isOpen && (
         <div className="dropdown-menu" role="listbox" aria-label={ariaLabel}>
           {options.length > 0 ? (
-            options.map((option) => (
-              <button
-                className={`dropdown-option ${
-                  option.value === value ? "dropdown-option-active" : ""
-                }`.trim()}
-                type="button"
-                role="option"
-                aria-selected={option.value === value}
-                disabled={option.disabled}
-                key={option.value}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => {
-                  if (!option.disabled) {
-                    handleSelect(option.value);
-                  }
-                }}
-              >
-                {option.label}
-              </button>
-            ))
+            options.map((option) => {
+              if (option.kind === "separator") {
+                return (
+                  <span className="dropdown-separator" role="separator" key={`separator-${option.label}`}>
+                    {option.label}
+                  </span>
+                );
+              }
+
+              return (
+                <button
+                  className={`dropdown-option ${
+                    option.value === value ? "dropdown-option-active" : ""
+                  }`.trim()}
+                  type="button"
+                  role="option"
+                  aria-selected={option.value === value}
+                  disabled={option.disabled}
+                  key={option.value}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => {
+                    if (!option.disabled) {
+                      handleSelect(option.value);
+                    }
+                  }}
+                >
+                  {option.label}
+                </button>
+              );
+            })
           ) : (
             <span className="dropdown-empty">{emptyLabel}</span>
           )}

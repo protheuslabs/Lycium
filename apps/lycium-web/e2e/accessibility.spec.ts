@@ -30,7 +30,7 @@ test("visible interactive catalog controls expose accessible names", async ({ pa
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/Lycium/catalog");
 
-  await expect(page.getByRole("button", { name: /create course/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create", exact: true })).toBeVisible();
 
   const unnamedControls = await page.locator(INTERACTIVE_SELECTOR).evaluateAll((nodes) => {
     function isVisible(element: Element) {
@@ -70,7 +70,7 @@ test("primary dialogs keep modal semantics under keyboard navigation", async ({ 
   await page.keyboard.press("Tab");
   await expect.poll(async () => page.evaluate(() => document.activeElement?.tagName)).not.toBe("BODY");
 
-  const createCourseButton = page.getByRole("button", { name: /^Create Course$/i }).first();
+  const createCourseButton = page.getByRole("button", { name: "Create", exact: true }).first();
   await expect(createCourseButton).toBeVisible();
   await createCourseButton.click({ force: true });
   await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();

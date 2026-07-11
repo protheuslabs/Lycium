@@ -12,12 +12,12 @@ async function chooseDropdownOption(page: Page, label: string, optionName: strin
 
 function firstUsableCourseCard(page: Page) {
   return page
-    .locator(".course-card:not(.create-course-card):not(.course-card--empty):not(.course-card--generating):not(.course-card--locked):not(.course-card--lifecycle-source)")
+    .locator(".course-card:not(.create-course-card):not(.course-card--empty):not(.course-card--generating):not(.course-card--locked)")
     .first();
 }
 
 async function openCreateCourseDialog(page: Page) {
-  const createButton = page.getByRole("button", { name: "Create course", exact: true });
+  const createButton = page.getByRole("button", { name: "Create", exact: true });
   await expect(createButton).toBeVisible();
   await createButton.click();
   await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();
@@ -227,7 +227,7 @@ test.beforeEach(async ({ page }) => {
 test("manual course creation opens a blank editable draft", async ({ page }) => {
   await page.goto("/Lycium/catalog");
 
-  await page.getByRole("button", { name: /^Create Course$/i }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();
   await page.getByRole("tab", { name: "Manual" }).click();
   await page.getByRole("button", { name: "Create blank course" }).click();
@@ -238,30 +238,28 @@ test("manual course creation opens a blank editable draft", async ({ page }) => 
   await expect(page.locator(".sidebar")).toContainText("1.1");
 });
 
-test("under-sourced AI creation produces a source-gated draft card", async ({ page }) => {
+test("under-sourced AI creation remains openable with an incomplete-sources notice", async ({ page }) => {
   await mockVerifiedAiConnection(page);
   await page.goto("/Lycium/catalog");
-
   await page.getByLabel("Settings").click();
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await openCreateCourseDialog(page);
-  await page.getByPlaceholder("Describe the course you want to build...").fill("Lifecycle Needs Sources Course");
+  await page.getByPlaceholder("Describe the course you want to build...").fill("Lifecycle Course");
   await chooseDropdownOption(page, "College", "College of Natural Sciences and Mathematics");
   await chooseDropdownOption(page, "Department", "Chemistry");
   const createButton = page.getByRole("dialog", { name: "Create Course" }).getByRole("button", { name: /^Create course$/i });
   await expect(createButton).toBeEnabled();
   await createButton.click();
-
-  const sourceGatedCard = page.locator(".course-card").filter({ hasText: "Lifecycle Needs Sources Course" }).first();
+  const sourceGatedCard = page.locator(".course-card").filter({ hasText: "Lifecycle Course" }).first();
   await expect(sourceGatedCard).toBeVisible();
-  await expect(sourceGatedCard.locator(".course-lifecycle-badge-source")).toHaveText("Needs sources");
+  await expect(sourceGatedCard.locator(".course-lifecycle-badge-source")).toHaveCount(0);
+  await expect(sourceGatedCard.getByRole("button", { name: "Add sources", exact: true })).toHaveCount(0);
+  await expect(sourceGatedCard).not.toContainText("Needs sources");
   await sourceGatedCard.click();
-
-  await expect(page.getByRole("dialog", { name: "Lifecycle Needs Sources Course" })).toBeVisible();
-  await expect(page.getByText("Sources needed")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Add source and resume" })).toBeDisabled();
-  await expect(page).toHaveURL(/\/Lycium\/catalog$/);
+  await expect(page).toHaveURL(/\/Lycium\/courses\//);
+  await expect(page.locator(".course-source-notice")).toContainText("Sources incomplete");
+  await expect(page.locator(".course-source-notice")).toContainText("You can still use the course");
 });
 
 test("catalog lifecycle badges expose review-ready and published states", async ({ page }) => {
@@ -291,7 +289,7 @@ test("catalog lifecycle badges expose review-ready and published states", async 
 test("catalog loads, exposes create flow, and opens a course", async ({ page }) => {
   await seedReadyForReviewCourse(page);
   await page.goto("/Lycium/catalog");
-  await expect(page.getByRole("button", { name: /create course/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create", exact: true })).toBeVisible();
   await openCreateCourseDialog(page);
   await expect(page.getByPlaceholder("Describe the course you want to build...")).toBeVisible();
   await page.getByRole("button", { name: /close create course/i }).click();
@@ -403,7 +401,7 @@ test("catalog controls support keyboard navigation and modal focus", async ({ pa
   await page.keyboard.press("Escape");
   await expect(page.getByRole("listbox", { name: "Select catalog view level" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: /create course/i }).focus();
+  await page.getByRole("button", { name: "Create", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();
   await page.keyboard.press("Escape");

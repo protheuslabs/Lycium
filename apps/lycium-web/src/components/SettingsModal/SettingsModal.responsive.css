@@ -19,7 +19,6 @@
 
   .settings-input,
   .settings-select,
-  .settings-key-preview,
   .settings-key-provider {
     color: #e5e7eb;
     background: transparent;
@@ -27,10 +26,6 @@
 
   .settings-key-row {
     color: #e5e7eb;
-  }
-
-  .settings-key-row-active {
-    background: linear-gradient(145deg, rgba(72, 216, 109, 0.16), rgba(15, 23, 42, 0.98));
   }
 
   .settings-close-button,
@@ -75,15 +70,48 @@
     max-height: calc(100vh - 5.25rem);
   }
 
-  .settings-entry-row,
-  .settings-key-row {
-    grid-template-columns: 1fr;
+  .settings-entry-row {
+    grid-template-columns: minmax(0, 1fr) auto;
     min-height: 0;
   }
 
+  .settings-provider-picker {
+    grid-column: 1 / -1;
+  }
+
   .settings-key-row {
-    gap: 0.15rem;
-    padding: 0.7rem;
+    grid-template-columns: minmax(4.4rem, 0.9fr) minmax(0, 1.25fr) auto auto;
+    gap: 0.22rem;
+    min-height: 2.65rem;
+    padding: 0 0.45rem 0 0.7rem;
+    overflow: visible;
+  }
+
+  .settings-key-provider {
+    min-height: 0;
+    display: block;
+    padding: 0;
+  }
+
+  .settings-model-field {
+    min-width: 0;
+  }
+
+  .settings-key-actions {
+    min-height: 0;
+  }
+
+  .settings-key-state,
+  .settings-key-active-check,
+  .settings-key-state-placeholder {
+    align-self: center;
+    justify-self: end;
+    margin-right: 0;
+  }
+
+  .settings-key-state {
+    min-width: 0;
+    padding: 0 0.48rem;
   }
 
   .settings-entry-field-key,
@@ -91,8 +119,12 @@
     min-width: 0;
   }
 
-  .settings-key-state,
+  .settings-entry-field-key {
+    grid-column: 1;
+  }
+
   .settings-save-button {
-    justify-self: center;
+    grid-column: 2;
+    justify-self: end;
   }
 }

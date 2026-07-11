@@ -100,7 +100,7 @@
   border: 1px solid #d8deea;
   border-radius: 20px;
   display: grid;
-  gap: 0.55rem;
+  gap: 0;
   padding: 0.7rem;
   overflow: visible;
   background: #ffffff;
@@ -111,6 +111,10 @@
   display: block;
   min-width: 0;
   max-width: 100%;
+}
+
+.settings-key-list + .settings-form {
+  margin-top: 0.7rem;
 }
 
 .settings-entry-row {
@@ -197,6 +201,34 @@
   color: #c0392b;
   font-weight: 800;
   opacity: 1;
+}
+
+.settings-status-message {
+  border-radius: 12px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  margin: 0.55rem 0 0;
+  padding: 0.62rem 0.78rem;
+}
+
+.settings-status-message-idle {
+  background: rgba(226, 232, 240, 0.72);
+  color: #334155;
+}
+
+.settings-status-message-loading {
+  background: rgba(147, 197, 253, 0.22);
+  color: #1d4ed8;
+}
+
+.settings-status-message-success {
+  background: rgba(34, 197, 94, 0.16);
+  color: #166534;
+}
+
+.settings-status-message-error {
+  background: rgba(248, 113, 113, 0.16);
+  color: #991b1b;
 }
 
 .settings-save-button {

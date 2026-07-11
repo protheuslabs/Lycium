@@ -1,6 +1,7 @@
 /* ContentView styles */
 @import "./contentView.sources.css";
 @import "./contentView.refresh.css";
+@import "./contentView.notice.css";
 @import "./ProjectBlock.css";
 
 .content-view {
@@ -54,7 +55,6 @@
 .section-title-row .section-title {
   flex: 1;
 }
-
 
 .section-content {
   margin: 0;

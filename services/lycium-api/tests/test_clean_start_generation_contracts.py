@@ -129,13 +129,13 @@ def test_source_gap_suggestions_query_source_index_for_missing_concepts(monkeypa
     assert need["sourceIndexCandidates"][0]["sourceId"] == "source-open-stoichiometry"
 
 
-def test_under_sourced_generation_fixture_stays_as_source_gap_draft() -> None:
+def test_under_sourced_generation_fixture_stays_as_review_marked_best_effort_draft() -> None:
     draft = under_sourced_course_draft_from_scenario()
 
     assert draft["status"] == "needs_sources"
     assert draft["metadata"]["status"] == "needs_sources"
     assert draft["metadata"]["sourceGaps"][0]["severity"] == "blocking"
-    assert draft["modules"][0]["sections"][0]["sectionType"] == "source-gap"
+    assert draft["modules"][0]["sections"][0]["sectionType"] == "lesson"
     assert all(block.get("type") != "quiz" for block in _content_blocks(draft))
 
 
@@ -292,5 +292,4 @@ def test_section_generation_ready_task_stays_blocked_when_quality_gates_fail() -
     assert transitioned["transitionStatus"] == "blocked"
     assert transitioned["reviewReadiness"]["passed"] is False
     assert transitioned["reviewReadiness"]["metrics"]["failedGateCount"] == 2
-
 

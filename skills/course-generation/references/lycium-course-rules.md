@@ -48,7 +48,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 6. Source each idea.
    Find reputable sources for the idea level, not only the course level. Prefer primary docs, textbooks, academic sources, standards bodies, established university material, and reputable technical talks.
    When many sources are submitted, first run source corpus preflight. Use included sources as the course corpus and exclude irrelevant sources from requirements, lessons, quizzes, and citations unless a reviewer restores them.
-   If submitted sources do not satisfy the course's source coverage and source-strength policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps` instead of generating learner-facing placeholder modules. Do not gate full generation by raw source count; one comprehensive textbook, extracted document, or source packet may be sufficient when it covers the required concepts with strong depth, relevance, authority, and extractability.
+   If submitted sources do not satisfy the course's source coverage and source-strength policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps`, but still generate a coherent module and section outline plus distinct best-effort lesson scaffolds. Do not repeat a source-gap placeholder as every section body. Do not gate outline generation by raw source count; one comprehensive textbook, extracted document, or source packet may be sufficient when it covers the required concepts with strong depth, relevance, authority, and extractability.
    Map accepted sources to required concepts before drafting. Course-level source records are the full inventory, but section and block `sourceIds` should only include sources supporting concepts taught or assessed on that page.
    For uploaded files or long source documents, use bounded, stage-relevant excerpts for lesson, quiz, media, and summary prompts. Do not pass full extracted documents into every staged model call.
 
@@ -68,7 +68,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 
 11. Gate catalog intake.
    Generated courses must pass structural validation and source-reference validation before appearing in the learner catalog.
-   Source-gapped planning drafts may appear only as incomplete `needs_sources` artifacts; learner clicks should collect sources for the gaps instead of opening the course player.
+   Source-gapped planning drafts may appear as incomplete `needs_sources` artifacts and remain openable. Show source notices at the section level; source readiness gates review and publication rather than outline generation or course access.
 
 12. Use quality evals before review.
    LLM-generated drafts should be inspected through `quality_report.evals`; rejected drafts should remain available for prompt/source/gate tuning rather than being silently discarded.
@@ -289,7 +289,7 @@ Canonical module/week-summary concept-card block:
 - Every source ID referenced by a course exists in `sourceRecords/`.
 - Generated and remote course entries are rejected before catalog insertion if referenced source IDs do not resolve.
 - Sparse-source drafts use `metadata.sourceCoveragePolicy`, `metadata.sourceGaps`, optional `metadata.sourceGapSuggestions`, and lifecycle status `needs_sources`.
-- Blocking source gaps prevent full learner-facing generation and publication.
+- Blocking source gaps require review notices and prevent publication, but they do not prevent a best-effort outline, distinct incomplete lesson scaffolds, or learner access to the draft.
 - Every quiz has the intended number of questions.
 - Assessments test only previously taught or sourced material.
 - The frontend build passes after TypeScript or JSON import changes.

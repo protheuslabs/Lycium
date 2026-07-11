@@ -113,7 +113,8 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - during source enrichment, query Source Index search (`source-index-search-v1`) for missing concepts, replacement sources, benchmark evidence, and media candidates before asking the user for more sources
    - when a new source is submitted, use source-fit analysis against abstract course/program/concept descriptors to create review candidates; do not auto-attach the source to course sections
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
-   - if source coverage or source strength is below policy, create or preserve a `needs_sources` draft with `metadata.sourceGaps` instead of drafting hollow learner-facing modules
+   - if source coverage or source strength is below policy, still create a coherent module and section outline and distinct best-effort lesson scaffolds; preserve `needs_sources` with `metadata.sourceGaps` so incomplete content is clearly review-marked
+   - never repeat one source-gap placeholder as the body of every section, and never include workflow state such as `needs_sources` or `source gap` in learner-facing course, module, or section titles
    - preserve `metadata.generationReadiness` on source-ready generated courses and `needs_sources` drafts; full courses must carry a positive `course-generation-readiness-v1` report, while sparse drafts must carry the non-ready report
    - use `metadata.generationReadiness.sourceStrength` (`source-strength-v1`) as the readiness primitive; source count is not the readiness decision, and one comprehensive textbook, extracted file, or source packet can be enough when it covers the required concepts with strong depth, relevance, authority, and extractability
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
@@ -127,7 +128,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
 14. Validate structure and coherence before finishing.
 15. Treat validation as a catalog gate:
    - generated courses must not enter the catalog until structural validation passes
-   - sparse-source drafts may appear only as incomplete `needs_sources` artifacts that collect missing sources before full generation resumes
+   - sparse-source drafts may appear as incomplete `needs_sources` artifacts, remain openable, and show source notices at the section level; source readiness gates review and publication rather than outline generation or course access
    - copy readiness evidence into `generation_trace.generation_readiness` whenever backend generation or source-gap resume is involved so review, observability, and eval tools can explain the source-readiness decision
    - every referenced `sourceId` must resolve to a central or course-level source record
    - every section citation must point to a source that supports at least one concept taught or assessed in that section

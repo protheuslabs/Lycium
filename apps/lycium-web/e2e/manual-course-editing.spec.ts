@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 async function createBlankManualCourse(page: Page) {
   await page.goto("/Lycium/catalog");
 
-  await page.getByRole("button", { name: /^Create Course$/i }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();
   await page.getByRole("tab", { name: "Manual" }).click();
   await page.getByRole("button", { name: "Create blank course" }).click();

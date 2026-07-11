@@ -15,7 +15,6 @@ type CatalogCourseGridProps = {
   publishingCourseKey: string | null;
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
-  onOpenSourceGaps: (course: CourseEntry) => void;
   onSearchPrerequisite: (query: string) => void;
   selectionMode: CatalogSelectionMode;
   onToggleCourseSelection: (courseKey: string) => void;
@@ -31,7 +30,6 @@ export default function CatalogCourseGrid({
   publishingCourseKey,
   onOpenCourse,
   onOpenInfo,
-  onOpenSourceGaps,
   onSearchPrerequisite,
   selectionMode,
   onToggleCourseSelection,
@@ -56,7 +54,6 @@ export default function CatalogCourseGrid({
           visibleCourse={visibleCourse}
           onOpenCourse={onOpenCourse}
           onOpenInfo={onOpenInfo}
-          onOpenSourceGaps={onOpenSourceGaps}
           onSearchPrerequisite={onSearchPrerequisite}
           isPublishing={publishingCourseKey === visibleCourse.course.key}
           selectionMode={selectionMode?.kind === "cluster"}

@@ -7,7 +7,13 @@ from sqlalchemy.orm import Session
 from app.course_outline_from_source_packet import build_outline_from_source_packet
 from app.course_generation_readiness import build_generation_readiness_report
 from app.course_source_policy import SOURCE_COVERAGE_POLICY
-from app.generation_helpers import COURSE_GENERATION_RULES, _catalog_metadata_from_prompt, _title_from_prompt
+from app.generation_helpers import (
+    COURSE_GENERATION_RULES,
+    _build_instructional_blocks,
+    _catalog_metadata_from_prompt,
+    _concept_card_block,
+    _title_from_prompt,
+)
 from app.generation_outline import build_outline
 from app.models import CourseDraft, CourseSnapshot
 from app.course_source_gap_resume import summarize_concept_source_need_coverage
@@ -114,19 +120,6 @@ def _concept_source_needs(title: str, source_gate: dict[str, Any] | None) -> lis
     return needs
 
 
-def _source_gap_content(description: str, gap: dict[str, Any]) -> list[dict[str, str]]:
-    needs = gap.get("conceptSourceNeeds")
-    if not isinstance(needs, list) or not needs:
-        return [{"type": "text", "heading": "Course generation is paused", "value": description}]
-    concept_lines = [
-        f"- {need.get('concept')} ({need.get('location')})"
-        for need in needs[:12]
-        if isinstance(need, dict) and need.get("concept")
-    ]
-    value = description + "\n\nMissing concept source coverage:\n" + "\n".join(concept_lines)
-    return [{"type": "text", "heading": "Course generation is paused", "value": value}]
-
-
 def _desired_module_count_from_snapshot(snapshot: CourseSnapshot) -> int:
     structure = snapshot.structure if isinstance(snapshot.structure, dict) else {}
     metadata = structure.get("metadata") if isinstance(structure.get("metadata"), dict) else {}
@@ -202,8 +195,8 @@ def _source_gap_outline(
         )
     return {
         "title": title,
-        "shortDescription": f"Draft course waiting for source coverage: {prompt[:120].strip()}",
-        "summary": "This course is scoped, but full generation is blocked until enough source evidence is attached.",
+        "shortDescription": f"A best-effort course draft covering the foundations and applications of {title}.",
+        "summary": "This course has a complete outline and preliminary lesson scaffolds that still require source review.",
         "modules": modules,
         "provenance": {"mode": "source-gap-fallback"},
     }
@@ -212,13 +205,11 @@ def _source_gap_outline(
 def _source_gap_sections_for_module(
     module: dict[str, Any],
     *,
-    gap: dict[str, Any],
+    prompt: str,
     source_ids: list[str],
 ) -> list[dict[str, Any]]:
-    description = str(gap.get("description") or "Attach enough source coverage to generate this section.")
-    concept_needs = gap.get("conceptSourceNeeds") if isinstance(gap.get("conceptSourceNeeds"), list) else []
     sections = module.get("sections") if isinstance(module.get("sections"), list) else []
-    placeholder_sections: list[dict[str, Any]] = []
+    best_effort_sections: list[dict[str, Any]] = []
 
     for section_index, section in enumerate(sections, start=1):
         if not isinstance(section, dict):
@@ -226,37 +217,32 @@ def _source_gap_sections_for_module(
         section_id = str(section.get("id") or f"{module.get('id')}-s{section_index:02d}")
         section_title = str(section.get("title") or f"Planned section {section_index}")
         concept_keywords = [str(value).strip() for value in section.get("concept_keywords", []) if str(value).strip()]
-        matching_needs = [
-            need
-            for need in concept_needs
-            if isinstance(need, dict)
-            and (
-                str(need.get("sectionId") or "").strip() == section_id
-                or any(str(need.get("concept") or "").strip().lower() == keyword.lower() for keyword in concept_keywords)
-            )
+        raw_section_source_ids = section.get("sourceIds") or section.get("source_ids") or []
+        section_source_ids = [value for value in raw_section_source_ids if isinstance(value, str) and value in source_ids]
+        concepts = concept_keywords or [section_title]
+        concept_blocks = [
+            {"type": "heading", "title": "Concepts introduced"},
+            *[
+                _concept_card_block(
+                    concept.replace("_", " ").title(),
+                    f"A working concept used to reason about {section_title}.",
+                )
+                for concept in concepts[:4]
+            ],
         ]
-        concept_lines = [
-            f"- {str(need.get('concept') or '').strip()}"
-            for need in matching_needs[:8]
-            if str(need.get("concept") or "").strip()
-        ]
-        section_message = description
-        if concept_lines:
-            section_message += "\n\nSource coverage still needed for:\n" + "\n".join(concept_lines)
-
-        placeholder_sections.append(
+        best_effort_sections.append(
             {
                 "id": section_id,
                 "title": section_title,
-                "sectionType": "source-gap",
+                "sectionType": "lesson",
                 "pageType": "learn",
-                "sourceIds": source_ids,
+                "sourceIds": section_source_ids,
                 "learningObjectives": section.get("learning_objectives", []),
                 "estimatedMinutes": int(section.get("estimated_minutes") or 20),
                 "metadata": {
                     "generationOutline": {
                         "contractVersion": "section-generation-outline-v1",
-                        "role": "source_gap",
+                        "role": "best_effort_incomplete",
                         "planningSource": "outline_before_sources",
                         "moduleOutlineId": str(module.get("id") or ""),
                         "moduleOutlineTitle": str(module.get("title") or ""),
@@ -264,27 +250,29 @@ def _source_gap_sections_for_module(
                         "sectionOutlineTitle": section_title,
                         "plannedConceptKeywords": concept_keywords,
                         "plannedLearningObjectives": section.get("learning_objectives", []),
-                        "plannedSourceIds": source_ids,
+                        "plannedSourceIds": section_source_ids,
+                        "sourceReviewRequired": True,
                     }
                 },
-                "content": [{"type": "text", "heading": "Section not yet generated", "value": section_message}],
+                "content": [*_build_instructional_blocks(section_title, prompt), *concept_blocks],
                 "citations": [],
             }
         )
 
-    if placeholder_sections:
-        return placeholder_sections
+    if best_effort_sections:
+        return best_effort_sections
 
     return [
         {
             "id": f"{str(module.get('id') or 'module')}-source-gap",
-            "title": "Add sources to continue",
-            "sectionType": "source-gap",
+            "title": f"Introduction to {str(module.get('title') or 'the topic')}",
+            "sectionType": "lesson",
             "pageType": "learn",
-            "sourceIds": source_ids,
-            "learningObjectives": ["Attach enough relevant sources before course generation."],
-            "estimatedMinutes": 5,
-            "content": _source_gap_content(description, gap),
+            "sourceIds": [],
+            "learningObjectives": ["Explain the module's main ideas and identify where source review is still needed."],
+            "estimatedMinutes": 20,
+            "metadata": {"sourceReviewRequired": True},
+            "content": _build_instructional_blocks(str(module.get("title") or "the topic"), prompt),
             "citations": [],
         }
     ]
@@ -311,32 +299,37 @@ def _needs_sources_structure(
             "title": str(module.get("title") or f"Module {index}"),
             "sourceIds": source_ids,
             "learningObjectives": module.get("learning_objectives", []),
-            "sections": _source_gap_sections_for_module(module, gap=gap, source_ids=source_ids),
+            "sections": _source_gap_sections_for_module(module, prompt=prompt, source_ids=source_ids),
         }
         for index, module in enumerate(modules, start=1)
         if isinstance(module, dict)
     ]
 
     if not structured_modules:
+        module_title = f"Module 1: Foundations of {title}"
         structured_modules = [
             {
-                "id": "source-planning",
-                "title": "Source planning",
+                "id": "best-effort-foundations",
+                "title": module_title,
                 "sourceIds": source_ids,
-                "learningObjectives": ["Attach enough relevant sources before course generation."],
-                "sections": [
+                "learningObjectives": [f"Explain foundational ideas in {title}."],
+                "sections": _source_gap_sections_for_module(
                     {
-                        "id": "source-planning-overview",
-                        "title": "Add sources to continue",
-                        "sectionType": "source-gap",
-                        "pageType": "learn",
-                        "sourceIds": source_ids,
-                        "learningObjectives": ["Identify source gaps before generating course content."],
-                        "estimatedMinutes": 5,
-                        "content": _source_gap_content(str(gap.get("description") or ""), gap),
-                        "citations": [],
-                    }
-                ],
+                        "id": "best-effort-foundations",
+                        "title": module_title,
+                        "sections": [
+                            {
+                                "id": "best-effort-foundations-overview",
+                                "title": f"Foundational ideas in {title}",
+                                "learning_objectives": [f"Explain foundational ideas in {title}."],
+                                "concept_keywords": ["foundations"],
+                                "estimated_minutes": 20,
+                            }
+                        ],
+                    },
+                    prompt=prompt,
+                    source_ids=source_ids,
+                ),
             }
         ]
 
@@ -344,7 +337,7 @@ def _needs_sources_structure(
         "title": title,
         "shortDescription": str(
             outline.get("shortDescription")
-            or f"Draft course waiting for source coverage: {prompt[:120].strip()}"
+            or f"A best-effort course draft covering the foundations and applications of {title}."
         ),
         "difficultyLevel": level or "undergrad",
         "category": category,
@@ -364,8 +357,8 @@ def _needs_sources_structure(
             "sourceGaps": [gap],
             "generationReadiness": generation_readiness,
             "generationPlan": {
-                "status": ["scoped", "outline_planned", "needs_sources"],
-                "mode": "outline_first_source_gated_draft",
+                "status": ["scoped", "outline_planned", "best_effort_drafted", "needs_sources"],
+                "mode": "outline_first_best_effort_draft",
                 "message": str(gap.get("description") or ""),
                 "desiredModuleCount": len(structured_modules),
                 "moduleOutlines": modules,
@@ -387,14 +380,14 @@ def _source_gap_description(current_count: int, source_gate: dict[str, Any] | No
         score_text = f" Source strength is {score}/{minimum}." if score is not None and minimum is not None else ""
         return (
             f"This draft has {current_count} submitted source{'' if current_count == 1 else 's'}, "
-            "but Lycium could not verify enough source strength for full learner-facing generation."
+            "but Lycium could not verify enough source strength for review-ready source grounding."
             f"{score_text} "
             "Add targeted benchmark, textbook, lecture, lab, video, simulation, or assignment sources for the uncovered concepts."
         )
     return (
         f"This draft has {current_count} submitted source"
         f"{'' if current_count == 1 else 's'}, but Lycium could not verify enough source strength "
-        "before full course generation. Add benchmark, textbook, lecture, lab, video, simulation, or assignment sources."
+        "for review-ready source grounding. Add benchmark, textbook, lecture, lab, video, simulation, or assignment sources."
     )
 
 
@@ -516,7 +509,7 @@ def source_gap_quality_report(snapshot: CourseSnapshot) -> dict[str, Any]:
         "gate": "generation",
         "passed": False,
         "score": 0.0,
-        "errors": ["Course generation is blocked until source coverage meets the minimum policy."],
+        "errors": ["Course publication is blocked until source coverage meets the minimum policy."],
         "warnings": [],
         "metrics": {
             "currentSourceCount": int(gate.get("currentSourceCount") or 0),
@@ -537,7 +530,8 @@ def update_needs_sources_course_snapshot(
     generation_readiness: dict[str, Any] | None = None,
     session: Session | None = None,
 ) -> CourseSnapshot:
-    title = snapshot.title
+    title = _title_from_prompt(snapshot.prompt)
+    snapshot.title = title
     clean_source_urls = _unique_source_urls(source_urls)
     current_count = len(clean_source_urls)
     minimum_count = int(SOURCE_COVERAGE_POLICY["minimumCourseSources"])
@@ -641,8 +635,8 @@ def create_needs_sources_course_snapshot(
     gap_id = str(gap["id"])
     draft_outline = {
         "title": title,
-        "shortDescription": f"Draft course waiting for source coverage: {prompt[:120].strip()}",
-        "summary": "This course is scoped, but full generation is blocked until enough source evidence is attached.",
+        "shortDescription": f"A best-effort course draft covering the foundations and applications of {title}.",
+        "summary": "This course has a complete outline and preliminary lesson scaffolds that still require source review.",
         "modules": [],
         "provenance": {"mode": "needs_sources", "source_urls": clean_source_urls},
     }
@@ -675,6 +669,7 @@ def create_needs_sources_course_snapshot(
         desired_module_count=desired_module_count,
         source_packet=source_packet,
     )
+    draft.outline = outline
     structure = _needs_sources_structure(
         title=title,
         prompt=prompt,

@@ -283,7 +283,7 @@ test("uploaded files entered in the create-course UI reach course generation as 
   await page.getByLabel("Settings").click();
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
-  await page.getByRole("button", { name: /^Create Course$/i }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Create Course" });
   await expect(dialog).toBeVisible();
   await expect(page.getByPlaceholder("Describe the course you want to build...")).toBeEnabled();
@@ -395,7 +395,7 @@ test("course creation submits mixed URL and file inputs to generation", async ({
   await page.getByLabel("Settings").click();
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
-  await page.getByRole("button", { name: /^Create Course$/i }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Create Course" });
   await expect(dialog).toBeVisible();
 

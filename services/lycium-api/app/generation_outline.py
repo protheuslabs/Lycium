@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from statistics import mean
 from typing import Any
@@ -44,22 +45,42 @@ def _select_objects_for_outline(
     return rank_by_intent(objects, query=prompt)
 
 
-def _fallback_outline(prompt: str, module_count: int, goals: list[str]) -> dict[str, Any]:
+def _fallback_outline(prompt: str, module_count: int, _goals: list[str]) -> dict[str, Any]:
     title = _title_from_prompt(prompt)
+    subject = re.sub(r"\s+course$", "", title, flags=re.IGNORECASE).strip() or title
+    module_arcs = [
+        ("Foundations", ["Orientation and vocabulary", "Why the subject matters", "Foundational ideas"]),
+        ("Core Concepts", ["Essential concepts", "How the concepts connect", "Recognizing the concepts in context"]),
+        ("Models and Processes", ["Key models", "Common processes", "Choosing an appropriate model"]),
+        ("Methods and Tools", ["Core methods", "Using common tools", "Selecting a method"]),
+        ("Applied Practice", ["A guided application", "Working through constraints", "Reviewing an applied result"]),
+        ("Analysis and Reasoning", ["Breaking down a problem", "Comparing alternatives", "Supporting a conclusion"]),
+        ("Common Challenges", ["Frequent misconceptions", "Failure modes", "Troubleshooting an approach"]),
+        ("Systems and Context", ["The wider system", "Stakeholders and constraints", "Context-sensitive decisions"]),
+        ("Evaluation", ["Quality criteria", "Measuring outcomes", "Improving from evidence"]),
+        ("Advanced Applications", ["Complex scenarios", "Combining methods", "Adapting to new conditions"]),
+        ("Integration", ["Connecting the course ideas", "Planning an end-to-end approach", "Explaining key tradeoffs"]),
+        ("Capstone Practice", ["Defining a capstone problem", "Building a defensible solution", "Reflecting and revising"]),
+    ]
     modules: list[dict[str, Any]] = []
     for module_idx in range(1, module_count + 1):
-        module_title = f"Module {module_idx}: {goals[(module_idx - 1) % len(goals)]}"
+        arc_name, section_patterns = module_arcs[(module_idx - 1) % len(module_arcs)]
+        cycle = (module_idx - 1) // len(module_arcs)
+        arc_label = arc_name if cycle == 0 else f"{arc_name}, Continued"
+        module_title = f"Module {module_idx}: {arc_label} of {subject}"
         module_id = _stable_id("m", title, module_title, str(module_idx))
         sections = []
-        for section_idx in range(1, 4):
-            section_title = f"{module_title} - Part {section_idx}"
+        for section_idx, section_pattern in enumerate(section_patterns, start=1):
+            section_title = f"{section_pattern} in {subject}"
             section_id = _stable_id("s", module_id, section_title, str(section_idx))
             sections.append(
                 {
                     "id": section_id,
                     "title": section_title,
-                    "learning_objectives": [f"Explain {section_title.lower()}"],
-                    "concept_keywords": [goals[(section_idx - 1) % len(goals)].lower().replace(" ", "_")],
+                    "learning_objectives": [f"Explain and apply {section_pattern.lower()} in {subject}."],
+                    "concept_keywords": [
+                        token for token in tokenize(f"{section_pattern} {subject}") if len(token) > 3
+                    ][:5],
                     "estimated_minutes": 20,
                 }
             )
@@ -67,15 +88,18 @@ def _fallback_outline(prompt: str, module_count: int, goals: list[str]) -> dict[
             {
                 "id": module_id,
                 "title": module_title,
-                "learning_objectives": goals[:3],
+                "learning_objectives": [
+                    f"Explain the role of {arc_name.lower()} in {subject}.",
+                    f"Apply {arc_name.lower()} to a realistic {subject} problem.",
+                ],
                 "sections": sections,
             }
         )
 
     return {
         "title": title,
-        "shortDescription": f"A structured Lycium course generated from: {prompt[:120].strip()}",
-        "summary": f"Generated from prompt: {prompt}",
+        "shortDescription": f"A structured course covering the foundations, core concepts, applications, and evaluation of {subject}.",
+        "summary": f"A progressive introduction to {subject}, from foundational vocabulary through integrated practice.",
         "modules": modules,
         "provenance": {"mode": "fallback", "object_ids": []},
     }
@@ -168,8 +192,8 @@ def build_outline(
 
     return {
         "title": title,
-        "shortDescription": f"A personalized Lycium course generated from: {prompt[:120].strip()}",
-        "summary": f"Personalized draft outline for: {prompt}",
+        "shortDescription": f"A personalized course covering the foundations and applications of {title}.",
+        "summary": f"A progressive draft outline for {title}.",
         "modules": modules,
         "provenance": {"mode": "knowledge-base", "object_ids": [obj.id for obj in objects]},
     }

@@ -63,6 +63,12 @@ def test_needs_sources_snapshot_builds_generation_readiness_when_omitted() -> No
     assert readiness["status"] == "needs_sources"
     assert readiness["sourceEvidence"]["submittedEvidenceCount"] == 1
     assert generation_trace["generation_readiness"] == readiness
+    assert len(structure["modules"]) == 4
+    assert all(
+        section["sectionType"] == "lesson"
+        for module in structure["modules"]
+        for section in module["sections"]
+    )
 
 
 def test_source_gap_resume_updates_draft_then_queues_generation(client, monkeypatch) -> None:
@@ -387,10 +393,14 @@ def test_generation_with_weak_source_strength_returns_needs_sources_draft(client
 
     assert snapshot["status"] == "needs_sources"
     assert course["metadata"]["status"] == "needs_sources"
-    assert course["metadata"]["generationPlan"]["mode"] == "outline_first_source_gated_draft"
+    assert course["metadata"]["generationPlan"]["mode"] == "outline_first_best_effort_draft"
     assert gap["id"] == "source-strength"
     assert gap["coverageGate"]["gate"] == "source_strength"
     assert gap["missingConceptSourceCount"] == len(gap["conceptSourceNeeds"])
     assert gap["conceptSourceNeeds"] == []
-    assert "source strength" in course["modules"][0]["sections"][0]["content"][0]["value"].lower()
+    lesson_sections = [section for module in course["modules"] for section in module["sections"]]
+    assert all(section["sectionType"] == "lesson" for section in lesson_sections)
+    assert all(section["content"][0]["heading"] == "Explanation" for section in lesson_sections)
+    assert len({section["content"][0]["value"] for section in lesson_sections}) == len(lesson_sections)
+    assert all("section not yet generated" not in str(section["content"]).lower() for section in lesson_sections)
     assert course["modules"][0]["id"] == course["metadata"]["courseBuildOutline"]["modules"][0]["id"]

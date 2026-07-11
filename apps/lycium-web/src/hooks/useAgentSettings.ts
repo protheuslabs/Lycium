@@ -126,6 +126,34 @@ const activeAgentKey = (settings: { agent_keys?: AgentKeyRecord[] }) =>
 
 const localEndpointPattern = /^(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?(\/.*)?$/i;
 
+function providerExists(providers: AgentProviderRecord[], providerId: string) {
+  return providers.some((provider) => provider.id === providerId);
+}
+
+function detectedProviderIdFromCredential(credential: string, providers: AgentProviderRecord[]): string | null {
+  const trimmedCredential = credential.trim();
+  if (!trimmedCredential) {
+    return null;
+  }
+
+  const candidates: Array<[RegExp, string]> = [
+    [localEndpointPattern, "local-model"],
+    [/^sk-or-v1-/i, "openrouter"],
+    [/^sk-ant-/i, "anthropic"],
+    [/^AIza[a-z0-9_-]{16,}$/i, "google-gemini"],
+    [/^sk-(proj-|svcacct-|admin-)/i, "openai"],
+    [/^sk-[a-z0-9_-]{20,}$/i, "openai"],
+  ];
+
+  for (const [pattern, providerId] of candidates) {
+    if (pattern.test(trimmedCredential) && providerExists(providers, providerId)) {
+      return providerId;
+    }
+  }
+
+  return null;
+}
+
 const errorMessage = (err: unknown) => (err instanceof Error ? err.message : "");
 
 const isInvalidCredentialError = (err: unknown) => {
@@ -136,7 +164,7 @@ const isInvalidCredentialError = (err: unknown) => {
 export function useAgentSettings(routeKind: string, apiBase: string) {
   const lyciumApi = useMemo(() => createLyciumLocalApi(apiBase), [apiBase]);
   const [agentProviders, setAgentProviders] = useState<AgentProviderRecord[]>(DEFAULT_AGENT_PROVIDERS);
-  const [agentProviderId, setAgentProviderId] = useState("openai");
+  const [agentProviderId, setAgentProviderId] = useState("");
   const [agentApiKey, setAgentApiKey] = useState("");
   const [agentKeys, setAgentKeys] = useState<AgentKeyRecord[]>([]);
   const [apiKeySaveStatus, setApiKeySaveStatus] = useState<"idle" | "loading" | "invalid">("idle");
@@ -189,9 +217,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
       if (activeKey?.connection_status === "unverified") {
         setSettingsMessage(`${activeKey.provider_label} saved, but Lycium could not verify it yet.`);
       } else {
-        setSettingsMessage(
-          activeKey ? `${activeKey.provider_label} verified with ${activeKey.models?.length ?? 0} models.` : "AI connection verified."
-        );
+        setSettingsMessage("");
       }
     } catch (err) {
       console.warn("Unable to save settings:", err);
@@ -218,14 +244,9 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
 
     try {
       const settings = await lyciumApi.activateAgentKey({ key_id: keyId });
-      const activeKey = activeAgentKey(settings);
       setAgentKeys(settings.agent_keys ?? []);
-      if (activeKey?.provider_id) {
-        setAgentProviderId(activeKey.provider_id);
-      }
-      setAgentApiKey(isLocalAgentKey(activeKey, agentProviders) ? activeKey?.key_preview ?? "" : "");
       setSettingsStatus("success");
-      setSettingsMessage(activeKey ? `${activeKey.provider_label} is now active.` : "Active key updated.");
+      setSettingsMessage("");
     } catch (err) {
       console.warn("Unable to activate key:", err);
       setSettingsStatus("error");
@@ -241,7 +262,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
       const settings = await lyciumApi.updateAgentKeyModel({ key_id: keyId, model });
       setAgentKeys(settings.agent_keys ?? []);
       setSettingsStatus("success");
-      setSettingsMessage(`Model set to ${model}.`);
+      setSettingsMessage("");
     } catch (err) {
       console.warn("Unable to update model:", err);
       setSettingsStatus("error");
@@ -266,7 +287,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
       setSettingsMessage(
         activeKey?.connection_status === "unverified"
           ? activeKey.last_error || activeKey.connection_message || "Connection could not be verified."
-          : `${activeKey?.provider_label ?? "AI connection"} verified.`
+          : ""
       );
     } catch (err) {
       console.warn("Unable to verify key:", err);
@@ -290,12 +311,20 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
       }
       setAgentApiKey(isLocalAgentKey(activeKey, agentProviders) ? activeKey?.key_preview ?? "" : "");
       setSettingsStatus("success");
-      setSettingsMessage(activeKey ? `${activeKey.provider_label} is now active.` : "AI connection deleted.");
+      setSettingsMessage(activeKey ? "" : "AI connection deleted.");
     } catch (err) {
       console.warn("Unable to delete key:", err);
       setSettingsStatus("error");
       setSettingsMessage(err instanceof Error ? err.message : "Could not delete that AI connection.");
     }
+  };
+
+  const handleEditAgentKey = (key: AgentKeyRecord) => {
+    setAgentProviderId(key.provider_id);
+    setAgentApiKey(key.local_provider ? key.key_preview : "");
+    setApiKeySaveStatus("idle");
+    setSettingsStatus("idle");
+    setSettingsMessage("");
   };
 
   const handleThemeModeChange = (mode: ThemeMode) => {
@@ -310,6 +339,14 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     setApiKeySaveStatus("idle");
     setSettingsStatus("idle");
     setSettingsMessage("");
+  };
+
+  const handleAgentApiKeyChange = (apiKey: string) => {
+    const detectedProviderId = detectedProviderIdFromCredential(apiKey, agentProviders);
+    setAgentApiKey(apiKey);
+    if (detectedProviderId && detectedProviderId !== agentProviderId) {
+      setAgentProviderId(detectedProviderId);
+    }
   };
 
   useLayoutEffect(() => {
@@ -386,18 +423,16 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
         setAgentProviderId((currentProviderId) =>
           activeKey?.provider_id && loadedProviders.some((provider) => provider.id === activeKey.provider_id)
             ? activeKey.provider_id
-            : loadedProviders.some((provider) => provider.id === currentProviderId)
+            : currentProviderId && loadedProviders.some((provider) => provider.id === currentProviderId)
               ? currentProviderId
-              : loadedProviders[0]?.id || "openai"
+              : ""
         );
         setAgentApiKey(isLocalAgentKey(activeKey, loadedProviders) ? activeKey?.key_preview ?? "" : "");
         setAgentKeys(settings.agent_keys ?? []);
         setSettingsMessage(
           activeKey?.connection_status === "unverified"
             ? `${activeKey.provider_label} is saved but not verified yet.`
-            : activeKey
-              ? `${activeKey.provider_label} is active with ${activeKey.model ?? "no model selected"}.`
-              : ""
+            : ""
         );
       })
       .catch((err) => {
@@ -405,9 +440,9 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
         console.warn("Unable to load settings:", err);
         setAgentProviders(DEFAULT_AGENT_PROVIDERS);
         setAgentProviderId((currentProviderId) =>
-          DEFAULT_AGENT_PROVIDERS.some((provider) => provider.id === currentProviderId)
+          currentProviderId && DEFAULT_AGENT_PROVIDERS.some((provider) => provider.id === currentProviderId)
             ? currentProviderId
-            : DEFAULT_AGENT_PROVIDERS[0]?.id || "openai"
+            : ""
         );
         setSettingsStatus("error");
         setSettingsMessage("");
@@ -434,11 +469,12 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
     themeMode,
     handleActivateAgentKey,
     handleAgentModelChange,
+    handleEditAgentKey,
     handleVerifyAgentKey,
     handleDeleteAgentKey,
     handleSettingsSubmit,
     handleThemeModeChange,
-    setAgentApiKey,
+    setAgentApiKey: handleAgentApiKeyChange,
     setAgentProviderId: handleAgentProviderChange,
     setApiKeySaveStatus,
   };

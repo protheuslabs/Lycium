@@ -43,7 +43,7 @@ const passingQualityReport: LyciumCourseQualityReport = {
 };
 
 describe("course lifecycle summaries", () => {
-  it("routes source-gated drafts to source input", () => {
+  it("keeps source-incomplete drafts openable with source input available", () => {
     const summary = getCourseLifecycleSummary(
       course({
         status: "needs_sources",
@@ -70,7 +70,7 @@ describe("course lifecycle summaries", () => {
 
     expect(summary.tone).toBe("source");
     expect(summary.needsSourceInput).toBe(true);
-    expect(summary.canOpen).toBe(false);
+    expect(summary.canOpen).toBe(true);
   });
 
   it("marks passing ready-for-review courses as publishable", () => {

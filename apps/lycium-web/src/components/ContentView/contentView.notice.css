@@ -1,0 +1,34 @@
+.course-source-notice {
+  width: min(100%, 54rem);
+  box-sizing: border-box;
+  margin: 0 auto 1.25rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid #b7791f;
+  border-radius: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem;
+  color: var(--lycium-color-text);
+  background: color-mix(in srgb, #f6c453 16%, var(--lycium-color-surface));
+}
+
+.course-source-notice strong {
+  flex: 0 0 auto;
+  color: #8a5a13;
+}
+
+.course-source-notice span {
+  color: var(--lycium-color-text-muted);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-notice strong {
+  color: #f4c86a;
+}
+
+@media (max-width: 560px) {
+  .course-source-notice {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+}

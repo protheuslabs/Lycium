@@ -225,7 +225,7 @@ def calculate_source_strength(
     if concept_coverage["status"] != "ready":
         gaps.append({"code": "concept_coverage", "message": "Accepted sources do not yet cover the required concept candidates."})
     if score < minimum_score:
-        gaps.append({"code": "source_strength", "message": "Accepted source evidence is not strong enough for full learner-facing generation."})
+        gaps.append({"code": "source_strength", "message": "Accepted source evidence is not strong enough for review-ready source grounding or publication."})
     status = "blocked" if not has_evidence else "weak" if score < minimum_score else "adequate" if score < 80 else "strong"
     ready = status in {"adequate", "strong"} and concept_coverage["status"] == "ready"
     return {

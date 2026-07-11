@@ -37,6 +37,7 @@ type ContentViewProps = {
   onSectionTimedStatusChange?: (sectionId: string, hasTimedQuizInProgress: boolean) => void;
   sources: SourceRecord[];
   showCourseSourcesPage?: boolean;
+  hasIncompleteSources?: boolean;
   isEditMode?: boolean;
   onCourseTitleChange?: (title: string) => void;
   onModuleTitleChange?: (moduleIndex: number, title: string) => void;
@@ -76,6 +77,7 @@ export default function ContentView({
   onSectionTimedStatusChange,
   sources,
   showCourseSourcesPage = false,
+  hasIncompleteSources = false,
   isEditMode = false,
   onCourseTitleChange,
   onModuleTitleChange,
@@ -264,6 +266,12 @@ export default function ContentView({
   
   return (
     <main className={`content-view content-view--${pageType}`} data-module-index={moduleIndex}>
+      {hasIncompleteSources && (
+        <div className="course-source-notice" role="status">
+          <strong>Sources incomplete</strong>
+          <span>Some sections may be missing supporting evidence. You can still use the course.</span>
+        </div>
+      )}
       <p className="course-name course-editable-line">
         <span className="course-editable-line-content">{courseTitle}</span>
         {isEditMode && (

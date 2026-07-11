@@ -5,7 +5,6 @@ import Modal from "../Modal/Modal";
 import CatalogActionCard from "./CatalogActionCard";
 import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogVisibleCourse } from "./catalogUtils";
-import { sourceGapSummary } from "../../utils/courseSourceGaps";
 import { getCourseLifecycleSummary } from "../../utils/courseLifecycle";
 import { getLocalDraftMetadata } from "../../utils/localCourseDrafts";
 
@@ -13,7 +12,6 @@ type CatalogCourseCardProps = {
   visibleCourse: CatalogVisibleCourse;
   onOpenCourse: (course: CourseEntry) => void;
   onOpenInfo: (course: CourseEntry) => void;
-  onOpenSourceGaps: (course: CourseEntry) => void;
   onSearchPrerequisite: (query: string) => void;
   isPublishing: boolean;
   selected?: boolean;
@@ -25,7 +23,6 @@ export default function CatalogCourseCard({
   visibleCourse,
   onOpenCourse,
   onOpenInfo,
-  onOpenSourceGaps,
   onSearchPrerequisite,
   isPublishing,
   selected = false,
@@ -38,21 +35,17 @@ export default function CatalogCourseCard({
   const hasMounted = useClientMounted();
   const localDraft = getLocalDraftMetadata(course);
   const lifecycle = getCourseLifecycleSummary(course);
-  const sourceSummary = sourceGapSummary(course);
+  const catalogTone = lifecycle.needsSourceInput ? "draft" : lifecycle.tone;
   const requiresPrerequisites = !hasCourseActivity && unmetPrerequisites.length > 0;
   const requiredCourseLabel = `Requires ${unmetPrerequisites.length} course${unmetPrerequisites.length === 1 ? "" : "s"}`;
-  const canActivateCard = selectionMode || lifecycle.needsSourceInput || (!requiresPrerequisites && lifecycle.canOpen);
-  const shouldShowLifecycleAction = lifecycle.needsSourceInput || lifecycle.status === "failed";
+  const canActivateCard = selectionMode || (!requiresPrerequisites && lifecycle.canOpen);
+  const shouldShowLifecycleAction = lifecycle.status === "failed";
   const requirementLabel = requirementContexts.map((context) => context.title).join("; ");
   const canShowActivity = hasMounted && hasCourseActivity;
 
   const handleCourseOpen = () => {
     if (selectionMode) {
       onToggleSelect?.(course.key);
-      return;
-    }
-    if (lifecycle.needsSourceInput) {
-      onOpenSourceGaps(course);
       return;
     }
     if (!requiresPrerequisites && lifecycle.canOpen) {
@@ -62,7 +55,7 @@ export default function CatalogCourseCard({
 
   return (
     <CatalogActionCard
-      className={`course-card course-card--lifecycle-${lifecycle.tone} ${requiresPrerequisites && !selectionMode ? "course-card--locked" : ""} ${selectionMode ? "course-card--select-mode" : ""} ${selected ? "course-card--selected" : ""}`}
+      className={`course-card course-card--lifecycle-${catalogTone} ${requiresPrerequisites && !selectionMode ? "course-card--locked" : ""} ${selectionMode ? "course-card--select-mode" : ""} ${selected ? "course-card--selected" : ""}`}
       disabled={!canActivateCard}
       onActivate={handleCourseOpen}
       pressed={selected || undefined}
@@ -83,7 +76,9 @@ export default function CatalogCourseCard({
       <h3>
         {course.title}
         {localDraft && <span className="course-draft-badge">{localDraft.parentCourseKey ? "Fork" : "Local draft"}</span>}
-        <span className={`course-lifecycle-badge course-lifecycle-badge-${lifecycle.tone}`}>{lifecycle.badgeLabel}</span>
+        {!lifecycle.needsSourceInput && (
+          <span className={`course-lifecycle-badge course-lifecycle-badge-${lifecycle.tone}`}>{lifecycle.badgeLabel}</span>
+        )}
       </h3>
       {(bookmarkedSection || requirementLabel) && (
         <p className="course-active-subheader">
@@ -97,11 +92,7 @@ export default function CatalogCourseCard({
         </p>
       )}
       {course.data.shortDescription && <p className="course-short-description">{course.data.shortDescription}</p>}
-      {lifecycle.needsSourceInput ? (
-        <p className="course-progress-percentage course-progress-empty course-progress-required course-progress-needs-sources">
-          <span>Needs sources: {sourceSummary.blockingGaps.length} blocking gap{sourceSummary.blockingGaps.length === 1 ? "" : "s"}</span>
-        </p>
-      ) : !canShowActivity ? (
+      {!canShowActivity ? (
         <p className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}>
           {requiresPrerequisites && !selectionMode ? (
             <button
@@ -132,10 +123,6 @@ export default function CatalogCourseCard({
           disabled={isPublishing}
           onClick={(event) => {
             event.stopPropagation();
-            if (lifecycle.needsSourceInput) {
-              onOpenSourceGaps(course);
-              return;
-            }
             onOpenInfo(course);
           }}
           onKeyDown={(event) => event.stopPropagation()}

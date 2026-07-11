@@ -25,6 +25,7 @@ import {
   titleFromUrl,
 } from "../CourseEditing/courseEditPrimitives";
 import { collectReferencedCourseSourceIds } from "./sourceReferences";
+import { hasBlockingSourceGaps } from "../../utils/courseSourceGaps";
 
 const EMPTY_MODULES: CourseModule[] = [];
 
@@ -458,6 +459,7 @@ export default function CourseLearningLayout({
           onSectionTimedStatusChange={onSectionTimedStatusChange}
           sources={displayedSources}
           showCourseSourcesPage={isCourseSourcesPageActive}
+          hasIncompleteSources={Boolean(selectedCourse && hasBlockingSourceGaps(selectedCourse))}
           isEditMode={activeEditMode}
           onCourseTitleChange={setDraftCourseTitle}
           onModuleTitleChange={handleModuleTitleChange}

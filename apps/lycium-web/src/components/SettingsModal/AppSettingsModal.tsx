@@ -20,11 +20,13 @@ export default function AppSettingsModal({ isOpen, agentSettings, onClose }: App
       apiKeySaveStatus={agentSettings.apiKeySaveStatus}
       verifyingAgentKeyId={agentSettings.verifyingAgentKeyId}
       canAddAgentKey={agentSettings.canAddAgentKey}
+      settingsStatus={agentSettings.settingsStatus}
+      settingsMessage={agentSettings.settingsMessage}
       themeMode={agentSettings.themeMode}
       onClose={onClose}
       onActivateAgentKey={agentSettings.handleActivateAgentKey}
       onAgentModelChange={agentSettings.handleAgentModelChange}
-      onVerifyAgentKey={agentSettings.handleVerifyAgentKey}
+      onEditAgentKey={agentSettings.handleEditAgentKey}
       onDeleteAgentKey={agentSettings.handleDeleteAgentKey}
       onAgentProviderChange={agentSettings.setAgentProviderId}
       onAgentApiKeyChange={agentSettings.setAgentApiKey}

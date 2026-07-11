@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import Dropdown from "../Dropdown/Dropdown";
+import type { DropdownOption } from "../Dropdown/Dropdown";
 import Modal from "../Modal/Modal";
 import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
-import {
-  describeAgentKeyConnectionDetail,
-  describeAgentKeyConnectionStatus,
-} from "../../utils/aiConnectionReadiness";
+import { describeAgentKeyConnectionDetail, describeAgentKeyConnectionStatus } from "../../utils/aiConnectionReadiness";
 
 type SettingsModalProps = {
   isOpen: boolean;
@@ -18,11 +16,13 @@ type SettingsModalProps = {
   apiKeySaveStatus: "idle" | "loading" | "invalid";
   verifyingAgentKeyId: string | null;
   canAddAgentKey: boolean;
+  settingsStatus: "idle" | "loading" | "error" | "success";
+  settingsMessage: string;
   themeMode: ThemeMode;
   onClose: () => void;
   onActivateAgentKey: (keyId: string) => void;
   onAgentModelChange: (keyId: string, model: string) => void;
-  onVerifyAgentKey: (keyId: string) => void;
+  onEditAgentKey: (key: AgentKeyRecord) => void;
   onDeleteAgentKey: (keyId: string) => void;
   onAgentProviderChange: (providerId: string) => void;
   onAgentApiKeyChange: (apiKey: string) => void;
@@ -40,11 +40,13 @@ export default function SettingsModal({
   apiKeySaveStatus,
   verifyingAgentKeyId,
   canAddAgentKey,
+  settingsStatus,
+  settingsMessage,
   themeMode,
   onClose,
   onActivateAgentKey,
   onAgentModelChange,
-  onVerifyAgentKey,
+  onEditAgentKey,
   onDeleteAgentKey,
   onAgentProviderChange,
   onAgentApiKeyChange,
@@ -53,9 +55,38 @@ export default function SettingsModal({
   onThemeModeChange,
 }: SettingsModalProps) {
   const [keyPendingDelete, setKeyPendingDelete] = useState<AgentKeyRecord | null>(null);
+  const [openKeyMenuId, setOpenKeyMenuId] = useState<string | null>(null);
   const pendingDelete = keyPendingDelete && agentKeys.some((key) => key.id === keyPendingDelete.id)
     ? keyPendingDelete
     : null;
+
+  useEffect(() => {
+    if (!openKeyMenuId) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const menuRoot = document.querySelector(`[data-settings-key-menu-id="${openKeyMenuId}"]`);
+      if (menuRoot?.contains(event.target as Node)) {
+        return;
+      }
+      setOpenKeyMenuId(null);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpenKeyMenuId(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openKeyMenuId]);
 
   if (!isOpen) {
     return null;
@@ -63,15 +94,29 @@ export default function SettingsModal({
 
   const isSavingAgentKey = apiKeySaveStatus === "loading";
   const isSettingsBusy = isSavingAgentKey || Boolean(verifyingAgentKeyId);
-  const selectedProvider =
-    agentProviders.find((provider) => provider.id === agentProviderId) ?? agentProviders[0];
+  const selectedProvider = agentProviders.find((provider) => provider.id === agentProviderId);
   const credentialLabel = selectedProvider?.credential_label ?? "api key";
   const credentialPlaceholder = selectedProvider?.credential_placeholder ?? credentialLabel;
   const isLocalProvider = Boolean(selectedProvider?.local_provider);
-  const providerOptions = agentProviders.map((provider) => ({
+  const localProviderOptions = agentProviders.filter((provider) => provider.local_provider).map((provider) => ({
     value: provider.id,
     label: provider.label,
   }));
+  const apiProviderOptions = agentProviders.filter((provider) => !provider.local_provider).map((provider) => ({
+    value: provider.id,
+    label: provider.label,
+  }));
+  const providerOptions: DropdownOption[] = agentProviders.length > 0
+    ? [
+        { value: "", label: "Select" },
+        ...(localProviderOptions.length > 0
+          ? [{ kind: "separator" as const, label: "Local" }, ...localProviderOptions]
+          : []),
+        ...(apiProviderOptions.length > 0
+          ? [{ kind: "separator" as const, label: "API" }, ...apiProviderOptions]
+          : []),
+      ]
+    : [];
 
   const handleApiKeyChange = (value: string) => {
     onAgentApiKeyChange(value);
@@ -86,12 +131,16 @@ export default function SettingsModal({
     }
     onDeleteAgentKey(pendingDelete.id);
     setKeyPendingDelete(null);
+    setOpenKeyMenuId(null);
   };
 
   const handleClose = () => {
     setKeyPendingDelete(null);
+    setOpenKeyMenuId(null);
     onClose();
   };
+
+  const providerKindLabel = (key: AgentKeyRecord) => (key.local_provider ? "local" : "cloud");
 
   return (
     <Modal
@@ -109,10 +158,14 @@ export default function SettingsModal({
               <section className="settings-key-list" aria-label="Saved API keys">
                 <div className="settings-key-stack">
                   {agentKeys.map((key) => {
-                    const isVerifyingKey = verifyingAgentKeyId === key.id;
                     const isUnverified = key.connection_status === "unverified";
+                    const isKeyMenuOpen = openKeyMenuId === key.id;
+                    const isVerifyingKey = verifyingAgentKeyId === key.id;
                     const connectionStatus = describeAgentKeyConnectionStatus(key, { isChecking: isVerifyingKey });
                     const connectionDetail = describeAgentKeyConnectionDetail(key, { isChecking: isVerifyingKey });
+                    const providerKind = providerKindLabel(key);
+                    const showsActiveCheck = connectionStatus.status === "active";
+                    const showsStatusIndicator = !showsActiveCheck && connectionStatus.status !== "ready";
                     return (
                       <div
                         key={key.id}
@@ -120,6 +173,8 @@ export default function SettingsModal({
                         data-connection-status={connectionStatus.status}
                         role="button"
                         tabIndex={isSettingsBusy ? -1 : 0}
+                        aria-label={`${key.provider_label} ${providerKind} connection${key.is_active ? ", active" : ""}`}
+                        aria-pressed={key.is_active}
                         onClick={() => onActivateAgentKey(key.id)}
                         onKeyDown={(event) => {
                           if (isSettingsBusy) return;
@@ -130,8 +185,10 @@ export default function SettingsModal({
                         }}
                         aria-disabled={isSettingsBusy}
                       >
-                        <span className="settings-key-provider">{key.provider_label}</span>
-                        <span className="settings-key-preview">{key.key_preview}</span>
+                        <span className="settings-key-provider">
+                          {key.provider_label}
+                          <span className="settings-key-provider-kind"> - {providerKind}</span>
+                        </span>
                         <label className="settings-model-field" onClick={(event) => event.stopPropagation()}>
                           <Dropdown
                             className="settings-model-dropdown"
@@ -146,35 +203,61 @@ export default function SettingsModal({
                             placeholder="Model"
                           />
                         </label>
-                        <span className="settings-key-actions" onClick={(event) => event.stopPropagation()}>
+                        <span
+                          className="settings-key-actions"
+                          data-settings-key-menu-id={key.id}
+                          onClick={(event) => event.stopPropagation()}
+                        >
                           <button
-                            className="settings-key-action-button"
+                            className="settings-key-menu-button"
                             type="button"
                             disabled={isSettingsBusy}
-                            onClick={() => onVerifyAgentKey(key.id)}
-                            aria-label={`Refresh ${key.provider_label} connection`}
-                            title="Refresh connection"
+                            aria-label={`${key.provider_label} actions`}
+                            aria-haspopup="menu"
+                            aria-expanded={isKeyMenuOpen}
+                            onClick={() => setOpenKeyMenuId((currentKeyId) => (currentKeyId === key.id ? null : key.id))}
+                            title="Connection actions"
                           >
-                            {isVerifyingKey ? (
-                              <span className="settings-key-action-spinner" aria-hidden="true" />
-                            ) : (
-                              <RefreshIcon />
-                            )}
+                            <MoreIcon />
                           </button>
-                          <button
-                            className="settings-key-action-button settings-key-delete-button"
-                            type="button"
-                            disabled={isSettingsBusy}
-                            onClick={() => setKeyPendingDelete(key)}
-                            aria-label={`Delete ${key.provider_label} connection`}
-                            title="Delete connection"
-                          >
-                            <TrashIcon />
-                          </button>
+                          {isKeyMenuOpen && (
+                            <div className="settings-key-menu" role="menu" aria-label={`${key.provider_label} actions`}>
+                              <button
+                                className="settings-key-menu-item"
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  onEditAgentKey(key);
+                                  setOpenKeyMenuId(null);
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                className="settings-key-menu-item settings-key-menu-item-danger"
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setKeyPendingDelete(key);
+                                  setOpenKeyMenuId(null);
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
                         </span>
-                        <span className="settings-key-state" title={connectionDetail} aria-label={connectionDetail}>
-                          {connectionStatus.label}
-                        </span>
+                        {showsActiveCheck ? (
+                          <span className="settings-key-active-check" title="Active connection" aria-label="Active connection">
+                            <CheckIcon />
+                          </span>
+                        ) : showsStatusIndicator ? (
+                          <span className="settings-key-state" title={connectionDetail} aria-label={connectionDetail}>
+                            {connectionStatus.label}
+                          </span>
+                        ) : (
+                          <span className="settings-key-state-placeholder" aria-hidden="true" />
+                        )}
                       </div>
                     );
                   })}
@@ -186,13 +269,13 @@ export default function SettingsModal({
                 <div className="settings-entry-field settings-provider-picker">
                   <Dropdown
                     className="settings-provider-dropdown"
-                    value={selectedProvider?.id ?? ""}
+                    value={agentProviderId}
                     options={providerOptions}
                     onChange={onAgentProviderChange}
                     ariaLabel="AI provider"
                     disabled={isSettingsBusy}
                     emptyLabel="No providers available"
-                    placeholder="Provider"
+                    placeholder="Select"
                   />
                 </div>
                 <label className="settings-entry-field settings-entry-field-key" htmlFor="agent-api-key">
@@ -222,6 +305,14 @@ export default function SettingsModal({
                   )}
                 </button>
               </div>
+              {settingsMessage && (
+                <p
+                  className={`settings-status-message settings-status-message-${settingsStatus}`}
+                  role={settingsStatus === "error" ? "alert" : "status"}
+                >
+                  {settingsMessage}
+                </p>
+              )}
             </form>
           </div>
         </section>
@@ -254,18 +345,18 @@ export default function SettingsModal({
   );
 }
 
-function RefreshIcon() {
+function MoreIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M17.7 6.3A7.9 7.9 0 0 0 4.6 10a1 1 0 1 0 2 .2 5.9 5.9 0 0 1 9.8-2.7l-1.9 1.9A.9.9 0 0 0 15.1 11H20a.9.9 0 0 0 .9-.9V5.2a.9.9 0 0 0-1.6-.6l-1.6 1.7ZM6.3 17.7A7.9 7.9 0 0 0 19.4 14a1 1 0 1 0-2-.2 5.9 5.9 0 0 1-9.8 2.7l1.9-1.9A.9.9 0 0 0 8.9 13H4a.9.9 0 0 0-.9.9v4.9a.9.9 0 0 0 1.6.6l1.6-1.7Z" />
+      <path d="M5 12a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm5 0a2 2 0 1 1 4 0 2 2 0 0 1-4 0Zm5 0a2 2 0 1 1 4 0 2 2 0 0 1-4 0Z" />
     </svg>
   );
 }
 
-function TrashIcon() {
+function CheckIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-      <path d="M9 3.8A1.8 1.8 0 0 1 10.8 2h2.4A1.8 1.8 0 0 1 15 3.8V5h4a1 1 0 1 1 0 2h-1.1l-.8 12.1A3.1 3.1 0 0 1 14 22h-4a3.1 3.1 0 0 1-3.1-2.9L6.1 7H5a1 1 0 1 1 0-2h4V3.8Zm2 .2v1h2V4h-2Zm-1 6a1 1 0 0 0-1 1v6a1 1 0 1 0 2 0v-6a1 1 0 0 0-1-1Zm4 0a1 1 0 0 0-1 1v6a1 1 0 1 0 2 0v-6a1 1 0 0 0-1-1Z" />
+      <path d="M9.6 17.2a1 1 0 0 1-.7-.3l-4.1-4.1a1 1 0 1 1 1.4-1.4l3.4 3.4 8.2-8.2a1 1 0 1 1 1.4 1.4l-8.9 8.9a1 1 0 0 1-.7.3Z" />
     </svg>
   );
 }
