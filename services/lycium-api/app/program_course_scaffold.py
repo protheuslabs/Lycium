@@ -4,6 +4,11 @@ import re
 from typing import Any
 
 from app.course_build_task_reports import build_course_build_task_report, build_program_course_shell_readiness_report
+from app.curriculum_assembly_policy import (
+    cluster_generation_threshold_report,
+    curriculum_assembly_threshold_policy,
+    program_generation_threshold_report,
+)
 from app.program_course_shell_actions import build_program_course_shell_action_plan
 from app.program_source_acquisition import build_program_source_acquisition_plan
 
@@ -92,6 +97,7 @@ def _course_fit_evidence(
     section_score = _overlap_ratio(requirement_terms, section_terms)
     concept_score = _overlap_ratio(requirement_terms, concept_terms)
     catalog_score = _overlap_ratio(requirement_terms, catalog_terms)
+    reverse_catalog_score = _overlap_ratio(catalog_terms, requirement_terms)
     has_content_evidence = bool(module_terms or section_terms or concept_terms)
     fit_score = max(
         0.95 if course_id_match else 0.0,
@@ -101,6 +107,7 @@ def _course_fit_evidence(
         section_score,
         concept_score,
         catalog_score * 0.86,
+        reverse_catalog_score * 0.68,
     )
     if has_content_evidence and title_slug_match and max(module_score, section_score, concept_score, catalog_score) < 0.2:
         fit_score = 0.58
@@ -121,9 +128,47 @@ def _course_fit_evidence(
             "sectionTitleOverlap": round(section_score, 4),
             "conceptTitleOverlap": round(concept_score, 4),
             "catalogOverlap": round(catalog_score, 4),
+            "reverseCatalogOverlap": round(reverse_catalog_score, 4),
         },
         "inspectedFields": ["title", "shortDescription", "tags", "moduleTitles", "sectionTitles", "conceptTitles"],
     }
+
+
+def _unique_known_course_candidates(known_index: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    candidates: dict[str, dict[str, Any]] = {}
+    for course in known_index.values():
+        course_id = str(course.get("courseId") or course.get("title") or "").strip()
+        title = str(course.get("title") or course_id).strip()
+        key = _slugify(course_id or title)
+        if key and key not in candidates:
+            candidates[key] = course
+    return list(candidates.values())
+
+
+def _best_known_course_match(
+    *,
+    course_id: str,
+    title: str,
+    group: dict[str, Any],
+    known_index: dict[str, dict[str, Any]],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    exact = known_index.get(_slugify(course_id)) or known_index.get(_slugify(title))
+    if exact:
+        return exact, _course_fit_evidence(course_id=course_id, title=title, group=group, candidate=exact)
+
+    best_candidate: dict[str, Any] | None = None
+    best_evidence: dict[str, Any] | None = None
+    best_score = 0.0
+    for candidate in _unique_known_course_candidates(known_index):
+        evidence = _course_fit_evidence(course_id=course_id, title=title, group=group, candidate=candidate)
+        if not evidence:
+            continue
+        score = float(evidence.get("fitScore") or 0)
+        if score > best_score:
+            best_candidate = candidate
+            best_evidence = evidence
+            best_score = score
+    return best_candidate, best_evidence
 
 
 def _requirement_course_ids(requirements: list[dict[str, Any]]) -> list[str]:
@@ -303,6 +348,42 @@ def _source_request_for_requirement(
     }
 
 
+def _requirement_description(requirement: dict[str, Any], title: str) -> str:
+    description = str(requirement.get("description") or "").strip()
+    if description:
+        return description
+    return f"Complete a source-backed course covering {title}."
+
+
+def _course_kind_summary(
+    *,
+    course_id: str,
+    title: str,
+    requirement: dict[str, Any],
+    action: dict[str, Any],
+    source_request: dict[str, Any],
+    course_build_task: dict[str, Any],
+    prerequisite_course_ids: list[str],
+    importance: str,
+) -> dict[str, Any]:
+    creates_empty_shell = action.get("action") == "create_empty_course"
+    return {
+        "contractVersion": "cluster-course-kind-v1",
+        "courseId": course_id,
+        "requirementId": str(requirement.get("id") or ""),
+        "title": title,
+        "description": _requirement_description(requirement, title),
+        "action": str(action.get("action") or ""),
+        "status": "empty_course_shell" if creates_empty_shell else "linked_existing_course",
+        "sourceStatus": "needs_sources" if creates_empty_shell else "existing_course_available",
+        "estimatedHours": requirement.get("estimatedHours"),
+        "importance": importance,
+        "prerequisiteCourseIds": list(prerequisite_course_ids),
+        "requiredConcepts": source_request.get("requiredConcepts") if creates_empty_shell else [],
+        "courseBuildTaskStatus": str(course_build_task.get("status") or ""),
+    }
+
+
 def build_course_scaffold_plan(
     groups: list[dict[str, Any]],
     known_course_ids: set[str] | None = None,
@@ -310,12 +391,17 @@ def build_course_scaffold_plan(
 ) -> dict[str, Any]:
     known_index = _known_course_index(known_course_ids, known_courses)
     clusters: list[dict[str, Any]] = []
+    cluster_course_kinds: dict[str, list[dict[str, Any]]] = {}
     courses: list[dict[str, Any]] = []
     prior_group_course_ids: list[str] = []
 
     def course_action(course_id: str, title: str, group: dict[str, Any]) -> dict[str, Any]:
-        existing = known_index.get(_slugify(course_id)) or known_index.get(_slugify(title))
-        fit_evidence = _course_fit_evidence(course_id=course_id, title=title, group=group, candidate=existing)
+        existing, fit_evidence = _best_known_course_match(
+            course_id=course_id,
+            title=title,
+            group=group,
+            known_index=known_index,
+        )
         if existing and fit_evidence and fit_evidence["fitScore"] >= 0.7:
             return {
                 "action": "link_existing_course",
@@ -334,21 +420,43 @@ def build_course_scaffold_plan(
             title = str(requirement.get("title") or course_id)
             action = course_action(course_id, title, group)
             importance = str(requirement.get("importance") or "required")
+            prerequisite_ids = list(prerequisite_course_ids)
             source_request = _source_request_for_requirement(
                 goal_title=str(group.get("title") or group.get("displayName") or title),
                 requirement=requirement,
                 course_id=course_id,
                 title=title,
             )
+            course_build_task = _course_build_task(
+                course_id=course_id,
+                title=title,
+                action=action["action"],
+                status=action["status"],
+                prerequisite_course_ids=prerequisite_ids,
+                importance=importance,
+            )
+            cluster_course_kinds.setdefault(str(group.get("id") or ""), []).append(
+                _course_kind_summary(
+                    course_id=course_id,
+                    title=title,
+                    requirement=requirement,
+                    action=action,
+                    source_request=source_request,
+                    course_build_task=course_build_task,
+                    prerequisite_course_ids=prerequisite_ids,
+                    importance=importance,
+                )
+            )
             courses.append({
                 "clusterId": group["id"],
                 "requirementId": requirement["id"],
                 "courseId": course_id,
                 "title": title,
+                "description": _requirement_description(requirement, title),
                 **action,
                 "estimatedHours": requirement.get("estimatedHours"),
                 "importance": importance,
-                "prerequisiteCourseIds": prerequisite_course_ids,
+                "prerequisiteCourseIds": prerequisite_ids,
                 "sourceRequest": source_request if action["action"] == "create_empty_course" else None,
                 "courseWrapper": _course_wrapper(
                     course_id=course_id,
@@ -363,14 +471,7 @@ def build_course_scaffold_plan(
                     source_request=source_request,
                     status=action["status"],
                 ) if action["action"] == "create_empty_course" else None,
-                "courseBuildTask": _course_build_task(
-                    course_id=course_id,
-                    title=title,
-                    action=action["action"],
-                    status=action["status"],
-                    prerequisite_course_ids=prerequisite_course_ids,
-                    importance=importance,
-                ),
+                "courseBuildTask": course_build_task,
             })
         elif requirement_type == "requirement_set":
             for nested in _items(requirement.get("requirements")):
@@ -380,21 +481,43 @@ def build_course_scaffold_plan(
                 if isinstance(course_id, str) and course_id:
                     action = course_action(course_id, course_id, group)
                     importance = str(requirement.get("importance") or "required")
+                    prerequisite_ids = list(prerequisite_course_ids)
                     source_request = _source_request_for_requirement(
                         goal_title=str(group.get("title") or group.get("displayName") or course_id),
                         requirement=requirement,
                         course_id=course_id,
                         title=course_id,
                     )
+                    course_build_task = _course_build_task(
+                        course_id=course_id,
+                        title=course_id,
+                        action=action["action"],
+                        status=action["status"],
+                        prerequisite_course_ids=prerequisite_ids,
+                        importance=importance,
+                    )
+                    cluster_course_kinds.setdefault(str(group.get("id") or ""), []).append(
+                        _course_kind_summary(
+                            course_id=course_id,
+                            title=course_id,
+                            requirement=requirement,
+                            action=action,
+                            source_request=source_request,
+                            course_build_task=course_build_task,
+                            prerequisite_course_ids=prerequisite_ids,
+                            importance=importance,
+                        )
+                    )
                     courses.append({
                         "clusterId": group["id"],
                         "requirementId": requirement["id"],
                         "courseId": course_id,
                         "title": course_id,
+                        "description": _requirement_description(requirement, course_id),
                         **action,
                         "estimatedHours": requirement.get("estimatedHours"),
                         "importance": importance,
-                        "prerequisiteCourseIds": prerequisite_course_ids,
+                        "prerequisiteCourseIds": prerequisite_ids,
                         "sourceRequest": source_request if action["action"] == "create_empty_course" else None,
                         "courseWrapper": _course_wrapper(
                             course_id=course_id,
@@ -409,22 +532,18 @@ def build_course_scaffold_plan(
                             source_request=source_request,
                             status=action["status"],
                         ) if action["action"] == "create_empty_course" else None,
-                        "courseBuildTask": _course_build_task(
-                            course_id=course_id,
-                            title=course_id,
-                            action=action["action"],
-                            status=action["status"],
-                            prerequisite_course_ids=prerequisite_course_ids,
-                            importance=importance,
-                        ),
+                        "courseBuildTask": course_build_task,
                     })
 
     for group in groups:
         group_requirements = _items(group.get("requirements"))
         prerequisite_course_ids = list(prior_group_course_ids)
-        clusters.append({
-            "clusterId": group["id"],
+        cluster_id = str(group["id"])
+        course_kinds = cluster_course_kinds.setdefault(cluster_id, [])
+        cluster_row = {
+            "clusterId": cluster_id,
             "title": str(group.get("displayName") or group.get("title") or group["id"]),
+            "description": str(group.get("description") or group.get("purpose") or ""),
             "action": "create_cluster",
             "workflow": {
                 "contractVersion": "cluster-generation-workflow-v1",
@@ -435,12 +554,17 @@ def build_course_scaffold_plan(
             "locked": False,
             "estimatedHours": group.get("estimatedHours"),
             "prerequisiteCourseIds": prerequisite_course_ids,
-        })
+            "courseKinds": course_kinds,
+        }
+        clusters.append(cluster_row)
         for requirement in group_requirements:
             visit(requirement, group, prerequisite_course_ids)
+        cluster_row["courseKindCount"] = len(course_kinds)
+        cluster_row["assemblyReadiness"] = cluster_generation_threshold_report(len(course_kinds))
         group_course_ids = _requirement_course_ids(group_requirements)
         if group_course_ids:
             prior_group_course_ids = group_course_ids
+    program_candidate_cluster_count = sum(1 for cluster in clusters if cluster.get("courseKinds"))
 
     return {
         "version": "program-course-scaffold-plan-v1",
@@ -456,10 +580,12 @@ def build_course_scaffold_plan(
             "contentMaterialization": "generate_modules_on_demand_in_batches",
             "defaultModuleBatchSize": 2,
             "placeholderText": "Section not yet generated",
+            "assemblyThresholds": curriculum_assembly_threshold_policy()["thresholds"],
         },
         "clusterCount": len(clusters),
         "courseCount": len(courses),
         "activeGenerationCourseCount": sum(1 for course in courses if isinstance(course.get("activeGenerationPlan"), dict)),
+        "programAssemblyReadiness": program_generation_threshold_report(program_candidate_cluster_count),
         "clusters": clusters,
         "courses": courses,
         "courseBuildTaskReport": build_course_build_task_report(courses),

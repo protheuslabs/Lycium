@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.course_build_tasks import transition_course_build_task_from_source_packet
 from app.course_generation_stage_workflows import (
     CLUSTER_GENERATION_CONTRACT,
     COURSE_MODULE_OUTLINE_CONTRACT,
@@ -22,6 +23,11 @@ from app.course_generation_stage_workflows import (
 def _source_packet() -> dict:
     return {
         "contract_version": "source-packet-v1",
+        "quality": {
+            "status": "usable",
+            "conceptCoverageRatio": 1.0,
+            "uncoveredConceptCandidates": [],
+        },
         "source_documents": [
             {
                 "courseSourceId": "source-motion",
@@ -67,7 +73,27 @@ def test_cluster_generation_workflow_is_separate_from_program_generation() -> No
     assert result["status"] == "passed"
     assert result["metrics"]["clusterCount"] == len(program["requirementGroups"])
     assert result["metrics"]["courseRequirementCount"] >= 8
+    assert result["metrics"]["clusterCourseKindCount"] >= 8
+    assert result["metrics"]["programCandidateClusterCount"] >= 2
+    assert result["artifacts"]["assemblyThresholdPolicy"]["thresholds"]["clusterFromCourses"] == {
+        "memberType": "course",
+        "minimumRequired": 3,
+        "recommendedMinimum": 4,
+    }
+    assert result["artifacts"]["programAssemblyReadiness"]["minimumRequired"] == 2
+    assert result["artifacts"]["programAssemblyReadiness"]["recommendedMinimum"] == 3
+    assert result["artifacts"]["programAssemblyReadiness"]["canGenerate"] is True
     assert all("courseRequirementCount" in cluster for cluster in result["artifacts"]["clusters"])
+    course_clusters = [cluster for cluster in result["artifacts"]["clusters"] if cluster["courseKinds"]]
+    assert course_clusters
+    assert course_clusters[0]["assemblyReadiness"]["minimumRequired"] == 3
+    assert course_clusters[0]["assemblyReadiness"]["recommendedMinimum"] == 4
+    first_kind = course_clusters[0]["courseKinds"][0]
+    assert first_kind["contractVersion"] == "cluster-course-kind-v1"
+    assert first_kind["title"]
+    assert first_kind["description"]
+    assert "courseWrapper" not in first_kind
+    assert "activeGenerationPlan" not in first_kind
 
 
 def test_course_wrapper_generation_workflow_creates_build_tasks() -> None:
@@ -83,10 +109,100 @@ def test_course_wrapper_generation_workflow_creates_build_tasks() -> None:
     assert result["stage"] == "course_wrapper_generation"
     assert result["status"] == "passed"
     assert result["metrics"]["wrapperCourseCount"] > 0
+    plan = result["artifacts"]["courseScaffoldPlan"]
+    wrappers = result["artifacts"]["wrapperCourses"]
     wrapper = result["artifacts"]["wrapperCourses"][0]
+    scaffold_cluster = plan["clusters"][0]
+    scaffold_kind = scaffold_cluster["courseKinds"][0]
+    task_report = plan["courseBuildTaskReport"]
+    action_plan = plan["courseShellActionPlan"]
+    source_acquisition = plan["sourceAcquisitionPlan"]
+    assert plan["generationPolicy"]["assemblyThresholds"]["programFromClusters"] == {
+        "memberType": "cluster",
+        "minimumRequired": 2,
+        "recommendedMinimum": 3,
+    }
+    assert plan["programAssemblyReadiness"]["minimumRequired"] == 2
+    assert scaffold_cluster["assemblyReadiness"]["minimumRequired"] == 3
+    assert scaffold_kind["contractVersion"] == "cluster-course-kind-v1"
+    assert scaffold_kind["title"]
+    assert scaffold_kind["description"]
+    assert scaffold_kind["action"] == "create_empty_course"
+    assert scaffold_kind["status"] == "empty_course_shell"
+    assert scaffold_kind["sourceStatus"] == "needs_sources"
+    assert "courseWrapper" not in scaffold_kind
     assert wrapper["courseWrapper"]["contractVersion"] == "course-wrapper-v1"
     assert wrapper["activeGenerationPlan"]["contractVersion"] == "active-course-generation-plan-v1"
     assert wrapper["courseBuildTask"]["contractVersion"] == "course-build-task-v1"
+    assert task_report["status"] == "needs_sources"
+    assert task_report["missingCourseBuildTaskCount"] == 0
+    assert task_report["sourcePacketRequiredCount"] == len(wrappers)
+    assert action_plan["status"] == "needs_sources"
+    assert action_plan["actionCounts"]["attach_source_packet"] == len(wrappers)
+    assert action_plan["sourceRequestCount"] == len(wrappers)
+    assert source_acquisition["status"] == "needs_sources"
+    assert source_acquisition["sourceRequestCount"] == len(wrappers)
+    assert source_acquisition["sourceIndexSearchPlan"]["searchTaskCount"] >= len(wrappers)
+
+    for row in wrappers:
+        course_wrapper = row["courseWrapper"]
+        active_plan = row["activeGenerationPlan"]
+        build_task = row["courseBuildTask"]
+        source_request = row["sourceRequest"]
+        assert "modules" not in row
+        assert "sections" not in row
+        assert "content" not in row
+        assert course_wrapper["status"] == "wrapper"
+        assert course_wrapper["generationMode"] == "active_generation"
+        assert "source-backed course" in course_wrapper["generationPrompt"]
+        assert "source packet" in course_wrapper["generationPrompt"]
+        assert course_wrapper["learnerPlaceholderText"] == "Section not yet generated"
+        assert active_plan["status"] == "needs_sources"
+        assert active_plan["mode"] == "on_demand_module_batches"
+        assert active_plan["plannedModuleCount"] >= 4
+        assert active_plan["batches"]
+        assert build_task["status"] == "source_gathering"
+        assert build_task["currentStage"] == "source_gathering"
+        assert build_task["nextAction"] == "attach_source_packet"
+        assert {"source_packet", "concept_source_coverage"}.issubset(set(build_task["requiredInputs"]))
+        assert source_request["contractVersion"] == "course-source-request-v1"
+        assert source_request["requiredConcepts"]
+        assert source_request["suggestedQueries"]
+
+
+def test_course_wrapper_source_packet_transition_enables_module_outline_generation() -> None:
+    program = run_program_generation_workflow(
+        goal="data analyst portfolio pathway",
+        level="professional",
+        desired_course_count=5,
+    )["artifacts"]["program"]
+    wrapper_result = run_course_wrapper_generation_workflow(program)
+    wrapper = wrapper_result["artifacts"]["wrapperCourses"][0]
+    source_packet = _source_packet()
+
+    transitioned_task = transition_course_build_task_from_source_packet(
+        wrapper["courseBuildTask"],
+        source_packet=source_packet,
+    )
+    outline_result = run_course_module_outline_workflow(
+        prompt=wrapper["title"],
+        source_packet=source_packet,
+        desired_module_count=2,
+        sections_per_module=2,
+    )
+
+    assert transitioned_task["status"] == "outline_ready"
+    assert transitioned_task["currentStage"] == "outline_ready"
+    assert transitioned_task["nextAction"] == "generate_course_outline"
+    assert transitioned_task["requiredInputs"] == ["course_outline"]
+    assert transitioned_task["sourcePacketTransitionReport"]["passed"] is True
+    assert outline_result["status"] == "passed"
+    assert outline_result["metrics"]["moduleCount"] == 2
+    assert outline_result["metrics"]["sectionOutlineCount"] == 4
+    outline = outline_result["artifacts"]["outline"]
+    assert outline["contractVersion"] == "course-outline-from-source-packet-v1"
+    assert outline["provenance"]["mode"] == "source_packet"
+    assert all(module["planningSource"] == "source_packet" for module in outline["modules"])
 
 
 def test_course_module_outline_workflow_is_testable_from_source_packet() -> None:

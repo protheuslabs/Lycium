@@ -6,6 +6,11 @@ from typing import Any, Literal
 from app.course_agent_assembly import _coerce_generated_section, _module_lesson_outlines, _source_ids_from_outline
 from app.course_agent_staged_support import _infer_pacing_label, _normalize_summary_for_pacing, _with_generation_outline_metadata
 from app.course_outline_from_source_packet import SOURCE_PACKET_OUTLINE_CONTRACT_VERSION, build_outline_from_source_packet
+from app.curriculum_assembly_policy import (
+    cluster_generation_threshold_report,
+    curriculum_assembly_threshold_policy,
+    program_generation_threshold_report,
+)
 from app.program_contract_builder import build_program_contract
 from app.program_course_scaffold import build_course_scaffold_plan
 from app.program_validation import validate_program_contract
@@ -121,6 +126,48 @@ def run_program_generation_workflow(
     )
 
 
+def _cluster_course_kind_from_requirement(requirement: dict[str, Any], index: int) -> dict[str, Any]:
+    title = str(requirement.get("title") or requirement.get("courseId") or f"Course {index}")
+    origin = requirement.get("origin") if isinstance(requirement.get("origin"), dict) else {}
+    concepts = _strings(origin.get("concepts") or origin.get("topics") or origin.get("requiredConcepts"))
+    return {
+        "contractVersion": "cluster-course-kind-v1",
+        "courseId": str(requirement.get("courseId") or ""),
+        "requirementId": str(requirement.get("id") or ""),
+        "title": title,
+        "description": str(requirement.get("description") or f"Complete a source-backed course covering {title}."),
+        "estimatedHours": requirement.get("estimatedHours") or 0,
+        "importance": str(requirement.get("importance") or "required"),
+        "requiredConcepts": concepts,
+    }
+
+
+def _cluster_course_kinds(requirements: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    course_kinds: list[dict[str, Any]] = []
+    for index, requirement in enumerate(requirements, start=1):
+        requirement_type = requirement.get("type")
+        if requirement_type == "complete_course":
+            course_kinds.append(_cluster_course_kind_from_requirement(requirement, index))
+        elif requirement_type == "complete_n_of_courses":
+            for course_index, course_id in enumerate(requirement.get("courseIds") or [], start=1):
+                if not isinstance(course_id, str) or not course_id.strip():
+                    continue
+                course_kinds.append(
+                    _cluster_course_kind_from_requirement(
+                        {
+                            **requirement,
+                            "id": f"{requirement.get('id') or 'requirement'}-{course_index}",
+                            "title": course_id,
+                            "courseId": course_id,
+                        },
+                        len(course_kinds) + 1,
+                    )
+                )
+        elif requirement_type == "requirement_set":
+            course_kinds.extend(_cluster_course_kinds(_items(requirement.get("requirements"))))
+    return course_kinds
+
+
 def run_cluster_generation_workflow(program: dict[str, Any]) -> dict[str, Any]:
     groups = _items(program.get("requirementGroups"))
     clusters: list[dict[str, Any]] = []
@@ -129,16 +176,21 @@ def run_cluster_generation_workflow(program: dict[str, Any]) -> dict[str, Any]:
     for index, group in enumerate(groups, start=1):
         requirements = _items(group.get("requirements"))
         course_requirements = [requirement for requirement in requirements if requirement.get("type") == "complete_course"]
+        course_kinds = _cluster_course_kinds(requirements)
         clusters.append(
             {
                 "clusterId": str(group.get("id") or f"cluster-{index}"),
                 "title": str(group.get("displayName") or group.get("title") or f"Cluster {index}"),
+                "description": str(group.get("description") or group.get("purpose") or ""),
                 "groupKind": str(group.get("groupKind") or "cluster"),
                 "clusterType": str(group.get("clusterType") or "core"),
                 "requirementCount": len(requirements),
-                "courseRequirementCount": len(course_requirements),
+                "courseRequirementCount": len(course_kinds) or len(course_requirements),
                 "estimatedHours": group.get("estimatedHours") or 0,
                 "completionRule": group.get("completionRule") if isinstance(group.get("completionRule"), dict) else {},
+                "courseKindCount": len(course_kinds),
+                "courseKinds": course_kinds,
+                "assemblyReadiness": cluster_generation_threshold_report(len(course_kinds)),
             }
         )
 
@@ -146,6 +198,8 @@ def run_cluster_generation_workflow(program: dict[str, Any]) -> dict[str, Any]:
         issues.append(_issue("error", "Cluster generation has no requirement groups to inspect.", "requirementGroups"))
     if clusters and not any(cluster["courseRequirementCount"] for cluster in clusters):
         issues.append(_issue("warning", "Clusters contain no course requirements.", "requirementGroups"))
+    program_candidate_cluster_count = sum(1 for cluster in clusters if cluster["courseKinds"])
+    program_assembly_readiness = program_generation_threshold_report(program_candidate_cluster_count)
 
     return _workflow_result(
         stage="cluster_generation",
@@ -155,9 +209,15 @@ def run_cluster_generation_workflow(program: dict[str, Any]) -> dict[str, Any]:
         metrics={
             "clusterCount": len(clusters),
             "courseRequirementCount": sum(cluster["courseRequirementCount"] for cluster in clusters),
+            "clusterCourseKindCount": sum(len(cluster["courseKinds"]) for cluster in clusters),
+            "programCandidateClusterCount": program_candidate_cluster_count,
             "assessmentClusterCount": sum(1 for cluster in clusters if cluster["groupKind"] in {"assessment", "capstone"}),
         },
-        artifacts={"clusters": clusters},
+        artifacts={
+            "clusters": clusters,
+            "programAssemblyReadiness": program_assembly_readiness,
+            "assemblyThresholdPolicy": curriculum_assembly_threshold_policy(),
+        },
     )
 
 

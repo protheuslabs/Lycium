@@ -117,8 +117,109 @@ def test_program_builder_falls_back_to_valid_generic_contract_without_benchmarks
 
     assert validate_program_contract(program) == []
     assert synthesis["mode"] == "goal_token_fallback"
+    assert synthesis["fallbackTemplate"] == "writing_rhetoric"
     assert len(course_requirements) >= 6
     assert synthesis["courseScaffoldPlan"]["courseCount"] >= len(course_requirements)
+
+
+def test_program_builder_fallback_uses_domain_curriculum_for_full_stack() -> None:
+    program, course_requirements, synthesis = build_program_contract(
+        "Become a full-stack software engineer",
+        "professional",
+        18,
+        benchmark_context={},
+    )
+
+    titles = {str(requirement["title"]) for requirement in course_requirements}
+    groups = {
+        str(group["displayName"]): {str(requirement["title"]) for requirement in group.get("requirements", [])}
+        for group in program["requirementGroups"]
+    }
+
+    assert validate_program_contract(program) == []
+    assert program["title"] == "Full-Stack Software Engineer Pathway"
+    assert program["field"] == "Software Engineering"
+    assert synthesis["fallbackTemplate"] == "software_engineering"
+    assert {"Become", "Full", "Stack", "Software", "Engineer"}.isdisjoint(titles)
+    assert {
+        "Programming Fundamentals",
+        "HTML, CSS, and JavaScript",
+        "TypeScript and React",
+        "Backend APIs and HTTP",
+        "Databases and SQL",
+        "Authentication and Application Security",
+        "DevOps, Docker, and CI/CD",
+        "Full-Stack Portfolio Project",
+    }.issubset(titles)
+    assert "Databases and SQL" in groups["Backend, Data, and Infrastructure"]
+    assert "Performance and Observability" in groups["Backend, Data, and Infrastructure"]
+    assert "Full-Stack Portfolio Project" in groups["Professional Evidence and Communication"]
+    scaffold_clusters = synthesis["courseScaffoldPlan"]["clusters"]
+    backend_cluster = next(cluster for cluster in scaffold_clusters if cluster["title"] == "Backend, Data, and Infrastructure")
+    backend_kind = next(kind for kind in backend_cluster["courseKinds"] if kind["title"] == "Backend APIs and HTTP")
+    assert synthesis["courseScaffoldPlan"]["programAssemblyReadiness"]["minimumRequired"] == 2
+    assert synthesis["courseScaffoldPlan"]["programAssemblyReadiness"]["recommendedMinimum"] == 3
+    assert synthesis["courseScaffoldPlan"]["programAssemblyReadiness"]["canGenerate"] is True
+    assert backend_cluster["assemblyReadiness"]["minimumRequired"] == 3
+    assert backend_cluster["assemblyReadiness"]["recommendedMinimum"] == 4
+    assert backend_kind["contractVersion"] == "cluster-course-kind-v1"
+    assert backend_kind["description"]
+    assert backend_kind["status"] == "empty_course_shell"
+    assert backend_kind["sourceStatus"] == "needs_sources"
+    assert "courseWrapper" not in backend_kind
+    assert "activeGenerationPlan" not in backend_kind
+
+
+def test_program_builder_fallback_uses_pre_medical_curriculum() -> None:
+    program, course_requirements, synthesis = build_program_contract(
+        "Prepare for medical school",
+        "undergraduate",
+        14,
+        benchmark_context={},
+    )
+
+    titles = {str(requirement["title"]) for requirement in course_requirements}
+
+    assert validate_program_contract(program) == []
+    assert program["title"] == "Medical School Preparation Program"
+    assert program["field"] == "Pre-Medical Studies"
+    assert synthesis["fallbackTemplate"] == "pre_medical"
+    assert {"Prepare", "For", "Medical", "School"}.isdisjoint(titles)
+    assert {
+        "Biology Foundations for Pre-Medical Study",
+        "General Chemistry",
+        "Organic Chemistry",
+        "Physics for Life Sciences",
+        "Calculus and Statistics",
+        "Psychology and Sociology",
+        "MCAT Integrated Review",
+        "Medical School Application Portfolio",
+    }.issubset(titles)
+
+
+def test_program_builder_fallback_uses_data_science_curriculum_without_generic_fillers() -> None:
+    program, course_requirements, synthesis = build_program_contract(
+        "Data science and analytics professional foundations",
+        "professional",
+        12,
+        benchmark_context={},
+    )
+
+    titles = {str(requirement["title"]) for requirement in course_requirements}
+
+    assert validate_program_contract(program) == []
+    assert program["field"] == "Data Science"
+    assert synthesis["fallbackTemplate"] == "data_science"
+    assert "Foundations of Data Science And Analytics Professional Foundations" not in titles
+    assert {
+        "Statistics and Probability",
+        "Python for Data Analysis",
+        "SQL and Data Modeling",
+        "Data Cleaning and Reproducible Workflows",
+        "Machine Learning Foundations",
+        "Data Engineering Foundations",
+        "Capstone Data Product",
+    }.issubset(titles)
 
 
 def test_program_scaffold_plan_links_known_courses_by_title() -> None:

@@ -51,6 +51,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 
 - Program, cluster, course-wrapper, and course-content generation are separate workflows.
   Program generation creates the requirement graph and cluster plan. Cluster generation searches the available course inventory, inspects course titles plus internal evidence such as module titles, section titles, concept cards, tags, and descriptions, then links only courses with recorded fit evidence. If a needed course is missing or fit is uncertain, the workflow creates a course wrapper instead of generating a complete course immediately.
+- Curriculum assembly inference should use shared thresholds before generating or attaching parent structures: cluster generation from orphaned courses requires at least 3 related courses and treats 4+ as recommended; program generation from orphaned clusters requires at least 2 related clusters and treats 3+ as recommended. Below the minimum, surface fit candidates only.
 - Course wrappers are real planning artifacts, not hollow learner pages.
   A wrapper should preserve the course title, cluster, requirement id, prerequisites, source needs, generation prompt, estimated time, and active-generation plan. Wrappers may appear as drafts or source-gapped shells, but they should not pretend to be complete courses.
 - Active generation should generate course content in small batches.

@@ -23,6 +23,8 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record requirement origins so generated paths can explain why a requirement exists
    - validate missing course, assessment, project, or competency references before publishing program data
    - separate program generation, cluster generation, course-wrapper generation, and active course-content generation
+   - infer/generate clusters from orphaned courses only when there are at least 3 related courses; treat 4+ related courses as the recommended threshold
+   - infer/generate programs from orphaned clusters only when there are at least 2 related clusters; treat 3+ related clusters as the recommended threshold
    - cluster generation should search existing courses and inspect internal fit evidence such as module titles, section titles, concept cards, tags, and descriptions before linking an existing course
    - missing or uncertain courses should become course wrappers with source needs and generation prompts rather than hollow full courses
    - use active generation for large paths: generate bottom-level prerequisite course wrappers first, then generate course modules or sections in small batches as needed

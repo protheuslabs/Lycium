@@ -16,6 +16,7 @@
 - Planned catalog-visible course wrappers should also include `metadata.prerequisiteCourseIds`.
 - Empty planned course wrappers may use `modules: []` until the course is built out.
 - Program generation, cluster generation, course-wrapper generation, and course-content generation should be separate workflows.
+- Curriculum assembly inference should use shared thresholds before generating or attaching parent structures: cluster generation from orphaned courses requires at least 3 related courses and treats 4+ as recommended; program generation from orphaned clusters requires at least 2 related clusters and treats 3+ as recommended. Below the minimum, surface fit candidates only.
 - Cluster generation should search existing courses and inspect internal fit evidence such as module titles, section titles, concept cards, tags, descriptions, and taxonomy before linking an existing course to a requirement.
 - Missing or uncertain courses should become explicit wrappers with source needs, prerequisite metadata, generation prompts, and active-generation plans instead of hollow full courses.
 - Active generation may materialize large courses in module batches, usually two modules at a time, while ungenerated sections remain explicit `not_generated` states with learner-facing placeholder text such as `Section not yet generated`.

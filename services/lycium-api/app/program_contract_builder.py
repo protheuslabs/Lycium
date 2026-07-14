@@ -16,6 +16,36 @@ IMPORTANCE_RANK = {
     "optional": 3,
     "enrichment": 3,
 }
+FALLBACK_STOPWORDS = {
+    "and",
+    "become",
+    "build",
+    "course",
+    "create",
+    "for",
+    "from",
+    "learn",
+    "learning",
+    "pathway",
+    "prepare",
+    "program",
+    "study",
+    "the",
+    "with",
+}
+TITLE_REPLACEMENTS = {
+    "Api": "API",
+    "Apis": "APIs",
+    "Css": "CSS",
+    "Ci Cd": "CI/CD",
+    "Html": "HTML",
+    "Http": "HTTP",
+    "Javascript": "JavaScript",
+    "Mcat": "MCAT",
+    "Sql": "SQL",
+    "Typescript": "TypeScript",
+    "Ux": "UX",
+}
 
 REQUIREMENT_TITLE_PREFIX = re.compile(
     r"^(?:a|an|complete|apply|integrate|interpret|practice|build|prepare|create|use|explain|conduct|analyze|compare|define|solve|model|evaluate|submit)\s+",
@@ -66,6 +96,10 @@ def _program_field_for_goal(goal: str) -> str:
         return "Data Science"
     if any(term in value for term in ("software", "full-stack", "programming", "developer")):
         return "Software Engineering"
+    if any(term in value for term in ("writing", "rhetoric", "composition", "creative")):
+        return "Writing and Rhetoric"
+    if any(term in value for term in ("music", "guitar", "piano", "performance", "songwriting")):
+        return "Music"
     return "Interdisciplinary Studies"
 
 
@@ -73,6 +107,38 @@ def _readable_title(value: str) -> str:
     cleaned = re.sub(r"[_\-]+", " ", value or "program").strip()
     cleaned = re.sub(r"\s+", " ", cleaned)
     return cleaned.title() if cleaned else "Program"
+
+
+def _smart_title(value: str) -> str:
+    title = _readable_title(value)
+    for source, replacement in TITLE_REPLACEMENTS.items():
+        title = re.sub(rf"\b{re.escape(source)}\b", replacement, title)
+    return title.replace("Full Stack", "Full-Stack")
+
+
+def _goal_focus_title(goal: str) -> str:
+    cleaned = re.sub(r"\s+", " ", goal or "").strip()
+    cleaned = re.sub(
+        r"^(?:i\s+want\s+to\s+|i\s+need\s+to\s+|i\s+would\s+like\s+to\s+|learn\s+to\s+|learn\s+|become\s+(?:a|an)?\s*|prepare\s+for\s+|create\s+|build\s+|study\s+)",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    ).strip()
+    if re.search(r"\bmedical school\b", cleaned, re.IGNORECASE):
+        return "Medical School Preparation"
+    return _smart_title(cleaned or goal or "Program")
+
+
+def _program_title_for_goal(goal: str) -> str:
+    value = goal.lower()
+    if any(term in value for term in ("full-stack", "full stack", "software engineer", "software developer")):
+        return "Full-Stack Software Engineer Pathway"
+    if any(term in value for term in ("pre-med", "premed", "pre medical", "pre-medical", "medical school")):
+        return "Medical School Preparation Program"
+    focus = _goal_focus_title(goal)
+    if focus.lower().endswith(("pathway", "program", "preparation", "foundations")):
+        return focus
+    return f"{focus} Pathway"
 
 
 def _origin_title(origin: dict[str, Any], index: int) -> str:
@@ -151,23 +217,184 @@ def _extract_requirement_origins(benchmark_context: dict[str, Any] | None, desir
     return origins[: max(minimum, min(len(origins), desired_course_count))]
 
 
-def _fallback_course_terms(goal: str, desired_course_count: int) -> list[str]:
-    base_terms = [term for term in re.split(r"[^a-zA-Z0-9+#]+", goal.lower()) if len(term) > 2]
-    generic_terms = [
-        "foundations",
-        "core concepts",
-        "tools and methods",
-        "applied practice",
-        "quality and evaluation",
-        "professional evidence",
-        "capstone",
+def _fallback_template_terms(goal: str, field: str) -> tuple[str, list[str]]:
+    value = goal.lower()
+    if field == "Software Engineering" or any(term in value for term in ("full-stack", "full stack", "software engineer", "developer")):
+        return (
+            "software_engineering",
+            [
+                "Computing and Command Line Foundations",
+                "Git and Collaborative Workflow",
+                "Programming Fundamentals",
+                "Data Structures and Algorithms",
+                "HTML, CSS, and JavaScript",
+                "TypeScript and React",
+                "Frontend Accessibility and UX",
+                "Backend APIs and HTTP",
+                "Databases and SQL",
+                "Authentication and Application Security",
+                "Testing and Quality Engineering",
+                "Software Architecture and Design",
+                "DevOps, Docker, and CI/CD",
+                "Cloud Deployment and Operations",
+                "Performance and Observability",
+                "Maintenance and Technical Debt",
+                "Professional Engineering Practice",
+                "Full-Stack Portfolio Project",
+            ],
+        )
+    if field == "Pre-Medical Studies":
+        return (
+            "pre_medical",
+            [
+                "Biology Foundations for Pre-Medical Study",
+                "General Chemistry",
+                "Organic Chemistry",
+                "Physics for Life Sciences",
+                "Calculus and Statistics",
+                "Psychology and Sociology",
+                "Biochemistry",
+                "Cell and Molecular Biology",
+                "Genetics and Physiology",
+                "Medical Ethics and Patient Communication",
+                "Laboratory Research and Scientific Writing",
+                "MCAT Integrated Review",
+                "Clinical Exposure and Service Learning",
+                "Medical School Application Portfolio",
+            ],
+        )
+    if field == "Data Science":
+        return (
+            "data_science",
+            [
+                "Statistics and Probability",
+                "Python for Data Analysis",
+                "SQL and Data Modeling",
+                "Data Cleaning and Reproducible Workflows",
+                "Exploratory Visualization and Dashboards",
+                "Machine Learning Foundations",
+                "Experimentation and Evaluation",
+                "Data Ethics and Privacy",
+                "Communication for Data Products",
+                "Analytics Portfolio Project",
+                "Data Engineering Foundations",
+                "Capstone Data Product",
+            ],
+        )
+    if field == "Public Health":
+        return (
+            "public_health",
+            [
+                "Foundations of Public Health",
+                "Epidemiology",
+                "Biostatistics",
+                "Health Policy and Systems",
+                "Community Health Assessment",
+                "Environmental Health",
+                "Health Equity and Social Determinants",
+                "Program Evaluation",
+                "Intervention Planning",
+                "Stakeholder Communication",
+                "Public Health Capstone",
+            ],
+        )
+    if field == "Chemistry":
+        return (
+            "chemistry",
+            [
+                "Matter and Measurement",
+                "Atomic Structure",
+                "Periodic Trends",
+                "Stoichiometry",
+                "Chemical Reactions",
+                "Thermochemistry",
+                "Chemical Bonding",
+                "Equilibrium",
+                "Acids and Bases",
+                "Laboratory Safety and Measurement",
+                "Chemistry Lab Practice",
+                "Chemistry Capstone Portfolio",
+            ],
+        )
+    if field == "Writing and Rhetoric":
+        return (
+            "writing_rhetoric",
+            [
+                "Rhetoric, Audience, and Purpose",
+                "Academic Research Methods",
+                "Thesis, Argument, and Evidence",
+                "Source Evaluation and Citation",
+                "Revision and Peer Review",
+                "Genre, Style, and Voice",
+                "Creative Writing Workshop",
+                "Publication and Professional Practice",
+                "Writing Portfolio Development",
+                "Capstone Manuscript",
+            ],
+        )
+    if field == "Music":
+        return (
+            "music",
+            [
+                "Instrument Technique Foundations",
+                "Music Theory and Ear Training",
+                "Rhythm and Sight Reading",
+                "Repertoire Study",
+                "Improvisation and Composition",
+                "Recording and Practice Workflow",
+                "Performance Preparation",
+                "Ensemble Musicianship",
+                "Portfolio Recital",
+                "Capstone Performance",
+            ],
+        )
+    return ("generic", [])
+
+
+def _concepts_from_title(title: str) -> list[str]:
+    segments = [
+        segment.strip(" -")
+        for segment in re.split(r",|/|\band\b|&|:", title)
+        if segment.strip(" -")
     ]
+    return list(dict.fromkeys(segments or [title]))[:6]
+
+
+def _fallback_course_terms(goal: str, desired_course_count: int, field: str | None = None) -> tuple[list[str], str]:
+    focus = _goal_focus_title(goal)
+    template_key, template_terms = _fallback_template_terms(goal, field or _program_field_for_goal(goal))
+    fallback_terms = [
+        f"Foundations of {focus}",
+        f"{focus} Core Concepts",
+        f"{focus} Tools and Methods",
+        f"Applied {focus} Practice",
+        f"{focus} Quality and Feedback",
+        f"{focus} Communication and Documentation",
+        f"{focus} Portfolio Evidence",
+        f"{focus} Capstone Preparation",
+    ]
+    token_terms = [
+        _smart_title(term)
+        for term in re.split(r"[^a-zA-Z0-9+#/]+", goal.lower())
+        if len(term) > 2 and term not in FALLBACK_STOPWORDS
+    ]
+    extension_terms = [
+        f"Advanced {focus} Practice",
+        f"{focus} Case Studies",
+        f"{focus} Project Studio",
+        f"{focus} Review and Remediation",
+        f"{focus} Professional Practice",
+    ]
+    source_terms = [*token_terms, *fallback_terms] if template_key == "generic" else [*template_terms, *fallback_terms, *token_terms]
     terms: list[str] = []
-    for term in [*base_terms, *generic_terms]:
-        title = _readable_title(term)
-        if title not in terms:
+    seen: set[str] = set()
+    for term in [*source_terms, *extension_terms]:
+        title = term.strip()
+        key = _slugify(title)
+        if title and key not in seen:
             terms.append(title)
-    return terms[: max(4, desired_course_count)]
+            seen.add(key)
+    return terms[: max(4, desired_course_count)], template_key
 
 
 def _course_requirement_from_origin(goal: str, origin: dict[str, Any], index: int) -> dict[str, Any]:
@@ -189,27 +416,46 @@ def _course_requirement_from_origin(goal: str, origin: dict[str, Any], index: in
     }
 
 
-def _fallback_course_requirement(goal: str, title: str, index: int) -> dict[str, Any]:
+def _fallback_course_requirement(goal: str, title: str, index: int, *, template_key: str) -> dict[str, Any]:
     slug = _slugify(title)
+    focus = _goal_focus_title(goal)
     return {
         "id": f"req-{index:02d}-{slug}",
         "type": "complete_course",
         "title": title,
-        "description": f"Complete a course that develops {title.lower()} for {goal}.",
+        "description": f"Complete a course that develops {title.lower()} for {focus.lower()}.",
         "courseId": f"{_slugify(goal)[:40]}-{slug}".strip("-"),
         "required": True,
         "importance": "required",
         "estimatedHours": 40,
-        "origin": {"originType": "generated_gap_fill", "title": title, "importance": "required", "evidenceRefs": []},
+        "origin": {
+            "originType": "generated_gap_fill",
+            "fallbackTemplate": template_key,
+            "title": title,
+            "importance": "required",
+            "concepts": _concepts_from_title(title),
+            "evidenceRefs": [],
+        },
     }
 
 
-def _group_key_for_requirement(requirement: dict[str, Any], goal: str) -> str:
-    haystack = " ".join(str(requirement.get(key) or "") for key in ("title", "description", "courseId", "importance")).lower()
-    haystack = f"{haystack} {goal.lower()}"
+def _group_key_for_requirement(requirement: dict[str, Any], _goal: str) -> str:
+    origin = requirement.get("origin") if isinstance(requirement.get("origin"), dict) else {}
+    concepts = origin.get("concepts") if isinstance(origin.get("concepts"), list) else []
+    haystack = " ".join([str(requirement.get("title") or ""), *(str(concept) for concept in concepts)]).lower()
+    best_key = ""
+    best_score = 0
     for key, _label, keywords in PROGRAM_GROUP_RULES:
-        if any(keyword in haystack for keyword in keywords):
-            return key
+        score = sum(
+            1
+            for keyword in keywords
+            if re.search(rf"(?<![a-z0-9]){re.escape(keyword.lower())}(?![a-z0-9])", haystack)
+        )
+        if score > best_score:
+            best_key = key
+            best_score = score
+    if best_key:
+        return best_key
     return "applied"
 
 
@@ -363,16 +609,25 @@ def build_program_contract(
     known_courses: list[dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     desired_course_count = max(4, min(32, desired_course_count))
+    program_title = _program_title_for_goal(goal)
+    program_focus = _goal_focus_title(goal)
+    program_field = _program_field_for_goal(goal)
+    program_type = _program_type_for_goal(goal)
     origins = _extract_requirement_origins(benchmark_context, desired_course_count)
     if origins:
         course_requirements = [_course_requirement_from_origin(goal, origin, index) for index, origin in enumerate(origins, start=1)]
         synthesis_mode = "benchmark_first"
+        fallback_template = None
     else:
-        course_requirements = [_fallback_course_requirement(goal, title, index) for index, title in enumerate(_fallback_course_terms(goal, desired_course_count), start=1)]
+        fallback_terms, fallback_template = _fallback_course_terms(goal, desired_course_count, program_field)
+        course_requirements = [
+            _fallback_course_requirement(goal, title, index, template_key=fallback_template)
+            for index, title in enumerate(fallback_terms, start=1)
+        ]
         synthesis_mode = "goal_token_fallback"
-    groups = _group_requirements(goal, course_requirements)
-    groups.append(_checkpoint_group(goal, len(groups) + 1))
-    groups.append(_capstone_group(goal, len(groups) + 1))
+    groups = _group_requirements(program_focus, course_requirements)
+    groups.append(_checkpoint_group(program_focus, len(groups) + 1))
+    groups.append(_capstone_group(program_focus, len(groups) + 1))
     course_scaffold_plan = build_course_scaffold_plan(groups, known_course_ids, known_courses)
     linked_existing_requirement_count = apply_existing_course_links(groups, course_scaffold_plan)
     source_slots = benchmark_context.get("sourceSlots") if isinstance(benchmark_context, dict) else []
@@ -380,16 +635,16 @@ def build_program_contract(
     estimated_hours = sum(int(group.get("estimatedHours") or 0) for group in groups)
     program = {
         "id": f"program-{_slugify(goal)}",
-        "title": _readable_title(goal),
-        "description": f"A source-backed program for {goal}, organized around curriculum requirements and portfolio evidence.",
-        "programType": _program_type_for_goal(goal),
-        "field": _program_field_for_goal(goal),
+        "title": program_title,
+        "description": f"A structured, source-backed pathway for {program_focus.lower()}, organized around curriculum requirements and portfolio evidence.",
+        "programType": program_type,
+        "field": program_field,
         "level": _normalize_program_level(level),
-        "targetOutcome": f"Learners can demonstrate practical competence in {goal}.",
+        "targetOutcome": f"Learners can demonstrate practical competence in {program_focus.lower()} through courses, assessments, and portfolio evidence.",
         "learningOutcomes": [
             {
                 "id": "outcome-foundational-concepts",
-                "statement": f"Explain the foundational concepts behind {goal}.",
+                "statement": f"Explain the foundational concepts behind {program_focus.lower()}.",
             },
             {
                 "id": "outcome-source-backed-requirements",
@@ -439,6 +694,7 @@ def build_program_contract(
         "usedRequirementOriginCount": len(course_requirements) if origins else 0,
         "courseRequirementCount": len(course_requirements),
         "requirementGroupCount": len(groups),
+        "fallbackTemplate": fallback_template,
         "field": program["field"],
         "programType": program["programType"],
         "estimatedHours": estimated_hours,
