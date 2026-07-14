@@ -14,6 +14,18 @@ from typing import Any
 
 DEFAULT_TIMEOUT_SECONDS = 900
 
+CODEX_ACCOUNT_DEFAULT_MODEL = {"id": "codex", "label": "Codex account default"}
+CODEX_DOCUMENTED_MODELS = (
+    {"id": "gpt-5.6-sol", "label": "GPT-5.6 Sol"},
+    {"id": "gpt-5.6-terra", "label": "GPT-5.6 Terra"},
+    {"id": "gpt-5.6-luna", "label": "GPT-5.6 Luna"},
+    {"id": "gpt-5.5", "label": "GPT-5.5"},
+    {"id": "gpt-5.4", "label": "GPT-5.4"},
+    {"id": "gpt-5.4-mini", "label": "GPT-5.4 Mini"},
+    {"id": "gpt-5.3-codex-spark", "label": "GPT-5.3 Codex Spark"},
+)
+CODEX_DOCUMENTED_FALLBACK_WARNING = "Documented Codex model; availability depends on this Codex account."
+
 
 def _read_request() -> dict[str, Any]:
     raw = sys.stdin.read()
@@ -44,9 +56,85 @@ def _runtime_executable(runtime: str) -> str | None:
     return shutil.which("codex" if runtime == "codex" else "claude")
 
 
-def _models_for_runtime(runtime: str) -> list[dict[str, str]]:
+def _codex_cache_paths() -> list[Path]:
+    paths: list[Path] = []
+    codex_home = os.environ.get("CODEX_HOME", "").strip()
+    if codex_home:
+        paths.append(Path(codex_home).expanduser() / "models_cache.json")
+    home = Path.home()
+    if home:
+        paths.append(home / ".codex" / "models_cache.json")
+    return paths
+
+
+def _append_model(
+    models: list[dict[str, Any]],
+    seen: set[str],
+    model_id: str,
+    label: str | None = None,
+    *,
+    warning: str | None = None,
+    error: str | None = None,
+    disabled: bool = False,
+) -> None:
+    cleaned_id = str(model_id or "").strip()
+    if not cleaned_id or cleaned_id in seen:
+        return
+    record: dict[str, Any] = {"id": cleaned_id, "label": str(label or cleaned_id).strip() or cleaned_id}
+    if warning:
+        record["warning"] = warning
+    if error:
+        record["error"] = error
+    if disabled:
+        record["disabled"] = True
+    models.append(record)
+    seen.add(cleaned_id)
+
+
+def _cached_codex_models() -> list[dict[str, Any]]:
+    for path in _codex_cache_paths():
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        raw_models = payload.get("models") if isinstance(payload, dict) else None
+        if not isinstance(raw_models, list):
+            continue
+        models: list[dict[str, Any]] = []
+        for raw_model in raw_models:
+            if not isinstance(raw_model, dict):
+                continue
+            if str(raw_model.get("visibility") or "list").lower() == "hide":
+                continue
+            model_id = str(raw_model.get("slug") or raw_model.get("id") or raw_model.get("name") or "").strip()
+            label = str(raw_model.get("display_name") or raw_model.get("label") or model_id).strip()
+            if model_id:
+                models.append({"id": model_id, "label": label or model_id})
+        if models:
+            return models
+    return []
+
+
+def _codex_models() -> list[dict[str, Any]]:
+    models: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    _append_model(models, seen, CODEX_ACCOUNT_DEFAULT_MODEL["id"], CODEX_ACCOUNT_DEFAULT_MODEL["label"])
+
+    for model in _cached_codex_models():
+        _append_model(models, seen, str(model.get("id") or ""), str(model.get("label") or ""))
+
+    for model in CODEX_DOCUMENTED_MODELS:
+        warning = None if model["id"] in seen else CODEX_DOCUMENTED_FALLBACK_WARNING
+        _append_model(models, seen, model["id"], model["label"], warning=warning)
+
+    return models
+
+
+def _models_for_runtime(runtime: str) -> list[dict[str, Any]]:
     if runtime == "codex":
-        return [{"id": "codex", "label": "Codex account default"}]
+        return _codex_models()
     return [{"id": "claude-code", "label": "Claude Code account default"}]
 
 

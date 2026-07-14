@@ -353,6 +353,9 @@ export type LyciumBookmarkRecord = {
 export type LyciumAgentModelRecord = {
   id: string;
   label?: string | null;
+  warning?: string | null;
+  error?: string | null;
+  disabled?: boolean;
 };
 
 export type LyciumAgentProviderContract = {
@@ -385,6 +388,10 @@ export type LyciumAgentProviderRecord = {
   local_endpoint_candidates?: string[];
   credential_kind?: "api_key" | "local_endpoint" | "local_runtime";
   contract?: LyciumAgentProviderContract | null;
+  models?: LyciumAgentModelRecord[];
+  models_fetched_at?: string | null;
+  model_discovery_status?: "not_checked" | "requires_credential" | "available" | "partial" | "error" | "unsupported";
+  model_discovery_error?: string | null;
 };
 
 export type LyciumAgentKeyRecord = {

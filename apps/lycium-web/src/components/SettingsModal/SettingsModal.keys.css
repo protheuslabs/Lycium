@@ -62,18 +62,73 @@
 .settings-key-provider,
 .settings-key-state {
   min-width: 0;
+  white-space: nowrap;
+}
+
+.settings-key-provider {
+  align-items: center;
+  display: flex;
+  gap: 0.36rem;
+  font-weight: 800;
+  overflow: visible;
+}
+
+.settings-key-provider-text {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.settings-key-provider {
-  font-weight: 800;
-}
-
 .settings-key-provider-kind {
   color: #64748b;
   font-weight: 700;
+}
+
+.settings-key-provider-issue {
+  align-items: center;
+  background: #dc2626;
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 900;
+  height: 1rem;
+  justify-content: center;
+  line-height: 1;
+  position: relative;
+  width: 1rem;
+}
+
+.settings-key-provider-issue::after {
+  background: #111827;
+  border-radius: 8px;
+  bottom: calc(100% + 0.48rem);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.2);
+  color: #ffffff;
+  content: attr(data-tooltip);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.25;
+  max-width: min(18rem, 72vw);
+  opacity: 0;
+  padding: 0.5rem 0.6rem;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  transform: translateY(0.16rem);
+  transition: opacity 140ms ease, transform 140ms ease;
+  white-space: normal;
+  width: max-content;
+  z-index: 120;
+}
+
+.settings-key-provider-issue:hover::after,
+.settings-key-provider-issue:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .settings-key-row .settings-model-dropdown .dropdown-trigger {
@@ -184,6 +239,8 @@
 }
 
 .settings-key-state {
+  overflow: hidden;
+  text-overflow: ellipsis;
   justify-self: end;
   align-self: stretch;
   min-width: 4.2rem;

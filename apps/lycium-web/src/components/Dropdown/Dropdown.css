@@ -148,7 +148,46 @@
     color 160ms ease;
 }
 
-.dropdown-option:hover:not(:disabled),
+.dropdown-option-content {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+  min-width: 0;
+  width: 100%;
+}
+
+.dropdown-option-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dropdown-option-issue {
+  align-items: center;
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 900;
+  height: 1rem;
+  justify-content: center;
+  line-height: 1;
+  width: 1rem;
+}
+
+.dropdown-option-issue-error {
+  background: #dc2626;
+}
+
+.dropdown-option-issue-warning {
+  background: #b45309;
+}
+
+.dropdown-option:hover:not([aria-disabled="true"]),
 .dropdown-option:focus-visible {
   background: var(--dropdown-option-hover-background);
   outline: none;
@@ -158,7 +197,7 @@
   background: var(--dropdown-option-active-background);
 }
 
-.dropdown-option:disabled {
+.dropdown-option[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.48;
 }

@@ -314,6 +314,7 @@ def test_source_index_to_program_generation_creates_quality_gated_course_shell_h
     scaffold = trace["programSynthesis"]["courseScaffoldPlan"]
     quality = structure["qualityReport"]
     timeline = trace["timeline"]
+    stage_workflows = trace["stageWorkflows"]
     shell_readiness = scaffold["courseShellReadinessReport"]
     action_plan = scaffold["courseShellActionPlan"]
     source_acquisition = scaffold["sourceAcquisitionPlan"]
@@ -330,6 +331,13 @@ def test_source_index_to_program_generation_creates_quality_gated_course_shell_h
     assert trace["sourceIndexSnapshotDocumentCount"] == 2
     assert trace["curriculumBenchmarkContext"]["curriculumBenchmarks"]
     assert trace["curriculumBenchmarkContext"]["requirementOrigins"]
+    assert [stage["stage"] for stage in stage_workflows] == [
+        "program_generation",
+        "cluster_generation",
+        "course_wrapper_generation",
+    ]
+    assert all(stage["status"] == "passed" for stage in stage_workflows)
+    assert stage_workflows[0]["artifactKeys"] == ["courseRequirements", "program", "programSynthesis"]
     assert program["dependencyGraph"]["edges"]
     assert any(group.get("groupKind") == "capstone" for group in program["requirementGroups"])
     assert any(requirement.get("type") == "submit_project" for group in program["requirementGroups"] for requirement in group.get("requirements", []))

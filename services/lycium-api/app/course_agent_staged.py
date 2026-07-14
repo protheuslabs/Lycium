@@ -34,6 +34,13 @@ from app.course_agent_staged_outline import (
 from app.course_agent_types import CourseAgentError, CourseAgentResult
 from app.course_generation_readiness import build_generation_readiness_report
 from app.course_generation_service import validate_generation_taxonomy_input
+from app.course_generation_stage_workflows import (
+    compact_stage_workflow_report,
+    run_course_module_outline_workflow,
+    run_module_assembly_workflow,
+    run_module_section_plan_workflow,
+    run_section_fill_workflow,
+)
 from app.course_quality_evals import run_course_quality_evals
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 from app.source_corpus import compile_generation_source_corpus
@@ -41,6 +48,55 @@ from app.course_agent_source_context import build_source_context_index, source_c
 from app.source_packet_quality_gate import source_packet_gate_message, source_packet_quality_gate
 
 
+def _lesson_sections_for_stage_reports(module: dict) -> list[dict]:
+    sections = module.get("sections") if isinstance(module.get("sections"), list) else []
+    return [
+        section
+        for section in sections
+        if isinstance(section, dict)
+        and str(section.get("pageType") or "learn") == "learn"
+        and str(section.get("sectionType") or "lesson") != "summary"
+    ]
+
+
+def _module_stage_workflow_reports(
+    *,
+    module_outline: dict,
+    generated_module: dict,
+    module_number: int,
+    source_ids: list[str],
+    pacing_label: str,
+) -> list[dict]:
+    section_plan_report = run_module_section_plan_workflow(
+        module_outline,
+        fallback_source_ids=source_ids,
+        module_number=module_number,
+    )
+    reports = [compact_stage_workflow_report(section_plan_report)]
+    section_plans = section_plan_report["artifacts"]["sectionPlans"]
+    lesson_sections = _lesson_sections_for_stage_reports(generated_module)
+    for section_plan, generated_section in zip(section_plans, lesson_sections, strict=False):
+        reports.append(
+            compact_stage_workflow_report(
+                run_section_fill_workflow(
+                    section_plan,
+                    generated_section=generated_section,
+                    module_outline=module_outline,
+                )
+            )
+        )
+    reports.append(
+        compact_stage_workflow_report(
+            run_module_assembly_workflow(
+                module_outline,
+                generated_module.get("sections") if isinstance(generated_module.get("sections"), list) else [],
+                module_number=module_number,
+                fallback_source_ids=source_ids,
+                pacing_label=pacing_label,
+            )
+        )
+    )
+    return reports
 
 
 def generate_course_with_agent_staged(
@@ -118,6 +174,7 @@ def generate_course_with_agent_staged(
     adapter = str(provider.get("generationAdapter") or "openai-chat-completions")
     previous_trace = _resume_trace(resume_trace)
     previous_stages = previous_trace.get("stages") if isinstance(previous_trace.get("stages"), list) else []
+    previous_stage_workflows = previous_trace.get("stage_workflows") if isinstance(previous_trace.get("stage_workflows"), list) else []
     previous_media_logs = previous_trace.get("media_logs") if isinstance(previous_trace.get("media_logs"), list) else []
     trace = {
         **_base_agent_trace(
@@ -138,6 +195,7 @@ def generate_course_with_agent_staged(
         "source_packet_contract": source_packet.get("contract_version") if isinstance(source_packet, dict) else None,
         "input_artifacts": source_corpus.input_artifacts,
         "module_parallelism": min(DEFAULT_MODULE_PARALLELISM, max(1, desired_module_count)),
+        "stage_workflows": list(previous_stage_workflows),
     }
     if previous_media_logs:
         trace["media_logs"] = list(previous_media_logs)
@@ -251,6 +309,20 @@ def generate_course_with_agent_staged(
         if isinstance(benchmark_context.get("requirementOrigins"), list)
         else 0,
     }
+    trace["stage_workflows"].append(
+        compact_stage_workflow_report(
+            run_course_module_outline_workflow(
+                prompt=prompt,
+                desired_module_count=desired_module_count,
+                outline={
+                    **plan,
+                    "modules": module_outlines,
+                    "planningSource": module_planning_source,
+                    "sourceOutline": plan.get("sourceOutline"),
+                },
+            )
+        )
+    )
     resume_modules = _resume_modules_from_course(resume_course, desired_module_count)
     completed_modules: dict[int, dict] = {index: module for index, module in enumerate(resume_modules, start=1)}
     if completed_modules:
@@ -320,6 +392,15 @@ def generate_course_with_agent_staged(
                 completed_modules[index] = result["module"]
                 module_usage.extend(result["usage"])
                 trace["stages"].extend(result["stages"])
+                trace["stage_workflows"].extend(
+                    _module_stage_workflow_reports(
+                        module_outline=module_outlines[index - 1],
+                        generated_module=result["module"],
+                        module_number=index,
+                        source_ids=source_ids,
+                        pacing_label=pacing_label,
+                    )
+                )
                 if result["media_logs"]:
                     trace.setdefault("media_logs", []).extend(result["media_logs"])
                 modules = [completed_modules[key] for key in sorted(completed_modules)]
@@ -372,6 +453,15 @@ def generate_course_with_agent_staged(
         completed_modules[index] = result["module"]
         module_usage.extend(result["usage"])
         trace["stages"].extend(result["stages"])
+        trace["stage_workflows"].extend(
+            _module_stage_workflow_reports(
+                module_outline=module_outline,
+                generated_module=result["module"],
+                module_number=index,
+                source_ids=source_ids,
+                pacing_label=pacing_label,
+            )
+        )
         if result["media_logs"]:
             trace.setdefault("media_logs", []).extend(result["media_logs"])
         modules = [completed_modules[key] for key in sorted(completed_modules)]

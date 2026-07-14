@@ -6,6 +6,7 @@ import shlex
 import shutil
 import subprocess
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,8 @@ TRANSIENT_ERROR_MARKERS = (
     "timeout",
     "timed out",
 )
+
+ModelRecord = dict[str, Any]
 
 
 def load_agent_providers() -> list[dict[str, Any]]:
@@ -90,28 +93,76 @@ def _default_credential(provider: dict[str, Any]) -> str:
     return f"python3 {shlex.quote(str(RUNTIME_BRIDGE_PATH))} --runtime {shlex.quote(runtime_kind)}"
 
 
-def list_agent_provider_summaries() -> list[dict[str, Any]]:
-    return [
-        {
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _provider_model_discovery(provider: dict[str, Any], *, discover_models: bool) -> dict[str, Any]:
+    contract = agent_provider_contract(provider)
+    payload: dict[str, Any] = {
+        "models": [],
+        "models_fetched_at": None,
+        "model_discovery_status": "not_checked",
+        "model_discovery_error": None,
+    }
+    if not contract["supports_model_list"]:
+        return {**payload, "model_discovery_status": "unsupported"}
+    if not discover_models:
+        return payload
+
+    adapter = str(provider.get("generationAdapter") or "")
+    if contract["credential_kind"] == "api_key" and provider.get("modelsPath"):
+        return {**payload, "model_discovery_status": "requires_credential"}
+
+    try:
+        if adapter == "local-agent-runtime":
+            models = _validate_local_agent_runtime(provider, _default_credential(provider))
+        elif adapter == "ollama-chat":
+            models = fetch_agent_models(str(provider.get("id") or ""), _default_credential(provider))
+        else:
+            models = _static_agent_models(provider)
+    except CourseAgentError as exc:
+        return {
+            **payload,
+            "models": _static_agent_models(provider),
+            "model_discovery_status": "error",
+            "model_discovery_error": str(exc),
+        }
+
+    return {
+        **payload,
+        "models": models,
+        "models_fetched_at": _now(),
+        "model_discovery_status": "partial" if any(model.get("error") for model in models) else "available",
+    }
+
+
+def list_agent_provider_summaries(*, discover_models: bool = False) -> list[dict[str, Any]]:
+    summaries: list[dict[str, Any]] = []
+    for provider in load_agent_providers():
+        if not provider.get("id"):
+            continue
+        contract = agent_provider_contract(provider)
+        summary = {
             "id": str(provider.get("id") or ""),
             "label": str(provider.get("label") or provider.get("id") or ""),
             "default_model": provider.get("defaultModel") or None,
             "recommended_model": provider.get("recommendedModel") or provider.get("defaultModel") or None,
             "minimum_recommended_parameters_billion": provider.get("minimumRecommendedParametersBillion") or None,
             "model_recommendation_note": provider.get("modelRecommendationNote") or None,
-            "model_fetch_supported": agent_provider_contract(provider)["supports_model_list"],
+            "model_fetch_supported": contract["supports_model_list"],
             "generation_adapter": str(provider.get("generationAdapter") or ""),
             "local_provider": bool(provider.get("localProvider")),
             "credential_label": str(provider.get("credentialLabel") or "api key"),
             "credential_placeholder": str(provider.get("credentialPlaceholder") or "api key"),
             "credential_default": _default_credential(provider),
             "local_endpoint_candidates": provider.get("localEndpointCandidates") if isinstance(provider.get("localEndpointCandidates"), list) else [],
-            "credential_kind": agent_provider_contract(provider)["credential_kind"],
-            "contract": agent_provider_contract(provider),
+            "credential_kind": contract["credential_kind"],
+            "contract": contract,
         }
-        for provider in load_agent_providers()
-        if provider.get("id")
-    ]
+        summary.update(_provider_model_discovery(provider, discover_models=discover_models))
+        summaries.append(summary)
+    return summaries
 
 
 def _provider_url(provider: dict[str, Any], path_key: str) -> str:
@@ -174,7 +225,7 @@ def _provider_headers(provider: dict[str, Any], api_key: str, *, content_type: b
     return headers
 
 
-def _normalize_model_response(provider: dict[str, Any], payload: dict[str, Any]) -> list[dict[str, str]]:
+def _normalize_model_response(provider: dict[str, Any], payload: dict[str, Any]) -> list[ModelRecord]:
     response_key = provider.get("modelsResponseKey")
     raw_models = payload.get(response_key) if response_key else None
     if not isinstance(raw_models, list):
@@ -183,7 +234,7 @@ def _normalize_model_response(provider: dict[str, Any], payload: dict[str, Any])
         return []
 
     required_generation_method = provider.get("requiredGenerationMethod")
-    models: list[dict[str, str]] = []
+    models: list[ModelRecord] = []
     for raw_model in raw_models:
         if isinstance(raw_model, str):
             model_id = raw_model
@@ -205,16 +256,26 @@ def _normalize_model_response(provider: dict[str, Any], payload: dict[str, Any])
             continue
 
         if model_id:
-            models.append({"id": model_id, "label": label or model_id})
+            record: ModelRecord = {"id": model_id, "label": label or model_id}
+            if isinstance(raw_model, dict):
+                error = str(raw_model.get("error") or raw_model.get("last_error") or "").strip()
+                warning = str(raw_model.get("warning") or "").strip()
+                if error:
+                    record["error"] = error
+                if warning:
+                    record["warning"] = warning
+                if raw_model.get("disabled") is not None:
+                    record["disabled"] = bool(raw_model.get("disabled"))
+            models.append(record)
     return _prioritize_models(provider, models)
 
 
-def _static_agent_models(provider: dict[str, Any]) -> list[dict[str, str]]:
+def _static_agent_models(provider: dict[str, Any]) -> list[ModelRecord]:
     raw_models = provider.get("staticModels")
     if not isinstance(raw_models, list):
         return []
 
-    models: list[dict[str, str]] = []
+    models: list[ModelRecord] = []
     for raw_model in raw_models:
         if isinstance(raw_model, str):
             model_id = raw_model.strip()
@@ -225,17 +286,27 @@ def _static_agent_models(provider: dict[str, Any]) -> list[dict[str, str]]:
         else:
             continue
         if model_id:
-            models.append({"id": model_id, "label": label or model_id})
+            record: ModelRecord = {"id": model_id, "label": label or model_id}
+            if isinstance(raw_model, dict):
+                error = str(raw_model.get("error") or raw_model.get("last_error") or "").strip()
+                warning = str(raw_model.get("warning") or "").strip()
+                if error:
+                    record["error"] = error
+                if warning:
+                    record["warning"] = warning
+                if raw_model.get("disabled") is not None:
+                    record["disabled"] = bool(raw_model.get("disabled"))
+            models.append(record)
     return _prioritize_models(provider, models)
 
 
-def _prioritize_models(provider: dict[str, Any], models: list[dict[str, str]]) -> list[dict[str, str]]:
+def _prioritize_models(provider: dict[str, Any], models: list[ModelRecord]) -> list[ModelRecord]:
     recommended_model = str(provider.get("recommendedModel") or provider.get("defaultModel") or "").strip()
     if not recommended_model:
         return models
 
-    prioritized: list[dict[str, str]] = []
-    remaining: list[dict[str, str]] = []
+    prioritized: list[ModelRecord] = []
+    remaining: list[ModelRecord] = []
     for model in models:
         if model.get("id") == recommended_model:
             label = model.get("label") or recommended_model
@@ -291,7 +362,7 @@ def assess_agent_model_capability(provider: dict[str, Any], model: str) -> dict[
     }
 
 
-def fetch_agent_models(provider_id: str, api_key: str) -> list[dict[str, str]]:
+def fetch_agent_models(provider_id: str, api_key: str) -> list[ModelRecord]:
     provider = get_agent_provider(provider_id)
     if not provider.get("modelsPath"):
         return _static_agent_models(provider)
@@ -358,7 +429,7 @@ def _parse_runtime_bridge_output(provider: dict[str, Any], stdout: str) -> dict[
     return payload
 
 
-def _validate_local_agent_runtime(provider: dict[str, Any], command: str) -> list[dict[str, str]]:
+def _validate_local_agent_runtime(provider: dict[str, Any], command: str) -> list[ModelRecord]:
     parts = _runtime_command_parts(command, provider)
     label = str(provider.get("label") or provider.get("id") or "Agent runtime")
     probe_payload = {
@@ -394,7 +465,7 @@ def _validate_local_agent_runtime(provider: dict[str, Any], command: str) -> lis
     return models or _static_agent_models(provider)
 
 
-def detect_local_agent_endpoint(provider_id: str) -> tuple[str, list[dict[str, str]]] | None:
+def detect_local_agent_endpoint(provider_id: str) -> tuple[str, list[ModelRecord]] | None:
     provider = get_agent_provider(provider_id)
     if provider.get("generationAdapter") != "ollama-chat":
         return None
@@ -602,7 +673,7 @@ def call_agent_model(
     return _call_openai_chat_completions(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
 
 
-def validate_agent_api_key(api_key: str, provider_id: str = "openai", model: str | None = None) -> list[dict[str, str]]:
+def validate_agent_api_key(api_key: str, provider_id: str = "openai", model: str | None = None) -> list[ModelRecord]:
     provider = get_agent_provider(provider_id)
     if provider.get("generationAdapter") == "local-agent-runtime":
         models = _validate_local_agent_runtime(provider, api_key)

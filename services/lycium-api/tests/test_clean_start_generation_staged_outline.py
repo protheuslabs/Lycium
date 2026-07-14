@@ -265,7 +265,31 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
                         "pageType": "learn",
                         "sectionType": "lesson",
                         "sourceIds": source_ids[:1],
-                        "content": [{"type": "text", "value": "Source-backed lesson draft."}],
+                        "content": [
+                            {"type": "text", "value": "Source-backed lesson draft."},
+                            {
+                                "type": "conceptCard",
+                                "title": "Stoichiometry",
+                                "description": "Using source evidence to connect amounts and reactions.",
+                                "sourceIds": source_ids[:1],
+                            },
+                        ],
+                    },
+                    {
+                        "id": "section-quiz",
+                        "title": "Quiz: source-backed chemistry",
+                        "pageType": "apply",
+                        "sectionType": "assessment",
+                        "sourceIds": source_ids[:1],
+                        "content": [{"type": "quiz", "questions": [], "sourceIds": source_ids[:1]}],
+                    },
+                    {
+                        "id": "section-summary",
+                        "title": "Module 1 Concept Review",
+                        "pageType": "learn",
+                        "sectionType": "summary",
+                        "sourceIds": source_ids[:1],
+                        "content": [{"type": "heading", "title": "Module concepts"}],
                     }
                 ],
             },
@@ -304,6 +328,14 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
         "status": "derived_from_source_packet_outline",
     }
     assert result.trace["module_planning"]["source"] == "source_packet_outline"
+    stage_workflow_stages = [stage["stage"] for stage in result.trace["stage_workflows"]]
+    assert stage_workflow_stages == [
+        "course_module_outline_generation",
+        "module_section_plan_generation",
+        "section_fill_generation",
+        "module_assembly",
+    ]
+    assert all(stage["status"] == "passed" for stage in result.trace["stage_workflows"])
     assert result.course["metadata"]["generationPlan"]["planningSource"] == "source_packet_outline"
     assert result.course["metadata"]["sourceCorpusSynthesis"]["sourcePacket"]["quality"]["conceptCoverageRatio"] == 1
     assert result.course["metadata"]["courseBuildOutline"]["contractVersion"] == "course-outline-from-source-packet-v1"

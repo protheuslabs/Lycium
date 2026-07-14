@@ -176,7 +176,7 @@ def register(app: FastAPI) -> None:
 
     @app.get("/v1/local/ai/providers", response_model=list[LocalAiProviderRead])
     def get_local_ai_providers() -> list[dict[str, Any]]:
-        return list_agent_provider_summaries()
+        return list_agent_provider_summaries(discover_models=True)
 
 
     @app.put("/v1/local/settings", response_model=LocalSettingsRead)

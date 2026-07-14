@@ -6,6 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.generation_helpers import _stable_id, _title_from_prompt
 from app.models import CourseSnapshot, Learner, ProgramSnapshot
+from app.course_generation_stage_workflows import (
+    compact_stage_workflow_report,
+    run_cluster_generation_workflow,
+    run_course_wrapper_generation_workflow,
+    run_program_generation_workflow,
+)
 from app.program_contract_builder import build_program_contract
 from app.program_course_materialization import materialize_program_course_scaffold
 from app.curriculum_benchmarks import compile_curriculum_benchmark_context
@@ -419,13 +425,35 @@ def generate_program(
         fetch_sources=False,
         source_documents=indexed_source_documents,
     )
-    program, course_requirements, program_synthesis = build_program_contract(
-        goal,
-        level,
-        desired_course_count,
+    known_courses = _known_course_records(session)
+    program_stage = run_program_generation_workflow(
+        goal=goal,
+        level=level,
+        desired_course_count=desired_course_count,
         benchmark_context=benchmark_context,
-        known_courses=_known_course_records(session),
+        known_courses=known_courses,
     )
+    program = program_stage["artifacts"]["program"]
+    course_requirements = program_stage["artifacts"]["courseRequirements"]
+    program_synthesis = program_stage["artifacts"]["programSynthesis"]
+    cluster_stage = run_cluster_generation_workflow(program)
+    wrapper_stage = run_course_wrapper_generation_workflow(
+        program,
+        known_courses=known_courses,
+        course_scaffold_plan=program_synthesis.get("courseScaffoldPlan")
+        if isinstance(program_synthesis.get("courseScaffoldPlan"), dict)
+        else None,
+    )
+    program_synthesis["courseScaffoldPlan"] = wrapper_stage["artifacts"]["courseScaffoldPlan"]
+    stage_workflows = [
+        compact_stage_workflow_report(program_stage),
+        compact_stage_workflow_report(cluster_stage),
+        compact_stage_workflow_report(wrapper_stage),
+    ]
+    if program_stage["status"] == "failed":
+        validation_errors = [issue["message"] for issue in program_stage["issues"] if issue.get("severity") == "error"]
+    else:
+        validation_errors = validate_program_contract(program)
     course_packets = []
     for requirement in course_requirements:
         term = str(requirement["title"]).replace(" Course", "")
@@ -444,7 +472,6 @@ def generate_program(
                 "learningPacket": packet,
             }
         )
-    validation_errors = validate_program_contract(program)
     structure = {
         "contractVersion": "0.1.0",
         "program": program,
@@ -459,6 +486,7 @@ def generate_program(
             "sourceIndexSnapshotDocumentCount": len(indexed_source_documents),
             "curriculumBenchmarkContext": benchmark_context,
             "programSynthesis": program_synthesis,
+            "stageWorkflows": stage_workflows,
         },
         "contractValidation": {
             "passed": len(validation_errors) == 0,

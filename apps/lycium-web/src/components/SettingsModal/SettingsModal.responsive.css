@@ -89,7 +89,7 @@
 
   .settings-key-provider {
     min-height: 0;
-    display: block;
+    display: flex;
     padding: 0;
   }
 

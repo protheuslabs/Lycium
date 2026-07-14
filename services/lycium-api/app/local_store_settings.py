@@ -6,7 +6,13 @@ from typing import Any
 
 from app.agent_model_records import normalize_model_records
 from app.config import SETTINGS
-from app.course_agent_providers import agent_provider_contract, assess_agent_model_capability, get_agent_provider
+from app.course_agent_providers import (
+    agent_provider_contract,
+    assess_agent_model_capability,
+    get_agent_provider,
+    validate_agent_api_key,
+)
+from app.course_agent_types import CourseAgentError
 from app.local_store_core import _now, _read_json, _safe_key, _write_json, ensure_local_data_dirs
 
 
@@ -205,7 +211,7 @@ def save_agent_api_key(
     provider_id: str,
     provider_label: str,
     api_key: str,
-    models: list[dict[str, str]],
+    models: list[dict[str, Any]],
     model: str | None = None,
     connection_status: str = "verified",
     connection_message: str | None = None,
@@ -281,7 +287,7 @@ def get_agent_profile_by_id(key_id: str) -> dict[str, Any] | None:
 def update_agent_key_verification(
     key_id: str,
     *,
-    models: list[dict[str, str]],
+    models: list[dict[str, Any]],
     model: str | None,
     connection_status: str,
     connection_message: str | None = None,
@@ -343,9 +349,34 @@ def update_agent_key_model(key_id: str, model: str) -> dict[str, Any]:
     for key in secret["agent_keys"]:
         if key["id"] != key_id:
             continue
-        available_model_ids = {available_model["id"] for available_model in key.get("models", [])}
+        available_model_ids = {
+            available_model["id"]
+            for available_model in key.get("models", [])
+            if not available_model.get("disabled") and not available_model.get("error")
+        }
         if available_model_ids and cleaned_model not in available_model_ids:
-            raise ValueError("Model is not available for this API key.")
+            try:
+                refreshed_models = validate_agent_api_key(
+                    str(key.get("agent_api_key") or ""),
+                    provider_id=str(key.get("provider_id") or ""),
+                    model=cleaned_model,
+                )
+            except CourseAgentError as exc:
+                raise ValueError(f"Model is not available for this API key. {exc}") from exc
+            normalized_models = normalize_model_records(refreshed_models, cleaned_model)
+            refreshed_model_ids = {
+                available_model["id"]
+                for available_model in normalized_models
+                if not available_model.get("disabled") and not available_model.get("error")
+            }
+            if cleaned_model not in refreshed_model_ids:
+                raise ValueError("Model is not available for this API key.")
+            key["models"] = normalized_models
+            key["models_fetched_at"] = _now()
+            key["connection_status"] = "verified"
+            key["connection_message"] = "Connection verified."
+            key["last_verified_at"] = _now()
+            key["last_error"] = None
         key["model"] = cleaned_model
         key["updated_at"] = _now()
         secret["updated_at"] = _now()

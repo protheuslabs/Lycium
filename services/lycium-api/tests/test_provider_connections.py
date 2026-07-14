@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 from typing import Iterator
 
 import pytest
 
 from app.config import SETTINGS
+from app.course_agent_providers import RUNTIME_BRIDGE_PATH
 from app.course_agent_types import CourseAgentError
 from app.local_store import get_active_agent_profile
 
@@ -44,7 +46,30 @@ def test_provider_summaries_expose_generation_contract(client) -> None:
     assert providers["local-model"]["contract"]["supports_json_mode"] is True
     assert providers["openai"]["credential_kind"] == "api_key"
     assert providers["openai"]["contract"]["generation_adapter"] == "openai-chat-completions"
+    assert providers["openai"]["model_discovery_status"] == "requires_credential"
+    assert providers["openai"]["models"] == []
     assert providers["anthropic"]["contract"]["provider_kind"] == "cloud"
+    assert isinstance(providers["local-model"]["models"], list)
+    assert "model_discovery_error" in providers["local-model"]
+    assert providers["codex-runtime"]["model_discovery_status"] in {"available", "partial", "error"}
+    assert isinstance(providers["codex-runtime"]["models"], list)
+
+
+def test_codex_runtime_bridge_reports_cached_and_documented_models() -> None:
+    spec = importlib.util.spec_from_file_location("agent_runtime_bridge", RUNTIME_BRIDGE_PATH)
+    assert spec is not None and spec.loader is not None
+    bridge = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bridge)
+
+    models = bridge._models_for_runtime("codex")
+    model_ids = {model["id"] for model in models}
+
+    assert "codex" in model_ids
+    assert "gpt-5.5" in model_ids
+    assert "gpt-5.4-mini" in model_ids
+    assert "gpt-5.6-sol" in model_ids
+    assert "codex-auto-review" not in model_ids
+    assert next(model for model in models if model["id"] == "gpt-5.6-sol").get("label")
 
 
 def test_valid_cloud_key_is_saved_verified_and_active(client, monkeypatch, isolated_local_data) -> None:
@@ -80,7 +105,7 @@ def test_empty_cloud_model_list_keeps_default_model_available(client, monkeypatc
     key = response.json()["agent_keys"][0]
     assert key["connection_status"] == "verified"
     assert key["model"] == "gpt-4.1-mini"
-    assert key["models"] == [{"id": "gpt-4.1-mini", "label": "gpt-4.1-mini"}]
+    assert key["models"][0]["id"] == "gpt-4.1-mini"
 
 
 def test_local_key_can_be_saved_unverified_then_verified_later(client, monkeypatch, isolated_local_data) -> None:
@@ -208,6 +233,30 @@ def test_model_update_persists_for_active_key(client, monkeypatch, isolated_loca
     assert updated.status_code == 200, updated.text
     assert fetched.status_code == 200, fetched.text
     assert fetched.json()["agent_keys"][0]["model"] == "gpt-4.1"
+
+
+def test_model_update_refreshes_stale_saved_model_cache(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", lambda *args, **kwargs: _mock_models("codex"))
+    saved = client.put(
+        "/v1/local/settings",
+        json={
+            "provider_id": "codex-runtime",
+            "agent_api_key": "python3 services/lycium-api/scripts/agent_runtime_bridge.py --runtime codex",
+        },
+    )
+    assert saved.status_code == 200, saved.text
+    key_id = saved.json()["agent_keys"][0]["id"]
+
+    monkeypatch.setattr(
+        "app.local_store_settings.validate_agent_api_key",
+        lambda *args, **kwargs: _mock_models("codex", "gpt-5.5"),
+    )
+    updated = client.put("/v1/local/settings/key-model", json={"key_id": key_id, "model": "gpt-5.5"})
+
+    assert updated.status_code == 200, updated.text
+    key = updated.json()["agent_keys"][0]
+    assert key["model"] == "gpt-5.5"
+    assert [model["id"] for model in key["models"]] == ["codex", "gpt-5.5"]
 
 
 def test_active_provider_switch_persists_selected_provider_and_model(client, monkeypatch, isolated_local_data) -> None:

@@ -4,7 +4,7 @@ import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import Dropdown from "../Dropdown/Dropdown";
 import type { DropdownOption } from "../Dropdown/Dropdown";
 import Modal from "../Modal/Modal";
-import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
+import type { AgentKeyRecord, AgentModelRecord, AgentProviderRecord, ThemeMode } from "../../courseTypes";
 import { describeAgentKeyConnectionDetail, describeAgentKeyConnectionStatus } from "../../utils/aiConnectionReadiness";
 
 type SettingsModalProps = {
@@ -29,6 +29,52 @@ type SettingsModalProps = {
   onApiKeySaveStatusChange: Dispatch<SetStateAction<"idle" | "loading" | "invalid">>;
   onSettingsSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onThemeModeChange: (mode: ThemeMode) => void;
+};
+
+const providerOption = (provider: AgentProviderRecord): DropdownOption => ({
+  value: provider.id,
+  label: provider.label,
+  error: provider.model_discovery_error,
+});
+
+const mergeModelRecords = (...recordSets: Array<AgentModelRecord[] | undefined>) => {
+  const byId = new Map<string, AgentModelRecord>();
+
+  recordSets.flatMap((records) => records ?? []).forEach((model) => {
+    const modelId = model.id?.trim();
+    if (!modelId) {
+      return;
+    }
+    const existing = byId.get(modelId);
+    const label = model.label || modelId;
+    if (!existing) {
+      byId.set(modelId, { ...model, id: modelId, label });
+      return;
+    }
+    byId.set(modelId, {
+      id: modelId,
+      label: label !== modelId ? label : existing.label || label,
+      warning: model.warning ?? existing.warning,
+      error: model.error ?? existing.error,
+      disabled: Boolean(existing.disabled || model.disabled),
+    });
+  });
+
+  return Array.from(byId.values());
+};
+
+const modelOptionsForKey = (key: AgentKeyRecord, provider?: AgentProviderRecord): DropdownOption[] => {
+  const models = mergeModelRecords(provider?.models, key.models);
+  if (key.model && !models.some((model) => model.id === key.model)) {
+    models.unshift({ id: key.model, label: key.model });
+  }
+  return models.map((model) => ({
+    value: model.id,
+    label: model.label || model.id,
+    warning: model.warning,
+    error: model.error,
+    disabled: Boolean(model.disabled || model.error),
+  }));
 };
 
 export default function SettingsModal({
@@ -98,14 +144,8 @@ export default function SettingsModal({
   const credentialLabel = selectedProvider?.credential_label ?? "api key";
   const credentialPlaceholder = selectedProvider?.credential_placeholder ?? credentialLabel;
   const isLocalProvider = Boolean(selectedProvider?.local_provider);
-  const localProviderOptions = agentProviders.filter((provider) => provider.local_provider).map((provider) => ({
-    value: provider.id,
-    label: provider.label,
-  }));
-  const apiProviderOptions = agentProviders.filter((provider) => !provider.local_provider).map((provider) => ({
-    value: provider.id,
-    label: provider.label,
-  }));
+  const localProviderOptions = agentProviders.filter((provider) => provider.local_provider).map(providerOption);
+  const apiProviderOptions = agentProviders.filter((provider) => !provider.local_provider).map(providerOption);
   const providerOptions: DropdownOption[] = agentProviders.length > 0
     ? [
         { value: "", label: "Select" },
@@ -164,6 +204,9 @@ export default function SettingsModal({
                     const connectionStatus = describeAgentKeyConnectionStatus(key, { isChecking: isVerifyingKey });
                     const connectionDetail = describeAgentKeyConnectionDetail(key, { isChecking: isVerifyingKey });
                     const providerKind = providerKindLabel(key);
+                    const providerForKey = agentProviders.find((provider) => provider.id === key.provider_id);
+                    const providerIssue = isUnverified ? connectionDetail : "";
+                    const modelOptions = modelOptionsForKey(key, providerForKey);
                     const showsActiveCheck = connectionStatus.status === "active";
                     const showsStatusIndicator = !showsActiveCheck && connectionStatus.status !== "ready";
                     return (
@@ -186,19 +229,28 @@ export default function SettingsModal({
                         aria-disabled={isSettingsBusy}
                       >
                         <span className="settings-key-provider">
-                          {key.provider_label}
-                          <span className="settings-key-provider-kind"> - {providerKind}</span>
+                          <span className="settings-key-provider-text">
+                            {key.provider_label}
+                            <span className="settings-key-provider-kind"> - {providerKind}</span>
+                          </span>
+                          {providerIssue && (
+                            <span
+                              className="settings-key-provider-issue"
+                              aria-label={providerIssue}
+                              title={providerIssue}
+                              data-tooltip={providerIssue}
+                            >
+                              !
+                            </span>
+                          )}
                         </span>
                         <label className="settings-model-field" onClick={(event) => event.stopPropagation()}>
                           <Dropdown
                             className="settings-model-dropdown"
                             value={key.model ?? ""}
-                            options={(key.models ?? []).map((model) => ({
-                              value: model.id,
-                              label: model.label || model.id,
-                            }))}
+                            options={modelOptions}
                             onChange={(nextModel) => onAgentModelChange(key.id, nextModel)}
-                            disabled={isSettingsBusy || !key.models?.length}
+                            disabled={isSettingsBusy || modelOptions.length === 0}
                             ariaLabel={`Model for ${key.provider_label}`}
                             placeholder="Model"
                           />

@@ -6,6 +6,8 @@ type DropdownValueOption = {
   value: string;
   label: string;
   disabled?: boolean;
+  warning?: string | null;
+  error?: string | null;
 };
 
 type DropdownSeparatorOption = {
@@ -88,15 +90,19 @@ export default function Dropdown({
                 );
               }
 
+              const issue = option.error || option.warning;
+              const issueTone = option.error ? "error" : "warning";
               return (
                 <button
                   className={`dropdown-option ${
                     option.value === value ? "dropdown-option-active" : ""
+                  } ${
+                    option.disabled ? "dropdown-option-disabled" : ""
                   }`.trim()}
                   type="button"
                   role="option"
                   aria-selected={option.value === value}
-                  disabled={option.disabled}
+                  aria-disabled={option.disabled ? "true" : undefined}
                   key={option.value}
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => {
@@ -105,7 +111,18 @@ export default function Dropdown({
                     }
                   }}
                 >
-                  {option.label}
+                  <span className="dropdown-option-content">
+                    <span className="dropdown-option-label">{option.label}</span>
+                    {issue && (
+                      <span
+                        className={`dropdown-option-issue dropdown-option-issue-${issueTone}`}
+                        aria-label={issue}
+                        title={issue}
+                      >
+                        !
+                      </span>
+                    )}
+                  </span>
                 </button>
               );
             })

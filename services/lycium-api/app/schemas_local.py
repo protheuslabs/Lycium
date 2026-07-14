@@ -21,6 +21,14 @@ class LocalAiProviderContractRead(BaseModel):
     capabilities: dict[str, Any] = Field(default_factory=dict)
 
 
+class LocalAgentModelRead(BaseModel):
+    id: str
+    label: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    disabled: bool = False
+
+
 class LocalAiProviderRead(BaseModel):
     id: str
     label: str
@@ -37,11 +45,17 @@ class LocalAiProviderRead(BaseModel):
     local_endpoint_candidates: list[str] = Field(default_factory=list)
     credential_kind: Literal["api_key", "local_endpoint", "local_runtime"] = "api_key"
     contract: LocalAiProviderContractRead | None = None
-
-
-class LocalAgentModelRead(BaseModel):
-    id: str
-    label: str | None = None
+    models: list[LocalAgentModelRead] = Field(default_factory=list)
+    models_fetched_at: str | None = None
+    model_discovery_status: Literal[
+        "not_checked",
+        "requires_credential",
+        "available",
+        "partial",
+        "error",
+        "unsupported",
+    ] = "not_checked"
+    model_discovery_error: str | None = None
 
 
 class LocalAgentKeyRead(BaseModel):

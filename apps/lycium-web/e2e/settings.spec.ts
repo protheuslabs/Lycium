@@ -262,6 +262,78 @@ async function mockUnavailableLocalProviderSettingsApis(page: Page) {
   });
 }
 
+async function mockProviderIssueSettingsApis(page: Page) {
+  const discoveryError = "Ollama is unavailable at http://localhost:11434";
+  const settings = {
+    local_data_dir: "/tmp/lycium-e2e",
+    has_agent_api_key: true,
+    agent_api_key_preview: "http://localhost:11434",
+    active_agent_key_id: "local-model-localhost",
+    agent_keys: [
+      {
+        id: "local-model-localhost",
+        provider_id: "local-model",
+        provider_label: "Ollama Local",
+        key_preview: "http://localhost:11434",
+        model: "llama3.1:8b",
+        models: [
+          { id: "llama3.1:8b", label: "llama3.1:8b" },
+          { id: "broken-model", label: "Broken model", error: "Provider returned an error.", disabled: true },
+        ],
+        models_fetched_at: null,
+        connection_status: "unverified",
+        connection_message: discoveryError,
+        last_verified_at: null,
+        last_error: discoveryError,
+        is_active: true,
+        generation_adapter: "ollama-chat",
+        local_provider: true,
+        credential_label: "local path",
+        credential_kind: "local_endpoint",
+      },
+    ],
+  };
+
+  await page.route("**/v1/local/ai/providers", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          ...localProvider,
+          models: [
+            { id: "llama3.1:8b", label: "llama3.1:8b" },
+            { id: "llama3.1:70b", label: "llama3.1:70b", warning: "Available from provider discovery." },
+          ],
+          model_discovery_status: "error",
+          model_discovery_error: discoveryError,
+        },
+      ]),
+    });
+  });
+  await page.route("**/v1/local/settings", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify(settings),
+    });
+  });
+  await page.route("**/v1/local/storage", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        local_data_dir: "/tmp/lycium-e2e",
+        schema_version: 1,
+        target_schema_version: 1,
+        backup_count: 0,
+        json_error_count: 0,
+        json_errors: [],
+        repair_warning_count: 0,
+        repair_warnings: [],
+        directories: [],
+      }),
+    });
+  });
+}
+
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.clear();
@@ -355,6 +427,38 @@ test("activating a saved model does not overwrite the add model row", async ({ p
   await expect(page.getByRole("button", { name: "Codex local connection, active" })).toBeVisible();
   await expect(providerButton).toContainText("Ollama Local");
   await expect(endpointInput).toHaveValue("http://localhost:3001");
+});
+
+test("provider and model discovery issues are visible in settings dropdowns", async ({ page }) => {
+  await mockProviderIssueSettingsApis(page);
+  await page.goto("/Lycium/settings");
+
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+  await expect(page.locator(".settings-key-provider-issue")).toHaveAttribute(
+    "title",
+    "Ollama is unavailable at http://localhost:11434",
+  );
+
+  const providerButton = page.getByRole("button", { name: "AI provider" });
+  await providerButton.click();
+  const providerIssue = page.locator(
+    '.settings-provider-dropdown .dropdown-option:has-text("Ollama Local") .dropdown-option-issue-error',
+  );
+  await expect(providerIssue).toBeVisible();
+  await expect(providerIssue).toHaveAttribute("title", "Ollama is unavailable at http://localhost:11434");
+  await providerButton.click();
+
+  await page.getByRole("button", { name: "Model for Ollama Local" }).click();
+  const modelWarning = page.locator(
+    '.settings-model-dropdown .dropdown-option:has-text("llama3.1:70b") .dropdown-option-issue-warning',
+  );
+  const modelError = page.locator(
+    '.settings-model-dropdown .dropdown-option:has-text("Broken model") .dropdown-option-issue-error',
+  );
+  await expect(modelWarning).toBeVisible();
+  await expect(modelWarning).toHaveAttribute("title", "Available from provider discovery.");
+  await expect(modelError).toBeVisible();
+  await expect(modelError).toHaveAttribute("title", "Provider returned an error.");
 });
 
 test("unavailable local model endpoint remains saved and recoverable", async ({ page }) => {
