@@ -4,8 +4,11 @@ from app.course_build_task_resume import apply_course_build_resume_inputs
 from app.course_build_tasks import transition_course_build_task_from_source_packet
 from app.course_generation_stage_workflows import (
     CLUSTER_GENERATION_CONTRACT,
+    CLUSTER_PLAN_CONTRACT,
+    CLUSTER_QUALITY_REPORT_CONTRACT,
     COURSE_MODULE_OUTLINE_CONTRACT,
     COURSE_WRAPPER_GENERATION_CONTRACT,
+    COURSE_WRAPPER_QUALITY_REPORT_CONTRACT,
     MODULE_ASSEMBLY_CONTRACT,
     MODULE_SECTION_PLAN_CONTRACT,
     PROGRAM_BRIEF_CONTRACT,
@@ -21,6 +24,16 @@ from app.course_generation_stage_workflows import (
     run_program_generation_workflow,
     run_section_fill_workflow,
 )
+
+
+def _contains_course_materialization_payload(value: object) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in ("courseWrapper", "activeGenerationPlan", "courseBuildTask", "modules", "sections", "content")):
+            return True
+        return any(_contains_course_materialization_payload(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_contains_course_materialization_payload(item) for item in value)
+    return False
 
 
 def _source_packet() -> dict:
@@ -213,6 +226,97 @@ def test_cluster_generation_workflow_is_separate_from_program_generation() -> No
     assert "activeGenerationPlan" not in first_kind
 
 
+def test_cluster_generation_workflow_scores_quality_without_materializing_courses() -> None:
+    program = run_program_generation_workflow(
+        goal="pre-medical preparation",
+        level="undergraduate",
+        desired_course_count=8,
+    )["artifacts"]["program"]
+
+    result = run_cluster_generation_workflow(program)
+
+    quality = result["artifacts"]["clusterQualityReport"]
+    clusters = result["artifacts"]["clusters"]
+    course_clusters = [cluster for cluster in clusters if cluster["qualityProfile"]["courseBearing"]]
+
+    assert result["status"] == "passed"
+    assert quality["contractVersion"] == CLUSTER_QUALITY_REPORT_CONTRACT
+    assert quality["passed"] is True
+    assert quality["courseBearingClusterCount"] >= 2
+    assert quality["courseKindCount"] >= 8
+    assert quality["requiredConceptCount"] >= 8
+    assert quality["policy"] == {
+        "materializesCourses": False,
+        "materializesCourseWrappers": False,
+        "courseWrappersCreatedBy": COURSE_WRAPPER_GENERATION_CONTRACT,
+    }
+    assert course_clusters
+    assert any(cluster["dependencyProfile"]["unlocksClusterIds"] for cluster in course_clusters)
+
+    for cluster in clusters:
+        assert cluster["contractVersion"] == CLUSTER_PLAN_CONTRACT
+        assert cluster["policy"]["materializesCourses"] is False
+        assert cluster["policy"]["materializesCourseWrappers"] is False
+        assert cluster["dependencyProfile"]["contractVersion"] == "cluster-dependency-profile-v1"
+        assert not _contains_course_materialization_payload(cluster)
+        if not cluster["qualityProfile"]["courseBearing"]:
+            continue
+        assert cluster["qualityProfile"]["status"] == "passed"
+        assert cluster["qualityProfile"]["titleReady"] is True
+        assert cluster["qualityProfile"]["scopeReady"] is True
+        assert cluster["qualityProfile"]["learningOutcomeCount"] >= 2
+        assert cluster["requiredConcepts"]
+        for course_kind in cluster["courseKinds"]:
+            assert course_kind["contractVersion"] == "cluster-course-kind-v1"
+            assert course_kind["planningRole"] == "abstract_course_kind"
+            assert course_kind["sourceStatus"] == "needs_sources"
+            assert course_kind["title"]
+            assert course_kind["description"]
+            assert course_kind["requiredConcepts"]
+            assert "courseWrapper" not in course_kind
+            assert "activeGenerationPlan" not in course_kind
+
+
+def test_cluster_generation_workflow_blocks_missing_cluster_titles() -> None:
+    result = run_cluster_generation_workflow(
+        {
+            "requirementGroups": [
+                {
+                    "id": "group-untitled",
+                    "title": "",
+                    "displayName": "",
+                    "description": "",
+                    "purpose": "",
+                    "groupKind": "cluster",
+                    "clusterType": "core",
+                    "learningOutcomes": [],
+                    "requirements": [
+                        {
+                            "id": "req-python",
+                            "type": "complete_course",
+                            "title": "Python Foundations",
+                            "description": "Complete a course covering Python foundations.",
+                            "courseId": "python-foundations",
+                            "estimatedHours": 20,
+                        }
+                    ],
+                    "completionRule": {"type": "complete_all"},
+                }
+            ],
+            "dependencyGraph": {"edges": []},
+        }
+    )
+
+    cluster = result["artifacts"]["clusters"][0]
+
+    assert result["status"] == "failed"
+    assert result["artifacts"]["clusterQualityReport"]["passed"] is False
+    assert cluster["title"] == "Cluster 1"
+    assert cluster["qualityProfile"]["status"] == "needs_review"
+    assert "missing_cluster_title" in cluster["qualityProfile"]["reviewReasons"]
+    assert any(issue["location"] == "clusters[1].title" for issue in result["issues"])
+
+
 def test_course_wrapper_generation_workflow_creates_build_tasks() -> None:
     program = run_program_generation_workflow(
         goal="data analyst portfolio pathway",
@@ -232,6 +336,7 @@ def test_course_wrapper_generation_workflow_creates_build_tasks() -> None:
     scaffold_cluster = plan["clusters"][0]
     scaffold_kind = scaffold_cluster["courseKinds"][0]
     task_report = plan["courseBuildTaskReport"]
+    quality_report = result["artifacts"]["courseWrapperQualityReport"]
     action_plan = plan["courseShellActionPlan"]
     source_acquisition = plan["sourceAcquisitionPlan"]
     assert plan["generationPolicy"]["assemblyThresholds"]["programFromClusters"] == {
@@ -251,6 +356,21 @@ def test_course_wrapper_generation_workflow_creates_build_tasks() -> None:
     assert wrapper["courseWrapper"]["contractVersion"] == "course-wrapper-v1"
     assert wrapper["activeGenerationPlan"]["contractVersion"] == "active-course-generation-plan-v1"
     assert wrapper["courseBuildTask"]["contractVersion"] == "course-build-task-v1"
+    assert plan["courseWrapperQualityReport"] == quality_report
+    assert quality_report["contractVersion"] == COURSE_WRAPPER_QUALITY_REPORT_CONTRACT
+    assert quality_report["passed"] is True
+    assert quality_report["wrapperCourseCount"] == len(wrappers)
+    assert quality_report["sourceRequestCount"] == len(wrappers)
+    assert quality_report["activeGenerationPlanCount"] == len(wrappers)
+    assert quality_report["courseBuildTaskCount"] == len(wrappers)
+    assert quality_report["materializedContentCourseCount"] == 0
+    assert quality_report["policy"] == {
+        "wrapperStatus": "wrapper",
+        "placeholderText": "Section not yet generated",
+        "nextWorkflow": "active-course-generation-plan-v1",
+        "requiresSourcePacketBeforeOutline": True,
+        "materializesLearnerContent": False,
+    }
     assert task_report["status"] == "needs_sources"
     assert task_report["missingCourseBuildTaskCount"] == 0
     assert task_report["sourcePacketRequiredCount"] == len(wrappers)
@@ -266,11 +386,19 @@ def test_course_wrapper_generation_workflow_creates_build_tasks() -> None:
         active_plan = row["activeGenerationPlan"]
         build_task = row["courseBuildTask"]
         source_request = row["sourceRequest"]
+        quality_profile = next(profile for profile in quality_report["profiles"] if profile["courseId"] == row["courseId"])
         assert "modules" not in row
         assert "sections" not in row
         assert "content" not in row
+        assert quality_profile["contractVersion"] == "course-wrapper-quality-profile-v1"
+        assert quality_profile["passed"] is True
+        assert quality_profile["sourceRequestReady"] is True
+        assert quality_profile["activeGenerationPlanReady"] is True
+        assert quality_profile["courseBuildTaskReady"] is True
+        assert quality_profile["materializesContent"] is False
         assert course_wrapper["status"] == "wrapper"
         assert course_wrapper["generationMode"] == "active_generation"
+        assert "editor-native" in course_wrapper["generationPrompt"]
         assert "source-backed course" in course_wrapper["generationPrompt"]
         assert "source packet" in course_wrapper["generationPrompt"]
         assert course_wrapper["learnerPlaceholderText"] == "Section not yet generated"
@@ -285,6 +413,48 @@ def test_course_wrapper_generation_workflow_creates_build_tasks() -> None:
         assert source_request["contractVersion"] == "course-source-request-v1"
         assert source_request["requiredConcepts"]
         assert source_request["suggestedQueries"]
+
+
+def test_course_wrapper_generation_workflow_blocks_incomplete_wrapper_handoff() -> None:
+    result = run_course_wrapper_generation_workflow(
+        {"requirementGroups": []},
+        course_scaffold_plan={
+            "version": "program-course-scaffold-plan-v1",
+            "clusters": [],
+            "courses": [
+                {
+                    "clusterId": "cluster-broken",
+                    "requirementId": "req-broken",
+                    "courseId": "broken-course",
+                    "title": "Broken Course",
+                    "action": "create_empty_course",
+                    "status": "needs_course_buildout",
+                    "courseBuildTask": {
+                        "contractVersion": "course-build-task-v1",
+                        "courseId": "broken-course",
+                        "title": "Broken Course",
+                        "status": "source_gathering",
+                        "currentStage": "source_gathering",
+                        "nextAction": "attach_source_packet",
+                        "requiredInputs": ["source_packet"],
+                    },
+                }
+            ],
+        },
+    )
+
+    quality = result["artifacts"]["courseWrapperQualityReport"]
+    profile = quality["failedProfiles"][0]
+
+    assert result["status"] == "failed"
+    assert quality["passed"] is False
+    assert quality["failedCourseCount"] == 1
+    assert profile["courseId"] == "broken-course"
+    assert "missing_source_request" in profile["reasons"]
+    assert "missing_course_wrapper" in profile["reasons"]
+    assert "missing_active_generation_plan" in profile["reasons"]
+    assert "course_build_task_required_inputs_invalid" in profile["reasons"]
+    assert any(issue["location"] == "courseWrapperQualityReport.failedProfiles" for issue in result["issues"])
 
 
 def test_course_wrapper_source_packet_transition_enables_module_outline_generation() -> None:

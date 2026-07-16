@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from typing import Any, Literal
 
@@ -12,7 +13,11 @@ from app.curriculum_assembly_policy import (
     program_generation_threshold_report,
 )
 from app.program_contract_builder import build_program_brief, build_program_contract, build_requirement_group_plan
-from app.program_course_scaffold import build_course_scaffold_plan
+from app.program_course_scaffold import (
+    COURSE_WRAPPER_QUALITY_REPORT_CONTRACT,
+    build_course_scaffold_plan,
+    build_course_wrapper_quality_report,
+)
 from app.program_validation import validate_program_contract
 
 STAGE_WORKFLOW_VERSION = "course-generation-stage-workflows-v1"
@@ -23,6 +28,8 @@ PROGRAM_BRIEF_CONTRACT = "program-brief-workflow-v1"
 REQUIREMENT_GROUP_PLAN_CONTRACT = "requirement-group-plan-workflow-v1"
 PROGRAM_GENERATION_CONTRACT = "program-generation-workflow-v1"
 CLUSTER_GENERATION_CONTRACT = "cluster-generation-workflow-v1"
+CLUSTER_PLAN_CONTRACT = "cluster-plan-v1"
+CLUSTER_QUALITY_REPORT_CONTRACT = "cluster-quality-report-v1"
 COURSE_WRAPPER_GENERATION_CONTRACT = "course-wrapper-generation-workflow-v1"
 COURSE_MODULE_OUTLINE_CONTRACT = "course-module-outline-workflow-v1"
 MODULE_SECTION_PLAN_CONTRACT = "module-section-plan-workflow-v1"
@@ -40,6 +47,21 @@ def _items(value: Any) -> list[dict[str, Any]]:
 
 def _strings(value: Any) -> list[str]:
     return [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
+
+
+def _unique_strings(values: list[str], *, limit: int | None = None) -> list[str]:
+    rows: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        clean = str(value or "").strip()
+        key = clean.lower()
+        if not clean or key in seen:
+            continue
+        rows.append(clean)
+        seen.add(key)
+        if limit is not None and len(rows) >= limit:
+            break
+    return rows
 
 
 def _workflow_result(
@@ -138,6 +160,16 @@ def _has_materialized_course_artifacts(value: Any) -> bool:
         return any(_has_materialized_course_artifacts(child) for child in value.values())
     if isinstance(value, list):
         return any(_has_materialized_course_artifacts(item) for item in value)
+    return False
+
+
+def _has_course_materialization_payload(value: Any) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in ("courseWrapper", "activeGenerationPlan", "courseBuildTask", "modules", "sections", "content")):
+            return True
+        return any(_has_course_materialization_payload(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_has_course_materialization_payload(item) for item in value)
     return False
 
 
@@ -283,19 +315,55 @@ def run_program_generation_workflow(
     )
 
 
+CLUSTER_CONCEPT_STOPWORDS = {
+    "and",
+    "course",
+    "complete",
+    "develops",
+    "for",
+    "from",
+    "into",
+    "needed",
+    "program",
+    "source",
+    "source-backed",
+    "that",
+    "the",
+    "with",
+}
+
+
+def _concepts_for_course_kind(requirement: dict[str, Any], title: str, description: str) -> list[str]:
+    origin = requirement.get("origin") if isinstance(requirement.get("origin"), dict) else {}
+    origin_concepts = _strings(origin.get("concepts") or origin.get("topics") or origin.get("requiredConcepts"))
+    if origin_concepts:
+        return _unique_strings(origin_concepts, limit=8)
+
+    title_concept = title.replace(" Course", "").strip()
+    token_concepts = [
+        token
+        for token in re.split(r"[^A-Za-z0-9+#/.-]+", f"{title} {description}")
+        if len(token) > 2 and token.lower() not in CLUSTER_CONCEPT_STOPWORDS
+    ]
+    return _unique_strings([title_concept, *token_concepts], limit=8)
+
+
 def _cluster_course_kind_from_requirement(requirement: dict[str, Any], index: int) -> dict[str, Any]:
     title = str(requirement.get("title") or requirement.get("courseId") or f"Course {index}")
-    origin = requirement.get("origin") if isinstance(requirement.get("origin"), dict) else {}
-    concepts = _strings(origin.get("concepts") or origin.get("topics") or origin.get("requiredConcepts"))
+    description = str(requirement.get("description") or f"Complete a source-backed course covering {title}.")
+    concepts = _concepts_for_course_kind(requirement, title, description)
     return {
         "contractVersion": "cluster-course-kind-v1",
+        "kindId": str(requirement.get("id") or f"course-kind-{index}"),
         "courseId": str(requirement.get("courseId") or ""),
         "requirementId": str(requirement.get("id") or ""),
         "title": title,
-        "description": str(requirement.get("description") or f"Complete a source-backed course covering {title}."),
+        "description": description,
         "estimatedHours": requirement.get("estimatedHours") or 0,
         "importance": str(requirement.get("importance") or "required"),
         "requiredConcepts": concepts,
+        "sourceStatus": "needs_sources",
+        "planningRole": "abstract_course_kind",
     }
 
 
@@ -325,8 +393,120 @@ def _cluster_course_kinds(requirements: list[dict[str, Any]]) -> list[dict[str, 
     return course_kinds
 
 
+def _dependency_edges_for(program: dict[str, Any]) -> list[dict[str, Any]]:
+    graph = program.get("dependencyGraph") if isinstance(program.get("dependencyGraph"), dict) else {}
+    return _items(graph.get("edges"))
+
+
+def _cluster_dependency_profile(group: dict[str, Any], edges: list[dict[str, Any]]) -> dict[str, Any]:
+    group_id = str(group.get("id") or "")
+    explicit_prerequisites = [
+        str(row.get("nodeId") or row.get("groupId") or "")
+        for row in _items(group.get("prerequisites"))
+        if str(row.get("nodeId") or row.get("groupId") or "").strip()
+    ]
+    depends_on = [
+        str(edge.get("fromNodeId") or "")
+        for edge in edges
+        if str(edge.get("toNodeId") or "") == group_id and str(edge.get("fromNodeId") or "").strip()
+    ]
+    unlocks = [
+        str(edge.get("toNodeId") or "")
+        for edge in edges
+        if str(edge.get("fromNodeId") or "") == group_id and str(edge.get("toNodeId") or "").strip()
+    ]
+    return {
+        "contractVersion": "cluster-dependency-profile-v1",
+        "dependsOnClusterIds": _unique_strings([*explicit_prerequisites, *depends_on]),
+        "unlocksClusterIds": _unique_strings(unlocks),
+        "dependencyCount": len(_unique_strings([*explicit_prerequisites, *depends_on])),
+        "unlockCount": len(_unique_strings(unlocks)),
+    }
+
+
+def _cluster_required_concepts(course_kinds: list[dict[str, Any]]) -> list[str]:
+    return _unique_strings(
+        [
+            concept
+            for kind in course_kinds
+            for concept in _strings(kind.get("requiredConcepts"))
+        ],
+        limit=18,
+    )
+
+
+def _cluster_quality_profile(
+    *,
+    group: dict[str, Any],
+    cluster_title: str,
+    cluster_description: str,
+    has_authored_title: bool,
+    course_kinds: list[dict[str, Any]],
+    dependency_profile: dict[str, Any],
+    assembly_readiness: dict[str, Any],
+) -> dict[str, Any]:
+    group_kind = str(group.get("groupKind") or "cluster")
+    cluster_type = str(group.get("clusterType") or "core")
+    is_course_bearing = group_kind == "cluster" and cluster_type not in {"lab", "assessment", "capstone"}
+    learning_outcomes = _items(group.get("learningOutcomes"))
+    concept_count = len(_cluster_required_concepts(course_kinds))
+    review_reasons: list[str] = []
+    if not has_authored_title:
+        review_reasons.append("missing_cluster_title")
+    if not cluster_description.strip() and not str(group.get("purpose") or "").strip():
+        review_reasons.append("missing_cluster_purpose")
+    if is_course_bearing and not course_kinds:
+        review_reasons.append("missing_course_kinds")
+    if is_course_bearing and concept_count == 0:
+        review_reasons.append("missing_required_concepts")
+    if is_course_bearing and not learning_outcomes:
+        review_reasons.append("missing_learning_outcomes")
+
+    return {
+        "contractVersion": "cluster-quality-profile-v1",
+        "status": "needs_review" if review_reasons else "passed",
+        "reviewReasons": review_reasons,
+        "courseBearing": is_course_bearing,
+        "titleReady": has_authored_title and bool(cluster_title.strip()),
+        "scopeReady": bool(cluster_description.strip() or str(group.get("purpose") or "").strip()),
+        "learningOutcomeCount": len(learning_outcomes),
+        "courseKindCount": len(course_kinds),
+        "requiredConceptCount": concept_count,
+        "assemblyReadinessStatus": assembly_readiness.get("status"),
+        "dependencyCount": dependency_profile.get("dependencyCount") or 0,
+        "unlockCount": dependency_profile.get("unlockCount") or 0,
+        "materializesCourses": False,
+        "materializesCourseWrappers": False,
+    }
+
+
+def _cluster_quality_report(clusters: list[dict[str, Any]]) -> dict[str, Any]:
+    profiles = [
+        cluster.get("qualityProfile")
+        for cluster in clusters
+        if isinstance(cluster.get("qualityProfile"), dict)
+    ]
+    review_clusters = [cluster for cluster in clusters if cluster.get("qualityProfile", {}).get("status") != "passed"]
+    course_bearing_clusters = [cluster for cluster in clusters if cluster.get("qualityProfile", {}).get("courseBearing")]
+    return {
+        "contractVersion": CLUSTER_QUALITY_REPORT_CONTRACT,
+        "passed": not review_clusters,
+        "clusterCount": len(clusters),
+        "courseBearingClusterCount": len(course_bearing_clusters),
+        "clustersNeedingReviewCount": len(review_clusters),
+        "courseKindCount": sum(len(_items(cluster.get("courseKinds"))) for cluster in clusters),
+        "requiredConceptCount": sum(int(profile.get("requiredConceptCount") or 0) for profile in profiles),
+        "policy": {
+            "materializesCourses": False,
+            "materializesCourseWrappers": False,
+            "courseWrappersCreatedBy": COURSE_WRAPPER_GENERATION_CONTRACT,
+        },
+    }
+
+
 def run_cluster_generation_workflow(program: dict[str, Any]) -> dict[str, Any]:
     groups = _items(program.get("requirementGroups"))
+    dependency_edges = _dependency_edges_for(program)
     clusters: list[dict[str, Any]] = []
     issues: list[dict[str, Any]] = []
 
@@ -334,20 +514,46 @@ def run_cluster_generation_workflow(program: dict[str, Any]) -> dict[str, Any]:
         requirements = _items(group.get("requirements"))
         course_requirements = [requirement for requirement in requirements if requirement.get("type") == "complete_course"]
         course_kinds = _cluster_course_kinds(requirements)
+        raw_title = str(group.get("displayName") or group.get("title") or "").strip()
+        title = raw_title or f"Cluster {index}"
+        description = str(group.get("description") or group.get("purpose") or "")
+        assembly_readiness = cluster_generation_threshold_report(len(course_kinds))
+        dependency_profile = _cluster_dependency_profile(group, dependency_edges)
+        required_concepts = _cluster_required_concepts(course_kinds)
+        quality_profile = _cluster_quality_profile(
+            group=group,
+            cluster_title=title,
+            cluster_description=description,
+            has_authored_title=bool(raw_title),
+            course_kinds=course_kinds,
+            dependency_profile=dependency_profile,
+            assembly_readiness=assembly_readiness,
+        )
         clusters.append(
             {
+                "contractVersion": CLUSTER_PLAN_CONTRACT,
                 "clusterId": str(group.get("id") or f"cluster-{index}"),
-                "title": str(group.get("displayName") or group.get("title") or f"Cluster {index}"),
-                "description": str(group.get("description") or group.get("purpose") or ""),
+                "title": title,
+                "description": description,
+                "purpose": str(group.get("purpose") or description),
                 "groupKind": str(group.get("groupKind") or "cluster"),
                 "clusterType": str(group.get("clusterType") or "core"),
+                "learningOutcomes": _items(group.get("learningOutcomes")),
                 "requirementCount": len(requirements),
                 "courseRequirementCount": len(course_kinds) or len(course_requirements),
                 "estimatedHours": group.get("estimatedHours") or 0,
                 "completionRule": group.get("completionRule") if isinstance(group.get("completionRule"), dict) else {},
                 "courseKindCount": len(course_kinds),
                 "courseKinds": course_kinds,
-                "assemblyReadiness": cluster_generation_threshold_report(len(course_kinds)),
+                "requiredConcepts": required_concepts,
+                "dependencyProfile": dependency_profile,
+                "assemblyReadiness": assembly_readiness,
+                "qualityProfile": quality_profile,
+                "policy": {
+                    "materializesCourses": False,
+                    "materializesCourseWrappers": False,
+                    "nextWorkflow": COURSE_WRAPPER_GENERATION_CONTRACT,
+                },
             }
         )
 
@@ -355,8 +561,28 @@ def run_cluster_generation_workflow(program: dict[str, Any]) -> dict[str, Any]:
         issues.append(_issue("error", "Cluster generation has no requirement groups to inspect.", "requirementGroups"))
     if clusters and not any(cluster["courseRequirementCount"] for cluster in clusters):
         issues.append(_issue("warning", "Clusters contain no course requirements.", "requirementGroups"))
+    titles = [str(cluster.get("title") or "").strip().lower() for cluster in clusters if str(cluster.get("title") or "").strip()]
+    if len(titles) != len(set(titles)):
+        issues.append(_issue("error", "Cluster generation produced duplicate cluster titles.", "clusters[].title"))
+    for index, cluster in enumerate(clusters, start=1):
+        location = f"clusters[{index}]"
+        if not cluster.get("qualityProfile", {}).get("titleReady"):
+            issues.append(_issue("error", "Cluster is missing a learner-facing title.", f"{location}.title"))
+        if cluster.get("qualityProfile", {}).get("courseBearing") and not _items(cluster.get("courseKinds")):
+            issues.append(_issue("error", "Course-bearing cluster has no abstract course kinds.", f"{location}.courseKinds"))
+        if _has_course_materialization_payload(cluster):
+            issues.append(_issue("error", "Cluster generation must not materialize course wrappers or active course plans.", location))
+        for kind_index, course_kind in enumerate(_items(cluster.get("courseKinds")), start=1):
+            kind_location = f"{location}.courseKinds[{kind_index}]"
+            if not str(course_kind.get("title") or "").strip():
+                issues.append(_issue("error", "Course kind is missing a title.", f"{kind_location}.title"))
+            if not str(course_kind.get("description") or "").strip():
+                issues.append(_issue("error", "Course kind is missing a description.", f"{kind_location}.description"))
+            if not _strings(course_kind.get("requiredConcepts")):
+                issues.append(_issue("error", "Course kind is missing required concepts.", f"{kind_location}.requiredConcepts"))
     program_candidate_cluster_count = sum(1 for cluster in clusters if cluster["courseKinds"])
     program_assembly_readiness = program_generation_threshold_report(program_candidate_cluster_count)
+    quality_report = _cluster_quality_report(clusters)
 
     return _workflow_result(
         stage="cluster_generation",
@@ -368,10 +594,13 @@ def run_cluster_generation_workflow(program: dict[str, Any]) -> dict[str, Any]:
             "courseRequirementCount": sum(cluster["courseRequirementCount"] for cluster in clusters),
             "clusterCourseKindCount": sum(len(cluster["courseKinds"]) for cluster in clusters),
             "programCandidateClusterCount": program_candidate_cluster_count,
+            "clustersNeedingReviewCount": quality_report["clustersNeedingReviewCount"],
+            "requiredConceptCount": quality_report["requiredConceptCount"],
             "assessmentClusterCount": sum(1 for cluster in clusters if cluster["groupKind"] in {"assessment", "capstone"}),
         },
         artifacts={
             "clusters": clusters,
+            "clusterQualityReport": quality_report,
             "programAssemblyReadiness": program_assembly_readiness,
             "assemblyThresholdPolicy": curriculum_assembly_threshold_policy(),
         },
@@ -394,11 +623,22 @@ def run_course_wrapper_generation_workflow(
     courses = _items(plan.get("courses"))
     wrappers = [course for course in courses if course.get("action") == "create_empty_course"]
     linked_courses = [course for course in courses if course.get("action") == "link_existing_course"]
+    quality_report = (
+        dict(plan.get("courseWrapperQualityReport"))
+        if isinstance(plan.get("courseWrapperQualityReport"), dict)
+        else build_course_wrapper_quality_report(courses)
+    )
     issues: list[dict[str, Any]] = []
     if not courses:
         issues.append(_issue("error", "Course wrapper generation did not produce course actions.", "courses"))
     if wrappers and not all(isinstance(course.get("courseBuildTask"), dict) for course in wrappers):
         issues.append(_issue("error", "Every wrapper course needs a courseBuildTask.", "courses[].courseBuildTask"))
+    if quality_report.get("contractVersion") != COURSE_WRAPPER_QUALITY_REPORT_CONTRACT:
+        issues.append(_issue("error", "Course wrapper quality report has the wrong contract version.", "courseWrapperQualityReport"))
+    for profile in _items(quality_report.get("failedProfiles")):
+        course_id = str(profile.get("courseId") or profile.get("title") or "unknown")
+        reasons = ", ".join(_strings(profile.get("reasons"))) or "unknown wrapper quality failure"
+        issues.append(_issue("error", f"Course wrapper '{course_id}' failed quality checks: {reasons}.", "courseWrapperQualityReport.failedProfiles"))
 
     return _workflow_result(
         stage="course_wrapper_generation",
@@ -410,8 +650,16 @@ def run_course_wrapper_generation_workflow(
             "courseCount": len(courses),
             "wrapperCourseCount": len(wrappers),
             "linkedExistingCourseCount": len(linked_courses),
+            "failedWrapperQualityCount": quality_report.get("failedCourseCount") or 0,
+            "sourceRequestCount": quality_report.get("sourceRequestCount") or 0,
+            "activeGenerationPlanCount": quality_report.get("activeGenerationPlanCount") or 0,
         },
-        artifacts={"courseScaffoldPlan": plan, "courses": courses, "wrapperCourses": wrappers},
+        artifacts={
+            "courseScaffoldPlan": plan,
+            "courses": courses,
+            "wrapperCourses": wrappers,
+            "courseWrapperQualityReport": quality_report,
+        },
     )
 
 
@@ -671,11 +919,16 @@ def run_module_assembly_workflow(
 
 __all__ = [
     "CLUSTER_GENERATION_CONTRACT",
+    "CLUSTER_PLAN_CONTRACT",
+    "CLUSTER_QUALITY_REPORT_CONTRACT",
     "COURSE_MODULE_OUTLINE_CONTRACT",
     "COURSE_WRAPPER_GENERATION_CONTRACT",
+    "COURSE_WRAPPER_QUALITY_REPORT_CONTRACT",
     "MODULE_ASSEMBLY_CONTRACT",
     "MODULE_SECTION_PLAN_CONTRACT",
+    "PROGRAM_BRIEF_CONTRACT",
     "PROGRAM_GENERATION_CONTRACT",
+    "REQUIREMENT_GROUP_PLAN_CONTRACT",
     "SECTION_FILL_CONTRACT",
     "SOURCE_PACKET_OUTLINE_CONTRACT_VERSION",
     "STAGE_WORKFLOW_VERSION",
@@ -685,6 +938,8 @@ __all__ = [
     "run_course_wrapper_generation_workflow",
     "run_module_assembly_workflow",
     "run_module_section_plan_workflow",
+    "run_program_brief_workflow",
     "run_program_generation_workflow",
+    "run_requirement_group_plan_workflow",
     "run_section_fill_workflow",
 ]

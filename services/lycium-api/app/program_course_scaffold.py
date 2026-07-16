@@ -12,6 +12,8 @@ from app.curriculum_assembly_policy import (
 from app.program_course_shell_actions import build_program_course_shell_action_plan
 from app.program_source_acquisition import build_program_source_acquisition_plan
 
+COURSE_WRAPPER_QUALITY_REPORT_CONTRACT = "course-wrapper-quality-report-v1"
+
 
 def _items(value: Any) -> list[dict[str, Any]]:
     return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
@@ -429,6 +431,147 @@ def _course_kind_summary(
     }
 
 
+def _contains_materialized_content_payload(value: Any) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in ("modules", "sections", "content")):
+            return True
+        return any(_contains_materialized_content_payload(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_contains_materialized_content_payload(item) for item in value)
+    return False
+
+
+def _course_wrapper_quality_profile(course: dict[str, Any]) -> dict[str, Any]:
+    action = str(course.get("action") or "")
+    creates_wrapper = action == "create_empty_course"
+    links_existing = action == "link_existing_course"
+    course_id = str(course.get("courseId") or "")
+    title = str(course.get("title") or "")
+    source_request = course.get("sourceRequest") if isinstance(course.get("sourceRequest"), dict) else {}
+    course_wrapper = course.get("courseWrapper") if isinstance(course.get("courseWrapper"), dict) else {}
+    active_plan = course.get("activeGenerationPlan") if isinstance(course.get("activeGenerationPlan"), dict) else {}
+    build_task = course.get("courseBuildTask") if isinstance(course.get("courseBuildTask"), dict) else {}
+    fit_evidence = course.get("courseFitEvidence") if isinstance(course.get("courseFitEvidence"), dict) else {}
+    required_inputs = _strings(build_task.get("requiredInputs"))
+    reasons: list[str] = []
+
+    if not course_id:
+        reasons.append("missing_course_id")
+    if not title:
+        reasons.append("missing_title")
+    if not str(course.get("clusterId") or "").strip():
+        reasons.append("missing_cluster_id")
+    if not str(course.get("requirementId") or "").strip():
+        reasons.append("missing_requirement_id")
+    if _contains_materialized_content_payload({key: value for key, value in course.items() if key not in {"courseWrapper", "activeGenerationPlan", "courseBuildTask"}}):
+        reasons.append("materialized_content_payload_present")
+
+    if creates_wrapper:
+        if source_request.get("contractVersion") != "course-source-request-v1":
+            reasons.append("missing_source_request")
+        if not _strings(source_request.get("requiredConcepts")):
+            reasons.append("source_request_missing_required_concepts")
+        if not _strings(source_request.get("suggestedQueries")):
+            reasons.append("source_request_missing_suggested_queries")
+        if not isinstance(source_request.get("minimumConceptCoverageRatio"), (int, float)):
+            reasons.append("source_request_missing_concept_coverage_policy")
+
+        if course_wrapper.get("contractVersion") != "course-wrapper-v1":
+            reasons.append("missing_course_wrapper")
+        if course_wrapper.get("status") != "wrapper":
+            reasons.append("course_wrapper_status_invalid")
+        prompt = str(course_wrapper.get("generationPrompt") or "")
+        if "source packet" not in prompt.lower():
+            reasons.append("generation_prompt_missing_source_packet")
+        if "editor-native" not in prompt.lower():
+            reasons.append("generation_prompt_missing_editor_native_instruction")
+        if course_wrapper.get("learnerPlaceholderText") != "Section not yet generated":
+            reasons.append("placeholder_text_policy_missing")
+        if course_wrapper.get("generationMode") != "active_generation":
+            reasons.append("course_wrapper_generation_mode_invalid")
+        if not _strings(course_wrapper.get("requiredConcepts")):
+            reasons.append("course_wrapper_missing_required_concepts")
+        if _contains_materialized_content_payload(course_wrapper):
+            reasons.append("course_wrapper_contains_materialized_content")
+
+        if active_plan.get("contractVersion") != "active-course-generation-plan-v1":
+            reasons.append("missing_active_generation_plan")
+        if active_plan.get("status") != "needs_sources":
+            reasons.append("active_generation_plan_status_invalid")
+        if active_plan.get("mode") != "on_demand_module_batches":
+            reasons.append("active_generation_plan_mode_invalid")
+        if not _items(active_plan.get("plannedModules")):
+            reasons.append("active_generation_plan_missing_modules")
+        if not _items(active_plan.get("batches")):
+            reasons.append("active_generation_plan_missing_batches")
+
+        if build_task.get("contractVersion") != "course-build-task-v1":
+            reasons.append("missing_course_build_task")
+        if build_task.get("status") != "source_gathering":
+            reasons.append("course_build_task_status_invalid")
+        if build_task.get("currentStage") != "source_gathering":
+            reasons.append("course_build_task_stage_invalid")
+        if build_task.get("nextAction") != "attach_source_packet":
+            reasons.append("course_build_task_next_action_invalid")
+        if "source_packet" not in required_inputs or "concept_source_coverage" not in required_inputs:
+            reasons.append("course_build_task_required_inputs_invalid")
+    elif links_existing:
+        if source_request or course_wrapper or active_plan:
+            reasons.append("linked_existing_course_has_wrapper_payload")
+        if fit_evidence.get("contractVersion") != "course-fit-evidence-v1" or fit_evidence.get("status") != "accepted":
+            reasons.append("linked_existing_course_missing_accepted_fit_evidence")
+        if build_task.get("status") != "linked_existing_course":
+            reasons.append("linked_existing_course_build_task_invalid")
+    else:
+        reasons.append("unknown_course_wrapper_action")
+
+    return {
+        "contractVersion": "course-wrapper-quality-profile-v1",
+        "courseId": course_id,
+        "title": title,
+        "clusterId": str(course.get("clusterId") or ""),
+        "requirementId": str(course.get("requirementId") or ""),
+        "action": action,
+        "status": "passed" if not reasons else "failed",
+        "passed": not reasons,
+        "reasons": sorted(set(reasons)),
+        "sourceRequestReady": bool(source_request.get("contractVersion") == "course-source-request-v1" and _strings(source_request.get("requiredConcepts"))),
+        "activeGenerationPlanReady": bool(active_plan.get("contractVersion") == "active-course-generation-plan-v1" and _items(active_plan.get("plannedModules"))),
+        "courseBuildTaskReady": bool(build_task.get("contractVersion") == "course-build-task-v1"),
+        "materializesContent": _contains_materialized_content_payload(course),
+    }
+
+
+def build_course_wrapper_quality_report(course_rows: list[dict[str, Any]]) -> dict[str, Any]:
+    courses = _items(course_rows)
+    profiles = [_course_wrapper_quality_profile(course) for course in courses]
+    failed = [profile for profile in profiles if not profile["passed"]]
+    wrappers = [course for course in courses if course.get("action") == "create_empty_course"]
+    linked = [course for course in courses if course.get("action") == "link_existing_course"]
+    return {
+        "contractVersion": COURSE_WRAPPER_QUALITY_REPORT_CONTRACT,
+        "status": "passed" if not failed else "failed",
+        "passed": not failed,
+        "courseCount": len(courses),
+        "wrapperCourseCount": len(wrappers),
+        "linkedExistingCourseCount": len(linked),
+        "failedCourseCount": len(failed),
+        "sourceRequestCount": sum(1 for course in courses if isinstance(course.get("sourceRequest"), dict)),
+        "activeGenerationPlanCount": sum(1 for course in courses if isinstance(course.get("activeGenerationPlan"), dict)),
+        "courseBuildTaskCount": sum(1 for course in courses if isinstance(course.get("courseBuildTask"), dict)),
+        "materializedContentCourseCount": sum(1 for profile in profiles if profile["materializesContent"]),
+        "profiles": profiles,
+        "failedProfiles": failed,
+        "policy": {
+            "wrapperStatus": "wrapper",
+            "placeholderText": "Section not yet generated",
+            "nextWorkflow": "active-course-generation-plan-v1",
+            "requiresSourcePacketBeforeOutline": True,
+            "materializesLearnerContent": False,
+        },
+    }
+
+
 def build_course_scaffold_plan(
     groups: list[dict[str, Any]],
     known_course_ids: set[str] | None = None,
@@ -611,6 +754,7 @@ def build_course_scaffold_plan(
         if group_course_ids:
             prior_group_course_ids = group_course_ids
     program_candidate_cluster_count = sum(1 for cluster in clusters if cluster.get("courseKinds"))
+    course_wrapper_quality_report = build_course_wrapper_quality_report(courses)
 
     return {
         "version": "program-course-scaffold-plan-v1",
@@ -635,6 +779,7 @@ def build_course_scaffold_plan(
         "programAssemblyReadiness": program_generation_threshold_report(program_candidate_cluster_count),
         "clusters": clusters,
         "courses": courses,
+        "courseWrapperQualityReport": course_wrapper_quality_report,
         "courseBuildTaskReport": build_course_build_task_report(courses),
         "courseShellReadinessReport": build_program_course_shell_readiness_report(
             clusters=clusters,

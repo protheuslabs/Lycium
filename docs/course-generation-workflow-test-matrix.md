@@ -1,6 +1,6 @@
 # Course Generation Workflow Test Matrix
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
 This document tracks the workflow-level tests for Lycium generation. Update it whenever a workflow stage is added, split, or promoted from smoke coverage to stronger integration coverage.
 
@@ -23,9 +23,10 @@ This document tracks the workflow-level tests for Lycium generation. Update it w
 | --- | --- | --- | --- | --- |
 | Curriculum assembly thresholds | `curriculum-assembly-policy-v1` | `test_curriculum_assembly_policy.py` | Passing | Cluster-from-courses requires 3, recommends 4. Program-from-clusters requires 2, recommends 3. |
 | Program brief generation | `program-brief-v1`, `program-brief-workflow-v1` | `test_course_generation_stage_workflows.py` | Passing | Validates title, type, field, level, audience, outcome, learning outcomes, broad group plan, benchmark-vs-prompt evidence mode, empty-goal blocking, and no course/wrapper materialization. |
+| Requirement-group plan generation | `requirement-group-plan-v1`, `requirement-group-plan-workflow-v1` | `test_course_generation_stage_workflows.py` | Passing | Validates group titles, purposes, themes, dependency plan, checkpoint/capstone planning, and no course/wrapper materialization before program generation. |
 | Program generation | `program-generation-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py` | Passing | Validates domain fallback curricula, program contract, requirement groups, and scaffold handoff. |
-| Cluster generation | `cluster-generation-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py` | Passing | Clusters expose semantic `courseKinds` with title, description, source status, and assembly readiness. |
-| Course-wrapper generation | `course-wrapper-v1`, `course-build-task-v1`, `active-course-generation-plan-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py` | Passing | Verifies empty shell rows have source requests, build tasks, action/source-acquisition plans, active generation plans, and no fake generated content. |
+| Cluster generation | `cluster-generation-workflow-v1`, `cluster-plan-v1`, `cluster-quality-report-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py` | Passing | Clusters expose abstract `courseKinds`, required concepts, purposes, outcomes, dependency profiles, assembly readiness, and materialization-boundary checks before wrappers are created. |
+| Course-wrapper generation | `course-wrapper-v1`, `course-wrapper-quality-report-v1`, `course-build-task-v1`, `active-course-generation-plan-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py` | Passing | Verifies empty shell rows have source requests, wrapper quality profiles, build tasks, action/source-acquisition plans, active generation plans, and no fake generated content. |
 | Catalog/course-fit linking | `course-fit-evidence-v1`, `program-course-scaffold-plan-v1` | `test_program_course_scaffold_fit.py`, `test_program_generation_eval_scenarios.py` | Passing | Verifies title-only matches, content-backed matches, exact-title false positives, and near-title false positives before auto-linking existing courses. |
 | Program scaffold materialization | `program-course-scaffold-plan-v1`, `program-course-shell-readiness-report-v1` | `test_program_generation_e2e.py`, `test_program_shell_staged_generation.py` | Passing | Verifies program shell handoff creates openable `needs_sources` course shells without pretending the course content is complete. |
 
@@ -50,7 +51,7 @@ This document tracks the workflow-level tests for Lycium generation. Update it w
 
 ## Latest Verification
 
-Run on 2026-07-15:
+Run on 2026-07-16:
 
 ```bash
 python3 -m pytest \
@@ -67,7 +68,7 @@ python3 -m pytest \
   services/lycium-api/tests/test_course_generation_gauntlet.py -q
 ```
 
-Result: `66 passed`.
+Result: `69 passed`.
 
 Additional checks:
 
@@ -95,7 +96,7 @@ Broader API regression:
 python3 -m pytest services/lycium-api/tests -q
 ```
 
-Result: `238 passed`.
+Result: `241 passed`.
 
 ## Next Workflow Target
 

@@ -30,7 +30,9 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - infer/generate clusters from orphaned courses only when there are at least 3 related courses; treat 4+ related courses as the recommended threshold
    - infer/generate programs from orphaned clusters only when there are at least 2 related clusters; treat 3+ related clusters as the recommended threshold
    - cluster generation should search existing courses and inspect internal fit evidence such as module titles, section titles, concept cards, tags, and descriptions before linking an existing course
+   - cluster generation should emit inspectable `cluster-plan-v1` artifacts and a `cluster-quality-report-v1` before course wrappers are created; cluster plans should include purpose, outcomes, dependency profile, required concepts, assembly readiness, and abstract `cluster-course-kind-v1` records without creating wrappers, build tasks, modules, sections, or learner-facing content
    - missing or uncertain courses should become course wrappers with source needs and generation prompts rather than hollow full courses
+   - course-wrapper generation should emit a `course-wrapper-quality-report-v1`; wrapper rows should have source requests, active-generation plans, course-build tasks, prerequisite metadata, placeholder policy, and no modules, sections, or learner-facing content
    - hand passive workflows to active workflows through explicit artifacts such as course wrappers, source requests, source packets, `metadata.activeGenerationPlan`, `metadata.courseBuildOutline`, and course build tasks
    - use active generation for large paths: generate bottom-level prerequisite course wrappers first, then generate course modules or sections in small batches as needed
 4. Determine course scope before writing lesson content:
