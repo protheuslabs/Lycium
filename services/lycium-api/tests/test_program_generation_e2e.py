@@ -333,15 +333,25 @@ def test_source_index_to_program_generation_creates_quality_gated_course_shell_h
     assert trace["curriculumBenchmarkContext"]["requirementOrigins"]
     assert [stage["stage"] for stage in stage_workflows] == [
         "program_brief",
+        "requirement_group_plan",
         "program_generation",
         "cluster_generation",
         "course_wrapper_generation",
     ]
     assert all(stage["status"] == "passed" for stage in stage_workflows)
     assert stage_workflows[0]["artifactKeys"] == ["programBrief"]
-    assert stage_workflows[1]["artifactKeys"] == ["courseRequirements", "program", "programBrief", "programSynthesis"]
+    assert stage_workflows[1]["artifactKeys"] == ["programBrief", "requirementGroupPlan"]
+    assert stage_workflows[2]["artifactKeys"] == [
+        "courseRequirements",
+        "program",
+        "programBrief",
+        "programSynthesis",
+        "requirementGroupPlan",
+    ]
     assert trace["programSynthesis"]["programBrief"]["contractVersion"] == "program-brief-v1"
     assert trace["programSynthesis"]["programBrief"]["title"] == program["title"]
+    assert trace["programSynthesis"]["requirementGroupPlan"]["contractVersion"] == "requirement-group-plan-v1"
+    assert trace["programSynthesis"]["requirementGroupPlan"]["groups"]
     assert program["dependencyGraph"]["edges"]
     assert any(group.get("groupKind") == "capstone" for group in program["requirementGroups"])
     assert any(requirement.get("type") == "submit_project" for group in program["requirementGroups"] for requirement in group.get("requirements", []))

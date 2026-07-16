@@ -17,6 +17,7 @@ IMPORTANCE_RANK = {
     "enrichment": 3,
 }
 PROGRAM_BRIEF_CONTRACT_VERSION = "program-brief-v1"
+REQUIREMENT_GROUP_PLAN_CONTRACT_VERSION = "requirement-group-plan-v1"
 FALLBACK_STOPWORDS = {
     "and",
     "become",
@@ -657,6 +658,165 @@ def _brief_group_plan(goal: str, requirements: list[dict[str, Any]]) -> list[dic
     return group_plans
 
 
+def _requirement_theme(requirement: dict[str, Any]) -> dict[str, Any]:
+    origin = requirement.get("origin") if isinstance(requirement.get("origin"), dict) else {}
+    concepts = origin.get("concepts") if isinstance(origin.get("concepts"), list) else []
+    evidence_refs = origin.get("evidenceRefs") if isinstance(origin.get("evidenceRefs"), list) else []
+    return {
+        "title": str(requirement.get("title") or ""),
+        "description": str(requirement.get("description") or ""),
+        "importance": str(requirement.get("importance") or "required"),
+        "estimatedHours": requirement.get("estimatedHours") or 0,
+        "originType": str(origin.get("originType") or origin.get("source") or "generated"),
+        "concepts": [str(concept) for concept in concepts if str(concept).strip()][:8],
+        "evidenceRefs": [str(ref) for ref in evidence_refs if str(ref).strip()][:8],
+    }
+
+
+def _group_plan_from_group(group: dict[str, Any], index: int) -> dict[str, Any]:
+    requirements = _items(group.get("requirements"))
+    themes = [_requirement_theme(requirement) for requirement in requirements]
+    return {
+        "id": f"group-plan-{index:02d}-{_slugify(str(group.get('title') or index))}",
+        "title": str(group.get("displayName") or group.get("title") or f"Group {index}"),
+        "description": str(group.get("description") or ""),
+        "groupKind": str(group.get("groupKind") or "cluster"),
+        "clusterType": str(group.get("clusterType") or "core"),
+        "purpose": str(group.get("purpose") or ""),
+        "learningOutcomes": _items(group.get("learningOutcomes")),
+        "requirementThemeCount": len(themes),
+        "requirementThemes": themes,
+        "sampleTopics": [theme["title"] for theme in themes[:4] if theme.get("title")],
+        "estimatedHours": group.get("estimatedHours") or sum(int(theme.get("estimatedHours") or 0) for theme in themes),
+        "completionRuleShape": str((group.get("completionRule") if isinstance(group.get("completionRule"), dict) else {}).get("type") or "complete_all"),
+    }
+
+
+def _planned_checkpoint_group(goal: str, index: int) -> dict[str, Any]:
+    group = _checkpoint_group(goal, index)
+    return {
+        "id": f"group-plan-{index:02d}-integrated-assessment",
+        "title": str(group.get("title") or "Integrated Assessment"),
+        "description": str(group.get("description") or ""),
+        "groupKind": str(group.get("groupKind") or "cluster"),
+        "clusterType": str(group.get("clusterType") or "lab"),
+        "purpose": str(group.get("purpose") or ""),
+        "learningOutcomes": _items(group.get("learningOutcomes")),
+        "requirementThemeCount": 1,
+        "requirementThemes": [
+            {
+                "title": "Integrated Program Checkpoint",
+                "description": f"Assess synthesis across the major requirements for {goal}.",
+                "importance": "required",
+                "estimatedHours": 4,
+                "originType": "program_planning",
+                "concepts": ["integrated assessment", "synthesis", "feedback"],
+                "evidenceRefs": [],
+            }
+        ],
+        "sampleTopics": ["Integrated Program Checkpoint"],
+        "estimatedHours": group.get("estimatedHours") or 4,
+        "completionRuleShape": "pass_assessment",
+    }
+
+
+def _planned_capstone_group(goal: str, index: int) -> dict[str, Any]:
+    group = _capstone_group(goal, index)
+    return {
+        "id": f"group-plan-{index:02d}-capstone",
+        "title": str(group.get("title") or "Capstone and Portfolio Evidence"),
+        "description": str(group.get("description") or ""),
+        "groupKind": str(group.get("groupKind") or "capstone"),
+        "clusterType": str(group.get("clusterType") or "capstone"),
+        "purpose": str(group.get("purpose") or ""),
+        "learningOutcomes": _items(group.get("learningOutcomes")),
+        "requirementThemeCount": 2,
+        "requirementThemes": [
+            {
+                "title": "Capstone Project",
+                "description": f"Produce an integrated portfolio artifact for {goal}.",
+                "importance": "required",
+                "estimatedHours": 24,
+                "originType": "program_planning",
+                "concepts": ["portfolio artifact", "capstone synthesis", "source-backed rationale"],
+                "evidenceRefs": [],
+            },
+            {
+                "title": "Portfolio Review",
+                "description": "Review capstone evidence and supporting artifacts.",
+                "importance": "required",
+                "estimatedHours": 3,
+                "originType": "program_planning",
+                "concepts": ["human review", "mastery evidence"],
+                "evidenceRefs": [],
+            },
+        ],
+        "sampleTopics": ["Capstone Project", "Portfolio Review"],
+        "estimatedHours": group.get("estimatedHours") or 27,
+        "completionRuleShape": "complete_all",
+    }
+
+
+def _group_plan_edges(groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        {"fromGroupPlanId": previous["id"], "toGroupPlanId": current["id"], "type": "recommended"}
+        for previous, current in zip(groups, groups[1:])
+    ]
+
+
+def build_requirement_group_plan(
+    goal: str,
+    level: str | None,
+    desired_course_count: int,
+    benchmark_context: dict[str, Any] | None = None,
+    program_brief: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    desired_course_count = max(4, min(32, desired_course_count))
+    brief = (
+        dict(program_brief)
+        if isinstance(program_brief, dict)
+        else build_program_brief(goal, level, desired_course_count, benchmark_context)
+    )
+    clean_goal = str(brief.get("sourceGoal") or goal or "").strip()
+    field = str(brief.get("field") or _program_field_for_goal(clean_goal))
+    course_signals, evidence_mode, fallback_template = _brief_course_signals(
+        goal=clean_goal,
+        desired_course_count=int(brief.get("desiredCourseCount") or desired_course_count),
+        field=field,
+        benchmark_context=benchmark_context,
+    )
+    planned_groups = [
+        _group_plan_from_group(group, index)
+        for index, group in enumerate(_group_requirements(str(brief.get("focus") or _goal_focus_title(clean_goal)), course_signals), start=1)
+    ]
+    checkpoint_group = _planned_checkpoint_group(str(brief.get("focus") or clean_goal), len(planned_groups) + 1)
+    capstone_group = _planned_capstone_group(str(brief.get("focus") or clean_goal), len(planned_groups) + 2)
+    groups = [*planned_groups, checkpoint_group, capstone_group]
+    return {
+        "contractVersion": REQUIREMENT_GROUP_PLAN_CONTRACT_VERSION,
+        "sourceGoal": clean_goal,
+        "programBriefTitle": str(brief.get("title") or ""),
+        "programType": str(brief.get("programType") or _program_type_for_goal(clean_goal)),
+        "field": field,
+        "level": str(brief.get("level") or _normalize_program_level(level)),
+        "evidence": {
+            "mode": evidence_mode,
+            "fallbackTemplate": fallback_template,
+            "courseSignalCount": len(course_signals),
+            "briefBroadRequirementGroupCount": len(_items(brief.get("broadRequirementGroups"))),
+        },
+        "groups": groups,
+        "dependencyPlan": {"edges": _group_plan_edges(groups)},
+        "policy": {
+            "materializesCourses": False,
+            "materializesCourseWrappers": False,
+            "requiresCapstone": True,
+            "requiresIntegratedAssessment": True,
+        },
+        "estimatedHours": sum(int(group.get("estimatedHours") or 0) for group in groups),
+    }
+
+
 def build_program_brief(
     goal: str,
     level: str | None,
@@ -743,6 +903,7 @@ def build_program_contract(
     known_course_ids: set[str] | None = None,
     known_courses: list[dict[str, Any]] | None = None,
     program_brief: dict[str, Any] | None = None,
+    requirement_group_plan: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     desired_course_count = max(4, min(32, desired_course_count))
     brief = (
@@ -755,6 +916,11 @@ def build_program_contract(
     program_field = str(brief.get("field") or _program_field_for_goal(goal))
     program_type = str(brief.get("programType") or _program_type_for_goal(goal))
     program_level = str(brief.get("level") or _normalize_program_level(level))
+    group_plan = (
+        dict(requirement_group_plan)
+        if isinstance(requirement_group_plan, dict)
+        else build_requirement_group_plan(goal, level, desired_course_count, benchmark_context, brief)
+    )
     origins = _extract_requirement_origins(benchmark_context, desired_course_count)
     if origins:
         course_requirements = [_course_requirement_from_origin(goal, origin, index) for index, origin in enumerate(origins, start=1)]
@@ -844,6 +1010,7 @@ def build_program_contract(
         "requirementGroupCount": len(groups),
         "fallbackTemplate": fallback_template,
         "programBrief": brief,
+        "requirementGroupPlan": group_plan,
         "field": program["field"],
         "programType": program["programType"],
         "estimatedHours": estimated_hours,

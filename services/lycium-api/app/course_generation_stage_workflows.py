@@ -11,7 +11,7 @@ from app.curriculum_assembly_policy import (
     curriculum_assembly_threshold_policy,
     program_generation_threshold_report,
 )
-from app.program_contract_builder import build_program_brief, build_program_contract
+from app.program_contract_builder import build_program_brief, build_program_contract, build_requirement_group_plan
 from app.program_course_scaffold import build_course_scaffold_plan
 from app.program_validation import validate_program_contract
 
@@ -20,6 +20,7 @@ STAGE_WORKFLOW_VERSION = "course-generation-stage-workflows-v1"
 StageStatus = Literal["passed", "needs_review", "failed"]
 
 PROGRAM_BRIEF_CONTRACT = "program-brief-workflow-v1"
+REQUIREMENT_GROUP_PLAN_CONTRACT = "requirement-group-plan-workflow-v1"
 PROGRAM_GENERATION_CONTRACT = "program-generation-workflow-v1"
 CLUSTER_GENERATION_CONTRACT = "cluster-generation-workflow-v1"
 COURSE_WRAPPER_GENERATION_CONTRACT = "course-wrapper-generation-workflow-v1"
@@ -130,14 +131,22 @@ def run_program_brief_workflow(
     )
 
 
-def run_program_generation_workflow(
+def _has_materialized_course_artifacts(value: Any) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in ("courseId", "courseIds", "courseWrapper", "activeGenerationPlan", "courseBuildTask")):
+            return True
+        return any(_has_materialized_course_artifacts(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_has_materialized_course_artifacts(item) for item in value)
+    return False
+
+
+def run_requirement_group_plan_workflow(
     *,
     goal: str,
     level: str | None = None,
     desired_course_count: int = 8,
     benchmark_context: dict[str, Any] | None = None,
-    known_course_ids: set[str] | None = None,
-    known_courses: list[dict[str, Any]] | None = None,
     program_brief: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     brief = (
@@ -150,6 +159,93 @@ def run_program_generation_workflow(
             benchmark_context=benchmark_context,
         )["artifacts"]["programBrief"]
     )
+    group_plan = build_requirement_group_plan(
+        goal=goal,
+        level=level,
+        desired_course_count=desired_course_count,
+        benchmark_context=benchmark_context,
+        program_brief=brief,
+    )
+    groups = _items(group_plan.get("groups"))
+    course_groups = [group for group in groups if group.get("groupKind") == "cluster"]
+    capstone_groups = [group for group in groups if group.get("groupKind") == "capstone" or group.get("clusterType") == "capstone"]
+    assessment_groups = [group for group in groups if group.get("clusterType") == "lab" or "assessment" in str(group.get("title") or "").lower()]
+    titles = [str(group.get("title") or "").strip().lower() for group in groups if str(group.get("title") or "").strip()]
+    issues: list[dict[str, Any]] = []
+    if not str(goal or "").strip():
+        issues.append(_issue("error", "Requirement group plan needs a non-empty user goal.", "goal"))
+    if group_plan.get("contractVersion") != "requirement-group-plan-v1":
+        issues.append(_issue("error", "Requirement group plan has the wrong contract version.", "contractVersion"))
+    if len(groups) < 3:
+        issues.append(_issue("error", "Requirement group plan needs at least three groups.", "groups"))
+    if not course_groups:
+        issues.append(_issue("error", "Requirement group plan needs at least one course-bearing cluster.", "groups"))
+    if not capstone_groups:
+        issues.append(_issue("error", "Requirement group plan needs a capstone or portfolio evidence group.", "groups"))
+    if not assessment_groups:
+        issues.append(_issue("warning", "Requirement group plan has no integrated assessment group.", "groups"))
+    if len(titles) != len(set(titles)):
+        issues.append(_issue("error", "Requirement group plan has duplicate group titles.", "groups[].title"))
+    for index, group in enumerate(groups, start=1):
+        location = f"groups[{index}]"
+        if not str(group.get("title") or "").strip():
+            issues.append(_issue("error", "Requirement group plan group is missing a title.", location))
+        if not str(group.get("purpose") or group.get("description") or "").strip():
+            issues.append(_issue("warning", "Requirement group plan group should explain its purpose.", location))
+        if group.get("groupKind") == "cluster" and int(group.get("requirementThemeCount") or 0) == 0:
+            issues.append(_issue("error", "Course-bearing cluster has no requirement themes.", location))
+        if _has_materialized_course_artifacts(group):
+            issues.append(_issue("error", "Requirement group plan must not materialize course IDs, wrappers, or build tasks.", location))
+
+    return _workflow_result(
+        stage="requirement_group_plan",
+        contract_version=REQUIREMENT_GROUP_PLAN_CONTRACT,
+        status=_status_from_issues(issues),
+        issues=issues,
+        metrics={
+            "groupCount": len(groups),
+            "courseBearingGroupCount": len(course_groups),
+            "capstoneGroupCount": len(capstone_groups),
+            "assessmentGroupCount": len(assessment_groups),
+            "requirementThemeCount": sum(int(group.get("requirementThemeCount") or 0) for group in groups),
+            "estimatedHours": group_plan.get("estimatedHours") or 0,
+        },
+        artifacts={"programBrief": brief, "requirementGroupPlan": group_plan},
+    )
+
+
+def run_program_generation_workflow(
+    *,
+    goal: str,
+    level: str | None = None,
+    desired_course_count: int = 8,
+    benchmark_context: dict[str, Any] | None = None,
+    known_course_ids: set[str] | None = None,
+    known_courses: list[dict[str, Any]] | None = None,
+    program_brief: dict[str, Any] | None = None,
+    requirement_group_plan: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    brief = (
+        dict(program_brief)
+        if isinstance(program_brief, dict)
+        else run_program_brief_workflow(
+            goal=goal,
+            level=level,
+            desired_course_count=desired_course_count,
+            benchmark_context=benchmark_context,
+        )["artifacts"]["programBrief"]
+    )
+    group_plan = (
+        dict(requirement_group_plan)
+        if isinstance(requirement_group_plan, dict)
+        else run_requirement_group_plan_workflow(
+            goal=goal,
+            level=level,
+            desired_course_count=desired_course_count,
+            benchmark_context=benchmark_context,
+            program_brief=brief,
+        )["artifacts"]["requirementGroupPlan"]
+    )
     program, course_requirements, synthesis = build_program_contract(
         goal=goal,
         level=level,
@@ -158,6 +254,7 @@ def run_program_generation_workflow(
         known_course_ids=known_course_ids,
         known_courses=known_courses,
         program_brief=brief,
+        requirement_group_plan=group_plan,
     )
     validation_errors = validate_program_contract(program)
     issues = [_issue("error", error) for error in validation_errors]
@@ -180,6 +277,7 @@ def run_program_generation_workflow(
             "program": program,
             "courseRequirements": course_requirements,
             "programBrief": brief,
+            "requirementGroupPlan": group_plan,
             "programSynthesis": synthesis,
         },
     )
