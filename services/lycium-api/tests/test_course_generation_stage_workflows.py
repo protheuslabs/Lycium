@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.course_build_task_resume import apply_course_build_resume_inputs
 from app.course_build_tasks import transition_course_build_task_from_source_packet
 from app.course_generation_stage_workflows import (
     CLUSTER_GENERATION_CONTRACT,
@@ -7,6 +8,7 @@ from app.course_generation_stage_workflows import (
     COURSE_WRAPPER_GENERATION_CONTRACT,
     MODULE_ASSEMBLY_CONTRACT,
     MODULE_SECTION_PLAN_CONTRACT,
+    PROGRAM_BRIEF_CONTRACT,
     PROGRAM_GENERATION_CONTRACT,
     SECTION_FILL_CONTRACT,
     STAGE_WORKFLOW_VERSION,
@@ -15,6 +17,7 @@ from app.course_generation_stage_workflows import (
     run_course_wrapper_generation_workflow,
     run_module_assembly_workflow,
     run_module_section_plan_workflow,
+    run_program_brief_workflow,
     run_program_generation_workflow,
     run_section_fill_workflow,
 )
@@ -42,11 +45,120 @@ def _source_packet() -> dict:
     }
 
 
+def _course_shell_from_wrapper(wrapper: dict) -> dict:
+    return {
+        "title": wrapper["title"],
+        "shortDescription": wrapper["description"],
+        "metadata": {
+            "courseBuildTask": wrapper["courseBuildTask"],
+            "courseWrapper": wrapper["courseWrapper"],
+            "activeGenerationPlan": wrapper["activeGenerationPlan"],
+            "scaffoldCourseId": wrapper["courseId"],
+            "clusterId": wrapper["clusterId"],
+            "requirementId": wrapper["requirementId"],
+        },
+    }
+
+
+def test_program_brief_workflow_returns_testable_intent_artifact() -> None:
+    result = run_program_brief_workflow(
+        goal="full-stack software developer",
+        level="professional",
+        desired_course_count=6,
+    )
+
+    assert result["workflowVersion"] == STAGE_WORKFLOW_VERSION
+    assert result["contractVersion"] == PROGRAM_BRIEF_CONTRACT
+    assert result["stage"] == "program_brief"
+    assert result["status"] == "passed"
+    assert result["metrics"]["learningOutcomeCount"] >= 4
+    assert result["metrics"]["broadRequirementGroupCount"] >= 3
+    brief = result["artifacts"]["programBrief"]
+    assert brief["contractVersion"] == "program-brief-v1"
+    assert brief["title"] == "Full-Stack Software Engineer Pathway"
+    assert brief["programType"] == "career_path"
+    assert brief["field"] == "Software Engineering"
+    assert brief["level"] == "professional"
+    assert "source-backed" in brief["description"]
+    assert "portfolio" in brief["targetOutcome"].lower()
+    assert brief["evidence"]["mode"] == "prompt_inferred"
+    assert brief["evidence"]["fallbackTemplate"] == "software_engineering"
+    assert brief["broadRequirementGroups"]
+    assert all("courseId" not in group for group in brief["broadRequirementGroups"])
+    assert all("courseWrapper" not in group for group in brief["broadRequirementGroups"])
+    assert all("activeGenerationPlan" not in group for group in brief["broadRequirementGroups"])
+
+
+def test_program_brief_workflow_uses_benchmark_requirement_signals() -> None:
+    benchmark_context = {
+        "curriculumBenchmarks": [{"id": "bm-data", "title": "Data analytics curriculum"}],
+        "sourceSlots": [{"conceptId": "statistics", "primarySourceId": "source-statistics"}],
+        "requirementOrigins": [
+            {
+                "requirementId": "req-statistics",
+                "title": "Statistics and Probability",
+                "importance": "required",
+                "score": 0.95,
+                "evidenceRefs": ["source-statistics"],
+            },
+            {
+                "requirementId": "req-python",
+                "title": "Python Data Workflows",
+                "importance": "required",
+                "score": 0.9,
+                "evidenceRefs": ["source-python"],
+            },
+            {
+                "requirementId": "req-portfolio",
+                "title": "Analytics Portfolio Project",
+                "importance": "recommended",
+                "score": 0.8,
+                "evidenceRefs": ["source-portfolio"],
+            },
+        ],
+    }
+
+    result = run_program_brief_workflow(
+        goal="data analyst portfolio pathway",
+        level="professional",
+        desired_course_count=5,
+        benchmark_context=benchmark_context,
+    )
+
+    brief = result["artifacts"]["programBrief"]
+
+    assert result["status"] == "passed"
+    assert brief["field"] == "Data Science"
+    assert brief["evidence"]["mode"] == "benchmark_informed"
+    assert brief["evidence"]["curriculumBenchmarkCount"] == 1
+    assert brief["evidence"]["requirementOriginCount"] == 3
+    assert brief["evidence"]["sourceSlotCount"] == 1
+    assert brief["evidence"]["fallbackTemplate"] is None
+    assert any(
+        "statistics" in topic.lower() and "probability" in topic.lower()
+        for group in brief["broadRequirementGroups"]
+        for topic in group["sampleTopics"]
+    )
+
+
+def test_program_brief_workflow_blocks_empty_goal() -> None:
+    result = run_program_brief_workflow(goal="   ", level="professional")
+
+    assert result["status"] == "failed"
+    assert any(issue["location"] == "goal" for issue in result["issues"])
+
+
 def test_program_generation_workflow_returns_testable_program_contract() -> None:
+    brief_result = run_program_brief_workflow(
+        goal="full-stack software developer",
+        level="professional",
+        desired_course_count=6,
+    )
     result = run_program_generation_workflow(
         goal="full-stack software developer",
         level="professional",
         desired_course_count=6,
+        program_brief=brief_result["artifacts"]["programBrief"],
     )
 
     assert result["workflowVersion"] == STAGE_WORKFLOW_VERSION
@@ -56,6 +168,11 @@ def test_program_generation_workflow_returns_testable_program_contract() -> None
     assert result["metrics"]["requirementGroupCount"] >= 3
     assert result["metrics"]["courseRequirementCount"] >= 6
     assert result["artifacts"]["program"]["requirementGroups"]
+    assert result["artifacts"]["programBrief"] == brief_result["artifacts"]["programBrief"]
+    assert result["artifacts"]["program"]["title"] == result["artifacts"]["programBrief"]["title"]
+    assert result["artifacts"]["program"]["targetOutcome"] == result["artifacts"]["programBrief"]["targetOutcome"]
+    assert result["artifacts"]["programSynthesis"]["programBrief"] == result["artifacts"]["programBrief"]
+    assert result["artifacts"]["programSynthesis"]["courseScaffoldPlan"]["workflowContracts"]["programBrief"] == "program-brief-workflow-v1"
     assert result["artifacts"]["programSynthesis"]["courseScaffoldPlan"]["workflowContracts"]["programGeneration"] == "program-generation-workflow-v1"
 
 
@@ -203,6 +320,127 @@ def test_course_wrapper_source_packet_transition_enables_module_outline_generati
     assert outline["contractVersion"] == "course-outline-from-source-packet-v1"
     assert outline["provenance"]["mode"] == "source_packet"
     assert all(module["planningSource"] == "source_packet" for module in outline["modules"])
+
+
+def test_course_wrapper_resume_inputs_advance_to_section_generation_ready() -> None:
+    program = run_program_generation_workflow(
+        goal="data analyst portfolio pathway",
+        level="professional",
+        desired_course_count=5,
+    )["artifacts"]["program"]
+    wrapper = run_course_wrapper_generation_workflow(program)["artifacts"]["wrapperCourses"][0]
+
+    resumed = apply_course_build_resume_inputs(
+        _course_shell_from_wrapper(wrapper),
+        prompt=wrapper["courseWrapper"]["generationPrompt"],
+        source_packet=_source_packet(),
+        desired_module_count=2,
+    )
+
+    metadata = resumed["metadata"]
+    task = metadata["courseBuildTask"]
+    trace = metadata["courseBuildResumeTrace"]
+    report = metadata["courseBuildResumeReport"]
+    outline = metadata["courseBuildOutline"]
+
+    assert task["status"] == "section_generation_ready"
+    assert task["currentStage"] == "section_generation_ready"
+    assert task["nextAction"] == "generate_course_sections"
+    assert task["requiredInputs"] == ["section_generation"]
+    assert task["sourcePacketTransitionReport"]["passed"] is True
+    assert task["outlineTransitionReport"]["passed"] is True
+    assert task["outlineTransitionReport"]["metrics"]["moduleCount"] == 2
+    assert task["outlineTransitionReport"]["metrics"]["sectionCount"] == 4
+    assert outline["contractVersion"] == "course-outline-from-source-packet-v1"
+    assert len(outline["modules"]) == 2
+    assert metadata["courseWrapper"]["contractVersion"] == "course-wrapper-v1"
+    assert metadata["activeGenerationPlan"]["contractVersion"] == "active-course-generation-plan-v1"
+    assert [row["inputType"] for row in trace] == ["source_packet", "outline"]
+    assert [row["transitionStatus"] for row in trace] == ["advanced", "advanced"]
+    assert trace[0]["fromStatus"] == "source_gathering"
+    assert trace[0]["toStatus"] == "outline_ready"
+    assert trace[1]["fromStatus"] == "outline_ready"
+    assert trace[1]["toStatus"] == "section_generation_ready"
+    assert report["status"] == "section_generation_ready"
+    assert report["advancedTransitionCount"] == 2
+    assert report["blockedTransitionCount"] == 0
+    assert report["latestInputType"] == "outline"
+
+    first_module_plan = run_module_section_plan_workflow(outline["modules"][0])
+    assert first_module_plan["status"] == "passed"
+    assert first_module_plan["metrics"]["sectionPlanCount"] == 2
+    assert first_module_plan["artifacts"]["sectionPlans"][0]["sourceIds"] == ["source-motion"]
+
+
+def test_course_wrapper_resume_inputs_preserve_explicit_outline() -> None:
+    program = run_program_generation_workflow(
+        goal="data analyst portfolio pathway",
+        level="professional",
+        desired_course_count=5,
+    )["artifacts"]["program"]
+    wrapper = run_course_wrapper_generation_workflow(program)["artifacts"]["wrapperCourses"][0]
+    outline = run_course_module_outline_workflow(
+        prompt=wrapper["courseWrapper"]["generationPrompt"],
+        source_packet=_source_packet(),
+        desired_module_count=2,
+        sections_per_module=2,
+    )["artifacts"]["outline"]
+    shell = _course_shell_from_wrapper(wrapper)
+    shell["metadata"]["courseBuildTask"] = transition_course_build_task_from_source_packet(
+        shell["metadata"]["courseBuildTask"],
+        source_packet=_source_packet(),
+    )
+
+    resumed = apply_course_build_resume_inputs(shell, outline=outline)
+
+    assert resumed["metadata"]["courseBuildTask"]["status"] == "section_generation_ready"
+    assert resumed["metadata"]["courseBuildOutline"] == outline
+    assert resumed["metadata"]["courseBuildResumeReport"]["latestInputType"] == "outline"
+
+
+def test_course_wrapper_resume_inputs_block_weak_outline_with_report() -> None:
+    program = run_program_generation_workflow(
+        goal="data analyst portfolio pathway",
+        level="professional",
+        desired_course_count=5,
+    )["artifacts"]["program"]
+    wrapper = run_course_wrapper_generation_workflow(program)["artifacts"]["wrapperCourses"][0]
+    shell = _course_shell_from_wrapper(wrapper)
+    shell["metadata"]["courseBuildTask"] = transition_course_build_task_from_source_packet(
+        shell["metadata"]["courseBuildTask"],
+        source_packet=_source_packet(),
+    )
+    weak_outline = {
+        "contractVersion": "course-outline-from-source-packet-v1",
+        "modules": [
+            {
+                "id": "thin-module",
+                "title": "",
+                "sections": [{"id": "thin-section", "title": "Only a title"}],
+            }
+        ],
+    }
+
+    resumed = apply_course_build_resume_inputs(shell, outline=weak_outline)
+    task = resumed["metadata"]["courseBuildTask"]
+    report = task["outlineTransitionReport"]
+    resume_report = resumed["metadata"]["courseBuildResumeReport"]
+
+    assert task["status"] == "outline_ready"
+    assert task["currentStage"] == "outline_ready"
+    assert task["nextAction"] == "revise_course_outline"
+    assert task["requiredInputs"] == ["course_outline"]
+    assert report["passed"] is False
+    assert report["status"] == "blocked"
+    assert report["metrics"]["moduleCount"] == 1
+    assert report["metrics"]["sectionCount"] == 1
+    assert "module_title_missing" in report["reasons"]
+    assert "section_count_below_policy" in report["reasons"]
+    assert "section_objectives_missing" in report["reasons"]
+    assert "section_concepts_missing" in report["reasons"]
+    assert resume_report["status"] == "blocked"
+    assert resume_report["blockedTransitionCount"] == 1
+    assert resume_report["latestInputType"] == "outline"
 
 
 def test_course_module_outline_workflow_is_testable_from_source_packet() -> None:

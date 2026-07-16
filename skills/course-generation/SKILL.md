@@ -22,11 +22,16 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - prefer benchmark-derived requirements over topic-prompt outlines when catalogs, syllabi, certification outlines, or employer profiles are available
    - record requirement origins so generated paths can explain why a requirement exists
    - validate missing course, assessment, project, or competency references before publishing program data
+   - separate passive curriculum planning from active course materialization
+   - passive generation plans, organizes, links, or proposes curriculum through program contracts, cluster plans, course wrappers, source requests, fit evidence, and review candidates
+   - active generation materializes source-backed course content through source-packet outlines, module and section planning, section fill, module assembly, active batches, quality reports, and review promotion
    - separate program generation, cluster generation, course-wrapper generation, and active course-content generation
+   - generate and test a `program-brief-v1` artifact before program requirements; the brief should capture goal, title, type, field, level, audience, outcome, description, learning outcomes, broad groups, evidence mode, and assumptions without materializing course IDs or wrappers
    - infer/generate clusters from orphaned courses only when there are at least 3 related courses; treat 4+ related courses as the recommended threshold
    - infer/generate programs from orphaned clusters only when there are at least 2 related clusters; treat 3+ related clusters as the recommended threshold
    - cluster generation should search existing courses and inspect internal fit evidence such as module titles, section titles, concept cards, tags, and descriptions before linking an existing course
    - missing or uncertain courses should become course wrappers with source needs and generation prompts rather than hollow full courses
+   - hand passive workflows to active workflows through explicit artifacts such as course wrappers, source requests, source packets, `metadata.activeGenerationPlan`, `metadata.courseBuildOutline`, and course build tasks
    - use active generation for large paths: generate bottom-level prerequisite course wrappers first, then generate course modules or sections in small batches as needed
 4. Determine course scope before writing lesson content:
    - learner level

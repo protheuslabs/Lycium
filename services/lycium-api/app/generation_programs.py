@@ -9,6 +9,7 @@ from app.models import CourseSnapshot, Learner, ProgramSnapshot
 from app.course_generation_stage_workflows import (
     compact_stage_workflow_report,
     run_cluster_generation_workflow,
+    run_program_brief_workflow,
     run_course_wrapper_generation_workflow,
     run_program_generation_workflow,
 )
@@ -426,12 +427,20 @@ def generate_program(
         source_documents=indexed_source_documents,
     )
     known_courses = _known_course_records(session)
+    brief_stage = run_program_brief_workflow(
+        goal=goal,
+        level=level,
+        desired_course_count=desired_course_count,
+        benchmark_context=benchmark_context,
+    )
+    program_brief = brief_stage["artifacts"]["programBrief"]
     program_stage = run_program_generation_workflow(
         goal=goal,
         level=level,
         desired_course_count=desired_course_count,
         benchmark_context=benchmark_context,
         known_courses=known_courses,
+        program_brief=program_brief,
     )
     program = program_stage["artifacts"]["program"]
     course_requirements = program_stage["artifacts"]["courseRequirements"]
@@ -446,6 +455,7 @@ def generate_program(
     )
     program_synthesis["courseScaffoldPlan"] = wrapper_stage["artifacts"]["courseScaffoldPlan"]
     stage_workflows = [
+        compact_stage_workflow_report(brief_stage),
         compact_stage_workflow_report(program_stage),
         compact_stage_workflow_report(cluster_stage),
         compact_stage_workflow_report(wrapper_stage),

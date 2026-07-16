@@ -150,15 +150,20 @@ def apply_course_build_resume_inputs(
                 source_packet=source_packet,
                 desired_module_count=desired_module_count,
             )
-            metadata = next_structure.get("metadata")
-            metadata = metadata if isinstance(metadata, dict) else {}
-            metadata["courseBuildOutline"] = outline
-            next_structure["metadata"] = metadata
 
     if outline is not None:
         before = _task(next_structure)
         next_structure = transition_course_build_task_in_structure_from_outline(next_structure, outline=outline)
-        rows.append(_transition_trace_row(input_type="outline", before=before, after=_task(next_structure)))
+        after = _task(next_structure)
+        rows.append(_transition_trace_row(input_type="outline", before=before, after=after))
+        if (
+            after.get("transitionStatus") == "advanced"
+            and (after.get("status") or after.get("currentStage")) == "section_generation_ready"
+        ):
+            metadata = next_structure.get("metadata")
+            metadata = metadata if isinstance(metadata, dict) else {}
+            metadata["courseBuildOutline"] = outline
+            next_structure["metadata"] = metadata
 
     if quality_report is not None:
         before = _task(next_structure)

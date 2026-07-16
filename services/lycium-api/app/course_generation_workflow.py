@@ -504,6 +504,27 @@ def _blocking_source_gaps(course: dict[str, Any]) -> list[dict[str, Any]]:
     ] if isinstance(gaps, list) else []
 
 
+def _active_generation_in_progress(metadata: dict[str, Any]) -> bool:
+    active_plan = metadata.get("activeGenerationPlan") if isinstance(metadata.get("activeGenerationPlan"), dict) else {}
+    if not active_plan:
+        return False
+    status = str(active_plan.get("status") or "").strip()
+    if status == "complete":
+        return False
+    generation_plan = metadata.get("generationPlan") if isinstance(metadata.get("generationPlan"), dict) else {}
+    batches = active_plan.get("batches")
+    batch_statuses = {
+        str(batch.get("status") or "").strip()
+        for batch in batches
+        if isinstance(batch, dict)
+    } if isinstance(batches, list) else set()
+    return (
+        status == "partially_generated"
+        or "generated" in batch_statuses
+        or str(generation_plan.get("activeGenerationMode") or "").strip() == "module_batches"
+    )
+
+
 def _gate_review_publish(gates: list[GateResult], course: dict[str, Any]) -> GateResult:
     failed_gate_names = [gate.gate for gate in gates if gate.status == "failed"]
     critical_review_gates = [
@@ -514,6 +535,7 @@ def _gate_review_publish(gates: list[GateResult], course: dict[str, Any]) -> Gat
     blocking_source_gaps = _blocking_source_gaps(course)
     metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
     metadata_status = str(metadata.get("status") or "").strip()
+    active_generation_in_progress = _active_generation_in_progress(metadata)
     issues = [_issue("error", f"Failed gates must be resolved before publish: {', '.join(failed_gate_names)}.")] if failed_gate_names else []
     if critical_review_gates:
         issues.append(
@@ -532,6 +554,14 @@ def _gate_review_publish(gates: list[GateResult], course: dict[str, Any]) -> Gat
                 "metadata.sourceGaps",
             )
         )
+    if active_generation_in_progress:
+        issues.append(
+            _issue(
+                "error",
+                "Active generation must complete all planned module batches before review or publish.",
+                "metadata.activeGenerationPlan.status",
+            )
+        )
     return _gate(
         "review_publish",
         "Workflow gate status was summarized for review/publish readiness.",
@@ -540,6 +570,7 @@ def _gate_review_publish(gates: list[GateResult], course: dict[str, Any]) -> Gat
             "failedGateCount": len(failed_gate_names),
             "criticalGateBlockerCount": len(critical_review_gates),
             "blockingSourceGapCount": len(blocking_source_gaps),
+            "activeGenerationComplete": int(not active_generation_in_progress),
         },
     )
 

@@ -33,6 +33,11 @@ def _scaffold_plan(trace: dict[str, Any]) -> dict[str, Any]:
     return synthesis.get("courseScaffoldPlan") if isinstance(synthesis.get("courseScaffoldPlan"), dict) else {}
 
 
+def _program_brief(trace: dict[str, Any]) -> dict[str, Any]:
+    synthesis = trace.get("programSynthesis") if isinstance(trace.get("programSynthesis"), dict) else {}
+    return synthesis.get("programBrief") if isinstance(synthesis.get("programBrief"), dict) else {}
+
+
 def _count_by_key(rows: list[dict[str, Any]], key: str) -> dict[str, int]:
     counts: dict[str, int] = {}
     for row in rows:
@@ -86,6 +91,7 @@ def build_program_generation_timeline(payload: dict[str, Any]) -> dict[str, Any]
     quality = _quality(payload)
     validation = _contract_validation(payload)
     benchmark_context = trace.get("curriculumBenchmarkContext") if isinstance(trace.get("curriculumBenchmarkContext"), dict) else {}
+    program_brief = _program_brief(trace)
     scaffold_plan = _scaffold_plan(trace)
     task_report = scaffold_plan.get("courseBuildTaskReport") if isinstance(scaffold_plan.get("courseBuildTaskReport"), dict) else {}
     shell_readiness = scaffold_plan.get("courseShellReadinessReport") if isinstance(scaffold_plan.get("courseShellReadinessReport"), dict) else {}
@@ -114,6 +120,21 @@ def build_program_generation_timeline(payload: dict[str, Any]) -> dict[str, Any]
                 "goal": trace.get("goal"),
                 "level": trace.get("level"),
                 "sourceUrlCount": len(trace.get("sourceUrls")) if isinstance(trace.get("sourceUrls"), list) else 0,
+            },
+        ),
+        _event(
+            event_type="program_brief_created",
+            stage="program_brief",
+            status="passed" if program_brief.get("title") and program_brief.get("targetOutcome") else "needs_review",
+            message="Program intent, audience, outcome, and broad requirement groups drafted.",
+            progress=0.18,
+            payload={
+                "title": program_brief.get("title"),
+                "programType": program_brief.get("programType"),
+                "field": program_brief.get("field"),
+                "level": program_brief.get("level"),
+                "broadRequirementGroupCount": len(_items(program_brief.get("broadRequirementGroups"))),
+                "learningOutcomeCount": len(_items(program_brief.get("learningOutcomes"))),
             },
         ),
         _event(

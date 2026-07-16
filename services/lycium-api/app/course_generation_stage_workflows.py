@@ -11,7 +11,7 @@ from app.curriculum_assembly_policy import (
     curriculum_assembly_threshold_policy,
     program_generation_threshold_report,
 )
-from app.program_contract_builder import build_program_contract
+from app.program_contract_builder import build_program_brief, build_program_contract
 from app.program_course_scaffold import build_course_scaffold_plan
 from app.program_validation import validate_program_contract
 
@@ -19,6 +19,7 @@ STAGE_WORKFLOW_VERSION = "course-generation-stage-workflows-v1"
 
 StageStatus = Literal["passed", "needs_review", "failed"]
 
+PROGRAM_BRIEF_CONTRACT = "program-brief-workflow-v1"
 PROGRAM_GENERATION_CONTRACT = "program-generation-workflow-v1"
 CLUSTER_GENERATION_CONTRACT = "cluster-generation-workflow-v1"
 COURSE_WRAPPER_GENERATION_CONTRACT = "course-wrapper-generation-workflow-v1"
@@ -84,6 +85,51 @@ def _status_from_issues(issues: list[dict[str, Any]]) -> StageStatus:
     return "needs_review" if issues else "passed"
 
 
+def run_program_brief_workflow(
+    *,
+    goal: str,
+    level: str | None = None,
+    desired_course_count: int = 8,
+    benchmark_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    brief = build_program_brief(
+        goal=goal,
+        level=level,
+        desired_course_count=desired_course_count,
+        benchmark_context=benchmark_context,
+    )
+    broad_groups = _items(brief.get("broadRequirementGroups"))
+    learning_outcomes = _items(brief.get("learningOutcomes"))
+    issues: list[dict[str, Any]] = []
+    if not str(goal or "").strip():
+        issues.append(_issue("error", "Program brief needs a non-empty user goal.", "goal"))
+    for key in ("title", "description", "programType", "field", "level", "targetAudience", "targetOutcome"):
+        if not str(brief.get(key) or "").strip():
+            issues.append(_issue("error", f"Program brief is missing {key}.", key))
+    if len(learning_outcomes) < 3:
+        issues.append(_issue("error", "Program brief needs at least three learning outcomes.", "learningOutcomes"))
+    if len(broad_groups) < 2:
+        issues.append(_issue("warning", "Program brief has fewer than two broad requirement groups.", "broadRequirementGroups"))
+    if any("courseId" in group or "courseWrapper" in group or "activeGenerationPlan" in group for group in broad_groups):
+        issues.append(_issue("error", "Program brief should not materialize courses or wrappers.", "broadRequirementGroups"))
+
+    evidence = brief.get("evidence") if isinstance(brief.get("evidence"), dict) else {}
+    return _workflow_result(
+        stage="program_brief",
+        contract_version=PROGRAM_BRIEF_CONTRACT,
+        status=_status_from_issues(issues),
+        issues=issues,
+        metrics={
+            "learningOutcomeCount": len(learning_outcomes),
+            "broadRequirementGroupCount": len(broad_groups),
+            "desiredCourseCount": brief.get("desiredCourseCount") or desired_course_count,
+            "requirementOriginCount": evidence.get("requirementOriginCount") or 0,
+            "courseSignalCount": evidence.get("courseSignalCount") or 0,
+        },
+        artifacts={"programBrief": brief},
+    )
+
+
 def run_program_generation_workflow(
     *,
     goal: str,
@@ -92,7 +138,18 @@ def run_program_generation_workflow(
     benchmark_context: dict[str, Any] | None = None,
     known_course_ids: set[str] | None = None,
     known_courses: list[dict[str, Any]] | None = None,
+    program_brief: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    brief = (
+        dict(program_brief)
+        if isinstance(program_brief, dict)
+        else run_program_brief_workflow(
+            goal=goal,
+            level=level,
+            desired_course_count=desired_course_count,
+            benchmark_context=benchmark_context,
+        )["artifacts"]["programBrief"]
+    )
     program, course_requirements, synthesis = build_program_contract(
         goal=goal,
         level=level,
@@ -100,6 +157,7 @@ def run_program_generation_workflow(
         benchmark_context=benchmark_context,
         known_course_ids=known_course_ids,
         known_courses=known_courses,
+        program_brief=brief,
     )
     validation_errors = validate_program_contract(program)
     issues = [_issue("error", error) for error in validation_errors]
@@ -121,6 +179,7 @@ def run_program_generation_workflow(
         artifacts={
             "program": program,
             "courseRequirements": course_requirements,
+            "programBrief": brief,
             "programSynthesis": synthesis,
         },
     )

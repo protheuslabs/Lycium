@@ -49,8 +49,14 @@ Use the repo-local course generation skill as the starting point:
 
 Course generation is a gated workflow. Each gate should produce inspectable artifacts and issues before the next stage is trusted:
 
+- Passive generation and active generation are separate modes.
+  Passive generation plans, organizes, links, or proposes curriculum. It may create program contracts, cluster plans, course wrappers, source requests, fit evidence, and review candidates, but it should not generate learner-facing lessons or silently attach parent structures when threshold or review gates are missing.
+  Active generation materializes source-backed course content. It advances source packets into outlines, module plans, section plans, section content, module assembly, active batches, quality reports, and review promotion.
 - Program, cluster, course-wrapper, and course-content generation are separate workflows.
   Program generation creates the requirement graph and cluster plan. Cluster generation searches the available course inventory, inspects course titles plus internal evidence such as module titles, section titles, concept cards, tags, and descriptions, then links only courses with recorded fit evidence. If a needed course is missing or fit is uncertain, the workflow creates a course wrapper instead of generating a complete course immediately.
+- Program brief generation is the topmost passive workflow.
+  Before generating requirement groups, create an inspectable `program-brief-v1` artifact that captures the user goal, program title, program type, field, level, target audience, target outcome, short description, learning outcomes, broad requirement group plan, evidence mode, and assumptions. The brief must not materialize course IDs, wrappers, or active-generation plans.
+- Passive workflows should hand off to active workflows through explicit artifacts such as course wrappers, source requests, source packets, `metadata.activeGenerationPlan`, `metadata.courseBuildOutline`, and course build tasks.
 - Curriculum assembly inference should use shared thresholds before generating or attaching parent structures: cluster generation from orphaned courses requires at least 3 related courses and treats 4+ as recommended; program generation from orphaned clusters requires at least 2 related clusters and treats 3+ as recommended. Below the minimum, surface fit candidates only.
 - Course wrappers are real planning artifacts, not hollow learner pages.
   A wrapper should preserve the course title, cluster, requirement id, prerequisites, source needs, generation prompt, estimated time, and active-generation plan. Wrappers may appear as drafts or source-gapped shells, but they should not pretend to be complete courses.

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
+from app.course_build_tasks import transition_course_build_task_in_structure_from_quality_report
 from app.course_generation_workflow import run_course_generation_workflow
 from app.course_quality_evals import run_course_quality_evals
 from app.course_structure import concept_items as _concept_items
@@ -128,6 +129,11 @@ def assess_course_quality(course: dict[str, Any], *, gate: str = "publish") -> d
 
 def apply_course_quality_gate(course_snapshot: Any, *, gate: str = "review") -> dict[str, Any]:
     report = assess_course_quality(course_snapshot.structure, gate=gate)
+    if isinstance(course_snapshot.structure, dict):
+        course_snapshot.structure = transition_course_build_task_in_structure_from_quality_report(
+            course_snapshot.structure,
+            quality_report=report,
+        )
     trace = dict(course_snapshot.generation_trace or {})
     trace["quality_report"] = report
     course_snapshot.generation_trace = trace

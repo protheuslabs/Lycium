@@ -54,6 +54,36 @@ def _overlap_ratio(left: set[str], right: set[str]) -> float:
     return len(left & right) / max(1, len(left))
 
 
+def _requirement_terms(
+    *,
+    course_id: str,
+    title: str,
+    group: dict[str, Any],
+    requirement: dict[str, Any] | None,
+) -> set[str]:
+    requirement = requirement if isinstance(requirement, dict) else {}
+    origin = requirement.get("origin") if isinstance(requirement.get("origin"), dict) else {}
+    return _tokens(
+        " ".join(
+            [
+                course_id,
+                title,
+                str(requirement.get("title") or ""),
+                str(requirement.get("description") or ""),
+                str(requirement.get("purpose") or ""),
+                " ".join(_strings(requirement.get("tags"))),
+                " ".join(_strings(origin.get("concepts"))),
+                " ".join(_strings(origin.get("topics"))),
+                " ".join(_strings(origin.get("requiredConcepts"))),
+                str(group.get("title") or ""),
+                str(group.get("displayName") or ""),
+                str(group.get("purpose") or ""),
+                str(group.get("description") or ""),
+            ]
+        )
+    )
+
+
 def _known_course_index(
     known_course_ids: set[str] | None = None,
     known_courses: list[dict[str, Any]] | None = None,
@@ -77,18 +107,19 @@ def _course_fit_evidence(
     course_id: str,
     title: str,
     group: dict[str, Any],
+    requirement: dict[str, Any] | None = None,
     candidate: dict[str, Any] | None,
 ) -> dict[str, Any] | None:
     if not candidate:
         return None
     title_slug_match = _slugify(title) == _slugify(str(candidate.get("title") or ""))
     course_id_match = _slugify(course_id) == _slugify(str(candidate.get("courseId") or ""))
-    requirement_terms = _tokens(" ".join([
-        title,
-        str(group.get("title") or ""),
-        str(group.get("displayName") or ""),
-        str(group.get("purpose") or ""),
-    ]))
+    requirement_terms = _requirement_terms(
+        course_id=course_id,
+        title=title,
+        group=group,
+        requirement=requirement,
+    )
     module_terms = _tokens(" ".join(_strings(candidate.get("moduleTitles"))))
     section_terms = _tokens(" ".join(_strings(candidate.get("sectionTitles"))))
     concept_terms = _tokens(" ".join(_strings(candidate.get("conceptTitles"))))
@@ -124,6 +155,7 @@ def _course_fit_evidence(
             "courseIdMatch": course_id_match,
             "titleMatch": title_slug_match,
             "contentEvidenceAvailable": has_content_evidence,
+            "requirementTermCount": len(requirement_terms),
             "moduleTitleOverlap": round(module_score, 4),
             "sectionTitleOverlap": round(section_score, 4),
             "conceptTitleOverlap": round(concept_score, 4),
@@ -150,17 +182,30 @@ def _best_known_course_match(
     course_id: str,
     title: str,
     group: dict[str, Any],
+    requirement: dict[str, Any] | None = None,
     known_index: dict[str, dict[str, Any]],
 ) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     exact = known_index.get(_slugify(course_id)) or known_index.get(_slugify(title))
     if exact:
-        return exact, _course_fit_evidence(course_id=course_id, title=title, group=group, candidate=exact)
+        return exact, _course_fit_evidence(
+            course_id=course_id,
+            title=title,
+            group=group,
+            requirement=requirement,
+            candidate=exact,
+        )
 
     best_candidate: dict[str, Any] | None = None
     best_evidence: dict[str, Any] | None = None
     best_score = 0.0
     for candidate in _unique_known_course_candidates(known_index):
-        evidence = _course_fit_evidence(course_id=course_id, title=title, group=group, candidate=candidate)
+        evidence = _course_fit_evidence(
+            course_id=course_id,
+            title=title,
+            group=group,
+            requirement=requirement,
+            candidate=candidate,
+        )
         if not evidence:
             continue
         score = float(evidence.get("fitScore") or 0)
@@ -395,11 +440,12 @@ def build_course_scaffold_plan(
     courses: list[dict[str, Any]] = []
     prior_group_course_ids: list[str] = []
 
-    def course_action(course_id: str, title: str, group: dict[str, Any]) -> dict[str, Any]:
+    def course_action(course_id: str, title: str, group: dict[str, Any], requirement: dict[str, Any]) -> dict[str, Any]:
         existing, fit_evidence = _best_known_course_match(
             course_id=course_id,
             title=title,
             group=group,
+            requirement=requirement,
             known_index=known_index,
         )
         if existing and fit_evidence and fit_evidence["fitScore"] >= 0.7:
@@ -418,7 +464,7 @@ def build_course_scaffold_plan(
         if requirement_type == "complete_course":
             course_id = str(requirement.get("courseId") or "")
             title = str(requirement.get("title") or course_id)
-            action = course_action(course_id, title, group)
+            action = course_action(course_id, title, group, requirement)
             importance = str(requirement.get("importance") or "required")
             prerequisite_ids = list(prerequisite_course_ids)
             source_request = _source_request_for_requirement(
@@ -479,7 +525,7 @@ def build_course_scaffold_plan(
         elif requirement_type == "complete_n_of_courses":
             for course_id in requirement.get("courseIds") or []:
                 if isinstance(course_id, str) and course_id:
-                    action = course_action(course_id, course_id, group)
+                    action = course_action(course_id, course_id, group, requirement)
                     importance = str(requirement.get("importance") or "required")
                     prerequisite_ids = list(prerequisite_course_ids)
                     source_request = _source_request_for_requirement(
@@ -569,6 +615,7 @@ def build_course_scaffold_plan(
     return {
         "version": "program-course-scaffold-plan-v1",
         "workflowContracts": {
+            "programBrief": "program-brief-workflow-v1",
             "programGeneration": "program-generation-workflow-v1",
             "clusterGeneration": "cluster-generation-workflow-v1",
             "courseWrapperGeneration": "course-wrapper-v1",

@@ -16,6 +16,7 @@ IMPORTANCE_RANK = {
     "optional": 3,
     "enrichment": 3,
 }
+PROGRAM_BRIEF_CONTRACT_VERSION = "program-brief-v1"
 FALLBACK_STOPWORDS = {
     "and",
     "become",
@@ -56,6 +57,10 @@ REQUIREMENT_TITLE_PREFIX = re.compile(
 def _slugify(value: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
     return slug or "program"
+
+
+def _items(value: Any) -> list[dict[str, Any]]:
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
 
 
 def _normalize_program_level(level: str | None) -> str:
@@ -600,6 +605,136 @@ def _dependency_edges(groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
+def _target_audience_for(level: str, program_type: str, field: str) -> str:
+    if program_type == "career_path":
+        return f"learners preparing for entry-level or advancing professional work in {field.lower()}"
+    if program_type == "degree_equivalent":
+        return f"{level.replace('_', ' ')} learners seeking a structured {field.lower()} curriculum"
+    if program_type == "certificate":
+        return f"learners seeking a focused certificate-style path in {field.lower()}"
+    return f"self-directed learners building capability in {field.lower()}"
+
+
+def _brief_course_signals(
+    *,
+    goal: str,
+    desired_course_count: int,
+    field: str,
+    benchmark_context: dict[str, Any] | None,
+) -> tuple[list[dict[str, Any]], str, str | None]:
+    origins = _extract_requirement_origins(benchmark_context, desired_course_count)
+    if origins:
+        requirements = [_course_requirement_from_origin(goal, origin, index) for index, origin in enumerate(origins, start=1)]
+        return requirements, "benchmark_informed", None
+    fallback_terms, fallback_template = _fallback_course_terms(goal, desired_course_count, field)
+    requirements = [
+        _fallback_course_requirement(goal, title, index, template_key=fallback_template)
+        for index, title in enumerate(fallback_terms, start=1)
+    ]
+    return requirements, "prompt_inferred", fallback_template
+
+
+def _brief_group_plan(goal: str, requirements: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    groups = _group_requirements(_goal_focus_title(goal), requirements)
+    group_plans: list[dict[str, Any]] = []
+    for index, group in enumerate(groups, start=1):
+        group_requirements = _items(group.get("requirements"))
+        group_plans.append(
+            {
+                "id": f"brief-group-{index:02d}-{_slugify(str(group.get('title') or index))}",
+                "title": str(group.get("displayName") or group.get("title") or f"Group {index}"),
+                "description": str(group.get("description") or ""),
+                "groupKind": str(group.get("groupKind") or "cluster"),
+                "clusterType": str(group.get("clusterType") or "core"),
+                "requirementThemeCount": len(group_requirements),
+                "sampleTopics": [
+                    str(requirement.get("title") or "")
+                    for requirement in group_requirements[:4]
+                    if str(requirement.get("title") or "").strip()
+                ],
+            }
+        )
+    return group_plans
+
+
+def build_program_brief(
+    goal: str,
+    level: str | None,
+    desired_course_count: int,
+    benchmark_context: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    desired_course_count = max(4, min(32, desired_course_count))
+    clean_goal = re.sub(r"\s+", " ", goal or "").strip()
+    program_title = _program_title_for_goal(clean_goal)
+    program_focus = _goal_focus_title(clean_goal)
+    program_field = _program_field_for_goal(clean_goal)
+    program_type = _program_type_for_goal(clean_goal)
+    normalized_level = _normalize_program_level(level)
+    course_signals, evidence_mode, fallback_template = _brief_course_signals(
+        goal=clean_goal,
+        desired_course_count=desired_course_count,
+        field=program_field,
+        benchmark_context=benchmark_context,
+    )
+    source_slots = benchmark_context.get("sourceSlots") if isinstance(benchmark_context, dict) else []
+    benchmarks = benchmark_context.get("curriculumBenchmarks") if isinstance(benchmark_context, dict) else []
+    origins = _extract_requirement_origins(benchmark_context, desired_course_count)
+    target_audience = _target_audience_for(normalized_level, program_type, program_field)
+    target_outcome = (
+        f"Learners can demonstrate practical competence in {program_focus.lower()} "
+        "through source-backed courses, integrated assessment, and portfolio evidence."
+    )
+    return {
+        "contractVersion": PROGRAM_BRIEF_CONTRACT_VERSION,
+        "sourceGoal": clean_goal,
+        "title": program_title,
+        "shortDescription": f"A structured, source-backed pathway for {program_focus.lower()}.",
+        "description": (
+            f"A structured, source-backed pathway for {program_focus.lower()}, "
+            "organized around curriculum requirements, practice, assessment, and portfolio evidence."
+        ),
+        "programType": program_type,
+        "field": program_field,
+        "focus": program_focus,
+        "level": normalized_level,
+        "targetAudience": target_audience,
+        "targetOutcome": target_outcome,
+        "desiredCourseCount": desired_course_count,
+        "learningOutcomes": [
+            {
+                "id": "outcome-program-foundations",
+                "statement": f"Explain the foundational concepts behind {program_focus.lower()}.",
+            },
+            {
+                "id": "outcome-program-practice",
+                "statement": f"Apply {program_focus.lower()} skills to realistic practice or project work.",
+            },
+            {
+                "id": "outcome-program-source-backed-requirements",
+                "statement": "Complete source-backed requirements with traceable evidence and assessment checkpoints.",
+            },
+            {
+                "id": "outcome-program-portfolio-evidence",
+                "statement": "Produce portfolio or capstone evidence that can be reviewed by a human.",
+            },
+        ],
+        "broadRequirementGroups": _brief_group_plan(clean_goal, course_signals),
+        "evidence": {
+            "mode": evidence_mode,
+            "fallbackTemplate": fallback_template,
+            "curriculumBenchmarkCount": len(benchmarks) if isinstance(benchmarks, list) else 0,
+            "requirementOriginCount": len(origins),
+            "sourceSlotCount": len(source_slots) if isinstance(source_slots, list) else 0,
+            "courseSignalCount": len(course_signals),
+        },
+        "assumptions": [
+            "Later workflows will turn this brief into requirement groups and course wrappers.",
+            "Courses should remain source-backed before review or publication.",
+            "Portfolio or capstone evidence is expected unless a reviewer marks it not applicable.",
+        ],
+    }
+
+
 def build_program_contract(
     goal: str,
     level: str | None,
@@ -607,12 +742,19 @@ def build_program_contract(
     benchmark_context: dict[str, Any] | None = None,
     known_course_ids: set[str] | None = None,
     known_courses: list[dict[str, Any]] | None = None,
+    program_brief: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     desired_course_count = max(4, min(32, desired_course_count))
-    program_title = _program_title_for_goal(goal)
-    program_focus = _goal_focus_title(goal)
-    program_field = _program_field_for_goal(goal)
-    program_type = _program_type_for_goal(goal)
+    brief = (
+        dict(program_brief)
+        if isinstance(program_brief, dict)
+        else build_program_brief(goal, level, desired_course_count, benchmark_context)
+    )
+    program_title = str(brief.get("title") or _program_title_for_goal(goal))
+    program_focus = str(brief.get("focus") or _goal_focus_title(goal))
+    program_field = str(brief.get("field") or _program_field_for_goal(goal))
+    program_type = str(brief.get("programType") or _program_type_for_goal(goal))
+    program_level = str(brief.get("level") or _normalize_program_level(level))
     origins = _extract_requirement_origins(benchmark_context, desired_course_count)
     if origins:
         course_requirements = [_course_requirement_from_origin(goal, origin, index) for index, origin in enumerate(origins, start=1)]
@@ -636,12 +778,18 @@ def build_program_contract(
     program = {
         "id": f"program-{_slugify(goal)}",
         "title": program_title,
-        "description": f"A structured, source-backed pathway for {program_focus.lower()}, organized around curriculum requirements and portfolio evidence.",
+        "description": str(
+            brief.get("description")
+            or f"A structured, source-backed pathway for {program_focus.lower()}, organized around curriculum requirements and portfolio evidence."
+        ),
         "programType": program_type,
         "field": program_field,
-        "level": _normalize_program_level(level),
-        "targetOutcome": f"Learners can demonstrate practical competence in {program_focus.lower()} through courses, assessments, and portfolio evidence.",
-        "learningOutcomes": [
+        "level": program_level,
+        "targetOutcome": str(
+            brief.get("targetOutcome")
+            or f"Learners can demonstrate practical competence in {program_focus.lower()} through courses, assessments, and portfolio evidence."
+        ),
+        "learningOutcomes": _items(brief.get("learningOutcomes")) or [
             {
                 "id": "outcome-foundational-concepts",
                 "statement": f"Explain the foundational concepts behind {program_focus.lower()}.",
@@ -695,6 +843,7 @@ def build_program_contract(
         "courseRequirementCount": len(course_requirements),
         "requirementGroupCount": len(groups),
         "fallbackTemplate": fallback_template,
+        "programBrief": brief,
         "field": program["field"],
         "programType": program["programType"],
         "estimatedHours": estimated_hours,

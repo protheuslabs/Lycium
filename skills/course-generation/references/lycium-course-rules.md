@@ -15,7 +15,12 @@
 - Treat course equivalency records as reference/parity metadata, not as formal transfer credit or articulation agreements unless the source explicitly supports that claim.
 - Planned catalog-visible course wrappers should also include `metadata.prerequisiteCourseIds`.
 - Empty planned course wrappers may use `modules: []` until the course is built out.
+- Passive generation and active generation should be separate modes.
+  Passive generation plans, organizes, links, or proposes curriculum through program contracts, cluster plans, course wrappers, source requests, fit evidence, and review candidates. It should not generate learner-facing lesson content or silently attach parent structures when threshold or review gates are missing.
+  Active generation materializes source-backed course content through source-packet outline creation, module and section planning, section fill, module assembly, active batches, quality reports, and review promotion.
 - Program generation, cluster generation, course-wrapper generation, and course-content generation should be separate workflows.
+- Program brief generation is the topmost passive workflow. Before generating requirement groups, create an inspectable `program-brief-v1` artifact that captures the user goal, program title, program type, field, level, target audience, target outcome, short description, learning outcomes, broad requirement group plan, evidence mode, and assumptions. The brief must not materialize course IDs, wrappers, or active-generation plans.
+- Passive workflows should hand off to active workflows through explicit artifacts such as course wrappers, source requests, source packets, `metadata.activeGenerationPlan`, `metadata.courseBuildOutline`, and course build tasks.
 - Curriculum assembly inference should use shared thresholds before generating or attaching parent structures: cluster generation from orphaned courses requires at least 3 related courses and treats 4+ as recommended; program generation from orphaned clusters requires at least 2 related clusters and treats 3+ as recommended. Below the minimum, surface fit candidates only.
 - Cluster generation should search existing courses and inspect internal fit evidence such as module titles, section titles, concept cards, tags, descriptions, and taxonomy before linking an existing course to a requirement.
 - Missing or uncertain courses should become explicit wrappers with source needs, prerequisite metadata, generation prompts, and active-generation plans instead of hollow full courses.

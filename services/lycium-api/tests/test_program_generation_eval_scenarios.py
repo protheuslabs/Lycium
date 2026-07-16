@@ -320,6 +320,7 @@ def test_program_generation_drill_rehearses_full_path_handoff() -> None:
     assert timeline["status"] == "passed"
     assert [event["eventType"] for event in timeline["events"]] == [
         "program_intake",
+        "program_brief_created",
         "curriculum_benchmark_context",
         "program_contract_validated",
         "program_quality_assessed",
