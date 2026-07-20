@@ -254,6 +254,7 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
     def fake_module_bundle(**kwargs: Any) -> dict[str, Any]:
         module_outline = kwargs["module_outline"]
         source_ids = kwargs["source_ids"]
+        lesson_outline = _module_lesson_outlines(module_outline)[0]
         return {
             "module": {
                 "id": "module-1",
@@ -261,7 +262,7 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
                 "sections": [
                     {
                         "id": "section-1",
-                        "title": module_outline["sections"][0]["title"],
+                        "title": lesson_outline["title"],
                         "pageType": "learn",
                         "sectionType": "lesson",
                         "sourceIds": source_ids[:1],
@@ -280,8 +281,25 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
                         "title": "Quiz: source-backed chemistry",
                         "pageType": "apply",
                         "sectionType": "assessment",
-                        "sourceIds": source_ids[:1],
-                        "content": [{"type": "quiz", "questions": [], "sourceIds": source_ids[:1]}],
+                        "content": [
+                            {
+                                "type": "quiz",
+                                "questions": [
+                                    {
+                                        "id": f"q{index}",
+                                        "question": f"How should learners apply Stoichiometry in source-backed chemistry case {index}?",
+                                        "options": [
+                                            "Use ratios and evidence to connect amounts and reactions.",
+                                            "Ignore source evidence and memorize only labels.",
+                                            "Assess a topic that was not introduced in the lesson.",
+                                            "Replace the chemistry problem with an unrelated reflection.",
+                                        ],
+                                        "answers": [0],
+                                    }
+                                    for index in range(1, 11)
+                                ],
+                            }
+                        ],
                     },
                     {
                         "id": "section-summary",
@@ -289,7 +307,16 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
                         "pageType": "learn",
                         "sectionType": "summary",
                         "sourceIds": source_ids[:1],
-                        "content": [{"type": "heading", "title": "Module concepts"}],
+                        "content": [
+                            {"type": "heading", "title": "Module concepts"},
+                            {
+                                "type": "conceptCard",
+                                "title": "Stoichiometry",
+                                "description": "Using source evidence to connect amounts and reactions.",
+                                "sourceSectionId": "section-1",
+                                "sourceIds": source_ids[:1],
+                            },
+                        ],
                     }
                 ],
             },
@@ -333,6 +360,8 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
         "course_module_outline_generation",
         "module_section_plan_generation",
         "section_fill_generation",
+        "module_apply_section_generation",
+        "module_summary_section_generation",
         "module_assembly",
     ]
     assert all(stage["status"] == "passed" for stage in result.trace["stage_workflows"])

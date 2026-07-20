@@ -49,6 +49,10 @@ export function getSourcesByIds(sourceIds: string[] | undefined, sources: Source
 }
 
 export function getSectionSources(section: Section, sources: SourceRecord[], courseSourceIndex: CourseSourceIndex) {
+  if (section.pageType === "apply" || ["assessment", "quiz", "project"].includes((section.sectionType ?? "").toLowerCase())) {
+    return [];
+  }
+
   const sourceIds = new Set(section.sourceIds ?? []);
 
   for (const block of section.content) {

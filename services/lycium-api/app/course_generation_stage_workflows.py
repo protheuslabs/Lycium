@@ -6,7 +6,12 @@ from typing import Any, Literal
 
 from app.course_agent_assembly import _coerce_generated_section, _module_lesson_outlines, _source_ids_from_outline
 from app.course_agent_staged_support import _infer_pacing_label, _normalize_summary_for_pacing, _with_generation_outline_metadata
-from app.course_outline_from_source_packet import SOURCE_PACKET_OUTLINE_CONTRACT_VERSION, build_outline_from_source_packet
+from app.course_outline_from_source_packet import (
+    COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
+    SOURCE_PACKET_OUTLINE_CONTRACT_VERSION,
+    build_course_module_outline_quality_report,
+    build_outline_from_source_packet,
+)
 from app.curriculum_assembly_policy import (
     cluster_generation_threshold_report,
     curriculum_assembly_threshold_policy,
@@ -34,6 +39,8 @@ COURSE_WRAPPER_GENERATION_CONTRACT = "course-wrapper-generation-workflow-v1"
 COURSE_MODULE_OUTLINE_CONTRACT = "course-module-outline-workflow-v1"
 MODULE_SECTION_PLAN_CONTRACT = "module-section-plan-workflow-v1"
 SECTION_FILL_CONTRACT = "section-fill-workflow-v1"
+MODULE_APPLY_SECTION_CONTRACT = "module-apply-section-workflow-v1"
+MODULE_SUMMARY_SECTION_CONTRACT = "module-summary-section-workflow-v1"
 MODULE_ASSEMBLY_CONTRACT = "module-assembly-workflow-v1"
 
 
@@ -679,15 +686,26 @@ def run_course_module_outline_workflow(
             source_packet=source_packet,
             desired_module_count=desired_module_count,
             sections_per_module=sections_per_module,
+            include_section_outlines=False,
         )
     )
     modules = _items(outline.get("modules"))
     section_count = sum(len(_items(module.get("sections"))) for module in modules)
+    quality_report = build_course_module_outline_quality_report(
+        outline,
+        source_packet=source_packet,
+        desired_module_count=desired_module_count,
+        sections_per_module=sections_per_module,
+    )
     issues: list[dict[str, Any]] = []
     if not modules:
         issues.append(_issue("error", "Module outline generation did not create modules.", "modules"))
-    if modules and section_count == 0:
-        issues.append(_issue("error", "Module outline generation did not create section outlines.", "modules[].sections"))
+    if quality_report.get("contractVersion") != COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT:
+        issues.append(_issue("error", "Module outline quality report has the wrong contract version.", "outlineQualityReport"))
+    for reason in _strings(quality_report.get("reasons")):
+        issues.append(_issue("error", f"Module outline quality check failed: {reason}.", "outlineQualityReport.reasons"))
+    for warning in _strings(quality_report.get("warnings")):
+        issues.append(_issue("warning", f"Module outline quality warning: {warning}.", "outlineQualityReport.warnings"))
 
     return _workflow_result(
         stage="course_module_outline_generation",
@@ -697,31 +715,53 @@ def run_course_module_outline_workflow(
         metrics={
             "moduleCount": len(modules),
             "sectionOutlineCount": section_count,
+            "embeddedSectionOutlineCount": section_count,
             "sourceDocumentCount": outline.get("provenance", {}).get("sourceDocumentCount", 0)
             if isinstance(outline.get("provenance"), dict)
             else 0,
+            "outlineQualityStatus": quality_report.get("status"),
+            "outlineQualityReasonCount": len(_strings(quality_report.get("reasons"))),
+            "sourceMappedModuleCount": quality_report.get("metrics", {}).get("sourceMappedModuleCount", 0)
+            if isinstance(quality_report.get("metrics"), dict)
+            else 0,
+            "sourceMappedSectionCount": quality_report.get("metrics", {}).get("sourceMappedSectionCount", 0)
+            if isinstance(quality_report.get("metrics"), dict)
+            else 0,
         },
-        artifacts={"outline": outline},
+        artifacts={"outline": outline, "outlineQualityReport": quality_report},
     )
 
 
 def run_module_section_plan_workflow(
     module_outline: dict[str, Any],
     *,
+    course: dict[str, Any] | None = None,
     fallback_source_ids: list[str] | None = None,
     module_number: int = 1,
+    desired_section_count: int | None = None,
 ) -> dict[str, Any]:
     module_source_ids = _source_ids_from_outline(module_outline, fallback_source_ids or _strings(module_outline.get("sourceIds")))
-    lesson_outlines = _module_lesson_outlines(module_outline)
+    has_embedded_sections = bool(_items(module_outline.get("sections")))
+    planning_outline = dict(module_outline)
+    if desired_section_count is not None and not has_embedded_sections:
+        planning_outline["targetSectionCount"] = desired_section_count
+    lesson_outlines = _module_lesson_outlines(planning_outline)
+    target_count = len(lesson_outlines)
+    generated_from_module_outline = not has_embedded_sections
     section_plans: list[dict[str, Any]] = []
     for index, lesson_outline in enumerate(lesson_outlines, start=1):
         title = str(lesson_outline.get("title") or f"Lesson {index}")
         source_ids = _source_ids_from_outline(lesson_outline, module_source_ids)
+        description = str(
+            lesson_outline.get("description")
+            or f"Planning reference for content generation: fill {title} as a source-backed section."
+        )
         section_plans.append(
             {
                 "contractVersion": "section-generation-outline-v1",
                 "id": str(lesson_outline.get("id") or f"module-{module_number}-section-{index}"),
                 "title": title,
+                "description": description,
                 "role": "lesson",
                 "pageType": "learn",
                 "sectionType": "lesson",
@@ -734,20 +774,143 @@ def run_module_section_plan_workflow(
     issues: list[dict[str, Any]] = []
     if not section_plans:
         issues.append(_issue("error", "Module section planning did not produce lesson section plans.", "sections"))
+    title_keys = [str(plan.get("title") or "").strip().lower() for plan in section_plans if str(plan.get("title") or "").strip()]
+    if len(title_keys) != len(set(title_keys)):
+        issues.append(_issue("error", "Module section planning produced duplicate lesson titles.", "sections[].title"))
+    for index, section_plan in enumerate(section_plans, start=1):
+        location = f"sectionPlans[{index}]"
+        if not str(section_plan.get("title") or "").strip():
+            issues.append(_issue("error", "Section plan is missing a title.", f"{location}.title"))
+        if not str(section_plan.get("description") or "").strip():
+            issues.append(_issue("warning", "Section plan has no planning description.", f"{location}.description"))
+        if not _strings(section_plan.get("learningObjectives")):
+            issues.append(_issue("error", "Section plan is missing learning objectives.", f"{location}.learningObjectives"))
+        if not _strings(section_plan.get("conceptKeywords")):
+            issues.append(_issue("error", "Section plan is missing concept keywords.", f"{location}.conceptKeywords"))
+        if module_source_ids and not _strings(section_plan.get("sourceIds")):
+            issues.append(_issue("error", "Section plan is missing source IDs.", f"{location}.sourceIds"))
+    planned_sections = [
+        _with_generation_outline_metadata(
+            {
+                "id": str(section_plan.get("id") or f"module-{module_number}-section-{index}"),
+                "title": str(section_plan.get("title") or f"Lesson {index}"),
+                "description": str(section_plan.get("description") or ""),
+                "pageType": str(section_plan.get("pageType") or "learn"),
+                "sectionType": str(section_plan.get("sectionType") or "lesson"),
+                "sourceIds": _strings(section_plan.get("sourceIds")),
+                "content": [],
+            },
+            module_outline=module_outline,
+            section_outline={
+                "id": section_plan.get("id"),
+                "title": section_plan.get("title"),
+                "description": section_plan.get("description"),
+                "conceptKeywords": section_plan.get("conceptKeywords"),
+                "learningObjectives": section_plan.get("learningObjectives"),
+                "planningSource": section_plan.get("planningSource"),
+            },
+            source_ids=_strings(section_plan.get("sourceIds")),
+            role=str(section_plan.get("role") or "lesson"),
+        )
+        for index, section_plan in enumerate(section_plans, start=1)
+    ]
+    planned_module = {
+        **module_outline,
+        "sections": planned_sections,
+        "sectionPlanningStatus": "planned_empty_sections",
+    }
+    course_row = dict(course) if isinstance(course, dict) else {}
+    course_modules = _items(course_row.get("modules"))
+    planned_course_modules: list[dict[str, Any]] = []
+    matched_module = False
+    planned_module_id = str(planned_module.get("id") or "")
+    for index, module in enumerate(course_modules, start=1):
+        module_id = str(module.get("id") or "")
+        if (planned_module_id and module_id == planned_module_id) or (not planned_module_id and index == module_number):
+            planned_course_modules.append(planned_module)
+            matched_module = True
+        else:
+            planned_course_modules.append(module)
+    if not matched_module:
+        planned_course_modules.append(planned_module)
+    planned_course = {**course_row, "modules": planned_course_modules}
 
     return _workflow_result(
         stage="module_section_plan_generation",
         contract_version=MODULE_SECTION_PLAN_CONTRACT,
         status=_status_from_issues(issues),
         issues=issues,
-        metrics={"sectionPlanCount": len(section_plans), "sourceIdCount": len(module_source_ids)},
-        artifacts={"moduleOutline": module_outline, "sectionPlans": section_plans},
+        metrics={
+            "sectionPlanCount": len(section_plans),
+            "targetSectionCount": target_count,
+            "sourceIdCount": len(module_source_ids),
+            "generatedFromModuleOutline": generated_from_module_outline,
+            "plannedSectionCount": len(planned_sections),
+        },
+        artifacts={
+            "moduleOutline": module_outline,
+            "sectionPlans": section_plans,
+            "plannedSections": planned_sections,
+            "plannedModule": planned_module,
+            "plannedCourse": planned_course,
+        },
     )
 
 
 def _section_source_ids(section_plan: dict[str, Any], fallback_source_ids: list[str] | None = None) -> list[str]:
     source_ids = _strings(section_plan.get("sourceIds"))
     return source_ids or list(fallback_source_ids or [])
+
+
+def _source_ids_from_value(value: Any) -> list[str]:
+    source_ids: list[str] = []
+    if isinstance(value, dict):
+        source_ids.extend(_strings(value.get("sourceIds")))
+        for child in value.values():
+            source_ids.extend(_source_ids_from_value(child))
+    elif isinstance(value, list):
+        for child in value:
+            source_ids.extend(_source_ids_from_value(child))
+    return _unique_strings(source_ids)
+
+
+def _filter_source_id_refs(value: Any, allowed_source_ids: set[str]) -> Any:
+    if isinstance(value, dict):
+        filtered: dict[str, Any] = {}
+        for key, child in value.items():
+            if key == "sourceIds":
+                source_ids = [source_id for source_id in _strings(child) if source_id in allowed_source_ids]
+                if source_ids:
+                    filtered[key] = _unique_strings(source_ids)
+                continue
+            filtered[key] = _filter_source_id_refs(child, allowed_source_ids)
+        return filtered
+    if isinstance(value, list):
+        return [_filter_source_id_refs(child, allowed_source_ids) for child in value]
+    return value
+
+
+def _strip_source_id_refs(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _strip_source_id_refs(child) for key, child in value.items() if key != "sourceIds"}
+    if isinstance(value, list):
+        return [_strip_source_id_refs(child) for child in value]
+    return value
+
+
+def _normalize_explicit_source_refs(section: dict[str, Any], raw_section: dict[str, Any], planned_source_ids: list[str]) -> dict[str, Any]:
+    allowed = set(planned_source_ids)
+    explicit_ids = _source_ids_from_value(raw_section)
+    local_ids = _unique_strings(
+        [source_id for source_id in explicit_ids if not allowed or source_id in allowed]
+    )
+    filtered_section = _filter_source_id_refs(section, set(local_ids))
+    section_source_ids = _source_ids_from_value(filtered_section)
+    if section_source_ids:
+        filtered_section["sourceIds"] = section_source_ids
+    else:
+        filtered_section.pop("sourceIds", None)
+    return filtered_section
 
 
 def _draft_section_from_plan(section_plan: dict[str, Any], source_ids: list[str]) -> dict[str, Any]:
@@ -785,13 +948,18 @@ def _draft_section_from_plan(section_plan: dict[str, Any], source_ids: list[str]
 def run_section_fill_workflow(
     section_plan: dict[str, Any],
     *,
+    planned_section: dict[str, Any] | None = None,
     generated_section: dict[str, Any] | None = None,
     module_outline: dict[str, Any] | None = None,
     fallback_source_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     source_ids = _section_source_ids(section_plan, fallback_source_ids)
     role = str(section_plan.get("role") or "lesson")
+    planned_section_row = planned_section if isinstance(planned_section, dict) else {}
     raw_section = generated_section if isinstance(generated_section, dict) else _draft_section_from_plan(section_plan, source_ids)
+    if planned_section_row and not isinstance(generated_section, dict):
+        raw_section = {**planned_section_row, **raw_section}
+        raw_section.pop("description", None)
     section = _coerce_generated_section(
         raw_section,
         fallback_id=str(section_plan.get("id") or "generated-section"),
@@ -800,12 +968,15 @@ def run_section_fill_workflow(
         section_type=str(section_plan.get("sectionType") or "lesson"),
         source_ids=source_ids,
     )
+    if isinstance(generated_section, dict):
+        section = _normalize_explicit_source_refs(section, raw_section, source_ids)
     section = _with_generation_outline_metadata(
         section,
         module_outline=module_outline or {},
         section_outline={
             "id": section_plan.get("id"),
             "title": section_plan.get("title"),
+            "description": section_plan.get("description"),
             "concept_keywords": section_plan.get("conceptKeywords"),
             "learning_objectives": section_plan.get("learningObjectives"),
             "planningSource": section_plan.get("planningSource"),
@@ -819,14 +990,246 @@ def run_section_fill_workflow(
         issues.append(_issue("error", "Section fill produced no content blocks.", "content"))
     if role == "lesson" and not any(block.get("type") == "conceptCard" for block in content_blocks):
         issues.append(_issue("warning", "Lesson section has no conceptCard blocks.", "content"))
+    replaced_planned_empty_section = bool(planned_section_row and not _items(planned_section_row.get("content")) and content_blocks)
 
     return _workflow_result(
         stage="section_fill_generation",
         contract_version=SECTION_FILL_CONTRACT,
         status=_status_from_issues(issues),
         issues=issues,
-        metrics={"contentBlockCount": len(content_blocks), "sourceIdCount": len(source_ids)},
-        artifacts={"section": section, "sectionPlan": section_plan},
+        metrics={
+            "contentBlockCount": len(content_blocks),
+            "sourceIdCount": len(_source_ids_from_value(section)),
+            "plannedSourceIdCount": len(source_ids),
+            "replacedPlannedEmptySection": replaced_planned_empty_section,
+        },
+        artifacts={"section": section, "sectionPlan": section_plan, "plannedSection": planned_section_row},
+    )
+
+
+def _concept_cards_from_sections(sections: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    concepts: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for section in sections:
+        section_id = str(section.get("id") or "")
+        for block in _items(section.get("content")):
+            if block.get("type") == "conceptCard":
+                title = str(block.get("title") or block.get("name") or "").strip()
+                if not title:
+                    continue
+                key = title.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                concepts.append(
+                    {
+                        "title": title,
+                        "description": str(block.get("description") or f"Use {title} in context."),
+                        "sourceSectionId": section_id,
+                        "sourceIds": _strings(block.get("sourceIds")) or _strings(section.get("sourceIds")),
+                    }
+                )
+            elif block.get("type") == "conceptCards" and isinstance(block.get("cards"), list):
+                for card in _items(block.get("cards")):
+                    title = str(card.get("title") or card.get("name") or "").strip()
+                    if not title:
+                        continue
+                    key = title.lower()
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    concepts.append(
+                        {
+                            "title": title,
+                            "description": str(card.get("description") or f"Use {title} in context."),
+                            "sourceSectionId": section_id,
+                            "sourceIds": _strings(card.get("sourceIds")) or _strings(section.get("sourceIds")),
+                        }
+                    )
+    return concepts
+
+
+def _draft_module_apply_section(
+    *,
+    module_id: str,
+    module_title: str,
+    concepts: list[dict[str, Any]],
+) -> dict[str, Any]:
+    question_concepts = concepts or [
+        {
+            "title": module_title,
+            "description": f"Use the core ideas from {module_title} in context.",
+            "sourceSectionId": "",
+        }
+    ]
+    questions: list[dict[str, Any]] = []
+    for index in range(10):
+        concept = question_concepts[index % len(question_concepts)]
+        concept_title = str(concept.get("title") or module_title)
+        questions.append(
+            {
+                "id": f"q{index + 1}",
+                "question": f"Which answer best demonstrates mastery of {concept_title}?",
+                "options": [
+                    f"Explain {concept_title} with source-backed evidence and apply it to a realistic case.",
+                    f"Memorize the label {concept_title} without connecting it to evidence.",
+                    f"Use {concept_title} before prerequisite ideas have been introduced.",
+                    "Assess an unrelated idea that was not taught in this module.",
+                ],
+                "answers": [0],
+                "conceptIds": [concept_title],
+                "sourceSectionId": concept.get("sourceSectionId"),
+            }
+        )
+    return {
+        "id": f"{module_id}-apply",
+        "title": f"Apply: {module_title}",
+        "pageType": "apply",
+        "sectionType": "assessment",
+        "content": [
+            {
+                "type": "quiz",
+                "questions": questions,
+            }
+        ],
+    }
+
+
+def _quiz_questions(block: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_questions = block.get("questions") if isinstance(block.get("questions"), list) else block.get("questionBank")
+    return _items(raw_questions)
+
+
+def _valid_quiz_question_count(questions: list[dict[str, Any]]) -> int:
+    valid_count = 0
+    for question in questions:
+        options = question.get("options")
+        answers = question.get("answers")
+        if (
+            str(question.get("question") or "").strip()
+            and isinstance(options, list)
+            and len(options) >= 2
+            and isinstance(answers, list)
+            and answers
+            and all(isinstance(answer, int) and 0 <= answer < len(options) for answer in answers)
+        ):
+            valid_count += 1
+    return valid_count
+
+
+def run_module_apply_section_workflow(
+    module_outline: dict[str, Any],
+    filled_lesson_sections: list[dict[str, Any]],
+    *,
+    module_number: int = 1,
+    fallback_source_ids: list[str] | None = None,
+    generated_section: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    module_id = str(module_outline.get("id") or f"module-{module_number}")
+    module_title = str(module_outline.get("title") or f"Module {module_number}")
+    module_source_ids = _source_ids_from_outline(module_outline, fallback_source_ids or _strings(module_outline.get("sourceIds")))
+    lesson_sections = [
+        section
+        for section in filled_lesson_sections
+        if isinstance(section, dict)
+        and str(section.get("pageType") or "learn") == "learn"
+        and str(section.get("sectionType") or "lesson").lower() not in {"summary", "assessment"}
+    ]
+    concepts = _concept_cards_from_sections(lesson_sections)
+    raw_section = (
+        generated_section
+        if isinstance(generated_section, dict)
+        else _draft_module_apply_section(
+            module_id=module_id,
+            module_title=module_title,
+            concepts=concepts,
+        )
+    )
+    section = _coerce_generated_section(
+        raw_section,
+        fallback_id=f"{module_id}-apply",
+        fallback_title=f"Apply: {module_title}",
+        page_type="apply",
+        section_type="assessment",
+        source_ids=[],
+    )
+    section = _strip_source_id_refs(section)
+    content_blocks = _items(section.get("content"))
+    quiz_blocks = [block for block in content_blocks if block.get("type") == "quiz"]
+    project_blocks = [block for block in content_blocks if block.get("type") == "project"]
+    if quiz_blocks and str(section.get("sectionType") or "").lower() in {"", "quiz", "practice"}:
+        section = {**section, "sectionType": "assessment"}
+    section = _with_generation_outline_metadata(
+        section,
+        module_outline=module_outline,
+        section_outline={
+            "id": section.get("id"),
+            "title": section.get("title"),
+            "description": f"Assess concepts taught in {module_title}.",
+            "conceptKeywords": [concept["title"] for concept in concepts],
+            "learningObjectives": [f"Demonstrate mastery of concepts taught in {module_title}."],
+            "planningSource": "module_apply_section_workflow",
+        },
+        source_ids=[],
+        role="assessment",
+    )
+    section = _strip_source_id_refs(section)
+
+    question_count = sum(len(_quiz_questions(block)) for block in quiz_blocks)
+    valid_question_count = sum(_valid_quiz_question_count(_quiz_questions(block)) for block in quiz_blocks)
+    taught_concepts = [str(concept.get("title") or "") for concept in concepts if str(concept.get("title") or "").strip()]
+    quiz_text_parts: list[str] = []
+    for block in quiz_blocks:
+        for question in _quiz_questions(block):
+            quiz_text_parts.append(str(question.get("question") or ""))
+            options = question.get("options")
+            if isinstance(options, list):
+                quiz_text_parts.extend(str(option) for option in options)
+    quiz_text = " ".join(quiz_text_parts).lower()
+    assessed_concepts = [
+        concept
+        for concept in taught_concepts
+        if concept.lower() in quiz_text
+    ]
+
+    issues: list[dict[str, Any]] = []
+    if not lesson_sections:
+        issues.append(_issue("error", "Apply generation needs filled lesson sections before assessment can be created.", "filledLessonSections"))
+    if not concepts:
+        issues.append(_issue("error", "Apply generation needs taught concept cards from filled lesson sections.", "filledLessonSections[].content"))
+    if str(section.get("pageType") or "") != "apply":
+        issues.append(_issue("error", "Apply generation must create an Apply page.", "pageType"))
+    if str(section.get("sectionType") or "") not in {"assessment", "project"}:
+        issues.append(_issue("error", "Apply generation must create an assessment or project section.", "sectionType"))
+    if not content_blocks:
+        issues.append(_issue("error", "Apply generation produced no content blocks.", "content"))
+    if not quiz_blocks and not project_blocks:
+        issues.append(_issue("error", "Apply generation must create a quiz or project block.", "content"))
+    if quiz_blocks and len(quiz_blocks) != len(content_blocks):
+        issues.append(_issue("error", "Quiz Apply sections must contain quiz blocks only.", "content"))
+    if quiz_blocks and question_count < 10:
+        issues.append(_issue("error", "Quiz Apply sections need at least 10 questions.", "content[].questions"))
+    if quiz_blocks and valid_question_count != question_count:
+        issues.append(_issue("error", "Every quiz question needs question, options, and zero-based answer indexes.", "content[].questions"))
+
+    return _workflow_result(
+        stage="module_apply_section_generation",
+        contract_version=MODULE_APPLY_SECTION_CONTRACT,
+        status=_status_from_issues(issues),
+        issues=issues,
+        metrics={
+            "lessonSectionCount": len(lesson_sections),
+            "taughtConceptCount": len(taught_concepts),
+            "assessedConceptCount": len(assessed_concepts),
+            "contentBlockCount": len(content_blocks),
+            "quizBlockCount": len(quiz_blocks),
+            "projectBlockCount": len(project_blocks),
+            "questionCount": question_count,
+            "validQuestionCount": valid_question_count,
+            "sourceIdCount": len(_source_ids_from_value(section)),
+            "generatedFromFilledLessons": not isinstance(generated_section, dict),
+        },
+        artifacts={"section": section, "filledLessonSections": lesson_sections, "taughtConcepts": concepts},
     )
 
 
@@ -853,19 +1256,116 @@ def _summary_section_from_sections(
                     "title": title,
                     "description": str(block.get("description") or f"Review {title}."),
                     "sourceSectionId": section.get("id"),
-                    "sourceIds": block.get("sourceIds") if isinstance(block.get("sourceIds"), list) else source_ids,
+                    "sourceIds": _strings(block.get("sourceIds")) or _strings(section.get("sourceIds")),
                 }
             )
-    return _normalize_summary_for_pacing(
-        {
-            "id": f"{module_id}-summary",
-            "title": f"{pacing_label} {module_number} Concept Review",
-            "pageType": "learn",
-            "sectionType": "summary",
-            "sourceIds": source_ids,
-            "content": [{"type": "heading", "title": f"{pacing_label} concepts"}, *concepts[:16]],
+    summary = {
+        "id": f"{module_id}-summary",
+        "title": f"{pacing_label} {module_number} Concept Review",
+        "pageType": "learn",
+        "sectionType": "summary",
+        "content": [{"type": "heading", "title": f"{pacing_label} concepts"}, *concepts[:16]],
+    }
+    summary_source_ids = _source_ids_from_value(summary)
+    if summary_source_ids:
+        summary["sourceIds"] = summary_source_ids
+    return _normalize_summary_for_pacing(summary, pacing_label)
+
+
+def run_module_summary_section_workflow(
+    module_outline: dict[str, Any],
+    filled_lesson_sections: list[dict[str, Any]],
+    *,
+    module_number: int = 1,
+    fallback_source_ids: list[str] | None = None,
+    pacing_label: str | None = None,
+    generated_section: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    module_id = str(module_outline.get("id") or f"module-{module_number}")
+    module_title = str(module_outline.get("title") or f"Module {module_number}")
+    module_source_ids = _source_ids_from_outline(module_outline, fallback_source_ids or _strings(module_outline.get("sourceIds")))
+    label = pacing_label or _infer_pacing_label({"modules": [module_outline]})
+    lesson_sections = [
+        section
+        for section in filled_lesson_sections
+        if isinstance(section, dict)
+        and str(section.get("pageType") or "learn") == "learn"
+        and str(section.get("sectionType") or "lesson").lower() not in {"summary", "assessment"}
+    ]
+    raw_section = (
+        generated_section
+        if isinstance(generated_section, dict)
+        else _summary_section_from_sections(
+            module_id=module_id,
+            module_title=module_title,
+            module_number=module_number,
+            pacing_label=label,
+            source_ids=module_source_ids,
+            sections=lesson_sections,
+        )
+    )
+    section = _coerce_generated_section(
+        raw_section,
+        fallback_id=f"{module_id}-summary",
+        fallback_title=f"{label} {module_number} Concept Review",
+        page_type="learn",
+        section_type="summary",
+        source_ids=module_source_ids,
+    )
+    if isinstance(generated_section, dict):
+        section = _normalize_explicit_source_refs(section, raw_section, module_source_ids)
+    else:
+        summary_source_ids = _source_ids_from_value(section)
+        if summary_source_ids:
+            section["sourceIds"] = summary_source_ids
+        else:
+            section.pop("sourceIds", None)
+    section = _with_generation_outline_metadata(
+        section,
+        module_outline=module_outline,
+        section_outline={
+            "id": section.get("id"),
+            "title": section.get("title"),
+            "description": f"Summarize concepts introduced in {module_title}.",
+            "conceptKeywords": [concept["title"] for concept in _concept_cards_from_sections(lesson_sections)],
+            "learningObjectives": [f"Review the raw concepts introduced in {module_title}."],
+            "planningSource": "module_summary_section_workflow",
         },
-        pacing_label,
+        source_ids=_strings(section.get("sourceIds")),
+        role="summary",
+    )
+    section = _normalize_summary_for_pacing(section, label)
+
+    content_blocks = _items(section.get("content"))
+    concept_blocks = [block for block in content_blocks if block.get("type") == "conceptCard"]
+    quiz_blocks = [block for block in content_blocks if block.get("type") == "quiz"]
+    issues: list[dict[str, Any]] = []
+    if not lesson_sections:
+        issues.append(_issue("error", "Summary generation needs filled lesson sections before a module concept inventory can be created.", "filledLessonSections"))
+    if str(section.get("pageType") or "") != "learn":
+        issues.append(_issue("error", "Summary generation must create a Learn page.", "pageType"))
+    if str(section.get("sectionType") or "") != "summary":
+        issues.append(_issue("error", "Summary generation must create a summary section.", "sectionType"))
+    if not content_blocks:
+        issues.append(_issue("error", "Summary generation produced no content blocks.", "content"))
+    if quiz_blocks:
+        issues.append(_issue("error", "Summary sections must not contain quiz blocks.", "content"))
+    if not concept_blocks:
+        issues.append(_issue("error", "Summary sections need conceptCard blocks copied from filled lessons.", "content"))
+
+    return _workflow_result(
+        stage="module_summary_section_generation",
+        contract_version=MODULE_SUMMARY_SECTION_CONTRACT,
+        status=_status_from_issues(issues),
+        issues=issues,
+        metrics={
+            "lessonSectionCount": len(lesson_sections),
+            "conceptCardCount": len(concept_blocks),
+            "contentBlockCount": len(content_blocks),
+            "sourceIdCount": len(_source_ids_from_value(section)),
+            "generatedFromFilledLessons": not isinstance(generated_section, dict),
+        },
+        artifacts={"section": section, "filledLessonSections": lesson_sections},
     )
 
 
@@ -880,20 +1380,7 @@ def run_module_assembly_workflow(
     module_id = str(module_outline.get("id") or f"module-{module_number}")
     module_title = str(module_outline.get("title") or f"Module {module_number}")
     source_ids = _source_ids_from_outline(module_outline, fallback_source_ids or _strings(module_outline.get("sourceIds")))
-    label = pacing_label or _infer_pacing_label({"modules": [module_outline]})
     sections = [section for section in filled_sections if isinstance(section, dict)]
-    has_summary = any(str(section.get("sectionType") or "") == "summary" for section in sections)
-    if not has_summary:
-        sections.append(
-            _summary_section_from_sections(
-                module_id=module_id,
-                module_title=module_title,
-                module_number=module_number,
-                pacing_label=label,
-                source_ids=source_ids,
-                sections=sections,
-            )
-        )
     module = {"id": module_id, "title": module_title, "sourceIds": source_ids, "sections": sections}
     issues: list[dict[str, Any]] = []
     if not sections:
@@ -910,7 +1397,10 @@ def run_module_assembly_workflow(
         issues=issues,
         metrics={
             "sectionCount": len(sections),
+            "lessonSectionCount": sum(1 for section in sections if str(section.get("sectionType") or "") == "lesson"),
+            "applySectionCount": sum(1 for section in sections if str(section.get("pageType") or "") == "apply"),
             "summarySectionCount": sum(1 for section in sections if str(section.get("sectionType") or "") == "summary"),
+            "contentReadySectionCount": sum(1 for section in sections if _items(section.get("content"))),
             "sourceIdCount": len(source_ids),
         },
         artifacts={"module": module},
@@ -922,10 +1412,13 @@ __all__ = [
     "CLUSTER_PLAN_CONTRACT",
     "CLUSTER_QUALITY_REPORT_CONTRACT",
     "COURSE_MODULE_OUTLINE_CONTRACT",
+    "COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT",
     "COURSE_WRAPPER_GENERATION_CONTRACT",
     "COURSE_WRAPPER_QUALITY_REPORT_CONTRACT",
+    "MODULE_APPLY_SECTION_CONTRACT",
     "MODULE_ASSEMBLY_CONTRACT",
     "MODULE_SECTION_PLAN_CONTRACT",
+    "MODULE_SUMMARY_SECTION_CONTRACT",
     "PROGRAM_BRIEF_CONTRACT",
     "PROGRAM_GENERATION_CONTRACT",
     "REQUIREMENT_GROUP_PLAN_CONTRACT",
@@ -936,8 +1429,10 @@ __all__ = [
     "run_cluster_generation_workflow",
     "run_course_module_outline_workflow",
     "run_course_wrapper_generation_workflow",
+    "run_module_apply_section_workflow",
     "run_module_assembly_workflow",
     "run_module_section_plan_workflow",
+    "run_module_summary_section_workflow",
     "run_program_brief_workflow",
     "run_program_generation_workflow",
     "run_requirement_group_plan_workflow",

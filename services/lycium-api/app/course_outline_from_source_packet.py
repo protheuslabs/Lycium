@@ -5,6 +5,7 @@ from collections import Counter
 from typing import Any
 
 SOURCE_PACKET_OUTLINE_CONTRACT_VERSION = "course-outline-from-source-packet-v1"
+COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT = "course-module-outline-quality-report-v1"
 TOKEN_RE = re.compile(r"[a-z][a-z0-9+#.-]{2,}")
 STOPWORDS = {
     "about",
@@ -155,6 +156,26 @@ def _source_documents(source_packet: dict[str, Any] | None) -> list[dict[str, An
     ]
 
 
+def _source_packet_contract(source_packet: dict[str, Any] | None) -> str:
+    if not isinstance(source_packet, dict):
+        return ""
+    return str(source_packet.get("contract_version") or source_packet.get("contractVersion") or "")
+
+
+def _source_packet_quality(source_packet: dict[str, Any] | None) -> dict[str, Any]:
+    packet = source_packet if isinstance(source_packet, dict) else {}
+    quality = packet.get("quality") if isinstance(packet.get("quality"), dict) else {}
+    if quality:
+        return quality
+    synthesis = packet.get("synthesis") if isinstance(packet.get("synthesis"), dict) else {}
+    synthesis_packet = synthesis.get("sourcePacket") if isinstance(synthesis.get("sourcePacket"), dict) else {}
+    quality = synthesis_packet.get("quality") if isinstance(synthesis_packet.get("quality"), dict) else {}
+    if quality:
+        return quality
+    nested_packet = packet.get("sourcePacket") if isinstance(packet.get("sourcePacket"), dict) else {}
+    return nested_packet.get("quality") if isinstance(nested_packet.get("quality"), dict) else {}
+
+
 def _course_source_id(document: dict[str, Any], index: int) -> str:
     explicit = str(document.get("courseSourceId") or document.get("inputSourceId") or "").strip()
     if explicit:
@@ -195,6 +216,255 @@ def _document_text(document: dict[str, Any]) -> str:
             _text(document.get("text") or document.get("rawText") or document.get("content") or document.get("extracted_text")),
         ]
     )
+
+
+def _section_outlines(module: dict[str, Any]) -> list[dict[str, Any]]:
+    return _items(module.get("sections"))
+
+
+def _outline_source_ids(value: dict[str, Any]) -> list[str]:
+    return [
+        str(source_id).strip()
+        for source_id in value.get("sourceIds", [])
+        if str(source_id).strip()
+    ] if isinstance(value.get("sourceIds"), list) else []
+
+
+def _outline_objectives(value: dict[str, Any]) -> list[str]:
+    return [
+        str(objective).strip()
+        for objective in value.get("learning_objectives") or value.get("learningObjectives") or []
+        if str(objective).strip()
+    ] if isinstance(value.get("learning_objectives") or value.get("learningObjectives"), list) else []
+
+
+def _outline_concepts(value: dict[str, Any]) -> list[str]:
+    return [
+        str(concept).strip()
+        for concept in value.get("concept_keywords") or value.get("conceptKeywords") or value.get("concepts") or []
+        if str(concept).strip()
+    ] if isinstance(value.get("concept_keywords") or value.get("conceptKeywords") or value.get("concepts"), list) else []
+
+
+def _has_materialized_outline_content(value: Any) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in ("content", "blocks", "lessonText", "body", "markdown", "html")):
+            return True
+        return any(_has_materialized_outline_content(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_has_materialized_outline_content(item) for item in value)
+    return False
+
+
+def _dedupe_count(values: list[str]) -> int:
+    seen: set[str] = set()
+    duplicate_count = 0
+    for value in values:
+        key = value.strip().lower()
+        if not key:
+            continue
+        if key in seen:
+            duplicate_count += 1
+        seen.add(key)
+    return duplicate_count
+
+
+def build_course_module_outline_quality_report(
+    outline: dict[str, Any] | None,
+    *,
+    source_packet: dict[str, Any] | None = None,
+    desired_module_count: int = 4,
+    sections_per_module: int = 2,
+) -> dict[str, Any]:
+    outline_row = outline if isinstance(outline, dict) else {}
+    modules = _items(outline_row.get("modules"))
+    source_documents = _source_documents(source_packet)
+    source_inventory = _source_inventory(source_packet)
+    source_packet_present = isinstance(source_packet, dict)
+    source_packet_contract = _source_packet_contract(source_packet)
+    source_packet_quality = _source_packet_quality(source_packet)
+    source_quality_status = str(source_packet_quality.get("status") or "").lower()
+    try:
+        concept_coverage_ratio = float(source_packet_quality.get("conceptCoverageRatio") or 0)
+    except (TypeError, ValueError):
+        concept_coverage_ratio = 0.0
+    uncovered_concepts = [
+        str(concept).strip()
+        for concept in source_packet_quality.get("uncoveredConceptCandidates", [])
+        if str(concept).strip()
+    ] if isinstance(source_packet_quality.get("uncoveredConceptCandidates"), list) else []
+
+    minimum_modules = max(1, min(20, desired_module_count))
+    minimum_sections = max(1, min(6, sections_per_module))
+    reasons: list[str] = []
+    warnings: list[str] = []
+    module_profiles: list[dict[str, Any]] = []
+    module_titles: list[str] = []
+    section_titles: list[str] = []
+    section_count = 0
+    titled_module_count = 0
+    titled_section_count = 0
+    objective_module_count = 0
+    concept_module_count = 0
+    objective_section_count = 0
+    concept_section_count = 0
+    source_mapped_module_count = 0
+    source_mapped_section_count = 0
+    materialized_content_count = 0
+
+    if source_packet_present:
+        if source_packet_contract != "source-packet-v1":
+            reasons.append("source_packet_contract_missing")
+        if not source_documents:
+            reasons.append("source_documents_missing")
+        if source_packet_quality and source_quality_status != "usable":
+            reasons.append("source_packet_not_usable")
+        if source_packet_quality and concept_coverage_ratio < 0.7:
+            reasons.append("source_packet_concept_coverage_below_policy")
+        if uncovered_concepts:
+            reasons.append("uncovered_concepts_remaining")
+
+    if source_packet_present and outline_row.get("contractVersion") != SOURCE_PACKET_OUTLINE_CONTRACT_VERSION:
+        reasons.append("outline_contract_mismatch")
+    if not modules:
+        reasons.append("module_count_below_policy")
+    elif len(modules) < minimum_modules:
+        warnings.append("module_count_below_requested_count")
+
+    for module_index, module in enumerate(modules, start=1):
+        module_reasons: list[str] = []
+        title = str(module.get("title") or "").strip()
+        module_titles.append(title)
+        if title:
+            titled_module_count += 1
+        else:
+            module_reasons.append("module_title_missing")
+        module_sources = _outline_source_ids(module)
+        if module_sources:
+            source_mapped_module_count += 1
+        elif source_inventory:
+            module_reasons.append("module_source_ids_missing")
+        module_objectives = _outline_objectives(module)
+        if module_objectives:
+            objective_module_count += 1
+        else:
+            module_reasons.append("module_objectives_missing")
+        module_concepts = _outline_concepts(module)
+        if module_concepts:
+            concept_module_count += 1
+        else:
+            module_reasons.append("module_concepts_missing")
+        sections = _section_outlines(module)
+        section_count += len(sections)
+        if _has_materialized_outline_content(module):
+            materialized_content_count += 1
+            module_reasons.append("materialized_content_payload_present")
+
+        section_profiles: list[dict[str, Any]] = []
+        for section_index, section in enumerate(sections, start=1):
+            section_reasons: list[str] = []
+            section_title = str(section.get("title") or "").strip()
+            section_titles.append(section_title)
+            if section_title:
+                titled_section_count += 1
+            else:
+                section_reasons.append("section_title_missing")
+            if _outline_objectives(section):
+                objective_section_count += 1
+            else:
+                section_reasons.append("section_objectives_missing")
+            if _outline_concepts(section):
+                concept_section_count += 1
+            else:
+                section_reasons.append("section_concepts_missing")
+            if _outline_source_ids(section):
+                source_mapped_section_count += 1
+            elif source_inventory:
+                section_reasons.append("section_source_ids_missing")
+            if _has_materialized_outline_content(section):
+                materialized_content_count += 1
+                section_reasons.append("materialized_content_payload_present")
+            section_profiles.append(
+                {
+                    "sectionIndex": section_index,
+                    "title": section_title,
+                    "status": "passed" if not section_reasons else "failed",
+                    "reasons": sorted(set(section_reasons)),
+                    "learningObjectiveCount": len(_outline_objectives(section)),
+                    "conceptCount": len(_outline_concepts(section)),
+                    "sourceIdCount": len(_outline_source_ids(section)),
+                }
+            )
+            reasons.extend(f"module_{module_index}_section_{section_index}_{reason}" for reason in section_reasons)
+
+        duplicate_section_count = _dedupe_count([profile["title"] for profile in section_profiles])
+        if duplicate_section_count:
+            module_reasons.append("duplicate_section_titles")
+        module_profiles.append(
+            {
+                "moduleIndex": module_index,
+                "title": title,
+                "status": "passed" if not module_reasons and all(profile["status"] == "passed" for profile in section_profiles) else "failed",
+                "reasons": sorted(set(module_reasons)),
+                "sectionCount": len(sections),
+                "targetSectionCount": int(module.get("targetSectionCount") or minimum_sections),
+                "learningObjectiveCount": len(module_objectives),
+                "conceptCount": len(module_concepts),
+                "sourceIdCount": len(module_sources),
+                "duplicateSectionTitleCount": duplicate_section_count,
+                "sections": section_profiles,
+            }
+        )
+        reasons.extend(f"module_{module_index}_{reason}" for reason in module_reasons)
+
+    duplicate_module_title_count = _dedupe_count(module_titles)
+    duplicate_section_title_count = _dedupe_count(section_titles)
+    if duplicate_module_title_count:
+        reasons.append("duplicate_module_titles")
+    if duplicate_section_title_count:
+        reasons.append("duplicate_section_titles")
+
+    reasons = sorted(set(reasons))
+    warnings = sorted(set(warnings))
+    return {
+        "contractVersion": COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
+        "status": "failed" if reasons else "needs_review" if warnings else "passed",
+        "passed": not reasons,
+        "reasons": reasons,
+        "warnings": warnings,
+        "metrics": {
+            "moduleCount": len(modules),
+            "sectionCount": section_count,
+            "minimumModuleCount": minimum_modules,
+            "minimumSectionsPerModule": minimum_sections,
+            "titledModuleCount": titled_module_count,
+            "objectiveModuleCount": objective_module_count,
+            "conceptModuleCount": concept_module_count,
+            "titledSectionCount": titled_section_count,
+            "objectiveSectionCount": objective_section_count,
+            "conceptSectionCount": concept_section_count,
+            "sourceMappedModuleCount": source_mapped_module_count,
+            "sourceMappedSectionCount": source_mapped_section_count,
+            "duplicateModuleTitleCount": duplicate_module_title_count,
+            "duplicateSectionTitleCount": duplicate_section_title_count,
+            "materializedContentPayloadCount": materialized_content_count,
+            "sourcePacketContractVersion": source_packet_contract,
+            "sourcePacketQualityStatus": source_packet_quality.get("status"),
+            "sourcePacketConceptCoverageRatio": concept_coverage_ratio,
+            "uncoveredConceptCount": len(uncovered_concepts),
+            "sourceDocumentCount": len(source_documents),
+        },
+        "moduleProfiles": module_profiles,
+        "policy": {
+            "materializesLearnerContent": False,
+            "requiresSourcePacketWhenProvided": True,
+            "createsSectionPlans": False,
+            "sectionPlansCreatedBy": "module-section-plan-workflow-v1",
+            "requiresModuleObjectives": True,
+            "requiresModuleConcepts": True,
+            "requiresSourceMappingWhenSourcePacketProvided": True,
+        },
+    }
 
 
 def _document_body_text(document: dict[str, Any]) -> str:
@@ -256,6 +526,7 @@ def build_outline_from_source_packet(
     source_packet: dict[str, Any] | None,
     desired_module_count: int = 4,
     sections_per_module: int = 2,
+    include_section_outlines: bool = True,
 ) -> dict[str, Any]:
     module_count = max(1, min(20, desired_module_count))
     section_count = max(2, min(6, sections_per_module))
@@ -293,19 +564,25 @@ def build_outline_from_source_packet(
                     "planningSource": "source_packet",
                 }
             )
-        modules.append(
-            {
-                "id": f"source-packet-m{module_index:02d}",
-                "title": module_title,
-                "learning_objectives": [
-                    f"Use source packet evidence to organize {_title(module_focus).lower()} into teachable lessons."
-                ],
-                "sections": sections,
-                "concept_keywords": module_concepts,
-                "sourceIds": module_source_ids,
-                "planningSource": "source_packet",
-            }
-        )
+        module = {
+            "id": f"source-packet-m{module_index:02d}",
+            "title": module_title,
+            "learning_objectives": [
+                f"Use source packet evidence to organize {_title(module_focus).lower()} into teachable lessons."
+            ],
+            "targetSectionCount": section_count,
+            "sectionPlanPolicy": {
+                "contractVersion": "module-section-plan-policy-v1",
+                "defaultSectionCount": section_count,
+                "nextWorkflow": "module-section-plan-workflow-v1",
+            },
+            "concept_keywords": module_concepts,
+            "sourceIds": module_source_ids,
+            "planningSource": "source_packet",
+        }
+        if include_section_outlines:
+            module["sections"] = sections
+        modules.append(module)
 
     return {
         "contractVersion": SOURCE_PACKET_OUTLINE_CONTRACT_VERSION,

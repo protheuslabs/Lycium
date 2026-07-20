@@ -51,7 +51,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 
 - Passive generation and active generation are separate modes.
   Passive generation plans, organizes, links, or proposes curriculum. It may create program contracts, cluster plans, course wrappers, source requests, fit evidence, and review candidates, but it should not generate learner-facing lessons or silently attach parent structures when threshold or review gates are missing.
-  Active generation materializes source-backed course content. It advances source packets into outlines, module plans, section plans, section content, module assembly, active batches, quality reports, and review promotion.
+  Active generation materializes source-backed course content. It advances source packets into outlines, module plans, section plans, section content, module Apply sections, module summaries, module assembly, active batches, quality reports, and review promotion.
 - Program, cluster, course-wrapper, and course-content generation are separate workflows.
   Program generation creates the requirement graph and cluster plan. Cluster generation searches the available course inventory, inspects course titles plus internal evidence such as module titles, section titles, concept cards, tags, and descriptions, then links only courses with recorded fit evidence. If a needed course is missing or fit is uncertain, the workflow creates a course wrapper instead of generating a complete course immediately.
 - Program brief generation is the topmost passive workflow.
@@ -60,6 +60,16 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
   A cluster plan should carry title, purpose, learning outcomes, dependency profile, assembly readiness, required concepts, and abstract `cluster-course-kind-v1` records. It may reference planned requirement/course identifiers, but it must not create course wrappers, active-generation plans, build tasks, modules, sections, or learner-facing content.
 - Course-wrapper generation emits a `course-wrapper-quality-report-v1`.
   Wrapper rows should include source requests, active-generation plans, course-build tasks, prerequisite metadata, placeholder policy, and generation prompts that require source packets before outline/content generation. They must not contain modules, sections, or learner-facing content.
+- Course module outline generation emits a `course-module-outline-quality-report-v1`.
+  Source-packet module outlines should validate source-packet usability, module titles, module learning objectives, module concept keywords, module source IDs, duplicate module titles, target section counts, and the absence of learner-facing lesson content.
+- Module section planning is a separate active workflow from module outline generation and section fill.
+  It expands one module outline into section-plan records and adds planned empty section shells to the course/module structure with section titles, planning-only descriptions, learning objectives, concept keywords, source IDs, and empty `content` arrays before section fill starts.
+- Section fill is the only active workflow that replaces planned empty section shells with learner-facing content blocks.
+  It should preserve source IDs only for sources the generated section actually uses, resolving those IDs against the course source catalog. It should not auto-attach the full planned, module, or course source list just because sources were available.
+- Module Apply generation is a separate active workflow after section fill and before module assembly.
+  It should create or validate Apply sections from concepts taught in filled lesson sections, enforce quiz/project assessment shape, require real quiz banks to have at least 10 valid questions when quiz-based, omit section/block `sourceIds` so Apply pages do not render a source footer, and fail empty assessment payloads instead of hiding them in module assembly.
+- Module summary generation is a separate active workflow after section fill and before module assembly.
+  It should create or validate a concept-card inventory from filled Learn sections, preserve `sourceSectionId`, copy only source IDs already present on summarized concepts or lesson sections, and avoid adding the full module/course source list.
 - Passive workflows should hand off to active workflows through explicit artifacts such as course wrappers, source requests, source packets, `metadata.activeGenerationPlan`, `metadata.courseBuildOutline`, and course build tasks.
 - Curriculum assembly inference should use shared thresholds before generating or attaching parent structures: cluster generation from orphaned courses requires at least 3 related courses and treats 4+ as recommended; program generation from orphaned clusters requires at least 2 related clusters and treats 3+ as recommended. Below the minimum, surface fit candidates only.
 - Course wrappers are real planning artifacts, not hollow learner pages.
@@ -128,7 +138,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
    When many sources are submitted, run source corpus preflight first and do not use excluded sources as course evidence unless a reviewer restores them.
    If submitted sources do not meet the course's source coverage and source-strength policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps`, a real module and section outline, and distinct best-effort lesson scaffolds. Source readiness is based on concept coverage, depth, relevance, authority, extractability, and diversity, not on a simple minimum source count. Keep workflow labels such as `needs_sources` and `source gap` out of learner-facing titles.
    Preserve the source-readiness decision as `metadata.generationReadiness`. Full generated courses must keep the positive readiness report that allowed generation to proceed, and the same report should be copied into `generation_trace.generation_readiness` so review, observability, and eval tooling can explain why the course was considered source-ready.
-   Source IDs should narrow as the course narrows: course-level `sourceIds` are the full accepted inventory, module-level `sourceIds` support the module, and section/block `sourceIds` must only reference sources that support concepts in that section. Citation numbers are assigned from the course-wide source inventory.
+   Source IDs should narrow as the course narrows: course-level `sourceIds` are the full accepted inventory, module-level `sourceIds` support the module, and section/block `sourceIds` should only be added for sources actually used by that section or block. Citation numbers are assigned from the course-wide source inventory.
    Text blocks may include inline citation markers such as `[1]`; each marker must be a 1-based index into the course-wide source inventory and must resolve to a supporting source for the nearby claim.
 
 7. Generate instructional content for each idea.
@@ -136,7 +146,7 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
    Write learner-facing content directly. Do not write prompts, outlines, or instructions for a future model to fill in later.
 
 8. Generate assessments separately.
-   Assessment means mastery evidence, not only quizzes. Quizzes and longer tests must be their own assessment sections after the relevant lesson/unit content. Projects, labs, simulations, portfolio tasks, and submissions should be their own Apply sections with project blocks, rubrics, submission policy, and grader workflow metadata.
+   Assessment means mastery evidence, not only quizzes. Quizzes and longer tests must be their own assessment sections after the relevant lesson/unit content. Projects, labs, simulations, portfolio tasks, and submissions should be their own Apply sections with project blocks, rubrics, submission policy, and grader workflow metadata. Apply sections assess the course content itself and should not include section/block `sourceIds` or render a source footer.
 
 9. Generate module/week concept inventories.
    End every module/week with a summary section that aggregates the raw concept names introduced on that module/week's Learn pages. Use one heading block followed by one editable `conceptCard` block per concept. Do not turn the summary into interpretive prose categories.
@@ -305,8 +315,9 @@ Renderer-facing content still belongs in `modules[].sections[].content`; plannin
 
 - Store reusable source metadata in `apps/lycium-web/src/courseData/sourceRecords/`.
 - Course records should reference sources using `sourceIds`.
-- Use source IDs at the most helpful levels: course, module, section, and block.
+- Use source IDs at the most helpful levels: course and module for available/catalog evidence; section and block only for sources actually used in that learner-facing section.
 - If a block fetches or embeds material from a link, it must reference the source record for that link.
+- Do not blanket-cite the same full course source list on every page. Section source footers should resolve only local section/block refs through the course source catalog, and Apply sections should not render source footers.
 - Generated courses must either reference existing central source records or include course-level `sourceRecords` for generated/local-only records.
 - Course generation should accept source packets as the preferred source handoff. A source packet records the corpus run, inclusion/exclusion decisions, source documents, snapshots, and evidence refs that explain why a source was used.
 - Course generation should use Source Index in reverse during enrichment: search the index for missing concepts, replacement sources, benchmark evidence, and media candidates before treating a course as blocked for lack of sources.

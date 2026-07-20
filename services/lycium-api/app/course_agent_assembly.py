@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Callable
 
 from app.course_agent_contract import normalize_course
@@ -165,7 +166,53 @@ def _module_lesson_titles(module_outline: dict) -> list[str]:
             if any(marker in lowered for marker in ("quiz", "assessment", "summary", "review")):
                 continue
             titles.append(title)
-    return titles[:6] or ["Core concepts", "Worked examples", "Practice and applications"]
+    return titles[:6]
+
+
+def _strings(value: Any) -> list[str]:
+    return [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
+
+
+def _unique_strings(values: list[str], *, limit: int | None = None) -> list[str]:
+    rows: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        clean = str(value or "").strip()
+        key = clean.lower()
+        if not clean or key in seen:
+            continue
+        rows.append(clean)
+        seen.add(key)
+        if limit is not None and len(rows) >= limit:
+            break
+    return rows
+
+
+def _outline_concepts(outline: dict[str, Any]) -> list[str]:
+    return _unique_strings(
+        _strings(outline.get("concept_keywords") or outline.get("conceptKeywords") or outline.get("concepts")),
+        limit=12,
+    )
+
+
+def _target_section_count(module_outline: dict[str, Any]) -> int:
+    policy = module_outline.get("sectionPlanPolicy") if isinstance(module_outline.get("sectionPlanPolicy"), dict) else {}
+    raw_value = (
+        module_outline.get("targetSectionCount")
+        or policy.get("defaultSectionCount")
+        or len(_module_lesson_titles(module_outline))
+        or 2
+    )
+    try:
+        return max(1, min(6, int(raw_value)))
+    except (TypeError, ValueError):
+        return 2
+
+
+def _human_title(value: str) -> str:
+    clean = re.sub(r"[_\\/-]+", " ", str(value or "")).strip()
+    clean = re.sub(r"\s+", " ", clean)
+    return clean.title() if clean else "Core Concepts"
 
 
 def _source_ids_from_outline(outline: dict | None, fallback_source_ids: list[str]) -> list[str]:
@@ -201,7 +248,40 @@ def _module_lesson_outlines(module_outline: dict) -> list[dict[str, Any]]:
             lesson_outlines.append(section)
     if lesson_outlines:
         return lesson_outlines[:6]
-    return [{"title": title} for title in _module_lesson_titles(module_outline)]
+    module_title = str(module_outline.get("title") or "Module").strip()
+    module_source_ids = _source_ids_from_outline(module_outline, _strings(module_outline.get("sourceIds")))
+    concepts = _outline_concepts(module_outline) or [module_title]
+    lesson_titles = _module_lesson_titles(module_outline)
+    generated_outlines: list[dict[str, Any]] = []
+    for index in range(1, _target_section_count(module_outline) + 1):
+        focus = "Foundations" if index == 1 else "Applied Practice" if index == 2 else f"Extension {index}"
+        primary_concept = concepts[(index - 1) % len(concepts)]
+        nearby_concepts = _unique_strings(
+            [
+                primary_concept,
+                *concepts[index : index + 2],
+            ],
+            limit=3,
+        )
+        title = lesson_titles[index - 1] if index - 1 < len(lesson_titles) else f"{_human_title(primary_concept)} {focus}"
+        generated_outlines.append(
+            {
+                "id": str(module_outline.get("id") or "module") + f"-section-{index}",
+                "title": title,
+                "description": (
+                    f"Planning reference for content generation: cover {primary_concept} within {module_title}, "
+                    f"using {', '.join(nearby_concepts)} as the section scope."
+                ),
+                "learning_objectives": [
+                    f"Explain {primary_concept} in the context of {module_title}.",
+                    f"Use source-backed evidence to apply {primary_concept} to a learner-facing example.",
+                ],
+                "concept_keywords": nearby_concepts,
+                "sourceIds": module_source_ids,
+                "planningSource": str(module_outline.get("planningSource") or "module_outline"),
+            }
+        )
+    return generated_outlines
 
 
 def _valid_source_ids(raw_source_ids: Any, fallback_source_ids: list[str]) -> list[str]:

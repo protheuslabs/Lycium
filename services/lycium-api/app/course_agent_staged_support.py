@@ -40,6 +40,7 @@ def _with_generation_outline_metadata(
         "moduleOutlineTitle": str(module_outline.get("title") or ""),
         "sectionOutlineId": str(section_outline.get("id") or ""),
         "sectionOutlineTitle": str(section_outline.get("title") or ""),
+        "plannedDescription": str(section_outline.get("description") or ""),
         "plannedConceptKeywords": _string_list(
             section_outline.get("concept_keywords") or section_outline.get("conceptKeywords")
         ),
@@ -141,6 +142,72 @@ def _source_context_stats(source_context: dict | None) -> dict:
     }
 
 
+def _strip_source_ids(value: object) -> object:
+    if isinstance(value, dict):
+        return {key: _strip_source_ids(child) for key, child in value.items() if key != "sourceIds"}
+    if isinstance(value, list):
+        return [_strip_source_ids(child) for child in value]
+    return value
+
+
+def _unique_source_ids_from_value(value: object) -> list[str]:
+    source_ids: list[str] = []
+    if isinstance(value, dict):
+        raw_source_ids = value.get("sourceIds")
+        if isinstance(raw_source_ids, list):
+            source_ids.extend(str(source_id).strip() for source_id in raw_source_ids if str(source_id).strip())
+        for child in value.values():
+            source_ids.extend(_unique_source_ids_from_value(child))
+    elif isinstance(value, list):
+        for child in value:
+            source_ids.extend(_unique_source_ids_from_value(child))
+
+    unique: list[str] = []
+    seen: set[str] = set()
+    for source_id in source_ids:
+        if source_id in seen:
+            continue
+        seen.add(source_id)
+        unique.append(source_id)
+    return unique
+
+
+def _filter_source_ids(value: object, allowed_source_ids: set[str]) -> object:
+    if isinstance(value, dict):
+        filtered: dict[str, object] = {}
+        for key, child in value.items():
+            if key == "sourceIds":
+                source_ids = [
+                    str(source_id).strip()
+                    for source_id in child
+                    if str(source_id).strip() in allowed_source_ids
+                ] if isinstance(child, list) else []
+                if source_ids:
+                    filtered[key] = list(dict.fromkeys(source_ids))
+                continue
+            filtered[key] = _filter_source_ids(child, allowed_source_ids)
+        return filtered
+    if isinstance(value, list):
+        return [_filter_source_ids(child, allowed_source_ids) for child in value]
+    return value
+
+
+def _normalize_explicit_source_refs(section: dict, raw_section: dict, planned_source_ids: list[str]) -> dict:
+    planned = set(planned_source_ids)
+    explicit_source_ids = [
+        source_id
+        for source_id in _unique_source_ids_from_value(raw_section)
+        if not planned or source_id in planned
+    ]
+    filtered = _filter_source_ids(section, set(explicit_source_ids))
+    local_source_ids = _unique_source_ids_from_value(filtered)
+    if local_source_ids:
+        filtered["sourceIds"] = local_source_ids
+    else:
+        filtered.pop("sourceIds", None)
+    return filtered
+
+
 def _generate_module_bundle(
     *,
     provider: dict,
@@ -214,6 +281,7 @@ def _generate_module_bundle(
                 }
             )
             raise CourseAgentError(str(exc), trace={**getattr(exc, "trace", {}), "stages": stages, "partial_course": partial_course}) from exc
+        raw_section = section
         section = _coerce_generated_section(
             section,
             fallback_id=f"module-{module_number}-lesson-{lesson_index}",
@@ -222,6 +290,7 @@ def _generate_module_bundle(
             section_type="lesson",
             source_ids=lesson_source_ids,
         )
+        section = _normalize_explicit_source_refs(section, raw_section, lesson_source_ids)
         section = _with_generation_outline_metadata(
             section,
             module_outline=module_outline,
@@ -348,15 +417,17 @@ def _generate_module_bundle(
         fallback_title=f"Quiz: {module_title}",
         page_type="apply",
         section_type="assessment",
-        source_ids=module_source_ids,
+        source_ids=[],
     )
+    quiz_section = _strip_source_ids(quiz_section)
     quiz_section = _with_generation_outline_metadata(
         quiz_section,
         module_outline=module_outline,
         section_outline=None,
-        source_ids=module_source_ids,
+        source_ids=[],
         role="assessment",
     )
+    quiz_section = _strip_source_ids(quiz_section)
     sections.append(quiz_section)
     module_usage.append({"stage": quiz_stage, "usage": quiz_response.get("usage", {})})
     stages.append({"stage": quiz_stage, "status": "passed", "section_id": quiz_section.get("id"), **_source_context_stats(quiz_source_context)})
@@ -404,6 +475,7 @@ def _generate_module_bundle(
             }
         )
         raise CourseAgentError(str(exc), trace={**getattr(exc, "trace", {}), "stages": stages, "partial_course": partial_course}) from exc
+    raw_summary_section = summary_section
     summary_section = _coerce_generated_section(
         summary_section,
         fallback_id=f"module-{module_number}-summary",
@@ -412,6 +484,7 @@ def _generate_module_bundle(
         section_type="summary",
         source_ids=module_source_ids,
     )
+    summary_section = _normalize_explicit_source_refs(summary_section, raw_summary_section, module_source_ids)
     summary_section = _with_generation_outline_metadata(
         summary_section,
         module_outline=module_outline,
@@ -420,6 +493,11 @@ def _generate_module_bundle(
         role="summary",
     )
     summary_section = _normalize_summary_for_pacing(summary_section, pacing_label)
+    summary_source_ids = _unique_source_ids_from_value(summary_section)
+    if summary_source_ids:
+        summary_section["sourceIds"] = summary_source_ids
+    else:
+        summary_section.pop("sourceIds", None)
     sections.append(summary_section)
     module_usage.append({"stage": summary_stage, "usage": summary_response.get("usage", {})})
     stages.append(

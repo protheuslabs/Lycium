@@ -73,7 +73,10 @@ def _staged_quiz_messages(
                         "Use source_context.sources as bounded evidence for quiz questions. "
                         "Do not assess details that are not taught in lesson_sections or supported by the bounded excerpts."
                     ),
-                    "evidence_rule": "Only assess concepts taught in this module and cite/use sourceIds assigned to those concepts.",
+                    "evidence_rule": (
+                        "Only assess concepts taught in this module. Do not include sourceIds on the Apply section, "
+                        "quiz block, or questions; the assessment references the course content itself and should not render a source footer."
+                    ),
                     "assessment_scope_rule": (
                         "This stage is for question-bank assessments, including longer tests. "
                         "Other mastery evidence belongs in an Apply section with a project block, rubric, submission policy, and graderWorkflow metadata."
@@ -84,7 +87,6 @@ def _staged_quiz_messages(
                         "title": f"Quiz: {module_outline.get('title') or f'Module {module_number}'}",
                         "pageType": "apply",
                         "sectionType": "assessment",
-                        "sourceIds": source_ids,
                         "content": [
                             {
                                 "type": "quiz",
@@ -145,12 +147,15 @@ def _staged_summary_messages(
                         "Use source_context only to keep concept definitions source-grounded. "
                         "The summary should still be a compact concept inventory copied from module Learn pages."
                     ),
+                    "source_reference_rule": (
+                        "Only include sourceIds that are copied from the concept cards or lesson sections being summarized. "
+                        "Do not add the full module or course source list to the summary."
+                    ),
                     "required_shape": {
                         "id": f"module-{module_number}-summary",
                         "title": f"{pacing_label} {module_number} Concept Review",
                         "pageType": "learn",
                         "sectionType": "summary",
-                        "sourceIds": source_ids,
                         "content": [
                             {"type": "heading", "title": f"{pacing_label} concepts"},
                             {

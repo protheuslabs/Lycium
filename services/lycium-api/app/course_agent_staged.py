@@ -37,8 +37,10 @@ from app.course_generation_service import validate_generation_taxonomy_input
 from app.course_generation_stage_workflows import (
     compact_stage_workflow_report,
     run_course_module_outline_workflow,
+    run_module_apply_section_workflow,
     run_module_assembly_workflow,
     run_module_section_plan_workflow,
+    run_module_summary_section_workflow,
     run_section_fill_workflow,
 )
 from app.course_quality_evals import run_course_quality_evals
@@ -56,6 +58,28 @@ def _lesson_sections_for_stage_reports(module: dict) -> list[dict]:
         if isinstance(section, dict)
         and str(section.get("pageType") or "learn") == "learn"
         and str(section.get("sectionType") or "lesson") != "summary"
+    ]
+
+
+def _apply_sections_for_stage_reports(module: dict) -> list[dict]:
+    sections = module.get("sections") if isinstance(module.get("sections"), list) else []
+    return [
+        section
+        for section in sections
+        if isinstance(section, dict)
+        and (
+            str(section.get("pageType") or "") == "apply"
+            or str(section.get("sectionType") or "").lower() in {"assessment", "quiz", "project"}
+        )
+    ]
+
+
+def _summary_sections_for_stage_reports(module: dict) -> list[dict]:
+    sections = module.get("sections") if isinstance(module.get("sections"), list) else []
+    return [
+        section
+        for section in sections
+        if isinstance(section, dict) and str(section.get("sectionType") or "").lower() == "summary"
     ]
 
 
@@ -85,6 +109,31 @@ def _module_stage_workflow_reports(
                 )
             )
         )
+    generated_apply_sections = _apply_sections_for_stage_reports(generated_module)
+    reports.append(
+        compact_stage_workflow_report(
+            run_module_apply_section_workflow(
+                module_outline,
+                lesson_sections,
+                generated_section=generated_apply_sections[0] if generated_apply_sections else {},
+                module_number=module_number,
+                fallback_source_ids=source_ids,
+            )
+        )
+    )
+    generated_summary_sections = _summary_sections_for_stage_reports(generated_module)
+    reports.append(
+        compact_stage_workflow_report(
+            run_module_summary_section_workflow(
+                module_outline,
+                lesson_sections,
+                generated_section=generated_summary_sections[0] if generated_summary_sections else None,
+                module_number=module_number,
+                fallback_source_ids=source_ids,
+                pacing_label=pacing_label,
+            )
+        )
+    )
     reports.append(
         compact_stage_workflow_report(
             run_module_assembly_workflow(

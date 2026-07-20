@@ -2,15 +2,19 @@ from __future__ import annotations
 
 from app.course_build_task_resume import apply_course_build_resume_inputs
 from app.course_build_tasks import transition_course_build_task_from_source_packet
+from app.course_outline_from_source_packet import build_outline_from_source_packet
 from app.course_generation_stage_workflows import (
     CLUSTER_GENERATION_CONTRACT,
     CLUSTER_PLAN_CONTRACT,
     CLUSTER_QUALITY_REPORT_CONTRACT,
     COURSE_MODULE_OUTLINE_CONTRACT,
+    COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
     COURSE_WRAPPER_GENERATION_CONTRACT,
     COURSE_WRAPPER_QUALITY_REPORT_CONTRACT,
+    MODULE_APPLY_SECTION_CONTRACT,
     MODULE_ASSEMBLY_CONTRACT,
     MODULE_SECTION_PLAN_CONTRACT,
+    MODULE_SUMMARY_SECTION_CONTRACT,
     PROGRAM_BRIEF_CONTRACT,
     PROGRAM_GENERATION_CONTRACT,
     SECTION_FILL_CONTRACT,
@@ -18,8 +22,10 @@ from app.course_generation_stage_workflows import (
     run_cluster_generation_workflow,
     run_course_module_outline_workflow,
     run_course_wrapper_generation_workflow,
+    run_module_apply_section_workflow,
     run_module_assembly_workflow,
     run_module_section_plan_workflow,
+    run_module_summary_section_workflow,
     run_program_brief_workflow,
     run_program_generation_workflow,
     run_section_fill_workflow,
@@ -485,11 +491,13 @@ def test_course_wrapper_source_packet_transition_enables_module_outline_generati
     assert transitioned_task["sourcePacketTransitionReport"]["passed"] is True
     assert outline_result["status"] == "passed"
     assert outline_result["metrics"]["moduleCount"] == 2
-    assert outline_result["metrics"]["sectionOutlineCount"] == 4
+    assert outline_result["metrics"]["embeddedSectionOutlineCount"] == 0
     outline = outline_result["artifacts"]["outline"]
     assert outline["contractVersion"] == "course-outline-from-source-packet-v1"
     assert outline["provenance"]["mode"] == "source_packet"
     assert all(module["planningSource"] == "source_packet" for module in outline["modules"])
+    assert all("sections" not in module for module in outline["modules"])
+    assert all(module["targetSectionCount"] == 2 for module in outline["modules"])
 
 
 def test_course_wrapper_resume_inputs_advance_to_section_generation_ready() -> None:
@@ -549,12 +557,12 @@ def test_course_wrapper_resume_inputs_preserve_explicit_outline() -> None:
         desired_course_count=5,
     )["artifacts"]["program"]
     wrapper = run_course_wrapper_generation_workflow(program)["artifacts"]["wrapperCourses"][0]
-    outline = run_course_module_outline_workflow(
+    outline = build_outline_from_source_packet(
         prompt=wrapper["courseWrapper"]["generationPrompt"],
         source_packet=_source_packet(),
         desired_module_count=2,
         sections_per_module=2,
-    )["artifacts"]["outline"]
+    )
     shell = _course_shell_from_wrapper(wrapper)
     shell["metadata"]["courseBuildTask"] = transition_course_build_task_from_source_packet(
         shell["metadata"]["courseBuildTask"],
@@ -624,14 +632,112 @@ def test_course_module_outline_workflow_is_testable_from_source_packet() -> None
     assert result["contractVersion"] == COURSE_MODULE_OUTLINE_CONTRACT
     assert result["stage"] == "course_module_outline_generation"
     assert result["status"] == "passed"
-    assert result["metrics"] == {
-        "moduleCount": 2,
-        "sectionOutlineCount": 4,
-        "sourceDocumentCount": 1,
-    }
+    assert result["metrics"]["moduleCount"] == 2
+    assert result["metrics"]["sectionOutlineCount"] == 0
+    assert result["metrics"]["embeddedSectionOutlineCount"] == 0
+    assert result["metrics"]["sourceDocumentCount"] == 1
+    assert result["metrics"]["outlineQualityStatus"] == "passed"
+    assert result["metrics"]["outlineQualityReasonCount"] == 0
+    assert result["metrics"]["sourceMappedModuleCount"] == 2
+    assert result["metrics"]["sourceMappedSectionCount"] == 0
     outline = result["artifacts"]["outline"]
+    quality = result["artifacts"]["outlineQualityReport"]
     assert outline["contractVersion"] == "course-outline-from-source-packet-v1"
-    assert outline["modules"][0]["sections"][0]["sourceIds"] == ["source-motion"]
+    assert outline["modules"][0]["sourceIds"] == ["source-motion"]
+    assert outline["modules"][0]["targetSectionCount"] == 2
+    assert "sections" not in outline["modules"][0]
+    assert quality["contractVersion"] == COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT
+    assert quality["passed"] is True
+    assert quality["metrics"]["sourcePacketContractVersion"] == "source-packet-v1"
+    assert quality["metrics"]["sourcePacketQualityStatus"] == "usable"
+    assert quality["metrics"]["sourceMappedModuleCount"] == 2
+    assert quality["metrics"]["sourceMappedSectionCount"] == 0
+    assert quality["metrics"]["objectiveModuleCount"] == 2
+    assert quality["metrics"]["conceptModuleCount"] == 2
+    assert quality["metrics"]["materializedContentPayloadCount"] == 0
+    assert quality["policy"] == {
+        "materializesLearnerContent": False,
+        "requiresSourcePacketWhenProvided": True,
+        "createsSectionPlans": False,
+        "sectionPlansCreatedBy": "module-section-plan-workflow-v1",
+        "requiresModuleObjectives": True,
+        "requiresModuleConcepts": True,
+        "requiresSourceMappingWhenSourcePacketProvided": True,
+    }
+    assert all(module["status"] == "passed" for module in quality["moduleProfiles"])
+
+
+def test_course_module_outline_workflow_blocks_weak_source_packet() -> None:
+    weak_packet = {
+        "contract_version": "source-packet-v1",
+        "quality": {
+            "status": "blocked",
+            "conceptCoverageRatio": 0.25,
+            "uncoveredConceptCandidates": ["momentum", "energy"],
+        },
+        "source_documents": [
+            {
+                "courseSourceId": "source-thin",
+                "title": "Thin mechanics notes",
+                "text": "Velocity definition only.",
+            }
+        ],
+    }
+
+    result = run_course_module_outline_workflow(
+        prompt="Create an introductory mechanics course",
+        source_packet=weak_packet,
+        desired_module_count=2,
+        sections_per_module=2,
+    )
+
+    quality = result["artifacts"]["outlineQualityReport"]
+
+    assert result["status"] == "failed"
+    assert quality["passed"] is False
+    assert "source_packet_not_usable" in quality["reasons"]
+    assert "source_packet_concept_coverage_below_policy" in quality["reasons"]
+    assert any(issue["location"] == "outlineQualityReport.reasons" for issue in result["issues"])
+
+
+def test_course_module_outline_workflow_blocks_materialized_or_thin_outlines() -> None:
+    outline = {
+        "contractVersion": "course-outline-from-source-packet-v1",
+        "modules": [
+            {
+                "id": "module-1",
+                "title": "",
+                "sections": [
+                    {
+                        "id": "section-1",
+                        "title": "Only a title",
+                        "content": [{"type": "text", "value": "This is already lesson content."}],
+                    }
+                ],
+            }
+        ],
+    }
+
+    result = run_course_module_outline_workflow(
+        prompt="Create an introductory mechanics course",
+        source_packet=_source_packet(),
+        desired_module_count=2,
+        sections_per_module=2,
+        outline=outline,
+    )
+
+    quality = result["artifacts"]["outlineQualityReport"]
+
+    assert result["status"] == "failed"
+    assert quality["passed"] is False
+    assert "module_1_module_title_missing" in quality["reasons"]
+    assert "module_1_module_objectives_missing" in quality["reasons"]
+    assert "module_1_module_concepts_missing" in quality["reasons"]
+    assert "module_1_module_source_ids_missing" in quality["reasons"]
+    assert "module_1_materialized_content_payload_present" in quality["reasons"]
+    assert "module_1_section_1_section_objectives_missing" in quality["reasons"]
+    assert "module_1_section_1_section_concepts_missing" in quality["reasons"]
+    assert "module_1_section_1_section_source_ids_missing" in quality["reasons"]
 
 
 def test_module_section_plan_workflow_extracts_lesson_plans() -> None:
@@ -648,8 +754,137 @@ def test_module_section_plan_workflow_extracts_lesson_plans() -> None:
     assert result["stage"] == "module_section_plan_generation"
     assert result["status"] == "passed"
     assert result["metrics"]["sectionPlanCount"] == 3
+    assert result["metrics"]["targetSectionCount"] == 3
+    assert result["metrics"]["generatedFromModuleOutline"] is True
+    assert result["metrics"]["plannedSectionCount"] == 3
     assert result["artifacts"]["sectionPlans"][0]["contractVersion"] == "section-generation-outline-v1"
     assert result["artifacts"]["sectionPlans"][0]["pageType"] == "learn"
+    assert result["artifacts"]["sectionPlans"][0]["description"]
+    assert result["artifacts"]["sectionPlans"][0]["sourceIds"] == ["source-motion"]
+    assert result["artifacts"]["sectionPlans"][0]["conceptKeywords"]
+    assert result["artifacts"]["sectionPlans"][0]["learningObjectives"]
+    assert result["artifacts"]["plannedModule"]["sections"] == result["artifacts"]["plannedSections"]
+    assert result["artifacts"]["plannedCourse"]["modules"][0] == result["artifacts"]["plannedModule"]
+    assert result["artifacts"]["plannedSections"][0]["content"] == []
+    assert result["artifacts"]["plannedSections"][0]["description"] == result["artifacts"]["sectionPlans"][0]["description"]
+    assert (
+        result["artifacts"]["plannedSections"][0]["metadata"]["generationOutline"]["plannedDescription"]
+        == result["artifacts"]["sectionPlans"][0]["description"]
+    )
+
+
+def test_module_section_plan_workflow_expands_module_only_outline_without_content() -> None:
+    module_outline = {
+        "id": "module-data-pipelines",
+        "title": "Module 1: Data Pipelines",
+        "targetSectionCount": 4,
+        "learning_objectives": ["Design a resilient source-backed data pipeline."],
+        "concept_keywords": [
+            "batch ingestion",
+            "schema validation",
+            "pipeline monitoring",
+            "retry strategy",
+        ],
+        "sourceIds": ["source-pipeline", "source-ops"],
+        "planningSource": "source_packet",
+    }
+
+    result = run_module_section_plan_workflow(
+        module_outline,
+        course={"title": "Data Engineering Course", "modules": [module_outline]},
+    )
+    section_plans = result["artifacts"]["sectionPlans"]
+
+    assert result["status"] == "passed"
+    assert result["metrics"]["sectionPlanCount"] == 4
+    assert result["metrics"]["generatedFromModuleOutline"] is True
+    assert result["metrics"]["plannedSectionCount"] == 4
+    assert [plan["title"] for plan in section_plans] == [
+        "Batch Ingestion Foundations",
+        "Schema Validation Applied Practice",
+        "Pipeline Monitoring Extension 3",
+        "Retry Strategy Extension 4",
+    ]
+    assert len({plan["title"] for plan in section_plans}) == 4
+    assert all(plan["description"].startswith("Planning reference for content generation") for plan in section_plans)
+    assert all(plan["sourceIds"] == ["source-pipeline", "source-ops"] for plan in section_plans)
+    assert all(plan["conceptKeywords"] for plan in section_plans)
+    assert all(plan["learningObjectives"] for plan in section_plans)
+    assert all(
+        not {"content", "blocks", "body", "markdown", "html"}.intersection(plan)
+        for plan in section_plans
+    )
+    assert result["artifacts"]["plannedModule"]["sections"]
+    assert all(section["content"] == [] for section in result["artifacts"]["plannedModule"]["sections"])
+    assert all(section["description"] for section in result["artifacts"]["plannedModule"]["sections"])
+    assert result["artifacts"]["plannedCourse"]["title"] == "Data Engineering Course"
+    assert result["artifacts"]["plannedCourse"]["modules"][0]["sections"] == result["artifacts"]["plannedSections"]
+
+
+def test_module_section_plan_workflow_respects_desired_count_override() -> None:
+    module_outline = {
+        "id": "module-risk",
+        "title": "Module 1: Risk Controls",
+        "targetSectionCount": 5,
+        "learning_objectives": ["Explain practical risk controls."],
+        "concept_keywords": ["risk register", "mitigation plan", "control review"],
+        "sourceIds": ["source-risk"],
+    }
+
+    result = run_module_section_plan_workflow(module_outline, desired_section_count=2)
+
+    assert result["status"] == "passed"
+    assert result["metrics"]["sectionPlanCount"] == 2
+    assert result["metrics"]["targetSectionCount"] == 2
+    assert [plan["id"] for plan in result["artifacts"]["sectionPlans"]] == [
+        "module-risk-section-1",
+        "module-risk-section-2",
+    ]
+
+
+def test_module_section_plan_workflow_blocks_duplicate_embedded_lesson_titles() -> None:
+    module_outline = {
+        "id": "module-duplicates",
+        "title": "Module 1: Duplicate Lessons",
+        "sourceIds": ["source-1"],
+        "sections": [
+            {
+                "id": "section-1",
+                "title": "Repeated Lesson",
+                "learning_objectives": ["Explain the first target."],
+                "concept_keywords": ["first target"],
+                "sourceIds": ["source-1"],
+            },
+            {
+                "id": "section-2",
+                "title": "Repeated Lesson",
+                "learning_objectives": ["Explain the second target."],
+                "concept_keywords": ["second target"],
+                "sourceIds": ["source-1"],
+            },
+        ],
+    }
+
+    result = run_module_section_plan_workflow(module_outline)
+
+    assert result["status"] == "failed"
+    assert result["metrics"]["generatedFromModuleOutline"] is False
+    assert any(issue["location"] == "sections[].title" for issue in result["issues"])
+
+
+def test_module_section_plan_workflow_blocks_thin_embedded_lesson_plans() -> None:
+    module_outline = {
+        "id": "module-thin",
+        "title": "Module 1: Thin Lessons",
+        "sourceIds": ["source-1"],
+        "sections": [{"id": "section-1", "title": "Only a title"}],
+    }
+
+    result = run_module_section_plan_workflow(module_outline)
+
+    assert result["status"] == "failed"
+    assert any(issue["location"] == "sectionPlans[1].learningObjectives" for issue in result["issues"])
+    assert any(issue["location"] == "sectionPlans[1].conceptKeywords" for issue in result["issues"])
 
 
 def test_section_fill_workflow_produces_section_with_generation_outline_metadata() -> None:
@@ -660,20 +895,225 @@ def test_section_fill_workflow_produces_section_with_generation_outline_metadata
         sections_per_module=2,
     )["artifacts"]["outline"]
     module = outline["modules"][0]
-    section_plan = run_module_section_plan_workflow(module)["artifacts"]["sectionPlans"][0]
+    section_plan_result = run_module_section_plan_workflow(module)
+    section_plan = section_plan_result["artifacts"]["sectionPlans"][0]
+    planned_section = section_plan_result["artifacts"]["plannedSections"][0]
 
-    result = run_section_fill_workflow(section_plan, module_outline=module)
+    result = run_section_fill_workflow(
+        section_plan,
+        planned_section=planned_section,
+        module_outline=section_plan_result["artifacts"]["plannedModule"],
+    )
 
     assert result["contractVersion"] == SECTION_FILL_CONTRACT
     assert result["stage"] == "section_fill_generation"
     assert result["status"] == "passed"
+    assert result["metrics"]["replacedPlannedEmptySection"] is True
+    assert planned_section["content"] == []
     section = result["artifacts"]["section"]
+    assert section["id"] == planned_section["id"]
+    assert section["title"] == planned_section["title"]
     assert section["pageType"] == "learn"
+    assert "description" not in section
+    assert section["content"]
     assert section["metadata"]["generationOutline"]["contractVersion"] == "section-generation-outline-v1"
+    assert section["metadata"]["generationOutline"]["plannedDescription"] == section_plan["description"]
     assert any(block["type"] == "conceptCard" for block in section["content"])
 
 
-def test_module_assembly_workflow_adds_summary_and_reports_missing_apply_stage() -> None:
+def test_section_fill_workflow_blocks_unfilled_planned_empty_section() -> None:
+    outline = run_course_module_outline_workflow(
+        prompt="Create an introductory mechanics course",
+        source_packet=_source_packet(),
+        desired_module_count=1,
+        sections_per_module=2,
+    )["artifacts"]["outline"]
+    module = outline["modules"][0]
+    section_plan_result = run_module_section_plan_workflow(module)
+    section_plan = section_plan_result["artifacts"]["sectionPlans"][0]
+    planned_section = section_plan_result["artifacts"]["plannedSections"][0]
+
+    result = run_section_fill_workflow(
+        section_plan,
+        planned_section=planned_section,
+        generated_section=planned_section,
+        module_outline=section_plan_result["artifacts"]["plannedModule"],
+    )
+
+    assert result["status"] == "failed"
+    assert result["metrics"]["contentBlockCount"] == 0
+    assert result["metrics"]["replacedPlannedEmptySection"] is False
+    assert any(issue["location"] == "content" for issue in result["issues"])
+
+
+def test_section_fill_workflow_keeps_only_explicitly_used_source_refs() -> None:
+    outline = run_course_module_outline_workflow(
+        prompt="Create an introductory mechanics course",
+        source_packet=_source_packet(),
+        desired_module_count=1,
+        sections_per_module=2,
+    )["artifacts"]["outline"]
+    module = outline["modules"][0]
+    section_plan = run_module_section_plan_workflow(module)["artifacts"]["sectionPlans"][0]
+
+    result = run_section_fill_workflow(
+        section_plan,
+        generated_section={
+            "id": "generated-lesson",
+            "title": "Generated Lesson",
+            "pageType": "learn",
+            "sectionType": "lesson",
+            "sourceIds": ["unused-source"],
+            "content": [
+                {
+                    "type": "text",
+                    "value": "This block explicitly uses the source-motion reference.",
+                    "sourceIds": ["source-motion", "unknown-source"],
+                },
+                {"type": "heading", "title": "Concepts introduced"},
+                {
+                    "type": "conceptCard",
+                    "title": "Velocity",
+                    "description": "Velocity connects motion to time.",
+                },
+            ],
+        },
+        module_outline=module,
+    )
+
+    section = result["artifacts"]["section"]
+
+    assert result["status"] == "passed"
+    assert result["metrics"]["sourceIdCount"] == 1
+    assert result["metrics"]["plannedSourceIdCount"] == 1
+    assert section["sourceIds"] == ["source-motion"]
+    assert section["content"][0]["sourceIds"] == ["source-motion"]
+    assert "sourceIds" not in section["content"][2]
+
+
+def test_module_apply_section_workflow_generates_assessment_from_filled_lessons() -> None:
+    outline = run_course_module_outline_workflow(
+        prompt="Create an introductory mechanics course",
+        source_packet=_source_packet(),
+        desired_module_count=1,
+        sections_per_module=2,
+    )["artifacts"]["outline"]
+    module_outline = outline["modules"][0]
+    section_plan_result = run_module_section_plan_workflow(module_outline)
+    filled_lessons = [
+        run_section_fill_workflow(
+            section_plan,
+            planned_section=planned_section,
+            module_outline=section_plan_result["artifacts"]["plannedModule"],
+        )["artifacts"]["section"]
+        for section_plan, planned_section in zip(
+            section_plan_result["artifacts"]["sectionPlans"],
+            section_plan_result["artifacts"]["plannedSections"],
+            strict=True,
+        )
+    ]
+
+    result = run_module_apply_section_workflow(module_outline, filled_lessons)
+
+    assert result["contractVersion"] == MODULE_APPLY_SECTION_CONTRACT
+    assert result["stage"] == "module_apply_section_generation"
+    assert result["status"] == "passed"
+    assert result["metrics"]["lessonSectionCount"] == 2
+    assert result["metrics"]["taughtConceptCount"] >= 2
+    assert result["metrics"]["assessedConceptCount"] >= 2
+    assert result["metrics"]["questionCount"] == 10
+    assert result["metrics"]["validQuestionCount"] == 10
+    assert result["metrics"]["sourceIdCount"] == 0
+    assert result["metrics"]["generatedFromFilledLessons"] is True
+    section = result["artifacts"]["section"]
+    quiz = section["content"][0]
+    assert section["pageType"] == "apply"
+    assert section["sectionType"] == "assessment"
+    assert "sourceIds" not in section
+    assert section["metadata"]["generationOutline"]["role"] == "assessment"
+    assert section["metadata"]["generationOutline"]["planningSource"] == "module_apply_section_workflow"
+    assert quiz["type"] == "quiz"
+    assert "sourceIds" not in quiz
+    assert len(quiz["questions"]) == 10
+    assert all(question["answers"] == [0] for question in quiz["questions"])
+    assert all("sourceIds" not in question for question in quiz["questions"])
+
+
+def test_module_apply_section_workflow_blocks_empty_assessment_payload() -> None:
+    outline = run_course_module_outline_workflow(
+        prompt="Create an introductory mechanics course",
+        source_packet=_source_packet(),
+        desired_module_count=1,
+        sections_per_module=2,
+    )["artifacts"]["outline"]
+    module_outline = outline["modules"][0]
+    section_plan_result = run_module_section_plan_workflow(module_outline)
+    filled_lessons = [
+        run_section_fill_workflow(section_plan, module_outline=module_outline)["artifacts"]["section"]
+        for section_plan in section_plan_result["artifacts"]["sectionPlans"]
+    ]
+
+    result = run_module_apply_section_workflow(
+        module_outline,
+        filled_lessons,
+        generated_section={
+            "id": f"{module_outline['id']}-apply",
+            "title": f"Apply: {module_outline['title']}",
+            "pageType": "apply",
+            "sectionType": "assessment",
+            "sourceIds": module_outline["sourceIds"],
+            "content": [],
+        },
+    )
+
+    assert result["status"] == "failed"
+    assert result["metrics"]["generatedFromFilledLessons"] is False
+    assert result["metrics"]["contentBlockCount"] == 0
+    assert any(issue["location"] == "content" for issue in result["issues"])
+    assert "sourceIds" not in result["artifacts"]["section"]
+
+
+def test_module_summary_section_workflow_generates_concept_inventory_from_filled_lessons() -> None:
+    outline = run_course_module_outline_workflow(
+        prompt="Create an introductory mechanics course",
+        source_packet=_source_packet(),
+        desired_module_count=1,
+        sections_per_module=2,
+    )["artifacts"]["outline"]
+    module_outline = outline["modules"][0]
+    section_plan_result = run_module_section_plan_workflow(module_outline)
+    filled_lessons = [
+        run_section_fill_workflow(
+            section_plan,
+            planned_section=planned_section,
+            module_outline=section_plan_result["artifacts"]["plannedModule"],
+        )["artifacts"]["section"]
+        for section_plan, planned_section in zip(
+            section_plan_result["artifacts"]["sectionPlans"],
+            section_plan_result["artifacts"]["plannedSections"],
+            strict=True,
+        )
+    ]
+
+    result = run_module_summary_section_workflow(module_outline, filled_lessons)
+
+    assert result["contractVersion"] == MODULE_SUMMARY_SECTION_CONTRACT
+    assert result["stage"] == "module_summary_section_generation"
+    assert result["status"] == "passed"
+    assert result["metrics"]["lessonSectionCount"] == 2
+    assert result["metrics"]["conceptCardCount"] >= 2
+    assert result["metrics"]["sourceIdCount"] == 1
+    section = result["artifacts"]["section"]
+    assert section["pageType"] == "learn"
+    assert section["sectionType"] == "summary"
+    assert section["sourceIds"] == ["source-motion"]
+    assert section["metadata"]["generationOutline"]["role"] == "summary"
+    assert section["metadata"]["generationOutline"]["planningSource"] == "module_summary_section_workflow"
+    assert section["content"][0]["title"] == "Module concepts"
+    assert all(block["type"] != "quiz" for block in section["content"])
+
+
+def test_module_assembly_workflow_reports_missing_summary_and_apply_stage() -> None:
     outline = run_course_module_outline_workflow(
         prompt="Create an introductory mechanics course",
         source_packet=_source_packet(),
@@ -691,9 +1131,45 @@ def test_module_assembly_workflow_adds_summary_and_reports_missing_apply_stage()
 
     assert result["contractVersion"] == MODULE_ASSEMBLY_CONTRACT
     assert result["stage"] == "module_assembly"
-    assert result["status"] == "needs_review"
-    assert result["metrics"]["sectionCount"] == 3
-    module = result["artifacts"]["module"]
-    assert module["sections"][-1]["sectionType"] == "summary"
-    assert module["sections"][-1]["content"][0]["title"] == "Module concepts"
+    assert result["status"] == "failed"
+    assert result["metrics"]["sectionCount"] == 2
+    assert any(issue["message"] == "Module assembly must end with a summary section." for issue in result["issues"])
     assert any(issue["message"] == "Module assembly has no apply/practice section yet." for issue in result["issues"])
+
+
+def test_module_assembly_workflow_passes_with_filled_lesson_and_apply_sections() -> None:
+    outline = run_course_module_outline_workflow(
+        prompt="Create an introductory mechanics course",
+        source_packet=_source_packet(),
+        desired_module_count=1,
+        sections_per_module=2,
+    )["artifacts"]["outline"]
+    module_outline = outline["modules"][0]
+    section_plan_result = run_module_section_plan_workflow(module_outline)
+    filled_lessons = [
+        run_section_fill_workflow(
+            section_plan,
+            planned_section=planned_section,
+            module_outline=section_plan_result["artifacts"]["plannedModule"],
+        )["artifacts"]["section"]
+        for section_plan, planned_section in zip(
+            section_plan_result["artifacts"]["sectionPlans"],
+            section_plan_result["artifacts"]["plannedSections"],
+            strict=True,
+        )
+    ]
+    apply_section = run_module_apply_section_workflow(module_outline, filled_lessons)["artifacts"]["section"]
+    summary_section = run_module_summary_section_workflow(module_outline, filled_lessons)["artifacts"]["section"]
+
+    result = run_module_assembly_workflow(module_outline, [*filled_lessons, apply_section, summary_section])
+
+    assert result["status"] == "passed"
+    assert result["metrics"]["sectionCount"] == 4
+    assert result["metrics"]["lessonSectionCount"] == 2
+    assert result["metrics"]["applySectionCount"] == 1
+    assert result["metrics"]["summarySectionCount"] == 1
+    assert result["metrics"]["contentReadySectionCount"] == 4
+    assert not any("apply/practice" in issue["message"] for issue in result["issues"])
+    module = result["artifacts"]["module"]
+    assert module["sections"][-2]["pageType"] == "apply"
+    assert module["sections"][-1]["sectionType"] == "summary"

@@ -34,14 +34,16 @@ This document tracks the workflow-level tests for Lycium generation. Update it w
 
 | Workflow level | Contract or report | Primary tests | Current status | Notes |
 | --- | --- | --- | --- | --- |
-| Source-packet transition to outline | `source-packet-transition-report-v1`, `course-outline-from-source-packet-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py` | Passing | Verifies a wrapper task can advance from `source_gathering` to `outline_ready` and produce a source-packet-derived module outline. |
+| Source-packet transition to outline | `source-packet-transition-report-v1`, `course-outline-from-source-packet-v1`, `course-module-outline-quality-report-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py` | Passing | Verifies a wrapper task can advance from `source_gathering` to `outline_ready` and produce a source-packet-derived outline with source mapping and quality checks before section planning. |
 | Outline transition to section generation | `outline-transition-report-v1`, `course-build-resume-report-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py`, `test_clean_start_generation_contracts.py` | Passing | Verifies wrapper resumes advance from `outline_ready` to `section_generation_ready`, preserve valid explicit or derived outlines, and keep weak outlines blocked with reasons. |
-| Course module outline generation | `course-module-outline-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Source-packet-backed outlines are independently testable. |
-| Module section planning | `module-section-plan-workflow-v1` | `test_course_generation_stage_workflows.py` | Passing | Extracts lesson section plans from module outlines. |
-| Section fill generation | `section-fill-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Produces editor-native sections with generation-outline metadata. |
-| Module assembly | `module-assembly-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Adds/validates summary sections and reports missing apply/practice coverage. |
+| Course module outline generation | `course-module-outline-workflow-v1`, `course-module-outline-quality-report-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Validates source-packet quality, module titles, module objectives, module concepts, module source mapping, target section counts, duplicate titles, and no learner-facing content payload. |
+| Module section planning | `module-section-plan-workflow-v1` | `test_course_generation_stage_workflows.py` | Passing | Expands one module outline into section-plan records and planned course/module sections with titles, planning descriptions, objectives, concepts, source IDs, and empty `content` arrays; covers target-count overrides, no learner-facing content payload, duplicate embedded lesson titles, and thin embedded lesson plans. |
+| Section fill generation | `section-fill-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Replaces planned empty section shells with editor-native content blocks, preserves generation-outline metadata, records only explicitly used section/block source refs, and blocks unfilled shells from being treated as generated content. |
+| Module Apply generation | `module-apply-section-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Creates or validates Apply sections after filled lessons exist, assesses taught concept cards, requires quiz/project assessment shape, requires quiz-based module assessments to have at least 10 valid questions, omits source refs/source footers, and blocks empty assessment payloads. |
+| Module summary generation | `module-summary-section-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Creates or validates module concept inventories from filled Learn sections, preserves source section links, copies only local source refs from summarized concepts, and blocks heading-only summaries. |
+| Module assembly | `module-assembly-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Assembles filled lesson, Apply, and summary sections; validates that summary and apply/practice coverage exist without generating them inside assembly. |
 | Active course generation batches | `active-course-generation-plan-v1`, `active-course-generation-run-v1` | `test_active_course_generation.py` | Passing | Verifies batch progression, source-packet ID preservation, courseBuildOutline-derived batches, completed-batch protection, unusable source-packet rejection, endpoint behavior, and course-build task next actions. |
-| Full staged course generation | staged trace `stage_workflows` | `test_clean_start_generation_staged_outline.py`, `test_program_shell_staged_generation.py` | Passing | Real staged generator records outline, section-plan, section-fill, and module-assembly reports. |
+| Full staged course generation | staged trace `stage_workflows` | `test_clean_start_generation_staged_outline.py`, `test_program_shell_staged_generation.py` | Passing | Real staged generator records outline, section-plan, section-fill, module-Apply, module-summary, and module-assembly reports. |
 
 ## Review And Promotion Workflows
 
@@ -51,52 +53,38 @@ This document tracks the workflow-level tests for Lycium generation. Update it w
 
 ## Latest Verification
 
-Run on 2026-07-16:
+Run on 2026-07-19:
 
 ```bash
+python3 -m py_compile \
+  services/lycium-api/app/course_generation_stage_workflows.py \
+  services/lycium-api/app/course_agent_staged.py \
+  services/lycium-api/app/course_agent_staged_support.py \
+  services/lycium-api/app/course_agent_assessment_prompting.py
+
 python3 -m pytest \
-  services/lycium-api/tests/test_curriculum_assembly_policy.py \
-  services/lycium-api/tests/test_program_course_scaffold_fit.py \
-  services/lycium-api/tests/test_program_generation_eval_scenarios.py \
-  services/lycium-api/tests/test_program_shell_staged_generation.py \
-  services/lycium-api/tests/test_source_gap_resume.py \
-  services/lycium-api/tests/test_active_course_generation.py \
   services/lycium-api/tests/test_course_generation_stage_workflows.py \
-  services/lycium-api/tests/test_program_generation_e2e.py \
-  services/lycium-api/tests/test_program_source_acquisition_reports.py \
-  services/lycium-api/tests/test_generation_eval_reports.py \
-  services/lycium-api/tests/test_course_generation_gauntlet.py -q
+  services/lycium-api/tests/test_clean_start_generation_staged_outline.py \
+  services/lycium-api/tests/test_program_shell_staged_generation.py -q
+
+python3 -m pytest services/lycium-api/tests -q
+
+corepack pnpm --filter @lycium/web test -- sourceCitationUtils.test.ts
+
+corepack pnpm --filter @lycium/web typecheck
+
+corepack pnpm --filter @lycium/web build
 ```
 
-Result: `69 passed`.
+Result: `py_compile` passed, focused workflow tests `37 passed`, broader API regression `253 passed`, web tests `53 passed`, web typecheck passed, and web build passed.
 
 Additional checks:
 
 ```bash
-python3 -m py_compile \
-  services/lycium-api/app/program_contract_builder.py \
-  services/lycium-api/app/curriculum_assembly_policy.py \
-  services/lycium-api/app/program_course_scaffold.py \
-  services/lycium-api/app/course_generation_stage_workflows.py \
-  services/lycium-api/app/course_build_task_resume.py \
-  services/lycium-api/app/active_course_generation.py \
-  services/lycium-api/app/course_generation_workflow.py \
-  services/lycium-api/app/course_quality.py \
-  services/lycium-api/app/generation_programs.py \
-  services/lycium-api/app/program_generation_timeline.py
-
 git diff --check
 ```
 
 Result: passed.
-
-Broader API regression:
-
-```bash
-python3 -m pytest services/lycium-api/tests -q
-```
-
-Result: `241 passed`.
 
 ## Next Workflow Target
 

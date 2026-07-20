@@ -24,7 +24,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - validate missing course, assessment, project, or competency references before publishing program data
    - separate passive curriculum planning from active course materialization
    - passive generation plans, organizes, links, or proposes curriculum through program contracts, cluster plans, course wrappers, source requests, fit evidence, and review candidates
-   - active generation materializes source-backed course content through source-packet outlines, module and section planning, section fill, module assembly, active batches, quality reports, and review promotion
+   - active generation materializes source-backed course content through source-packet outlines, module and section planning, section fill, module Apply generation, module summary generation, module assembly, active batches, quality reports, and review promotion
    - separate program generation, cluster generation, course-wrapper generation, and active course-content generation
    - generate and test a `program-brief-v1` artifact before program requirements; the brief should capture goal, title, type, field, level, audience, outcome, description, learning outcomes, broad groups, evidence mode, and assumptions without materializing course IDs or wrappers
    - infer/generate clusters from orphaned courses only when there are at least 3 related courses; treat 4+ related courses as the recommended threshold
@@ -33,6 +33,12 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - cluster generation should emit inspectable `cluster-plan-v1` artifacts and a `cluster-quality-report-v1` before course wrappers are created; cluster plans should include purpose, outcomes, dependency profile, required concepts, assembly readiness, and abstract `cluster-course-kind-v1` records without creating wrappers, build tasks, modules, sections, or learner-facing content
    - missing or uncertain courses should become course wrappers with source needs and generation prompts rather than hollow full courses
    - course-wrapper generation should emit a `course-wrapper-quality-report-v1`; wrapper rows should have source requests, active-generation plans, course-build tasks, prerequisite metadata, placeholder policy, and no modules, sections, or learner-facing content
+   - course module outline generation should emit a `course-module-outline-quality-report-v1`; source-packet module outlines should validate source-packet usability, module titles, module objectives, module concept keywords, module source IDs, duplicate module titles, target section counts, and no learner-facing lesson content
+   - module section planning should be a separate workflow from module outline generation and section fill; it expands one module outline into section-plan records and adds empty section shells to the course/module structure with titles, planning-only descriptions, objectives, concept keywords, source IDs, and empty `content` arrays
+   - section fill should be the only active workflow that replaces planned empty section shells with learner-facing content blocks
+   - section fill should preserve source IDs only for sources the generated section actually uses; do not auto-attach full planned, module, or course source lists just because they were available
+   - module Apply generation should be a separate workflow after section fill and before module assembly; it creates or validates Apply sections from filled lesson concepts, enforces quiz/project assessment shape, requires quiz-based module assessments to have at least 10 valid questions, omits section/block source IDs so Apply pages do not render a source footer, and fails empty assessment payloads
+   - module summary generation should be a separate workflow after section fill and before module assembly; it creates or validates concept-card inventories from filled Learn sections, preserves `sourceSectionId`, and copies only source IDs already present on summarized concepts or lesson sections
    - hand passive workflows to active workflows through explicit artifacts such as course wrappers, source requests, source packets, `metadata.activeGenerationPlan`, `metadata.courseBuildOutline`, and course build tasks
    - use active generation for large paths: generate bottom-level prerequisite course wrappers first, then generate course modules or sections in small batches as needed
 4. Determine course scope before writing lesson content:
@@ -116,7 +122,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - use project blocks for projects, labs, simulations, portfolio tasks, practical exams, or other non-quiz evidence that should be graded against a rubric
 12. Record all sources centrally and reference them from the course:
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
-   - use `sourceIds` in course, module, section, and block records
+   - use `sourceIds` at course/module scope for available source catalogs, and at section/block scope only for sources actually used in that section or block
    - when many sources are submitted, run source corpus preflight and use only included sources as course evidence unless a reviewer restores an excluded source
    - when source packets are available, prefer `source-packet-v1` evidence over loose URL lists so generation uses imported snapshots, source decisions, and evidence refs
    - during source enrichment, query Source Index search (`source-index-search-v1`) for missing concepts, replacement sources, benchmark evidence, and media candidates before asking the user for more sources
@@ -128,7 +134,8 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - use `metadata.generationReadiness.sourceStrength` (`source-strength-v1`) as the readiness primitive; source count is not the readiness decision, and one comprehensive textbook, extracted file, or source packet can be enough when it covers the required concepts with strong depth, relevance, authority, and extractability
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
    - when uploaded files or long source documents are used, pass bounded, stage-relevant excerpts into lesson, quiz, media, and summary prompts; do not dump full extracted documents into every model call
-   - scope `sourceIds` locally while numbering citations globally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, and section/block `sourceIds` support only concepts taught or assessed there
+   - scope `sourceIds` locally while numbering citations globally: course-level `sourceIds` are the full accepted inventory, module `sourceIds` support that module, and section/block `sourceIds` should be present only for sources actually used by that section or block
+   - Apply/assessment sections assess the course content itself and should not include section/block `sourceIds` or render source footers
    - text blocks may include inline citation markers such as `[1]`; these are 1-based indexes into the course-wide source index, while each section renders only the subset it uses sorted from lowest to highest citation number
    - for embedded videos, prefer source-record `embedUrl`; do not duplicate untracked raw video URLs in course blocks
    - video blocks may reuse a full video source with an optional `clip` object such as `{ "startSeconds": 185, "endSeconds": 420 }`; omit `clip` to play the whole video

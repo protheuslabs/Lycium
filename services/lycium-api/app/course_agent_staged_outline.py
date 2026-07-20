@@ -61,6 +61,7 @@ def _course_build_outline_plan_from_source_packet(
         prompt=prompt,
         source_packet=source_packet,
         desired_module_count=desired_module_count,
+        include_section_outlines=False,
     )
     return _course_build_outline_plan_from_outline(
         outline,

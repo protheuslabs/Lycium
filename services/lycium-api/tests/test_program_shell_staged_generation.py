@@ -118,8 +118,7 @@ def test_staged_agent_uses_resumed_program_course_shell_outline_before_llm(monke
         planned_keywords = lesson_outline.get("concept_keywords", [lesson_outline["title"]])
         topic = str(planned_keywords[0])
         lesson_source_ids = lesson_outline.get("sourceIds") or [source_ids[(module_number - 1) % len(source_ids)]]
-        quiz_source_ids = [source_ids[module_number % len(source_ids)]]
-        summary_source_ids = list(dict.fromkeys([*lesson_source_ids, *quiz_source_ids]))
+        summary_source_ids = list(dict.fromkeys(lesson_source_ids))
         assert kwargs["source_context_index"]
         return {
             "module": {
@@ -166,8 +165,7 @@ def test_staged_agent_uses_resumed_program_course_shell_outline_before_llm(monke
                         "title": f"{topic.title()} quiz",
                         "pageType": "apply",
                         "sectionType": "quiz",
-                        "sourceIds": quiz_source_ids,
-                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": quiz_source_ids}],
+                        "content": [{"type": "quiz", "questions": _questions(topic)}],
                     },
                     {
                         "id": f"{module_outline['id']}-summary",
@@ -196,14 +194,14 @@ def test_staged_agent_uses_resumed_program_course_shell_outline_before_llm(monke
                                 "title": "Practice loop",
                                 "description": "An exercise cycle that asks learners to apply, explain, and assess the concept.",
                                 "sourceSectionId": f"{module_outline['id']}-lesson",
-                                "sourceIds": quiz_source_ids,
+                                "sourceIds": lesson_source_ids,
                             },
                             {
                                 "type": "conceptCard",
                                 "title": "Mastery evidence",
                                 "description": "Observable quiz or laboratory evidence that the learner can use the concept.",
                                 "sourceSectionId": f"{module_outline['id']}-lesson",
-                                "sourceIds": quiz_source_ids,
+                                "sourceIds": lesson_source_ids,
                             },
                         ],
                     },
