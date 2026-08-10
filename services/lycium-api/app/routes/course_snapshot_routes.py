@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.analytics import analytics_summary, record_event, upsert_progress
+from app.active_course_content_fill import fill_active_course_content
 from app.active_course_generation import generate_active_course_batch
 from app.coverage import recompute_coverage
 from app.course_agent_harness import (
@@ -66,6 +67,7 @@ from app.retrieval import assemble_learning_packet, search_knowledge_objects
 from app.schemas import (
     AnalyticsSummaryRead,
     ApproveOutlineRequest,
+    ActiveCourseContentFillRequest,
     ActiveCourseGenerationBatchRequest,
     AskInstructorRequest,
     AskInstructorResponse,
@@ -315,6 +317,34 @@ def register(app: FastAPI) -> None:
                 source_packet=payload.source_packet,
                 batch_index=payload.batch_index,
                 module_count=payload.module_count,
+            )
+            session.commit()
+            session.refresh(updated)
+            save_course_snapshot(updated)
+            return updated
+        except ValueError as exc:
+            session.rollback()
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+    @app.post("/v1/courses/{course_snapshot_id}/active-generation/fill-content", response_model=CourseSnapshotRead)
+    def fill_active_course_content_endpoint(
+        course_snapshot_id: int,
+        payload: ActiveCourseContentFillRequest,
+        session: Session = Depends(get_session),
+    ) -> CourseSnapshot:
+        row = session.get(CourseSnapshot, course_snapshot_id)
+        if row is None:
+            raise HTTPException(status_code=404, detail="Course snapshot not found")
+        try:
+            updated = fill_active_course_content(
+                row,
+                scope=payload.scope,
+                module_id=payload.module_id,
+                section_id=payload.section_id,
+                max_sections=payload.max_sections,
+                retry_filled=payload.retry_filled,
+                include_module_artifacts=payload.include_module_artifacts,
             )
             session.commit()
             session.refresh(updated)

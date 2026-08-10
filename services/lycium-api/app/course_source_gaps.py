@@ -9,9 +9,7 @@ from app.course_generation_readiness import build_generation_readiness_report
 from app.course_source_policy import SOURCE_COVERAGE_POLICY
 from app.generation_helpers import (
     COURSE_GENERATION_RULES,
-    _build_instructional_blocks,
     _catalog_metadata_from_prompt,
-    _concept_card_block,
     _title_from_prompt,
 )
 from app.generation_outline import build_outline
@@ -30,6 +28,10 @@ def _unique_source_urls(source_urls: list[str] | None) -> list[str]:
         seen.add(clean_url)
         urls.append(clean_url)
     return urls
+
+
+def _string_list(value: Any) -> list[str]:
+    return [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
 
 
 def source_count_meets_minimum(source_urls: list[str] | None) -> bool:
@@ -196,7 +198,7 @@ def _source_gap_outline(
     return {
         "title": title,
         "shortDescription": f"A best-effort course draft covering the foundations and applications of {title}.",
-        "summary": "This course has a complete outline and preliminary lesson scaffolds that still require source review.",
+        "summary": "This course has a complete outline and empty planned sections that still require source review and content generation.",
         "modules": modules,
         "provenance": {"mode": "source-gap-fallback"},
     }
@@ -209,70 +211,114 @@ def _source_gap_sections_for_module(
     source_ids: list[str],
 ) -> list[dict[str, Any]]:
     sections = module.get("sections") if isinstance(module.get("sections"), list) else []
-    best_effort_sections: list[dict[str, Any]] = []
+    planned_sections: list[dict[str, Any]] = []
+    course_title = _title_from_prompt(prompt)
+    module_id = str(module.get("id") or "")
+    module_title = str(module.get("title") or "Planned module")
 
     for section_index, section in enumerate(sections, start=1):
         if not isinstance(section, dict):
             continue
-        section_id = str(section.get("id") or f"{module.get('id')}-s{section_index:02d}")
+        section_id = str(section.get("id") or f"{module_id or 'module'}-s{section_index:02d}")
         section_title = str(section.get("title") or f"Planned section {section_index}")
-        concept_keywords = [str(value).strip() for value in section.get("concept_keywords", []) if str(value).strip()]
+        concept_keywords = _string_list(section.get("concept_keywords") or section.get("conceptKeywords"))
         raw_section_source_ids = section.get("sourceIds") or section.get("source_ids") or []
         section_source_ids = [value for value in raw_section_source_ids if isinstance(value, str) and value in source_ids]
-        concepts = concept_keywords or [section_title]
-        concept_blocks = [
-            {"type": "heading", "title": "Concepts introduced"},
-            *[
-                _concept_card_block(
-                    concept.replace("_", " ").title(),
-                    f"A working concept used to reason about {section_title}.",
-                )
-                for concept in concepts[:4]
-            ],
-        ]
-        best_effort_sections.append(
+        learning_objectives = _string_list(section.get("learning_objectives") or section.get("learningObjectives"))
+        primary_concept = (concept_keywords or [section_title])[0].replace("_", " ")
+        learning_outcome = str(section.get("learningOutcome") or section.get("learning_outcome") or "").strip()
+        if not learning_outcome:
+            learning_outcome = f"Explain {primary_concept} and use it in the context of {course_title}."
+        if not learning_objectives:
+            learning_objectives = [learning_outcome]
+        planned_description = str(section.get("description") or section.get("summary") or "").strip()
+        if not planned_description:
+            concept_text = ", ".join(concept.replace("_", " ") for concept in concept_keywords[:4])
+            planned_description = (
+                f"Planning reference for section fill: teach {section_title}"
+                + (f" through {concept_text}" if concept_text else "")
+                + f" as part of {module_title}."
+            )
+        planned_sections.append(
             {
                 "id": section_id,
                 "title": section_title,
                 "sectionType": "lesson",
                 "pageType": "learn",
-                "sourceIds": section_source_ids,
-                "learningObjectives": section.get("learning_objectives", []),
+                "sourceIds": [],
+                "description": planned_description,
+                "learningObjectives": learning_objectives,
                 "estimatedMinutes": int(section.get("estimated_minutes") or 20),
                 "metadata": {
                     "generationOutline": {
                         "contractVersion": "section-generation-outline-v1",
-                        "role": "best_effort_incomplete",
+                        "role": "section_plan",
                         "planningSource": "outline_before_sources",
-                        "moduleOutlineId": str(module.get("id") or ""),
-                        "moduleOutlineTitle": str(module.get("title") or ""),
+                        "moduleOutlineId": module_id,
+                        "moduleOutlineTitle": module_title,
                         "sectionOutlineId": section_id,
                         "sectionOutlineTitle": section_title,
+                        "plannedDescription": planned_description,
+                        "plannedLearningOutcome": learning_outcome,
                         "plannedConceptKeywords": concept_keywords,
-                        "plannedLearningObjectives": section.get("learning_objectives", []),
+                        "plannedLearningObjectives": learning_objectives,
                         "plannedSourceIds": section_source_ids,
+                        "candidateSourceIds": section_source_ids,
+                        "sourceNeeds": [
+                            f"Add sources that can support learner-facing content for {concept}."
+                            for concept in (concept_keywords or [section_title])[:4]
+                        ],
+                        "contentStatus": "planned_empty",
+                        "nextWorkflow": "section_fill",
+                        "rebuildScopes": ["section_plan", "section_content"],
                         "sourceReviewRequired": True,
                     }
                 },
-                "content": [*_build_instructional_blocks(section_title, prompt), *concept_blocks],
+                "content": [],
                 "citations": [],
             }
         )
 
-    if best_effort_sections:
-        return best_effort_sections
+    if planned_sections:
+        return planned_sections
 
+    section_id = f"{module_id or 'module'}-source-gap"
+    section_title = f"Introduction to {module_title}"
+    planned_description = f"Planning reference for section fill: introduce the main ideas in {module_title} and connect them to {course_title}."
+    learning_outcome = f"Explain the main ideas in {module_title} and identify which source evidence is still needed."
     return [
         {
-            "id": f"{str(module.get('id') or 'module')}-source-gap",
-            "title": f"Introduction to {str(module.get('title') or 'the topic')}",
+            "id": section_id,
+            "title": section_title,
             "sectionType": "lesson",
             "pageType": "learn",
             "sourceIds": [],
-            "learningObjectives": ["Explain the module's main ideas and identify where source review is still needed."],
+            "description": planned_description,
+            "learningObjectives": [learning_outcome],
             "estimatedMinutes": 20,
-            "metadata": {"sourceReviewRequired": True},
-            "content": _build_instructional_blocks(str(module.get("title") or "the topic"), prompt),
+            "metadata": {
+                "generationOutline": {
+                    "contractVersion": "section-generation-outline-v1",
+                    "role": "section_plan",
+                    "planningSource": "outline_before_sources",
+                    "moduleOutlineId": module_id,
+                    "moduleOutlineTitle": module_title,
+                    "sectionOutlineId": section_id,
+                    "sectionOutlineTitle": section_title,
+                    "plannedDescription": planned_description,
+                    "plannedLearningOutcome": learning_outcome,
+                    "plannedConceptKeywords": [],
+                    "plannedLearningObjectives": [learning_outcome],
+                    "plannedSourceIds": [],
+                    "candidateSourceIds": [],
+                    "sourceNeeds": [f"Add sources that can support learner-facing content for {module_title}."],
+                    "contentStatus": "planned_empty",
+                    "nextWorkflow": "section_fill",
+                    "rebuildScopes": ["section_plan", "section_content"],
+                    "sourceReviewRequired": True,
+                }
+            },
+            "content": [],
             "citations": [],
         }
     ]
@@ -357,12 +403,14 @@ def _needs_sources_structure(
             "sourceGaps": [gap],
             "generationReadiness": generation_readiness,
             "generationPlan": {
-                "status": ["scoped", "outline_planned", "best_effort_drafted", "needs_sources"],
-                "mode": "outline_first_best_effort_draft",
+                "status": ["scoped", "outline_planned", "sections_planned", "needs_sources"],
+                "mode": "outline_first_empty_section_plan",
                 "message": str(gap.get("description") or ""),
                 "desiredModuleCount": len(structured_modules),
                 "moduleOutlines": modules,
                 "planningSource": str(outline.get("provenance", {}).get("mode") or "outline"),
+                "nextWorkflow": "section_fill",
+                "rebuildScopes": ["course_outline", "module_outline", "section_plan", "section_content"],
             },
             "courseBuildOutline": outline,
             "courseGenerationRules": [COURSE_GENERATION_RULES],
@@ -636,7 +684,7 @@ def create_needs_sources_course_snapshot(
     draft_outline = {
         "title": title,
         "shortDescription": f"A best-effort course draft covering the foundations and applications of {title}.",
-        "summary": "This course has a complete outline and preliminary lesson scaffolds that still require source review.",
+        "summary": "This course has a complete outline and empty planned sections that still require source review and content generation.",
         "modules": [],
         "provenance": {"mode": "needs_sources", "source_urls": clean_source_urls},
     }

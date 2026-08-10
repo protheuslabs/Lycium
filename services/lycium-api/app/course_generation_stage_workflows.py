@@ -797,7 +797,7 @@ def run_module_section_plan_workflow(
                 "description": str(section_plan.get("description") or ""),
                 "pageType": str(section_plan.get("pageType") or "learn"),
                 "sectionType": str(section_plan.get("sectionType") or "lesson"),
-                "sourceIds": _strings(section_plan.get("sourceIds")),
+                "sourceIds": [],
                 "content": [],
             },
             module_outline=module_outline,
@@ -814,6 +814,34 @@ def run_module_section_plan_workflow(
         )
         for index, section_plan in enumerate(section_plans, start=1)
     ]
+    for planned_section, section_plan in zip(planned_sections, section_plans):
+        metadata = planned_section.get("metadata") if isinstance(planned_section.get("metadata"), dict) else {}
+        generation_outline = (
+            metadata.get("generationOutline")
+            if isinstance(metadata.get("generationOutline"), dict)
+            else {}
+        )
+        planned_source_ids = _strings(section_plan.get("sourceIds"))
+        source_needs = [
+            f"Add or confirm sources that support learner-facing content for {concept}."
+            for concept in _strings(section_plan.get("conceptKeywords"))[:6]
+        ]
+        generation_outline.update(
+            {
+                "plannedLearningOutcome": (
+                    _strings(section_plan.get("learningObjectives"))[0]
+                    if _strings(section_plan.get("learningObjectives"))
+                    else ""
+                ),
+                "candidateSourceIds": planned_source_ids,
+                "sourceNeeds": source_needs,
+                "contentStatus": "planned_empty",
+                "nextWorkflow": "section_fill",
+                "rebuildScopes": ["section_plan", "section_content"],
+            }
+        )
+        metadata["generationOutline"] = generation_outline
+        planned_section["metadata"] = metadata
     planned_module = {
         **module_outline,
         "sections": planned_sections,

@@ -766,11 +766,14 @@ def test_module_section_plan_workflow_extracts_lesson_plans() -> None:
     assert result["artifacts"]["plannedModule"]["sections"] == result["artifacts"]["plannedSections"]
     assert result["artifacts"]["plannedCourse"]["modules"][0] == result["artifacts"]["plannedModule"]
     assert result["artifacts"]["plannedSections"][0]["content"] == []
+    assert result["artifacts"]["plannedSections"][0]["sourceIds"] == []
     assert result["artifacts"]["plannedSections"][0]["description"] == result["artifacts"]["sectionPlans"][0]["description"]
     assert (
         result["artifacts"]["plannedSections"][0]["metadata"]["generationOutline"]["plannedDescription"]
         == result["artifacts"]["sectionPlans"][0]["description"]
     )
+    assert result["artifacts"]["plannedSections"][0]["metadata"]["generationOutline"]["candidateSourceIds"] == ["source-motion"]
+    assert result["artifacts"]["plannedSections"][0]["metadata"]["generationOutline"]["contentStatus"] == "planned_empty"
 
 
 def test_module_section_plan_workflow_expands_module_only_outline_without_content() -> None:

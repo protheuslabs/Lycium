@@ -5,7 +5,9 @@ from copy import deepcopy
 import pytest
 
 from app import db
+from app.active_course_content_fill import fill_active_course_content
 from app.active_course_generation import generate_active_course_batch
+from app.course_generation_stage_workflows import run_module_section_plan_workflow
 from app.course_quality import assess_course_quality
 from app.models import CourseSnapshot
 
@@ -253,12 +255,152 @@ def _outline_snapshot() -> CourseSnapshot:
     )
 
 
+def _planned_outline_snapshot() -> CourseSnapshot:
+    snapshot = _outline_snapshot()
+    outline = _course_build_outline()
+    planned_modules = [
+        run_module_section_plan_workflow(module_outline, module_number=index)["artifacts"]["plannedModule"]
+        for index, module_outline in enumerate(outline["modules"], start=1)
+    ]
+    snapshot.structure = {
+        **snapshot.structure,
+        "sourceRecords": [
+            {
+                "id": "packet-source-1",
+                "type": "web",
+                "title": "Statistics source",
+                "url": "https://example.edu/statistics",
+            },
+            {
+                "id": "packet-source-2",
+                "type": "web",
+                "title": "Python source",
+                "url": "https://example.edu/python",
+            },
+        ],
+        "sourceIds": ["packet-source-1", "packet-source-2"],
+        "modules": planned_modules,
+    }
+    return snapshot
+
+
 def _persist(snapshot: CourseSnapshot) -> CourseSnapshot:
     with db.SessionLocal() as session:
         session.add(snapshot)
         session.commit()
         session.refresh(snapshot)
         return snapshot
+
+
+def _lesson_sections(module: dict) -> list[dict]:
+    return [
+        section
+        for section in module["sections"]
+        if section.get("pageType") == "learn" and section.get("sectionType") == "lesson"
+    ]
+
+
+def test_active_content_fill_orchestrator_fills_one_planned_section_at_a_time() -> None:
+    snapshot = _planned_outline_snapshot()
+
+    fill_active_course_content(
+        snapshot,
+        scope="course",
+        max_sections=1,
+        include_module_artifacts=False,
+    )
+
+    sections = [section for module in snapshot.structure["modules"] for section in _lesson_sections(module)]
+    filled_sections = [section for section in sections if section["content"]]
+    report = snapshot.structure["metadata"]["activeContentFill"]
+
+    assert len(filled_sections) == 1
+    assert filled_sections[0]["metadata"]["generationOutline"]["contentStatus"] == "filled"
+    assert filled_sections[0]["metadata"]["generationOutline"]["nextWorkflow"] == "module_apply_summary"
+    assert report["contractVersion"] == "active-course-content-fill-orchestrator-v1"
+    assert report["status"] == "partially_filled"
+    assert report["metrics"]["filledSectionCount"] == 1
+    assert report["metrics"]["remainingPlannedSectionCount"] == 5
+    assert snapshot.generation_trace["activeContentFill"]["filledSectionIds"] == [filled_sections[0]["id"]]
+
+
+def test_active_content_fill_orchestrator_fills_module_and_adds_apply_summary() -> None:
+    snapshot = _planned_outline_snapshot()
+
+    fill_active_course_content(snapshot, scope="module", module_id="outline-m1")
+
+    module = snapshot.structure["modules"][0]
+    lesson_sections = _lesson_sections(module)
+    report = snapshot.structure["metadata"]["activeContentFill"]
+    task = snapshot.structure["metadata"]["courseBuildTask"]
+
+    assert all(section["content"] for section in lesson_sections)
+    assert all("description" not in section for section in lesson_sections)
+    assert any(section.get("pageType") == "apply" for section in module["sections"])
+    assert module["sections"][-1]["sectionType"] == "summary"
+    assert report["status"] == "partially_filled"
+    assert report["metrics"]["filledSectionCount"] == 2
+    assert report["metrics"]["moduleArtifactReportCount"] == 3
+    assert {stage["stage"] for stage in report["moduleWorkflows"]} == {
+        "module_apply_section_generation",
+        "module_summary_section_generation",
+        "module_assembly",
+    }
+    assert task["nextAction"] == "generate_course_sections"
+
+
+def test_active_content_fill_orchestrator_retries_one_section_without_replacing_neighbors() -> None:
+    snapshot = _planned_outline_snapshot()
+    fill_active_course_content(
+        snapshot,
+        scope="module",
+        module_id="outline-m1",
+        include_module_artifacts=False,
+    )
+    module = snapshot.structure["modules"][0]
+    untouched_neighbor = deepcopy(module["sections"][1])
+    module["sections"][0]["content"] = [{"type": "text", "value": "thin retry target"}]
+
+    fill_active_course_content(
+        snapshot,
+        scope="section",
+        module_id="outline-m1",
+        section_id="outline-m1-s1",
+        retry_filled=True,
+        include_module_artifacts=False,
+    )
+
+    module = snapshot.structure["modules"][0]
+    first_section_text = " ".join(str(block.get("value") or "") for block in module["sections"][0]["content"])
+
+    assert "thin retry target" not in first_section_text
+    assert module["sections"][1] == untouched_neighbor
+    assert snapshot.structure["metadata"]["activeContentFill"]["filledSectionIds"] == ["outline-m1-s1"]
+
+
+def test_active_content_fill_endpoint_runs_scoped_course_fill(client) -> None:
+    snapshot = _persist(_planned_outline_snapshot())
+
+    response = client.post(
+        f"/v1/courses/{snapshot.id}/active-generation/fill-content",
+        json={"scope": "course", "max_sections": 1, "include_module_artifacts": False},
+    )
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    sections = [
+        section
+        for module in body["structure"]["modules"]
+        for section in _lesson_sections(module)
+    ]
+    filled_sections = [section for section in sections if section["content"]]
+    report = body["structure"]["metadata"]["activeContentFill"]
+
+    assert len(filled_sections) == 1
+    assert body["status"] == "needs_sources"
+    assert report["scope"] == "course"
+    assert report["metrics"]["filledSectionCount"] == 1
+    assert report["metrics"]["remainingPlannedSectionCount"] == 5
 
 
 def test_active_generation_advances_fallback_batches_and_preserves_source_ids() -> None:

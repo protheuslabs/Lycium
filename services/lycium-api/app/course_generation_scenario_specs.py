@@ -115,7 +115,7 @@ COURSE_SCENARIOS: dict[str, dict[str, Any]] = {
         "expectedStatus": "needs_sources",
         "minSourceGaps": 1,
         "minOutlineModules": 4,
-        "minBestEffortLessonSections": 8,
+        "minPlannedLessonSections": 8,
         "minSuggestedQueries": 2,
         "minSourceTypeHints": 3,
         "maxSourceRecords": 2,

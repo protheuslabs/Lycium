@@ -194,6 +194,30 @@ def _source_gap_metrics(course: dict[str, Any]) -> dict[str, Any]:
         for block in _items(section.get("content"))
         if block.get("type") == "text" and _text(block.get("value")).strip()
     }
+    planned_empty_sections = []
+    handoff_sections = []
+    content_bearing_lesson_sections = []
+    for section in lesson_sections:
+        content = section.get("content")
+        if _items(content):
+            content_bearing_lesson_sections.append(section)
+        section_metadata = section.get("metadata") if isinstance(section.get("metadata"), dict) else {}
+        generation_outline = (
+            section_metadata.get("generationOutline")
+            if isinstance(section_metadata.get("generationOutline"), dict)
+            else {}
+        )
+        if content == [] and generation_outline.get("contentStatus") == "planned_empty":
+            planned_empty_sections.append(section)
+        if (
+            generation_outline.get("plannedDescription")
+            and (
+                generation_outline.get("plannedLearningOutcome")
+                or _has_items(generation_outline.get("plannedLearningObjectives"))
+            )
+            and _has_items(generation_outline.get("sourceNeeds"))
+        ):
+            handoff_sections.append(section)
     source_records = course.get("sourceRecords")
     source_record_count = len(source_records) if isinstance(source_records, list) else len(source_records or {}) if isinstance(source_records, dict) else 0
     return {
@@ -208,6 +232,9 @@ def _source_gap_metrics(course: dict[str, Any]) -> dict[str, Any]:
         "generationPlanMode": generation_plan.get("mode"),
         "moduleCount": len(modules),
         "bestEffortLessonSectionCount": len(lesson_sections),
+        "plannedEmptySectionCount": len(planned_empty_sections),
+        "handoffMetadataSectionCount": len(handoff_sections),
+        "contentBearingLessonSectionCount": len(content_bearing_lesson_sections),
         "distinctLessonBodyCount": len(lesson_bodies),
         "placeholderSectionCount": len(placeholder_sections),
         "sourceRecordCount": source_record_count,
@@ -218,6 +245,7 @@ def _evaluate_needs_sources_scenario(course: dict[str, Any], scenario_id: str, s
     metrics = _source_gap_metrics(course)
     text_blob = _course_metrics(course)["textBlob"]
     expected_status = spec.get("expectedStatus", "needs_sources")
+    min_planned_sections = int(spec.get("minPlannedLessonSections") or spec.get("minBestEffortLessonSections") or 0)
     checks = [
         _check(
             key="source_gap_lifecycle",
@@ -252,21 +280,23 @@ def _evaluate_needs_sources_scenario(course: dict[str, Any], scenario_id: str, s
             metrics={key: metrics[key] for key in ("blockingSourceGapCount", "suggestedQueryCount", "sourceTypeHintCount", "currentSourceCount", "minimumSourceCount")},
         ),
         _check(
-            key="best_effort_outline",
-            label="Best-effort outline and lesson scaffolds",
+            key="planned_empty_outline",
+            label="Outline with planned empty section handoffs",
             score=(
-                0.3 * (metrics["moduleCount"] >= int(spec["minOutlineModules"]))
-                + 0.3 * (metrics["bestEffortLessonSectionCount"] >= int(spec["minBestEffortLessonSections"]))
-                + 0.25 * (metrics["distinctLessonBodyCount"] >= int(spec["minBestEffortLessonSections"]))
+                0.25 * (metrics["moduleCount"] >= int(spec["minOutlineModules"]))
+                + 0.25 * (metrics["plannedEmptySectionCount"] >= min_planned_sections)
+                + 0.25 * (metrics["handoffMetadataSectionCount"] >= min_planned_sections)
                 + 0.15 * (metrics["placeholderSectionCount"] == 0)
+                + 0.10 * (metrics["contentBearingLessonSectionCount"] == 0)
             ),
             findings=[
                 *([] if metrics["moduleCount"] >= int(spec["minOutlineModules"]) else [_finding("error", "Under-sourced prompts should still produce a coherent module outline.", "modules")]),
-                *([] if metrics["bestEffortLessonSectionCount"] >= int(spec["minBestEffortLessonSections"]) else [_finding("error", "Under-sourced drafts should include best-effort lesson sections.")]),
-                *([] if metrics["distinctLessonBodyCount"] >= int(spec["minBestEffortLessonSections"]) else [_finding("error", "Best-effort lessons should have distinct section-specific content.")]),
+                *([] if metrics["plannedEmptySectionCount"] >= min_planned_sections else [_finding("error", "Under-sourced drafts should include planned empty lesson sections.")]),
+                *([] if metrics["handoffMetadataSectionCount"] >= min_planned_sections else [_finding("error", "Planned lesson sections should include hidden descriptions, outcomes, source needs, and rebuild handoff metadata.")]),
                 *([] if metrics["placeholderSectionCount"] == 0 else [_finding("error", "Under-sourced drafts should not repeat source-gap placeholders as lesson content.")]),
+                *([] if metrics["contentBearingLessonSectionCount"] == 0 else [_finding("error", "Under-sourced section planning should not write learner-facing lesson content before section fill.")]),
             ],
-            metrics={key: metrics[key] for key in ("moduleCount", "bestEffortLessonSectionCount", "distinctLessonBodyCount", "placeholderSectionCount", "generationPlanMode")},
+            metrics={key: metrics[key] for key in ("moduleCount", "plannedEmptySectionCount", "handoffMetadataSectionCount", "contentBearingLessonSectionCount", "placeholderSectionCount", "generationPlanMode")},
         ),
         _specificity_check(text_blob),
     ]

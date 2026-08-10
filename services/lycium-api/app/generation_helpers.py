@@ -20,8 +20,8 @@ COURSE_GENERATION_RULES = (
     "Do not use interpretive prose categories as concept cards. Quiz blocks may include maxAttempts "
     "and timeLimitSeconds; omitted or blank values mean unlimited. showAnswers defaults to false, "
     "but answers are shown after submission on the final allowed attempt. If source coverage is below "
-    "the course source policy, still generate a coherent module and section outline plus distinct best-effort "
-    "lesson scaffolds. Mark the draft needs_sources with metadata.sourceGaps, and reserve source readiness as "
+    "the course source policy, still generate a coherent module and section outline plus empty planned section "
+    "shells with handoff metadata for section fill. Mark the draft needs_sources with metadata.sourceGaps, and reserve source readiness as "
     "a review and publication gate rather than an outline or course-access gate. Source IDs and citations must be scoped to the concepts actually "
     "taught or assessed in that section; do not blanket-cite the full course source list on every page."
 )

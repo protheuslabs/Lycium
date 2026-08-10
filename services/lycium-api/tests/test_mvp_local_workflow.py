@@ -59,7 +59,7 @@ def test_local_source_gap_resume_publish_progress_workflow(client, monkeypatch) 
     assert initial_job["status"] == "ready"
     assert initial_job["current_stage"] == "source_coverage"
     assert initial_job["course_snapshot"]["status"] == "needs_sources"
-    assert initial_job["course"]["metadata"]["generationPlan"]["mode"] == "outline_first_best_effort_draft"
+    assert initial_job["course"]["metadata"]["generationPlan"]["mode"] == "outline_first_empty_section_plan"
     assert initial_job["course"]["metadata"]["sourceGaps"][0]["currentSourceCount"] == 1
 
     still_blocked = client.post(

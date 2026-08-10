@@ -114,6 +114,15 @@ class ActiveCourseGenerationBatchRequest(BaseModel):
     source_packet: dict[str, Any] | None = None
 
 
+class ActiveCourseContentFillRequest(BaseModel):
+    scope: Literal["course", "module", "section"] = "course"
+    module_id: str | None = None
+    section_id: str | None = None
+    max_sections: int | None = Field(default=None, ge=1, le=100)
+    retry_filled: bool = False
+    include_module_artifacts: bool = True
+
+
 class GenerateCourseFromOutlineRequest(BaseModel):
     learner_id: int | None = None
     source_policy: Literal["balanced", "high-trust", "free-only"] = "balanced"

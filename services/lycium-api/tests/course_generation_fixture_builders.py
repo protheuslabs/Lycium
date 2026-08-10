@@ -345,25 +345,40 @@ def under_sourced_course_draft_from_scenario() -> dict[str, Any]:
         sections = []
         for section_index, section_focus in enumerate(("Explanation", "Guided Practice"), start=1):
             section_title = f"{focus}: {section_focus}"
+            planned_description = f"Planning reference for section fill: teach {section_title.lower()} once stronger sources are available."
+            planned_outcome = f"Explain {section_title.lower()} and connect it to the course outcome."
             sections.append(
                 {
                     "id": f"best-effort-m{module_index:02d}-s{section_index:02d}",
                     "title": section_title,
                     "sectionType": "lesson",
                     "pageType": "learn",
-                    "content": [
-                        {
-                            "type": "text",
-                            "heading": "Explanation",
-                            "value": f"This preliminary lesson develops {section_title.lower()} through a focused explanation, example, and practice decision that still requires source review.",
-                        },
-                        {"type": "heading", "title": "Concepts introduced"},
-                        {
-                            "type": "conceptCard",
-                            "title": focus,
-                            "description": f"A working concept for the {focus.lower()} portion of the course.",
-                        },
-                    ],
+                    "description": planned_description,
+                    "learningObjectives": [planned_outcome],
+                    "sourceIds": [],
+                    "metadata": {
+                        "generationOutline": {
+                            "contractVersion": "section-generation-outline-v1",
+                            "role": "section_plan",
+                            "planningSource": "outline_before_sources",
+                            "moduleOutlineId": f"best-effort-m{module_index:02d}",
+                            "moduleOutlineTitle": f"Module {module_index}: {focus}",
+                            "sectionOutlineId": f"best-effort-m{module_index:02d}-s{section_index:02d}",
+                            "sectionOutlineTitle": section_title,
+                            "plannedDescription": planned_description,
+                            "plannedLearningOutcome": planned_outcome,
+                            "plannedConceptKeywords": [focus.lower(), section_focus.lower()],
+                            "plannedLearningObjectives": [planned_outcome],
+                            "plannedSourceIds": [],
+                            "candidateSourceIds": [],
+                            "sourceNeeds": [f"Add sources that support {section_title.lower()}."],
+                            "contentStatus": "planned_empty",
+                            "nextWorkflow": "section_fill",
+                            "rebuildScopes": ["section_plan", "section_content"],
+                            "sourceReviewRequired": True,
+                        }
+                    },
+                    "content": [],
                 }
             )
         modules.append(
@@ -375,7 +390,7 @@ def under_sourced_course_draft_from_scenario() -> dict[str, Any]:
         )
     return {
         "title": spec["label"],
-        "shortDescription": "A best-effort course draft with preliminary content awaiting source review.",
+        "shortDescription": "A best-effort course draft with planned empty sections awaiting source review and section fill.",
         "status": "needs_sources",
         "difficultyLevel": "undergrad",
         "category": "computing-information-sciences",
@@ -402,9 +417,9 @@ def under_sourced_course_draft_from_scenario() -> dict[str, Any]:
                 }
             ],
             "generationPlan": {
-                "status": ["scoped", "needs_sources"],
-                "mode": "outline_first_best_effort_draft",
-                "message": "Review and strengthen the preliminary content with relevant sources.",
+                "status": ["scoped", "outline_planned", "sections_planned", "needs_sources"],
+                "mode": "outline_first_empty_section_plan",
+                "message": "Review and strengthen the planned course structure with relevant sources before section fill.",
             },
         },
         "modules": modules,
