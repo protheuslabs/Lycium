@@ -49,6 +49,22 @@ def _with_generation_outline_metadata(
         ),
         "plannedSourceIds": list(source_ids),
     }
+    assigned_coverage_item_ids = _string_list(
+        section_outline.get("assignedCoverageItemIds") or section_outline.get("coverageItemIds")
+    )
+    coverage_item_id = str(
+        section_outline.get("coverageItemId")
+        or (assigned_coverage_item_ids[0] if assigned_coverage_item_ids else "")
+    ).strip()
+    if coverage_item_id and coverage_item_id not in assigned_coverage_item_ids:
+        assigned_coverage_item_ids = [coverage_item_id, *assigned_coverage_item_ids]
+    coverage_must_teach = _string_list(section_outline.get("coverageMustTeach"))
+    if assigned_coverage_item_ids:
+        generation_outline["assignedCoverageItemIds"] = assigned_coverage_item_ids
+    if coverage_item_id:
+        generation_outline["coverageItemId"] = coverage_item_id
+    if coverage_must_teach:
+        generation_outline["coverageMustTeach"] = coverage_must_teach
     return {
         **section,
         "metadata": {

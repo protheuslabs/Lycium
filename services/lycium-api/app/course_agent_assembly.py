@@ -251,6 +251,8 @@ def _module_lesson_outlines(module_outline: dict) -> list[dict[str, Any]]:
     module_title = str(module_outline.get("title") or "Module").strip()
     module_source_ids = _source_ids_from_outline(module_outline, _strings(module_outline.get("sourceIds")))
     concepts = _outline_concepts(module_outline) or [module_title]
+    coverage_item_ids = _strings(module_outline.get("assignedCoverageItemIds") or module_outline.get("coverageItemIds"))
+    coverage_must_teach = _strings(module_outline.get("coverageMustTeach") or module_outline.get("mustTeach"))
     lesson_titles = _module_lesson_titles(module_outline)
     generated_outlines: list[dict[str, Any]] = []
     for index in range(1, _target_section_count(module_outline) + 1):
@@ -279,6 +281,9 @@ def _module_lesson_outlines(module_outline: dict) -> list[dict[str, Any]]:
                 "concept_keywords": nearby_concepts,
                 "sourceIds": module_source_ids,
                 "planningSource": str(module_outline.get("planningSource") or "module_outline"),
+                "assignedCoverageItemIds": coverage_item_ids,
+                "coverageItemId": coverage_item_ids[(index - 1) % len(coverage_item_ids)] if coverage_item_ids else "",
+                "coverageMustTeach": coverage_must_teach or nearby_concepts,
             }
         )
     return generated_outlines

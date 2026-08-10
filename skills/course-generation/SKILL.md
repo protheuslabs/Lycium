@@ -34,6 +34,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - missing or uncertain courses should become course wrappers with source needs and generation prompts rather than hollow full courses
    - course-wrapper generation should emit a `course-wrapper-quality-report-v1`; wrapper rows should have source requests, active-generation plans, course-build tasks, prerequisite metadata, placeholder policy, and no modules, sections, or learner-facing content
    - course module outline generation should emit a `course-module-outline-quality-report-v1`; source-packet module outlines should validate source-packet usability, module titles, module objectives, module concept keywords, module source IDs, duplicate module titles, target section counts, and no learner-facing lesson content
+   - fallback or under-sourced course planning should create a `course-coverage-checklist-v1` required-topic inventory before module planning; module planning should assign every required coverage item to a module, and section planning should carry assigned coverage item IDs plus `coverageMustTeach` into hidden section handoff metadata before section fill
    - module section planning should be a separate workflow from module outline generation and section fill; it expands one module outline into section-plan records and adds empty section shells to the course/module structure with titles, planning-only descriptions, objectives, concept keywords, candidate source IDs in metadata, and empty `content` arrays
    - section fill should be the only active workflow that replaces planned empty section shells with learner-facing content blocks
    - section fill should preserve source IDs only for sources the generated section actually uses; do not auto-attach full planned, module, or course source lists just because they were available
@@ -74,7 +75,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - record module, unit, idea, and source planning in `metadata.generationPlan`
    - record active generation state in `metadata.activeGenerationPlan` when a course is only partially materialized or should be generated in module batches
    - record wrapper lineage in `metadata.courseWrapper` when a catalog entry was created as a program or cluster course shell
-   - preserve generated section planning evidence in `sections[].metadata.generationOutline` when content is created from source-packet, benchmark, or staged outline inputs
+   - preserve generated section planning evidence in `sections[].metadata.generationOutline` when content is created from source-packet, benchmark, coverage-checklist, or staged outline inputs
    - preserve `metadata.courseHealth` when backend review, generation, or source diagnostics have produced a course-health summary
    - record estimated learning time at the most specific reliable level available: prefer section-level `estimatedMinutes`, then course-level `estimatedMinutes` or `estimatedHours`, then requirement, cluster, and program `estimatedHours`
    - treat parent-level time estimates as authored fallbacks; when every child has an estimate, roll parent time up from children instead of manually duplicating totals

@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.course_outline_from_source_packet import build_outline_from_source_packet
+from app.course_coverage_checklists import build_outline_from_coverage_checklist
 from app.course_generation_readiness import build_generation_readiness_report
 from app.course_source_policy import SOURCE_COVERAGE_POLICY
 from app.generation_helpers import (
@@ -168,40 +169,11 @@ def _source_gap_outline(
         if isinstance(outline, dict) and isinstance(outline.get("modules"), list) and outline.get("modules"):
             return outline
 
-    modules: list[dict[str, Any]] = []
-    for module_index in range(1, max(2, min(20, desired_module_count)) + 1):
-        module_title = f"Module {module_index}: Planned topic {module_index}"
-        modules.append(
-            {
-                "id": f"source-gap-m{module_index:02d}",
-                "title": module_title,
-                "learning_objectives": [f"Establish the source-backed scope for {module_title.lower()}."],
-                "sections": [
-                    {
-                        "id": f"source-gap-m{module_index:02d}-s01",
-                        "title": f"{module_title} foundations",
-                        "learning_objectives": [f"Define what this section should teach in {title}."],
-                        "concept_keywords": [f"module_{module_index}", "foundation"],
-                        "estimated_minutes": 20,
-                    },
-                    {
-                        "id": f"source-gap-m{module_index:02d}-s02",
-                        "title": f"{module_title} applied practice",
-                        "learning_objectives": [f"Identify applied work for {module_title.lower()}."],
-                        "concept_keywords": [f"module_{module_index}", "application"],
-                        "estimated_minutes": 20,
-                    },
-                ],
-                "provenance": {"mode": "source-gap-fallback"},
-            }
-        )
-    return {
-        "title": title,
-        "shortDescription": f"A best-effort course draft covering the foundations and applications of {title}.",
-        "summary": "This course has a complete outline and empty planned sections that still require source review and content generation.",
-        "modules": modules,
-        "provenance": {"mode": "source-gap-fallback"},
-    }
+    return build_outline_from_coverage_checklist(
+        prompt=prompt or title,
+        desired_module_count=desired_module_count,
+        level=level,
+    )
 
 
 def _source_gap_sections_for_module(
@@ -221,7 +193,15 @@ def _source_gap_sections_for_module(
             continue
         section_id = str(section.get("id") or f"{module_id or 'module'}-s{section_index:02d}")
         section_title = str(section.get("title") or f"Planned section {section_index}")
-        concept_keywords = _string_list(section.get("concept_keywords") or section.get("conceptKeywords"))
+        coverage_item_ids = _string_list(section.get("assignedCoverageItemIds") or section.get("coverageItemIds"))
+        coverage_item_id = str(section.get("coverageItemId") or (coverage_item_ids[0] if coverage_item_ids else "")).strip()
+        if coverage_item_id and coverage_item_id not in coverage_item_ids:
+            coverage_item_ids = [coverage_item_id, *coverage_item_ids]
+        coverage_must_teach = _string_list(section.get("coverageMustTeach") or section.get("coverage_must_teach"))
+        concept_keywords = (
+            _string_list(section.get("concept_keywords") or section.get("conceptKeywords"))
+            or coverage_must_teach
+        )
         raw_section_source_ids = section.get("sourceIds") or section.get("source_ids") or []
         section_source_ids = [value for value in raw_section_source_ids if isinstance(value, str) and value in source_ids]
         learning_objectives = _string_list(section.get("learning_objectives") or section.get("learningObjectives"))
@@ -249,6 +229,9 @@ def _source_gap_sections_for_module(
                 "description": planned_description,
                 "learningObjectives": learning_objectives,
                 "estimatedMinutes": int(section.get("estimated_minutes") or 20),
+                "assignedCoverageItemIds": coverage_item_ids,
+                "coverageItemId": coverage_item_id,
+                "coverageMustTeach": coverage_must_teach,
                 "metadata": {
                     "generationOutline": {
                         "contractVersion": "section-generation-outline-v1",
@@ -264,6 +247,9 @@ def _source_gap_sections_for_module(
                         "plannedLearningObjectives": learning_objectives,
                         "plannedSourceIds": section_source_ids,
                         "candidateSourceIds": section_source_ids,
+                        "assignedCoverageItemIds": coverage_item_ids,
+                        "coverageItemId": coverage_item_id,
+                        "coverageMustTeach": coverage_must_teach,
                         "sourceNeeds": [
                             f"Add sources that can support learner-facing content for {concept}."
                             for concept in (concept_keywords or [section_title])[:4]
@@ -345,6 +331,8 @@ def _needs_sources_structure(
             "title": str(module.get("title") or f"Module {index}"),
             "sourceIds": source_ids,
             "learningObjectives": module.get("learning_objectives", []),
+            "assignedCoverageItemIds": _string_list(module.get("assignedCoverageItemIds")),
+            "coverageAllocationStatus": module.get("coverageAllocationStatus"),
             "sections": _source_gap_sections_for_module(module, prompt=prompt, source_ids=source_ids),
         }
         for index, module in enumerate(modules, start=1)
@@ -379,6 +367,41 @@ def _needs_sources_structure(
             }
         ]
 
+    coverage_checklist = outline.get("coverageChecklist") if isinstance(outline.get("coverageChecklist"), dict) else {}
+    coverage_report = (
+        outline.get("coverageAllocationReport")
+        if isinstance(outline.get("coverageAllocationReport"), dict)
+        else {}
+    )
+    metadata: dict[str, Any] = {
+        "prompt": prompt,
+        "pacingLabel": "Week" if any(str(module.get("title") or "").startswith("Week ") for module in modules if isinstance(module, dict)) else "Module",
+        "status": "needs_sources",
+        "version": 1,
+        "durationMinutes": expected_duration_minutes,
+        "sourceCoveragePolicy": SOURCE_COVERAGE_POLICY,
+        "sourceGaps": [gap],
+        "generationReadiness": generation_readiness,
+        "generationPlan": {
+            "status": ["scoped", "outline_planned", "sections_planned", "needs_sources"],
+            "mode": "outline_first_empty_section_plan",
+            "message": str(gap.get("description") or ""),
+            "desiredModuleCount": len(structured_modules),
+            "moduleOutlines": modules,
+            "planningSource": str(outline.get("provenance", {}).get("mode") or "outline"),
+            "coverageChecklistContract": str(coverage_checklist.get("contractVersion") or ""),
+            "coverageAllocationStatus": str(coverage_report.get("status") or ""),
+            "nextWorkflow": "section_fill",
+            "rebuildScopes": ["course_outline", "module_outline", "section_plan", "section_content"],
+        },
+        "courseBuildOutline": outline,
+        "courseGenerationRules": [COURSE_GENERATION_RULES],
+    }
+    if coverage_checklist:
+        metadata["courseCoverageChecklist"] = coverage_checklist
+    if coverage_report:
+        metadata["courseCoverageAllocationReport"] = coverage_report
+
     return {
         "title": title,
         "shortDescription": str(
@@ -393,28 +416,7 @@ def _needs_sources_structure(
         "orderMandatory": False,
         "sourceIds": source_ids,
         "sourceRecords": source_records,
-        "metadata": {
-            "prompt": prompt,
-            "pacingLabel": "Week" if any(str(module.get("title") or "").startswith("Week ") for module in modules if isinstance(module, dict)) else "Module",
-            "status": "needs_sources",
-            "version": 1,
-            "durationMinutes": expected_duration_minutes,
-            "sourceCoveragePolicy": SOURCE_COVERAGE_POLICY,
-            "sourceGaps": [gap],
-            "generationReadiness": generation_readiness,
-            "generationPlan": {
-                "status": ["scoped", "outline_planned", "sections_planned", "needs_sources"],
-                "mode": "outline_first_empty_section_plan",
-                "message": str(gap.get("description") or ""),
-                "desiredModuleCount": len(structured_modules),
-                "moduleOutlines": modules,
-                "planningSource": str(outline.get("provenance", {}).get("mode") or "outline"),
-                "nextWorkflow": "section_fill",
-                "rebuildScopes": ["course_outline", "module_outline", "section_plan", "section_content"],
-            },
-            "courseBuildOutline": outline,
-            "courseGenerationRules": [COURSE_GENERATION_RULES],
-        },
+        "metadata": metadata,
         "modules": structured_modules,
     }
 

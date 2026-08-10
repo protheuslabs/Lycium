@@ -86,6 +86,20 @@ def _section_plan_from_planned_section(section: dict[str, Any], module: dict[str
     candidate_source_ids = _strings(outline.get("candidateSourceIds"))
     section_source_ids = _strings(section.get("sourceIds"))
     module_source_ids = _strings(module.get("sourceIds"))
+    coverage_item_ids = _unique_strings(
+        _strings(outline.get("assignedCoverageItemIds") or outline.get("coverageItemIds"))
+        or _strings(section.get("assignedCoverageItemIds") or section.get("coverageItemIds"))
+    )
+    coverage_item_id = str(
+        outline.get("coverageItemId")
+        or section.get("coverageItemId")
+        or (coverage_item_ids[0] if coverage_item_ids else "")
+    ).strip()
+    if coverage_item_id and coverage_item_id not in coverage_item_ids:
+        coverage_item_ids = [coverage_item_id, *coverage_item_ids]
+    coverage_must_teach = _unique_strings(
+        _strings(outline.get("coverageMustTeach")) or _strings(section.get("coverageMustTeach"))
+    )
     planned_learning_objectives = _strings(outline.get("plannedLearningObjectives"))
     planned_learning_outcome = str(outline.get("plannedLearningOutcome") or "").strip()
     if planned_learning_outcome and planned_learning_outcome not in planned_learning_objectives:
@@ -100,9 +114,12 @@ def _section_plan_from_planned_section(section: dict[str, Any], module: dict[str
         "pageType": str(section.get("pageType") or "learn"),
         "sectionType": str(section.get("sectionType") or "lesson"),
         "sourceIds": _unique_strings(planned_source_ids or candidate_source_ids or section_source_ids or module_source_ids),
-        "conceptKeywords": _strings(outline.get("plannedConceptKeywords")) or [str(section.get("title") or "Lesson")],
+        "conceptKeywords": coverage_must_teach or _strings(outline.get("plannedConceptKeywords")) or [str(section.get("title") or "Lesson")],
         "learningObjectives": planned_learning_objectives or [f"Explain {section.get('title') or 'the section'} in context."],
         "planningSource": str(outline.get("planningSource") or module.get("planningSource") or "active_content_fill_orchestrator"),
+        "assignedCoverageItemIds": coverage_item_ids,
+        "coverageItemId": coverage_item_id,
+        "coverageMustTeach": coverage_must_teach,
     }
 
 

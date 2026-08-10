@@ -752,6 +752,18 @@ def run_module_section_plan_workflow(
     for index, lesson_outline in enumerate(lesson_outlines, start=1):
         title = str(lesson_outline.get("title") or f"Lesson {index}")
         source_ids = _source_ids_from_outline(lesson_outline, module_source_ids)
+        coverage_item_ids = _strings(lesson_outline.get("assignedCoverageItemIds") or lesson_outline.get("coverageItemIds"))
+        coverage_item_id = str(
+            lesson_outline.get("coverageItemId")
+            or (coverage_item_ids[0] if coverage_item_ids else "")
+        ).strip()
+        if coverage_item_id and coverage_item_id not in coverage_item_ids:
+            coverage_item_ids = [coverage_item_id, *coverage_item_ids]
+        coverage_must_teach = _strings(lesson_outline.get("coverageMustTeach"))
+        concept_keywords = (
+            _strings(lesson_outline.get("concept_keywords") or lesson_outline.get("conceptKeywords"))
+            or coverage_must_teach
+        )
         description = str(
             lesson_outline.get("description")
             or f"Planning reference for content generation: fill {title} as a source-backed section."
@@ -766,9 +778,12 @@ def run_module_section_plan_workflow(
                 "pageType": "learn",
                 "sectionType": "lesson",
                 "sourceIds": source_ids,
-                "conceptKeywords": _strings(lesson_outline.get("concept_keywords") or lesson_outline.get("conceptKeywords")),
+                "conceptKeywords": concept_keywords,
                 "learningObjectives": _strings(lesson_outline.get("learning_objectives") or lesson_outline.get("learningObjectives")),
                 "planningSource": str(lesson_outline.get("planningSource") or module_outline.get("planningSource") or "module_outline"),
+                "assignedCoverageItemIds": coverage_item_ids,
+                "coverageItemId": coverage_item_id,
+                "coverageMustTeach": coverage_must_teach,
             }
         )
     issues: list[dict[str, Any]] = []
@@ -799,6 +814,9 @@ def run_module_section_plan_workflow(
                 "sectionType": str(section_plan.get("sectionType") or "lesson"),
                 "sourceIds": [],
                 "content": [],
+                "assignedCoverageItemIds": _strings(section_plan.get("assignedCoverageItemIds")),
+                "coverageItemId": str(section_plan.get("coverageItemId") or ""),
+                "coverageMustTeach": _strings(section_plan.get("coverageMustTeach")),
             },
             module_outline=module_outline,
             section_outline={
@@ -808,6 +826,9 @@ def run_module_section_plan_workflow(
                 "conceptKeywords": section_plan.get("conceptKeywords"),
                 "learningObjectives": section_plan.get("learningObjectives"),
                 "planningSource": section_plan.get("planningSource"),
+                "assignedCoverageItemIds": section_plan.get("assignedCoverageItemIds"),
+                "coverageItemId": section_plan.get("coverageItemId"),
+                "coverageMustTeach": section_plan.get("coverageMustTeach"),
             },
             source_ids=_strings(section_plan.get("sourceIds")),
             role=str(section_plan.get("role") or "lesson"),
@@ -834,6 +855,9 @@ def run_module_section_plan_workflow(
                     else ""
                 ),
                 "candidateSourceIds": planned_source_ids,
+                "assignedCoverageItemIds": _strings(section_plan.get("assignedCoverageItemIds")),
+                "coverageItemId": str(section_plan.get("coverageItemId") or ""),
+                "coverageMustTeach": _strings(section_plan.get("coverageMustTeach")),
                 "sourceNeeds": source_needs,
                 "contentStatus": "planned_empty",
                 "nextWorkflow": "section_fill",
@@ -926,6 +950,168 @@ def _strip_source_id_refs(value: Any) -> Any:
     return value
 
 
+CHEMISTRY_CONCEPT_DEFINITIONS = {
+    "scientific method": "The scientific method turns observations into testable questions, controlled experiments, evidence, and revised explanations.",
+    "hypothesis": "A hypothesis is a testable explanation that predicts what should happen under defined conditions.",
+    "si units": "SI units give chemistry a common measurement language, with base units such as meter, kilogram, second, kelvin, and mole.",
+    "unit conversion": "Unit conversion rewrites the same quantity with conversion factors so units cancel and the remaining unit answers the question.",
+    "dimensional analysis": "Dimensional analysis uses unit cancellation to plan and check calculations before numbers are trusted.",
+    "significant figures": "Significant figures communicate the precision supported by a measurement and limit how many digits should appear in calculated results.",
+    "matter": "Matter is anything with mass that occupies volume; chemistry tracks how matter is classified, measured, and transformed.",
+    "element": "An element is a pure substance whose atoms have the same number of protons.",
+    "compound": "A compound contains atoms of different elements in fixed chemical ratios.",
+    "atom": "An atom is the smallest unit of an element that keeps that element's chemical identity.",
+    "proton": "A proton is a positively charged particle in the nucleus; the proton count defines the element.",
+    "neutron": "A neutron is an uncharged nuclear particle that changes isotope mass without changing element identity.",
+    "electron": "An electron is a negatively charged particle whose arrangement controls bonding and reactivity.",
+    "isotope": "Isotopes are atoms of the same element with different neutron counts and therefore different masses.",
+    "ion": "An ion is an atom or group of atoms with a net charge because electrons were gained or lost.",
+    "periodic table": "The periodic table arranges elements by atomic number and recurring chemical properties.",
+    "electron configuration": "Electron configuration describes how electrons occupy energy levels and orbitals.",
+    "valence electron": "Valence electrons are outer-shell electrons that participate most directly in bonding.",
+    "atomic radius": "Atomic radius measures the size of an atom and changes predictably across periods and down groups.",
+    "ionization energy": "Ionization energy is the energy required to remove an electron from a gaseous atom or ion.",
+    "electronegativity": "Electronegativity measures how strongly an atom attracts shared electrons in a bond.",
+    "chemical formula": "A chemical formula uses element symbols and subscripts to show the composition of a substance.",
+    "ionic compound": "An ionic compound forms from cations and anions arranged so total positive and negative charge balances.",
+    "charge balance": "Charge balance means the total positive charge and total negative charge in an ionic formula sum to zero.",
+    "polyatomic ion": "A polyatomic ion is a bonded group of atoms that carries an overall charge.",
+    "nomenclature": "Nomenclature is the rule system for naming compounds from formulas and writing formulas from names.",
+    "molar mass": "Molar mass is the mass in grams of one mole of a substance, calculated from atomic masses in the formula.",
+    "mole": "The mole is a counting unit equal to Avogadro's number of particles.",
+    "ionic bond": "An ionic bond is the electrostatic attraction between oppositely charged ions.",
+    "covalent bond": "A covalent bond forms when atoms share electron pairs.",
+    "lewis structure": "A Lewis structure represents valence electrons as dots and bonding pairs as lines.",
+    "formal charge": "Formal charge estimates how electron ownership in a Lewis structure compares with a neutral atom.",
+    "resonance": "Resonance describes multiple valid Lewis structures that together represent delocalized electrons.",
+    "vsepr": "VSEPR predicts molecular shape by arranging electron groups as far apart as possible around a central atom.",
+    "molecular geometry": "Molecular geometry names the three-dimensional arrangement of atoms in a molecule.",
+    "polarity": "Polarity describes an uneven distribution of electron density that creates partial positive and negative regions.",
+    "hybridization": "Hybridization describes how atomic orbitals combine into directional bonding orbitals such as sp, sp2, and sp3.",
+    "intermolecular force": "Intermolecular forces are attractions between particles that influence boiling point, melting point, solubility, and phase behavior.",
+    "dispersion force": "Dispersion forces come from temporary electron-density fluctuations and exist between all particles.",
+    "dipole-dipole force": "Dipole-dipole forces attract the positive end of one polar molecule to the negative end of another.",
+    "hydrogen bonding": "Hydrogen bonding is a strong dipole interaction involving H bonded to N, O, or F and a nearby lone pair.",
+    "phase change": "A phase change converts matter between solid, liquid, and gas without changing chemical identity.",
+    "chemical equation": "A chemical equation uses formulas to show reactants, products, and their stoichiometric ratios.",
+    "reactant": "A reactant is a starting substance consumed or transformed during a chemical reaction.",
+    "product": "A product is a substance formed by a chemical reaction.",
+    "law of conservation of mass": "The law of conservation of mass requires atoms to be conserved, so equations must be balanced.",
+    "balancing equations": "Balancing equations changes coefficients so each element has the same atom count on both sides.",
+    "net ionic equation": "A net ionic equation removes spectator ions and shows only the species that chemically change.",
+    "precipitation": "A precipitation reaction forms an insoluble solid from dissolved ions.",
+    "acid-base reaction": "An acid-base reaction transfers protons or neutralizes acid and base into products such as water and salt.",
+    "redox reaction": "A redox reaction transfers electrons, coupling oxidation with reduction.",
+    "avogadro's number": "Avogadro's number, 6.022 x 10^23, links particle counts to moles.",
+    "mole ratio": "A mole ratio comes from balanced-equation coefficients and converts moles of one substance to moles of another.",
+    "stoichiometry": "Stoichiometry uses balanced equations and mole ratios to calculate reactants, products, and yields.",
+    "limiting reactant": "The limiting reactant is used up first and sets the maximum amount of product possible.",
+    "theoretical yield": "Theoretical yield is the maximum product predicted by stoichiometry if the reaction goes to completion.",
+    "percent yield": "Percent yield compares actual yield with theoretical yield as a percentage.",
+    "solution": "A solution is a homogeneous mixture in which solute particles are evenly dispersed in a solvent.",
+    "solute": "The solute is the dissolved component of a solution.",
+    "solvent": "The solvent is the component that dissolves the solute and is usually present in greater amount.",
+    "molarity": "Molarity is moles of solute per liter of solution.",
+    "dilution": "Dilution lowers concentration by adding solvent while keeping solute amount constant.",
+    "electrolyte": "An electrolyte produces mobile ions in solution and can conduct electricity.",
+    "titration": "A titration uses a measured reaction with known concentration to determine an unknown concentration.",
+    "equivalence point": "The equivalence point is where stoichiometric amounts of titrant and analyte have reacted.",
+    "pressure": "Pressure is force per unit area from particle collisions with container walls.",
+    "boyle's law": "Boyle's law states that gas pressure and volume are inversely related at constant temperature and amount.",
+    "charles's law": "Charles's law states that gas volume is directly proportional to kelvin temperature at constant pressure and amount.",
+    "ideal gas law": "The ideal gas law, PV = nRT, relates pressure, volume, moles, and kelvin temperature.",
+    "partial pressure": "Partial pressure is the pressure a gas in a mixture would exert by itself at the same volume and temperature.",
+    "gas stoichiometry": "Gas stoichiometry combines balanced equations with gas-law relationships to calculate reacting gases.",
+    "heat": "Heat is energy transferred because of a temperature difference.",
+    "temperature": "Temperature measures average particle kinetic energy.",
+    "specific heat": "Specific heat is the energy needed to raise one gram of a substance by one degree Celsius.",
+    "calorimetry": "Calorimetry measures heat transfer using temperature change, mass, and specific heat.",
+    "enthalpy": "Enthalpy tracks heat flow at constant pressure for a process or reaction.",
+    "hess's law": "Hess's law says enthalpy changes add because enthalpy is a state function.",
+    "reaction rate": "Reaction rate measures how quickly reactant concentration decreases or product concentration increases.",
+    "activation energy": "Activation energy is the energy barrier reactants must overcome to form products.",
+    "chemical equilibrium": "Chemical equilibrium occurs when forward and reverse reaction rates are equal, so concentrations stay constant.",
+    "le chatelier's principle": "Le Chatelier's principle predicts how an equilibrium shifts when concentration, pressure, or temperature changes.",
+    "acid": "An acid donates H+ in Bronsted-Lowry chemistry or increases hydronium concentration in water.",
+    "base": "A base accepts H+ in Bronsted-Lowry chemistry or increases hydroxide concentration in water.",
+    "ph": "pH is a logarithmic measure of hydronium concentration, where lower pH means more acidic solution.",
+    "oxidation": "Oxidation is loss of electrons or an increase in oxidation number.",
+    "reduction": "Reduction is gain of electrons or a decrease in oxidation number.",
+}
+
+
+def _concept_definition(concept: str) -> str:
+    lowered = concept.lower()
+    for key, definition in CHEMISTRY_CONCEPT_DEFINITIONS.items():
+        if key in lowered or lowered in key:
+            return definition
+    title = concept[:1].upper() + concept[1:]
+    return f"{title} is a specific idea learners should define, connect to prior material, and use in a worked example."
+
+
+def _lesson_core_text(title: str, concepts: list[str], objective_text: str) -> str:
+    concept_names = ", ".join(concepts[:6])
+    definitions = " ".join(f"{concept[:1].upper() + concept[1:]}: {_concept_definition(concept)}" for concept in concepts[:6])
+    return f"{title} focuses on {concept_names}. {objective_text} {definitions}"
+
+
+def _lesson_example_text(concepts: list[str]) -> str:
+    text = " ".join(concepts).lower()
+    if "stoichiometry" in text or "mole ratio" in text or "limiting reactant" in text:
+        return (
+            "Worked example: for 2 H2 + O2 -> 2 H2O, the coefficients say 2 mol H2 react with "
+            "1 mol O2 to form 2 mol H2O. If 3.0 mol H2 and 1.0 mol O2 are available, O2 limits "
+            "the reaction and at most 2.0 mol H2O can form."
+        )
+    if "molarity" in text or "dilution" in text or "titration" in text:
+        return (
+            "Worked example: a 0.250 M solution contains 0.250 mol solute per liter. To dilute "
+            "100.0 mL of 0.250 M stock to 0.100 M, use M1V1 = M2V2 to get V2 = 250.0 mL."
+        )
+    if "ideal gas" in text or "pressure" in text or "gas" in text:
+        return (
+            "Worked example: with PV = nRT, pressure must be in a unit compatible with R, volume "
+            "in liters, and temperature in kelvin. Raising kelvin temperature at fixed moles and volume raises pressure."
+        )
+    if "enthalpy" in text or "calorimetry" in text or "specific heat" in text:
+        return (
+            "Worked example: if 50.0 g of water warms by 4.0 degrees C, q = mcDeltaT gives "
+            "50.0 g x 4.184 J/g degrees C x 4.0 degrees C = 837 J absorbed by the water."
+        )
+    if "lewis" in text or "vsepr" in text or "hybridization" in text:
+        return (
+            "Worked example: methane has four bonding groups around carbon and no lone pairs, so VSEPR "
+            "predicts a tetrahedral geometry; carbon uses sp3 hybrid orbitals for the four sigma bonds."
+        )
+    if "acid" in text or "base" in text or "ph" in text:
+        return (
+            "Worked example: HCl donates H+ to water, so it behaves as a Bronsted-Lowry acid. "
+            "A solution with pH 3 has a hydronium concentration of 1 x 10^-3 M."
+        )
+    if "balanced" in text or "chemical equation" in text or "reaction" in text:
+        return (
+            "Worked example: balance CH4 + O2 -> CO2 + H2O by counting atoms. One carbon gives CO2, "
+            "four hydrogens require 2 H2O, and the products now contain four oxygen atoms, so use 2 O2."
+        )
+    if "dimensional analysis" in text or "unit" in text or "significant" in text:
+        return (
+            "Worked example: convert 2.50 km to meters by multiplying by 1000 m / 1 km. "
+            "The kilometer units cancel, leaving 2500 m; significant figures decide how many digits to report."
+        )
+    return (
+        f"Worked example: pick a case involving {concepts[0]}. Define the quantity or relationship, "
+        "state the evidence needed, apply the rule, then check whether the result fits the units and assumptions."
+    )
+
+
+def _lesson_practice_text(concepts: list[str]) -> str:
+    focus = concepts[0] if concepts else "the section concept"
+    return (
+        f"Quick check: explain {focus} in one sentence, identify the prior concept it depends on, "
+        "then solve or outline a simple example without looking back at the definition."
+    )
+
+
 def _normalize_explicit_source_refs(section: dict[str, Any], raw_section: dict[str, Any], planned_source_ids: list[str]) -> dict[str, Any]:
     allowed = set(planned_source_ids)
     explicit_ids = _source_ids_from_value(raw_section)
@@ -943,14 +1129,21 @@ def _normalize_explicit_source_refs(section: dict[str, Any], raw_section: dict[s
 
 def _draft_section_from_plan(section_plan: dict[str, Any], source_ids: list[str]) -> dict[str, Any]:
     title = str(section_plan.get("title") or "Lesson")
-    concepts = _strings(section_plan.get("conceptKeywords") or section_plan.get("concept_keywords")) or [title]
+    coverage_must_teach = _strings(section_plan.get("coverageMustTeach"))
+    concepts = _unique_strings(
+        [
+            *coverage_must_teach,
+            *_strings(section_plan.get("conceptKeywords") or section_plan.get("concept_keywords")),
+        ],
+        limit=8,
+    ) or [title]
     objectives = _strings(section_plan.get("learningObjectives") or section_plan.get("learning_objectives"))
     objective_text = objectives[0] if objectives else f"Explain {concepts[0]} in context."
     concept_cards = [
         {
             "type": "conceptCard",
             "title": concept.title(),
-            "description": f"{concept.title()} is a key idea learners use in this section.",
+            "description": _concept_definition(concept),
             "sourceIds": source_ids,
         }
         for concept in concepts[:6]
@@ -964,7 +1157,20 @@ def _draft_section_from_plan(section_plan: dict[str, Any], source_ids: list[str]
         "content": [
             {
                 "type": "text",
-                "value": f"{title} focuses on {concepts[0]}. {objective_text} Work through the idea by naming the concept, locating it in the evidence, and applying it to a realistic case.",
+                "heading": "Core explanation",
+                "value": _lesson_core_text(title, concepts, objective_text),
+                "sourceIds": source_ids,
+            },
+            {
+                "type": "text",
+                "heading": "Worked example",
+                "value": _lesson_example_text(concepts),
+                "sourceIds": source_ids,
+            },
+            {
+                "type": "text",
+                "heading": "Practice",
+                "value": _lesson_practice_text(concepts),
                 "sourceIds": source_ids,
             },
             {"type": "heading", "title": "Concepts introduced"},
@@ -1008,6 +1214,9 @@ def run_section_fill_workflow(
             "concept_keywords": section_plan.get("conceptKeywords"),
             "learning_objectives": section_plan.get("learningObjectives"),
             "planningSource": section_plan.get("planningSource"),
+            "assignedCoverageItemIds": section_plan.get("assignedCoverageItemIds"),
+            "coverageItemId": section_plan.get("coverageItemId"),
+            "coverageMustTeach": section_plan.get("coverageMustTeach"),
         },
         source_ids=source_ids,
         role=role,
