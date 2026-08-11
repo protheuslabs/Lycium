@@ -312,6 +312,10 @@ def _keywords_for_section(plan: dict[str, Any], item: dict[str, Any]) -> list[st
     return _unique([*plan.get("mustTeach", []), *item.get("mustTeach", [])], limit=8)
 
 
+def _must_teach_for_section(plan: dict[str, Any], item: dict[str, Any]) -> list[str]:
+    return _unique(plan.get("mustTeach", []) or item.get("mustTeach", []), limit=6)
+
+
 def build_coverage_allocation_report(
     checklist: dict[str, Any],
     modules: list[dict[str, Any]],
@@ -385,6 +389,7 @@ def build_outline_from_coverage_checklist(
                 section_title = str(plan.get("title") or item.get("title") or "Coverage section")
                 section_id = _stable_id("s", module_id, item_id, section_title, str(section_index))
                 keywords = _keywords_for_section(plan, item)
+                must_teach = _must_teach_for_section(plan, item)
                 sections.append(
                     {
                         "id": section_id,
@@ -393,7 +398,7 @@ def build_outline_from_coverage_checklist(
                         "concept_keywords": keywords,
                         "assignedCoverageItemIds": [item_id],
                         "coverageItemId": item_id,
-                        "coverageMustTeach": keywords,
+                        "coverageMustTeach": must_teach,
                         "estimated_minutes": 20,
                     }
                 )

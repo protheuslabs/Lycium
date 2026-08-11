@@ -47,6 +47,12 @@ def _title_from_prompt(prompt: str) -> str:
         cleaned,
         flags=re.IGNORECASE,
     )
+    cleaned = re.sub(
+        r"\s+for\s+(?:first[- ]year|college|undergraduate|undergrad|high[- ]school|postgraduate|postgrad|students?|learners?|beginners?|introductory)\b.*$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" -:,.\t") or "Untitled Course"
     if len(cleaned) <= 64:
         return cleaned.title()

@@ -953,9 +953,11 @@ def _strip_source_id_refs(value: Any) -> Any:
 CHEMISTRY_CONCEPT_DEFINITIONS = {
     "scientific method": "The scientific method turns observations into testable questions, controlled experiments, evidence, and revised explanations.",
     "hypothesis": "A hypothesis is a testable explanation that predicts what should happen under defined conditions.",
+    "hypothesis and experiment": "A hypothesis predicts what an experiment should show under defined conditions.",
     "si units": "SI units give chemistry a common measurement language, with base units such as meter, kilogram, second, kelvin, and mole.",
     "unit conversion": "Unit conversion rewrites the same quantity with conversion factors so units cancel and the remaining unit answers the question.",
     "dimensional analysis": "Dimensional analysis uses unit cancellation to plan and check calculations before numbers are trusted.",
+    "measurement uncertainty": "Measurement uncertainty is the reasonable range around a measured value caused by instrument limits and experimental variation.",
     "significant figures": "Significant figures communicate the precision supported by a measurement and limit how many digits should appear in calculated results.",
     "matter": "Matter is anything with mass that occupies volume; chemistry tracks how matter is classified, measured, and transformed.",
     "element": "An element is a pure substance whose atoms have the same number of protons.",
@@ -994,6 +996,7 @@ CHEMISTRY_CONCEPT_DEFINITIONS = {
     "hydrogen bonding": "Hydrogen bonding is a strong dipole interaction involving H bonded to N, O, or F and a nearby lone pair.",
     "phase change": "A phase change converts matter between solid, liquid, and gas without changing chemical identity.",
     "chemical equation": "A chemical equation uses formulas to show reactants, products, and their stoichiometric ratios.",
+    "balanced equation": "A balanced equation has coefficients that make each element's atom count equal on both sides.",
     "reactant": "A reactant is a starting substance consumed or transformed during a chemical reaction.",
     "product": "A product is a substance formed by a chemical reaction.",
     "law of conservation of mass": "The law of conservation of mass requires atoms to be conserved, so equations must be balanced.",
@@ -1041,59 +1044,92 @@ CHEMISTRY_CONCEPT_DEFINITIONS = {
 
 
 def _concept_definition(concept: str) -> str:
-    lowered = concept.lower()
-    for key, definition in CHEMISTRY_CONCEPT_DEFINITIONS.items():
-        if key in lowered or lowered in key:
+    normalized = _normalize_concept_text(concept)
+    normalized_definitions = {
+        _normalize_concept_text(key): definition
+        for key, definition in CHEMISTRY_CONCEPT_DEFINITIONS.items()
+    }
+    if normalized in normalized_definitions:
+        return normalized_definitions[normalized]
+    for key, definition in sorted(normalized_definitions.items(), key=lambda item: len(item[0]), reverse=True):
+        if re.search(rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])", normalized):
             return definition
     title = concept[:1].upper() + concept[1:]
     return f"{title} is a specific idea learners should define, connect to prior material, and use in a worked example."
 
 
+CONCEPT_DISPLAY_NAMES = {
+    "avogadro s number": "Avogadro's Number",
+    "boyle s law": "Boyle's Law",
+    "charles s law": "Charles's Law",
+    "hess s law": "Hess's Law",
+    "le chatelier s principle": "Le Chatelier's Principle",
+    "ph": "pH",
+    "si units": "SI Units",
+    "vsepr": "VSEPR",
+}
+
+
+def _normalize_concept_text(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
+
+
+def _concept_display_name(concept: str) -> str:
+    normalized = _normalize_concept_text(concept)
+    if normalized in CONCEPT_DISPLAY_NAMES:
+        return CONCEPT_DISPLAY_NAMES[normalized]
+    return " ".join(word[:1].upper() + word[1:] for word in concept.split())
+
+
+def _has_concept(concepts: list[str], *candidates: str) -> bool:
+    normalized = {_normalize_concept_text(concept) for concept in concepts}
+    return any(_normalize_concept_text(candidate) in normalized for candidate in candidates)
+
+
 def _lesson_core_text(title: str, concepts: list[str], objective_text: str) -> str:
     concept_names = ", ".join(concepts[:6])
-    definitions = " ".join(f"{concept[:1].upper() + concept[1:]}: {_concept_definition(concept)}" for concept in concepts[:6])
+    definitions = " ".join(f"{_concept_display_name(concept)}: {_concept_definition(concept)}" for concept in concepts[:6])
     return f"{title} focuses on {concept_names}. {objective_text} {definitions}"
 
 
 def _lesson_example_text(concepts: list[str]) -> str:
-    text = " ".join(concepts).lower()
-    if "stoichiometry" in text or "mole ratio" in text or "limiting reactant" in text:
+    if _has_concept(concepts, "stoichiometry", "mole ratio", "limiting reactant"):
         return (
             "Worked example: for 2 H2 + O2 -> 2 H2O, the coefficients say 2 mol H2 react with "
             "1 mol O2 to form 2 mol H2O. If 3.0 mol H2 and 1.0 mol O2 are available, O2 limits "
             "the reaction and at most 2.0 mol H2O can form."
         )
-    if "molarity" in text or "dilution" in text or "titration" in text:
+    if _has_concept(concepts, "molarity", "dilution", "titration"):
         return (
             "Worked example: a 0.250 M solution contains 0.250 mol solute per liter. To dilute "
             "100.0 mL of 0.250 M stock to 0.100 M, use M1V1 = M2V2 to get V2 = 250.0 mL."
         )
-    if "ideal gas" in text or "pressure" in text or "gas" in text:
+    if _has_concept(concepts, "ideal gas law", "pressure", "gas stoichiometry"):
         return (
             "Worked example: with PV = nRT, pressure must be in a unit compatible with R, volume "
             "in liters, and temperature in kelvin. Raising kelvin temperature at fixed moles and volume raises pressure."
         )
-    if "enthalpy" in text or "calorimetry" in text or "specific heat" in text:
+    if _has_concept(concepts, "enthalpy", "calorimetry", "specific heat"):
         return (
             "Worked example: if 50.0 g of water warms by 4.0 degrees C, q = mcDeltaT gives "
             "50.0 g x 4.184 J/g degrees C x 4.0 degrees C = 837 J absorbed by the water."
         )
-    if "lewis" in text or "vsepr" in text or "hybridization" in text:
+    if _has_concept(concepts, "lewis structure", "vsepr", "hybridization"):
         return (
             "Worked example: methane has four bonding groups around carbon and no lone pairs, so VSEPR "
             "predicts a tetrahedral geometry; carbon uses sp3 hybrid orbitals for the four sigma bonds."
         )
-    if "acid" in text or "base" in text or "ph" in text:
+    if _has_concept(concepts, "acid", "base", "ph", "acid-base reaction"):
         return (
             "Worked example: HCl donates H+ to water, so it behaves as a Bronsted-Lowry acid. "
             "A solution with pH 3 has a hydronium concentration of 1 x 10^-3 M."
         )
-    if "balanced" in text or "chemical equation" in text or "reaction" in text:
+    if _has_concept(concepts, "balanced equation", "chemical equation", "balancing equations"):
         return (
             "Worked example: balance CH4 + O2 -> CO2 + H2O by counting atoms. One carbon gives CO2, "
             "four hydrogens require 2 H2O, and the products now contain four oxygen atoms, so use 2 O2."
         )
-    if "dimensional analysis" in text or "unit" in text or "significant" in text:
+    if _has_concept(concepts, "dimensional analysis", "unit conversion", "si units", "significant figures"):
         return (
             "Worked example: convert 2.50 km to meters by multiplying by 1000 m / 1 km. "
             "The kilometer units cancel, leaving 2500 m; significant figures decide how many digits to report."
@@ -1142,7 +1178,7 @@ def _draft_section_from_plan(section_plan: dict[str, Any], source_ids: list[str]
     concept_cards = [
         {
             "type": "conceptCard",
-            "title": concept.title(),
+            "title": _concept_display_name(concept),
             "description": _concept_definition(concept),
             "sourceIds": source_ids,
         }
@@ -1300,7 +1336,7 @@ def _draft_module_apply_section(
         }
     ]
     questions: list[dict[str, Any]] = []
-    for index in range(10):
+    for index in range(max(10, len(question_concepts))):
         concept = question_concepts[index % len(question_concepts)]
         concept_title = str(concept.get("title") or module_title)
         questions.append(

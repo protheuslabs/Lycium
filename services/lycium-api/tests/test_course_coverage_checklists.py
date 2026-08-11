@@ -150,8 +150,15 @@ def test_section_fill_uses_coverage_handoff_for_real_chemistry_content() -> None
         if "stoichiometry" in module["assignedCoverageItemIds"]
     )
     plan_result = run_module_section_plan_workflow(stoich_module)
-    section_plan = plan_result["artifacts"]["sectionPlans"][0]
-    planned_section = plan_result["artifacts"]["plannedSections"][0]
+    section_plan, planned_section = next(
+        (plan, section)
+        for plan, section in zip(
+            plan_result["artifacts"]["sectionPlans"],
+            plan_result["artifacts"]["plannedSections"],
+            strict=True,
+        )
+        if "stoichiometric" in plan["title"].lower()
+    )
 
     result = run_section_fill_workflow(
         section_plan,
