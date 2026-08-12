@@ -28,7 +28,11 @@
 - Section fill should be the only active workflow that replaces planned empty section shells with learner-facing content blocks.
 - Section fill should preserve source IDs only for sources the generated section actually uses. It should not auto-attach the full planned, module, or course source list just because sources were available.
 - Course, module, and section content-fill runs should be thin orchestrators over section fill. They may loop through planned empty sections, save progress after each section, add module Apply/Summary artifacts after lesson sections are filled, and support scoped retries, but they should not bypass the section-fill workflow with a separate content writer.
-- Module Apply generation should be a separate active workflow after section fill and before module assembly. It should create or validate Apply sections from concepts taught in filled lesson sections, enforce quiz/project assessment shape, require quiz-based module assessments to have at least 10 valid questions, omit section/block source IDs so Apply pages do not render source footers, and fail empty assessment payloads.
+- Module Apply generation should be a separate active workflow after section fill and before module assembly. It should orchestrate assessment planning, routed quiz/test generation, routed project generation, and final Apply-section validation rather than writing assessment content directly.
+- Assessment planning should inspect filled lesson content plus course/module requirements to decide whether the Apply section should be a quiz/test or project unless a requirement specifies the assessment type. Ordinary module checks may default to quizzes, while capstone, lab, design, project, portfolio, or final-style modules may route to projects or larger checks.
+- Assessment plans should record assessment kind, scale, coverage scope, minimum content coverage ratio, target section IDs, target concept IDs, target coverage item IDs when available, and inherited quiz/project specs before routed generation starts. Default minimum content coverage is 70% for both quizzes/tests and projects. Regular module checks usually cover the current module, unit checks may cover current and previous modules, and final-style Apply sections usually cover the whole course.
+- Quiz/test generation and project generation should be separate sub-workflows with separate rules. Quizzes must ask realistic content questions that make learners calculate, classify, interpret, predict, or apply taught ideas, must not use generic meta-prompts such as "Which answer best demonstrates mastery of X?", and must include at least 10 valid questions for module quizzes with larger banks for unit or final-style checks. Quiz specs may include question count, time limit, question types, and multiple-answer ratio, defaulting multiple-answer ratio to 0. Projects should include instructions, required evidence, rubric criteria, one canonical submission type, project spec metadata, and grader workflow metadata.
+- Apply sections should omit section/block source IDs so they do not render source footers, because they assess the course content itself. Empty assessment payloads should fail instead of being hidden in module assembly.
 - Module summary generation should be a separate active workflow after section fill and before module assembly. It should create or validate concept-card inventories from filled Learn sections, preserve `sourceSectionId`, and copy only source IDs already present on summarized concepts or lesson sections.
 - Passive workflows should hand off to active workflows through explicit artifacts such as course wrappers, source requests, source packets, `metadata.activeGenerationPlan`, `metadata.courseBuildOutline`, and course build tasks.
 - Curriculum assembly inference should use shared thresholds before generating or attaching parent structures: cluster generation from orphaned courses requires at least 3 related courses and treats 4+ as recommended; program generation from orphaned clusters requires at least 2 related clusters and treats 3+ as recommended. Below the minimum, surface fit candidates only.
@@ -74,7 +78,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
    Do not write lesson pages as prompts, outlines, or instructions for a future model. The rendered course must teach the learner directly.
 
 8. Draft assessment.
-   Create quiz-only assessment sections after relevant instruction. Questions must test previously taught or sourced ideas. Apply assessment sections should not include section/block `sourceIds`; they assess course content and should not render source footers.
+   Create Apply sections after relevant instruction by first planning the assessment type, coverage scope, and minimum content coverage ratio, then routing to quiz/test or project generation. Default coverage is at least 70% of the selected coverage universe. Questions must test previously taught or sourced ideas through realistic calculations, classifications, interpretations, predictions, or applications. Quiz sections must remain quiz-only. Apply assessment sections should persist the compact assessment plan in section metadata, but should not include section/block `sourceIds`; they assess course content and should not render source footers.
 
 9. Draft module/week concept inventories.
    End every module/week with a summary section that aggregates the raw concept names introduced on that module/week's Learn pages. Do not turn the summary into interpretive prose categories.
@@ -212,13 +216,14 @@ Canonical module/week-summary concept-card block:
 - Put the lesson section first, then add a following `Quiz: ...` section.
 - Mark quiz-only sections with `sectionType: "assessment"` when authoring new JSON or backend-generated sections.
 - Mark quiz-only sections with `pageType: "apply"`.
-- Quiz questions should assess concepts taught or sourced in prior lesson sections.
+- Quiz questions should assess concepts taught or sourced in prior lesson sections through realistic content tasks. Avoid generic meta-questions that ask which answer "demonstrates mastery" of a concept without requiring the learner to use the concept.
+- Generated Apply sections should persist compact `metadata.assessmentPlan` values for rebuilds, including assessment kind, scale, coverage scope, minimum content coverage ratio, target section IDs, target concept IDs, target coverage item IDs, and the quiz/project spec used to generate the block.
 
 ## Quiz Item Rules
 
 - Use `questions` for quizzes that contain more than one question.
 - Treat `questions` or `questionBank` as the total question bank.
-- Real module quizzes should include at least 10 questions. More than 10 is acceptable when it improves coverage.
+- Real module quizzes should include at least 10 questions. More than 10 is acceptable when it improves coverage or when the assessment is a unit/final-style check.
 - Use `questionsPerAttempt` only when each attempt should display a subset of the bank. Omit it or leave it blank to display the full bank.
 - Each new attempt should randomize question selection, question order, and answer order.
 - Keep a currently open attempt stable when the learner navigates away and returns.

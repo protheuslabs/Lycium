@@ -39,9 +39,13 @@ COURSE_WRAPPER_GENERATION_CONTRACT = "course-wrapper-generation-workflow-v1"
 COURSE_MODULE_OUTLINE_CONTRACT = "course-module-outline-workflow-v1"
 MODULE_SECTION_PLAN_CONTRACT = "module-section-plan-workflow-v1"
 SECTION_FILL_CONTRACT = "section-fill-workflow-v1"
+MODULE_ASSESSMENT_PLAN_CONTRACT = "module-assessment-plan-workflow-v1"
+MODULE_QUIZ_ASSESSMENT_CONTRACT = "module-quiz-assessment-workflow-v1"
+MODULE_PROJECT_ASSESSMENT_CONTRACT = "module-project-assessment-workflow-v1"
 MODULE_APPLY_SECTION_CONTRACT = "module-apply-section-workflow-v1"
 MODULE_SUMMARY_SECTION_CONTRACT = "module-summary-section-workflow-v1"
 MODULE_ASSEMBLY_CONTRACT = "module-assembly-workflow-v1"
+APPLY_NESTED_REPORT_ARTIFACT_KEYS = ("assessmentPlanReport", "assessmentSubWorkflowReport")
 
 
 def _now() -> str:
@@ -103,6 +107,17 @@ def compact_stage_workflow_report(report: dict[str, Any]) -> dict[str, Any]:
         "issues": report.get("issues") if isinstance(report.get("issues"), list) else [],
         "artifactKeys": sorted(str(key) for key in artifacts),
     }
+
+
+def compact_module_apply_workflow_reports(apply_report: dict[str, Any]) -> list[dict[str, Any]]:
+    artifacts = apply_report.get("artifacts") if isinstance(apply_report.get("artifacts"), dict) else {}
+    reports: list[dict[str, Any]] = []
+    for report_key in APPLY_NESTED_REPORT_ARTIFACT_KEYS:
+        nested_report = artifacts.get(report_key)
+        if isinstance(nested_report, dict):
+            reports.append(compact_stage_workflow_report(nested_report))
+    reports.append(compact_stage_workflow_report(apply_report))
+    return reports
 
 
 def _issue(severity: Literal["warning", "error"], message: str, location: str | None = None) -> dict[str, Any]:
@@ -1322,12 +1337,601 @@ def _concept_cards_from_sections(sections: list[dict[str, Any]]) -> list[dict[st
     return concepts
 
 
-def _draft_module_apply_section(
+BAD_QUIZ_TEMPLATE_PHRASES = (
+    "which answer best demonstrates mastery",
+    "source-backed evidence and apply it to a realistic case",
+    "memorize the label",
+    "before prerequisite ideas have been introduced",
+    "assess an unrelated idea",
+)
+
+DEFAULT_ASSESSMENT_MIN_CONTENT_COVERAGE_RATIO = 0.7
+ASSESSMENT_COVERAGE_SCOPE_ALIASES = {
+    "current section": "current_section",
+    "current sections": "current_section",
+    "current module": "current_module",
+    "current": "current_module",
+    "current and previous section": "current_and_previous_sections",
+    "current and previous sections": "current_and_previous_sections",
+    "current previous sections": "current_and_previous_sections",
+    "current and previous module": "current_and_previous_modules",
+    "current and previous modules": "current_and_previous_modules",
+    "current previous modules": "current_and_previous_modules",
+    "all section": "entire_course",
+    "all sections": "entire_course",
+    "all module": "entire_course",
+    "all modules": "entire_course",
+    "entire course": "entire_course",
+    "course": "entire_course",
+}
+
+
+def _bounded_ratio(value: Any, default: float) -> float:
+    try:
+        ratio = float(value)
+    except (TypeError, ValueError):
+        return default
+    return min(1.0, max(0.0, ratio))
+
+
+def _assessment_min_content_coverage_ratio(module_outline: dict[str, Any]) -> float:
+    metadata = module_outline.get("metadata") if isinstance(module_outline.get("metadata"), dict) else {}
+    candidates = [
+        module_outline.get("minimumContentCoverageRatio"),
+        module_outline.get("minContentCoverageRatio"),
+        module_outline.get("assessmentCoverageRatio"),
+        metadata.get("minimumContentCoverageRatio"),
+        metadata.get("minContentCoverageRatio"),
+        metadata.get("assessmentCoverageRatio"),
+    ]
+    for candidate in candidates:
+        if candidate is not None:
+            return _bounded_ratio(candidate, DEFAULT_ASSESSMENT_MIN_CONTENT_COVERAGE_RATIO)
+    return DEFAULT_ASSESSMENT_MIN_CONTENT_COVERAGE_RATIO
+
+
+def _normalize_assessment_coverage_scope(value: Any, *, scale: str) -> str:
+    normalized = _normalize_concept_text(str(value or ""))
+    if normalized in ASSESSMENT_COVERAGE_SCOPE_ALIASES:
+        return ASSESSMENT_COVERAGE_SCOPE_ALIASES[normalized]
+    if scale == "final":
+        return "entire_course"
+    if scale == "unit_test":
+        return "current_and_previous_modules"
+    return "current_module"
+
+
+def _assessment_coverage_scope(module_outline: dict[str, Any], *, scale: str) -> str:
+    metadata = module_outline.get("metadata") if isinstance(module_outline.get("metadata"), dict) else {}
+    candidates = [
+        module_outline.get("coverageScope"),
+        module_outline.get("assessmentCoverageScope"),
+        module_outline.get("applyCoverageScope"),
+        metadata.get("coverageScope"),
+        metadata.get("assessmentCoverageScope"),
+        metadata.get("applyCoverageScope"),
+    ]
+    for candidate in candidates:
+        if candidate is not None:
+            return _normalize_assessment_coverage_scope(candidate, scale=scale)
+    return _normalize_assessment_coverage_scope(None, scale=scale)
+
+
+def _stable_concept_id(value: str) -> str:
+    return _normalize_concept_text(value).replace(" ", "-")
+
+
+def _section_ids(sections: list[dict[str, Any]]) -> list[str]:
+    return _unique_strings([str(section.get("id") or "") for section in sections])
+
+
+def _concept_ids(concepts: list[dict[str, Any]]) -> list[str]:
+    return _unique_strings(
+        [_stable_concept_id(_concept_title(concept, "concept")) for concept in concepts]
+    )
+
+
+def _coverage_item_ids_from_sections(sections: list[dict[str, Any]]) -> list[str]:
+    values: list[str] = []
+    for section in sections:
+        values.extend(_strings(section.get("assignedCoverageItemIds")))
+        coverage_item_id = str(section.get("coverageItemId") or "").strip()
+        if coverage_item_id:
+            values.append(coverage_item_id)
+        outline = section.get("metadata", {}).get("generationOutline") if isinstance(section.get("metadata"), dict) else {}
+        if isinstance(outline, dict):
+            values.extend(_strings(outline.get("assignedCoverageItemIds") or outline.get("coverageItemIds")))
+            outline_item_id = str(outline.get("coverageItemId") or "").strip()
+            if outline_item_id:
+                values.append(outline_item_id)
+    return _unique_strings(values)
+
+
+def _module_assessment_override(module_outline: dict[str, Any]) -> str | None:
+    metadata = module_outline.get("metadata") if isinstance(module_outline.get("metadata"), dict) else {}
+    candidates = [
+        module_outline.get("assessmentKind"),
+        module_outline.get("assessmentType"),
+        module_outline.get("applyKind"),
+        module_outline.get("applyType"),
+        metadata.get("assessmentKind"),
+        metadata.get("assessmentType"),
+        metadata.get("applyKind"),
+        metadata.get("applyType"),
+    ]
+    for candidate in candidates:
+        normalized = _normalize_concept_text(str(candidate or ""))
+        if normalized in {"quiz", "test", "exam", "checkpoint"}:
+            return "quiz"
+        if normalized in {"project", "lab", "capstone", "portfolio", "performance"}:
+            return "project"
+    return None
+
+
+def _module_assessment_text(module_outline: dict[str, Any]) -> str:
+    metadata = module_outline.get("metadata") if isinstance(module_outline.get("metadata"), dict) else {}
+    rows = [
+        module_outline.get("title"),
+        module_outline.get("description"),
+        module_outline.get("summary"),
+        metadata.get("title"),
+        metadata.get("description"),
+        metadata.get("assessmentNotes"),
+    ]
+    rows.extend(_strings(module_outline.get("tags")))
+    rows.extend(_strings(module_outline.get("learningObjectives") or module_outline.get("learning_objectives")))
+    return " ".join(str(row or "") for row in rows).lower()
+
+
+def _assessment_kind_for_module(module_outline: dict[str, Any]) -> str:
+    override = _module_assessment_override(module_outline)
+    if override:
+        return override
+    text = _module_assessment_text(module_outline)
+    project_terms = {
+        "project",
+        "capstone",
+        "portfolio",
+        "lab",
+        "laboratory",
+        "design",
+        "studio",
+        "case study",
+        "simulation",
+        "field work",
+        "practical",
+    }
+    return "project" if any(term in text for term in project_terms) else "quiz"
+
+
+def _assessment_scale_for_module(module_title: str, module_number: int, total_module_count: int | None) -> str:
+    normalized_title = _normalize_concept_text(module_title)
+    if "final" in normalized_title or "capstone" in normalized_title:
+        return "final"
+    if total_module_count and module_number == total_module_count:
+        return "final"
+    if module_number > 0 and module_number % 4 == 0:
+        return "unit_test"
+    return "module_check"
+
+
+def assessment_coverage_scope_for_module(
+    module_outline: dict[str, Any],
     *,
-    module_id: str,
-    module_title: str,
-    concepts: list[dict[str, Any]],
+    module_number: int = 1,
+    total_module_count: int | None = None,
+) -> str:
+    module_title = str(module_outline.get("title") or f"Module {module_number}")
+    scale = _assessment_scale_for_module(module_title, module_number, total_module_count)
+    return _assessment_coverage_scope(module_outline, scale=scale)
+
+
+def _quiz_question_target(scale: str, taught_concept_count: int) -> int:
+    floor = 20 if scale == "final" else 15 if scale == "unit_test" else 10
+    return max(floor, taught_concept_count)
+
+
+def run_module_assessment_plan_workflow(
+    module_outline: dict[str, Any],
+    filled_lesson_sections: list[dict[str, Any]],
+    *,
+    module_number: int = 1,
+    total_module_count: int | None = None,
+    coverage_lesson_sections: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    module_id = str(module_outline.get("id") or f"module-{module_number}")
+    module_title = str(module_outline.get("title") or f"Module {module_number}")
+    lesson_sections = [
+        section
+        for section in filled_lesson_sections
+        if isinstance(section, dict)
+        and str(section.get("pageType") or "learn") == "learn"
+        and str(section.get("sectionType") or "lesson").lower() not in {"summary", "assessment"}
+    ]
+    assessment_kind = _assessment_kind_for_module(module_outline)
+    scale = _assessment_scale_for_module(module_title, module_number, total_module_count)
+    coverage_sections = [
+        section
+        for section in (coverage_lesson_sections if isinstance(coverage_lesson_sections, list) else lesson_sections)
+        if isinstance(section, dict)
+        and str(section.get("pageType") or "learn") == "learn"
+        and str(section.get("sectionType") or "lesson").lower() not in {"summary", "assessment"}
+    ]
+    concepts = _concept_cards_from_sections(lesson_sections)
+    target_concepts = _concept_cards_from_sections(coverage_sections) or concepts
+    target_concept_ids = _concept_ids(target_concepts)
+    target_coverage_item_ids = _coverage_item_ids_from_sections(coverage_sections)
+    coverage_scope = assessment_coverage_scope_for_module(
+        module_outline,
+        module_number=module_number,
+        total_module_count=total_module_count,
+    )
+    minimum_coverage_ratio = _assessment_min_content_coverage_ratio(module_outline)
+    question_target = _quiz_question_target(scale, len(target_concepts)) if assessment_kind == "quiz" else 0
+    quiz_spec = {
+        "questionCount": question_target,
+        "timeLimitSeconds": None,
+        "multipleAnswerRatio": 0,
+        "questionTypes": ["single_answer", "calculation", "classification", "interpretation", "prediction"],
+    }
+    project_spec = {
+        "submissionType": "text",
+        "requiredEvidenceCount": 4,
+        "rubricCriterionCount": 3,
+    }
+    issues: list[dict[str, Any]] = []
+    if not lesson_sections:
+        issues.append(_issue("error", "Assessment planning needs filled lesson sections.", "filledLessonSections"))
+    if not concepts:
+        issues.append(_issue("error", "Assessment planning needs taught concept cards.", "filledLessonSections[].content"))
+    if not target_concepts:
+        issues.append(_issue("error", "Assessment planning needs target concepts for coverage.", "coverage.targetConcepts"))
+    plan = {
+        "contractVersion": "module-assessment-plan-v1",
+        "moduleId": module_id,
+        "moduleTitle": module_title,
+        "assessmentKind": assessment_kind,
+        "assessmentScale": scale,
+        "coverageScope": coverage_scope,
+        "minimumContentCoverageRatio": minimum_coverage_ratio,
+        "targetSectionIds": _section_ids(coverage_sections),
+        "targetConceptIds": target_concept_ids,
+        "targetCoverageItemIds": target_coverage_item_ids,
+        "targetConcepts": target_concepts,
+        "coverageUniverse": {
+            "sectionCount": len(coverage_sections),
+            "conceptCount": len(target_concept_ids),
+            "coverageItemCount": len(target_coverage_item_ids),
+        },
+        "questionTarget": question_target,
+        "projectTarget": assessment_kind == "project",
+        "quizSpec": quiz_spec if assessment_kind == "quiz" else None,
+        "projectSpec": project_spec if assessment_kind == "project" else None,
+        "taughtConcepts": concepts,
+        "routingReason": (
+            "Explicit or project-like module signals require applied work."
+            if assessment_kind == "project"
+            else "Default module Apply section should check taught concepts with realistic quiz items."
+        ),
+        "nextWorkflow": MODULE_PROJECT_ASSESSMENT_CONTRACT if assessment_kind == "project" else MODULE_QUIZ_ASSESSMENT_CONTRACT,
+    }
+    return _workflow_result(
+        stage="module_assessment_planning",
+        contract_version=MODULE_ASSESSMENT_PLAN_CONTRACT,
+        status=_status_from_issues(issues),
+        issues=issues,
+        metrics={
+            "lessonSectionCount": len(lesson_sections),
+            "taughtConceptCount": len(concepts),
+            "targetSectionCount": len(coverage_sections),
+            "targetConceptCount": len(target_concept_ids),
+            "minimumContentCoverageRatio": minimum_coverage_ratio,
+            "assessmentKind": assessment_kind,
+            "assessmentScale": scale,
+            "coverageScope": coverage_scope,
+            "questionTarget": question_target,
+        },
+        artifacts={"assessmentPlan": plan, "filledLessonSections": lesson_sections, "taughtConcepts": concepts},
+    )
+
+
+def _concept_title(concept: dict[str, Any], fallback: str) -> str:
+    return str(concept.get("title") or concept.get("name") or fallback).strip() or fallback
+
+
+def _make_quiz_question(
+    *,
+    index: int,
+    question: str,
+    options: list[str],
+    concept_title: str,
+    source_section_id: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "id": f"q{index + 1}",
+        "question": question,
+        "options": options,
+        "answers": [0],
+        "conceptIds": [concept_title],
+        "sourceSectionId": source_section_id,
+    }
+
+
+def _quiz_question_for_concept(concept: dict[str, Any], *, index: int, module_title: str) -> dict[str, Any]:
+    concept_title = _concept_title(concept, module_title)
+    display_title = _concept_display_name(concept_title)
+    normalized = _normalize_concept_text(concept_title)
+    source_section_id = str(concept.get("sourceSectionId") or "") or None
+    variant = index % 2
+
+    if normalized == "si units":
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="A student measures the length of a lab bench. Which unit is the SI base unit for length?",
+            options=["meter", "liter", "gram", "degree Celsius"],
+        )
+    if normalized in {"unit conversion", "dimensional analysis"}:
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="A distance is reported as 2.50 km. Which setup correctly converts it to meters?",
+            options=[
+                "2.50 km x (1000 m / 1 km) = 2500 m",
+                "2.50 km x (1 km / 1000 m) = 0.00250 m",
+                "2.50 km + 1000 m = 1002.50 m",
+                "2.50 km / 1000 km = 0.00250 km",
+            ],
+        )
+    if normalized == "significant figures":
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="How many significant figures are in the measurement 0.00450 g?",
+            options=["3", "2", "5", "1"],
+        )
+    if normalized == "precision":
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="Four students measure the same sample as 10.21 g, 10.22 g, 10.21 g, and 10.23 g. What does this pattern mainly show?",
+            options=["High precision because the measurements are close to each other", "High accuracy because the true value is known", "Low precision because all values have decimals", "No uncertainty because the values are similar"],
+        )
+    if normalized == "accuracy":
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="A balance is checked with a 50.00 g standard and reads 49.98 g. Which statement best describes accuracy?",
+            options=["The reading is accurate because it is close to the accepted value", "The reading is precise because it has two decimal places", "The reading has no uncertainty because it is near 50", "The reading proves the sample mass is exactly 49.98 g"],
+        )
+    if normalized == "measurement uncertainty":
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="A graduated cylinder is read as 18.6 mL with an uncertainty of +/-0.1 mL. What does that uncertainty mean?",
+            options=["The measured volume is reasonably between 18.5 mL and 18.7 mL", "The volume must be exactly 18.6 mL", "The instrument cannot measure liquids", "The final digit should always be ignored"],
+        )
+    if normalized == "scientific method":
+        question = (
+            "A student observes that a salt dissolves faster in warm water than cold water. What is the best next scientific step?"
+            if variant == 0
+            else "Which statement is a testable hypothesis about dissolving sugar in water?"
+        )
+        options = (
+            [
+                "Design a controlled experiment that changes water temperature and measures dissolving time",
+                "Conclude that all solids dissolve faster when warm",
+                "Ignore the observation because it is not a calculation",
+                "Choose the result that matches the student's expectation",
+            ]
+            if variant == 0
+            else [
+                "If water temperature increases, then the time for a fixed mass of sugar to dissolve decreases",
+                "Sugar is interesting in water",
+                "Warm water is better than cold water",
+                "The answer should match the textbook",
+            ]
+        )
+        return _make_quiz_question(index=index, question=question, options=options, concept_title=display_title, source_section_id=source_section_id)
+    if "hypothesis" in normalized and "experiment" in normalized:
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="Why should an experiment change only one planned variable at a time when testing a hypothesis?",
+            options=["So any measured effect can be connected to the variable being tested", "So the experiment always confirms the hypothesis", "So uncertainty can be removed from the data", "So units no longer matter"],
+        )
+    if normalized in {"balanced equation", "chemical equation", "balancing equations"}:
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="Which equation correctly balances methane combustion?",
+            options=["CH4 + 2 O2 -> CO2 + 2 H2O", "CH4 + O2 -> CO2 + H2O", "CH4 + 2 O2 -> CO2 + H2O", "CH4 + O2 -> C + 2 H2O"],
+        )
+    if normalized in {"mole ratio", "stoichiometry"}:
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="For 2 H2 + O2 -> 2 H2O, how many moles of H2O can form from 1.0 mol O2 with excess H2?",
+            options=["2.0 mol H2O", "1.0 mol H2O", "0.50 mol H2O", "4.0 mol H2O"],
+        )
+    if normalized == "limiting reactant":
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="For 2 H2 + O2 -> 2 H2O, 3.0 mol H2 reacts with 1.0 mol O2. Which reactant limits the product?",
+            options=["O2, because 1.0 mol O2 can use only 2.0 mol H2", "H2, because there are more moles of H2", "Neither, because both are gases", "H2O, because it is the product"],
+        )
+    if normalized == "molarity":
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="What is the molarity of a solution containing 0.250 mol solute in 0.500 L solution?",
+            options=["0.500 M", "0.125 M", "2.00 M", "0.750 M"],
+        )
+    if normalized == "ideal gas law":
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="Which set of variables belongs together in the ideal gas law PV = nRT?",
+            options=["Pressure, volume, moles, gas constant, and kelvin temperature", "Mass, density, Celsius temperature, and pH", "Molarity, volume, enthalpy, and time", "Charge, current, resistance, and voltage"],
+        )
+    if normalized in {"acid", "base", "ph"}:
+        return _make_quiz_question(
+            index=index,
+            concept_title=display_title,
+            source_section_id=source_section_id,
+            question="A solution has pH 3. Compared with pH 5, what is true about its hydronium concentration?",
+            options=["It is 100 times higher", "It is 2 times higher", "It is 100 times lower", "It has no hydronium ions"],
+        )
+
+    definition = str(concept.get("description") or _concept_definition(concept_title))
+    return _make_quiz_question(
+        index=index,
+        concept_title=display_title,
+        source_section_id=source_section_id,
+        question=f"In {module_title}, which statement correctly applies {display_title}?",
+        options=[
+            definition,
+            f"{display_title} can be used without checking definitions, units, or assumptions.",
+            f"{display_title} only matters as a vocabulary word.",
+            f"{display_title} should be ignored when solving module problems.",
+        ],
+    )
+
+
+def _quiz_bad_template_phrase_count(questions: list[dict[str, Any]]) -> int:
+    count = 0
+    for question in questions:
+        text = " ".join(
+            [
+                str(question.get("question") or ""),
+                *[str(option) for option in question.get("options", []) if isinstance(question.get("options"), list)],
+            ]
+        ).lower()
+        if any(phrase in text for phrase in BAD_QUIZ_TEMPLATE_PHRASES):
+            count += 1
+    return count
+
+
+def _target_concepts_from_assessment_plan(assessment_plan: dict[str, Any]) -> list[dict[str, Any]]:
+    target_concepts = _items(assessment_plan.get("targetConcepts"))
+    return target_concepts or _items(assessment_plan.get("taughtConcepts"))
+
+
+def _target_concept_ids_from_assessment_plan(assessment_plan: dict[str, Any]) -> list[str]:
+    plan_ids = _strings(assessment_plan.get("targetConceptIds"))
+    if plan_ids:
+        return _unique_strings([_stable_concept_id(concept_id) for concept_id in plan_ids])
+    return _concept_ids(_target_concepts_from_assessment_plan(assessment_plan))
+
+
+def _concept_ids_from_quiz_questions(questions: list[dict[str, Any]]) -> list[str]:
+    values: list[str] = []
+    for question in questions:
+        values.extend(_strings(question.get("conceptIds")))
+        concept_id = str(question.get("conceptId") or "").strip()
+        if concept_id:
+            values.append(concept_id)
+    return _unique_strings([_stable_concept_id(value) for value in values])
+
+
+def _concept_ids_from_project_blocks(project_blocks: list[dict[str, Any]]) -> list[str]:
+    values: list[str] = []
+    for block in project_blocks:
+        values.extend(_strings(block.get("coveredConceptIds")))
+        values.extend(_strings(block.get("conceptIds")))
+        values.extend(_strings(block.get("targetConceptIds")))
+    return _unique_strings([_stable_concept_id(value) for value in values])
+
+
+def _coverage_ratio(covered_ids: list[str], target_ids: list[str]) -> float:
+    if not target_ids:
+        return 1.0
+    covered = {_stable_concept_id(value) for value in covered_ids if str(value or "").strip()}
+    target = {_stable_concept_id(value) for value in target_ids if str(value or "").strip()}
+    if not target:
+        return 1.0
+    return round(len(covered & target) / len(target), 4)
+
+
+def _compact_assessment_target_concepts(assessment_plan: dict[str, Any]) -> list[dict[str, Any]]:
+    compact: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for concept in _target_concepts_from_assessment_plan(assessment_plan):
+        title = _concept_title(concept, "concept")
+        concept_id = _stable_concept_id(title)
+        if concept_id in seen:
+            continue
+        seen.add(concept_id)
+        row: dict[str, Any] = {"id": concept_id, "title": title}
+        source_section_id = str(concept.get("sourceSectionId") or "").strip()
+        if source_section_id:
+            row["sourceSectionId"] = source_section_id
+        compact.append(row)
+    return compact
+
+
+def _compact_assessment_spec(spec: Any) -> dict[str, Any] | None:
+    if not isinstance(spec, dict):
+        return None
+    return {
+        key: value
+        for key, value in spec.items()
+        if value is not None or key in {"timeLimitSeconds"}
+    }
+
+
+def _section_assessment_plan_metadata(
+    assessment_plan: dict[str, Any],
+    *,
+    assessed_concept_ids: list[str],
+    content_coverage_ratio: float,
+    assessment_subworkflow_report: dict[str, Any] | None,
+) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "contractVersion": "module-apply-assessment-plan-v1",
+        "assessmentKind": assessment_plan.get("assessmentKind"),
+        "assessmentScale": assessment_plan.get("assessmentScale"),
+        "coverageScope": assessment_plan.get("coverageScope"),
+        "minimumContentCoverageRatio": _bounded_ratio(
+            assessment_plan.get("minimumContentCoverageRatio"),
+            DEFAULT_ASSESSMENT_MIN_CONTENT_COVERAGE_RATIO,
+        ),
+        "contentCoverageRatio": content_coverage_ratio,
+        "targetSectionIds": _strings(assessment_plan.get("targetSectionIds")),
+        "targetConceptIds": _target_concept_ids_from_assessment_plan(assessment_plan),
+        "targetCoverageItemIds": _strings(assessment_plan.get("targetCoverageItemIds")),
+        "targetConcepts": _compact_assessment_target_concepts(assessment_plan),
+        "assessedConceptIds": _unique_strings([_stable_concept_id(value) for value in assessed_concept_ids]),
+    }
+    quiz_spec = _compact_assessment_spec(assessment_plan.get("quizSpec"))
+    if quiz_spec is not None:
+        metadata["quizSpec"] = quiz_spec
+    project_spec = _compact_assessment_spec(assessment_plan.get("projectSpec"))
+    if project_spec is not None:
+        metadata["projectSpec"] = project_spec
+    if assessment_subworkflow_report is not None:
+        metadata["subWorkflow"] = {
+            "contractVersion": assessment_subworkflow_report.get("contractVersion"),
+            "stage": assessment_subworkflow_report.get("stage"),
+            "status": assessment_subworkflow_report.get("status"),
+        }
+    return metadata
+
+
+def _draft_module_quiz_section(*, module_id: str, module_title: str, concepts: list[dict[str, Any]], question_target: int) -> dict[str, Any]:
     question_concepts = concepts or [
         {
             "title": module_title,
@@ -1335,37 +1939,150 @@ def _draft_module_apply_section(
             "sourceSectionId": "",
         }
     ]
-    questions: list[dict[str, Any]] = []
-    for index in range(max(10, len(question_concepts))):
-        concept = question_concepts[index % len(question_concepts)]
-        concept_title = str(concept.get("title") or module_title)
-        questions.append(
-            {
-                "id": f"q{index + 1}",
-                "question": f"Which answer best demonstrates mastery of {concept_title}?",
-                "options": [
-                    f"Explain {concept_title} with source-backed evidence and apply it to a realistic case.",
-                    f"Memorize the label {concept_title} without connecting it to evidence.",
-                    f"Use {concept_title} before prerequisite ideas have been introduced.",
-                    "Assess an unrelated idea that was not taught in this module.",
-                ],
-                "answers": [0],
-                "conceptIds": [concept_title],
-                "sourceSectionId": concept.get("sourceSectionId"),
-            }
-        )
+    questions = [
+        _quiz_question_for_concept(question_concepts[index % len(question_concepts)], index=index, module_title=module_title)
+        for index in range(max(10, question_target))
+    ]
     return {
         "id": f"{module_id}-apply",
         "title": f"Apply: {module_title}",
         "pageType": "apply",
         "sectionType": "assessment",
-        "content": [
-            {
-                "type": "quiz",
-                "questions": questions,
-            }
-        ],
+        "content": [{"type": "quiz", "questions": questions}],
     }
+
+
+def run_module_quiz_assessment_workflow(module_outline: dict[str, Any], assessment_plan: dict[str, Any]) -> dict[str, Any]:
+    module_id = str(assessment_plan.get("moduleId") or module_outline.get("id") or "module")
+    module_title = str(assessment_plan.get("moduleTitle") or module_outline.get("title") or "Module")
+    concepts = _target_concepts_from_assessment_plan(assessment_plan)
+    quiz_spec = assessment_plan.get("quizSpec") if isinstance(assessment_plan.get("quizSpec"), dict) else {}
+    question_target = int(quiz_spec.get("questionCount") or assessment_plan.get("questionTarget") or max(10, len(concepts)))
+    section = _draft_module_quiz_section(
+        module_id=module_id,
+        module_title=module_title,
+        concepts=concepts,
+        question_target=question_target,
+    )
+    quiz_blocks = [block for block in _items(section.get("content")) if block.get("type") == "quiz"]
+    questions = [question for block in quiz_blocks for question in _quiz_questions(block)]
+    valid_question_count = _valid_quiz_question_count(questions)
+    bad_phrase_count = _quiz_bad_template_phrase_count(questions)
+    target_concept_ids = _target_concept_ids_from_assessment_plan(assessment_plan)
+    assessed_concept_ids = _concept_ids_from_quiz_questions(questions)
+    content_coverage_ratio = _coverage_ratio(assessed_concept_ids, target_concept_ids)
+    minimum_coverage_ratio = _bounded_ratio(
+        assessment_plan.get("minimumContentCoverageRatio"),
+        DEFAULT_ASSESSMENT_MIN_CONTENT_COVERAGE_RATIO,
+    )
+    issues: list[dict[str, Any]] = []
+    if len(questions) < 10:
+        issues.append(_issue("error", "Quiz generation produced fewer than 10 questions.", "content[].questions"))
+    if valid_question_count != len(questions):
+        issues.append(_issue("error", "Quiz generation produced invalid question payloads.", "content[].questions"))
+    if bad_phrase_count:
+        issues.append(_issue("error", "Quiz generation reused generic mastery-template wording.", "content[].questions"))
+    if content_coverage_ratio < minimum_coverage_ratio:
+        issues.append(_issue("error", "Quiz generation did not cover enough target content.", "assessmentPlan.minimumContentCoverageRatio"))
+    return _workflow_result(
+        stage="module_quiz_assessment_generation",
+        contract_version=MODULE_QUIZ_ASSESSMENT_CONTRACT,
+        status=_status_from_issues(issues),
+        issues=issues,
+        metrics={
+            "questionTarget": question_target,
+            "questionCount": len(questions),
+            "validQuestionCount": valid_question_count,
+            "badTemplatePhraseCount": bad_phrase_count,
+            "taughtConceptCount": len(concepts),
+            "targetConceptCount": len(target_concept_ids),
+            "assessedConceptCount": len(set(assessed_concept_ids) & set(target_concept_ids)),
+            "contentCoverageRatio": content_coverage_ratio,
+            "minimumContentCoverageRatio": minimum_coverage_ratio,
+            "coverageScope": assessment_plan.get("coverageScope"),
+        },
+        artifacts={"section": section, "assessmentPlan": assessment_plan},
+    )
+
+
+def run_module_project_assessment_workflow(module_outline: dict[str, Any], assessment_plan: dict[str, Any]) -> dict[str, Any]:
+    module_id = str(assessment_plan.get("moduleId") or module_outline.get("id") or "module")
+    module_title = str(assessment_plan.get("moduleTitle") or module_outline.get("title") or "Module")
+    concepts = _target_concepts_from_assessment_plan(assessment_plan)
+    concept_titles = [_concept_title(concept, module_title) for concept in concepts[:6]]
+    target_concept_ids = _target_concept_ids_from_assessment_plan(assessment_plan)
+    project_spec = assessment_plan.get("projectSpec") if isinstance(assessment_plan.get("projectSpec"), dict) else {}
+    submission_type = str(project_spec.get("submissionType") or "text").strip() or "text"
+    focus = ", ".join(concept_titles) or module_title
+    project_block = {
+        "type": "project",
+        "title": f"{module_title} applied project",
+        "coveredConceptIds": target_concept_ids,
+        "coverageScope": assessment_plan.get("coverageScope"),
+        "instructions": (
+            f"Create a short applied artifact that uses {focus}. State the problem, show the method, "
+            "include the worked evidence or calculation, and explain what the result means."
+        ),
+        "artifactType": "written-response",
+        "requiredEvidence": [
+            "Problem statement or scenario",
+            "Method, calculation, model, or design choice",
+            "Result with interpretation",
+            "Brief reflection on assumptions or limitations",
+        ],
+        "submission": {"submissionType": submission_type, "submissionMethods": [submission_type]},
+        "rubric": {
+            "title": f"{module_title} project rubric",
+            "criteria": [
+                {"id": "concept-use", "title": "Concept use", "description": "Uses the module concepts correctly.", "points": 4},
+                {"id": "evidence", "title": "Evidence", "description": "Shows calculations, observations, or decisions that support the result.", "points": 4},
+                {"id": "interpretation", "title": "Interpretation", "description": "Explains what the result means and names assumptions.", "points": 2},
+            ],
+        },
+        "graderWorkflow": {
+            "grader": "agent",
+            "status": "ready",
+            "allowedContext": ["course", "module", "filled_lesson_sections"],
+            "feedbackPolicy": "Return criterion-level feedback and one next step.",
+        },
+    }
+    section = {
+        "id": f"{module_id}-apply",
+        "title": f"Apply: {module_title}",
+        "pageType": "apply",
+        "sectionType": "project",
+        "content": [project_block],
+    }
+    issues: list[dict[str, Any]] = []
+    project_coverage_ratio = _coverage_ratio(_strings(project_block.get("coveredConceptIds")), target_concept_ids)
+    minimum_coverage_ratio = _bounded_ratio(
+        assessment_plan.get("minimumContentCoverageRatio"),
+        DEFAULT_ASSESSMENT_MIN_CONTENT_COVERAGE_RATIO,
+    )
+    if not concepts:
+        issues.append(_issue("error", "Project generation needs taught concepts from filled lessons.", "assessmentPlan.taughtConcepts"))
+    if not project_block["requiredEvidence"]:
+        issues.append(_issue("error", "Project generation must name required evidence.", "content[].requiredEvidence"))
+    if project_coverage_ratio < minimum_coverage_ratio:
+        issues.append(_issue("error", "Project generation did not cover enough target content.", "assessmentPlan.minimumContentCoverageRatio"))
+    return _workflow_result(
+        stage="module_project_assessment_generation",
+        contract_version=MODULE_PROJECT_ASSESSMENT_CONTRACT,
+        status=_status_from_issues(issues),
+        issues=issues,
+        metrics={
+            "projectBlockCount": 1,
+            "requiredEvidenceCount": len(project_block["requiredEvidence"]),
+            "rubricCriterionCount": len(project_block["rubric"]["criteria"]),
+            "taughtConceptCount": len(concepts),
+            "targetConceptCount": len(target_concept_ids),
+            "coveredConceptCount": len(target_concept_ids),
+            "contentCoverageRatio": project_coverage_ratio,
+            "minimumContentCoverageRatio": minimum_coverage_ratio,
+            "coverageScope": assessment_plan.get("coverageScope"),
+        },
+        artifacts={"section": section, "assessmentPlan": assessment_plan},
+    )
 
 
 def _quiz_questions(block: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1395,6 +2112,8 @@ def run_module_apply_section_workflow(
     filled_lesson_sections: list[dict[str, Any]],
     *,
     module_number: int = 1,
+    total_module_count: int | None = None,
+    coverage_lesson_sections: list[dict[str, Any]] | None = None,
     fallback_source_ids: list[str] | None = None,
     generated_section: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -1409,15 +2128,43 @@ def run_module_apply_section_workflow(
         and str(section.get("sectionType") or "lesson").lower() not in {"summary", "assessment"}
     ]
     concepts = _concept_cards_from_sections(lesson_sections)
+    assessment_plan_report = run_module_assessment_plan_workflow(
+        module_outline,
+        lesson_sections,
+        module_number=module_number,
+        total_module_count=total_module_count,
+        coverage_lesson_sections=coverage_lesson_sections,
+    )
+    assessment_plan = (
+        assessment_plan_report.get("artifacts", {}).get("assessmentPlan")
+        if isinstance(assessment_plan_report.get("artifacts"), dict)
+        else None
+    )
+    assessment_plan = assessment_plan if isinstance(assessment_plan, dict) else {}
+    assessment_subworkflow_report: dict[str, Any] | None = None
     raw_section = (
         generated_section
         if isinstance(generated_section, dict)
-        else _draft_module_apply_section(
-            module_id=module_id,
-            module_title=module_title,
-            concepts=concepts,
-        )
+        else None
     )
+    if raw_section is None:
+        if assessment_plan.get("assessmentKind") == "project":
+            assessment_subworkflow_report = run_module_project_assessment_workflow(module_outline, assessment_plan)
+        else:
+            assessment_subworkflow_report = run_module_quiz_assessment_workflow(module_outline, assessment_plan)
+        raw_section = (
+            assessment_subworkflow_report.get("artifacts", {}).get("section")
+            if isinstance(assessment_subworkflow_report.get("artifacts"), dict)
+            else None
+        )
+    if not isinstance(raw_section, dict):
+        raw_section = {
+            "id": f"{module_id}-apply",
+            "title": f"Apply: {module_title}",
+            "pageType": "apply",
+            "sectionType": "assessment",
+            "content": [],
+        }
     section = _coerce_generated_section(
         raw_section,
         fallback_id=f"{module_id}-apply",
@@ -1452,24 +2199,33 @@ def run_module_apply_section_workflow(
     valid_question_count = sum(_valid_quiz_question_count(_quiz_questions(block)) for block in quiz_blocks)
     taught_concepts = [str(concept.get("title") or "") for concept in concepts if str(concept.get("title") or "").strip()]
     quiz_text_parts: list[str] = []
-    for block in quiz_blocks:
-        for question in _quiz_questions(block):
-            quiz_text_parts.append(str(question.get("question") or ""))
-            options = question.get("options")
-            if isinstance(options, list):
-                quiz_text_parts.extend(str(option) for option in options)
+    quiz_questions = [question for block in quiz_blocks for question in _quiz_questions(block)]
+    for question in quiz_questions:
+        quiz_text_parts.append(str(question.get("question") or ""))
+        options = question.get("options")
+        if isinstance(options, list):
+            quiz_text_parts.extend(str(option) for option in options)
     quiz_text = " ".join(quiz_text_parts).lower()
-    assessed_concepts = [
-        concept
-        for concept in taught_concepts
-        if concept.lower() in quiz_text
-    ]
+    bad_template_phrase_count = _quiz_bad_template_phrase_count(quiz_questions)
+    target_concept_ids = _target_concept_ids_from_assessment_plan(assessment_plan)
+    quiz_assessed_concept_ids = _concept_ids_from_quiz_questions(quiz_questions)
+    project_assessed_concept_ids = _concept_ids_from_project_blocks(project_blocks)
+    assessed_concept_ids = _unique_strings([*quiz_assessed_concept_ids, *project_assessed_concept_ids])
+    content_coverage_ratio = _coverage_ratio(assessed_concept_ids, target_concept_ids)
+    minimum_coverage_ratio = _bounded_ratio(
+        assessment_plan.get("minimumContentCoverageRatio"),
+        DEFAULT_ASSESSMENT_MIN_CONTENT_COVERAGE_RATIO,
+    )
 
     issues: list[dict[str, Any]] = []
     if not lesson_sections:
         issues.append(_issue("error", "Apply generation needs filled lesson sections before assessment can be created.", "filledLessonSections"))
     if not concepts:
         issues.append(_issue("error", "Apply generation needs taught concept cards from filled lesson sections.", "filledLessonSections[].content"))
+    if assessment_plan_report.get("status") == "failed":
+        issues.append(_issue("error", "Apply generation assessment planning failed.", "assessmentPlan"))
+    if assessment_subworkflow_report is not None and assessment_subworkflow_report.get("status") == "failed":
+        issues.append(_issue("error", "Apply generation routed sub-workflow failed.", "assessmentSubWorkflow"))
     if str(section.get("pageType") or "") != "apply":
         issues.append(_issue("error", "Apply generation must create an Apply page.", "pageType"))
     if str(section.get("sectionType") or "") not in {"assessment", "project"}:
@@ -1484,6 +2240,25 @@ def run_module_apply_section_workflow(
         issues.append(_issue("error", "Quiz Apply sections need at least 10 questions.", "content[].questions"))
     if quiz_blocks and valid_question_count != question_count:
         issues.append(_issue("error", "Every quiz question needs question, options, and zero-based answer indexes.", "content[].questions"))
+    if quiz_blocks and bad_template_phrase_count:
+        issues.append(_issue("error", "Quiz Apply sections must ask realistic assessment questions, not generic mastery-template questions.", "content[].questions"))
+    if (quiz_blocks or project_blocks) and content_coverage_ratio < minimum_coverage_ratio:
+        issues.append(_issue("error", "Apply generation does not cover enough target content.", "assessmentPlan.minimumContentCoverageRatio"))
+
+    section_metadata = section.get("metadata") if isinstance(section.get("metadata"), dict) else {}
+    section = {
+        **section,
+        "metadata": {
+            **section_metadata,
+            "assessmentPlan": _section_assessment_plan_metadata(
+                assessment_plan,
+                assessed_concept_ids=assessed_concept_ids,
+                content_coverage_ratio=content_coverage_ratio,
+                assessment_subworkflow_report=assessment_subworkflow_report,
+            ),
+        },
+    }
+    section = _strip_source_id_refs(section)
 
     return _workflow_result(
         stage="module_apply_section_generation",
@@ -1493,16 +2268,32 @@ def run_module_apply_section_workflow(
         metrics={
             "lessonSectionCount": len(lesson_sections),
             "taughtConceptCount": len(taught_concepts),
-            "assessedConceptCount": len(assessed_concepts),
+            "targetConceptCount": len(target_concept_ids),
+            "assessedConceptCount": len(set(assessed_concept_ids) & set(target_concept_ids)),
+            "contentCoverageRatio": content_coverage_ratio,
+            "minimumContentCoverageRatio": minimum_coverage_ratio,
+            "coverageScope": assessment_plan.get("coverageScope"),
             "contentBlockCount": len(content_blocks),
             "quizBlockCount": len(quiz_blocks),
             "projectBlockCount": len(project_blocks),
             "questionCount": question_count,
             "validQuestionCount": valid_question_count,
+            "badTemplatePhraseCount": bad_template_phrase_count,
             "sourceIdCount": len(_source_ids_from_value(section)),
             "generatedFromFilledLessons": not isinstance(generated_section, dict),
+            "assessmentKind": assessment_plan.get("assessmentKind"),
+            "assessmentScale": assessment_plan.get("assessmentScale"),
+            "assessmentPlanStatus": assessment_plan_report.get("status"),
+            "assessmentSubWorkflowStatus": assessment_subworkflow_report.get("status") if assessment_subworkflow_report else None,
         },
-        artifacts={"section": section, "filledLessonSections": lesson_sections, "taughtConcepts": concepts},
+        artifacts={
+            "section": section,
+            "filledLessonSections": lesson_sections,
+            "taughtConcepts": concepts,
+            "assessmentPlan": assessment_plan,
+            "assessmentPlanReport": assessment_plan_report,
+            "assessmentSubWorkflowReport": assessment_subworkflow_report,
+        },
     )
 
 
@@ -1688,8 +2479,11 @@ __all__ = [
     "COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT",
     "COURSE_WRAPPER_GENERATION_CONTRACT",
     "COURSE_WRAPPER_QUALITY_REPORT_CONTRACT",
+    "MODULE_ASSESSMENT_PLAN_CONTRACT",
     "MODULE_APPLY_SECTION_CONTRACT",
     "MODULE_ASSEMBLY_CONTRACT",
+    "MODULE_PROJECT_ASSESSMENT_CONTRACT",
+    "MODULE_QUIZ_ASSESSMENT_CONTRACT",
     "MODULE_SECTION_PLAN_CONTRACT",
     "MODULE_SUMMARY_SECTION_CONTRACT",
     "PROGRAM_BRIEF_CONTRACT",
@@ -1698,12 +2492,17 @@ __all__ = [
     "SECTION_FILL_CONTRACT",
     "SOURCE_PACKET_OUTLINE_CONTRACT_VERSION",
     "STAGE_WORKFLOW_VERSION",
+    "assessment_coverage_scope_for_module",
+    "compact_module_apply_workflow_reports",
     "compact_stage_workflow_report",
     "run_cluster_generation_workflow",
     "run_course_module_outline_workflow",
     "run_course_wrapper_generation_workflow",
+    "run_module_assessment_plan_workflow",
     "run_module_apply_section_workflow",
     "run_module_assembly_workflow",
+    "run_module_project_assessment_workflow",
+    "run_module_quiz_assessment_workflow",
     "run_module_section_plan_workflow",
     "run_module_summary_section_workflow",
     "run_program_brief_workflow",

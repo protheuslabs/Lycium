@@ -35,6 +35,7 @@ from app.course_agent_types import CourseAgentError, CourseAgentResult
 from app.course_generation_readiness import build_generation_readiness_report
 from app.course_generation_service import validate_generation_taxonomy_input
 from app.course_generation_stage_workflows import (
+    compact_module_apply_workflow_reports,
     compact_stage_workflow_report,
     run_course_module_outline_workflow,
     run_module_apply_section_workflow,
@@ -110,17 +111,14 @@ def _module_stage_workflow_reports(
             )
         )
     generated_apply_sections = _apply_sections_for_stage_reports(generated_module)
-    reports.append(
-        compact_stage_workflow_report(
-            run_module_apply_section_workflow(
-                module_outline,
-                lesson_sections,
-                generated_section=generated_apply_sections[0] if generated_apply_sections else {},
-                module_number=module_number,
-                fallback_source_ids=source_ids,
-            )
-        )
+    apply_report = run_module_apply_section_workflow(
+        module_outline,
+        lesson_sections,
+        generated_section=generated_apply_sections[0] if generated_apply_sections else {},
+        module_number=module_number,
+        fallback_source_ids=source_ids,
     )
+    reports.extend(compact_module_apply_workflow_reports(apply_report))
     generated_summary_sections = _summary_sections_for_stage_reports(generated_module)
     reports.append(
         compact_stage_workflow_report(

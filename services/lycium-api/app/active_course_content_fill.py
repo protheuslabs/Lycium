@@ -7,6 +7,8 @@ from typing import Any, Literal
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.course_generation_stage_workflows import (
+    assessment_coverage_scope_for_module,
+    compact_module_apply_workflow_reports,
     compact_stage_workflow_report,
     run_module_apply_section_workflow,
     run_module_assembly_workflow,
@@ -206,6 +208,28 @@ def _course_complete(structure: dict[str, Any]) -> bool:
     return bool(modules) and all(_module_complete(module) for module in modules)
 
 
+def _module_apply_coverage_lesson_sections(modules: list[dict[str, Any]], module_position: int) -> list[dict[str, Any]]:
+    module = modules[module_position]
+    scope = assessment_coverage_scope_for_module(
+        module,
+        module_number=module_position + 1,
+        total_module_count=len(modules),
+    )
+    if scope == "entire_course":
+        scope_modules = modules
+    elif scope in {"current_and_previous_modules", "current_and_previous_sections"}:
+        scope_modules = modules[: module_position + 1]
+    else:
+        scope_modules = [module]
+    sections = [
+        section
+        for scoped_module in scope_modules
+        for section in _lesson_sections(scoped_module)
+        if _content_blocks(section)
+    ]
+    return sections or _lesson_sections(module)
+
+
 def _fill_candidate_rows(
     modules: list[dict[str, Any]],
     *,
@@ -245,6 +269,8 @@ def _run_module_artifacts(
     *,
     module_number: int,
     pacing_label: str,
+    total_module_count: int | None = None,
+    coverage_lesson_sections: list[dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     reports: list[dict[str, Any]] = []
     if not _module_content_ready(module):
@@ -256,9 +282,11 @@ def _run_module_artifacts(
         module,
         lesson_sections,
         module_number=module_number,
+        total_module_count=total_module_count,
+        coverage_lesson_sections=coverage_lesson_sections,
         fallback_source_ids=source_ids,
     )
-    reports.append(compact_stage_workflow_report(apply_report))
+    reports.extend(compact_module_apply_workflow_reports(apply_report))
     summary_report = run_module_summary_section_workflow(
         module,
         lesson_sections,
@@ -390,6 +418,8 @@ def fill_active_course_content(
                 module,
                 module_number=module_position + 1,
                 pacing_label=str(_metadata(structure).get("pacingLabel") or "Module"),
+                total_module_count=len(modules),
+                coverage_lesson_sections=_module_apply_coverage_lesson_sections(modules, module_position),
             )
             modules[module_position] = updated_module
             module_reports.extend(reports)

@@ -290,11 +290,12 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
                                         "question": f"How should learners apply Stoichiometry in source-backed chemistry case {index}?",
                                         "options": [
                                             "Use ratios and evidence to connect amounts and reactions.",
-                                            "Ignore source evidence and memorize only labels.",
-                                            "Assess a topic that was not introduced in the lesson.",
-                                            "Replace the chemistry problem with an unrelated reflection.",
+                                            "Choose coefficients without comparing particle amounts.",
+                                            "Use the product mass as the only ratio in the reaction.",
+                                            "Replace the mole ratio with the count of element symbols.",
                                         ],
                                         "answers": [0],
+                                        "conceptIds": ["Stoichiometry"],
                                     }
                                     for index in range(1, 11)
                                 ],
@@ -360,6 +361,7 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
         "course_module_outline_generation",
         "module_section_plan_generation",
         "section_fill_generation",
+        "module_assessment_planning",
         "module_apply_section_generation",
         "module_summary_section_generation",
         "module_assembly",

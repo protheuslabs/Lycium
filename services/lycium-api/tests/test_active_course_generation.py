@@ -336,12 +336,17 @@ def test_active_content_fill_orchestrator_fills_module_and_adds_apply_summary() 
 
     assert all(section["content"] for section in lesson_sections)
     assert all("description" not in section for section in lesson_sections)
-    assert any(section.get("pageType") == "apply" for section in module["sections"])
+    apply_section = next(section for section in module["sections"] if section.get("pageType") == "apply")
+    assert apply_section["metadata"]["assessmentPlan"]["coverageScope"] == "current_module"
+    assert apply_section["metadata"]["assessmentPlan"]["minimumContentCoverageRatio"] == 0.7
+    assert apply_section["metadata"]["assessmentPlan"]["quizSpec"]["questionCount"] == 10
     assert module["sections"][-1]["sectionType"] == "summary"
     assert report["status"] == "partially_filled"
     assert report["metrics"]["filledSectionCount"] == 2
-    assert report["metrics"]["moduleArtifactReportCount"] == 3
+    assert report["metrics"]["moduleArtifactReportCount"] == 5
     assert {stage["stage"] for stage in report["moduleWorkflows"]} == {
+        "module_assessment_planning",
+        "module_quiz_assessment_generation",
         "module_apply_section_generation",
         "module_summary_section_generation",
         "module_assembly",

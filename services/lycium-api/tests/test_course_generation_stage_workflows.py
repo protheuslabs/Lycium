@@ -11,8 +11,11 @@ from app.course_generation_stage_workflows import (
     COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
     COURSE_WRAPPER_GENERATION_CONTRACT,
     COURSE_WRAPPER_QUALITY_REPORT_CONTRACT,
+    MODULE_ASSESSMENT_PLAN_CONTRACT,
     MODULE_APPLY_SECTION_CONTRACT,
     MODULE_ASSEMBLY_CONTRACT,
+    MODULE_PROJECT_ASSESSMENT_CONTRACT,
+    MODULE_QUIZ_ASSESSMENT_CONTRACT,
     MODULE_SECTION_PLAN_CONTRACT,
     MODULE_SUMMARY_SECTION_CONTRACT,
     PROGRAM_BRIEF_CONTRACT,
@@ -22,8 +25,11 @@ from app.course_generation_stage_workflows import (
     run_cluster_generation_workflow,
     run_course_module_outline_workflow,
     run_course_wrapper_generation_workflow,
+    run_module_assessment_plan_workflow,
     run_module_apply_section_workflow,
     run_module_assembly_workflow,
+    run_module_project_assessment_workflow,
+    run_module_quiz_assessment_workflow,
     run_module_section_plan_workflow,
     run_module_summary_section_workflow,
     run_program_brief_workflow,
@@ -1026,8 +1032,15 @@ def test_module_apply_section_workflow_generates_assessment_from_filled_lessons(
     assert result["metrics"]["assessedConceptCount"] >= 2
     assert result["metrics"]["questionCount"] == 10
     assert result["metrics"]["validQuestionCount"] == 10
+    assert result["metrics"]["badTemplatePhraseCount"] == 0
+    assert result["metrics"]["contentCoverageRatio"] >= 0.7
+    assert result["metrics"]["minimumContentCoverageRatio"] == 0.7
+    assert result["metrics"]["coverageScope"] == "current_module"
     assert result["metrics"]["sourceIdCount"] == 0
     assert result["metrics"]["generatedFromFilledLessons"] is True
+    assert result["metrics"]["assessmentKind"] == "quiz"
+    assert result["metrics"]["assessmentPlanStatus"] == "passed"
+    assert result["metrics"]["assessmentSubWorkflowStatus"] == "passed"
     section = result["artifacts"]["section"]
     quiz = section["content"][0]
     assert section["pageType"] == "apply"
@@ -1035,11 +1048,190 @@ def test_module_apply_section_workflow_generates_assessment_from_filled_lessons(
     assert "sourceIds" not in section
     assert section["metadata"]["generationOutline"]["role"] == "assessment"
     assert section["metadata"]["generationOutline"]["planningSource"] == "module_apply_section_workflow"
+    assessment_metadata = section["metadata"]["assessmentPlan"]
+    assert assessment_metadata["contractVersion"] == "module-apply-assessment-plan-v1"
+    assert assessment_metadata["assessmentKind"] == "quiz"
+    assert assessment_metadata["coverageScope"] == "current_module"
+    assert assessment_metadata["minimumContentCoverageRatio"] == 0.7
+    assert assessment_metadata["contentCoverageRatio"] >= 0.7
+    assert assessment_metadata["quizSpec"]["questionCount"] == 10
+    assert assessment_metadata["quizSpec"]["multipleAnswerRatio"] == 0
+    assert assessment_metadata["targetConceptIds"]
+    assert assessment_metadata["assessedConceptIds"]
     assert quiz["type"] == "quiz"
     assert "sourceIds" not in quiz
     assert len(quiz["questions"]) == 10
     assert all(question["answers"] == [0] for question in quiz["questions"])
     assert all("sourceIds" not in question for question in quiz["questions"])
+    quiz_text = " ".join(
+        [question["question"] for question in quiz["questions"]]
+        + [option for question in quiz["questions"] for option in question["options"]]
+    ).lower()
+    assert "which answer best demonstrates mastery" not in quiz_text
+    assert "memorize the label" not in quiz_text
+    assert result["artifacts"]["assessmentPlanReport"]["contractVersion"] == MODULE_ASSESSMENT_PLAN_CONTRACT
+    assert result["artifacts"]["assessmentSubWorkflowReport"]["contractVersion"] == MODULE_QUIZ_ASSESSMENT_CONTRACT
+    assessment_plan = result["artifacts"]["assessmentPlan"]
+    assert assessment_plan["minimumContentCoverageRatio"] == 0.7
+    assert assessment_plan["coverageScope"] == "current_module"
+    assert assessment_plan["quizSpec"]["questionCount"] == 10
+    assert assessment_plan["quizSpec"]["multipleAnswerRatio"] == 0
+    assert assessment_plan["targetConceptIds"]
+
+
+def test_module_apply_section_workflow_generates_realistic_chemistry_quiz_questions() -> None:
+    module_outline = {
+        "id": "chem-m1",
+        "title": "Module 1: Scientific method, measurement, units, and significant figures",
+    }
+    filled_lessons = [
+        {
+            "id": "chem-m1-s1",
+            "title": "Scientific method and chemical measurement",
+            "pageType": "learn",
+            "sectionType": "lesson",
+            "content": [
+                {"type": "text", "value": "Students design controlled experiments and interpret uncertainty."},
+                {"type": "heading", "title": "Concepts introduced"},
+                {"type": "conceptCard", "title": "Scientific Method", "description": "A testable cycle of observation, hypothesis, experiment, evidence, and revision."},
+                {"type": "conceptCard", "title": "Hypothesis And Experiment", "description": "A hypothesis predicts what a controlled experiment should show."},
+                {"type": "conceptCard", "title": "Measurement Uncertainty", "description": "A measured value has a reasonable range due to instrument limits."},
+            ],
+        },
+        {
+            "id": "chem-m1-s2",
+            "title": "SI units and dimensional analysis",
+            "pageType": "learn",
+            "sectionType": "lesson",
+            "content": [
+                {"type": "text", "value": "Students convert quantities and report answers with appropriate precision."},
+                {"type": "heading", "title": "Concepts introduced"},
+                {"type": "conceptCard", "title": "SI Units", "description": "International base and derived units used for scientific measurement."},
+                {"type": "conceptCard", "title": "Unit Conversion", "description": "Changing units without changing the measured quantity."},
+                {"type": "conceptCard", "title": "Dimensional Analysis", "description": "Using conversion factors so units cancel correctly."},
+                {"type": "conceptCard", "title": "Significant Figures", "description": "Digits in a measured or calculated value supported by precision."},
+                {"type": "conceptCard", "title": "Precision", "description": "How close repeated measurements are to one another."},
+                {"type": "conceptCard", "title": "Accuracy", "description": "How close a measurement is to an accepted value."},
+            ],
+        },
+    ]
+
+    plan_report = run_module_assessment_plan_workflow(module_outline, filled_lessons)
+    quiz_report = run_module_quiz_assessment_workflow(module_outline, plan_report["artifacts"]["assessmentPlan"])
+    apply_report = run_module_apply_section_workflow(module_outline, filled_lessons)
+
+    assert plan_report["status"] == "passed"
+    assert plan_report["artifacts"]["assessmentPlan"]["assessmentKind"] == "quiz"
+    assert plan_report["artifacts"]["assessmentPlan"]["minimumContentCoverageRatio"] == 0.7
+    assert plan_report["artifacts"]["assessmentPlan"]["coverageScope"] == "current_module"
+    assert len(plan_report["artifacts"]["assessmentPlan"]["targetConceptIds"]) == 9
+    assert quiz_report["contractVersion"] == MODULE_QUIZ_ASSESSMENT_CONTRACT
+    assert quiz_report["status"] == "passed"
+    assert quiz_report["metrics"]["contentCoverageRatio"] >= 0.7
+    assert apply_report["status"] == "passed"
+    assert apply_report["metrics"]["contentCoverageRatio"] >= 0.7
+    assessment_metadata = apply_report["artifacts"]["section"]["metadata"]["assessmentPlan"]
+    assert assessment_metadata["coverageScope"] == "current_module"
+    assert assessment_metadata["minimumContentCoverageRatio"] == 0.7
+    assert assessment_metadata["contentCoverageRatio"] >= 0.7
+    assert len(assessment_metadata["targetConcepts"]) == 9
+    quiz = apply_report["artifacts"]["section"]["content"][0]
+    questions = quiz["questions"]
+    quiz_text = " ".join(
+        [question["question"] for question in questions]
+        + [option for question in questions for option in question["options"]]
+    ).lower()
+
+    assert len(questions) == 10
+    assert "which answer best demonstrates mastery" not in quiz_text
+    assert "source-backed evidence" not in quiz_text
+    assert "memorize the label" not in quiz_text
+    assert "assess an unrelated idea" not in quiz_text
+    assert "2.50 km x (1000 m / 1 km)" in quiz_text
+    assert "0.00450 g" in quiz_text
+    assert "+/-0.1 ml" in quiz_text
+    assert "controlled experiment" in quiz_text
+
+
+def test_module_quiz_assessment_workflow_blocks_low_content_coverage() -> None:
+    target_concepts = [
+        {"title": f"Concept {index}", "description": f"Definition for concept {index}."}
+        for index in range(1, 21)
+    ]
+    assessment_plan = {
+        "contractVersion": "module-assessment-plan-v1",
+        "moduleId": "coverage-m1",
+        "moduleTitle": "Module 1: Coverage Test",
+        "assessmentKind": "quiz",
+        "assessmentScale": "module_check",
+        "coverageScope": "current_module",
+        "minimumContentCoverageRatio": 0.7,
+        "targetConceptIds": [f"concept-{index}" for index in range(1, 21)],
+        "targetConcepts": target_concepts,
+        "quizSpec": {
+            "questionCount": 10,
+            "timeLimitSeconds": None,
+            "multipleAnswerRatio": 0,
+            "questionTypes": ["single_answer"],
+        },
+    }
+
+    result = run_module_quiz_assessment_workflow({"id": "coverage-m1", "title": "Module 1: Coverage Test"}, assessment_plan)
+
+    assert result["status"] == "failed"
+    assert result["metrics"]["questionCount"] == 10
+    assert result["metrics"]["targetConceptCount"] == 20
+    assert result["metrics"]["contentCoverageRatio"] == 0.5
+    assert any(issue["location"] == "assessmentPlan.minimumContentCoverageRatio" for issue in result["issues"])
+
+
+def test_module_apply_section_workflow_routes_project_modules_to_project_subworkflow() -> None:
+    module_outline = {
+        "id": "design-capstone",
+        "title": "Module 12: Capstone engineering design project",
+    }
+    filled_lessons = [
+        {
+            "id": "design-capstone-s1",
+            "title": "Design tradeoffs",
+            "pageType": "learn",
+            "sectionType": "lesson",
+            "content": [
+                {"type": "text", "value": "Students compare constraints, evidence, and tradeoffs."},
+                {"type": "heading", "title": "Concepts introduced"},
+                {"type": "conceptCard", "title": "Design Constraint", "description": "A requirement that limits acceptable solutions."},
+                {"type": "conceptCard", "title": "Tradeoff", "description": "A choice that improves one criterion while weakening another."},
+            ],
+        }
+    ]
+
+    plan_report = run_module_assessment_plan_workflow(module_outline, filled_lessons, module_number=12, total_module_count=12)
+    project_report = run_module_project_assessment_workflow(module_outline, plan_report["artifacts"]["assessmentPlan"])
+    apply_report = run_module_apply_section_workflow(module_outline, filled_lessons, module_number=12, total_module_count=12)
+
+    assert plan_report["artifacts"]["assessmentPlan"]["assessmentKind"] == "project"
+    assert plan_report["artifacts"]["assessmentPlan"]["assessmentScale"] == "final"
+    assert plan_report["artifacts"]["assessmentPlan"]["coverageScope"] == "entire_course"
+    assert plan_report["artifacts"]["assessmentPlan"]["projectSpec"]["submissionType"] == "text"
+    assert project_report["contractVersion"] == MODULE_PROJECT_ASSESSMENT_CONTRACT
+    assert project_report["status"] == "passed"
+    assert project_report["metrics"]["contentCoverageRatio"] >= 0.7
+    assert apply_report["status"] == "passed"
+    assert apply_report["metrics"]["assessmentKind"] == "project"
+    assert apply_report["metrics"]["contentCoverageRatio"] >= 0.7
+    section = apply_report["artifacts"]["section"]
+    assert section["pageType"] == "apply"
+    assert section["sectionType"] == "project"
+    assessment_metadata = section["metadata"]["assessmentPlan"]
+    assert assessment_metadata["assessmentKind"] == "project"
+    assert assessment_metadata["assessmentScale"] == "final"
+    assert assessment_metadata["coverageScope"] == "entire_course"
+    assert assessment_metadata["minimumContentCoverageRatio"] == 0.7
+    assert assessment_metadata["projectSpec"]["submissionType"] == "text"
+    assert section["content"][0]["type"] == "project"
+    assert section["content"][0]["submission"]["submissionType"] == "text"
+    assert len(section["content"][0]["rubric"]["criteria"]) == 3
+    assert "sourceIds" not in section
 
 
 def test_module_apply_section_workflow_blocks_empty_assessment_payload() -> None:

@@ -39,7 +39,12 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - section fill should be the only active workflow that replaces planned empty section shells with learner-facing content blocks
    - section fill should preserve source IDs only for sources the generated section actually uses; do not auto-attach full planned, module, or course source lists just because they were available
    - course, module, and section content-fill runs should be thin orchestrators over section fill; they may loop planned sections, save progress, add module Apply/Summary artifacts after lessons are filled, and support scoped retries, but should not bypass section fill with a separate content writer
-   - module Apply generation should be a separate workflow after section fill and before module assembly; it creates or validates Apply sections from filled lesson concepts, enforces quiz/project assessment shape, requires quiz-based module assessments to have at least 10 valid questions, omits section/block source IDs so Apply pages do not render a source footer, and fails empty assessment payloads
+   - module Apply generation should be a separate workflow after section fill and before module assembly; it should orchestrate assessment planning, routed quiz/test generation, routed project generation, and final Apply-section validation rather than writing assessment content directly
+   - assessment planning should inspect filled lesson content plus course/module requirements to decide whether the Apply section should be a quiz/test or project unless a requirement specifies the assessment type; ordinary module checks may default to quizzes, while capstone/lab/design/project/final-style modules may route to projects or larger checks
+   - assessment plans should record assessment kind, scale, coverage scope, minimum content coverage ratio, target section IDs, target concept IDs, target coverage item IDs, and inherited quiz/project specs before routed generation starts; default minimum content coverage is 70% for both quizzes/tests and projects
+   - quiz/test generation and project generation should be separate sub-workflows with separate rules; quizzes must ask realistic content questions that make learners calculate, classify, interpret, predict, or apply taught ideas, must not use generic meta-prompts such as "Which answer best demonstrates mastery of X?", and must include at least 10 valid questions for module quizzes with larger banks for unit or final-style checks; quiz specs may include question count, time limit, question types, and multiple-answer ratio, defaulting multiple-answer ratio to 0
+   - project generation should inherit coverage requirements from the assessment plan and include instructions, required evidence, rubric criteria, one canonical submission type, project spec metadata, and grader workflow metadata
+   - Apply sections should omit section/block source IDs so they do not render a source footer, and empty assessment payloads should fail instead of being hidden in module assembly
    - module summary generation should be a separate workflow after section fill and before module assembly; it creates or validates concept-card inventories from filled Learn sections, preserves `sourceSectionId`, and copies only source IDs already present on summarized concepts or lesson sections
    - hand passive workflows to active workflows through explicit artifacts such as course wrappers, source requests, source packets, `metadata.activeGenerationPlan`, `metadata.courseBuildOutline`, and course build tasks
    - use active generation for large paths: generate bottom-level prerequisite course wrappers first, then generate course modules or sections in small batches as needed
@@ -89,12 +94,16 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - Learn pages use `pageType: "learn"` and contain text, video, code, projects, labs, summaries, or other instructional blocks
    - Apply pages use `pageType: "apply"` and contain assessment or practice interactions
    - assessment means mastery evidence, not only quizzes; it may be a quiz, longer test, project, lab, simulation, portfolio task, or rubric-graded submission
+   - generate Apply sections through assessment planning first, then route to quiz/test or project generation unless the course requirements specify the assessment type
+   - assessment plans should persist on generated Apply section metadata so bad quizzes, projects, modules, or whole courses can be rebuilt later from the same coverage scope and target concepts
+   - default Apply coverage is at least 70% of the selected coverage universe; regular module checks usually cover the current module, unit checks may cover current and previous modules, and final-style Apply sections usually cover the whole course
    - quiz sections contain quiz blocks only and should be Apply pages
    - quiz blocks may use `maxAttempts` and `timeLimitSeconds`; omit or leave blank for unlimited attempts or unlimited time
    - quiz blocks may use `passPercentage`; omit or leave blank for neutral score display without pass/fail coloring
    - quiz blocks may use `showAnswers`; default false, but answers are always shown after the final allowed attempt
    - quiz `questions` or `questionBank` should be treated as the total bank; `questionsPerAttempt` may limit how many are displayed per attempt
-   - real module quizzes should include at least 10 questions; more than 10 is acceptable when it improves coverage
+   - real module quizzes should include at least 10 questions; more than 10 is acceptable when it improves coverage or when the assessment is a unit/final-style check
+   - quiz questions should ask learners to use taught content in realistic cases; avoid meta-questions that merely ask which option "demonstrates mastery" of a concept
    - quiz questions must use `question`, `options`, and `answers`; `answers` is an array of zero-based option indexes such as `[0]`, not answer objects or answer IDs
    - each new quiz attempt should randomize question selection, question order, and answer order
 9. End every module with a summary section:
