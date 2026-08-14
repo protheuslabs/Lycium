@@ -72,6 +72,18 @@ def test_prompt_goal_coverage_checklist_includes_macro_example_topics() -> None:
     assert all(item["sectionPlans"] for item in required_items)
 
 
+def test_prompt_phrase_cleanup_removes_leading_conjunctions() -> None:
+    checklist = build_course_coverage_checklist(
+        prompt="Create an introductory statistics course covering descriptive statistics, probability, and data visualization.",
+        level="undergrad",
+    )
+    titles = {item["title"] for item in checklist["requiredItems"]}
+
+    assert "Data Visualization" in titles
+    assert "And Data Visualization" not in titles
+    assert all(not title.startswith("And ") for title in titles)
+
+
 def test_coverage_outline_assigns_required_items_to_modules_and_sections() -> None:
     outline = build_outline_from_coverage_checklist(
         prompt="Create an undergraduate macroeconomics course.",

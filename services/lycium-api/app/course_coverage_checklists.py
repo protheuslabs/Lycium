@@ -115,6 +115,7 @@ LEADING_GOAL_VERB_PATTERN = re.compile(
 def _clean_topic_phrase(value: str) -> str:
     clean = re.sub(r"\s+", " ", str(value or "")).strip(" -:;,.")
     clean = LEADING_GOAL_VERB_PATTERN.sub("", clean).strip(" -:;,.")
+    clean = re.sub(r"^(?:and|or)\s+", "", clean, flags=re.IGNORECASE).strip(" -:;,.")
     clean = re.sub(
         r"\s+(?:for|to)\s+(?:first[- ]year|college|undergraduate|undergrad|students?|learners?|beginners?)\b.*$",
         "",
