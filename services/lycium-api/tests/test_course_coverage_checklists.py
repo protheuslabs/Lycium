@@ -12,6 +12,22 @@ from app.course_generation_stage_workflows import run_module_section_plan_workfl
 from app.course_source_gaps import create_needs_sources_course_snapshot
 from app.generation_outline import build_outline
 
+MACROECONOMICS_PROMPT = (
+    "Create an undergraduate macroeconomics course covering gross domestic product and national income accounting, "
+    "inflation and price indexes, unemployment and labor markets, aggregate demand and aggregate supply, fiscal policy, "
+    "money banking and monetary policy, economic growth and productivity, international trade and exchange rates."
+)
+MACROECONOMICS_GOALS = [
+    "gross domestic product and national income accounting",
+    "inflation and price indexes",
+    "unemployment and labor markets",
+    "aggregate demand and aggregate supply",
+    "fiscal policy",
+    "money banking and monetary policy",
+    "economic growth and productivity",
+    "international trade and exchange rates",
+]
+
 
 def _all_section_titles(outline: dict) -> list[str]:
     return [
@@ -23,10 +39,11 @@ def _all_section_titles(outline: dict) -> list[str]:
     ]
 
 
-def test_chem_105_coverage_checklist_includes_required_intro_chemistry_topics() -> None:
+def test_prompt_goal_coverage_checklist_includes_macro_example_topics() -> None:
     checklist = build_course_coverage_checklist(
-        prompt="Create a CHEM 105 general chemistry course for first-year college students.",
+        prompt="Create an undergraduate macroeconomics course.",
         level="undergrad",
+        goals=MACROECONOMICS_GOALS,
     )
     required_items = checklist["requiredItems"]
     required_ids = {item["id"] for item in required_items}
@@ -37,22 +54,30 @@ def test_chem_105_coverage_checklist_includes_required_intro_chemistry_topics() 
     }
 
     assert checklist["contractVersion"] == COURSE_COVERAGE_CHECKLIST_CONTRACT
-    assert checklist["courseKind"] == "intro_college_chemistry"
+    assert checklist["courseKind"] == "prompt_inferred"
+    assert checklist["source"] == "prompt_goals"
     assert {
-        "measurement-scientific-method",
-        "stoichiometry",
-        "bonding-lewis-geometry-hybridization",
-        "kinetics-equilibrium-acids-bases-redox",
+        "gross-domestic-product-and-national-income-accounting",
+        "inflation-and-price-indexes",
+        "aggregate-demand-and-aggregate-supply",
+        "money-banking-and-monetary-policy",
     }.issubset(required_ids)
-    assert {"scientific method", "stoichiometry", "hybridization", "acid", "base"}.issubset(must_teach)
+    assert {
+        "gross domestic product and national income accounting",
+        "inflation and price indexes",
+        "aggregate demand and aggregate supply",
+        "money banking and monetary policy",
+    }.issubset(must_teach)
+    assert not {"stoichiometry", "chemistry"}.intersection(must_teach)
     assert all(item["sectionPlans"] for item in required_items)
 
 
 def test_coverage_outline_assigns_required_items_to_modules_and_sections() -> None:
     outline = build_outline_from_coverage_checklist(
-        prompt="Create a CHEM 105 general chemistry course.",
-        desired_module_count=12,
+        prompt="Create an undergraduate macroeconomics course.",
+        desired_module_count=8,
         level="undergrad",
+        goals=MACROECONOMICS_GOALS,
     )
     report = outline["coverageAllocationReport"]
     section_titles = _all_section_titles(outline)
@@ -71,23 +96,24 @@ def test_coverage_outline_assigns_required_items_to_modules_and_sections() -> No
     assert report["unassignedSectionItemIds"] == []
     assert report["duplicateModuleAssignmentIds"] == []
     assert assigned_section_ids == required_ids
-    assert len(outline["modules"]) == 12
-    assert any("stoichiometry" in module["title"].lower() for module in outline["modules"])
-    assert any("Lewis structures" in title for title in section_titles)
+    assert len(outline["modules"]) == 8
+    assert any("inflation" in module["title"].lower() for module in outline["modules"])
+    assert any("Aggregate Demand And Aggregate Supply" in title for title in section_titles)
     assert all("Orientation and vocabulary" not in title for title in section_titles)
     assert all("Essential concepts" not in title for title in section_titles)
+    assert all(not title.startswith("Define ") for title in section_titles)
 
 
-def test_generation_outline_fallback_uses_coverage_checklist_for_chemistry() -> None:
+def test_generation_outline_fallback_uses_prompt_goals_for_macro_example() -> None:
     with db.SessionLocal() as session:
         outline = build_outline(
             session,
-            prompt="Create a CHEM 105 general chemistry course with college-level essentials.",
-            desired_module_count=12,
+            prompt="Create an undergraduate macroeconomics course.",
+            desired_module_count=8,
             free_only=False,
             trust_min=0,
             level="undergrad",
-            learning_goals=[],
+            learning_goals=MACROECONOMICS_GOALS,
         )
 
     all_keywords = {
@@ -98,58 +124,66 @@ def test_generation_outline_fallback_uses_coverage_checklist_for_chemistry() -> 
     }
 
     assert outline["provenance"]["mode"] == "coverage-checklist-fallback"
-    assert outline["coverageChecklist"]["courseKind"] == "intro_college_chemistry"
+    assert outline["coverageChecklist"]["courseKind"] == "prompt_inferred"
+    assert outline["coverageChecklist"]["source"] == "prompt_goals"
     assert outline["coverageAllocationReport"]["status"] == "passed"
-    assert {"stoichiometry", "hybridization", "acid", "base"}.issubset(all_keywords)
+    assert {
+        "inflation and price indexes",
+        "aggregate demand and aggregate supply",
+        "money banking and monetary policy",
+    }.issubset(all_keywords)
+    assert "stoichiometry" not in all_keywords
 
 
 def test_needs_sources_course_preserves_coverage_handoff_metadata() -> None:
     with db.SessionLocal() as session:
         snapshot = create_needs_sources_course_snapshot(
             session,
-            prompt="Create a CHEM 105 general chemistry course.",
+            prompt=MACROECONOMICS_PROMPT,
             learner_id=None,
             level="undergrad",
             language="en",
             source_policy="free-only",
-            desired_module_count=12,
+            desired_module_count=8,
             expected_duration_minutes=180,
             source_urls=[],
-            category="natural-sciences-mathematics",
-            department="chemistry",
+            category="business-management",
+            department="economics",
         )
         structure = snapshot.structure
 
     metadata = structure["metadata"]
     sections = [section for module in structure["modules"] for section in module["sections"]]
-    stoich_sections = [section for section in sections if section.get("coverageItemId") == "stoichiometry"]
+    inflation_sections = [section for section in sections if section.get("coverageItemId") == "inflation-and-price-indexes"]
 
-    assert metadata["courseCoverageChecklist"]["courseKind"] == "intro_college_chemistry"
+    assert metadata["courseCoverageChecklist"]["courseKind"] == "prompt_inferred"
+    assert metadata["courseCoverageChecklist"]["source"] == "prompt_phrases"
     assert metadata["courseCoverageAllocationReport"]["status"] == "passed"
     assert metadata["generationPlan"]["coverageAllocationStatus"] == "passed"
-    assert len(structure["modules"]) == 12
-    assert stoich_sections
+    assert len(structure["modules"]) == 8
+    assert inflation_sections
     assert all(section["content"] == [] for section in sections)
     assert all(section["metadata"]["generationOutline"]["assignedCoverageItemIds"] for section in sections)
     assert all(section["metadata"]["generationOutline"]["coverageMustTeach"] for section in sections)
     assert any(
-        "stoichiometry" in section["metadata"]["generationOutline"]["coverageMustTeach"]
-        for section in stoich_sections
+        "inflation and price indexes" in section["metadata"]["generationOutline"]["coverageMustTeach"]
+        for section in inflation_sections
     )
 
 
-def test_section_fill_uses_coverage_handoff_for_real_chemistry_content() -> None:
+def test_section_fill_uses_coverage_handoff_for_prompt_inferred_content() -> None:
     outline = build_outline_from_coverage_checklist(
-        prompt="Create a CHEM 105 general chemistry course.",
-        desired_module_count=12,
+        prompt="Create an undergraduate macroeconomics course.",
+        desired_module_count=8,
         level="undergrad",
+        goals=MACROECONOMICS_GOALS,
     )
-    stoich_module = next(
+    inflation_module = next(
         module
         for module in outline["modules"]
-        if "stoichiometry" in module["assignedCoverageItemIds"]
+        if "inflation-and-price-indexes" in module["assignedCoverageItemIds"]
     )
-    plan_result = run_module_section_plan_workflow(stoich_module)
+    plan_result = run_module_section_plan_workflow(inflation_module)
     section_plan, planned_section = next(
         (plan, section)
         for plan, section in zip(
@@ -157,7 +191,7 @@ def test_section_fill_uses_coverage_handoff_for_real_chemistry_content() -> None
             plan_result["artifacts"]["plannedSections"],
             strict=True,
         )
-        if "stoichiometric" in plan["title"].lower()
+        if "applied" in plan["title"].lower()
     )
 
     result = run_section_fill_workflow(
@@ -169,8 +203,12 @@ def test_section_fill_uses_coverage_handoff_for_real_chemistry_content() -> None
     lesson_text = " ".join(str(block.get("value") or "") for block in section["content"])
 
     assert result["status"] == "passed"
-    assert section["metadata"]["generationOutline"]["coverageItemId"] == "stoichiometry"
-    assert "Stoichiometry uses balanced equations and mole ratios" in lesson_text
-    assert "2 H2 + O2 -> 2 H2O" in lesson_text
-    assert "limiting" in lesson_text.lower()
-    assert any(block.get("type") == "conceptCard" and block.get("title") == "Stoichiometry" for block in section["content"])
+    assert section["metadata"]["generationOutline"]["coverageItemId"] == "inflation-and-price-indexes"
+    assert "Inflation And Price Indexes" in lesson_text
+    assert "realistic case" in lesson_text
+    assert "evidence" in lesson_text.lower()
+    assert "stoichiometry" not in lesson_text.lower()
+    assert any(
+        block.get("type") == "conceptCard" and block.get("title") == "Inflation And Price Indexes"
+        for block in section["content"]
+    )

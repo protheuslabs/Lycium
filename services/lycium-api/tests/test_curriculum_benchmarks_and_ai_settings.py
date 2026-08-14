@@ -68,16 +68,16 @@ def test_curriculum_context_derives_requirements_origins_and_source_slots() -> N
 
 def test_source_corpus_preflight_filters_irrelevant_sources() -> None:
     preflight = compile_source_corpus_preflight(
-        prompt="CHEM 105 General Chemistry I covering atoms, bonding, stoichiometry, gases, equilibrium, and acids",
+        prompt="Macroeconomics Principles covering GDP, inflation, unemployment, aggregate demand, monetary policy, and trade",
         source_urls=[
-            "https://catalog.example.edu/courses/chem105",
+            "https://catalog.example.edu/courses/macroeconomics-principles",
             "https://example.org/gardening/herb-roasting-guide",
         ],
         source_documents=[
             {
-                "url": "https://catalog.example.edu/courses/chem105",
+                "url": "https://catalog.example.edu/courses/macroeconomics-principles",
                 "contentType": "text/plain",
-                "text": "CHEM 105 covers atoms, isotopes, periodic trends, bonding, stoichiometry, gases, equilibrium, acids, and bases.",
+                "text": "Macroeconomics principles covers GDP, inflation, unemployment, aggregate demand, monetary policy, trade, and exchange rates.",
             },
             {
                 "url": "https://example.org/gardening/herb-roasting-guide",
@@ -87,7 +87,7 @@ def test_source_corpus_preflight_filters_irrelevant_sources() -> None:
         ],
     )
 
-    assert preflight.source_urls == ["https://catalog.example.edu/courses/chem105"]
+    assert preflight.source_urls == ["https://catalog.example.edu/courses/macroeconomics-principles"]
     assert preflight.synthesis["metrics"]["includedSourceCount"] == 1
     assert preflight.synthesis["metrics"]["excludedSourceCount"] == 1
     assert preflight.synthesis["excludedSources"][0]["url"] == "https://example.org/gardening/herb-roasting-guide"
@@ -125,38 +125,38 @@ def test_source_corpus_preflight_records_weak_single_anchor_noise() -> None:
 
 def test_curriculum_context_extracts_real_syllabus_structure() -> None:
     syllabus = """
-    CHEM 105 General Chemistry I
+    Macroeconomics Principles
     Course Description
-    Students will apply atomic structure, stoichiometry, bonding, thermochemistry, and gases to explain chemical systems.
+    Students will apply GDP, inflation, unemployment, aggregate demand, fiscal policy, and monetary policy to explain economy-wide outcomes.
     Learning Outcomes
-    1. Calculate quantities in chemical reactions using dimensional analysis and stoichiometry.
-    2. Explain atomic structure, periodic trends, and electron configurations.
-    3. Compare ionic, covalent, and metallic bonding models.
-    4. Solve thermochemistry problems using enthalpy and calorimetry.
+    1. Interpret GDP and national income accounting measures.
+    2. Calculate inflation rates from price indexes.
+    3. Explain unemployment and labor force measures.
+    4. Analyze aggregate demand, aggregate supply, fiscal policy, and monetary policy.
     Topics
-    Week 1: Measurement, matter, and significant figures
-    Week 2: Atoms, isotopes, and periodic trends
-    Week 3: Chemical formulas, reactions, and stoichiometry
-    Week 4: Chemical bonding and molecular geometry
+    Week 1: Economic measurement and GDP
+    Week 2: Inflation and price indexes
+    Week 3: Unemployment and labor markets
+    Week 4: Aggregate demand, aggregate supply, and policy
     Prerequisites
-    High school algebra and prior chemistry are recommended.
+    High school algebra and introductory economics are recommended.
     Assessment
-    Students complete quizzes, labs, exams, and a final project.
+    Students complete quizzes, data analyses, exams, and a final project.
     Optional Topics
-    Nuclear chemistry applications
+    Exchange rate applications
     """
     context = compile_curriculum_benchmark_context(
-        prompt="CHEM 105 General Chemistry I",
+        prompt="Macroeconomics Principles",
         source_urls=[],
         source_documents=[
             {
-                "url": "https://catalog.example.edu/courses/chem105",
+                "url": "https://catalog.example.edu/courses/macroeconomics-principles",
                 "contentType": "text/plain",
                 "text": syllabus,
             }
         ],
-        category="natural-sciences-mathematics",
-        department="chemistry",
+        category="business-management",
+        department="economics",
     )
     benchmark = context["curriculumBenchmarks"][0]
 
@@ -164,34 +164,34 @@ def test_curriculum_context_extracts_real_syllabus_structure() -> None:
     assert benchmark["extraction"]["extractor"] == "curriculum-structure-v2"
     assert benchmark["sourceType"] == "university_catalog"
     assert len(benchmark["extractedRequirements"]) >= 4
-    assert "High school algebra and prior chemistry are recommended" in benchmark["prerequisites"]
-    assert {"quiz", "lab", "exam", "project"}.issubset(set(benchmark["assessmentTypes"]))
+    assert "High school algebra and introductory economics are recommended" in benchmark["prerequisites"]
+    assert {"quiz", "exam", "project"}.issubset(set(benchmark["assessmentTypes"]))
     assert benchmark["scheduleClues"]
     assert benchmark["optionalCandidates"]
-    assert any("Stoichiometry" in topic for topic in context["courseParityProfile"]["commonRequiredTopics"])
+    assert any("Inflation" in topic for topic in context["courseParityProfile"]["commonRequiredTopics"])
     assert context["sourceSlots"]
 
 
 def test_course_module_outlines_are_built_from_requirement_origins() -> None:
     context = compile_curriculum_benchmark_context(
-        prompt="CHEM 105 General Chemistry I",
+        prompt="Macroeconomics Principles",
         source_urls=[],
         source_documents=[
             {
-                "url": "https://catalog.example.edu/courses/chem105",
+                "url": "https://catalog.example.edu/courses/macroeconomics-principles",
                 "contentType": "text/plain",
                 "text": """
-                CHEM 105 General Chemistry I
+                Macroeconomics Principles
                 Learning Outcomes
-                1. Calculate quantities in chemical reactions using stoichiometry.
-                2. Explain atomic structure and periodic trends.
-                3. Compare ionic and covalent bonding.
-                4. Solve thermochemistry problems.
+                1. Interpret GDP and national income accounting.
+                2. Calculate inflation from price indexes.
+                3. Analyze unemployment and labor markets.
+                4. Compare fiscal and monetary policy.
                 """,
             }
         ],
-        category="natural-sciences-mathematics",
-        department="chemistry",
+        category="business-management",
+        department="economics",
     )
     modules = _coerce_plan_modules({"modules": [{"title": "Model invented module"}]}, 3, benchmark_context=context)
 
@@ -204,41 +204,41 @@ def test_course_module_outlines_are_built_from_requirement_origins() -> None:
 
 def test_curriculum_context_maps_required_concepts_to_course_sections() -> None:
     context = compile_curriculum_benchmark_context(
-        prompt="CHEM 105 General Chemistry I",
-        source_urls=["https://catalog.example.edu/courses/chem105"],
+        prompt="Macroeconomics Principles",
+        source_urls=["https://catalog.example.edu/courses/macroeconomics-principles"],
         source_documents=[
             {
-                "url": "https://catalog.example.edu/courses/chem105",
+                "url": "https://catalog.example.edu/courses/macroeconomics-principles",
                 "contentType": "text/plain",
                 "text": """
-                CHEM 105 General Chemistry I
+                Macroeconomics Principles
                 Learning Outcomes
-                1. Calculate stoichiometry quantities in chemical reactions.
-                2. Explain atomic structure and periodic trends.
+                1. Calculate inflation from price indexes.
+                2. Explain unemployment and labor force measures.
                 """,
             }
         ],
-        category="natural-sciences-mathematics",
-        department="chemistry",
+        category="business-management",
+        department="economics",
     )
     course = {
-        "title": "CHEM 105",
-        "shortDescription": "General chemistry.",
+        "title": "Macroeconomics Principles",
+        "shortDescription": "Principles-level macroeconomics.",
         "difficultyLevel": "undergrad",
-        "category": "natural-sciences-mathematics",
-        "department": "chemistry",
+        "category": "business-management",
+        "department": "economics",
         "sourceIds": ["input-source-1"],
-        "sourceRecords": [{"id": "input-source-1", "type": "catalog", "url": "https://catalog.example.edu/courses/chem105"}],
+        "sourceRecords": [{"id": "input-source-1", "type": "catalog", "url": "https://catalog.example.edu/courses/macroeconomics-principles"}],
         "metadata": {},
         "modules": [
             {
                 "id": "module-1",
-                "title": "Module 1: Stoichiometry",
+                "title": "Module 1: Inflation",
                 "sourceIds": ["input-source-1"],
                 "sections": [
                     {
-                        "id": "section-stoichiometry",
-                        "title": "Stoichiometry quantities",
+                        "id": "section-inflation",
+                        "title": "Inflation and price indexes",
                         "pageType": "learn",
                         "sectionType": "lesson",
                         "sourceIds": ["input-source-1"],
@@ -246,7 +246,7 @@ def test_curriculum_context_maps_required_concepts_to_course_sections() -> None:
                         "content": [
                             {
                                 "type": "conceptCards",
-                                "concepts": [{"name": "Stoichiometry", "description": "Quantities in reactions."}],
+                                "concepts": [{"name": "Inflation", "description": "Price-level change over time."}],
                             }
                         ],
                     }
@@ -258,7 +258,7 @@ def test_curriculum_context_maps_required_concepts_to_course_sections() -> None:
     coverage = attached["metadata"]["conceptSourceCoverageMap"]
 
     assert coverage
-    assert any("section-stoichiometry" in row["sectionIds"] for row in coverage)
+    assert any("section-inflation" in row["sectionIds"] for row in coverage)
     assert all(row["status"] in {"covered", "weak", "missing"} for row in coverage)
     assert attached["metadata"]["sourceSlots"][0]["coverageStatus"] in {"covered", "weak", "missing"}
 
@@ -272,21 +272,21 @@ def test_curriculum_context_maps_required_concepts_to_course_sections() -> None:
 
 
 def test_source_index_snapshots_feed_curriculum_benchmark_extraction(client, monkeypatch) -> None:
-    url = "https://catalog.example.edu/courses/chem105"
+    url = "https://catalog.example.edu/courses/macroeconomics-principles"
     _install_source_fetch_mock(
         monkeypatch,
         {
             url: """
-            <html><head><title>CHEM 105 Catalog</title></head><body>
-            <h1>CHEM 105 General Chemistry I</h1>
+            <html><head><title>Macroeconomics Principles Catalog</title></head><body>
+            <h1>Macroeconomics Principles</h1>
             <h2>Course Description</h2>
-            <p>Students study atomic structure, stoichiometry, bonding, thermochemistry, and gases.</p>
+            <p>Students study GDP, inflation, unemployment, aggregate demand, fiscal policy, and monetary policy.</p>
             <h2>Learning Outcomes</h2>
             <ol>
-              <li>Calculate stoichiometric quantities in chemical reactions.</li>
-              <li>Explain periodic trends, atomic structure, and electron configurations.</li>
-              <li>Compare ionic, covalent, and metallic bonding models.</li>
-              <li>Solve thermochemistry and gas law problems.</li>
+              <li>Interpret GDP and national income accounting.</li>
+              <li>Calculate inflation from price indexes.</li>
+              <li>Explain unemployment and labor force measures.</li>
+              <li>Analyze fiscal and monetary policy.</li>
             </ol>
             </body></html>
             """,
@@ -303,14 +303,14 @@ def test_source_index_snapshots_feed_curriculum_benchmark_extraction(client, mon
 
     assert len(documents) == 1
     assert documents[0]["snapshotId"]
-    assert "stoichiometry" in documents[0]["text"].lower()
+    assert "inflation" in documents[0]["text"].lower()
 
     context = compile_curriculum_benchmark_context(
-        prompt="CHEM 105 General Chemistry I",
+        prompt="Macroeconomics Principles",
         source_urls=[url],
         source_documents=documents,
-        category="natural-sciences-mathematics",
-        department="chemistry",
+        category="business-management",
+        department="economics",
     )
 
     assert context["curriculumBenchmarks"][0]["extraction"]["status"] == "parsed"
@@ -471,5 +471,4 @@ def test_curriculum_artifacts_are_persisted_as_course_records(client) -> None:
     response = client.get(f"/v1/courses/{course_snapshot_id}/curriculum-artifacts")
     assert response.status_code == 200, response.text
     assert response.json()["artifactReferences"] == artifacts["artifactReferences"]
-
 

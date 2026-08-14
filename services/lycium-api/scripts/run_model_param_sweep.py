@@ -21,40 +21,39 @@ DEFAULT_API_BASE = "http://127.0.0.1:8000"
 DEFAULT_MODELS = ["qwen2.5:3b", "llama3.1:8b", "llama3.1:70b", "kimi-k2.6:cloud"]
 
 
-CHEMISTRY_ARTIFACTS = [
+MACROECONOMICS_ARTIFACTS = [
     {
-        "id": "chem105-syllabus-outline",
-        "filename": "chem105-syllabus-outline.txt",
+        "id": "macroeconomics-syllabus-outline",
+        "filename": "macroeconomics-syllabus-outline.txt",
         "mimeType": "text/plain",
         "text": """
-CHEM 105 General Chemistry I introduces measurement, dimensional analysis, atomic structure, periodic trends,
-chemical bonding, molecular geometry, stoichiometry, thermochemistry, gases, and aqueous reactions. Laboratory
-work emphasizes safety, measurement, data analysis, calorimetry, titration, and communicating results.
-Learning outcomes include solving quantitative chemistry problems, explaining structure-property relationships,
-writing balanced chemical equations, interpreting lab data, and connecting microscopic models to macroscopic
-observations.
+Macroeconomics Principles introduces GDP, national income accounting, inflation, unemployment, aggregate demand,
+aggregate supply, fiscal policy, money, banking, monetary policy, economic growth, international trade, and exchange
+rates. Data activities emphasize reading public data tables, calculating inflation, comparing labor-market measures,
+interpreting policy changes, and communicating evidence-based conclusions.
+Learning outcomes include interpreting economic indicators, explaining model assumptions, analyzing policy tradeoffs,
+and connecting macroeconomic data to economy-wide claims.
 """.strip(),
     },
     {
-        "id": "chem105-open-textbook-excerpt",
-        "filename": "chem105-open-textbook-excerpt.txt",
+        "id": "macroeconomics-open-textbook-excerpt",
+        "filename": "macroeconomics-open-textbook-excerpt.txt",
         "mimeType": "text/plain",
         "text": """
-Core topics: significant figures, unit conversion, isotopes, mole concept, empirical formulas, limiting reactants,
-solution concentration, enthalpy, ideal gas law, electron configuration, periodic properties, Lewis structures,
-VSEPR geometry, polarity, intermolecular forces, precipitation reactions, acid-base reactions, oxidation-reduction,
-and laboratory uncertainty.
+Core topics: circular-flow models, GDP components, real versus nominal GDP, CPI, inflation, unemployment, labor force
+participation, aggregate demand, aggregate supply, fiscal policy multipliers, money creation, central banking,
+monetary policy, long-run growth, exchange rates, and trade balances.
 """.strip(),
     },
     {
-        "id": "chem105-lab-sequence",
-        "filename": "chem105-lab-sequence.txt",
+        "id": "macroeconomics-data-activity-sequence",
+        "filename": "macroeconomics-data-activity-sequence.txt",
         "mimeType": "text/plain",
         "text": """
-Representative labs: chemical safety orientation, density and measurement uncertainty, hydrate composition,
-stoichiometry of a precipitation reaction, coffee-cup calorimetry, gas collection over water, acid-base titration,
-and qualitative analysis of ions. Lab assessment uses pre-lab questions, data tables, calculations, claim-evidence-
-reasoning conclusions, and short error analyses.
+Representative data activities: build a GDP components table, calculate inflation from a price index, compare
+unemployment and labor force participation, trace an aggregate demand shock, analyze a fiscal-policy scenario,
+interpret a central-bank decision, and compare exchange-rate changes. Assessment uses data tables, calculations,
+claim-evidence-reasoning conclusions, and short policy memos.
 """.strip(),
     },
 ]
@@ -87,7 +86,7 @@ def run_model(api_base: str, model: str, args: argparse.Namespace) -> dict[str, 
         "desired_module_count": module_count,
         "expected_duration_minutes": args.duration_minutes,
         "max_stage_timeout_seconds": args.stage_timeout,
-        "input_artifacts": CHEMISTRY_ARTIFACTS,
+        "input_artifacts": MACROECONOMICS_ARTIFACTS,
     }
     started = time.monotonic()
     try:
@@ -136,11 +135,11 @@ def main() -> int:
     parser.add_argument("--per-model-timeout", type=float, default=180.0)
     parser.add_argument("--task", choices=["full-course", "one-module", "plan", "section", "quiz", "all-micro"], default="full-course")
     parser.add_argument("--level", default="undergrad")
-    parser.add_argument("--category", default="natural-sciences-mathematics")
-    parser.add_argument("--department", default="chemistry")
+    parser.add_argument("--category", default="business-management")
+    parser.add_argument("--department", default="economics")
     parser.add_argument(
         "--prompt",
-        default="Generate a college-style CHEM 105 General Chemistry I course from the provided syllabus, textbook, and lab artifacts.",
+        default="Generate a college-style Macroeconomics Principles course from the provided syllabus, textbook, and data activity artifacts.",
     )
     parser.add_argument("--out", default=None, help="Optional JSON output path.")
     args = parser.parse_args()
@@ -157,7 +156,7 @@ def main() -> int:
             "modules": args.modules,
             "durationMinutes": args.duration_minutes,
             "stageTimeoutSeconds": args.stage_timeout,
-            "artifactCount": len(CHEMISTRY_ARTIFACTS),
+            "artifactCount": len(MACROECONOMICS_ARTIFACTS),
             "task": args.task,
         },
         "results": [],

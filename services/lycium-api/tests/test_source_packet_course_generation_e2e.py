@@ -21,43 +21,43 @@ PROMPT_FILLER_PATTERNS = [
 ]
 
 
-def _chem_105_source_packet() -> dict[str, Any]:
+def _macroeconomics_source_packet() -> dict[str, Any]:
     documents = [
         {
-            "url": "https://example.edu/chem105/syllabus",
-            "title": "CHEM 105 syllabus",
+            "url": "https://example.edu/macroeconomics/syllabus",
+            "title": "Macroeconomics principles syllabus",
             "contentType": "text/plain",
             "fetchStatus": "provided",
             "text": (
-                "CHEM 105 General Chemistry I introduces measurement, matter, atomic structure, periodic trends, "
-                "chemical nomenclature, stoichiometry, limiting reactants, aqueous reactions, thermochemistry, "
-                "chemical bonding, molecular geometry, gases, and laboratory safety."
+                "Macroeconomics principles introduces economic measurement, gross domestic product, national income "
+                "accounting, inflation, price indexes, unemployment, labor force participation, aggregate demand, "
+                "aggregate supply, fiscal policy, money, banking, monetary policy, economic growth, and trade."
             ),
         },
         {
-            "url": "https://example.edu/chem105/lab-manual",
-            "title": "CHEM 105 laboratory manual",
+            "url": "https://example.edu/macroeconomics/data-guide",
+            "title": "Macroeconomics public data guide",
             "contentType": "text/plain",
             "fetchStatus": "provided",
             "text": (
-                "Laboratory activities include density measurement, hydrate composition, reaction yield, calorimetry, "
-                "titration, gas collection, laboratory notebook practice, uncertainty, and evidence-based analysis."
+                "Data activities include reading GDP tables, calculating inflation from price indexes, comparing "
+                "unemployment and labor force measures, interpreting policy changes, and writing evidence-based analysis."
             ),
         },
         {
-            "url": "https://example.edu/chem105/open-textbook",
-            "title": "Open general chemistry textbook",
+            "url": "https://example.edu/macroeconomics/open-textbook",
+            "title": "Open macroeconomics textbook",
             "contentType": "text/plain",
             "fetchStatus": "provided",
             "text": (
-                "Open general chemistry readings explain atoms, molecules, moles, balanced equations, energy changes, "
-                "Lewis structures, VSEPR molecular shape, ideal gas law calculations, and solution concentration."
+                "Open macroeconomics readings explain circular-flow models, GDP components, aggregate demand and supply, "
+                "inflation, unemployment, fiscal policy, central banking, money creation, growth, exchange rates, and trade."
             ),
         },
     ]
     return {
         "contract_version": "source-packet-v1",
-        "context_id": "chem-105-e2e-source-packet",
+        "context_id": "macroeconomics-e2e-source-packet",
         "source_documents": documents,
         "source_urls": [str(document["url"]) for document in documents],
         "quality": {
@@ -74,7 +74,7 @@ def _chem_105_source_packet() -> dict[str, Any]:
                     "url": document["url"],
                     "decision": "included",
                     "reasonCode": "strong_relevance",
-                    "matchedTerms": ["chem", "105", "chemistry"],
+                    "matchedTerms": ["macroeconomics", "gdp", "inflation"],
                 }
                 for document in documents
             ],
@@ -155,16 +155,16 @@ def test_source_packet_to_generated_course_snapshot_runs_native_quality_path(cli
     response = client.post(
         "/v1/courses/generate",
         json={
-            "prompt": "Create an undergraduate CHEM 105 General Chemistry I course with labs, quizzes, and source-backed summaries.",
+            "prompt": "Create an undergraduate Macroeconomics Principles course with data activities, quizzes, and source-backed summaries.",
             "level": "undergrad",
-            "category": "natural-sciences-mathematics",
-            "department": "chemistry",
+            "category": "business-management",
+            "department": "economics",
             "desired_module_count": 3,
             "expected_duration_minutes": 240,
             "source_policy": "balanced",
             "free_only": True,
             "trust_min": 0.1,
-            "source_packet": _chem_105_source_packet(),
+            "source_packet": _macroeconomics_source_packet(),
         },
     )
 

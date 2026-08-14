@@ -5,10 +5,6 @@
   "title": "Chemistry LibreTexts: Chemistry 2e (OpenStax)",
   "url": "https://chem.libretexts.org/Bookshelves/General_Chemistry/Chemistry_2e_(OpenStax)",
   "license": "CC BY 4.0 source remix",
-  "usedByCourseIds": [
-    "local-chem-105"
-  ],
-  "usedByCourseTitles": [
-    "CHEM 105 General Chemistry I"
-  ]
+  "usedByCourseIds": [],
+  "usedByCourseTitles": []
 }

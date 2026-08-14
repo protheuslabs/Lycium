@@ -6,9 +6,9 @@ from app.course_generation_readiness import build_generation_readiness_report
 def test_generation_readiness_passes_with_enough_source_evidence() -> None:
     report = build_generation_readiness_report(
         source_urls=[
-            "https://example.edu/chem105/syllabus",
-            "https://example.edu/chem105/labs",
-            "https://example.edu/chem105/textbook",
+            "https://example.edu/macroeconomics/syllabus",
+            "https://example.edu/macroeconomics/data-guide",
+            "https://example.edu/macroeconomics/textbook",
         ],
     )
 
@@ -22,12 +22,12 @@ def test_generation_readiness_passes_with_enough_source_evidence() -> None:
 def test_generation_readiness_counts_usable_files_without_double_counting_artifact_urls() -> None:
     report = build_generation_readiness_report(
         source_urls=[
-            "https://example.edu/chem105/syllabus",
-            "https://example.edu/chem105/labs",
-            "artifact://chem105-notes",
+            "https://example.edu/macroeconomics/syllabus",
+            "https://example.edu/macroeconomics/data-guide",
+            "artifact://macroeconomics-notes",
         ],
         input_artifacts=[
-            {"id": "chem105-notes", "filename": "chem105-notes.txt", "text": "Stoichiometry and thermochemistry notes."}
+            {"id": "macroeconomics-notes", "filename": "macroeconomics-notes.txt", "text": "Inflation and monetary policy notes."}
         ],
     )
 
@@ -40,9 +40,9 @@ def test_generation_readiness_counts_usable_files_without_double_counting_artifa
 def test_generation_readiness_blocks_low_source_packet_concept_coverage() -> None:
     report = build_generation_readiness_report(
         source_urls=[
-            "https://example.edu/chem105/syllabus",
-            "https://example.edu/chem105/labs",
-            "https://example.edu/chem105/textbook",
+            "https://example.edu/macroeconomics/syllabus",
+            "https://example.edu/macroeconomics/data-guide",
+            "https://example.edu/macroeconomics/textbook",
         ],
         source_packet={
             "quality": {
@@ -50,7 +50,7 @@ def test_generation_readiness_blocks_low_source_packet_concept_coverage() -> Non
                 "conceptCoverageRatio": 0.33,
                 "conceptCandidateCount": 3,
                 "coveredConceptCandidateCount": 1,
-                "uncoveredConceptCandidates": ["stoichiometry", "thermochemistry"],
+                "uncoveredConceptCandidates": ["inflation", "monetary policy"],
             }
         },
     )
@@ -59,14 +59,14 @@ def test_generation_readiness_blocks_low_source_packet_concept_coverage() -> Non
     assert report["status"] == "needs_sources"
     assert report["sourceEvidence"]["submittedEvidenceCount"] == 3
     assert report["conceptCoverage"]["coverageRatio"] == 0.33
-    assert report["conceptCoverage"]["uncoveredConcepts"] == ["stoichiometry", "thermochemistry"]
+    assert report["conceptCoverage"]["uncoveredConcepts"] == ["inflation", "monetary policy"]
     assert report["sourceGate"]["gate"] == "source_packet_quality"
     assert any(issue["code"] == "source_packet_quality" for issue in report["issues"])
 
 
 def test_generation_readiness_blocks_too_little_evidence() -> None:
     report = build_generation_readiness_report(
-        source_urls=["https://example.edu/chem105/syllabus"],
+        source_urls=["https://example.edu/macroeconomics/syllabus"],
         input_artifacts=[{"id": "empty-notes", "filename": "empty-notes.txt", "text": ""}],
     )
 

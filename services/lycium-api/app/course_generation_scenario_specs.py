@@ -1,125 +1,46 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
-from app.course_generation_flagships import CHEM_105_FLAGSHIP_BLUEPRINT
 from app.course_generation_premed_specs import PRE_MEDICAL_PREPARATION_PROGRAM_SCENARIO
 
 
+GOLDEN_DATASET_VERSION = "course-generation-golden-dataset-v1"
+DEFAULT_GOLDEN_DATASET_PATH = Path(__file__).with_name("course_generation_golden_dataset.json")
+
+
+def load_course_generation_golden_dataset(path: str | Path | None = None) -> dict[str, Any]:
+    dataset_path = Path(path) if path is not None else DEFAULT_GOLDEN_DATASET_PATH
+    payload = json.loads(dataset_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("Course generation golden dataset must be a JSON object.")
+    if payload.get("contractVersion") != GOLDEN_DATASET_VERSION:
+        raise ValueError(f"Course generation golden dataset must use {GOLDEN_DATASET_VERSION}.")
+    course_templates = payload.get("courseTemplates")
+    if not isinstance(course_templates, list) or len(course_templates) < 10:
+        raise ValueError("Course generation golden dataset must include at least 10 course templates.")
+    return payload
+
+
+def _scenario_map(rows: Any) -> dict[str, dict[str, Any]]:
+    scenarios: dict[str, dict[str, Any]] = {}
+    for row in rows if isinstance(rows, list) else []:
+        if not isinstance(row, dict):
+            continue
+        scenario_id = str(row.get("id") or "")
+        if not scenario_id:
+            raise ValueError("Course generation scenario is missing id.")
+        scenarios[scenario_id] = dict(row)
+    return scenarios
+
+
+GOLDEN_DATASET = load_course_generation_golden_dataset()
+GOLDEN_COURSE_TEMPLATES: dict[str, dict[str, Any]] = _scenario_map(GOLDEN_DATASET.get("courseTemplates"))
 COURSE_SCENARIOS: dict[str, dict[str, Any]] = {
-    "chem-105-general-chemistry": CHEM_105_FLAGSHIP_BLUEPRINT["scenario"],
-    "intro-programming-foundations": {
-        "label": "Intro Programming Foundations",
-        "kind": "course",
-        "expectedCategory": "computing-information-sciences",
-        "expectedDepartment": "computer-science",
-        "minModules": 10,
-        "minLearnSections": 10,
-        "minQuizBlocks": 10,
-        "minQuestionsPerQuiz": 10,
-        "minSourceRecords": 3,
-        "minSourceSlotCount": 10,
-        "minSourceSlotPrimaryCoverageRatio": 0.9,
-        "minSectionSourceCoverage": 1.0,
-        "minBlockSourceCoverage": 0.9,
-        "minDirectConceptSourceCoverage": 1.0,
-        "minDirectBlockSourceCoverage": 0.9,
-        "minModuleVideoCoverage": 0.75,
-        "minRequiredKeywordCoverage": 0.75,
-        "requiredKeywords": [
-            "variables",
-            "data types",
-            "control flow",
-            "functions",
-            "arrays",
-            "objects",
-            "debugging",
-            "testing",
-            "algorithms",
-            "input and output",
-            "errors",
-            "abstraction",
-        ],
-    },
-    "software-engineering-methods": {
-        "label": "Software Engineering Methods",
-        "kind": "course",
-        "expectedCategory": "computing-information-sciences",
-        "expectedDepartment": "software-engineering",
-        "minModules": 10,
-        "minLearnSections": 10,
-        "minQuizBlocks": 10,
-        "minQuestionsPerQuiz": 10,
-        "minSourceRecords": 3,
-        "minSourceSlotCount": 10,
-        "minSourceSlotPrimaryCoverageRatio": 0.9,
-        "minSectionSourceCoverage": 1.0,
-        "minBlockSourceCoverage": 0.9,
-        "minDirectConceptSourceCoverage": 1.0,
-        "minDirectBlockSourceCoverage": 0.9,
-        "minModuleVideoCoverage": 0.75,
-        "minRequiredKeywordCoverage": 0.72,
-        "requiredKeywords": [
-            "requirements engineering",
-            "software architecture",
-            "design patterns",
-            "version control",
-            "testing strategy",
-            "continuous integration",
-            "agile",
-            "code review",
-            "maintenance",
-            "technical debt",
-            "security",
-            "deployment",
-        ],
-    },
-    "academic-writing-research-composition": {
-        "label": "Academic Writing and Research Composition",
-        "kind": "course",
-        "expectedCategory": "arts-humanities",
-        "expectedDepartment": "writing-rhetoric",
-        "discipline": "writing and rhetoric",
-        "minModules": 10,
-        "minLearnSections": 10,
-        "minQuizBlocks": 10,
-        "minQuestionsPerQuiz": 10,
-        "minSourceRecords": 3,
-        "minSourceSlotCount": 10,
-        "minSourceSlotPrimaryCoverageRatio": 0.9,
-        "minSectionSourceCoverage": 1.0,
-        "minBlockSourceCoverage": 0.9,
-        "minDirectConceptSourceCoverage": 1.0,
-        "minDirectBlockSourceCoverage": 0.9,
-        "minModuleVideoCoverage": 0.65,
-        "minRequiredKeywordCoverage": 0.72,
-        "requiredKeywords": [
-            "rhetorical situation",
-            "thesis",
-            "audience",
-            "evidence",
-            "source evaluation",
-            "citation",
-            "argument",
-            "counterargument",
-            "revision",
-            "peer review",
-            "research question",
-            "portfolio",
-        ],
-    },
-    "under-sourced-course-prompt": {
-        "label": "Under-Sourced Course Prompt",
-        "kind": "course",
-        "expectsNeedsSourcesDraft": True,
-        "expectedStatus": "needs_sources",
-        "minSourceGaps": 1,
-        "minOutlineModules": 4,
-        "minPlannedLessonSections": 8,
-        "minSuggestedQueries": 2,
-        "minSourceTypeHints": 3,
-        "maxSourceRecords": 2,
-    },
+    **GOLDEN_COURSE_TEMPLATES,
+    **_scenario_map(GOLDEN_DATASET.get("workflowScenarios")),
 }
 
 PROGRAM_SCENARIOS: dict[str, dict[str, Any]] = {
@@ -194,7 +115,7 @@ PROGRAM_SCENARIOS: dict[str, dict[str, Any]] = {
         ],
         "sourceDocuments": [
             {
-                "url": "https://example.edu/catalog/chem-105-general-chemistry",
+                "url": "https://example.edu/catalog/general-chemistry-foundations",
                 "contentType": "text/html",
                 "text": """Course Description
 General Chemistry I for science majors.

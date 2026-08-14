@@ -965,140 +965,20 @@ def _strip_source_id_refs(value: Any) -> Any:
     return value
 
 
-CHEMISTRY_CONCEPT_DEFINITIONS = {
-    "scientific method": "The scientific method turns observations into testable questions, controlled experiments, evidence, and revised explanations.",
-    "hypothesis": "A hypothesis is a testable explanation that predicts what should happen under defined conditions.",
-    "hypothesis and experiment": "A hypothesis predicts what an experiment should show under defined conditions.",
-    "si units": "SI units give chemistry a common measurement language, with base units such as meter, kilogram, second, kelvin, and mole.",
-    "unit conversion": "Unit conversion rewrites the same quantity with conversion factors so units cancel and the remaining unit answers the question.",
-    "dimensional analysis": "Dimensional analysis uses unit cancellation to plan and check calculations before numbers are trusted.",
-    "measurement uncertainty": "Measurement uncertainty is the reasonable range around a measured value caused by instrument limits and experimental variation.",
-    "significant figures": "Significant figures communicate the precision supported by a measurement and limit how many digits should appear in calculated results.",
-    "matter": "Matter is anything with mass that occupies volume; chemistry tracks how matter is classified, measured, and transformed.",
-    "element": "An element is a pure substance whose atoms have the same number of protons.",
-    "compound": "A compound contains atoms of different elements in fixed chemical ratios.",
-    "atom": "An atom is the smallest unit of an element that keeps that element's chemical identity.",
-    "proton": "A proton is a positively charged particle in the nucleus; the proton count defines the element.",
-    "neutron": "A neutron is an uncharged nuclear particle that changes isotope mass without changing element identity.",
-    "electron": "An electron is a negatively charged particle whose arrangement controls bonding and reactivity.",
-    "isotope": "Isotopes are atoms of the same element with different neutron counts and therefore different masses.",
-    "ion": "An ion is an atom or group of atoms with a net charge because electrons were gained or lost.",
-    "periodic table": "The periodic table arranges elements by atomic number and recurring chemical properties.",
-    "electron configuration": "Electron configuration describes how electrons occupy energy levels and orbitals.",
-    "valence electron": "Valence electrons are outer-shell electrons that participate most directly in bonding.",
-    "atomic radius": "Atomic radius measures the size of an atom and changes predictably across periods and down groups.",
-    "ionization energy": "Ionization energy is the energy required to remove an electron from a gaseous atom or ion.",
-    "electronegativity": "Electronegativity measures how strongly an atom attracts shared electrons in a bond.",
-    "chemical formula": "A chemical formula uses element symbols and subscripts to show the composition of a substance.",
-    "ionic compound": "An ionic compound forms from cations and anions arranged so total positive and negative charge balances.",
-    "charge balance": "Charge balance means the total positive charge and total negative charge in an ionic formula sum to zero.",
-    "polyatomic ion": "A polyatomic ion is a bonded group of atoms that carries an overall charge.",
-    "nomenclature": "Nomenclature is the rule system for naming compounds from formulas and writing formulas from names.",
-    "molar mass": "Molar mass is the mass in grams of one mole of a substance, calculated from atomic masses in the formula.",
-    "mole": "The mole is a counting unit equal to Avogadro's number of particles.",
-    "ionic bond": "An ionic bond is the electrostatic attraction between oppositely charged ions.",
-    "covalent bond": "A covalent bond forms when atoms share electron pairs.",
-    "lewis structure": "A Lewis structure represents valence electrons as dots and bonding pairs as lines.",
-    "formal charge": "Formal charge estimates how electron ownership in a Lewis structure compares with a neutral atom.",
-    "resonance": "Resonance describes multiple valid Lewis structures that together represent delocalized electrons.",
-    "vsepr": "VSEPR predicts molecular shape by arranging electron groups as far apart as possible around a central atom.",
-    "molecular geometry": "Molecular geometry names the three-dimensional arrangement of atoms in a molecule.",
-    "polarity": "Polarity describes an uneven distribution of electron density that creates partial positive and negative regions.",
-    "hybridization": "Hybridization describes how atomic orbitals combine into directional bonding orbitals such as sp, sp2, and sp3.",
-    "intermolecular force": "Intermolecular forces are attractions between particles that influence boiling point, melting point, solubility, and phase behavior.",
-    "dispersion force": "Dispersion forces come from temporary electron-density fluctuations and exist between all particles.",
-    "dipole-dipole force": "Dipole-dipole forces attract the positive end of one polar molecule to the negative end of another.",
-    "hydrogen bonding": "Hydrogen bonding is a strong dipole interaction involving H bonded to N, O, or F and a nearby lone pair.",
-    "phase change": "A phase change converts matter between solid, liquid, and gas without changing chemical identity.",
-    "chemical equation": "A chemical equation uses formulas to show reactants, products, and their stoichiometric ratios.",
-    "balanced equation": "A balanced equation has coefficients that make each element's atom count equal on both sides.",
-    "reactant": "A reactant is a starting substance consumed or transformed during a chemical reaction.",
-    "product": "A product is a substance formed by a chemical reaction.",
-    "law of conservation of mass": "The law of conservation of mass requires atoms to be conserved, so equations must be balanced.",
-    "balancing equations": "Balancing equations changes coefficients so each element has the same atom count on both sides.",
-    "net ionic equation": "A net ionic equation removes spectator ions and shows only the species that chemically change.",
-    "precipitation": "A precipitation reaction forms an insoluble solid from dissolved ions.",
-    "acid-base reaction": "An acid-base reaction transfers protons or neutralizes acid and base into products such as water and salt.",
-    "redox reaction": "A redox reaction transfers electrons, coupling oxidation with reduction.",
-    "avogadro's number": "Avogadro's number, 6.022 x 10^23, links particle counts to moles.",
-    "mole ratio": "A mole ratio comes from balanced-equation coefficients and converts moles of one substance to moles of another.",
-    "stoichiometry": "Stoichiometry uses balanced equations and mole ratios to calculate reactants, products, and yields.",
-    "limiting reactant": "The limiting reactant is used up first and sets the maximum amount of product possible.",
-    "theoretical yield": "Theoretical yield is the maximum product predicted by stoichiometry if the reaction goes to completion.",
-    "percent yield": "Percent yield compares actual yield with theoretical yield as a percentage.",
-    "solution": "A solution is a homogeneous mixture in which solute particles are evenly dispersed in a solvent.",
-    "solute": "The solute is the dissolved component of a solution.",
-    "solvent": "The solvent is the component that dissolves the solute and is usually present in greater amount.",
-    "molarity": "Molarity is moles of solute per liter of solution.",
-    "dilution": "Dilution lowers concentration by adding solvent while keeping solute amount constant.",
-    "electrolyte": "An electrolyte produces mobile ions in solution and can conduct electricity.",
-    "titration": "A titration uses a measured reaction with known concentration to determine an unknown concentration.",
-    "equivalence point": "The equivalence point is where stoichiometric amounts of titrant and analyte have reacted.",
-    "pressure": "Pressure is force per unit area from particle collisions with container walls.",
-    "boyle's law": "Boyle's law states that gas pressure and volume are inversely related at constant temperature and amount.",
-    "charles's law": "Charles's law states that gas volume is directly proportional to kelvin temperature at constant pressure and amount.",
-    "ideal gas law": "The ideal gas law, PV = nRT, relates pressure, volume, moles, and kelvin temperature.",
-    "partial pressure": "Partial pressure is the pressure a gas in a mixture would exert by itself at the same volume and temperature.",
-    "gas stoichiometry": "Gas stoichiometry combines balanced equations with gas-law relationships to calculate reacting gases.",
-    "heat": "Heat is energy transferred because of a temperature difference.",
-    "temperature": "Temperature measures average particle kinetic energy.",
-    "specific heat": "Specific heat is the energy needed to raise one gram of a substance by one degree Celsius.",
-    "calorimetry": "Calorimetry measures heat transfer using temperature change, mass, and specific heat.",
-    "enthalpy": "Enthalpy tracks heat flow at constant pressure for a process or reaction.",
-    "hess's law": "Hess's law says enthalpy changes add because enthalpy is a state function.",
-    "reaction rate": "Reaction rate measures how quickly reactant concentration decreases or product concentration increases.",
-    "activation energy": "Activation energy is the energy barrier reactants must overcome to form products.",
-    "chemical equilibrium": "Chemical equilibrium occurs when forward and reverse reaction rates are equal, so concentrations stay constant.",
-    "le chatelier's principle": "Le Chatelier's principle predicts how an equilibrium shifts when concentration, pressure, or temperature changes.",
-    "acid": "An acid donates H+ in Bronsted-Lowry chemistry or increases hydronium concentration in water.",
-    "base": "A base accepts H+ in Bronsted-Lowry chemistry or increases hydroxide concentration in water.",
-    "ph": "pH is a logarithmic measure of hydronium concentration, where lower pH means more acidic solution.",
-    "oxidation": "Oxidation is loss of electrons or an increase in oxidation number.",
-    "reduction": "Reduction is gain of electrons or a decrease in oxidation number.",
-}
-
-
-def _concept_definition(concept: str) -> str:
-    normalized = _normalize_concept_text(concept)
-    normalized_definitions = {
-        _normalize_concept_text(key): definition
-        for key, definition in CHEMISTRY_CONCEPT_DEFINITIONS.items()
-    }
-    if normalized in normalized_definitions:
-        return normalized_definitions[normalized]
-    for key, definition in sorted(normalized_definitions.items(), key=lambda item: len(item[0]), reverse=True):
-        if re.search(rf"(?<![a-z0-9]){re.escape(key)}(?![a-z0-9])", normalized):
-            return definition
-    title = concept[:1].upper() + concept[1:]
-    return f"{title} is a specific idea learners should define, connect to prior material, and use in a worked example."
-
-
-CONCEPT_DISPLAY_NAMES = {
-    "avogadro s number": "Avogadro's Number",
-    "boyle s law": "Boyle's Law",
-    "charles s law": "Charles's Law",
-    "hess s law": "Hess's Law",
-    "le chatelier s principle": "Le Chatelier's Principle",
-    "ph": "pH",
-    "si units": "SI Units",
-    "vsepr": "VSEPR",
-}
-
-
 def _normalize_concept_text(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
 
 def _concept_display_name(concept: str) -> str:
-    normalized = _normalize_concept_text(concept)
-    if normalized in CONCEPT_DISPLAY_NAMES:
-        return CONCEPT_DISPLAY_NAMES[normalized]
     return " ".join(word[:1].upper() + word[1:] for word in concept.split())
 
 
-def _has_concept(concepts: list[str], *candidates: str) -> bool:
-    normalized = {_normalize_concept_text(concept) for concept in concepts}
-    return any(_normalize_concept_text(candidate) in normalized for candidate in candidates)
+def _concept_definition(concept: str) -> str:
+    title = _concept_display_name(concept)
+    return (
+        f"{title} is a specific course idea learners should define clearly, connect to prerequisite ideas, "
+        "and apply in a realistic example."
+    )
 
 
 def _lesson_core_text(title: str, concepts: list[str], objective_text: str) -> str:
@@ -1108,50 +988,13 @@ def _lesson_core_text(title: str, concepts: list[str], objective_text: str) -> s
 
 
 def _lesson_example_text(concepts: list[str]) -> str:
-    if _has_concept(concepts, "stoichiometry", "mole ratio", "limiting reactant"):
-        return (
-            "Worked example: for 2 H2 + O2 -> 2 H2O, the coefficients say 2 mol H2 react with "
-            "1 mol O2 to form 2 mol H2O. If 3.0 mol H2 and 1.0 mol O2 are available, O2 limits "
-            "the reaction and at most 2.0 mol H2O can form."
-        )
-    if _has_concept(concepts, "molarity", "dilution", "titration"):
-        return (
-            "Worked example: a 0.250 M solution contains 0.250 mol solute per liter. To dilute "
-            "100.0 mL of 0.250 M stock to 0.100 M, use M1V1 = M2V2 to get V2 = 250.0 mL."
-        )
-    if _has_concept(concepts, "ideal gas law", "pressure", "gas stoichiometry"):
-        return (
-            "Worked example: with PV = nRT, pressure must be in a unit compatible with R, volume "
-            "in liters, and temperature in kelvin. Raising kelvin temperature at fixed moles and volume raises pressure."
-        )
-    if _has_concept(concepts, "enthalpy", "calorimetry", "specific heat"):
-        return (
-            "Worked example: if 50.0 g of water warms by 4.0 degrees C, q = mcDeltaT gives "
-            "50.0 g x 4.184 J/g degrees C x 4.0 degrees C = 837 J absorbed by the water."
-        )
-    if _has_concept(concepts, "lewis structure", "vsepr", "hybridization"):
-        return (
-            "Worked example: methane has four bonding groups around carbon and no lone pairs, so VSEPR "
-            "predicts a tetrahedral geometry; carbon uses sp3 hybrid orbitals for the four sigma bonds."
-        )
-    if _has_concept(concepts, "acid", "base", "ph", "acid-base reaction"):
-        return (
-            "Worked example: HCl donates H+ to water, so it behaves as a Bronsted-Lowry acid. "
-            "A solution with pH 3 has a hydronium concentration of 1 x 10^-3 M."
-        )
-    if _has_concept(concepts, "balanced equation", "chemical equation", "balancing equations"):
-        return (
-            "Worked example: balance CH4 + O2 -> CO2 + H2O by counting atoms. One carbon gives CO2, "
-            "four hydrogens require 2 H2O, and the products now contain four oxygen atoms, so use 2 O2."
-        )
-    if _has_concept(concepts, "dimensional analysis", "unit conversion", "si units", "significant figures"):
-        return (
-            "Worked example: convert 2.50 km to meters by multiplying by 1000 m / 1 km. "
-            "The kilometer units cancel, leaving 2500 m; significant figures decide how many digits to report."
-        )
+    focus = _concept_display_name(concepts[0]) if concepts else "The Section Concept"
+    supporting = ", ".join(_concept_display_name(concept) for concept in concepts[1:4])
+    supporting_text = f" Bring in {supporting} when those ideas affect the answer." if supporting else ""
     return (
-        f"Worked example: pick a case involving {concepts[0]}. Define the quantity or relationship, "
-        "state the evidence needed, apply the rule, then check whether the result fits the units and assumptions."
+        f"Worked example: start with a realistic case involving {focus}. Identify the variables, claims, "
+        "or constraints that matter; state what evidence would confirm or weaken the interpretation; apply the "
+        f"concept step by step; then check whether a different assumption would change the conclusion.{supporting_text}"
     )
 
 
@@ -1660,143 +1503,48 @@ def _make_quiz_question(
 def _quiz_question_for_concept(concept: dict[str, Any], *, index: int, module_title: str) -> dict[str, Any]:
     concept_title = _concept_title(concept, module_title)
     display_title = _concept_display_name(concept_title)
-    normalized = _normalize_concept_text(concept_title)
     source_section_id = str(concept.get("sourceSectionId") or "") or None
-    variant = index % 2
-
-    if normalized == "si units":
+    definition = str(concept.get("description") or _concept_definition(concept_title))
+    variant = index % 4
+    if variant == 0:
         return _make_quiz_question(
             index=index,
             concept_title=display_title,
             source_section_id=source_section_id,
-            question="A student measures the length of a lab bench. Which unit is the SI base unit for length?",
-            options=["meter", "liter", "gram", "degree Celsius"],
-        )
-    if normalized in {"unit conversion", "dimensional analysis"}:
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="A distance is reported as 2.50 km. Which setup correctly converts it to meters?",
+            question=f"A learner is analyzing a realistic case in {module_title}. What is the best first use of {display_title}?",
             options=[
-                "2.50 km x (1000 m / 1 km) = 2500 m",
-                "2.50 km x (1 km / 1000 m) = 0.00250 m",
-                "2.50 km + 1000 m = 1002.50 m",
-                "2.50 km / 1000 km = 0.00250 km",
+                f"Define the relevant variables, connect them to evidence, and apply {display_title} to the case.",
+                f"Use {display_title} as a label before checking what the case actually says.",
+                "Choose a conclusion first and then look for details that agree with it.",
+                "Skip assumptions because the topic name already gives the answer.",
             ],
         )
-    if normalized == "significant figures":
+    if variant == 1:
         return _make_quiz_question(
             index=index,
             concept_title=display_title,
             source_section_id=source_section_id,
-            question="How many significant figures are in the measurement 0.00450 g?",
-            options=["3", "2", "5", "1"],
+            question=f"Which response would make work with {display_title} most reliable?",
+            options=[
+                "State assumptions, use the section definition, and test the idea against an example.",
+                "Treat the term as self-explanatory and avoid checking edge cases.",
+                "Focus only on wording and ignore the situation being analyzed.",
+                "Use the same answer even when the evidence changes.",
+            ],
         )
-    if normalized == "precision":
+    if variant == 2:
         return _make_quiz_question(
             index=index,
             concept_title=display_title,
             source_section_id=source_section_id,
-            question="Four students measure the same sample as 10.21 g, 10.22 g, 10.21 g, and 10.23 g. What does this pattern mainly show?",
-            options=["High precision because the measurements are close to each other", "High accuracy because the true value is known", "Low precision because all values have decimals", "No uncertainty because the values are similar"],
+            question=f"A result changes after one assumption in the case changes. What should the learner do with {display_title}?",
+            options=[
+                "Re-evaluate the conclusion and explain how the changed assumption affects the concept.",
+                "Keep the original answer because assumptions do not affect analysis.",
+                "Remove the concept from the explanation instead of updating the reasoning.",
+                "Report both answers without explaining why they differ.",
+            ],
         )
-    if normalized == "accuracy":
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="A balance is checked with a 50.00 g standard and reads 49.98 g. Which statement best describes accuracy?",
-            options=["The reading is accurate because it is close to the accepted value", "The reading is precise because it has two decimal places", "The reading has no uncertainty because it is near 50", "The reading proves the sample mass is exactly 49.98 g"],
-        )
-    if normalized == "measurement uncertainty":
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="A graduated cylinder is read as 18.6 mL with an uncertainty of +/-0.1 mL. What does that uncertainty mean?",
-            options=["The measured volume is reasonably between 18.5 mL and 18.7 mL", "The volume must be exactly 18.6 mL", "The instrument cannot measure liquids", "The final digit should always be ignored"],
-        )
-    if normalized == "scientific method":
-        question = (
-            "A student observes that a salt dissolves faster in warm water than cold water. What is the best next scientific step?"
-            if variant == 0
-            else "Which statement is a testable hypothesis about dissolving sugar in water?"
-        )
-        options = (
-            [
-                "Design a controlled experiment that changes water temperature and measures dissolving time",
-                "Conclude that all solids dissolve faster when warm",
-                "Ignore the observation because it is not a calculation",
-                "Choose the result that matches the student's expectation",
-            ]
-            if variant == 0
-            else [
-                "If water temperature increases, then the time for a fixed mass of sugar to dissolve decreases",
-                "Sugar is interesting in water",
-                "Warm water is better than cold water",
-                "The answer should match the textbook",
-            ]
-        )
-        return _make_quiz_question(index=index, question=question, options=options, concept_title=display_title, source_section_id=source_section_id)
-    if "hypothesis" in normalized and "experiment" in normalized:
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="Why should an experiment change only one planned variable at a time when testing a hypothesis?",
-            options=["So any measured effect can be connected to the variable being tested", "So the experiment always confirms the hypothesis", "So uncertainty can be removed from the data", "So units no longer matter"],
-        )
-    if normalized in {"balanced equation", "chemical equation", "balancing equations"}:
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="Which equation correctly balances methane combustion?",
-            options=["CH4 + 2 O2 -> CO2 + 2 H2O", "CH4 + O2 -> CO2 + H2O", "CH4 + 2 O2 -> CO2 + H2O", "CH4 + O2 -> C + 2 H2O"],
-        )
-    if normalized in {"mole ratio", "stoichiometry"}:
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="For 2 H2 + O2 -> 2 H2O, how many moles of H2O can form from 1.0 mol O2 with excess H2?",
-            options=["2.0 mol H2O", "1.0 mol H2O", "0.50 mol H2O", "4.0 mol H2O"],
-        )
-    if normalized == "limiting reactant":
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="For 2 H2 + O2 -> 2 H2O, 3.0 mol H2 reacts with 1.0 mol O2. Which reactant limits the product?",
-            options=["O2, because 1.0 mol O2 can use only 2.0 mol H2", "H2, because there are more moles of H2", "Neither, because both are gases", "H2O, because it is the product"],
-        )
-    if normalized == "molarity":
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="What is the molarity of a solution containing 0.250 mol solute in 0.500 L solution?",
-            options=["0.500 M", "0.125 M", "2.00 M", "0.750 M"],
-        )
-    if normalized == "ideal gas law":
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="Which set of variables belongs together in the ideal gas law PV = nRT?",
-            options=["Pressure, volume, moles, gas constant, and kelvin temperature", "Mass, density, Celsius temperature, and pH", "Molarity, volume, enthalpy, and time", "Charge, current, resistance, and voltage"],
-        )
-    if normalized in {"acid", "base", "ph"}:
-        return _make_quiz_question(
-            index=index,
-            concept_title=display_title,
-            source_section_id=source_section_id,
-            question="A solution has pH 3. Compared with pH 5, what is true about its hydronium concentration?",
-            options=["It is 100 times higher", "It is 2 times higher", "It is 100 times lower", "It has no hydronium ions"],
-        )
-
-    definition = str(concept.get("description") or _concept_definition(concept_title))
     return _make_quiz_question(
         index=index,
         concept_title=display_title,
@@ -1804,8 +1552,8 @@ def _quiz_question_for_concept(concept: dict[str, Any], *, index: int, module_ti
         question=f"In {module_title}, which statement correctly applies {display_title}?",
         options=[
             definition,
-            f"{display_title} can be used without checking definitions, units, or assumptions.",
-            f"{display_title} only matters as a vocabulary word.",
+            f"{display_title} can be used without checking definitions, evidence, or assumptions.",
+            f"{display_title} only matters as a standalone vocabulary word.",
             f"{display_title} should be ignored when solving module problems.",
         ],
     )

@@ -7,6 +7,8 @@ from tests.course_generation_fixture_builders import source_backed_course_from_s
 
 def test_mixed_url_file_full_course_readiness_has_local_citations_and_quality_gate() -> None:
     course = source_backed_course_from_scenario("intro-programming-foundations")
+    base_source_ids = list(course["sourceIds"][:3])
+    primary_source_id = base_source_ids[0]
     file_source = {
         "id": "source-uploaded-syllabus",
         "type": "document",
@@ -42,7 +44,7 @@ def test_mixed_url_file_full_course_readiness_has_local_citations_and_quality_ga
             "includedSourceCount": 5,
             "excludedSourceCount": 0,
         },
-        "includedSources": ["source-primary", "source-video", "source-practice", file_source["id"], lab_source["id"]],
+        "includedSources": [*base_source_ids, file_source["id"], lab_source["id"]],
         "excludedSources": [],
         "commonThemes": ["variables", "functions", "testing", "source-backed practice"],
     }
@@ -51,14 +53,14 @@ def test_mixed_url_file_full_course_readiness_has_local_citations_and_quality_ga
             "requiredConceptId": "intro-programming-foundations-variables-uploaded-syllabus",
             "title": "Variables",
             "primarySourceId": file_source["id"],
-            "fallbackSourceIds": ["source-primary"],
+            "fallbackSourceIds": [primary_source_id],
             "replacementPolicy": "review_required",
         }
     )
     first_section = course["modules"][0]["sections"][0]
-    first_section["sourceIds"] = ["source-primary", file_source["id"]]
+    first_section["sourceIds"] = [primary_source_id, file_source["id"]]
     first_section["content"][0]["value"] += " The uploaded syllabus confirms variables as a required first concept [4]."
-    first_section["content"][0]["sourceIds"] = ["source-primary", file_source["id"]]
+    first_section["content"][0]["sourceIds"] = [primary_source_id, file_source["id"]]
 
     scenario_report = evaluate_course_generation_scenario(course, "intro-programming-foundations")
     quality_report = assess_course_quality(course, gate="generation")
@@ -75,6 +77,7 @@ def test_mixed_url_file_full_course_readiness_has_local_citations_and_quality_ga
 
 def test_mixed_url_file_readiness_rejects_enough_inputs_with_unmapped_coverage() -> None:
     course = source_backed_course_from_scenario("intro-programming-foundations")
+    base_source_ids = list(course["sourceIds"][:3])
     noisy_file_source = {
         "id": "source-uploaded-campus-parking",
         "type": "document",
@@ -99,7 +102,7 @@ def test_mixed_url_file_readiness_rejects_enough_inputs_with_unmapped_coverage()
             "includedSourceCount": 3,
             "excludedSourceCount": 1,
         },
-        "includedSources": ["source-primary", "source-video", "source-practice"],
+        "includedSources": base_source_ids,
         "excludedSources": [noisy_file_source["id"]],
         "commonThemes": ["variables", "functions", "testing"],
     }
@@ -119,4 +122,3 @@ def test_mixed_url_file_readiness_rejects_enough_inputs_with_unmapped_coverage()
         "not mapped to its concepts" in finding["message"] or "Inline citation markers" in finding["message"]
         for finding in source_integrity["issues"]
     )
-

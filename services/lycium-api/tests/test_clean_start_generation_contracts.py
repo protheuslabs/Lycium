@@ -63,7 +63,7 @@ def test_source_packet_gate_reports_uncovered_concepts_for_targeted_source_gaps(
                     "conceptCoverageRatio": 0.25,
                     "conceptCandidateCount": 4,
                     "coveredConceptCandidateCount": 1,
-                    "uncoveredConceptCandidates": ["stoichiometry", "thermochemistry", "molecular geometry"],
+                    "uncoveredConceptCandidates": ["inflation", "monetary policy", "aggregate demand"],
                 }
             }
         }
@@ -73,14 +73,14 @@ def test_source_packet_gate_reports_uncovered_concepts_for_targeted_source_gaps(
     assert gate["status"] == "failed"
     assert gate["artifacts"]["conceptCoverageRatio"] == 0.25
     assert gate["artifacts"]["uncoveredConceptCandidates"] == [
-        "stoichiometry",
-        "thermochemistry",
-        "molecular geometry",
+        "inflation",
+        "monetary policy",
+        "aggregate demand",
     ]
     assert {row["concept"] for row in gate["artifacts"]["conceptCoverage"]} == {
-        "stoichiometry",
-        "thermochemistry",
-        "molecular geometry",
+        "inflation",
+        "monetary policy",
+        "aggregate demand",
     }
 
 
@@ -93,15 +93,15 @@ def test_source_gap_suggestions_query_source_index_for_missing_concepts(monkeypa
             "results": [
                 {
                     "source": {
-                        "public_id": "source-open-stoichiometry",
-                        "canonical_url": "https://example.edu/chemistry/stoichiometry",
-                        "title": "Open Stoichiometry Notes",
+                        "public_id": "source-open-inflation",
+                        "canonical_url": "https://example.edu/economics/inflation",
+                        "title": "Open Inflation Notes",
                         "source_type": "open_courseware",
                     },
                     "score": 0.93,
-                    "matched_terms": ["stoichiometry", "chemistry"],
-                    "evidence_refs": ["source-open-stoichiometry"],
-                    "summary": "Stoichiometry lecture notes and examples.",
+                    "matched_terms": ["inflation", "macroeconomics"],
+                    "evidence_refs": ["source-open-inflation"],
+                    "summary": "Inflation lecture notes and examples.",
                 }
             ]
         }
@@ -110,23 +110,23 @@ def test_source_gap_suggestions_query_source_index_for_missing_concepts(monkeypa
     gap = {
         "conceptSourceNeeds": [
             {
-                "concept": "stoichiometry",
+                "concept": "inflation",
                 "location": "Module 2",
-                "sectionId": "lesson-stoichiometry",
-                "suggestedQueries": ["CHEM 105 stoichiometry open textbook"],
+                "sectionId": "lesson-inflation",
+                "suggestedQueries": ["macroeconomics inflation open textbook"],
             }
         ]
     }
 
-    suggestions = _attach_source_index_suggestions(object(), title="CHEM 105", gap=gap)
+    suggestions = _attach_source_index_suggestions(object(), title="Macroeconomics Principles", gap=gap)
     need = gap["conceptSourceNeeds"][0]
 
-    assert calls[0]["query"] == "CHEM 105 stoichiometry open textbook"
-    assert calls[0]["filters"] == {"free_only": True, "topics": ["stoichiometry"]}
-    assert suggestions[0]["concept"] == "stoichiometry"
+    assert calls[0]["query"] == "macroeconomics inflation open textbook"
+    assert calls[0]["filters"] == {"free_only": True, "topics": ["inflation"]}
+    assert suggestions[0]["concept"] == "inflation"
     assert need["sourceIndexSearchStatus"] == "searched"
-    assert need["sourceIndexCandidates"][0]["url"] == "https://example.edu/chemistry/stoichiometry"
-    assert need["sourceIndexCandidates"][0]["sourceId"] == "source-open-stoichiometry"
+    assert need["sourceIndexCandidates"][0]["url"] == "https://example.edu/economics/inflation"
+    assert need["sourceIndexCandidates"][0]["sourceId"] == "source-open-inflation"
 
 
 def test_under_sourced_generation_fixture_stays_as_review_marked_best_effort_draft() -> None:
@@ -292,4 +292,3 @@ def test_section_generation_ready_task_stays_blocked_when_quality_gates_fail() -
     assert transitioned["transitionStatus"] == "blocked"
     assert transitioned["reviewReadiness"]["passed"] is False
     assert transitioned["reviewReadiness"]["metrics"]["failedGateCount"] == 2
-

@@ -34,18 +34,18 @@ def test_source_upsert_canonicalizes_and_dedupes(client) -> None:
     first = client.post(
         "/v1/index/sources",
         json={
-            "url": "https://example.edu/courses/chem105?utm_source=newsletter",
-            "title": "CHEM 105",
+            "url": "https://example.edu/courses/macroeconomics?utm_source=newsletter",
+            "title": "Macroeconomics Principles",
             "source_type": "catalog",
         },
     )
     assert first.status_code == 201, first.text
 
-    second = client.post("/v1/index/sources", json={"url": "https://example.edu/courses/chem105"})
+    second = client.post("/v1/index/sources", json={"url": "https://example.edu/courses/macroeconomics"})
     assert second.status_code == 201, second.text
 
     assert first.json()["id"] == second.json()["id"]
-    assert second.json()["canonical_url"] == "https://example.edu/courses/chem105"
+    assert second.json()["canonical_url"] == "https://example.edu/courses/macroeconomics"
     assert len(second.json()["submitted_urls"]) == 2
 
 
@@ -54,11 +54,11 @@ def test_corpus_run_persists_include_exclude_decisions(client) -> None:
         "/v1/index/corpus-runs",
         json={
             "consumer": "lycium",
-            "context_id": "test-chem-corpus",
-            "prompt": "CHEM 105 chemistry stoichiometry bonding acids bases",
+            "context_id": "test-macro-corpus",
+            "prompt": "macroeconomics GDP inflation unemployment monetary policy",
             "fetch_sources": False,
             "source_urls": [
-                "https://chem.example.edu/chemistry/stoichiometry",
+                "https://econ.example.edu/macroeconomics/inflation",
                 "https://recipes.example.com/dinner/pasta",
             ],
         },
@@ -77,7 +77,7 @@ def test_corpus_run_persists_include_exclude_decisions(client) -> None:
 
     fetched = client.get(f"/v1/index/corpus-runs/{payload['id']}")
     assert fetched.status_code == 200, fetched.text
-    assert fetched.json()["context_id"] == "test-chem-corpus"
+    assert fetched.json()["context_id"] == "test-macro-corpus"
 
 
 def test_source_packet_builds_generation_ready_evidence_from_documents(client) -> None:
@@ -85,22 +85,22 @@ def test_source_packet_builds_generation_ready_evidence_from_documents(client) -
         "/v1/index/source-packets",
         json={
             "consumer": "lycium-course-generation",
-            "context_id": "packet-chem105",
-            "prompt": "CHEM 105 chemistry stoichiometry bonding acids bases",
+            "context_id": "packet-macroeconomics",
+            "prompt": "macroeconomics GDP inflation unemployment monetary policy",
             "fetch_sources": False,
             "source_urls": [
-                "https://chem.example.edu/chemistry/stoichiometry",
+                "https://econ.example.edu/macroeconomics/inflation",
                 "https://recipes.example.com/dinner/pasta",
             ],
             "source_documents": [
                 {
-                    "url": "https://chem.example.edu/chemistry/stoichiometry",
+                    "url": "https://econ.example.edu/macroeconomics/inflation",
                     "contentType": "text/html",
                     "text": """
                         <html>
                             <body>
-                                <h1>General Chemistry I</h1>
-                                <p>Stoichiometry, atomic structure, bonding, and acids and bases.</p>
+                                <h1>Macroeconomics Principles</h1>
+                                <p>GDP, inflation, unemployment, price indexes, monetary policy, and macroeconomic reasoning.</p>
                             </body>
                         </html>
                     """,
@@ -119,7 +119,7 @@ def test_source_packet_builds_generation_ready_evidence_from_documents(client) -
     assert packet["contract_version"] == "source-packet-v1"
     assert packet["corpus_run"]["included_source_count"] == 1
     assert packet["corpus_run"]["excluded_source_count"] == 1
-    assert packet["source_urls"] == ["https://chem.example.edu/chemistry/stoichiometry"]
+    assert packet["source_urls"] == ["https://econ.example.edu/macroeconomics/inflation"]
     assert len(packet["sources"]) == 1
     assert len(packet["source_documents"]) == 1
     assert packet["quality"]["status"] == "usable"
@@ -136,7 +136,7 @@ def test_source_packet_builds_generation_ready_evidence_from_documents(client) -
     assert packet["sources"][0]["decision"]["decision"] == "included"
     assert packet["sources"][0]["snapshots"][0]["public_id"]
     assert packet["source_documents"][0]["sourceIndexRef"]["snapshotPublicId"]
-    assert "Stoichiometry" in packet["source_documents"][0]["text"]
+    assert "inflation" in packet["source_documents"][0]["text"].lower()
 
     fetched = client.get(f"/v1/index/source-packets/{packet['corpus_run']['id']}")
     assert fetched.status_code == 200, fetched.text
@@ -149,15 +149,15 @@ def test_source_packet_import_validates_and_imports_packet_contract(client) -> N
         "/v1/index/source-packets",
         json={
             "consumer": "lycium-course-generation",
-            "context_id": "packet-import-chem105",
-            "prompt": "CHEM 105 chemistry stoichiometry bonding acids bases",
+            "context_id": "packet-import-macroeconomics",
+            "prompt": "macroeconomics GDP inflation unemployment monetary policy",
             "fetch_sources": False,
-            "source_urls": ["https://chem.example.edu/chemistry/stoichiometry"],
+            "source_urls": ["https://econ.example.edu/macroeconomics/inflation"],
             "source_documents": [
                 {
-                    "url": "https://chem.example.edu/chemistry/stoichiometry",
+                    "url": "https://econ.example.edu/macroeconomics/inflation",
                     "contentType": "text/plain",
-                    "text": "Stoichiometry, atomic structure, bonding, acids, bases, and thermochemistry.",
+                    "text": "Macroeconomics connects GDP, inflation, unemployment, monetary policy, price indexes, and purchasing power.",
                 }
             ],
         },
@@ -194,11 +194,11 @@ def test_source_packet_cli_exports_and_imports_portable_packet(client, tmp_path:
             "batch_id": "portable-packet-batch",
             "sources": [
                 {
-                    "url": "https://chem.example.edu/chemistry/stoichiometry",
-                    "title": "Stoichiometry Tutorial",
+                    "url": "https://econ.example.edu/macroeconomics/inflation",
+                    "title": "Inflation Tutorial",
                     "source_type": "open_courseware",
                     "license": "cc-by",
-                    "raw_text": "Stoichiometry connects balanced equations, mole ratios, limiting reactants, and yields.",
+                    "raw_text": "Inflation connects price indexes, purchasing power, nominal income, real income, and policy responses.",
                 }
             ],
         },
@@ -217,9 +217,9 @@ def test_source_packet_cli_exports_and_imports_portable_packet(client, tmp_path:
             "--context-id",
             "portable-packet-export",
             "--prompt",
-            "CHEM 105 chemistry stoichiometry mole ratios",
+            "macroeconomics inflation price indexes purchasing power",
             "--source-url",
-            "https://chem.example.edu/chemistry/stoichiometry",
+            "https://econ.example.edu/macroeconomics/inflation",
             "--no-fetch",
             "--output",
             str(packet_path),
@@ -228,7 +228,7 @@ def test_source_packet_cli_exports_and_imports_portable_packet(client, tmp_path:
     packet = json.loads(packet_path.read_text(encoding="utf-8"))
     assert packet["contract_version"] == "source-packet-v1"
     assert packet["source_documents"][0]["snapshotId"]
-    assert "Stoichiometry" in packet["source_documents"][0]["text"]
+    assert "Inflation" in packet["source_documents"][0]["text"]
 
     reset_db()
     import_packet_cli([str(packet_path), "--dry-run", "--output", str(dry_run_report_path)])
@@ -259,21 +259,21 @@ def test_bulk_source_import_feeds_generation_packet_eval(client) -> None:
     import_response = client.post(
         "/v1/index/source-imports",
         json={
-            "batch_id": "chem105-seed-batch",
+            "batch_id": "macroeconomics-seed-batch",
             "sources": [
                 {
-                    "url": "https://chem.example.edu/chemistry/stoichiometry",
-                    "title": "Stoichiometry Tutorial",
+                    "url": "https://econ.example.edu/macroeconomics/inflation",
+                    "title": "Inflation Tutorial",
                     "source_type": "open_courseware",
                     "license": "cc-by",
-                    "raw_text": "Stoichiometry connects balanced equations, mole ratios, limiting reactants, and yields.",
+                    "raw_text": "Inflation connects price indexes, purchasing power, nominal income, real income, and policy responses.",
                 },
                 {
-                    "url": "https://chem.example.edu/chemistry/bonding-acids-bases",
-                    "title": "Bonding and Acids/Bases",
+                    "url": "https://econ.example.edu/macroeconomics/gdp-unemployment",
+                    "title": "GDP and Unemployment Guide",
                     "source_type": "open_courseware",
                     "license": "cc-by",
-                    "raw_text": "General chemistry covers ionic bonding, covalent bonding, acids, bases, pH, and buffers.",
+                    "raw_text": "Macroeconomics covers GDP, national income accounting, unemployment, labor force participation, and monetary policy.",
                 },
                 {
                     "url": "https://recipes.example.com/dinner/pasta",
@@ -295,8 +295,8 @@ def test_bulk_source_import_feeds_generation_packet_eval(client) -> None:
         "/v1/index/source-packets",
         json={
             "consumer": "lycium-course-generation",
-            "context_id": "chem105-import-eval",
-            "prompt": "CHEM 105 chemistry stoichiometry bonding acids bases",
+            "context_id": "macroeconomics-import-eval",
+            "prompt": "macroeconomics GDP inflation unemployment monetary policy",
             "fetch_sources": False,
             "source_urls": [row["source"]["canonical_url"] for row in import_report["sources"]],
         },
@@ -316,7 +316,7 @@ def test_bulk_source_import_feeds_generation_packet_eval(client) -> None:
     assert "qualityWarnings" in packet["quality"]
     assert all(document["snapshotId"] for document in packet["source_documents"])
     assert "pasta" not in " ".join(packet["source_urls"]).lower()
-    assert {"stoichiometry", "bonding"}.issubset(
+    assert {"gdp", "inflation"}.issubset(
         set().union(*(set(decision["matched_terms"]) for decision in packet["corpus_run"]["decisions"]))
     )
 
@@ -325,8 +325,8 @@ def test_source_snapshot_extracts_provided_html(client) -> None:
     source_response = client.post(
         "/v1/index/sources",
         json={
-            "url": "https://example.edu/courses/chem105",
-            "title": "CHEM 105",
+            "url": "https://example.edu/courses/macroeconomics",
+            "title": "Macroeconomics Principles",
             "source_type": "syllabus",
         },
     )
@@ -340,11 +340,11 @@ def test_source_snapshot_extracts_provided_html(client) -> None:
             "content_type": "text/html",
             "raw_text": """
                 <html>
-                    <head><title>General Chemistry I Syllabus</title></head>
+                    <head><title>Macroeconomics Principles Syllabus</title></head>
                     <body>
                         <script>window.noise = true;</script>
-                        <h1>General Chemistry I</h1>
-                        <p>Stoichiometry, atomic structure, bonding, thermochemistry, and acids and bases.</p>
+                        <h1>Macroeconomics Principles</h1>
+                        <p>GDP, inflation, unemployment, aggregate demand, fiscal policy, and monetary policy.</p>
                     </body>
                 </html>
             """,
@@ -356,8 +356,8 @@ def test_source_snapshot_extracts_provided_html(client) -> None:
 
     assert snapshot["status"] == "provided"
     assert snapshot["content_hash"]
-    assert snapshot["title"] == "CHEM 105"
-    assert "Stoichiometry" in snapshot["extracted_text"]
+    assert snapshot["title"] == "Macroeconomics Principles"
+    assert "inflation" in snapshot["extracted_text"].lower()
     assert "window.noise" not in snapshot["extracted_text"]
     assert snapshot["snapshot_metadata"] == {"submitted_by": "test"}
 

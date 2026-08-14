@@ -96,7 +96,7 @@ This list tracks the work needed to make Lycium's local generation, storage, and
 
 22. Course-generation eval scenarios
     - Status: done
-    - Goal: fixed scenarios for CHEM 105, Intro Programming, Software Engineering Program, noisy corpus, and under-sourced prompts.
+    - Goal: fixed scenarios for Macroeconomics Principles, Intro Programming, Software Engineering Program, noisy corpus, and under-sourced prompts.
 
 23. Eval score dashboard
     - Status: done

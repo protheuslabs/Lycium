@@ -36,15 +36,15 @@ Assertions:
 - Capstone and portfolio artifact requirements are present.
 - Course prerequisites align with dependency edges.
 
-## Scenario 2: CHEM 105 College Course
+## Scenario 2: Golden Course Templates
 
-Goal: prove Lycium can generate a real lower-division college course from open sources.
+Goal: prove Lycium can generate real lower-division and professional courses from representative open-source inputs without domain-specific generator branches.
 
 Inputs:
 
-- OpenStax Chemistry 2e or comparable free textbook chapters.
-- At least two public general chemistry syllabi or catalog descriptions.
-- Reputable videos or simulations when available.
+- A data-only course template from `services/lycium-api/app/course_generation_golden_dataset.json`.
+- Open textbook, catalog, syllabus, public data, or comparable reputable sources appropriate to that template.
+- The generated course artifact to score against the template.
 
 Assertions:
 
@@ -52,7 +52,7 @@ Assertions:
 - College/category and department are selected from the taxonomy.
 - Course has 10-20 modules or weeks.
 - Each module has teachable Learn pages, at least one Apply/quiz page, media where appropriate, and a concept-card summary.
-- Required topics reflect common general chemistry scope: measurement, atoms, stoichiometry, reactions, thermochemistry, electronic structure, bonding, gases, liquids/solids, solutions, equilibrium, acids/bases, and electrochemistry if in scope.
+- Required topics match the chosen golden template's `requiredKeywords`.
 
 ## Scenario 3: Intro Programming Course
 
@@ -128,9 +128,9 @@ The backend scenario checks live in `services/lycium-api/tests/test_course_gener
 
 Current automated coverage includes:
 
-- Scenario registry checks for CHEM 105, intro programming, software engineering methods, under-sourced prompts, and full-stack program scenarios.
-- CHEM 105 acceptance and rejection checks.
-- CHEM 105 flagship benchmark/source/source-slot checks.
+- Scenario registry checks for golden course templates, under-sourced prompts, and full-stack program scenarios.
+- Macroeconomics Principles acceptance and rejection checks through the generic golden-template path.
+- Golden dataset checks that course-specific benchmark/source data lives in JSON rather than evaluator code.
 - Intro programming and software engineering methods source-backed fixture checks.
 - Noisy source corpus exclusion checks.
 - Full-stack program requirement-shape checks.
@@ -166,7 +166,7 @@ To write a real local report:
 corepack pnpm report:generation-evals
 ```
 
-The current persistent report test covers CHEM 105, Intro Programming, Full-Stack Software Engineer Program, multi-source noisy corpus, and under-sourced prompt scenarios.
+The current persistent report test covers Macroeconomics Principles, Intro Programming, Full-Stack Software Engineer Program, multi-source noisy corpus, and under-sourced prompt scenarios.
 
 ## Native Generation Gauntlet
 
@@ -174,10 +174,16 @@ The native gauntlet primitive lives in `services/lycium-api/app/course_generatio
 
 It evaluates generated artifacts without caring whether they came from a human, Ollama, a cloud provider, a fixture, a source packet, or a future Infring primitive. The default gauntlet cases are:
 
-- CHEM 105 college course.
+- Macroeconomics Principles college course.
 - Intro programming course.
 - Software engineering methods course.
 - Academic writing and research composition course.
+- General biology foundations course.
+- Introductory statistics course.
+- Environmental science foundations course.
+- Art history survey course.
+- Financial accounting principles course.
+- Public speaking and communication course.
 - Under-sourced prompt lifecycle.
 - Full-stack software engineer program.
 - Chemistry foundations program.
@@ -185,7 +191,7 @@ It evaluates generated artifacts without caring whether they came from a human, 
 - Public health foundations program.
 - Pre-medical preparation program.
 
-The default case list lives in `services/lycium-api/app/course_generation_gauntlet_manifest.json`. Add future domains by adding scenario gates and then extending or replacing this manifest; do not hardcode new domains into the evaluator.
+The default case list lives in `services/lycium-api/app/course_generation_gauntlet_manifest.json`. Course-template data lives in `services/lycium-api/app/course_generation_golden_dataset.json`; do not hardcode new course domains into the evaluator.
 
 The report returns:
 
@@ -205,11 +211,11 @@ To evaluate artifacts from a real local/cloud generation attempt, write a bundle
   "metadata": {
     "provider": "ollama",
     "model": "kimi-k2.6:cloud",
-    "prompt": "Generate CHEM 105 from these sources",
+    "prompt": "Generate Macroeconomics Principles from these sources",
     "inputMix": "prompt+urls+files"
   },
   "courses": {
-    "chem-105-general-chemistry": {}
+    "macroeconomics-principles": {}
   },
   "programs": {
     "full-stack-software-engineer-program": {}
@@ -232,7 +238,7 @@ To build that bundle from generated artifact files:
 
 ```bash
 corepack pnpm build:generation-gauntlet-bundle -- \
-  --course chem-105-general-chemistry=.lycium-local/generated/chem-105.json \
+  --course macroeconomics-principles=.lycium-local/generated/macroeconomics-principles.json \
   --program full-stack-software-engineer-program=.lycium-local/generated/full-stack-program.json \
   --provider ollama \
   --model kimi-k2.6:cloud \
@@ -252,7 +258,7 @@ Or build and score in one step:
 
 ```bash
 corepack pnpm run:generation-gauntlet -- \
-  --course chem-105-general-chemistry=.lycium-local/generated/chem-105.json \
+  --course macroeconomics-principles=.lycium-local/generated/macroeconomics-principles.json \
   --program full-stack-software-engineer-program=.lycium-local/generated/full-stack-program.json \
   --provider ollama \
   --model kimi-k2.6:cloud \

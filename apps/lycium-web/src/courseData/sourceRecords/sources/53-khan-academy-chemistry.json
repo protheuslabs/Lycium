@@ -5,10 +5,6 @@
   "title": "Khan Academy Chemistry archive",
   "url": "https://www.khanacademy.org/chemistry",
   "license": "free educational access",
-  "usedByCourseIds": [
-    "local-chem-105"
-  ],
-  "usedByCourseTitles": [
-    "CHEM 105 General Chemistry I"
-  ]
+  "usedByCourseIds": [],
+  "usedByCourseTitles": []
 }

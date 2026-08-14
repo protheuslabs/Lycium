@@ -19,20 +19,20 @@ def _source_records() -> list[dict[str, Any]]:
         {
             "id": "source-1",
             "type": "input_artifact",
-            "title": "CHEM 105 syllabus outline",
-            "localPath": "artifact://chem105-syllabus-outline",
+            "title": "Macroeconomics principles syllabus outline",
+            "localPath": "artifact://macroeconomics-syllabus-outline",
         },
         {
             "id": "source-2",
             "type": "input_artifact",
-            "title": "CHEM 105 open textbook excerpt",
-            "localPath": "artifact://chem105-open-textbook-excerpt",
+            "title": "Macroeconomics open textbook excerpt",
+            "localPath": "artifact://macroeconomics-open-textbook-excerpt",
         },
         {
             "id": "source-3",
             "type": "input_artifact",
-            "title": "CHEM 105 lab sequence",
-            "localPath": "artifact://chem105-lab-sequence",
+            "title": "Macroeconomics data activity sequence",
+            "localPath": "artifact://macroeconomics-data-activity-sequence",
         },
     ]
 
@@ -95,10 +95,10 @@ def _practice_loop_blocks(source_ids: list[str]) -> list[dict[str, Any]]:
         {
             "type": "text",
             "value": (
-                "Example: start with the balanced equation and treat each coefficient as a mole ratio. "
-                "If two moles of one reactant are required for every one mole of product, the coefficient "
-                "relationship becomes the bridge between measured mass, moles, and predicted yield [1]. "
-                "This keeps the work grounded in conservation of atoms instead of memorized shortcuts."
+                "Example: start with a price index in two periods and calculate the percent change. "
+                "Then explain whether the change reflects inflation, how it affects real purchasing power, "
+                "and which source definition controls the interpretation [1]. "
+                "This keeps the work grounded in economic data instead of memorized labels."
             ),
             "sourceIds": source_ids,
         },
@@ -106,10 +106,9 @@ def _practice_loop_blocks(source_ids: list[str]) -> list[dict[str, Any]]:
         {
             "type": "text",
             "value": (
-                "Practice: identify the known quantity, convert it to moles, use the balanced equation to "
-                "compare both reactants, and decide which reactant is consumed first. Then explain the result "
-                "as mastery evidence: the limiting reactant sets the theoretical yield, while the excess "
-                "reactant remains after the reaction [2]."
+                "Practice: identify the economic indicator, name the base and comparison periods, calculate "
+                "the change, and explain what policy or household decision the result could affect. Then "
+                "state one assumption that would change the interpretation [2]."
             ),
             "sourceIds": source_ids,
         },
@@ -157,8 +156,8 @@ def _source_slots(learn_section: dict[str, Any], quiz_section: dict[str, Any]) -
         {
             "id": "source-slot-quiz-application",
             "requiredConceptId": "quiz-application",
-            "concept": "CHEM 105 application quiz",
-            "title": str(quiz_section.get("title") or "CHEM 105 application quiz"),
+            "concept": "Macroeconomics application quiz",
+            "title": str(quiz_section.get("title") or "Macroeconomics application quiz"),
             "sectionIds": [str(quiz_section.get("id") or "module-1-quiz-1")],
             "primarySourceId": "source-2",
             "fallbackSourceIds": ["source-1", "source-3"],
@@ -179,15 +178,15 @@ def compose_one_module_course(micro_gate: dict[str, Any], model: str, args: argp
     source_ids = ["source-1", "source-2", "source-3"]
     return {
         "contractVersion": "0.1.0",
-        "title": str(plan.get("title") or "CHEM 105 General Chemistry I"),
+        "title": str(plan.get("title") or "Macroeconomics Principles"),
         "shortDescription": str(
             plan.get("shortDescription")
-            or "A source-backed one-module chemistry course assembled from validated generation primitives."
+            or "A source-backed one-module macroeconomics course assembled from validated generation primitives."
         ),
         "difficultyLevel": args.level,
         "category": args.category,
         "department": args.department,
-        "tags": ["chemistry", "general chemistry", "stoichiometry", "laboratory science"],
+        "tags": ["macroeconomics", "inflation", "gdp", "economic data"],
         "orderMandatory": False,
         "sourceIds": source_ids,
         "sourceRecords": _source_records(),
@@ -195,17 +194,17 @@ def compose_one_module_course(micro_gate: dict[str, Any], model: str, args: argp
             "pacingLabel": pacing_label if pacing_label in {"Module", "Week"} else "Module",
             "courseType": "academic_course",
             "scope": {
-                "audience": "Undergraduate general chemistry students",
+                "audience": "Undergraduate macroeconomics students",
                 "level": args.level,
                 "duration": f"{args.duration_minutes} minutes",
-                "outcome": "Use core chemistry models and quantitative reasoning to solve introductory problems.",
+                "outcome": "Use macroeconomic data, models, and quantitative reasoning to analyze introductory problems.",
             },
             "sourceSlots": _source_slots(learn_section, quiz_section),
             "requirementOrigins": [
                 {
-                    "id": "chem105-core-topics-origin",
-                    "requirementId": "chem105-core-topics",
-                    "title": "CHEM 105 core topic coverage",
+                    "id": "macroeconomics-core-topics-origin",
+                    "requirementId": "macroeconomics-core-topics",
+                    "title": "Macroeconomics core topic coverage",
                     "originType": "common_academic_requirement",
                     "evidenceRefs": ["source-1", "source-2", "source-3"],
                     "frequency": 1.0,
@@ -215,7 +214,7 @@ def compose_one_module_course(micro_gate: dict[str, Any], model: str, args: argp
                 "submittedSourceCount": 3,
                 "includedSourceCount": 3,
                 "excludedSourceCount": 0,
-                "commonThemes": ["stoichiometry", "bonding", "thermochemistry", "laboratory measurement"],
+                "commonThemes": ["gdp", "inflation", "unemployment", "monetary policy"],
             },
             "generationPlan": {
                 "mode": "composed-from-model-sweep-primitives",
@@ -226,7 +225,7 @@ def compose_one_module_course(micro_gate: dict[str, Any], model: str, args: argp
         "modules": [
             {
                 "id": "module-1",
-                "title": str(module_plan.get("title") or "Module 1: Chemistry foundations"),
+                "title": str(module_plan.get("title") or "Module 1: Macroeconomics foundations"),
                 "sourceIds": source_ids,
                 "sections": [
                     learn_section,

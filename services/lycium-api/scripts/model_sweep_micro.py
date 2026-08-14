@@ -35,18 +35,17 @@ MICRO_BENCHMARKS = {
             {
                 "role": "user",
                 "content": (
-                    "Create a one-module CHEM 105 General Chemistry I plan from these source excerpts. "
+                    "Create a one-module Macroeconomics Principles plan from these source excerpts. "
                     "Return JSON with title, shortDescription, pacingLabel, modules. Each module must have "
                     "title, learningObjectives, sections. Each section must have title, pageType, "
                     "conceptKeywords, learningObjectives, sourceIds.\n\n"
                     "Sources:\n"
-                    "source-1: CHEM 105 includes measurement, atomic structure, bonding, stoichiometry, "
-                    "thermochemistry, gases, and aqueous reactions.\n"
-                    "source-2: Core topics include mole concept, empirical formulas, limiting reactants, "
-                    "solution concentration, enthalpy, ideal gas law, Lewis structures, VSEPR, polarity, "
-                    "and redox reactions.\n"
-                    "source-3: Labs include safety, measurement uncertainty, hydrate composition, "
-                    "precipitation stoichiometry, calorimetry, gas collection, and titration."
+                    "source-1: Macroeconomics Principles includes GDP, national income accounting, inflation, "
+                    "unemployment, aggregate demand, aggregate supply, and fiscal policy.\n"
+                    "source-2: Core topics include price indexes, labor force participation, money, banking, "
+                    "monetary policy, economic growth, exchange rates, and international trade.\n"
+                    "source-3: Data activities include GDP table interpretation, inflation calculations, "
+                    "unemployment comparisons, policy scenario analysis, and evidence-based writing."
                 ),
             },
         ],
@@ -66,15 +65,15 @@ MICRO_BENCHMARKS = {
             {
                 "role": "user",
                 "content": (
-                    "Write one CHEM 105 learn section on stoichiometry and limiting reactants. "
+                    "Write one Macroeconomics Principles learn section on inflation and price indexes. "
                     "Return JSON with id, title, pageType='learn', sourceIds, and content. Content must "
                     "include at least one heading block using {\"type\":\"heading\",\"title\":\"...\"}, "
                     "two text blocks using {\"type\":\"text\",\"value\":\"...\"} with inline [1] citation markers, "
                     "and at least two conceptCard blocks. Use only sourceIds ['source-1','source-2'].\n\n"
-                    "source-1: Stoichiometry uses balanced chemical equations to relate amounts of reactants "
-                    "and products through mole ratios.\n"
-                    "source-2: Limiting reactants determine the maximum possible product when one reactant "
-                    "is consumed before the others."
+                    "source-1: Inflation measures sustained changes in the overall price level using indexes "
+                    "such as CPI.\n"
+                    "source-2: Price indexes compare a basket of goods across periods so learners can calculate "
+                    "inflation rates and real purchasing power."
                 ),
             },
         ],
@@ -95,8 +94,8 @@ MICRO_BENCHMARKS = {
             {
                 "role": "user",
                 "content": (
-                    "Create one CHEM 105 apply section assessing measurement, stoichiometry, bonding, "
-                    "thermochemistry, and gases. Return JSON with id, title, pageType='apply', and content "
+                    "Create one Macroeconomics Principles apply section assessing GDP, inflation, unemployment, "
+                    "aggregate demand, fiscal policy, and monetary policy. Return JSON with id, title, pageType='apply', and content "
                     "containing exactly one quiz block. The quiz must have at least 10 questions. Each "
                     "question needs question, exactly 4 options, and answers as zero-based indexes. Include "
                     "passPercentage 70 and showAnswers false. Use answers arrays like [1], never answer: 1. "

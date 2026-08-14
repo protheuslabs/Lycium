@@ -18,15 +18,15 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
         job = Job(
             job_type="agent_generate_course_staged",
             payload={
-                "prompt": "Create a CHEM 105 course",
+                "prompt": "Create a macroeconomics principles course",
                 "provider_id": "openai",
                 "model": "test-model",
-                "source_urls": ["https://example.edu/chemistry/syllabus"],
+                "source_urls": ["https://example.edu/macroeconomics/syllabus"],
                 "input_artifacts": [
                     {
-                        "id": "chem-lab-notes",
-                        "filename": "chem-lab-notes.txt",
-                        "text": "General chemistry laboratory notes about titration and safety.",
+                        "id": "macro-data-notes",
+                        "filename": "macro-data-notes.txt",
+                        "text": "Macroeconomics data notes about GDP, inflation, and unemployment.",
                     }
                 ],
                 "desired_module_count": 14,
@@ -59,10 +59,10 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
                         "excludedSourceCount": 1,
                         "fetchFailureCount": 0,
                     },
-                    "includedSources": [{"url": "https://example.edu/chemistry/syllabus"}],
+                    "includedSources": [{"url": "https://example.edu/macroeconomics/syllabus"}],
                     "excludedSources": [{"url": "https://example.edu/noise"}],
                     "fetchFailures": [],
-                    "commonThemes": ["stoichiometry"],
+                    "commonThemes": ["inflation"],
                 },
                 "stages": [{"stage": "course_plan", "status": "passed"}],
             },
@@ -90,10 +90,10 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
                         "excludedSourceCount": 1,
                         "fetchFailureCount": 0,
                     },
-                    "includedSources": [{"url": "https://example.edu/chemistry/syllabus"}],
+                    "includedSources": [{"url": "https://example.edu/macroeconomics/syllabus"}],
                     "excludedSources": [{"url": "https://example.edu/noise"}],
                     "fetchFailures": [],
-                    "commonThemes": ["stoichiometry"],
+                    "commonThemes": ["inflation"],
                 },
                 "generation_readiness": {
                     "contractVersion": "course-generation-readiness-v1",
@@ -111,7 +111,7 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
                         "minimumCoverageRatio": 0.7,
                         "requiredConceptCount": 2,
                         "coveredConceptCount": 1,
-                        "uncoveredConcepts": ["thermochemistry"],
+                        "uncoveredConcepts": ["monetary policy"],
                     },
                     "issues": [{"code": "minimum_source_evidence", "message": "Add at least 3 relevant sources."}],
                 },
@@ -127,14 +127,14 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
             course_snapshot_id=42,
             course_build_task={
                 "contractVersion": "course-build-task-v1",
-                "courseId": "chem-105",
+                "courseId": "macroeconomics-principles",
                 "status": "ready_for_review",
                 "currentStage": "ready_for_review",
                 "nextAction": "review_and_publish",
                 "transitionStatus": "advanced",
                 "transitionReason": "Generated course passed quality gates.",
                 "requiredInputs": ["human_review"],
-                "prerequisiteCourseIds": ["high-school-chemistry"],
+                "prerequisiteCourseIds": ["intro-economics"],
                 "reviewReadiness": {
                     "passed": True,
                     "metrics": {"qualityPassed": True, "failedGateCount": 0, "score": 0.94},
@@ -160,7 +160,7 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
     assert payload["result_summary"]["inputs"]["inputArtifactCount"] == 1
     assert payload["result_summary"]["inputs"]["usableInputArtifactCount"] == 1
     assert payload["result_summary"]["inputs"]["submittedEvidenceCount"] == 2
-    assert payload["result_summary"]["inputs"]["inputArtifactFilenames"] == ["chem-lab-notes.txt"]
+    assert payload["result_summary"]["inputs"]["inputArtifactFilenames"] == ["macro-data-notes.txt"]
     assert payload["result_summary"]["sourceCorpus"]["submittedSourceCount"] == 2
     assert payload["result_summary"]["sourceCorpus"]["submittedInputArtifactCount"] == 1
     assert payload["result_summary"]["sourceCorpus"]["includedInputArtifactCount"] == 1
@@ -168,7 +168,7 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
     assert payload["result_summary"]["sourceCorpus"]["excludedSourceCount"] == 1
     assert payload["result_summary"]["generationReadiness"]["status"] == "needs_sources"
     assert payload["result_summary"]["generationReadiness"]["sourceEvidence"]["submittedEvidenceCount"] == 2
-    assert payload["result_summary"]["generationReadiness"]["conceptCoverage"]["uncoveredConcepts"] == ["thermochemistry"]
+    assert payload["result_summary"]["generationReadiness"]["conceptCoverage"]["uncoveredConcepts"] == ["monetary policy"]
     assert payload["result_summary"]["generationReadiness"]["issueCount"] == 1
     assert payload["result_summary"]["gateSummary"]["passedGates"] == ["course_contract"]
     assert payload["result_summary"]["usage"]["totalTokens"] == 3000
@@ -184,7 +184,7 @@ def test_generation_run_records_timeline_and_is_readable(client) -> None:
     ]
     transition_event = payload["events"][2]
     assert transition_event["stage"] == "ready_for_review"
-    assert transition_event["payload"]["courseBuildTask"]["prerequisiteCourseIds"] == ["high-school-chemistry"]
+    assert transition_event["payload"]["courseBuildTask"]["prerequisiteCourseIds"] == ["intro-economics"]
 
 
 def test_generation_job_mirrors_file_backed_source_gap_resume_report(client, tmp_path, monkeypatch) -> None:
@@ -198,7 +198,7 @@ def test_generation_job_mirrors_file_backed_source_gap_resume_report(client, tmp
     monkeypatch.setattr(
         "app.jobs.generate_course_with_agent_staged",
         lambda **_kwargs: SimpleNamespace(
-            course={"title": "Mock mixed-source chemistry course", "modules": []},
+            course={"title": "Mock mixed-source macroeconomics course", "modules": []},
             trace={
                 "mode": "staged-llm-agent",
                 "source_corpus_synthesis": {
@@ -211,7 +211,7 @@ def test_generation_job_mirrors_file_backed_source_gap_resume_report(client, tmp
                         "excludedSourceCount": 1,
                         "fetchFailureCount": 0,
                     },
-                    "commonThemes": ["stoichiometry", "laboratory safety"],
+                    "commonThemes": ["inflation", "monetary policy"],
                 },
                 "stages": [{"stage": "course_plan", "status": "passed"}],
             },
@@ -232,30 +232,30 @@ def test_generation_job_mirrors_file_backed_source_gap_resume_report(client, tmp
         job = Job(
             job_type="agent_generate_course_staged",
             payload={
-                "prompt": "Create a CHEM 105 course from mixed evidence.",
+                "prompt": "Create a macroeconomics principles course from mixed evidence.",
                 "provider_id": "local-model",
                 "model": "kimi-k2.6:cloud",
-                "source_urls": ["https://example.edu/chem105/syllabus", "https://example.edu/noise"],
+                "source_urls": ["https://example.edu/macroeconomics/syllabus", "https://example.edu/noise"],
                 "input_artifacts": [
                     {
-                        "id": "chem-lab-notes",
-                        "filename": "chem-lab-notes.txt",
-                        "text": "Laboratory safety and titration notes.",
+                        "id": "macro-data-notes",
+                        "filename": "macro-data-notes.txt",
+                        "text": "GDP, inflation, and monetary policy notes.",
                     }
                 ],
                 "source_packet": {
                     "contract_version": "source-packet-v1",
                     "source_documents": [
                         {
-                            "url": "artifact://chem-lab-notes.txt",
-                            "title": "chem-lab-notes.txt",
-                            "text": "Laboratory safety and titration notes.",
-                            "inputArtifactId": "chem-lab-notes",
+                            "url": "artifact://macro-data-notes.txt",
+                            "title": "macro-data-notes.txt",
+                            "text": "GDP, inflation, and monetary policy notes.",
+                            "inputArtifactId": "macro-data-notes",
                         }
                     ],
                 },
                 "resume_course": {
-                    "title": "Chemistry 105 Draft",
+                    "title": "Macroeconomics Principles Draft",
                     "metadata": {"status": "needs_sources"},
                 },
                 "resume_trace": {"status": "needs_sources"},
@@ -288,7 +288,7 @@ def test_generation_job_mirrors_file_backed_source_gap_resume_report(client, tmp
     assert mirrored_summary["inputs"]["sourcePacketDocumentCount"] == 1
     assert mirrored_summary["inputs"]["sourcePacketInputArtifactDocumentCount"] == 1
     assert mirrored_summary["inputs"]["sourceGapResumeFileBacked"] is True
-    assert mirrored_summary["inputs"]["inputArtifactFilenames"] == ["chem-lab-notes.txt"]
+    assert mirrored_summary["inputs"]["inputArtifactFilenames"] == ["macro-data-notes.txt"]
     assert mirrored_summary["sourceCorpus"]["submittedSourceCount"] == 3
     assert mirrored_summary["sourceCorpus"]["submittedInputArtifactCount"] == 1
     assert mirrored_summary["sourceCorpus"]["includedInputArtifactCount"] == 1

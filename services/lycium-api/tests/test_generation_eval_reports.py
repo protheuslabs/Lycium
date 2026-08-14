@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from app.course_generation_gauntlet import evaluate_generation_gauntlet
+from app.course_generation_scenario_specs import GOLDEN_COURSE_TEMPLATES
 from app.course_generation_scenarios import evaluate_course_generation_scenario, evaluate_program_generation_scenario
 from app.generation_eval_reports import (
     build_generation_eval_run,
@@ -14,7 +15,7 @@ from app.generation_eval_reports import (
     write_generation_eval_run,
 )
 from tests.course_generation_fixture_builders import (
-    chem_105_flagship_course_from_scenario,
+    golden_course_from_scenario,
     source_backed_course_from_scenario,
     under_sourced_course_draft_from_scenario,
 )
@@ -28,6 +29,13 @@ GAUNTLET_PROGRAM_SCENARIOS = (
     "public-health-foundations-program",
     "pre-medical-preparation-program",
 )
+
+
+def _golden_course_artifacts() -> dict[str, dict[str, Any]]:
+    return {
+        scenario_id: golden_course_from_scenario(scenario_id)
+        for scenario_id in GOLDEN_COURSE_TEMPLATES
+    }
 
 
 def _noisy_source_report() -> dict[str, Any]:
@@ -48,7 +56,7 @@ def _noisy_source_report() -> dict[str, Any]:
 def _fixed_generation_eval_reports() -> list[dict[str, Any]]:
     full_stack_program = json.loads((REPO_ROOT / "packages/contracts/fixtures/full-stack-engineer-program.json").read_text())
     return [
-        evaluate_course_generation_scenario(chem_105_flagship_course_from_scenario(), "chem-105-general-chemistry"),
+        evaluate_course_generation_scenario(golden_course_from_scenario("macroeconomics-principles"), "macroeconomics-principles"),
         evaluate_course_generation_scenario(source_backed_course_from_scenario("intro-programming-foundations"), "intro-programming-foundations"),
         evaluate_program_generation_scenario(full_stack_program, "full-stack-software-engineer-program"),
         evaluate_program_generation_scenario(
@@ -64,10 +72,7 @@ def _fixed_generation_gauntlet_report() -> dict[str, Any]:
     full_stack_program = json.loads((REPO_ROOT / "packages/contracts/fixtures/full-stack-engineer-program.json").read_text())
     return evaluate_generation_gauntlet(
         course_artifacts={
-            "chem-105-general-chemistry": chem_105_flagship_course_from_scenario(),
-            "intro-programming-foundations": source_backed_course_from_scenario("intro-programming-foundations"),
-            "software-engineering-methods": source_backed_course_from_scenario("software-engineering-methods"),
-            "academic-writing-research-composition": source_backed_course_from_scenario("academic-writing-research-composition"),
+            **_golden_course_artifacts(),
             "under-sourced-course-prompt": under_sourced_course_draft_from_scenario(),
         },
         program_artifacts={
@@ -112,24 +117,26 @@ def test_generation_eval_reports_are_persisted_and_trendable(tmp_path: Path) -> 
     assert trend["latestSummary"]["scenarioCount"] == 6
     assert trend["latestSummary"]["failedCount"] == 0
     assert trend["latestGauntlet"]["status"] == "passed"
-    assert trend["latestGauntlet"]["caseCount"] == 10
-    assert trend["latestGauntlet"]["kindCounts"] == {"course": 5, "program": 5}
-    assert trend["latestGauntlet"]["domainCounts"]["arts and humanities"] == 1
+    assert trend["latestGauntlet"]["caseCount"] == 16
+    assert trend["latestGauntlet"]["kindCounts"] == {"course": 11, "program": 5}
+    assert trend["latestGauntlet"]["domainCounts"]["arts and humanities"] == 2
+    assert trend["latestGauntlet"]["domainCounts"]["natural sciences"] == 2
+    assert trend["latestGauntlet"]["domainCounts"]["quantitative reasoning"] == 1
     assert trend["latestGauntlet"]["domainCounts"]["data and analytics"] == 1
     assert trend["latestGauntlet"]["domainCounts"]["health sciences"] == 1
     assert trend["latestGauntlet"]["domainCounts"]["public health"] == 1
     assert loaded_runs[0]["gauntlet"]["status"] == "passed"
     assert loaded_runs[0]["gauntletReport"]["contractVersion"] == "course-generation-gauntlet-v1"
     assert {row["scenarioId"] for row in trend["scenarioTrends"]} >= {
-        "chem-105-general-chemistry",
+        "macroeconomics-principles",
         "intro-programming-foundations",
         "full-stack-software-engineer-program",
         "pre-medical-preparation-program",
         "multi-source-noisy-corpus",
         "under-sourced-course-prompt",
     }
-    chem_trend = next(row for row in trend["scenarioTrends"] if row["scenarioId"] == "chem-105-general-chemistry")
-    assert chem_trend["scoreDelta"] is not None
+    macro_trend = next(row for row in trend["scenarioTrends"] if row["scenarioId"] == "macroeconomics-principles")
+    assert macro_trend["scoreDelta"] is not None
 
 
 def test_generation_eval_trend_route_reads_persisted_reports(client, tmp_path: Path, monkeypatch) -> None:
@@ -152,4 +159,4 @@ def test_generation_eval_trend_route_reads_persisted_reports(client, tmp_path: P
     assert payload["trend"]["latestSummary"]["scenarioCount"] == 6
     assert payload["trend"]["latestGauntlet"]["status"] == "passed"
     assert payload["runs"][0]["runId"] == "eval-route-run"
-    assert payload["runs"][0]["gauntlet"]["caseCount"] == 10
+    assert payload["runs"][0]["gauntlet"]["caseCount"] == 16

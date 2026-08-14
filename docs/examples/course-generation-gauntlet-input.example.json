@@ -3,14 +3,14 @@
   "metadata": {
     "provider": "ollama",
     "model": "kimi-k2.6:cloud",
-    "prompt": "Generate a source-backed CHEM 105 course from the attached syllabus, OpenStax chapters, and public lab resources.",
+    "prompt": "Generate a source-backed Macroeconomics Principles course from the attached syllabus, OpenStax chapters, and public economics data references.",
     "inputMix": "prompt+urls+files",
-    "sourcePacketIds": ["source-packet-chem-105-openstax"],
-    "inputArtifactIds": ["uploaded-syllabus-pdf", "uploaded-lab-notes-pdf"],
+    "sourcePacketIds": ["source-packet-macroeconomics-openstax"],
+    "inputArtifactIds": ["uploaded-syllabus-pdf", "uploaded-data-reference-notes-pdf"],
     "notes": "Replace each empty object below with the generated artifact for that scenario."
   },
   "courses": {
-    "chem-105-general-chemistry": {},
+    "macroeconomics-principles": {},
     "intro-programming-foundations": {},
     "software-engineering-methods": {},
     "under-sourced-course-prompt": {}

@@ -120,11 +120,11 @@ Course generation is a gated workflow. Each gate should produce inspectable arti
 ## Professional Eval Direction
 
 - Maintain a small fixed eval suite before expanding generation features. The current minimum scenarios are documented in `docs/course-generation-eval-scenarios.md`.
-- Treat eval scenarios as product contracts: a model/provider combination is not trusted for full course generation until it can pass the flagship scenarios with source evidence, benchmark evidence, valid contracts, assessments, summaries, and review/publish gates.
+- Treat eval scenarios as product contracts: a model/provider combination is not trusted for full course generation until it can pass golden-template scenarios with source evidence, benchmark evidence, valid contracts, assessments, summaries, and review/publish gates.
 - Use local model capability sweeps before blaming or trusting a model. A model should first pass primitive `plan`, `section`, and `quiz` tasks, then a composed one-module benchmark, before being used for full-course generation confidence.
 - Prefer validated primitive generation plus deterministic course assembly over monolithic long-running course generation calls when the task can be decomposed. If high-tier models pass primitives but fail full generation, treat the workflow, source packing, assembly, or gates as the likely bottleneck.
 - The flagship software engineering program should remain the primary program-quality fixture because it exercises requirement groups, prerequisite graphs, capstones, portfolio evidence, source parity, and course wrappers.
-- CHEM 105 should remain the primary full-course eval because it tests whether Lycium can generate a real undergraduate course from free reputable sources rather than a software-only demo.
+- Course-specific eval targets belong in the golden dataset, not in generator code. Macroeconomics Principles is one current golden template for testing real undergraduate course generation from free reputable sources.
 - Messy source-corpus evals must prove that irrelevant or weak sources are excluded before generation. The generator should not silently use excluded sources.
 - Review/publish evals must prove that weak generated courses remain drafts and expose gate evidence to reviewers.
 

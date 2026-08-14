@@ -89,31 +89,31 @@ async function mockQuietCatalogApis(page: Page) {
 
 function generatedFileBackedCourse() {
   return {
-    title: "File Backed Chemistry Course",
-    shortDescription: "A generated chemistry course grounded in uploaded source files.",
+    title: "File Backed Macroeconomics Course",
+    shortDescription: "A generated macroeconomics course grounded in uploaded source files.",
     difficultyLevel: "undergrad",
-    category: "natural-sciences-mathematics",
-    department: "chemistry",
-    tags: ["chemistry", "files", "e2e"],
+    category: "business-management",
+    department: "economics",
+    tags: ["macroeconomics", "files", "e2e"],
     sourceIds: ["input-source-1"],
     sourceRecords: [
       {
         id: "input-source-1",
         type: "document",
-        title: "Uploaded chemistry notes",
-        url: "artifact://file-chem-stoichiometry",
+        title: "Uploaded macroeconomics notes",
+        url: "artifact://file-macro-inflation",
       },
     ],
     metadata: { pacingLabel: "Module" },
     modules: [
       {
-        id: "module-file-chemistry",
-        title: "Module 1: File-backed chemistry",
+        id: "module-file-macroeconomics",
+        title: "Module 1: File-backed macroeconomics",
         sourceIds: ["input-source-1"],
         sections: [
           {
             id: "file-backed-lesson",
-            title: "Stoichiometry from uploaded notes",
+            title: "Inflation from uploaded notes",
             pageType: "learn",
             sectionType: "lesson",
             sourceIds: ["input-source-1"],
@@ -121,7 +121,7 @@ function generatedFileBackedCourse() {
               {
                 type: "text",
                 heading: "Explanation",
-                value: "Uploaded notes describe stoichiometry as mole-ratio reasoning grounded in balanced equations.",
+                value: "Uploaded notes describe inflation as price-level reasoning grounded in price indexes.",
                 sourceIds: ["input-source-1"],
               },
               {
@@ -129,8 +129,8 @@ function generatedFileBackedCourse() {
                 title: "Concepts introduced",
                 concepts: [
                   {
-                    name: "Stoichiometry",
-                    description: "Quantitative mole-ratio reasoning from balanced chemical equations.",
+                    name: "Inflation",
+                    description: "Quantitative price-level reasoning from index data.",
                     sourceSectionId: "file-backed-lesson",
                   },
                 ],
@@ -140,7 +140,7 @@ function generatedFileBackedCourse() {
           },
           {
             id: "file-backed-quiz",
-            title: "Quiz: File-backed chemistry",
+            title: "Quiz: File-backed macroeconomics",
             pageType: "apply",
             sectionType: "assessment",
             sourceIds: ["input-source-1"],
@@ -150,8 +150,8 @@ function generatedFileBackedCourse() {
                 sourceIds: ["input-source-1"],
                 questions: Array.from({ length: 10 }, (_value, index) => ({
                   id: `q${index + 1}`,
-                  question: `Which idea did the uploaded chemistry notes support? ${index + 1}`,
-                  options: ["Stoichiometry", "Typography", "Source maps", "Routing"],
+                  question: `Which idea did the uploaded macroeconomics notes support? ${index + 1}`,
+                  options: ["Inflation", "Typography", "Source maps", "Routing"],
                   answers: [0],
                 })),
               },
@@ -159,7 +159,7 @@ function generatedFileBackedCourse() {
           },
           {
             id: "file-backed-summary",
-            title: "Module Summary: File-backed chemistry",
+            title: "Module Summary: File-backed macroeconomics",
             pageType: "learn",
             sectionType: "summary",
             sourceIds: ["input-source-1"],
@@ -169,8 +169,8 @@ function generatedFileBackedCourse() {
                 title: "Module concepts",
                 concepts: [
                   {
-                    name: "Stoichiometry",
-                    description: "Quantitative mole-ratio reasoning from balanced chemical equations.",
+                    name: "Inflation",
+                    description: "Quantitative price-level reasoning from index data.",
                     sourceSectionId: "file-backed-lesson",
                   },
                 ],
@@ -197,48 +197,48 @@ test("uploaded files entered in the create-course UI reach course generation as 
 
   const returnedArtifacts = [
     {
-      id: "file-chem-stoichiometry",
+      id: "file-macro-inflation",
       kind: "text",
-      filename: "stoichiometry-notes.txt",
-      title: "stoichiometry-notes.txt",
+      filename: "inflation-notes.txt",
+      title: "inflation-notes.txt",
       mimeType: "text/plain",
       sourceUrl: "",
-      sourceDocumentUrl: "artifact://file-chem-stoichiometry",
-      extractedText: "Stoichiometry notes covering mole ratios and limiting reagents.",
+      sourceDocumentUrl: "artifact://file-macro-inflation",
+      extractedText: "Inflation notes covering price indexes and purchasing power.",
       extractionStatus: "extracted",
       extractionWarnings: [],
       textLength: 62,
-      contentHash: "hash-stoichiometry",
+      contentHash: "hash-inflation",
       reader: { contractVersion: "lycium-file-reader-v1", adapter: "lycium-local" },
     },
     {
-      id: "file-chem-equilibrium",
+      id: "file-macro-gdp",
       kind: "text",
-      filename: "equilibrium-notes.txt",
-      title: "equilibrium-notes.txt",
+      filename: "gdp-notes.txt",
+      title: "gdp-notes.txt",
       mimeType: "text/plain",
       sourceUrl: "",
-      sourceDocumentUrl: "artifact://file-chem-equilibrium",
-      extractedText: "Equilibrium notes covering equilibrium constants.",
-      extractionStatus: "extracted",
-      extractionWarnings: [],
-      textLength: 48,
-      contentHash: "hash-equilibrium",
-      reader: { contractVersion: "lycium-file-reader-v1", adapter: "lycium-local" },
-    },
-    {
-      id: "file-chem-titration",
-      kind: "text",
-      filename: "titration-notes.txt",
-      title: "titration-notes.txt",
-      mimeType: "text/plain",
-      sourceUrl: "",
-      sourceDocumentUrl: "artifact://file-chem-titration",
-      extractedText: "Titration notes covering concentration and endpoint evidence.",
+      sourceDocumentUrl: "artifact://file-macro-gdp",
+      extractedText: "GDP notes covering output, income, and expenditure measures.",
       extractionStatus: "extracted",
       extractionWarnings: [],
       textLength: 58,
-      contentHash: "hash-titration",
+      contentHash: "hash-gdp",
+      reader: { contractVersion: "lycium-file-reader-v1", adapter: "lycium-local" },
+    },
+    {
+      id: "file-macro-unemployment",
+      kind: "text",
+      filename: "unemployment-notes.txt",
+      title: "unemployment-notes.txt",
+      mimeType: "text/plain",
+      sourceUrl: "",
+      sourceDocumentUrl: "artifact://file-macro-unemployment",
+      extractedText: "Unemployment notes covering labor force measures and participation.",
+      extractionStatus: "extracted",
+      extractionWarnings: [],
+      textLength: 64,
+      contentHash: "hash-unemployment",
       reader: { contractVersion: "lycium-file-reader-v1", adapter: "lycium-local" },
     },
   ];
@@ -270,7 +270,7 @@ test("uploaded files entered in the create-course UI reach course generation as 
         message: "Course generated from uploaded file artifacts.",
         course_snapshot: {
           id: 818181,
-          title: "File Backed Chemistry Course",
+          title: "File Backed Macroeconomics Course",
           status: "draft",
           generation_trace: { input_artifacts: returnedArtifacts },
           structure: generatedFileBackedCourse(),
@@ -287,41 +287,41 @@ test("uploaded files entered in the create-course UI reach course generation as 
   const dialog = page.getByRole("dialog", { name: "Create Course" });
   await expect(dialog).toBeVisible();
   await expect(page.getByPlaceholder("Describe the course you want to build...")).toBeEnabled();
-  await page.getByPlaceholder("Describe the course you want to build...").fill("File backed chemistry course");
-  await chooseDropdownOption(page, "College", "College of Natural Sciences and Mathematics");
-  await chooseDropdownOption(page, "Department", "Chemistry");
+  await page.getByPlaceholder("Describe the course you want to build...").fill("File backed macroeconomics course");
+  await chooseDropdownOption(page, "College", "College of Business and Management");
+  await chooseDropdownOption(page, "Department", "Economics");
   await page.locator('input[type="file"]').setInputFiles([
     {
-      name: "stoichiometry-notes.txt",
+      name: "inflation-notes.txt",
       mimeType: "text/plain",
-      buffer: Buffer.from("Stoichiometry uses mole ratios and limiting reagents."),
+      buffer: Buffer.from("Inflation uses price indexes and purchasing power."),
     },
     {
-      name: "equilibrium-notes.txt",
+      name: "gdp-notes.txt",
       mimeType: "text/plain",
-      buffer: Buffer.from("Equilibrium constants describe reaction balance."),
+      buffer: Buffer.from("GDP measures output, income, and expenditure."),
     },
     {
-      name: "titration-notes.txt",
+      name: "unemployment-notes.txt",
       mimeType: "text/plain",
-      buffer: Buffer.from("Titration uses concentration and endpoint evidence."),
+      buffer: Buffer.from("Unemployment uses labor force and participation measures."),
     },
   ]);
 
-  await expect(page.getByText("stoichiometry-notes.txt")).toBeVisible();
-  await expect(page.getByText("equilibrium-notes.txt")).toBeVisible();
-  await expect(page.getByText("titration-notes.txt")).toBeVisible();
+  await expect(page.getByText("inflation-notes.txt")).toBeVisible();
+  await expect(page.getByText("gdp-notes.txt")).toBeVisible();
+  await expect(page.getByText("unemployment-notes.txt")).toBeVisible();
   await dialog.getByRole("button", { name: /^Create course$/i }).click();
 
   await expect(page).toHaveURL(/\/Lycium\/courses\//);
-  await expect(page.locator(".course-name")).toHaveText("File Backed Chemistry Course");
+  await expect(page.locator(".course-name")).toHaveText("File Backed Macroeconomics Course");
   const conceptStack = page.getByRole("region", { name: "Concepts introduced" });
   await expect(conceptStack).toBeVisible();
-  await expect(conceptStack.getByRole("heading", { name: "Stoichiometry" })).toBeVisible();
+  await expect(conceptStack.getByRole("heading", { name: "Inflation" })).toBeVisible();
   expect(fileReaderPayload?.files?.map((file) => file.filename)).toEqual([
-    "stoichiometry-notes.txt",
-    "equilibrium-notes.txt",
-    "titration-notes.txt",
+    "inflation-notes.txt",
+    "gdp-notes.txt",
+    "unemployment-notes.txt",
   ]);
   expect(fileReaderPayload?.files?.every((file) => file.mimeType === "text/plain" && Boolean(file.base64))).toBe(true);
   expect(generationPayload?.input_artifacts).toEqual(returnedArtifacts);
@@ -334,22 +334,22 @@ test("course creation submits mixed URL and file inputs to generation", async ({
 
   const returnedArtifacts = [
     {
-      id: "file-chem-lab",
+      id: "file-macro-data",
       kind: "text",
-      filename: "chem-lab-notes.txt",
-      title: "chem-lab-notes.txt",
+      filename: "macro-data-notes.txt",
+      title: "macro-data-notes.txt",
       mimeType: "text/plain",
       sourceUrl: "",
-      sourceDocumentUrl: "artifact://file-chem-lab",
-      extractedText: "General chemistry lab notes covering safety, titration, and measurement uncertainty.",
+      sourceDocumentUrl: "artifact://file-macro-data",
+      extractedText: "Macroeconomics data notes covering GDP, inflation, and unemployment measures.",
       extractionStatus: "extracted",
       extractionWarnings: [],
       textLength: 82,
-      contentHash: "hash-lab",
+      contentHash: "hash-macro-data",
       reader: { contractVersion: "lycium-file-reader-v1", adapter: "lycium-local" },
     },
   ];
-  const sourceUrls = ["https://example.edu/chem105/syllabus", "https://openstax.org/books/chemistry-2e"];
+  const sourceUrls = ["https://example.edu/macroeconomics/syllabus", "https://openstax.org/books/principles-macroeconomics-3e"];
   let fileReaderPayload: { files?: Array<{ filename?: string; base64?: string }> } | null = null;
   let generationPayload: { input_artifacts?: unknown[]; source_urls?: string[] } | null = null;
 
@@ -378,13 +378,13 @@ test("course creation submits mixed URL and file inputs to generation", async ({
         message: "Course generated from mixed URL and file evidence.",
         course_snapshot: {
           id: 828282,
-          title: "Mixed Input Chemistry Course",
+          title: "Mixed Input Macroeconomics Course",
           status: "draft",
           generation_trace: { input_artifacts: returnedArtifacts, source_urls: sourceUrls },
           structure: {
             ...generatedFileBackedCourse(),
-            title: "Mixed Input Chemistry Course",
-            shortDescription: "A generated chemistry course grounded in URLs and uploaded source files.",
+            title: "Mixed Input Macroeconomics Course",
+            shortDescription: "A generated macroeconomics course grounded in URLs and uploaded source files.",
           },
         },
       }),
@@ -399,23 +399,23 @@ test("course creation submits mixed URL and file inputs to generation", async ({
   const dialog = page.getByRole("dialog", { name: "Create Course" });
   await expect(dialog).toBeVisible();
 
-  await page.getByPlaceholder("Describe the course you want to build...").fill("Mixed evidence chemistry course");
+  await page.getByPlaceholder("Describe the course you want to build...").fill("Mixed evidence macroeconomics course");
   await dialog.getByPlaceholder("https://example.com/source").first().fill(sourceUrls[0]);
   await dialog.getByRole("button", { name: /add another link/i }).click();
   await dialog.getByPlaceholder("https://example.com/source").nth(1).fill(sourceUrls[1]);
-  await chooseDropdownOption(page, "College", "College of Natural Sciences and Mathematics");
-  await chooseDropdownOption(page, "Department", "Chemistry");
+  await chooseDropdownOption(page, "College", "College of Business and Management");
+  await chooseDropdownOption(page, "Department", "Economics");
   await page.locator('input[type="file"]').setInputFiles({
-    name: "chem-lab-notes.txt",
+    name: "macro-data-notes.txt",
     mimeType: "text/plain",
-    buffer: Buffer.from("General chemistry lab notes covering safety, titration, and measurement uncertainty."),
+    buffer: Buffer.from("Macroeconomics data notes covering GDP, inflation, and unemployment measures."),
   });
-  await expect(page.getByText("chem-lab-notes.txt")).toBeVisible();
+  await expect(page.getByText("macro-data-notes.txt")).toBeVisible();
   await dialog.getByRole("button", { name: /^Create course$/i }).click();
 
   await expect(page).toHaveURL(/\/Lycium\/courses\//);
-  await expect(page.locator(".course-name")).toHaveText("Mixed Input Chemistry Course");
-  expect(fileReaderPayload?.files?.map((file) => file.filename)).toEqual(["chem-lab-notes.txt"]);
+  await expect(page.locator(".course-name")).toHaveText("Mixed Input Macroeconomics Course");
+  expect(fileReaderPayload?.files?.map((file) => file.filename)).toEqual(["macro-data-notes.txt"]);
   expect(fileReaderPayload?.files?.every((file) => Boolean(file.base64))).toBe(true);
   expect(generationPayload?.source_urls).toEqual(sourceUrls);
   expect(generationPayload?.input_artifacts).toEqual(returnedArtifacts);

@@ -71,6 +71,7 @@ COURSE_TAXONOMY: dict[str, set[str]] = {
     },
     "social-sciences": {
         "anthropology",
+        "communication",
         "criminology",
         "geography",
         "international-studies",

@@ -126,7 +126,7 @@ Goal: Course and program generation should be judged against repeatable scenario
 
 Todo:
 
-- Add full-course eval scenarios for CHEM 105, Intro Programming, Software Architecture, and Pre-Med preparation.
+- Add full-course eval scenarios for Macroeconomics Principles, Intro Programming, Software Architecture, and Pre-Med preparation.
 - Add noisy multi-source corpus scenarios with irrelevant sources that must be rejected.
 - Add under-sourced prompt scenarios that must produce source-gated drafts instead of weak full courses.
 - Add program-generation evals that verify clusters, requirements, prerequisites, capstones, and course placeholders.

@@ -12,8 +12,8 @@ from app.generation_helpers import _title_from_prompt
         ("Create a lifecycle source-gap course", "Lifecycle Course"),
         ("Build an undergraduate materials science course", "Undergraduate Materials Science Course"),
         (
-            "Create a CHEM 105 general chemistry course for first-year college students.",
-            "Chem 105 General Chemistry Course",
+            "Create a macroeconomics principles course for first-year college students.",
+            "Macroeconomics Principles Course",
         ),
     ],
 )

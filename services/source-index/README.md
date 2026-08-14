@@ -95,12 +95,12 @@ Source Index supports two reverse lookup flows so consumers can draw from the in
   "sources": [{ "source_id": 12 }],
   "targets": [
     {
-      "target_id": "course:chem-105",
+      "target_id": "course:macroeconomics-principles",
       "target_type": "course",
-      "title": "General Chemistry I",
-      "description": "First-semester chemistry.",
-      "concepts": ["stoichiometry", "atomic structure"],
-      "requirements": ["balance chemical equations"]
+      "title": "Macroeconomics Principles",
+      "description": "Introductory macroeconomics.",
+      "concepts": ["GDP", "inflation", "unemployment"],
+      "requirements": ["interpret public economic indicators"]
     }
   ],
   "limit": 20
@@ -116,9 +116,9 @@ Course generation should prefer `source-packet-v1`.
 ```json
 {
   "consumer": "lycium-course-generation",
-  "context_id": "chem-105-2026-05",
-  "prompt": "Create a first-semester general chemistry course.",
-  "source_urls": ["https://openstax.org/books/chemistry-2e/pages/1-introduction"],
+  "context_id": "macroeconomics-principles-2026-05",
+  "prompt": "Create an introductory macroeconomics course.",
+  "source_urls": ["https://openstax.org/details/books/principles-macroeconomics-3e"],
   "fetch_sources": true,
   "snapshot_limit": 1
 }

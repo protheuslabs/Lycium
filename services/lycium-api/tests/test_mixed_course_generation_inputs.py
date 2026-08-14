@@ -23,7 +23,7 @@ def _mock_models(*model_ids: str) -> list[dict[str, str]]:
     return [{"id": model_id, "label": model_id} for model_id in model_ids]
 
 
-def _chem_artifact(name: str, text: str) -> dict[str, str]:
+def _macro_artifact(name: str, text: str) -> dict[str, str]:
     return {
         "id": name.replace(".", "-").replace(" ", "-").lower(),
         "filename": name,
@@ -32,29 +32,29 @@ def _chem_artifact(name: str, text: str) -> dict[str, str]:
     }
 
 
-def _chem_input_artifacts() -> list[dict[str, str]]:
+def _macro_input_artifacts() -> list[dict[str, str]]:
     return [
-        _chem_artifact(
-            "chem105-syllabus.txt",
-            "CHEM 105 covers measurement, atomic structure, stoichiometry, bonding, thermochemistry, gases, and aqueous reactions.",
+        _macro_artifact(
+            "macroeconomics-syllabus.txt",
+            "Macroeconomics principles covers GDP, national income accounting, inflation, unemployment, aggregate demand, fiscal policy, money, banking, and monetary policy.",
         ),
-        _chem_artifact(
-            "chem105-labs.txt",
-            "General chemistry laboratory work includes safety, density, hydrate composition, calorimetry, titration, and gas collection.",
+        _macro_artifact(
+            "macroeconomics-data-guide.txt",
+            "Macroeconomics data work includes GDP tables, price index calculations, unemployment measures, labor force participation, and policy analysis.",
         ),
-        _chem_artifact(
-            "chem105-assessment.txt",
-            "Assessments include stoichiometry problems, limiting reactant calculations, molecular geometry, gas law questions, and lab analysis.",
+        _macro_artifact(
+            "macroeconomics-assessment.txt",
+            "Assessments include inflation calculations, GDP component interpretation, aggregate demand scenarios, monetary policy questions, and data analysis.",
         ),
     ]
 
 
 def _generation_payload(source_urls: list[str], input_artifacts: list[dict[str, str]]) -> dict:
     return {
-        "prompt": "Create an undergraduate CHEM 105 General Chemistry I course with labs and assessments.",
+        "prompt": "Create an undergraduate Macroeconomics Principles course with data activities and assessments.",
         "level": "undergrad",
-        "category": "natural-sciences-mathematics",
-        "department": "chemistry",
+        "category": "business-management",
+        "department": "economics",
         "desired_module_count": 1,
         "expected_duration_minutes": 90,
         "max_stage_timeout_seconds": 30,
@@ -67,13 +67,13 @@ def _generation_payload(source_urls: list[str], input_artifacts: list[dict[str, 
     ("source_urls", "artifact_count", "label"),
     [
         ([], 3, "files-only"),
-        (["https://example.edu/chem105/syllabus"], 2, "one-url-two-files"),
-        (["https://example.edu/chem105/syllabus", "https://example.edu/chem105/labs"], 1, "two-urls-one-file"),
+        (["https://example.edu/macroeconomics/syllabus"], 2, "one-url-two-files"),
+        (["https://example.edu/macroeconomics/syllabus", "https://example.edu/macroeconomics/data-guide"], 1, "two-urls-one-file"),
         (
             [
-                "https://example.edu/chem105/syllabus",
-                "https://example.edu/chem105/labs",
-                "https://example.edu/chem105/textbook",
+                "https://example.edu/macroeconomics/syllabus",
+                "https://example.edu/macroeconomics/data-guide",
+                "https://example.edu/macroeconomics/textbook",
             ],
             0,
             "urls-only",
@@ -96,7 +96,7 @@ def test_course_generation_jobs_accept_url_file_mixes(
     saved = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
     assert saved.status_code == 200, saved.text
 
-    artifacts = _chem_input_artifacts()[:artifact_count]
+    artifacts = _macro_input_artifacts()[:artifact_count]
     response = client.post("/v1/agent/courses/jobs", json=_generation_payload(source_urls, artifacts))
 
     assert response.status_code == 202, f"{label}: {response.text}"
@@ -113,7 +113,7 @@ def test_course_generation_jobs_accept_url_file_mixes(
 def test_course_generation_jobs_hold_under_sourced_url_file_mix_for_source_gaps(client, isolated_local_data) -> None:
     response = client.post(
         "/v1/agent/courses/jobs",
-        json=_generation_payload(["https://example.edu/chem105/syllabus"], _chem_input_artifacts()[:1]),
+        json=_generation_payload(["https://example.edu/macroeconomics/syllabus"], _macro_input_artifacts()[:1]),
     )
 
     assert response.status_code == 202, response.text
@@ -121,7 +121,7 @@ def test_course_generation_jobs_hold_under_sourced_url_file_mix_for_source_gaps(
     assert job["status"] == "ready"
     assert job["current_stage"] == "source_coverage"
     assert job["course_snapshot"]["status"] == "needs_sources"
-    assert job["request"]["source_urls"] == ["https://example.edu/chem105/syllabus"]
+    assert job["request"]["source_urls"] == ["https://example.edu/macroeconomics/syllabus"]
     assert len(job["request"]["input_artifacts"]) == 1
 
 
@@ -133,16 +133,16 @@ def test_course_generation_jobs_hold_low_packet_concept_coverage_for_source_gaps
             "source_packet": {
                 "contract_version": "source-packet-v1",
                 "source_urls": [
-                    "https://example.edu/chem105/syllabus",
-                    "https://example.edu/chem105/labs",
-                    "https://example.edu/chem105/textbook",
+                    "https://example.edu/macroeconomics/syllabus",
+                    "https://example.edu/macroeconomics/data-guide",
+                    "https://example.edu/macroeconomics/textbook",
                 ],
                 "quality": {
                     "status": "needs_review",
                     "conceptCoverageRatio": 0.33,
                     "conceptCandidateCount": 3,
                     "coveredConceptCandidateCount": 1,
-                    "uncoveredConceptCandidates": ["stoichiometry", "thermochemistry"],
+                    "uncoveredConceptCandidates": ["inflation", "monetary policy"],
                 },
             },
         },
@@ -155,25 +155,25 @@ def test_course_generation_jobs_hold_low_packet_concept_coverage_for_source_gaps
     assert job["current_stage"] == "source_coverage"
     assert readiness["status"] == "needs_sources"
     assert readiness["sourceEvidence"]["submittedEvidenceCount"] == 3
-    assert readiness["conceptCoverage"]["uncoveredConcepts"] == ["stoichiometry", "thermochemistry"]
+    assert readiness["conceptCoverage"]["uncoveredConcepts"] == ["inflation", "monetary policy"]
 
 
 def test_source_corpus_preflight_combines_url_documents_and_input_artifacts() -> None:
-    url = "https://example.edu/chem105/open-textbook"
+    url = "https://example.edu/macroeconomics/open-textbook"
     corpus = compile_generation_source_corpus(
-        prompt="CHEM 105 general chemistry stoichiometry bonding thermochemistry laboratory course",
+        prompt="macroeconomics principles GDP inflation unemployment monetary policy data course",
         source_urls=[url],
         fetch_sources=False,
         source_documents=[
             {
                 "url": url,
-                "title": "Open general chemistry chapter",
-                "text": "General chemistry chapters cover stoichiometry, molecular bonding, thermochemistry, and gas laws.",
+                "title": "Open macroeconomics chapter",
+                "text": "Macroeconomics chapters cover GDP, inflation, unemployment, aggregate demand, fiscal policy, and monetary policy.",
                 "contentType": "text/plain",
                 "fetchStatus": "provided",
             }
         ],
-        input_artifacts=_chem_input_artifacts()[:2],
+        input_artifacts=_macro_input_artifacts()[:2],
     )
 
     metrics = corpus.synthesis["metrics"]
@@ -184,29 +184,29 @@ def test_source_corpus_preflight_combines_url_documents_and_input_artifacts() ->
     assert url in corpus.source_urls
     assert any(url.startswith("artifact://") for url in corpus.source_urls)
     assert {document.get("inputArtifactId") for document in corpus.source_documents} >= {
-        "chem105-syllabus-txt",
-        "chem105-labs-txt",
+        "macroeconomics-syllabus-txt",
+        "macroeconomics-data-guide-txt",
     }
 
 
 def test_source_corpus_preflight_filters_noisy_url_and_file_inputs() -> None:
-    useful_url = "https://example.edu/chem105/syllabus"
+    useful_url = "https://example.edu/macroeconomics/syllabus"
     noisy_url = "https://example.edu/student-life/parking"
-    useful_artifact = _chem_input_artifacts()[0]
-    noisy_artifact = _chem_artifact(
+    useful_artifact = _macro_input_artifacts()[0]
+    noisy_artifact = _macro_artifact(
         "campus-parking.txt",
         "Parking permits, dining hall hours, residence move-in instructions, and campus shuttle routes.",
     )
 
     corpus = compile_generation_source_corpus(
-        prompt="CHEM 105 general chemistry stoichiometry bonding thermochemistry laboratory course",
+        prompt="macroeconomics principles GDP inflation unemployment monetary policy data course",
         source_urls=[useful_url, noisy_url],
         fetch_sources=False,
         source_documents=[
             {
                 "url": useful_url,
-                "title": "CHEM 105 syllabus",
-                "text": "General chemistry syllabus with stoichiometry, bonding, gas laws, thermochemistry, and laboratory safety.",
+                "title": "Macroeconomics principles syllabus",
+                "text": "Macroeconomics syllabus with GDP, inflation, unemployment, aggregate demand, fiscal policy, and monetary policy.",
                 "contentType": "text/plain",
                 "fetchStatus": "provided",
             },
@@ -230,5 +230,5 @@ def test_source_corpus_preflight_filters_noisy_url_and_file_inputs() -> None:
     assert metrics["includedInputArtifactCount"] == 1
     assert useful_url in corpus.source_urls
     assert noisy_url not in corpus.source_urls
-    assert "chem105-syllabus-txt" in included_artifact_ids
+    assert "macroeconomics-syllabus-txt" in included_artifact_ids
     assert "campus-parking-txt" not in included_artifact_ids

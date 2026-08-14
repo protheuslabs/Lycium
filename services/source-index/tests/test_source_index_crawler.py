@@ -16,8 +16,8 @@ def test_crawl_policy_accepts_education_paths_and_rejects_noise() -> None:
     policy = default_policy_payload()
     policy["seed_domains"] = ["example.edu"]
 
-    accepted, accepted_reason = should_visit_url("https://example.edu/catalog/courses/chem105", policy)
-    rejected_domain, domain_reason = should_visit_url("https://other.edu/catalog/courses/chem105", policy)
+    accepted, accepted_reason = should_visit_url("https://example.edu/catalog/courses/macroeconomics", policy)
+    rejected_domain, domain_reason = should_visit_url("https://other.edu/catalog/courses/macroeconomics", policy)
     rejected_path, path_reason = should_visit_url("https://example.edu/news/athletics", policy)
 
     assert accepted is True
@@ -83,7 +83,7 @@ def test_crawl_worker_result_contract_is_language_portable() -> None:
     task = CrawlTask(
         crawl_run_id=1,
         policy_id=2,
-        url="https://example.edu/catalog/courses/chem105",
+        url="https://example.edu/catalog/courses/macroeconomics",
         policy={"seed_domains": ["example.edu"]},
     )
     result = CrawlWorkerResult(
@@ -98,9 +98,9 @@ def test_crawl_worker_result_contract_is_language_portable() -> None:
             content_hash="abc123",
         ),
         extraction=ExtractionResult(
-            title="CHEM 105",
-            extracted_text="General Chemistry I covers stoichiometry and bonding.",
-            text_digest="General Chemistry I covers stoichiometry and bonding.",
+            title="Macroeconomics Principles",
+            extracted_text="Macroeconomics covers GDP and inflation.",
+            text_digest="Macroeconomics covers GDP and inflation.",
         ),
         classification=PageClassification(label="syllabus", confidence=0.91),
         accepted=True,
@@ -116,7 +116,7 @@ def test_crawl_worker_rejects_out_of_policy_url_without_fetching() -> None:
     task = CrawlTask(
         crawl_run_id=1,
         policy_id=2,
-        url="https://other.edu/catalog/courses/chem105",
+        url="https://other.edu/catalog/courses/macroeconomics",
         policy={"seed_domains": ["example.edu"]},
     )
 
@@ -130,12 +130,12 @@ def test_crawl_worker_rejects_out_of_policy_url_without_fetching() -> None:
 def test_crawl_worker_fetches_extracts_classifies_and_discovers_links(monkeypatch) -> None:
     html = """
         <html>
-            <head><title>CHEM 105 Course Catalog</title></head>
+            <head><title>Macroeconomics Principles Course Catalog</title></head>
             <body>
-                <h1>CHEM 105 General Chemistry I</h1>
-                <p>Course description: atomic structure, stoichiometry, bonding, and thermochemistry.</p>
+                <h1>Macroeconomics Principles</h1>
+                <p>Course description: GDP, inflation, unemployment, aggregate demand, and monetary policy.</p>
                 <p>Credits: 4. Prerequisite: placement into college algebra.</p>
-                <a href="/catalog/courses/chem106">Next chemistry course</a>
+                <a href="/catalog/courses/microeconomics">Related economics course</a>
                 <a href="/news/athletics">Campus news</a>
                 <script>window.noise = true;</script>
             </body>
@@ -155,7 +155,7 @@ def test_crawl_worker_fetches_extracts_classifies_and_discovers_links(monkeypatc
     task = CrawlTask(
         crawl_run_id=1,
         policy_id=2,
-        url="https://example.edu/catalog/courses/chem105",
+        url="https://example.edu/catalog/courses/macroeconomics",
         policy={"seed_domains": ["example.edu"], "max_depth": 2},
     )
 
@@ -166,12 +166,12 @@ def test_crawl_worker_fetches_extracts_classifies_and_discovers_links(monkeypatc
     assert result.fetch.status_code == 200
     assert result.fetch.raw_storage_ref is None
     assert result.extraction is not None
-    assert result.extraction.title == "CHEM 105 Course Catalog"
-    assert "stoichiometry" in result.extraction.extracted_text
+    assert result.extraction.title == "Macroeconomics Principles Course Catalog"
+    assert "inflation" in result.extraction.extracted_text
     assert "window.noise" not in result.extraction.extracted_text
     assert result.classification is not None
     assert result.classification.label == "course_catalog"
-    assert [link.url for link in result.discovered_links] == ["https://example.edu/catalog/courses/chem106"]
+    assert [link.url for link in result.discovered_links] == ["https://example.edu/catalog/courses/microeconomics"]
 
 
 def test_source_index_does_not_import_lycium_modules() -> None:

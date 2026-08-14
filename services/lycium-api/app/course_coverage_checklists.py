@@ -14,15 +14,27 @@ COURSE_COVERAGE_OUTLINE_CONTRACT = "course-outline-from-coverage-checklist-v1"
 GENERIC_FILLER_TERMS = {
     "application",
     "approach",
+    "beginner",
+    "beginners",
+    "build",
+    "college",
     "concept",
     "concepts",
     "context",
     "course",
+    "create",
+    "design",
     "essential",
     "essentials",
     "foundational",
     "foundation",
     "foundations",
+    "generate",
+    "intro",
+    "introductory",
+    "learner",
+    "learners",
+    "level",
     "matter",
     "matters",
     "method",
@@ -30,9 +42,13 @@ GENERIC_FILLER_TERMS = {
     "orientation",
     "practice",
     "process",
+    "student",
+    "students",
     "subject",
     "tool",
     "tools",
+    "undergrad",
+    "undergraduate",
     "vocabulary",
 }
 
@@ -55,11 +71,6 @@ def _unique(values: list[str], *, limit: int | None = None) -> list[str]:
         if limit is not None and len(rows) >= limit:
             break
     return rows
-
-
-def _is_chemistry_course(prompt: str, title: str) -> bool:
-    text = f"{prompt} {title}".lower()
-    return any(term in text for term in ("chem", "chemistry", "stoichiometry", "mole concept"))
 
 
 def _section_plan(title: str, must_teach: list[str], objective: str | None = None) -> dict[str, Any]:
@@ -91,171 +102,127 @@ def _coverage_item(
     }
 
 
-def _intro_chemistry_items() -> list[dict[str, Any]]:
+TOPIC_CLAUSE_PATTERN = re.compile(
+    r"\b(?:covering|including|includes|include|about|on|with)\b(?P<topics>.+)$",
+    flags=re.IGNORECASE,
+)
+LEADING_GOAL_VERB_PATTERN = re.compile(
+    r"^(?:understand|explain|apply|analyze|analyse|evaluate|describe|learn|use|identify|interpret|compare|create)\s+",
+    flags=re.IGNORECASE,
+)
+
+
+def _clean_topic_phrase(value: str) -> str:
+    clean = re.sub(r"\s+", " ", str(value or "")).strip(" -:;,.")
+    clean = LEADING_GOAL_VERB_PATTERN.sub("", clean).strip(" -:;,.")
+    clean = re.sub(
+        r"\s+(?:for|to)\s+(?:first[- ]year|college|undergraduate|undergrad|students?|learners?|beginners?)\b.*$",
+        "",
+        clean,
+        flags=re.IGNORECASE,
+    ).strip(" -:;,.")
+    return clean
+
+
+def _topic_phrases_from_prompt(prompt: str) -> list[str]:
+    match = TOPIC_CLAUSE_PATTERN.search(prompt)
+    if not match:
+        return []
+    topic_clause = re.split(r"\b(?:for|to)\s+(?:first[- ]year|college|undergraduate|undergrad|students?|learners?|beginners?)\b", match.group("topics"), maxsplit=1, flags=re.IGNORECASE)[0]
+    chunks = [chunk for chunk in re.split(r"\s*(?:,|;)\s*", topic_clause) if chunk.strip()]
+    if len(chunks) <= 1:
+        chunks = [chunk for chunk in re.split(r"\s+\band\b\s+", topic_clause, flags=re.IGNORECASE) if chunk.strip()]
+    return _unique([_clean_topic_phrase(chunk) for chunk in chunks], limit=12)
+
+
+def _phrase_is_specific(phrase: str) -> bool:
+    tokens = [token for token in tokenize(phrase) if token not in GENERIC_FILLER_TERMS]
+    return len(tokens) >= 2
+
+
+def _goal_topics(goals: list[str]) -> list[str]:
+    return _unique([_clean_topic_phrase(goal) for goal in goals], limit=12)
+
+
+def _token_topics(prompt: str, title: str) -> list[str]:
+    return _unique(
+        [
+            token
+            for token in tokenize(f"{prompt} {title}")
+            if len(token) > 3 and token not in GENERIC_FILLER_TERMS
+        ],
+        limit=8,
+    )
+
+
+def _topic_title(term: str) -> str:
+    return " ".join(word.upper() if word.isupper() else word[:1].upper() + word[1:] for word in term.split())
+
+
+def _topic_keywords(term: str) -> list[str]:
+    tokens = [token for token in tokenize(term) if len(token) > 3 and token not in GENERIC_FILLER_TERMS]
+    return _unique([term, *tokens], limit=6)
+
+
+def _topic_section_plans(term: str) -> list[dict[str, Any]]:
+    title = _topic_title(term)
+    keywords = _topic_keywords(term)
     return [
-        _coverage_item(
-            "measurement-scientific-method",
-            "Scientific method, measurement, units, and significant figures",
-            description="Start chemistry as a measurement-driven science with units, uncertainty, and dimensional analysis.",
-            must_teach=[
-                "scientific method",
-                "hypothesis and experiment",
-                "SI units",
-                "dimensional analysis",
-                "measurement uncertainty",
-                "significant figures",
-            ],
-            section_plans=[
-                _section_plan("Scientific method and chemical measurement", ["scientific method", "hypothesis and experiment", "measurement uncertainty"]),
-                _section_plan("SI units and dimensional analysis", ["SI units", "unit conversion", "dimensional analysis"]),
-                _section_plan("Significant figures and reporting measurements", ["significant figures", "precision", "accuracy"]),
-            ],
+        _section_plan(
+            f"{title} foundations",
+            keywords,
+            f"Explain the core meaning, vocabulary, and boundaries of {term}.",
         ),
-        _coverage_item(
-            "matter-atoms-isotopes",
-            "Matter, atomic structure, isotopes, and ions",
-            description="Explain what matter is made of and how atomic composition creates isotopes and ions.",
-            must_teach=["matter", "atom", "proton", "neutron", "electron", "isotope", "ion", "atomic mass"],
-            section_plans=[
-                _section_plan("Classification of matter and chemical change", ["matter", "element", "compound", "mixture", "physical change", "chemical change"]),
-                _section_plan("Atoms, subatomic particles, and nuclear symbols", ["atom", "proton", "neutron", "electron", "nuclear symbol"]),
-                _section_plan("Isotopes, ions, and average atomic mass", ["isotope", "ion", "average atomic mass"]),
-            ],
+        _section_plan(
+            f"Evidence and relationships for {title}",
+            _unique([term, "evidence", "relationships", *keywords], limit=6),
+            f"Analyze the evidence, variables, and relationships that make {term} usable.",
         ),
-        _coverage_item(
-            "periodic-table-electron-structure",
-            "Periodic table, electron configuration, and periodic trends",
-            description="Connect electron arrangement to periodic organization and chemical trends.",
-            must_teach=["periodic table", "electron configuration", "valence electron", "atomic radius", "ionization energy", "electronegativity"],
-            section_plans=[
-                _section_plan("Periodic table organization", ["period", "group", "metal", "nonmetal", "metalloid"]),
-                _section_plan("Electron configurations and valence electrons", ["electron configuration", "orbital", "valence electron"]),
-                _section_plan("Periodic trends", ["atomic radius", "ionization energy", "electronegativity"]),
-            ],
-        ),
-        _coverage_item(
-            "formulas-nomenclature-molar-mass",
-            "Chemical formulas, nomenclature, and molar mass",
-            description="Teach learners to name compounds, write formulas, and connect formulas to measurable mass.",
-            must_teach=["chemical formula", "ionic compound", "molecular compound", "nomenclature", "polyatomic ion", "molar mass"],
-            section_plans=[
-                _section_plan("Ionic formulas and charges", ["ionic compound", "charge balance", "polyatomic ion"]),
-                _section_plan("Naming ionic and molecular compounds", ["nomenclature", "ionic nomenclature", "molecular nomenclature"]),
-                _section_plan("Formula mass and molar mass", ["formula mass", "molar mass", "mole"]),
-            ],
-        ),
-        _coverage_item(
-            "bonding-lewis-geometry-hybridization",
-            "Chemical bonding, Lewis structures, molecular geometry, and hybridization",
-            description="Move from bonds and Lewis structures into shape, polarity, and hybrid orbitals.",
-            must_teach=["ionic bond", "covalent bond", "Lewis structure", "formal charge", "resonance", "VSEPR", "molecular geometry", "hybridization"],
-            section_plans=[
-                _section_plan("Ionic and covalent bonding", ["ionic bond", "covalent bond", "electronegativity difference"]),
-                _section_plan("Lewis structures, formal charge, and resonance", ["Lewis structure", "formal charge", "resonance"]),
-                _section_plan("VSEPR geometry, polarity, and hybridization", ["VSEPR", "molecular geometry", "polarity", "hybridization"]),
-            ],
-        ),
-        _coverage_item(
-            "intermolecular-forces-states",
-            "Intermolecular forces, liquids, solids, and phase changes",
-            description="Explain how particle-level attractions shape physical properties and phase behavior.",
-            must_teach=["intermolecular force", "dispersion force", "dipole-dipole force", "hydrogen bonding", "phase change", "vapor pressure"],
-            section_plans=[
-                _section_plan("Types of intermolecular forces", ["dispersion force", "dipole-dipole force", "hydrogen bonding"]),
-                _section_plan("Liquids, solids, and physical properties", ["boiling point", "melting point", "viscosity", "surface tension"]),
-                _section_plan("Heating curves and phase changes", ["phase change", "heating curve", "vapor pressure"]),
-            ],
-        ),
-        _coverage_item(
-            "chemical-reactions-equations",
-            "Chemical reactions, balanced equations, and reaction classes",
-            description="Use balanced chemical equations as the language for chemical change.",
-            must_teach=["chemical equation", "law of conservation of mass", "balancing equations", "reaction type", "net ionic equation"],
-            section_plans=[
-                _section_plan("Writing and interpreting chemical equations", ["chemical equation", "reactant", "product"]),
-                _section_plan("Balancing equations", ["law of conservation of mass", "coefficient", "balancing equations"]),
-                _section_plan("Reaction types and net ionic equations", ["precipitation", "acid-base reaction", "redox reaction", "net ionic equation"]),
-            ],
-        ),
-        _coverage_item(
-            "stoichiometry",
-            "Mole concept, stoichiometry, limiting reactants, and percent yield",
-            description="Connect balanced equations to measurable quantities and reaction yields.",
-            must_teach=["Avogadro's number", "mole", "mole ratio", "stoichiometry", "limiting reactant", "theoretical yield", "percent yield"],
-            section_plans=[
-                _section_plan("Moles, molar mass, and Avogadro's number", ["mole", "molar mass", "Avogadro's number"]),
-                _section_plan("Mole ratios and stoichiometric calculations", ["balanced equation", "mole ratio", "stoichiometry"]),
-                _section_plan("Limiting reactants and percent yield", ["limiting reactant", "theoretical yield", "percent yield"]),
-            ],
-        ),
-        _coverage_item(
-            "solutions-concentration",
-            "Aqueous solutions, concentration, dilution, and solution stoichiometry",
-            description="Teach solution composition and reactions in water.",
-            must_teach=["solution", "solute", "solvent", "molarity", "dilution", "electrolyte", "precipitation", "titration"],
-            section_plans=[
-                _section_plan("Solutions, electrolytes, and solubility", ["solution", "electrolyte", "solubility"]),
-                _section_plan("Molarity and dilution", ["molarity", "dilution", "stock solution"]),
-                _section_plan("Solution stoichiometry and titration", ["solution stoichiometry", "titration", "equivalence point"]),
-            ],
-        ),
-        _coverage_item(
-            "gases",
-            "Gas laws, ideal gases, and gas stoichiometry",
-            description="Relate gas pressure, volume, amount, and temperature through particle models and equations.",
-            must_teach=["pressure", "Boyle's law", "Charles's law", "Avogadro's law", "ideal gas law", "partial pressure", "gas stoichiometry"],
-            section_plans=[
-                _section_plan("Pressure, volume, temperature, and gas laws", ["pressure", "Boyle's law", "Charles's law", "Avogadro's law"]),
-                _section_plan("Ideal gas law and molar mass of gases", ["ideal gas law", "moles", "molar mass"]),
-                _section_plan("Partial pressures and gas stoichiometry", ["Dalton's law", "partial pressure", "gas stoichiometry"]),
-            ],
-        ),
-        _coverage_item(
-            "thermochemistry",
-            "Thermochemistry, calorimetry, enthalpy, and Hess's law",
-            description="Explain heat, energy transfer, and enthalpy changes in chemical systems.",
-            must_teach=["heat", "temperature", "specific heat", "calorimetry", "enthalpy", "Hess's law", "enthalpy of reaction"],
-            section_plans=[
-                _section_plan("Heat, temperature, and specific heat", ["heat", "temperature", "specific heat"]),
-                _section_plan("Calorimetry", ["calorimetry", "coffee-cup calorimeter", "heat capacity"]),
-                _section_plan("Enthalpy and Hess's law", ["enthalpy", "enthalpy of reaction", "Hess's law"]),
-            ],
-        ),
-        _coverage_item(
-            "kinetics-equilibrium-acids-bases-redox",
-            "Kinetics, equilibrium, acids and bases, and redox foundations",
-            description="Close the course with rate, reversibility, acid-base chemistry, and electron-transfer foundations.",
-            must_teach=["reaction rate", "activation energy", "chemical equilibrium", "Le Chatelier's principle", "acid", "base", "pH", "oxidation", "reduction"],
-            section_plans=[
-                _section_plan("Reaction rates and activation energy", ["reaction rate", "rate law", "activation energy", "catalyst"]),
-                _section_plan("Chemical equilibrium and Le Chatelier's principle", ["chemical equilibrium", "equilibrium constant", "Le Chatelier's principle"]),
-                _section_plan("Acids, bases, pH, and redox reactions", ["acid", "base", "pH", "oxidation", "reduction"]),
-            ],
+        _section_plan(
+            f"Applied {title} analysis",
+            _unique([term, "application", "analysis", *keywords], limit=6),
+            f"Use {term} to reason through a realistic course-level case.",
         ),
     ]
 
 
-def _generic_items(prompt: str, title: str, goals: list[str]) -> list[dict[str, Any]]:
-    seed_terms = _unique(
-        [
-            *[goal for goal in goals if goal],
-            *[token for token in tokenize(f"{prompt} {title}") if len(token) > 3 and token not in GENERIC_FILLER_TERMS],
-        ],
-        limit=8,
-    ) or [title]
+def _generic_seed_terms(prompt: str, title: str, goals: list[str]) -> tuple[list[str], str]:
+    goal_terms = _goal_topics(goals)
+    prompt_terms = _topic_phrases_from_prompt(prompt)
+    if goal_terms and any(_phrase_is_specific(term) for term in goal_terms):
+        return goal_terms, "prompt_goals"
+    if prompt_terms:
+        return prompt_terms, "prompt_phrases"
+    if goal_terms:
+        return goal_terms, "prompt_goals"
+    token_terms = _token_topics(prompt, title)
+    if token_terms:
+        return token_terms, "prompt_terms"
+    return [title], "prompt_title"
+
+
+def _coverage_item_id(term: str, used_ids: set[str]) -> str:
+    base_id = _slug(term)
+    item_id = base_id
+    suffix = 2
+    while item_id in used_ids:
+        item_id = f"{base_id}-{suffix}"
+        suffix += 1
+    used_ids.add(item_id)
+    return item_id
+
+
+def _generic_items(seed_terms: list[str]) -> list[dict[str, Any]]:
+    used_ids: set[str] = set()
     return [
         _coverage_item(
-            f"prompt-topic-{index}",
-            term.title(),
+            _coverage_item_id(term, used_ids),
+            _topic_title(term),
             description=f"Best-effort coverage item inferred from the course prompt: {term}.",
-            must_teach=[term],
-            section_plans=[
-                _section_plan(f"Define {term}", [term]),
-                _section_plan(f"Use {term} in context", [term]),
-                _section_plan(f"Practice with {term}", [term]),
-            ],
+            must_teach=_topic_keywords(term),
+            section_plans=_topic_section_plans(term),
         )
-        for index, term in enumerate(seed_terms, start=1)
+        for term in seed_terms
     ]
 
 
@@ -267,17 +234,11 @@ def build_course_coverage_checklist(
     goals: list[str] | None = None,
 ) -> dict[str, Any]:
     resolved_title = title or _title_from_prompt(prompt)
-    if _is_chemistry_course(prompt, resolved_title):
-        items = _intro_chemistry_items()
-        course_kind = "intro_college_chemistry"
-        source = "domain_template"
-    else:
-        items = _generic_items(prompt, resolved_title, goals or [])
-        course_kind = "prompt_inferred"
-        source = "prompt_terms"
+    seed_terms, source = _generic_seed_terms(prompt, resolved_title, goals or [])
+    items = _generic_items(seed_terms)
     return {
         "contractVersion": COURSE_COVERAGE_CHECKLIST_CONTRACT,
-        "courseKind": course_kind,
+        "courseKind": "prompt_inferred",
         "title": resolved_title,
         "level": level or "unspecified",
         "source": source,

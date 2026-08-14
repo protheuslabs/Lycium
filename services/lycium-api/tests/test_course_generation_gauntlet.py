@@ -15,8 +15,9 @@ from app.course_generation_gauntlet import (
     load_generation_gauntlet_cases,
     load_generation_gauntlet_manifest,
 )
+from app.course_generation_scenario_specs import GOLDEN_COURSE_TEMPLATES
 from tests.course_generation_fixture_builders import (
-    chem_105_flagship_course_from_scenario,
+    golden_course_from_scenario,
     source_backed_course_from_scenario,
     under_sourced_course_draft_from_scenario,
 )
@@ -29,6 +30,13 @@ GAUNTLET_PROGRAM_SCENARIOS = (
     "public-health-foundations-program",
     "pre-medical-preparation-program",
 )
+
+
+def _golden_course_artifacts() -> dict[str, dict[str, Any]]:
+    return {
+        scenario_id: golden_course_from_scenario(scenario_id)
+        for scenario_id in GOLDEN_COURSE_TEMPLATES
+    }
 
 
 def _program_fixture() -> dict[str, Any]:
@@ -154,10 +162,7 @@ def _program_fixture() -> dict[str, Any]:
 def test_generation_gauntlet_accepts_complete_artifacts() -> None:
     report = evaluate_generation_gauntlet(
         course_artifacts={
-            "chem-105-general-chemistry": chem_105_flagship_course_from_scenario(),
-            "intro-programming-foundations": source_backed_course_from_scenario("intro-programming-foundations"),
-            "software-engineering-methods": source_backed_course_from_scenario("software-engineering-methods"),
-            "academic-writing-research-composition": source_backed_course_from_scenario("academic-writing-research-composition"),
+            **_golden_course_artifacts(),
             "under-sourced-course-prompt": under_sourced_course_draft_from_scenario(),
         },
         program_artifacts={
@@ -168,14 +173,16 @@ def test_generation_gauntlet_accepts_complete_artifacts() -> None:
 
     assert report["contractVersion"] == "course-generation-gauntlet-v1"
     assert report["status"] == "passed"
-    assert report["metrics"]["caseCount"] == 10
-    assert report["metrics"]["kindCounts"] == {"course": 5, "program": 5}
-    assert report["metrics"]["domainCounts"]["arts and humanities"] == 1
+    assert report["metrics"]["caseCount"] == 16
+    assert report["metrics"]["kindCounts"] == {"course": 11, "program": 5}
+    assert report["metrics"]["domainCounts"]["arts and humanities"] == 2
+    assert report["metrics"]["domainCounts"]["natural sciences"] == 2
+    assert report["metrics"]["domainCounts"]["quantitative reasoning"] == 1
     assert report["metrics"]["domainCounts"]["data and analytics"] == 1
     assert report["metrics"]["domainCounts"]["health sciences"] == 1
     assert report["metrics"]["domainCounts"]["public health"] == 1
     assert report["metrics"]["inputMixCounts"]["prompt+urls+files"] == 1
-    assert report["metrics"]["passedCount"] == 10
+    assert report["metrics"]["passedCount"] == 16
     assert report["metrics"]["gapCounts"] == {}
 
 
@@ -185,10 +192,16 @@ def test_generation_gauntlet_manifest_defines_default_cases() -> None:
 
     assert manifest["contractVersion"] == "course-generation-gauntlet-manifest-v1"
     assert {case["scenarioId"] for case in cases} >= {
-        "chem-105-general-chemistry",
+        "macroeconomics-principles",
         "intro-programming-foundations",
         "software-engineering-methods",
         "academic-writing-research-composition",
+        "general-biology-foundations",
+        "introductory-statistics",
+        "environmental-science-foundations",
+        "art-history-survey",
+        "financial-accounting-principles",
+        "public-speaking-communication",
         "under-sourced-course-prompt",
         "full-stack-software-engineer-program",
         "chemistry-foundations-program",
@@ -226,14 +239,14 @@ def test_generation_gauntlet_manifest_rejects_unregistered_scenarios(tmp_path: P
 def test_generation_gauntlet_marks_missing_artifacts_as_review_needed() -> None:
     report = evaluate_generation_gauntlet(
         course_artifacts={
-            "chem-105-general-chemistry": chem_105_flagship_course_from_scenario(),
+            "macroeconomics-principles": golden_course_from_scenario("macroeconomics-principles"),
         },
         program_artifacts={},
     )
 
     assert report["status"] == "needs_review"
-    assert report["metrics"]["needsReviewCount"] == 9
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 9
+    assert report["metrics"]["needsReviewCount"] == 15
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 15
 
 
 def test_generation_gauntlet_bundle_preserves_run_metadata_and_case_reports() -> None:
@@ -246,7 +259,7 @@ def test_generation_gauntlet_bundle_preserves_run_metadata_and_case_reports() ->
                 "inputMix": "prompt+urls+files",
             },
             "courses": {
-                "chem-105-general-chemistry": chem_105_flagship_course_from_scenario(),
+                "macroeconomics-principles": golden_course_from_scenario("macroeconomics-principles"),
             },
             "programs": {},
         }
@@ -256,9 +269,9 @@ def test_generation_gauntlet_bundle_preserves_run_metadata_and_case_reports() ->
     assert report["inputContractVersion"] == "course-generation-gauntlet-input-v1"
     assert report["metadata"]["provider"] == "fixture-provider"
     assert report["status"] == "needs_review"
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 9
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 15
     assert {case_report["scenarioId"] for case_report in reports} >= {
-        "chem-105-general-chemistry",
+        "macroeconomics-principles",
         "intro-programming-foundations",
         "full-stack-software-engineer-program",
     }
@@ -269,13 +282,13 @@ def test_generation_gauntlet_bundle_treats_empty_placeholders_as_missing() -> No
         {
             "contractVersion": "course-generation-gauntlet-input-v1",
             "metadata": {"provider": "fixture-provider", "model": "fixture-model"},
-            "courses": {"chem-105-general-chemistry": {}},
+            "courses": {"macroeconomics-principles": {}},
             "programs": {"full-stack-software-engineer-program": {}},
         }
     )
 
     assert report["status"] == "needs_review"
-    assert report["metrics"]["gapCounts"]["missing_artifact"] == 10
+    assert report["metrics"]["gapCounts"]["missing_artifact"] == 16
     assert all(case["gapClass"] == "missing_artifact" for case in report["cases"])
 
 
@@ -288,7 +301,7 @@ def test_generation_gauntlet_report_script_writes_persistent_run(tmp_path: Path)
             {
                 "contractVersion": "course-generation-gauntlet-input-v1",
                 "metadata": {"provider": "fixture-provider", "model": "fixture-model"},
-                "courses": {"chem-105-general-chemistry": chem_105_flagship_course_from_scenario()},
+                "courses": {"macroeconomics-principles": golden_course_from_scenario("macroeconomics-principles")},
                 "programs": {},
             }
         ),
@@ -313,7 +326,7 @@ def test_generation_gauntlet_report_script_writes_persistent_run(tmp_path: Path)
 
     assert Path(payload["runPath"]).exists()
     assert payload["gauntlet"]["status"] == "needs_review"
-    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 9
+    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 15
     assert (report_dir / "latest.json").exists()
     assert (report_dir / "index.json").exists()
 
@@ -324,7 +337,7 @@ def test_generation_gauntlet_bundle_builder_wraps_generated_artifacts(tmp_path: 
     program_path = tmp_path / "program.json"
     output_path = tmp_path / "gauntlet-input.json"
     manifest_path = tmp_path / "manifest.json"
-    course_path.write_text(json.dumps({"data": chem_105_flagship_course_from_scenario()}), encoding="utf-8")
+    course_path.write_text(json.dumps({"data": golden_course_from_scenario("macroeconomics-principles")}), encoding="utf-8")
     program_path.write_text(json.dumps(_program_fixture()["program"]), encoding="utf-8")
     manifest_path.write_text(
         json.dumps(
@@ -334,9 +347,9 @@ def test_generation_gauntlet_bundle_builder_wraps_generated_artifacts(tmp_path: 
                 "cases": [
                     {
                         "kind": "course",
-                        "scenarioId": "chem-105-general-chemistry",
-                        "label": "CHEM 105",
-                        "domain": "chemistry",
+                        "scenarioId": "macroeconomics-principles",
+                        "label": "Macroeconomics Principles",
+                        "domain": "business and economics",
                         "inputMix": "prompt+urls+files",
                     },
                     {
@@ -357,7 +370,7 @@ def test_generation_gauntlet_bundle_builder_wraps_generated_artifacts(tmp_path: 
             sys.executable,
             "scripts/build_generation_gauntlet_bundle.py",
             "--course",
-            f"chem-105-general-chemistry={course_path}",
+            f"macroeconomics-principles={course_path}",
             "--program",
             f"full-stack-software-engineer-program={program_path}",
             "--provider",
@@ -383,7 +396,7 @@ def test_generation_gauntlet_bundle_builder_wraps_generated_artifacts(tmp_path: 
     assert bundle["metadata"]["provider"] == "fixture-provider"
     assert bundle["manifest"]["path"] == str(manifest_path)
     assert len(bundle["cases"]) == 2
-    assert isinstance(bundle["courses"]["chem-105-general-chemistry"]["modules"], list)
+    assert isinstance(bundle["courses"]["macroeconomics-principles"]["modules"], list)
     assert isinstance(bundle["programs"]["full-stack-software-engineer-program"]["program"]["requirementGroups"], list)
     assert report["status"] == "passed"
 
@@ -393,14 +406,14 @@ def test_generation_gauntlet_runner_builds_bundle_and_report(tmp_path: Path) -> 
     course_path = tmp_path / "course.json"
     bundle_path = tmp_path / "gauntlet-input.json"
     report_dir = tmp_path / "eval-runs"
-    course_path.write_text(json.dumps({"course": chem_105_flagship_course_from_scenario()}), encoding="utf-8")
+    course_path.write_text(json.dumps({"course": golden_course_from_scenario("macroeconomics-principles")}), encoding="utf-8")
 
     result = subprocess.run(
         [
             sys.executable,
             "scripts/run_generation_gauntlet.py",
             "--course",
-            f"chem-105-general-chemistry={course_path}",
+            f"macroeconomics-principles={course_path}",
             "--provider",
             "fixture-provider",
             "--model",
@@ -423,4 +436,4 @@ def test_generation_gauntlet_runner_builds_bundle_and_report(tmp_path: Path) -> 
     assert Path(payload["runPath"]).exists()
     assert payload["bundlePath"] == str(bundle_path)
     assert payload["gauntlet"]["status"] == "needs_review"
-    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 9
+    assert payload["gauntlet"]["gapCounts"]["missing_artifact"] == 15

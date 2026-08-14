@@ -4,13 +4,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-from app.course_generation_flagships import CHEM_105_FLAGSHIP_BLUEPRINT, chem_105_source_slots
 from app.course_generation_scenarios import (
     evaluate_course_generation_scenario,
     evaluate_program_generation_scenario,
     list_generation_eval_scenarios,
 )
-from app.course_generation_scenario_specs import COURSE_SCENARIOS
+from app.course_generation_scenario_specs import GOLDEN_COURSE_TEMPLATES
 from app.course_quality import assess_course_quality
 
 
@@ -32,31 +31,31 @@ def _questions(topic: str) -> list[dict[str, Any]]:
 
 
 from tests.course_generation_fixture_builders import (
-    chem_105_flagship_course_from_scenario,
+    golden_course_from_scenario,
     source_backed_course_from_scenario,
     under_sourced_course_draft_from_scenario,
 )
 
 def _course_for_scenario() -> dict[str, Any]:
-    return chem_105_flagship_course_from_scenario()
+    return golden_course_from_scenario("macroeconomics-principles")
 
 
 def _teachable_publish_ready_course() -> dict[str, Any]:
     source_records = [
-        {"id": "source-openstax-chemistry-2e", "type": "textbook", "title": "OpenStax Chemistry 2e", "url": "https://openstax.org/details/books/chemistry-2e"},
-        {"id": "source-chemcollective", "type": "virtual-lab", "title": "ChemCollective virtual labs", "url": "https://chemcollective.org/"},
-        {"id": "source-phet-chemistry", "type": "simulation", "title": "PhET chemistry simulations", "url": "https://phet.colorado.edu/en/simulations/filter?subjects=chemistry&type=html"},
+        {"id": "source-openstax-macro", "type": "textbook", "title": "OpenStax Principles of Macroeconomics 3e", "url": "https://openstax.org/details/books/principles-macroeconomics-3e"},
+        {"id": "source-bea-gdp", "type": "government-data", "title": "BEA GDP data", "url": "https://www.bea.gov/data/gdp/gross-domestic-product"},
+        {"id": "source-bls-cpi", "type": "government-data", "title": "BLS Consumer Price Index", "url": "https://www.bls.gov/cpi/"},
     ]
     modules = []
-    topics = ["measurement and matter", "stoichiometry", "bonding and molecular shape"]
+    topics = ["gross domestic product", "inflation and price indexes", "aggregate demand and supply"]
     for index, topic in enumerate(topics, start=1):
-        section_id = f"chem-publish-{index}"
+        section_id = f"macro-publish-{index}"
         explanation = (
             f"This lesson builds a foundation for {topic} by connecting prerequisite vocabulary, worked examples, "
-            "laboratory practice, and mastery evidence. Learners start from observable chemical systems, translate "
-            "the observations into quantitative or structural representations, and then use those representations to "
-            "make justified predictions. The advanced value of the lesson is not memorizing isolated facts; it is "
-            "learning how chemical constraints, measurement limits, and model assumptions shape the explanation. "
+            "data interpretation, and mastery evidence. Learners start from economic indicators, translate the "
+            "observations into model-based claims, and then use those claims to make justified predictions. "
+            "The advanced value of the lesson is not memorizing isolated facts; it is learning how definitions, "
+            "measurement choices, and model assumptions shape the explanation. "
             "A project-style practice task asks learners to document assumptions, compare alternatives, and explain "
             "what evidence would change their conclusion. Mastery is assessed through quiz questions, a short rubric, "
             "and a source-backed explanation that shows why the reasoning is valid."
@@ -74,14 +73,14 @@ def _teachable_publish_ready_course() -> dict[str, Any]:
                         "sectionType": "lesson",
                         "sourceIds": [source["id"] for source in source_records],
                         "content": [
-                            {"type": "text", "heading": "Explanation", "value": explanation, "sourceIds": ["source-openstax-chemistry-2e"]},
-                            {"type": "text", "heading": "Example", "value": f"Example: use {topic} to compare two chemical claims and state the evidence for each claim.", "sourceIds": ["source-openstax-chemistry-2e"]},
-                            {"type": "text", "heading": "Practice", "value": f"Practice: solve a {topic} problem, then write one sentence naming the assumption that matters most.", "sourceIds": ["source-chemcollective"]},
-                            {"type": "video", "title": f"{topic.title()} video", "url": "https://example.edu/chemistry-video", "sourceIds": ["source-phet-chemistry"]},
+                            {"type": "text", "heading": "Explanation", "value": explanation, "sourceIds": ["source-openstax-macro"]},
+                            {"type": "text", "heading": "Example", "value": f"Example: use {topic} to compare two economic claims and state the evidence for each claim.", "sourceIds": ["source-openstax-macro"]},
+                            {"type": "text", "heading": "Practice", "value": f"Practice: analyze a {topic} case, then write one sentence naming the assumption that matters most.", "sourceIds": ["source-bea-gdp"]},
+                            {"type": "video", "title": f"{topic.title()} video", "url": "https://example.edu/macroeconomics-video", "sourceIds": ["source-bls-cpi"]},
                             {
                                 "type": "conceptCards",
                                 "title": "Concepts introduced",
-                                "sourceIds": ["source-openstax-chemistry-2e"],
+                                "sourceIds": ["source-openstax-macro"],
                                 "concepts": [
                                     {"name": topic.title(), "description": f"The core representation and reasoning pattern for {topic}.", "sourceSectionId": section_id},
                                     {"name": "Mastery evidence", "description": "Observable work showing that a learner can apply a concept under constraints.", "sourceSectionId": section_id},
@@ -94,8 +93,8 @@ def _teachable_publish_ready_course() -> dict[str, Any]:
                         "title": f"Quiz: {topic.title()}",
                         "pageType": "apply",
                         "sectionType": "assessment",
-                        "sourceIds": ["source-openstax-chemistry-2e"],
-                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": ["source-openstax-chemistry-2e"]}],
+                        "sourceIds": ["source-openstax-macro"],
+                        "content": [{"type": "quiz", "questions": _questions(topic), "sourceIds": ["source-openstax-macro"]}],
                     },
                     {
                         "id": f"{section_id}-summary",
@@ -107,7 +106,7 @@ def _teachable_publish_ready_course() -> dict[str, Any]:
                             {
                                 "type": "conceptCards",
                                 "title": "Week concepts",
-                                "sourceIds": ["source-openstax-chemistry-2e"],
+                                "sourceIds": ["source-openstax-macro"],
                                 "concepts": [
                                     {"name": topic.title(), "description": f"Review definition for {topic}.", "sourceSectionId": section_id},
                                     {"name": "Mastery evidence", "description": "Review signal for source-backed capability.", "sourceSectionId": section_id},
@@ -119,26 +118,26 @@ def _teachable_publish_ready_course() -> dict[str, Any]:
             }
         )
     return {
-        "title": "CHEM 105 Publish-Ready Mini Course",
-        "shortDescription": "A source-backed chemistry course slice with teachable lessons, quizzes, and concept summaries.",
+        "title": "Macroeconomics Principles Publish-Ready Mini Course",
+        "shortDescription": "A source-backed macroeconomics course slice with teachable lessons, quizzes, and concept summaries.",
         "difficultyLevel": "undergrad",
-        "category": "natural-sciences-mathematics",
-        "department": "chemistry",
-        "tags": ["chemistry", "mastery", "laboratory practice"],
+        "category": "business-management",
+        "department": "economics",
+        "tags": ["macroeconomics", "mastery", "economic data"],
         "sourceIds": [source["id"] for source in source_records],
         "sourceRecords": source_records,
         "metadata": {
             "pacingLabel": "Week",
             "requirementOrigins": [
-                {"requirementId": "req-measurement", "originType": "common_academic_requirement", "evidenceRefs": ["source-openstax-chemistry-2e"]},
-                {"requirementId": "req-stoichiometry", "originType": "common_academic_requirement", "evidenceRefs": ["source-openstax-chemistry-2e"]},
+                {"requirementId": "req-gdp", "originType": "common_academic_requirement", "evidenceRefs": ["source-openstax-macro"]},
+                {"requirementId": "req-inflation", "originType": "common_academic_requirement", "evidenceRefs": ["source-openstax-macro"]},
             ],
             "sourceSlots": [
                 {
-                    "requiredConceptId": f"chem-{topic.replace(' ', '-')}",
+                    "requiredConceptId": f"macro-{topic.replace(' ', '-')}",
                     "title": topic.title(),
-                    "primarySourceId": "source-openstax-chemistry-2e",
-                    "fallbackSourceIds": ["source-chemcollective", "source-phet-chemistry"],
+                    "primarySourceId": "source-openstax-macro",
+                    "fallbackSourceIds": ["source-bea-gdp", "source-bls-cpi"],
                     "replacementPolicy": "review_required",
                 }
                 for topic in topics
@@ -147,13 +146,13 @@ def _teachable_publish_ready_course() -> dict[str, Any]:
                 {
                     "requiredConceptId": "mastery-evidence",
                     "title": "Mastery evidence",
-                    "primarySourceId": "source-openstax-chemistry-2e",
-                    "fallbackSourceIds": ["source-chemcollective", "source-phet-chemistry"],
+                    "primarySourceId": "source-openstax-macro",
+                    "fallbackSourceIds": ["source-bea-gdp", "source-bls-cpi"],
                     "replacementPolicy": "review_required",
                 }
             ],
         },
-        "prerequisites": [{"type": "course", "courseId": "high-school-chemistry", "title": "High School Chemistry"}],
+        "prerequisites": [{"type": "course", "courseId": "intro-economics", "title": "Introductory Economics"}],
         "modules": modules,
     }
 
@@ -218,14 +217,14 @@ def _full_stack_program() -> dict[str, Any]:
 def test_lists_fixed_course_and_program_scenarios() -> None:
     scenarios = list_generation_eval_scenarios()
 
-    assert "chem-105-general-chemistry" in {scenario["id"] for scenario in scenarios["courses"]}
+    assert "macroeconomics-principles" in {scenario["id"] for scenario in scenarios["courses"]}
     assert "academic-writing-research-composition" in {scenario["id"] for scenario in scenarios["courses"]}
     assert "under-sourced-course-prompt" in {scenario["id"] for scenario in scenarios["courses"]}
     assert "full-stack-software-engineer-program" in {scenario["id"] for scenario in scenarios["programs"]}
 
 
-def test_chem_105_scenario_accepts_complete_college_course_shape() -> None:
-    report = evaluate_course_generation_scenario(_course_for_scenario(), "chem-105-general-chemistry")
+def test_macroeconomics_scenario_accepts_complete_college_course_shape() -> None:
+    report = evaluate_course_generation_scenario(_course_for_scenario(), "macroeconomics-principles")
 
     assert report["status"] == "passed"
     assert report["score"] >= 0.9
@@ -371,30 +370,36 @@ def test_under_sourced_prompt_scenario_rejects_hollow_course() -> None:
     assert any("Expected course status needs_sources" in recommendation for recommendation in report["recommendations"])
     assert any("metadata.sourceGaps" in recommendation for recommendation in report["recommendations"])
 
-def test_chem_105_flagship_blueprint_has_real_benchmarks_sources_and_slots() -> None:
-    assert len(CHEM_105_FLAGSHIP_BLUEPRINT["benchmarkSources"]) >= 3
-    assert len(CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]) >= 6
-    assert len(CHEM_105_FLAGSHIP_BLUEPRINT["weekPlan"]) == 14
+def test_golden_course_dataset_has_broad_data_only_examples() -> None:
+    assert len(GOLDEN_COURSE_TEMPLATES) == 10
+    assert {
+        "macroeconomics-principles",
+        "general-biology-foundations",
+        "introductory-statistics",
+        "environmental-science-foundations",
+        "financial-accounting-principles",
+    }.issubset(GOLDEN_COURSE_TEMPLATES)
 
-    source_ids = {source["id"] for source in CHEM_105_FLAGSHIP_BLUEPRINT["freeSourceRecords"]}
-    for slot in chem_105_source_slots():
-        assert slot["primarySourceId"] in source_ids
-        assert slot["replacementPolicy"] == "review_required"
+    macro_template = GOLDEN_COURSE_TEMPLATES["macroeconomics-principles"]
+    source_blueprint = macro_template["sourceBlueprint"]
+    assert len(macro_template["requiredKeywords"]) == 14
+    assert len(source_blueprint["benchmarkSources"]) >= 3
+    assert len(source_blueprint["freeSourceRecords"]) >= 6
 
 
-def test_chem_105_scenario_rejects_wrong_department_and_thin_assessment() -> None:
+def test_macroeconomics_scenario_rejects_wrong_department_and_thin_assessment() -> None:
     course = _course_for_scenario()
     course["department"] = "computer-science"
-    course["modules"][0]["sections"][1]["content"][0]["questions"] = _questions("stoichiometry")[:4]
+    course["modules"][0]["sections"][1]["content"][0]["questions"] = _questions("inflation")[:4]
 
-    report = evaluate_course_generation_scenario(course, "chem-105-general-chemistry")
+    report = evaluate_course_generation_scenario(course, "macroeconomics-principles")
 
     assert report["status"] == "failed"
-    assert any("Expected department chemistry" in recommendation for recommendation in report["recommendations"])
+    assert any("Expected department economics" in recommendation for recommendation in report["recommendations"])
     assert any("at least 10 questions" in recommendation for recommendation in report["recommendations"])
 
 
-def test_chem_105_scenario_rejects_blanket_sources_without_block_grounding() -> None:
+def test_macroeconomics_scenario_rejects_blanket_sources_without_block_grounding() -> None:
     course = _course_for_scenario()
     course["metadata"]["sourceSlots"] = []
     for module in course["modules"]:
@@ -403,7 +408,7 @@ def test_chem_105_scenario_rejects_blanket_sources_without_block_grounding() -> 
             for block in section["content"]:
                 block.pop("sourceIds", None)
 
-    report = evaluate_course_generation_scenario(course, "chem-105-general-chemistry")
+    report = evaluate_course_generation_scenario(course, "macroeconomics-principles")
 
     assert report["status"] == "failed"
     assert any("source slots" in recommendation for recommendation in report["recommendations"])

@@ -5,10 +5,6 @@
   "title": "MIT OpenCourseWare 5.111 Principles of Chemical Science",
   "url": "https://ocw.mit.edu/courses/5-111-principles-of-chemical-science-fall-2008/",
   "license": "free educational access",
-  "usedByCourseIds": [
-    "local-chem-105"
-  ],
-  "usedByCourseTitles": [
-    "CHEM 105 General Chemistry I"
-  ]
+  "usedByCourseIds": [],
+  "usedByCourseTitles": []
 }

@@ -4,9 +4,9 @@
   "cases": [
     {
       "kind": "course",
-      "scenarioId": "chem-105-general-chemistry",
-      "label": "CHEM 105 college course",
-      "domain": "natural sciences",
+      "scenarioId": "macroeconomics-principles",
+      "label": "Macroeconomics Principles college course",
+      "domain": "business and economics",
       "inputMix": "prompt+urls+files"
     },
     {
@@ -28,6 +28,48 @@
       "scenarioId": "academic-writing-research-composition",
       "label": "Academic writing and research composition course",
       "domain": "arts and humanities",
+      "inputMix": "prompt+benchmarks+urls"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "general-biology-foundations",
+      "label": "General biology foundations course",
+      "domain": "natural sciences",
+      "inputMix": "prompt+benchmarks+urls"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "introductory-statistics",
+      "label": "Introductory statistics course",
+      "domain": "quantitative reasoning",
+      "inputMix": "prompt+benchmarks+urls"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "environmental-science-foundations",
+      "label": "Environmental science foundations course",
+      "domain": "environmental science",
+      "inputMix": "prompt+benchmarks+urls"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "art-history-survey",
+      "label": "Art history survey course",
+      "domain": "arts and humanities",
+      "inputMix": "prompt+benchmarks+urls"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "financial-accounting-principles",
+      "label": "Financial accounting principles course",
+      "domain": "business and accounting",
+      "inputMix": "prompt+benchmarks+urls"
+    },
+    {
+      "kind": "course",
+      "scenarioId": "public-speaking-communication",
+      "label": "Public speaking and communication course",
+      "domain": "communication",
       "inputMix": "prompt+benchmarks+urls"
     },
     {

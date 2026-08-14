@@ -1079,39 +1079,39 @@ def test_module_apply_section_workflow_generates_assessment_from_filled_lessons(
     assert assessment_plan["targetConceptIds"]
 
 
-def test_module_apply_section_workflow_generates_realistic_chemistry_quiz_questions() -> None:
+def test_module_apply_section_workflow_generates_prompt_grounded_quiz_questions() -> None:
     module_outline = {
-        "id": "chem-m1",
-        "title": "Module 1: Scientific method, measurement, units, and significant figures",
+        "id": "macro-m1",
+        "title": "Module 1: GDP, inflation, unemployment, and aggregate demand",
     }
     filled_lessons = [
         {
-            "id": "chem-m1-s1",
-            "title": "Scientific method and chemical measurement",
+            "id": "macro-m1-s1",
+            "title": "GDP and national income accounting",
             "pageType": "learn",
             "sectionType": "lesson",
             "content": [
-                {"type": "text", "value": "Students design controlled experiments and interpret uncertainty."},
+                {"type": "text", "value": "Students compare output, income, and expenditure approaches to measuring economic activity."},
                 {"type": "heading", "title": "Concepts introduced"},
-                {"type": "conceptCard", "title": "Scientific Method", "description": "A testable cycle of observation, hypothesis, experiment, evidence, and revision."},
-                {"type": "conceptCard", "title": "Hypothesis And Experiment", "description": "A hypothesis predicts what a controlled experiment should show."},
-                {"type": "conceptCard", "title": "Measurement Uncertainty", "description": "A measured value has a reasonable range due to instrument limits."},
+                {"type": "conceptCard", "title": "Gross Domestic Product", "description": "The market value of final goods and services produced in an economy over a period."},
+                {"type": "conceptCard", "title": "National Income Accounting", "description": "The framework for measuring production, spending, and income in an economy."},
+                {"type": "conceptCard", "title": "Real GDP", "description": "Output adjusted for price changes so production can be compared across time."},
             ],
         },
         {
-            "id": "chem-m1-s2",
-            "title": "SI units and dimensional analysis",
+            "id": "macro-m1-s2",
+            "title": "Inflation, labor markets, and aggregate demand",
             "pageType": "learn",
             "sectionType": "lesson",
             "content": [
-                {"type": "text", "value": "Students convert quantities and report answers with appropriate precision."},
+                {"type": "text", "value": "Students interpret price indexes, unemployment measures, and demand shocks."},
                 {"type": "heading", "title": "Concepts introduced"},
-                {"type": "conceptCard", "title": "SI Units", "description": "International base and derived units used for scientific measurement."},
-                {"type": "conceptCard", "title": "Unit Conversion", "description": "Changing units without changing the measured quantity."},
-                {"type": "conceptCard", "title": "Dimensional Analysis", "description": "Using conversion factors so units cancel correctly."},
-                {"type": "conceptCard", "title": "Significant Figures", "description": "Digits in a measured or calculated value supported by precision."},
-                {"type": "conceptCard", "title": "Precision", "description": "How close repeated measurements are to one another."},
-                {"type": "conceptCard", "title": "Accuracy", "description": "How close a measurement is to an accepted value."},
+                {"type": "conceptCard", "title": "Inflation", "description": "A sustained increase in the overall price level."},
+                {"type": "conceptCard", "title": "Price Index", "description": "A normalized measure used to compare prices across periods."},
+                {"type": "conceptCard", "title": "Unemployment Rate", "description": "The share of the labor force that is jobless and actively seeking work."},
+                {"type": "conceptCard", "title": "Aggregate Demand", "description": "Total planned spending on domestic output at different price levels."},
+                {"type": "conceptCard", "title": "Aggregate Supply", "description": "The relationship between price level and the quantity of output firms supply."},
+                {"type": "conceptCard", "title": "Fiscal Policy", "description": "Government tax and spending choices used to influence aggregate demand."},
             ],
         },
     ]
@@ -1147,10 +1147,11 @@ def test_module_apply_section_workflow_generates_realistic_chemistry_quiz_questi
     assert "source-backed evidence" not in quiz_text
     assert "memorize the label" not in quiz_text
     assert "assess an unrelated idea" not in quiz_text
-    assert "2.50 km x (1000 m / 1 km)" in quiz_text
-    assert "0.00450 g" in quiz_text
-    assert "+/-0.1 ml" in quiz_text
-    assert "controlled experiment" in quiz_text
+    assert "gross domestic product" in quiz_text
+    assert "inflation" in quiz_text
+    assert "aggregate demand" in quiz_text
+    assert "stoichiometry" not in quiz_text
+    assert "2 h2" not in quiz_text
 
 
 def test_module_quiz_assessment_workflow_blocks_low_content_coverage() -> None:

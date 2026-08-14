@@ -56,7 +56,7 @@ This loop is the bridge between the immediate local app and the long-term intern
 - Course-generation rules for agents, including source records, assessment-only quiz pages, Learn/Apply page types, concept cards, and module summaries
 - Software engineering program/catalog scaffolds with prerequisite metadata, college-course parity metadata, requirement origins, portfolio artifacts, and generated module/quiz/summary structure
 - Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
-- Course-generation eval scenarios for CHEM 105, intro programming, software engineering methods, noisy source corpora, under-sourced prompts, and full-stack program paths
+- Course-generation eval scenarios for macroeconomics, intro programming, software engineering methods, noisy source corpora, under-sourced prompts, and full-stack program paths
 - Local model capability sweep scripts for comparing provider/model behavior across primitive plan, section, quiz, composed one-module, and full-course generation tasks
 - Durable generation run records, source-gap resume flow, eval score dashboard, and local storage diagnostics for debugging generated artifacts
 - Source Index source packets with coverage, duplicate, broken-link, source-type, trust, freshness, and benchmark-usefulness quality reports
