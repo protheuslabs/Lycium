@@ -75,6 +75,27 @@ def test_codex_runtime_bridge_reports_cached_and_documented_models() -> None:
     assert next(model for model in models if model["id"] == "gpt-5.6-sol").get("label")
 
 
+def test_claude_code_runtime_bridge_reports_documented_model_selectors() -> None:
+    spec = importlib.util.spec_from_file_location("agent_runtime_bridge", RUNTIME_BRIDGE_PATH)
+    assert spec is not None and spec.loader is not None
+    bridge = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bridge)
+
+    models = bridge._models_for_runtime("claude-code")
+    model_ids = {model["id"] for model in models}
+
+    assert "claude-code" in model_ids
+    assert "sonnet" in model_ids
+    assert "opus" in model_ids
+    assert "fable" in model_ids
+    assert "haiku" in model_ids
+    assert "claude-sonnet-5" in model_ids
+    assert "claude-opus-5" in model_ids
+    assert "claude-fable-5" in model_ids
+    assert "claude-haiku-4-5" in model_ids
+    assert next(model for model in models if model["id"] == "sonnet").get("warning")
+
+
 def test_valid_cloud_key_is_saved_verified_and_active(client, monkeypatch, isolated_local_data) -> None:
     monkeypatch.setattr(
         "app.routes.local_routes.validate_agent_api_key",

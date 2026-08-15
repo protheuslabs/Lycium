@@ -26,6 +26,20 @@ CODEX_DOCUMENTED_MODELS = (
 )
 CODEX_DOCUMENTED_FALLBACK_WARNING = "Documented Codex model; availability depends on this Codex account."
 
+CLAUDE_CODE_ACCOUNT_DEFAULT_MODEL = {"id": "claude-code", "label": "Claude Code account default"}
+CLAUDE_CODE_DOCUMENTED_MODELS = (
+    {"id": "sonnet", "label": "Sonnet alias"},
+    {"id": "opus", "label": "Opus alias"},
+    {"id": "fable", "label": "Fable alias"},
+    {"id": "haiku", "label": "Haiku alias"},
+    {"id": "claude-sonnet-5", "label": "Claude Sonnet 5"},
+    {"id": "claude-opus-5", "label": "Claude Opus 5"},
+    {"id": "claude-fable-5", "label": "Claude Fable 5"},
+    {"id": "claude-haiku-4-5", "label": "Claude Haiku 4.5"},
+    {"id": "claude-haiku-4-5-20251001", "label": "Claude Haiku 4.5 20251001"},
+)
+CLAUDE_CODE_DOCUMENTED_FALLBACK_WARNING = "Claude Code model selector; availability depends on this Claude account and CLI configuration."
+
 
 def _read_request() -> dict[str, Any]:
     raw = sys.stdin.read()
@@ -135,7 +149,18 @@ def _codex_models() -> list[dict[str, Any]]:
 def _models_for_runtime(runtime: str) -> list[dict[str, Any]]:
     if runtime == "codex":
         return _codex_models()
-    return [{"id": "claude-code", "label": "Claude Code account default"}]
+    models: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    _append_model(models, seen, CLAUDE_CODE_ACCOUNT_DEFAULT_MODEL["id"], CLAUDE_CODE_ACCOUNT_DEFAULT_MODEL["label"])
+    for model in CLAUDE_CODE_DOCUMENTED_MODELS:
+        _append_model(
+            models,
+            seen,
+            model["id"],
+            model["label"],
+            warning=CLAUDE_CODE_DOCUMENTED_FALLBACK_WARNING,
+        )
+    return models
 
 
 def _messages_to_prompt(messages: list[dict[str, Any]], response_format: str) -> str:

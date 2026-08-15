@@ -61,6 +61,18 @@ const DEFAULT_AGENT_PROVIDERS: AgentProviderRecord[] = [
     credential_placeholder: "Auto-filled Lycium bridge command",
     credential_default: "python3 services/lycium-api/scripts/agent_runtime_bridge.py --runtime claude-code",
     credential_kind: "local_runtime",
+    models: [
+      { id: "claude-code", label: "Claude Code runtime" },
+      { id: "sonnet", label: "Sonnet alias", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+      { id: "opus", label: "Opus alias", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+      { id: "fable", label: "Fable alias", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+      { id: "haiku", label: "Haiku alias", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+      { id: "claude-sonnet-5", label: "Claude Sonnet 5", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+      { id: "claude-opus-5", label: "Claude Opus 5", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+      { id: "claude-fable-5", label: "Claude Fable 5", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+      { id: "claude-haiku-4-5", label: "Claude Haiku 4.5", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+      { id: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5 20251001", warning: "Claude Code model selector; availability depends on this Claude account and CLI configuration." },
+    ],
     contract: {
       provider_kind: "agent_runtime",
       credential_kind: "local_runtime",
