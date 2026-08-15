@@ -1,8 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { createBrowserStorageRepository, createLyciumLocalApi } from "@lycium/data-access";
-import type { AgentKeyRecord, AgentProviderRecord, ThemeMode } from "../courseTypes";
-import { localApiSyncEnabled } from "../runtime/appRuntime";
+import type { AgentKeyRecord, AgentModelRecord, AgentProviderRecord, ThemeMode } from "../courseTypes";
 
 const DEFAULT_AGENT_PROVIDERS: AgentProviderRecord[] = [
   {
@@ -160,6 +159,42 @@ const isInvalidCredentialError = (err: unknown) => {
   const message = errorMessage(err).toLowerCase();
   return message.includes("api key invalid") || message.includes("invalid api key");
 };
+
+const mergeModelRecords = (...recordSets: Array<AgentModelRecord[] | undefined>) => {
+  const byId = new Map<string, AgentModelRecord>();
+
+  recordSets.flatMap((records) => records ?? []).forEach((model) => {
+    const modelId = model.id?.trim();
+    if (!modelId) {
+      return;
+    }
+    const existing = byId.get(modelId);
+    const label = model.label || modelId;
+    if (!existing) {
+      byId.set(modelId, { ...model, id: modelId, label });
+      return;
+    }
+    byId.set(modelId, {
+      id: modelId,
+      label: label !== modelId ? label : existing.label || label,
+      warning: model.warning ?? existing.warning,
+      error: model.error ?? existing.error,
+      disabled: Boolean(existing.disabled || model.disabled),
+    });
+  });
+
+  return Array.from(byId.values());
+};
+
+const mergeProviderModelsIntoKeys = (keys: AgentKeyRecord[] | undefined, providers: AgentProviderRecord[]) =>
+  (keys ?? []).map((key) => {
+    const provider = providers.find((candidate) => candidate.id === key.provider_id);
+    const models = mergeModelRecords(provider?.models, key.models);
+    if (key.model && !models.some((model) => model.id === key.model)) {
+      models.unshift({ id: key.model, label: key.model });
+    }
+    return { ...key, models };
+  });
 
 export function useAgentSettings(routeKind: string, apiBase: string) {
   const lyciumApi = useMemo(() => createLyciumLocalApi(apiBase), [apiBase]);
@@ -375,10 +410,6 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
   }, [themeMode]);
 
   useEffect(() => {
-    if (!localApiSyncEnabled) {
-      return;
-    }
-
     let ignored = false;
 
     lyciumApi
@@ -428,7 +459,7 @@ export function useAgentSettings(routeKind: string, apiBase: string) {
               : ""
         );
         setAgentApiKey(isLocalAgentKey(activeKey, loadedProviders) ? activeKey?.key_preview ?? "" : "");
-        setAgentKeys(settings.agent_keys ?? []);
+        setAgentKeys(mergeProviderModelsIntoKeys(settings.agent_keys, loadedProviders));
         setSettingsMessage(
           activeKey?.connection_status === "unverified"
             ? `${activeKey.provider_label} is saved but not verified yet.`

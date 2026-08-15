@@ -927,7 +927,42 @@ def test_section_fill_workflow_produces_section_with_generation_outline_metadata
     assert section["content"]
     assert section["metadata"]["generationOutline"]["contractVersion"] == "section-generation-outline-v1"
     assert section["metadata"]["generationOutline"]["plannedDescription"] == section_plan["description"]
+    worked_example = next(block for block in section["content"] if block["type"] == "workedExample")
+    assert worked_example["problem"]
+    assert worked_example["given"]
+    assert worked_example["find"]
+    assert worked_example["steps"][0]["equation"]
+    assert worked_example["workedAnswer"]
     assert any(block["type"] == "conceptCard" for block in section["content"])
+
+
+def test_section_fill_workflow_uses_guided_practice_for_humanities_sections() -> None:
+    section_plan = {
+        "id": "history-section-1",
+        "title": "The Fugitive Slave Act and Northern Resistance",
+        "description": "Explain how the Fugitive Slave Act changed Northern attitudes toward slavery and compromise.",
+        "pageType": "learn",
+        "sectionType": "lesson",
+        "sourceIds": ["source-history"],
+        "learningObjectives": ["Explain a cause-and-effect historical interpretation using evidence."],
+        "conceptKeywords": ["Fugitive Slave Act of 1850", "Northern resistance", "sectional compromise"],
+    }
+
+    result = run_section_fill_workflow(
+        section_plan,
+        module_outline={
+            "id": "history-module-1",
+            "title": "Module 4: Sectional Crisis",
+            "learningObjectives": ["Interpret causes of sectional conflict."],
+        },
+    )
+
+    assert result["status"] == "passed"
+    content = result["artifacts"]["section"]["content"]
+    assert not any(block["type"] == "workedExample" for block in content)
+    guided_practice = next(block for block in content if block.get("heading") == "Guided practice")
+    assert guided_practice["type"] == "text"
+    assert "interpretation" in guided_practice["value"].lower()
 
 
 def test_section_fill_workflow_blocks_unfilled_planned_empty_section() -> None:

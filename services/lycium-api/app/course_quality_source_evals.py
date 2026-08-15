@@ -114,6 +114,17 @@ def _outline_source_ids(value: Any) -> set[str]:
     return source_ids
 
 
+def _is_needs_sources_course(course: dict[str, Any]) -> bool:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    readiness = metadata.get("generationReadiness") if isinstance(metadata.get("generationReadiness"), dict) else {}
+    statuses = {
+        str(course.get("status") or "").strip(),
+        str(metadata.get("status") or "").strip(),
+        str(readiness.get("status") or "").strip(),
+    }
+    return "needs_sources" in statuses
+
+
 def _eval_generation_outline_coverage(course: dict[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, str]] = []
     outlined_section_count = 0
@@ -248,6 +259,7 @@ def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
     synthesis = metadata.get("sourceCorpusSynthesis") if isinstance(metadata.get("sourceCorpusSynthesis"), dict) else {}
     source_packet = synthesis.get("sourcePacket") if isinstance(synthesis.get("sourcePacket"), dict) else {}
     declared = _source_record_ids(course)
+    needs_sources = _is_needs_sources_course(course)
     referenced: set[str] = set(_source_ids(course))
     sourced_sections = 0
     section_count = 0
@@ -263,7 +275,12 @@ def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
                 referenced.update(_source_ids(block))
 
     if not declared:
-        findings.append(_finding("error", "Course includes no sourceRecords."))
+        findings.append(
+            _finding(
+                "warning" if needs_sources else "error",
+                "Course includes no sourceRecords.",
+            )
+        )
     if not referenced:
         findings.append(_finding("warning", "Course includes no sourceIds references."))
     missing = sorted(referenced - declared)
@@ -301,5 +318,6 @@ def _eval_sources(course: dict[str, Any]) -> dict[str, Any]:
     source_ratio = sourced_sections / section_count if section_count else 0
     diversity_score = min(1.0, len(declared) / 3)
     score = source_ratio * 0.25 + diversity_score * 0.25 + direct_concept_ratio * 0.25 + direct_block_ratio * 0.15 + (0.1 if not missing else 0)
+    if needs_sources and not missing:
+        score = max(score, 0.55)
     return _dimension(key="source_grounding", label="Source grounding", weight=0.16, score=score, findings=findings, metrics={"sourceRecordCount": len(declared), "referencedSourceIdCount": len(referenced), "sourcedSectionRatio": round(source_ratio, 2), "directConceptSourceCoveragePercent": integrity_metrics.get("directConceptSourceCoveragePercent"), "directBlockSourceCoveragePercent": integrity_metrics.get("directBlockSourceCoveragePercent"), "citationIssueCount": integrity_metrics.get("citationIssueCount"), "inlineCitationIssueCount": integrity_metrics.get("inlineCitationIssueCount"), "blanketSourceSectionCount": integrity_metrics.get("blanketSourceSectionCount")})
-

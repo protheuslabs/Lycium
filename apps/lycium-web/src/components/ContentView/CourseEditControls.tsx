@@ -11,7 +11,17 @@ type DeleteBlockButtonProps = {
   onClick: () => void;
 };
 
-export type CourseEditBlockKind = "text" | "card" | "image" | "video" | "iframe" | "heading" | "quiz" | "project";
+export type CourseEditBlockKind =
+  | "text"
+  | "card"
+  | "image"
+  | "video"
+  | "iframe"
+  | "heading"
+  | "equation"
+  | "workedExample"
+  | "quiz"
+  | "project";
 
 const blockTypeOptions: Array<{
   kind: CourseEditBlockKind;
@@ -75,6 +85,24 @@ const blockTypeOptions: Array<{
     placeholder: "Write the heading text.",
     defaultValue: "Heading title",
     rows: 2,
+  },
+  {
+    kind: "equation",
+    label: "Equation",
+    description: "Standalone formula or equation lines with an optional caption.",
+    fieldLabel: "Equation",
+    placeholder: "Write one equation per line.",
+    defaultValue: "F = ma",
+    rows: 4,
+  },
+  {
+    kind: "workedExample",
+    label: "Worked Example",
+    description: "Structured problem, knowns, target values, equation steps, final answer, and check.",
+    fieldLabel: "Problem",
+    placeholder: "Describe the worked problem or quantitative example.",
+    defaultValue: "Solve a concrete problem using the section method.",
+    rows: 5,
   },
   {
     kind: "quiz",

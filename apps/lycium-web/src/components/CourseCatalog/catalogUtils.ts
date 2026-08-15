@@ -63,14 +63,10 @@ export const CATALOG_ACTIVITY_OPTIONS = [
   { value: "completed", label: "Completed" },
 ];
 
-export function getGeneratingCourseTitle(prompt: string): string {
-  const title = prompt
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find(Boolean);
-
+export function getGeneratingCourseTitle(workingTitle: string | null | undefined): string {
+  const title = workingTitle?.trim();
   if (!title) {
-    return "New course";
+    return "New Course";
   }
 
   return title.length > 72 ? `${title.slice(0, 69)}...` : title;

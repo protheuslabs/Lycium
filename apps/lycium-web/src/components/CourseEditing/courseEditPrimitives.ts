@@ -281,6 +281,39 @@ export function createBlockTemplate(kind: CourseEditBlockKind, initialValue: str
         title: value || "Heading title",
         sourceIds: [],
       };
+    case "equation":
+      return {
+        type: "equation",
+        title: "Equation",
+        equations: (value || "F = ma")
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean),
+        notation: "ascii",
+        caption: "Use the equation in the surrounding explanation.",
+        sourceIds: [],
+      };
+    case "workedExample":
+      return {
+        type: "workedExample",
+        title: "Worked example",
+        problem: value || "Solve a concrete problem using the section method.",
+        given: ["Known value or condition"],
+        find: ["Target value or explanation"],
+        steps: [
+          {
+            explanation: "Set up the relationship that connects the known values to the target.",
+            equation: "target = known relationship",
+          },
+          {
+            explanation: "Substitute the known values and simplify.",
+            equation: "target = simplified result",
+          },
+        ],
+        workedAnswer: "Final answer with units or interpretation.",
+        check: "Check that the result has the right units, sign, direction, or practical meaning.",
+        sourceIds: [],
+      };
     case "quiz":
       return {
         type: "quiz",

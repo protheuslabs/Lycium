@@ -66,6 +66,20 @@ describe("describeAiConnectionReadiness", () => {
     expect(readiness.lockedReason).toBe(warning);
   });
 
+  it("blocks active models with saved provider errors", () => {
+    const error = "402 Payment Required: extra usage balance is empty.";
+    const readiness = describeAiConnectionReadiness([
+      agentKey({
+        provider_label: "Ollama Local",
+        model: "kimi-k3:cloud",
+        models: [{ id: "kimi-k3:cloud", label: "kimi-k3:cloud", error, disabled: true }],
+      }),
+    ]);
+
+    expect(readiness.ready).toBe(false);
+    expect(readiness.lockedReason).toBe(error);
+  });
+
   it("is ready when the active connection is verified and has a model", () => {
     const readiness = describeAiConnectionReadiness([agentKey()]);
 
@@ -87,6 +101,12 @@ describe("describeAiConnectionReadiness", () => {
       status: "missing_model",
       label: "Choose model",
     });
+    expect(describeAgentKeyConnectionStatus(agentKey({
+      models: [{ id: "test-model", label: "Test Model", error: "Model requires extra usage." }],
+    }))).toEqual({
+      status: "model_error",
+      label: "Model error",
+    });
     expect(describeAgentKeyConnectionStatus(agentKey({ model_capability: { meets_recommended_floor: false } }))).toEqual({
       status: "underpowered",
       label: "Use 70B+",
@@ -107,6 +127,9 @@ describe("describeAiConnectionReadiness", () => {
     expect(describeAgentKeyConnectionDetail(agentKey({ model: null }))).toBe(
       AI_CONNECTION_LOCK_REASONS.missingModel("Test Provider"),
     );
+    expect(describeAgentKeyConnectionDetail(agentKey({
+      models: [{ id: "test-model", label: "Test Model", error: "Model requires extra usage." }],
+    }))).toBe("Model requires extra usage.");
     expect(describeAgentKeyConnectionDetail(agentKey())).toBe("Test Provider is active with test-model.");
   });
 });

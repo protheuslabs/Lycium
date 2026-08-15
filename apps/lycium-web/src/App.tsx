@@ -322,16 +322,25 @@ function App({ initialPath }: AppProps = {}) {
     setCourses,
   });
 
-const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCourse, handlePublishCourse, handleResumeCourseSourceGap } = useCourseGenerationActions({
-  prompt,
-  level,
-  learnerId,
-  activeAiReady,
-  aiLockedReason: activeAiConnection.lockedReason,
-  setCourses,
-  setPrompt,
-  openCourseByEntry,
-});
+  const {
+    generateStatus,
+    generateMessage,
+    generateProgress,
+    generateTitle,
+    publishingCourseKey,
+    handleGenerateCourse,
+    handlePublishCourse,
+    handleResumeCourseSourceGap,
+  } = useCourseGenerationActions({
+    prompt,
+    level,
+    learnerId,
+    activeAiReady,
+    aiLockedReason: activeAiConnection.lockedReason,
+    setCourses,
+    setPrompt,
+    openCourseByEntry,
+  });
 
   useConfiguredCourses({ setCourses, setLearnerId, setPrograms });
 
@@ -417,6 +426,8 @@ const { generateStatus, generateMessage, publishingCourseKey, handleGenerateCour
           aiLockedReason={activeAiConnection.lockedReason}
           generateStatus={generateStatus}
           generateMessage={generateMessage}
+          generateProgress={generateProgress}
+          generateTitle={generateTitle}
           onPromptChange={setPrompt}
           onLevelChange={setLevel}
           onGenerateCourse={handleGenerateCourse}

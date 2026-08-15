@@ -349,6 +349,7 @@ def compile_curriculum_benchmark_context(
         fetch_sources=fetch_sources,
         source_documents=source_documents,
     )
+    synthetic_only = False
     if not benchmarks:
         benchmarks = [
             _benchmark_from_url(
@@ -362,11 +363,13 @@ def compile_curriculum_benchmark_context(
             for index, url in enumerate(source_urls or [], start=1)
         ]
     if not benchmarks:
+        synthetic_only = True
         benchmarks.append(_synthetic_benchmark(prompt, category, department, keywords))
 
-    requirement_origins = _aggregate_requirement_origins(benchmarks)
+    source_corpus_origins = _source_corpus_requirement_origins(source_corpus_synthesis)
+    requirement_origins = [] if synthetic_only else _aggregate_requirement_origins(benchmarks)
     existing_titles = {_slug(str(origin.get("title") or "")) for origin in requirement_origins}
-    for origin in _source_corpus_requirement_origins(source_corpus_synthesis):
+    for origin in source_corpus_origins:
         if _slug(str(origin.get("title") or "")) not in existing_titles:
             requirement_origins.append(origin)
             existing_titles.add(_slug(str(origin.get("title") or "")))

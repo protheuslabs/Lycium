@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from datetime import UTC, datetime
 from typing import Any
 
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session
 from app import db
 from app.coverage import recompute_coverage
 from app.course_agent_harness import CourseAgentError, generate_course_with_agent_staged
+from app.course_generation_status import course_generation_workflow_status
 from app.course_quality import assess_course_quality
 from app.course_generation_service import build_course_snapshot_from_agent_result
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
@@ -21,11 +23,13 @@ from app.generation_observability import (
     start_generation_run,
 )
 from app.ingestion import ingest_source
-from app.local_store import require_verified_active_agent_profile, save_course_snapshot
+from app.local_store import mark_agent_model_error, require_verified_active_agent_profile, save_course_snapshot
 from app.models import CourseSnapshot, Job, Source
 from app.source_index import persist_source_corpus_run
 
 GENERATION_JOB_LOG_LIMIT = 5
+MODEL_BLOCKING_PROVIDER_STATUS_CODES = {402, 404}
+_AGENT_COURSE_GENERATION_QUEUE_LOCK = threading.Lock()
 
 
 def enqueue_job(session: Session, *, job_type: str, payload: dict[str, Any]) -> Job:
@@ -138,6 +142,32 @@ def _checkpoint_progress(payload: dict[str, Any], trace: dict[str, Any]) -> floa
     return min(0.95, completed / _generation_expected_stage_count(payload))
 
 
+def _workflow_status_result(
+    payload: dict[str, Any],
+    *,
+    stage: str,
+    progress: float,
+    trace: dict[str, Any] | None = None,
+    detail: str | None = None,
+) -> dict[str, Any]:
+    workflow_status = course_generation_workflow_status(
+        stage=stage,
+        progress=progress,
+        trace=trace,
+        detail=detail,
+    )
+    result: dict[str, Any] = {
+        "request": payload,
+        "progress": progress,
+        "current_stage": stage,
+        "message": workflow_status["message"],
+        "workflow_status": workflow_status,
+    }
+    if isinstance(trace, dict):
+        result["trace"] = trace
+    return result
+
+
 def _update_generation_job(job_id: int, updates: dict[str, Any], *, status: str | None = None, error: str | None = None) -> None:
     with db.SessionLocal() as session:
         job = session.get(Job, job_id)
@@ -193,6 +223,46 @@ def _persist_source_index_for_generation(session: Session, *, job_id: int, paylo
     )
 
 
+def _mark_model_error_from_generation_failure(
+    agent_profile: dict[str, Any] | None,
+    payload: dict[str, Any],
+    exc: CourseAgentError,
+) -> None:
+    if not agent_profile:
+        return
+    key_id = str(agent_profile.get("id") or "").strip()
+    if not key_id:
+        return
+    trace = exc.trace if isinstance(exc.trace, dict) else {}
+    model = str(trace.get("model") or payload.get("model") or agent_profile.get("model") or "").strip()
+    if not model:
+        return
+
+    statuses: set[int] = set()
+    status = trace.get("provider_http_status")
+    if isinstance(status, int):
+        statuses.add(status)
+    attempts = trace.get("provider_attempts")
+    if isinstance(attempts, list):
+        for attempt in attempts:
+            if isinstance(attempt, dict) and isinstance(attempt.get("status_code"), int):
+                statuses.add(attempt["status_code"])
+
+    message = str(exc)
+    lowered_message = message.lower()
+    is_model_blocking_error = bool(statuses & MODEL_BLOCKING_PROVIDER_STATUS_CODES) or (
+        bool(statuses & {400, 403})
+        and any(marker in lowered_message for marker in ("model", "payment", "quota", "usage", "permission"))
+    )
+    if not is_model_blocking_error:
+        return
+
+    try:
+        mark_agent_model_error(key_id, model, message)
+    except ValueError:
+        return
+
+
 def run_agent_course_generation_job(job_id: int) -> None:
     with db.SessionLocal() as session:
         job = session.get(Job, job_id)
@@ -204,31 +274,54 @@ def run_agent_course_generation_job(job_id: int) -> None:
         payload_resume_trace = payload.get("resume_trace") if isinstance(payload.get("resume_trace"), dict) else None
         resume_course = previous_result.get("course") if isinstance(previous_result.get("course"), dict) else payload_resume_course
         resume_trace = previous_result.get("trace") if isinstance(previous_result.get("trace"), dict) else payload_resume_trace
+        initial_trace = {"mode": "staged-llm-agent", "stages": []}
+        initial_result = _workflow_status_result(
+            payload,
+            stage="course_template_generation",
+            progress=0.0,
+            trace=initial_trace,
+        )
         job.status = "running"
         job.attempts += 1
         job.error = None
-        job.result = {
-            "request": payload,
-            "progress": 0.0,
-            "current_stage": "course_plan",
-            "message": "Planning course structure.",
-            "trace": {"mode": "staged-llm-agent", "stages": []},
-        }
-        start_generation_run(session, job, message="Planning course structure.", progress=0.0)
+        job.result = initial_result
+        start_generation_run(session, job, message=initial_result["message"], progress=0.0)
         session.commit()
 
+    agent_profile: dict[str, Any] | None = None
     try:
         agent_profile = require_verified_active_agent_profile()
+
+        def workflow_status_checkpoint(update: dict[str, Any]) -> None:
+            stage = str(update.get("stage") or "course_template_generation")
+            trace = update.get("trace") if isinstance(update.get("trace"), dict) else initial_trace
+            progress = float(update.get("progress") or _checkpoint_progress(payload, trace))
+            next_result = _workflow_status_result(
+                payload,
+                stage=stage,
+                progress=progress,
+                trace=trace,
+                detail=str(update.get("detail") or "") or None,
+            )
+            _update_generation_job(job_id, next_result, status="running")
+            record_generation_run_checkpoint(job_id, next_result, session_factory=db.SessionLocal)
 
         def checkpoint(update: dict[str, Any]) -> None:
             trace = update.get("trace") if isinstance(update.get("trace"), dict) else {}
             current_stage = _checkpoint_stage(trace) or "course_plan"
+            progress = _checkpoint_progress(payload, trace)
+            workflow_status = course_generation_workflow_status(
+                stage=current_stage,
+                progress=progress,
+                trace=trace,
+            )
             partial_course = update.get("partial_course")
             next_result: dict[str, Any] = {
                 "request": payload,
-                "progress": _checkpoint_progress(payload, trace),
+                "progress": progress,
                 "current_stage": current_stage,
-                "message": f"Generated {current_stage.replace('_', ' ')}.",
+                "message": workflow_status["message"],
+                "workflow_status": workflow_status,
                 "trace": trace,
             }
             if isinstance(partial_course, dict):
@@ -257,6 +350,7 @@ def run_agent_course_generation_job(job_id: int) -> None:
             on_checkpoint=checkpoint,
             resume_course=resume_course,
             resume_trace=resume_trace,
+            on_workflow_status=workflow_status_checkpoint,
         )
         quality_report = assess_course_quality(generated.course, gate="generation")
         generated_readiness = generated.trace.get("generation_readiness")
@@ -281,37 +375,61 @@ def run_agent_course_generation_job(job_id: int) -> None:
             if job is None:
                 return
             course_build_task = None
-            if quality_report["passed"]:
-                snapshot = build_course_snapshot_from_agent_result(
-                    session,
-                    learner_id=payload.get("learner_id"),
-                    prompt=str(payload.get("prompt") or ""),
-                    language=str(payload.get("language") or "en"),
-                    level=payload.get("level"),
-                    source_policy=str(payload.get("source_policy") or "balanced"),
-                    generated=generated,
-                    quality_report=quality_report,
-                    generation_readiness=effective_readiness,
-                )
-                session.refresh(snapshot)
-                save_course_snapshot(snapshot)
-                snapshot_payload = _course_snapshot_payload(snapshot)
-                snapshot_metadata = snapshot.structure.get("metadata") if isinstance(snapshot.structure, dict) else {}
-                course_build_task = snapshot_metadata.get("courseBuildTask") if isinstance(snapshot_metadata, dict) else None
+            source_ready = not isinstance(effective_readiness, dict) or bool(effective_readiness.get("ready"))
+            quality_passed = bool(quality_report["passed"])
+            snapshot_status = (
+                "ready_for_review"
+                if quality_passed and source_ready
+                else "needs_sources"
+                if not source_ready
+                else "needs_revision"
+            )
+            snapshot = build_course_snapshot_from_agent_result(
+                session,
+                learner_id=payload.get("learner_id"),
+                prompt=str(payload.get("prompt") or ""),
+                language=str(payload.get("language") or "en"),
+                level=payload.get("level"),
+                source_policy=str(payload.get("source_policy") or "balanced"),
+                generated=generated,
+                quality_report=quality_report,
+                generation_readiness=effective_readiness,
+                status=snapshot_status,
+            )
+            session.refresh(snapshot)
+            save_course_snapshot(snapshot)
+            snapshot_payload = _course_snapshot_payload(snapshot)
+            snapshot_metadata = snapshot.structure.get("metadata") if isinstance(snapshot.structure, dict) else {}
+            course_build_task = snapshot_metadata.get("courseBuildTask") if isinstance(snapshot_metadata, dict) else None
 
-            accepted = bool(quality_report["passed"])
-            job.status = "completed" if accepted else "failed"
-            job.error = None if accepted else "; ".join([*quality_report["errors"], *quality_report["warnings"]][:12])
+            accepted = snapshot_payload is not None
+            job.status = "completed"
+            job.error = None
             final_trace = {**generated.trace, "quality_report": quality_report}
             if isinstance(effective_readiness, dict):
                 final_trace["generation_readiness"] = effective_readiness
             _persist_source_index_for_generation(session, job_id=job_id, payload=payload, trace=final_trace)
+            final_stage = snapshot_status
+            completion_message = (
+                "Course ready for review."
+                if snapshot_status == "ready_for_review"
+                else "Course generated; sources need review."
+                if snapshot_status == "needs_sources"
+                else "Course generated; review gates need attention."
+            )
+            final_workflow_status = course_generation_workflow_status(
+                stage=final_stage,
+                progress=1.0,
+                trace=final_trace,
+            )
             job.result = {
                 "request": payload,
                 "accepted": accepted,
+                "quality_passed": quality_passed,
                 "progress": 1.0,
-                "current_stage": "ready_for_review" if accepted else "quality_eval",
-                "message": "Course ready for review." if accepted else "Course failed the generation quality gate.",
+                "current_stage": final_stage,
+                "message": completion_message,
+                "workflow_status": final_workflow_status,
                 "course": generated.course,
                 "quality_report": quality_report,
                 "trace": final_trace,
@@ -321,16 +439,19 @@ def run_agent_course_generation_job(job_id: int) -> None:
                 session,
                 job_id=job_id,
                 accepted=accepted,
-                message="Course ready for review." if accepted else "Course failed the generation quality gate.",
+                message=completion_message,
                 trace=final_trace,
                 quality_report=quality_report,
                 course_snapshot_id=snapshot_payload["id"] if snapshot_payload else None,
                 course_build_task=course_build_task,
+                current_stage=final_stage,
             )
             _trim_generation_job_logs(session)
             session.commit()
     except Exception as exc:
         trace = getattr(exc, "trace", {}) if isinstance(exc, CourseAgentError) else {}
+        if isinstance(exc, CourseAgentError):
+            _mark_model_error_from_generation_failure(agent_profile, payload, exc)
         partial_course = trace.get("partial_course") if isinstance(trace, dict) else None
         failed_stage = trace.get("failed_stage") or _checkpoint_stage(trace) if isinstance(trace, dict) else None
         result: dict[str, Any] = {
@@ -341,6 +462,12 @@ def run_agent_course_generation_job(job_id: int) -> None:
             "message": "Course generation failed.",
             "trace": {key: value for key, value in trace.items() if key != "partial_course"} if isinstance(trace, dict) else {},
         }
+        result["workflow_status"] = course_generation_workflow_status(
+            stage=str(failed_stage or "failed"),
+            progress=float(result["progress"]),
+            trace=result["trace"],
+            detail=str(exc),
+        )
         if isinstance(partial_course, dict):
             result["course"] = partial_course
         fail_generation_run(job_id, error=str(exc), result=result, session_factory=db.SessionLocal)
@@ -349,6 +476,39 @@ def run_agent_course_generation_job(job_id: int) -> None:
                 _persist_source_index_for_generation(session, job_id=job_id, payload=payload, trace=trace)
                 session.commit()
         _update_generation_job(job_id, result, status="failed", error=str(exc))
+
+
+def _next_pending_agent_course_generation_job_id() -> int | None:
+    with db.SessionLocal() as session:
+        return session.scalar(
+            select(Job.id)
+            .where(
+                Job.job_type == "agent_generate_course_staged",
+                Job.status == "pending",
+            )
+            .order_by(Job.created_at.asc(), Job.id.asc())
+            .limit(1)
+        )
+
+
+def run_agent_course_generation_queue() -> None:
+    """Run pending staged course-generation jobs FIFO with one active job per API process."""
+    next_job_id: int | None = None
+    while True:
+        if not _AGENT_COURSE_GENERATION_QUEUE_LOCK.acquire(blocking=False):
+            return
+        try:
+            while True:
+                job_id = next_job_id or _next_pending_agent_course_generation_job_id()
+                next_job_id = None
+                if job_id is None:
+                    break
+                run_agent_course_generation_job(job_id)
+        finally:
+            _AGENT_COURSE_GENERATION_QUEUE_LOCK.release()
+        next_job_id = _next_pending_agent_course_generation_job_id()
+        if next_job_id is None:
+            return
 
 
 def run_job(session: Session, job: Job) -> Job:

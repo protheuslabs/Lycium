@@ -156,6 +156,8 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 - `text`: instructional prose in `value`, optionally with `heading`.
 - `heading`: standalone section/block label such as `Concepts introduced`.
 - `conceptCard`: one raw concept card with `title` or `name`, `description`, optional `sourceSectionId`, and local `sourceIds`.
+- `equation`: standalone formula or symbolic relationship lines. Use `equation` or `equations`, optional `notation`, optional `caption`, and local `sourceIds` when applicable. Use readable ASCII math for now.
+- `workedExample`: quantitative, formal, technical, or procedural worked problem with `problem`, `given`, `find`, `steps`, `workedAnswer`, and `check`/`checks`. Do not use this block for interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts; write those as regular explanatory/practice text.
 - `image` / `visual`: instructional image, chart, or diagram. Use `url` or `src`, required `alt`, optional `caption`, optional `credit`, optional `license`, optional `generatedBy`, and local `sourceIds`.
 - `video`: embedded material. Prefer `sourceIds` that resolve to a source record with `embedUrl`. Use optional `clip.startSeconds` and `clip.endSeconds` when only a slice of the video supports the section; omit `clip` for the full video. Do not add filler video titles; use a separate `heading` block if a visible title is needed.
 - `iframe`: generic embedded web resource for interactive or external material.

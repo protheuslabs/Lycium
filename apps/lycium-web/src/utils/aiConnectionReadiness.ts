@@ -6,7 +6,14 @@ export type AiConnectionReadiness = {
   activeKey: AgentKeyRecord | null;
 };
 
-export type AiConnectionStatus = "active" | "ready" | "checking" | "unverified" | "missing_model" | "underpowered";
+export type AiConnectionStatus =
+  | "active"
+  | "ready"
+  | "checking"
+  | "unverified"
+  | "missing_model"
+  | "model_error"
+  | "underpowered";
 
 export type AiConnectionStatusSummary = {
   status: AiConnectionStatus;
@@ -19,10 +26,17 @@ export const AI_CONNECTION_LOCK_REASONS = {
     `${providerLabel} is saved but not connected. Refresh the connection in Settings before using AI features.`,
   missingModel: (providerLabel: string) =>
     `Choose a model for ${providerLabel} in Settings before using AI features.`,
+  modelUnavailable: (providerLabel: string, model: string, error?: string | null) =>
+    error || `${model} is currently unavailable for ${providerLabel}. Choose another model in Settings.`,
   belowRecommendedFloor: (providerLabel: string, warning?: string | null) =>
     warning ||
     `${providerLabel} is connected, but the selected model is below Lycium's recommended course-generation capacity. Choose a 70B+ model.`,
 };
+
+function selectedModelIssue(activeKey: AgentKeyRecord): { error?: string | null; disabled?: boolean } | null {
+  if (!activeKey.model) return null;
+  return (activeKey.models ?? []).find((model) => model.id === activeKey.model) ?? null;
+}
 
 export function describeAiConnectionReadiness(agentKeys: AgentKeyRecord[]): AiConnectionReadiness {
   const activeKey = agentKeys.find((key) => key.is_active) ?? null;
@@ -47,6 +61,19 @@ export function describeAiConnectionReadiness(agentKeys: AgentKeyRecord[]): AiCo
     return {
       ready: false,
       lockedReason: AI_CONNECTION_LOCK_REASONS.missingModel(activeKey.provider_label),
+      activeKey,
+    };
+  }
+
+  const modelIssue = selectedModelIssue(activeKey);
+  if (modelIssue?.error || modelIssue?.disabled) {
+    return {
+      ready: false,
+      lockedReason: AI_CONNECTION_LOCK_REASONS.modelUnavailable(
+        activeKey.provider_label,
+        activeKey.model,
+        modelIssue.error,
+      ),
       activeKey,
     };
   }
@@ -85,6 +112,11 @@ export function describeAgentKeyConnectionStatus(
     return { status: "missing_model", label: "Choose model" };
   }
 
+  const modelIssue = selectedModelIssue(key);
+  if (modelIssue?.error || modelIssue?.disabled) {
+    return { status: "model_error", label: "Model error" };
+  }
+
   if (key.model_capability?.meets_recommended_floor === false) {
     return { status: "underpowered", label: "Use 70B+" };
   }
@@ -110,6 +142,11 @@ export function describeAgentKeyConnectionDetail(
 
   if (!key.model) {
     return AI_CONNECTION_LOCK_REASONS.missingModel(key.provider_label);
+  }
+
+  const modelIssue = selectedModelIssue(key);
+  if (modelIssue?.error || modelIssue?.disabled) {
+    return AI_CONNECTION_LOCK_REASONS.modelUnavailable(key.provider_label, key.model, modelIssue.error);
   }
 
   if (key.model_capability?.meets_recommended_floor === false) {

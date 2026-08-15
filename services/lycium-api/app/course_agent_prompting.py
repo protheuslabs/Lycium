@@ -51,7 +51,10 @@ def _llm_messages(
         "critical_renderer_rules": [
             "Every section.content MUST be an array of block objects, never a plain string.",
             "Text blocks use {\"type\":\"text\",\"heading\":\"...\",\"value\":\"...\"}.",
-            "Use the same editable blocks a human can add in the UI: text, heading, conceptCard, image/visual, video, iframe, quiz, and project.",
+            "Use the same editable blocks a human can add in the UI: text, heading, conceptCard, equation, workedExample, image/visual, video, iframe, quiz, and project.",
+            "Use equation blocks for standalone formulas, symbolic relationships, or calculation lines.",
+            "Use workedExample blocks only for quantitative, formal, technical, or procedural examples where learners need problem/given/find/steps/answer/check structure.",
+            "Do not use workedExample blocks for interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts; use text practice blocks instead.",
             "Every non-summary Learn section ends with {\"type\":\"heading\",\"title\":\"Concepts introduced\"} followed by one {\"type\":\"conceptCard\",\"title\":\"...\",\"description\":\"...\"} block per concept.",
             "Every module has one Apply assessment section containing only one quiz block.",
             "Each quiz block contains at least 10 questions.",
@@ -66,8 +69,7 @@ def _llm_messages(
             "sourceIds": ["source-1"],
             "content": [
                 {"type": "text", "heading": "Explanation", "value": "Teach the idea directly in learner-facing prose."},
-                {"type": "text", "heading": "Worked example", "value": "Show the idea in a concrete situation."},
-                {"type": "text", "heading": "Practice", "value": "Ask the learner to apply the idea."},
+                {"type": "text", "heading": "Guided practice", "value": "Ask the learner to apply the idea with evidence, reasoning, or a short activity."},
                 {
                     "type": "heading",
                     "title": "Concepts introduced",
@@ -75,6 +77,28 @@ def _llm_messages(
                 {"type": "conceptCard", "title": "Raw concept name", "description": "Concise definition."},
             ],
         },
+        "optional_quantitative_or_procedural_blocks": [
+            {
+                "type": "equation",
+                "title": "Relationship",
+                "equations": ["target = known relationship"],
+                "notation": "ascii",
+                "caption": "Use readable ASCII math and include units when relevant.",
+            },
+            {
+                "type": "workedExample",
+                "title": "Worked example",
+                "problem": "Solve a concrete quantitative, formal, technical, or procedural problem.",
+                "given": ["Known value, condition, formula, or constraint."],
+                "find": ["Target value, classification, output, or procedure result."],
+                "steps": [
+                    {"explanation": "Set up the relationship or procedure.", "equation": "target = known relationship"},
+                    {"explanation": "Substitute, simplify, compute, or execute the rule.", "equation": "target = simplified result"},
+                ],
+                "workedAnswer": "Final answer with units or interpretation.",
+                "check": "Check the units, sign, direction, assumption, or practical meaning.",
+            },
+        ],
     }
 
     return [

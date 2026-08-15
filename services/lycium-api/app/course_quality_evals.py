@@ -127,7 +127,7 @@ def _eval_instructional_substance(course: dict[str, Any]) -> dict[str, Any]:
             headings = " ".join(str(block.get("heading") or block.get("title") or "").lower() for block in blocks)
             if words < 90:
                 findings.append(_finding("warning", "Learn section is thin; add fuller explanation, worked example, or practice.", location))
-            if "example" in headings:
+            if "example" in headings or any(block.get("type") in {"workedExample", "worked_example"} for block in blocks):
                 example_sections += 1
             if "practice" in headings or "exercise" in headings or "studio" in headings:
                 practice_sections += 1

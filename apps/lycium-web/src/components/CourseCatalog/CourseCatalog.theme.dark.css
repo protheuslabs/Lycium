@@ -1,6 +1,10 @@
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generator-bar,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .home-page {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generator-bar {
   background: #0b0b0c;
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .home-page {
+  background: #141416;
   color: #e5e7eb;
 }
 
@@ -292,8 +296,35 @@
   border-top-color: #b9c8ff;
 }
 
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generating-course-error-mark {
+  background: #ef4444;
+  color: #fff;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generating-course-progress-track {
+  background: rgba(128, 150, 255, 0.18);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generating-course-progress-fill {
+  background: #b9c8ff;
+}
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-generating-status {
   color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card--generation-error .course-generating-status {
+  color: #fecaca;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generating-course-action {
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generating-course-action:hover,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generating-course-action:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-pagination-summary {

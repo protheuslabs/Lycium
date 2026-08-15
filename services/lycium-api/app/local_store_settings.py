@@ -312,6 +312,52 @@ def update_agent_key_verification(
     raise ValueError("API key not found.")
 
 
+def mark_agent_model_error(key_id: str, model: str, error: str) -> dict[str, Any]:
+    cleaned_model = model.strip()
+    cleaned_error = error.strip()
+    if not cleaned_model:
+        raise ValueError("Model cannot be blank.")
+    if not cleaned_error:
+        cleaned_error = "This model is currently unavailable."
+
+    secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
+    for key in secret["agent_keys"]:
+        if key["id"] != key_id:
+            continue
+        normalized_models = normalize_model_records(key.get("models"), cleaned_model)
+        marked_models: list[dict[str, Any]] = []
+        found_model = False
+        for available_model in normalized_models:
+            if available_model["id"] == cleaned_model:
+                found_model = True
+                marked_models.append(
+                    {
+                        **available_model,
+                        "error": cleaned_error,
+                        "disabled": True,
+                    }
+                )
+            else:
+                marked_models.append(available_model)
+        if not found_model:
+            marked_models.insert(
+                0,
+                {
+                    "id": cleaned_model,
+                    "label": cleaned_model,
+                    "error": cleaned_error,
+                    "disabled": True,
+                },
+            )
+        key["models"] = marked_models
+        key["updated_at"] = _now()
+        secret["updated_at"] = _now()
+        _write_json(_agent_secret_path(), secret)
+        return local_settings_summary()
+
+    raise ValueError("API key not found.")
+
+
 def activate_agent_api_key(key_id: str) -> dict[str, Any]:
     secret = _normalize_secret_payload(_read_json(_agent_secret_path(), {}))
     if not any(key["id"] == key_id for key in secret["agent_keys"]):
@@ -404,6 +450,15 @@ def require_verified_active_agent_profile() -> dict[str, Any]:
         raise ValueError("Active AI connection is unverified. Verify it in Settings before generating a course.")
     if not str(active_key.get("model") or "").strip():
         raise ValueError("Choose an AI model in Settings before generating a course.")
+    selected_model = str(active_key.get("model") or "").strip()
+    for available_model in active_key.get("models", []):
+        if str(available_model.get("id") or "").strip() != selected_model:
+            continue
+        model_error = str(available_model.get("error") or "").strip()
+        if model_error:
+            raise ValueError(f"{selected_model} is currently unavailable. {model_error}")
+        if available_model.get("disabled"):
+            raise ValueError(f"{selected_model} is currently unavailable. Choose another model in Settings.")
     model_capability = active_key.get("model_capability") if isinstance(active_key.get("model_capability"), dict) else {}
     if model_capability.get("meets_recommended_floor") is False:
         warning = str(model_capability.get("warning") or "").strip()

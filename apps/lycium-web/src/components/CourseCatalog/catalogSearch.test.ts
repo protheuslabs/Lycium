@@ -3,7 +3,7 @@ import type { LyciumProgram } from "@lycium/contracts";
 import type { CourseEntry } from "../../courseTypes";
 import { getVisibleCatalogCourses } from "./catalogCourseFiltering";
 import { getVisibleCatalogClusters, getVisibleCatalogPrograms } from "./catalogPathFiltering";
-import { getCourseSearchScore, normalizeSearchText } from "./catalogUtils";
+import { getCourseSearchScore, getGeneratingCourseTitle, normalizeSearchText } from "./catalogUtils";
 
 const baseCourse: CourseEntry = {
   key: "local-test-course",
@@ -187,5 +187,16 @@ describe("catalog search scoring", () => {
 
     expect(programs[0]?.program.id).toBe(pathProgram.id);
     expect(clusterMinutes).toEqual([...clusterMinutes].sort((a, b) => a - b));
+  });
+});
+
+describe("generating course title", () => {
+  it("uses a neutral placeholder before the agent has named the course", () => {
+    expect(getGeneratingCourseTitle(null)).toBe("New Course");
+    expect(getGeneratingCourseTitle("   ")).toBe("New Course");
+  });
+
+  it("uses the generated working title instead of the user prompt", () => {
+    expect(getGeneratingCourseTitle("Principles of Macroeconomics")).toBe("Principles of Macroeconomics");
   });
 });

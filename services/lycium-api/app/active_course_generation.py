@@ -8,6 +8,7 @@ from typing import Any
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.course_build_tasks import transition_course_build_task_from_source_packet
+from app.course_block_policy import supports_worked_example
 from app.models import CourseSnapshot
 
 
@@ -246,6 +247,49 @@ def _lesson_sections_from_plan(module_plan: dict[str, Any], *, source_ids: list[
         supporting_concept = concepts[1] if len(concepts) > 1 else f"{primary_concept} practice"
         lesson_source_ids = _source_ids_from_plan(section_plan, module_source_ids)[:1] or source_ids[:1]
         lesson_id = str(section_plan.get("id") or f"active-m{module_index:02d}-lesson-{section_index:02d}")
+        application_block = (
+            {
+                "type": "workedExample",
+                "title": f"Worked example: Apply {primary_concept.title()}",
+                "problem": f"Use {primary_concept} to solve a concrete problem from this part of {module_title}.",
+                "given": [
+                    f"Primary concept: {primary_concept}",
+                    f"Supporting concept: {supporting_concept}",
+                    "A relevant value, data point, process step, tool state, or decision constraint from the section.",
+                ],
+                "find": [
+                    f"A correct application of {primary_concept}.",
+                    "A concrete result that can be checked against the section method.",
+                ],
+                "steps": [
+                    {
+                        "explanation": f"State the relevant knowns or definitions for {primary_concept}.",
+                        "equation": "knowns + context -> setup",
+                    },
+                    {
+                        "explanation": f"Apply {primary_concept} to the concrete values, process, tool, or decision point.",
+                        "equation": "setup + method -> result",
+                    },
+                    {
+                        "explanation": f"Use {supporting_concept} to check whether the result is complete.",
+                        "equation": "result + supporting check -> mastery evidence",
+                    },
+                ],
+                "workedAnswer": f"A strong answer names {primary_concept}, applies it to a concrete case, and checks the result with {supporting_concept}.",
+                "check": "The example works when it teaches a method the learner can repeat, not a generic label.",
+                "sourceIds": lesson_source_ids,
+            }
+            if supports_worked_example(section_plan, module_plan, concepts)
+            else {
+                "type": "text",
+                "heading": "Guided practice",
+                "value": (
+                    f"Apply {primary_concept} by writing a focused explanation: first state the prerequisite idea, then explain the source-backed claim in your own words, "
+                    f"then describe evidence that would prove you can use it. Compare your explanation with {supporting_concept} and mark the point where the two ideas reinforce each other."
+                ),
+                "sourceIds": lesson_source_ids,
+            }
+        )
         lessons.append(
             {
                 "id": lesson_id,
@@ -275,17 +319,7 @@ def _lesson_sections_from_plan(module_plan: dict[str, Any], *, source_ids: list[
                         ),
                         "sourceIds": lesson_source_ids,
                     },
-                    {
-                        "type": "text",
-                        "heading": "Worked example",
-                        "value": (
-                            f"Imagine a reviewer asks why {primary_concept} belongs in this course. "
-                            f"A strong answer names the source-backed definition, gives one concrete example, and explains how the example changes the work a learner can do next. "
-                            f"For {primary_concept}, the example should identify the relevant data, process, tool, or decision point, then show how {supporting_concept} supports the same outcome from another angle. "
-                            "This example pattern turns the source material into a usable explanation instead of a memorized label."
-                        ),
-                        "sourceIds": lesson_source_ids,
-                    },
+                    application_block,
                     {
                         "type": "text",
                         "heading": "Practice",

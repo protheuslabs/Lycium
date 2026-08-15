@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.db import get_session
 from app.generation_eval_reports import build_generation_eval_trend, load_generation_eval_runs
 from app.generation_observability import generation_run_payload, get_generation_run, list_generation_runs
-from app.jobs import run_agent_course_generation_job
+from app.jobs import run_agent_course_generation_queue
 from app.models import Job
 from app.routes.course_generation_responses import course_generation_job_response
 from app.schemas import CourseGenerationJobRead, GenerationRunRead
@@ -29,7 +29,7 @@ def _resume_agent_course_generation_job(
     job.result = {**(job.result or {}), "message": "Generation re-queued from the saved request."}
     session.commit()
     session.refresh(job)
-    background_tasks.add_task(run_agent_course_generation_job, job.id)
+    background_tasks.add_task(run_agent_course_generation_queue)
     return course_generation_job_response(job)
 
 

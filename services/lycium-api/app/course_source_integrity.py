@@ -276,6 +276,17 @@ def _section_location(module_index: int, section_index: int) -> str:
     return f"modules[{module_index}].sections[{section_index}]"
 
 
+def _is_needs_sources_course(course: dict[str, Any]) -> bool:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    readiness = metadata.get("generationReadiness") if isinstance(metadata.get("generationReadiness"), dict) else {}
+    statuses = {
+        str(course.get("status") or "").strip(),
+        str(metadata.get("status") or "").strip(),
+        str(readiness.get("status") or "").strip(),
+    }
+    return "needs_sources" in statuses
+
+
 def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
     slots = _source_slots(course)
     course_sources = set(source_ids(course)) or _source_record_ids(course)
@@ -285,6 +296,7 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
     requirement_context = _requirement_origin_context(metadata)
     raw_policy = metadata.get("sourceCoveragePolicy")
     policy = raw_policy if isinstance(raw_policy, dict) else {}
+    needs_sources = _is_needs_sources_course(course)
     min_concept_coverage = float((policy or {}).get("minimumRequiredConceptCoveragePercent") or 70)
     require_direct_concept_coverage = policy.get("requireDirectConceptSourceMappings") is True
     warn_on_inherited_concept_coverage = policy.get("warnOnInheritedConceptSourceCoverage") is True
@@ -463,7 +475,7 @@ def assess_course_source_integrity(course: dict[str, Any]) -> dict[str, Any]:
     direct_block_coverage_percent = round((directly_sourced_block_count / source_bearing_block_count) * 100, 2) if source_bearing_block_count else 100.0
     if concept_count and coverage_percent < min_concept_coverage:
         issues.append({
-            "severity": "error",
+            "severity": "warning" if needs_sources else "error",
             "message": f"Required concept source coverage is {coverage_percent}%, below policy minimum {min_concept_coverage}%.",
             "location": "metadata.sourceCoveragePolicy.minimumRequiredConceptCoveragePercent",
         })

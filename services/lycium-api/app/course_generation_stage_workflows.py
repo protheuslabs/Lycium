@@ -12,6 +12,7 @@ from app.course_outline_from_source_packet import (
     build_course_module_outline_quality_report,
     build_outline_from_source_packet,
 )
+from app.course_block_policy import supports_worked_example
 from app.curriculum_assembly_policy import (
     cluster_generation_threshold_report,
     curriculum_assembly_threshold_policy,
@@ -926,7 +927,13 @@ def run_module_section_plan_workflow(
 
 def _section_source_ids(section_plan: dict[str, Any], fallback_source_ids: list[str] | None = None) -> list[str]:
     source_ids = _strings(section_plan.get("sourceIds"))
-    return source_ids or list(fallback_source_ids or [])
+    if fallback_source_ids is None:
+        return source_ids
+    allowed = {str(source_id) for source_id in fallback_source_ids}
+    if not allowed:
+        return []
+    filtered = [source_id for source_id in source_ids if source_id in allowed]
+    return filtered or list(fallback_source_ids)
 
 
 def _source_ids_from_value(value: Any) -> list[str]:
@@ -987,15 +994,57 @@ def _lesson_core_text(title: str, concepts: list[str], objective_text: str) -> s
     return f"{title} focuses on {concept_names}. {objective_text} {definitions}"
 
 
-def _lesson_example_text(concepts: list[str]) -> str:
+def _lesson_worked_example_block(concepts: list[str], source_ids: list[str]) -> dict[str, Any]:
     focus = _concept_display_name(concepts[0]) if concepts else "The Section Concept"
-    supporting = ", ".join(_concept_display_name(concept) for concept in concepts[1:4])
-    supporting_text = f" Bring in {supporting} when those ideas affect the answer." if supporting else ""
-    return (
-        f"Worked example: start with a realistic case involving {focus}. Identify the variables, claims, "
-        "or constraints that matter; state what evidence would confirm or weaken the interpretation; apply the "
-        f"concept step by step; then check whether a different assumption would change the conclusion.{supporting_text}"
-    )
+    supporting = _concept_display_name(concepts[1]) if len(concepts) > 1 else "the supporting idea"
+    return {
+        "type": "workedExample",
+        "title": f"Worked example: Apply {focus}",
+        "problem": (
+            f"A learner is asked to use {focus} in a realistic course task. Decide what information matters, "
+            "show the setup, and explain how the result should be checked."
+        ),
+        "given": [
+            f"Primary concept: {focus}",
+            f"Supporting concept or constraint: {supporting}",
+            "A realistic case with known values, evidence, assumptions, or decision constraints.",
+        ],
+        "find": [
+            f"The correct application of {focus}.",
+            "A final answer, classification, decision, or interpretation that can be checked.",
+        ],
+        "steps": [
+            {
+                "explanation": f"Name the known quantities, definitions, or evidence that control {focus}.",
+                "equation": "knowns + assumptions -> setup",
+            },
+            {
+                "explanation": f"Apply {focus} while accounting for {supporting}.",
+                "equation": "setup + method -> result",
+            },
+            {
+                "explanation": "Check whether the result is reasonable before treating it as mastery evidence.",
+                "equation": "result check = units/sign/assumption/meaning test",
+            },
+        ],
+        "workedAnswer": f"The answer should state the result and explain how {focus} supports it.",
+        "check": "A credible solution names assumptions, uses the right relationship, and checks the result against the problem context.",
+        "sourceIds": source_ids,
+    }
+
+
+def _lesson_guided_practice_block(concepts: list[str], source_ids: list[str]) -> dict[str, Any]:
+    focus = _concept_display_name(concepts[0]) if concepts else "the section concept"
+    supporting = _concept_display_name(concepts[1]) if len(concepts) > 1 else "the supporting idea"
+    return {
+        "type": "text",
+        "heading": "Guided practice",
+        "value": (
+            f"Apply {focus} by writing a short explanation that names the situation, identifies the evidence or example that matters, "
+            f"and explains how {supporting} changes the interpretation. End by naming one limitation or unanswered question that would need more support."
+        ),
+        "sourceIds": source_ids,
+    }
 
 
 def _lesson_practice_text(concepts: list[str]) -> str:
@@ -1008,9 +1057,11 @@ def _lesson_practice_text(concepts: list[str]) -> str:
 
 def _normalize_explicit_source_refs(section: dict[str, Any], raw_section: dict[str, Any], planned_source_ids: list[str]) -> dict[str, Any]:
     allowed = set(planned_source_ids)
+    if not allowed:
+        return _strip_source_id_refs(section)
     explicit_ids = _source_ids_from_value(raw_section)
     local_ids = _unique_strings(
-        [source_id for source_id in explicit_ids if not allowed or source_id in allowed]
+        [source_id for source_id in explicit_ids if source_id in allowed]
     )
     filtered_section = _filter_source_id_refs(section, set(local_ids))
     section_source_ids = _source_ids_from_value(filtered_section)
@@ -1021,7 +1072,12 @@ def _normalize_explicit_source_refs(section: dict[str, Any], raw_section: dict[s
     return filtered_section
 
 
-def _draft_section_from_plan(section_plan: dict[str, Any], source_ids: list[str]) -> dict[str, Any]:
+def _draft_section_from_plan(
+    section_plan: dict[str, Any],
+    source_ids: list[str],
+    *,
+    module_outline: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     title = str(section_plan.get("title") or "Lesson")
     coverage_must_teach = _strings(section_plan.get("coverageMustTeach"))
     concepts = _unique_strings(
@@ -1042,6 +1098,11 @@ def _draft_section_from_plan(section_plan: dict[str, Any], source_ids: list[str]
         }
         for concept in concepts[:6]
     ]
+    application_block = (
+        _lesson_worked_example_block(concepts, source_ids)
+        if supports_worked_example(section_plan, module_outline or {}, concepts, objectives)
+        else _lesson_guided_practice_block(concepts, source_ids)
+    )
     return {
         "id": str(section_plan.get("id") or "generated-section"),
         "title": title,
@@ -1055,12 +1116,7 @@ def _draft_section_from_plan(section_plan: dict[str, Any], source_ids: list[str]
                 "value": _lesson_core_text(title, concepts, objective_text),
                 "sourceIds": source_ids,
             },
-            {
-                "type": "text",
-                "heading": "Worked example",
-                "value": _lesson_example_text(concepts),
-                "sourceIds": source_ids,
-            },
+            application_block,
             {
                 "type": "text",
                 "heading": "Practice",
@@ -1084,7 +1140,11 @@ def run_section_fill_workflow(
     source_ids = _section_source_ids(section_plan, fallback_source_ids)
     role = str(section_plan.get("role") or "lesson")
     planned_section_row = planned_section if isinstance(planned_section, dict) else {}
-    raw_section = generated_section if isinstance(generated_section, dict) else _draft_section_from_plan(section_plan, source_ids)
+    raw_section = (
+        generated_section
+        if isinstance(generated_section, dict)
+        else _draft_section_from_plan(section_plan, source_ids, module_outline=module_outline)
+    )
     if planned_section_row and not isinstance(generated_section, dict):
         raw_section = {**planned_section_row, **raw_section}
         raw_section.pop("description", None)

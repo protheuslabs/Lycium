@@ -214,6 +214,8 @@ class CourseGenerationJobRead(BaseModel):
     progress: float = Field(default=0.0, ge=0.0, le=1.0)
     current_stage: str | None = None
     message: str | None = None
+    workflow_status: dict[str, Any] | None = None
+    working_title: str | None = None
     course: dict[str, Any] | None = None
     quality_report: CourseQualityReportRead | None = None
     generation_readiness: CourseGenerationReadinessRead | None = None

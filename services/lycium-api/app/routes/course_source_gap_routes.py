@@ -20,7 +20,7 @@ from app.course_source_gap_resume import (
     source_urls_from_source_packet,
 )
 from app.db import get_session
-from app.jobs import enqueue_job, run_agent_course_generation_job
+from app.jobs import enqueue_job, run_agent_course_generation_queue
 from app.local_store import require_verified_active_agent_profile, save_course_snapshot
 from app.models import CourseDraft, CourseSnapshot
 from app.routes.course_generation_responses import course_generation_job_response
@@ -224,5 +224,5 @@ def register(app: FastAPI) -> None:
         )
         session.commit()
         session.refresh(job)
-        background_tasks.add_task(run_agent_course_generation_job, job.id)
+        background_tasks.add_task(run_agent_course_generation_queue)
         return course_generation_job_response(job)

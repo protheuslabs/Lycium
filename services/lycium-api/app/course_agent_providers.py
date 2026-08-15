@@ -634,9 +634,17 @@ def _post_json(
             if status_code in RETRYABLE_STATUS_CODES and attempt < max_attempts:
                 time.sleep(0.75 * attempt)
                 continue
+            trace: dict[str, Any] = {
+                "provider_attempts": attempt_errors,
+                "provider_http_status": status_code,
+                "provider_id": provider.get("id"),
+            }
+            selected_model = str(payload.get("model") or "").strip()
+            if selected_model:
+                trace["model"] = selected_model
             raise CourseAgentError(
                 f"LLM API rejected the request after {attempt} attempt(s): {detail}",
-                trace={"provider_attempts": attempt_errors},
+                trace=trace,
             ) from exc
         except httpx.HTTPError as exc:
             detail = str(exc)
@@ -645,9 +653,16 @@ def _post_json(
             if is_transient and attempt < max_attempts:
                 time.sleep(0.75 * attempt)
                 continue
+            trace = {
+                "provider_attempts": attempt_errors,
+                "provider_id": provider.get("id"),
+            }
+            selected_model = str(payload.get("model") or "").strip()
+            if selected_model:
+                trace["model"] = selected_model
             raise CourseAgentError(
                 f"LLM API request failed after {attempt} attempt(s): {detail}",
-                trace={"provider_attempts": attempt_errors},
+                trace=trace,
             ) from exc
 
     raise CourseAgentError("LLM API request failed without a response.", trace={"provider_attempts": attempt_errors})

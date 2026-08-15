@@ -101,9 +101,20 @@ def _validate_concept_block(block: dict[str, Any], errors: list[str], location: 
             errors.append(f"{location} concept {concept_index} is missing description.")
 
 
+def _is_needs_sources_course(course: dict[str, Any]) -> bool:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    readiness = metadata.get("generationReadiness") if isinstance(metadata.get("generationReadiness"), dict) else {}
+    statuses = {
+        str(course.get("status") or "").strip(),
+        str(metadata.get("status") or "").strip(),
+        str(readiness.get("status") or "").strip(),
+    }
+    return "needs_sources" in statuses
+
+
 def _declared_source_ids(course: dict[str, Any], errors: list[str]) -> set[str]:
     declared_source_ids = _source_record_ids(course)
-    if not declared_source_ids:
+    if not declared_source_ids and not _is_needs_sources_course(course):
         errors.append("Course must include sourceRecords with at least one source.")
     return declared_source_ids
 

@@ -42,6 +42,8 @@ type CourseCatalogProps = {
   aiLockedReason: string;
   generateStatus: "idle" | "loading" | "error" | "success";
   generateMessage: string;
+  generateProgress: number;
+  generateTitle: string;
   onPromptChange: (value: string) => void;
   onLevelChange: (value: string) => void;
   onGenerateCourse: (
@@ -97,7 +99,7 @@ type CourseCatalogProps = {
   onImportCourseDraft: (file: File) => Promise<void>;
   onResetCourseDraft: (course: CourseEntry) => void;
   publishingCourseKey: string | null;
-  onOpenSettings: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onOpenSettings: (event?: MouseEvent<HTMLAnchorElement>) => void;
 };
 
 export default function CourseCatalog({
@@ -112,6 +114,8 @@ export default function CourseCatalog({
   aiLockedReason,
   generateStatus,
   generateMessage,
+  generateProgress,
+  generateTitle,
   onPromptChange,
   onLevelChange,
   onGenerateCourse,
@@ -142,8 +146,8 @@ export default function CourseCatalog({
   const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE * 4);
   const isClientMounted = useClientMounted();
   const courseGridRef = useRef<HTMLDivElement | null>(null);
-  const isGeneratingCourse = generateStatus === "loading";
-  const generatingCourseTitle = getGeneratingCourseTitle(prompt);
+  const shouldShowGenerationTile = generateStatus === "loading" || generateStatus === "error";
+  const generatingCourseTitle = getGeneratingCourseTitle(generateTitle);
   const catalogControls = useCatalogControls({
     courses,
     programs,
@@ -234,7 +238,7 @@ export default function CourseCatalog({
       const rowsPerPage = window.matchMedia("(max-width: 860px)").matches
         ? CATALOG_MOBILE_ROWS_PER_PAGE
         : CATALOG_DESKTOP_ROWS_PER_PAGE;
-      const leadingCatalogCards = isGeneratingCourse ? 1 : 0;
+      const leadingCatalogCards = shouldShowGenerationTile ? 1 : 0;
       const nextCoursesPerPage = Math.max(1, columns * rowsPerPage - leadingCatalogCards);
       setCoursesPerPage(nextCoursesPerPage);
     };
@@ -248,7 +252,7 @@ export default function CourseCatalog({
       observer.disconnect();
       window.removeEventListener("resize", updateCoursesPerPage);
     };
-  }, [catalogControls.catalogViewLevel, isGeneratingCourse]);
+  }, [catalogControls.catalogViewLevel, shouldShowGenerationTile]);
 
   return (
     <div className="catalog-shell">
@@ -367,14 +371,17 @@ export default function CourseCatalog({
               )}
               <CatalogCourseGrid
                 courseGridRef={courseGridRef}
-                isGeneratingCourse={isGeneratingCourse}
+                generateStatus={generateStatus}
                 generatingCourseTitle={generatingCourseTitle}
                 generateMessage={generateMessage}
+                generateProgress={generateProgress}
                 visibleCourses={catalogControls.visibleCourses}
                 catalogPageCourses={catalogPageCourses}
                 publishingCourseKey={publishingCourseKey}
                 onOpenCourse={onOpenCourse}
                 onOpenInfo={setInfoCourse}
+                onOpenSettings={() => onOpenSettings()}
+                onRetryGenerate={() => createCourseModal.setIsOpen(true)}
                 onSearchPrerequisite={catalogControls.handlePrerequisiteSearch}
                 selectionMode={catalogSelectionMode}
                 onToggleCourseSelection={onToggleClusterCourseSelection}

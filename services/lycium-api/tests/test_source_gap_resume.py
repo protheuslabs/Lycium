@@ -107,7 +107,7 @@ def test_source_gap_resume_updates_draft_then_queues_generation(client, monkeypa
         "app.routes.course_source_gap_routes.require_verified_active_agent_profile",
         lambda: {"provider_id": "local-model", "model": "test-model", "agent_api_key": "local"},
     )
-    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_queue", lambda: None)
 
     queued = client.post(
         f"/v1/courses/{snapshot_id}/source-gaps/resume",
@@ -174,7 +174,7 @@ def test_source_gap_resume_requires_concept_relevant_sources(client, monkeypatch
         "app.routes.course_source_gap_routes.require_verified_active_agent_profile",
         lambda: {"provider_id": "local-model", "model": "test-model", "agent_api_key": "local"},
     )
-    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_queue", lambda: None)
 
     queued = client.post(
         f"/v1/courses/{snapshot_id}/source-gaps/resume",
@@ -212,7 +212,7 @@ def test_source_gap_resume_uses_source_packet_text_for_concept_relevance(client,
         "app.routes.course_source_gap_routes.require_verified_active_agent_profile",
         lambda: {"provider_id": "local-model", "model": "test-model", "agent_api_key": "local"},
     )
-    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_queue", lambda: None)
 
     queued = client.post(
         f"/v1/courses/{snapshot_id}/source-gaps/resume",
@@ -272,7 +272,7 @@ def test_source_gap_resume_accepts_input_artifacts_for_concept_relevance(client,
         "app.routes.course_source_gap_routes.require_verified_active_agent_profile",
         lambda: {"provider_id": "local-model", "model": "test-model", "agent_api_key": "local"},
     )
-    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_queue", lambda: None)
 
     artifacts = [
         {
@@ -334,8 +334,8 @@ def test_source_gap_resume_blocks_irrelevant_input_artifacts(client, monkeypatch
         lambda: (_ for _ in ()).throw(AssertionError("irrelevant files should not start generation")),
     )
     monkeypatch.setattr(
-        "app.routes.course_source_gap_routes.run_agent_course_generation_job",
-        lambda _job_id: (_ for _ in ()).throw(AssertionError("irrelevant files should not queue generation")),
+        "app.routes.course_source_gap_routes.run_agent_course_generation_queue",
+        lambda: (_ for _ in ()).throw(AssertionError("irrelevant files should not queue generation")),
     )
 
     blocked = client.post(

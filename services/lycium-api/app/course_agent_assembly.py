@@ -215,6 +215,23 @@ def _human_title(value: str) -> str:
     return clean.title() if clean else "Core Concepts"
 
 
+def _lesson_title_concepts(value: str, *, limit: int = 4) -> list[str]:
+    clean = re.sub(r"^\s*module\s+\d+\s*:\s*", "", str(value or ""), flags=re.IGNORECASE)
+    clean = re.sub(r"\bintro(?:duction|ductory)?\b", "", clean, flags=re.IGNORECASE)
+    parts = [
+        re.sub(r"\s+", " ", part).strip(" :-")
+        for part in re.split(r",|\band\b|&|/|;", clean, flags=re.IGNORECASE)
+    ]
+    concepts = [
+        part
+        for part in parts
+        if len(part) > 2 and part.lower() not in {"lesson", "section", "module", "concepts", "practice"}
+    ]
+    if concepts:
+        return _unique_strings(concepts, limit=limit)
+    return _unique_strings([clean.strip(" :-")], limit=limit) if clean.strip(" :-") else []
+
+
 def _source_ids_from_outline(outline: dict | None, fallback_source_ids: list[str]) -> list[str]:
     if not isinstance(outline, dict):
         return list(fallback_source_ids)
@@ -222,10 +239,12 @@ def _source_ids_from_outline(outline: dict | None, fallback_source_ids: list[str
     if not isinstance(raw_source_ids, list):
         return list(fallback_source_ids)
     allowed = {str(source_id) for source_id in fallback_source_ids}
+    if not allowed:
+        return []
     source_ids = [
         str(source_id)
         for source_id in raw_source_ids
-        if str(source_id).strip() and (not allowed or str(source_id) in allowed)
+        if str(source_id).strip() and str(source_id) in allowed
     ]
     return source_ids or list(fallback_source_ids)
 
@@ -250,22 +269,33 @@ def _module_lesson_outlines(module_outline: dict) -> list[dict[str, Any]]:
         return lesson_outlines[:6]
     module_title = str(module_outline.get("title") or "Module").strip()
     module_source_ids = _source_ids_from_outline(module_outline, _strings(module_outline.get("sourceIds")))
-    concepts = _outline_concepts(module_outline) or [module_title]
+    outline_concepts = _outline_concepts(module_outline)
+    concepts = outline_concepts or [module_title]
     coverage_item_ids = _strings(module_outline.get("assignedCoverageItemIds") or module_outline.get("coverageItemIds"))
     coverage_must_teach = _strings(module_outline.get("coverageMustTeach") or module_outline.get("mustTeach"))
     lesson_titles = _module_lesson_titles(module_outline)
     generated_outlines: list[dict[str, Any]] = []
     for index in range(1, _target_section_count(module_outline) + 1):
         focus = "Foundations" if index == 1 else "Applied Practice" if index == 2 else f"Extension {index}"
-        primary_concept = concepts[(index - 1) % len(concepts)]
-        nearby_concepts = _unique_strings(
-            [
-                primary_concept,
-                *concepts[index : index + 2],
-            ],
-            limit=3,
+        fallback_primary_concept = concepts[(index - 1) % len(concepts)]
+        title = lesson_titles[index - 1] if index - 1 < len(lesson_titles) else f"{_human_title(fallback_primary_concept)} {focus}"
+        title_concepts = _lesson_title_concepts(title)
+        primary_concept = (
+            title_concepts[0]
+            if title_concepts and not outline_concepts
+            else fallback_primary_concept
         )
-        title = lesson_titles[index - 1] if index - 1 < len(lesson_titles) else f"{_human_title(primary_concept)} {focus}"
+        nearby_concepts = (
+            title_concepts
+            if title_concepts and not outline_concepts
+            else _unique_strings(
+                [
+                    primary_concept,
+                    *concepts[index : index + 2],
+                ],
+                limit=3,
+            )
+        )
         generated_outlines.append(
             {
                 "id": str(module_outline.get("id") or "module") + f"-section-{index}",
@@ -345,6 +375,8 @@ def _requirements_from_benchmark_context(benchmark_context: dict | None) -> list
     requirements: list[dict[str, Any]] = []
     for benchmark in benchmarks:
         benchmark_id = str(benchmark.get("id") or "")
+        if benchmark_id == "benchmark-generated-intake":
+            continue
         raw_requirements = benchmark.get("extractedRequirements")
         if not isinstance(raw_requirements, list):
             continue

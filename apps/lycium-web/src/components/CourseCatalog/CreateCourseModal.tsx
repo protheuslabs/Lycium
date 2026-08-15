@@ -146,7 +146,7 @@ export default function CreateCourseModal({
                 Add another link
               </button>
             </div>
-            <label className="create-course-field">
+            <div className="create-course-field">
               <span>Difficulty level</span>
               <Dropdown
                 className="create-course-dropdown"
@@ -156,8 +156,8 @@ export default function CreateCourseModal({
                 ariaLabel="Difficulty level"
                 disabled={!canCreateCourse}
               />
-            </label>
-            <label className="create-course-field">
+            </div>
+            <div className="create-course-field">
               <span>College</span>
               <Dropdown
                 className="create-course-dropdown"
@@ -168,8 +168,8 @@ export default function CreateCourseModal({
                 disabled={!canCreateCourse}
                 placeholder="Select college"
               />
-            </label>
-            <label className="create-course-field">
+            </div>
+            <div className="create-course-field">
               <span>Department</span>
               <Dropdown
                 className="create-course-dropdown"
@@ -181,7 +181,7 @@ export default function CreateCourseModal({
                 emptyLabel="Select a college first"
                 placeholder={college ? "Select department" : "Select college first"}
               />
-            </label>
+            </div>
             <div className="create-course-files" aria-label="Add course generation files">
               <label className="create-course-file-picker">
                 <input

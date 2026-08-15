@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Callable
 
 from app.config import SETTINGS
 from app.course_agent_assembly import (
@@ -49,6 +50,26 @@ from app.curriculum_benchmarks import attach_curriculum_context, compile_curricu
 from app.source_corpus import compile_generation_source_corpus
 from app.course_agent_source_context import build_source_context_index, source_context_index_summary
 from app.source_packet_quality_gate import source_packet_gate_message, source_packet_quality_gate
+
+CourseGenerationWorkflowStatus = Callable[[dict], None]
+
+
+def _emit_workflow_status(
+    on_workflow_status: CourseGenerationWorkflowStatus | None,
+    *,
+    stage: str,
+    trace: dict,
+    progress: float | None = None,
+    detail: str | None = None,
+) -> None:
+    if on_workflow_status is None:
+        return
+    payload: dict = {"stage": stage, "trace": trace}
+    if progress is not None:
+        payload["progress"] = progress
+    if detail:
+        payload["detail"] = detail
+    on_workflow_status(payload)
 
 
 def _lesson_sections_for_stage_reports(module: dict) -> list[dict]:
@@ -165,6 +186,7 @@ def generate_course_with_agent_staged(
     department: str | None = None,
     enforce_contract: bool = True,
     on_checkpoint: CourseGenerationCheckpoint | None = None,
+    on_workflow_status: CourseGenerationWorkflowStatus | None = None,
     resume_course: dict | None = None,
     resume_trace: dict | None = None,
     max_stage_timeout_seconds: float | None = None,
@@ -182,9 +204,12 @@ def generate_course_with_agent_staged(
         input_artifacts=input_artifacts,
     )
     effective_source_urls = source_corpus.source_urls
+    has_submitted_source_evidence = bool(
+        effective_source_urls or source_corpus.source_documents or source_corpus.input_artifacts
+    )
     packet_gate = source_packet_quality_gate(
         source_corpus.synthesis,
-        require_source_strength=True,
+        require_source_strength=has_submitted_source_evidence,
         source_documents=source_corpus.source_documents,
         input_artifacts=source_corpus.input_artifacts,
         source_urls=effective_source_urls,
@@ -356,6 +381,12 @@ def generate_course_with_agent_staged(
         if isinstance(benchmark_context.get("requirementOrigins"), list)
         else 0,
     }
+    _emit_workflow_status(
+        on_workflow_status,
+        stage="course_module_outline_generation",
+        trace=trace,
+        progress=0.08,
+    )
     trace["stage_workflows"].append(
         compact_stage_workflow_report(
             run_course_module_outline_workflow(
@@ -390,6 +421,19 @@ def generate_course_with_agent_staged(
     )
 
     pending_module_outlines = [(index, module_outline) for index, module_outline in enumerate(module_outlines, start=1) if index not in completed_modules]
+    if pending_module_outlines:
+        _emit_workflow_status(
+            on_workflow_status,
+            stage="module_section_plan_generation",
+            trace=trace,
+            progress=0.12,
+        )
+        _emit_workflow_status(
+            on_workflow_status,
+            stage="section_fill_generation",
+            trace=trace,
+            progress=0.16,
+        )
     module_outlines_for_serial = pending_module_outlines
     if len(pending_module_outlines) > 1:
         module_outlines_for_serial = []
@@ -564,6 +608,9 @@ def generate_course_with_agent_staged(
     )
     metadata = dict(course.get("metadata") if isinstance(course.get("metadata"), dict) else {})
     metadata["generationReadiness"] = generation_readiness
+    if not bool(generation_readiness.get("ready")):
+        metadata["status"] = "needs_sources"
+        course["status"] = "needs_sources"
     course["metadata"] = metadata
     quality_evals = run_course_quality_evals(course)
     validation_errors = validate_course_contract(course)

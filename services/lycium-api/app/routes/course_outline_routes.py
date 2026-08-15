@@ -41,7 +41,7 @@ from app.generation import (
     validate_learner_exists,
 )
 from app.ingestion import ingest_source
-from app.jobs import enqueue_job, list_jobs, run_agent_course_generation_job, run_job, run_pending_jobs
+from app.jobs import enqueue_job, list_jobs, run_agent_course_generation_queue, run_job, run_pending_jobs
 from app.local_store import (
     activate_agent_api_key,
     ensure_local_data_dirs,
@@ -117,6 +117,16 @@ from app.schemas import (
     SourceRead,
     UpdateOutlineRequest,
 )
+
+
+def _has_submitted_generation_evidence(readiness: dict[str, Any]) -> bool:
+    source_evidence = readiness.get("sourceEvidence") if isinstance(readiness.get("sourceEvidence"), dict) else {}
+    evidence_counts = (
+        source_evidence.get("sourceUrlCount"),
+        source_evidence.get("usableInputArtifactCount"),
+        source_evidence.get("submittedEvidenceCount"),
+    )
+    return any(int(count or 0) > 0 for count in evidence_counts)
 
 
 def register(app: FastAPI) -> None:
@@ -312,11 +322,6 @@ def register(app: FastAPI) -> None:
                 input_artifacts=payload.input_artifacts,
             )
             quality_report = assess_agent_generation_result(generated, gate="review")
-            if not quality_report["passed"]:
-                raise ValueError(
-                    "Generated course failed quality gate: "
-                    + "; ".join([*quality_report["errors"], *quality_report["warnings"]][:12])
-                )
             snapshot = build_course_snapshot_from_agent_result(
                 session,
                 learner_id=payload.learner_id,
@@ -327,6 +332,7 @@ def register(app: FastAPI) -> None:
                 generated=generated,
                 quality_report=quality_report,
                 generation_readiness=readiness,
+                status="ready_for_review" if quality_report["passed"] else "needs_revision",
             )
             session.commit()
             session.refresh(snapshot)
@@ -434,7 +440,8 @@ def register(app: FastAPI) -> None:
             agent_profile = get_active_agent_profile()
             if agent_profile is not None:
                 agent_profile = require_verified_active_agent_profile()
-            if not bool(readiness["ready"]):
+            has_submitted_evidence = _has_submitted_generation_evidence(readiness)
+            if not bool(readiness["ready"]) and has_submitted_evidence:
                 job = enqueue_job(
                     session,
                     job_type="agent_generate_course_staged",
@@ -481,7 +488,7 @@ def register(app: FastAPI) -> None:
         )
         session.commit()
         session.refresh(job)
-        background_tasks.add_task(run_agent_course_generation_job, job.id)
+        background_tasks.add_task(run_agent_course_generation_queue)
         return course_generation_job_response(job)
 
 

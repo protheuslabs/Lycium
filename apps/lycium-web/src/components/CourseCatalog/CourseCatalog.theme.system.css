@@ -1,7 +1,11 @@
 @media (prefers-color-scheme: dark) {
-  .generator-bar,
-  .home-page {
+  .generator-bar {
     background: #0b0b0c;
+    color: #e5e7eb;
+  }
+
+  .home-page {
+    background: #141416;
     color: #e5e7eb;
   }
 
@@ -193,8 +197,35 @@
     border-top-color: #b9c8ff;
   }
 
+  .generating-course-error-mark {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  .generating-course-progress-track {
+    background: rgba(128, 150, 255, 0.18);
+  }
+
+  .generating-course-progress-fill {
+    background: #b9c8ff;
+  }
+
   .course-generating-status {
     color: #cbd5e1;
+  }
+
+  .course-card--generation-error .course-generating-status {
+    color: #fecaca;
+  }
+
+  .generating-course-action {
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #f8fafc;
+  }
+
+  .generating-course-action:hover,
+  .generating-course-action:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .course-progress-viewed-fill {

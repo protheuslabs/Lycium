@@ -4,12 +4,17 @@ import hashlib
 import re
 from typing import Any
 
+from app.course_block_policy import supports_worked_example
+
 
 COURSE_GENERATION_RULES = (
     "Quizzes are assessment-only sections. Do not mix instructional content and quiz content "
     "inside the same generated section. Use pageType='learn' for instructional pages and "
     "pageType='apply' for assessment or practice pages. Generated content must use the same atomic "
-    "editable blocks the UI creates: text, heading, conceptCard, video, iframe, and quiz. End every "
+    "editable blocks the UI creates: text, heading, conceptCard, equation, workedExample, video, iframe, and quiz. "
+    "Use equation for standalone formulas or symbolic relationships. Use workedExample only for quantitative, formal, "
+    "technical, or procedural problems where learners need repeatable work; do not use it for interpretive humanities "
+    "or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts. End every "
     "learn page with a heading block titled 'Concepts introduced' followed by one conceptCard block per "
     "raw concept. Each conceptCard must include a short title/name and concise description. Module "
     "summaries must be learn pages with a heading block titled according to the course pacing label, "
@@ -90,6 +95,46 @@ def _build_instructional_blocks(section_title: str, prompt: str, source_excerpt:
         if excerpt
         else " The available source coverage is sparse, so this lesson uses a conservative scaffold that should be reviewed."
     )
+    application_block = (
+        {
+            "type": "workedExample",
+            "title": f"Worked example: {subject}",
+            "problem": f"Use {subject} to solve a realistic problem under one constraint.",
+            "given": [
+                f"Topic or method: {subject}",
+                "Known values, a concrete task, and one constraint.",
+            ],
+            "find": [
+                "The selected method and the result it produces.",
+                "A check on units, assumptions, or practical meaning.",
+            ],
+            "steps": [
+                {
+                    "explanation": "Name the known values and constraint.",
+                    "equation": "knowns + constraint -> setup",
+                },
+                {
+                    "explanation": "Apply the relevant formula, algorithm, or procedure.",
+                    "equation": "setup + method -> result",
+                },
+                {
+                    "explanation": "Check the result against units, assumptions, or practical consequences.",
+                    "equation": "result check = units + assumptions + meaning",
+                },
+            ],
+            "workedAnswer": "A strong answer states the result, method, and reasonableness check.",
+            "check": "The example is credible when the method visibly controls the final answer.",
+        }
+        if supports_worked_example(section_title, prompt)
+        else {
+            "type": "text",
+            "heading": "Guided practice",
+            "value": (
+                f"Use {subject} in a short learner exercise. Name the situation, identify the evidence or example that matters, "
+                "explain the conclusion in your own words, and add one limitation that would need more support."
+            ),
+        }
+    )
     return [
         {
             "type": "text",
@@ -100,14 +145,7 @@ def _build_instructional_blocks(section_title: str, prompt: str, source_excerpt:
                 f"{grounding} The goal is to connect the definition to decisions a practitioner would actually make."
             ),
         },
-        {
-            "type": "text",
-            "heading": "Worked example",
-            "value": (
-                f"In a worked example for {subject}, start with a concrete task, name the constraint, choose an approach, and explain the tradeoff. "
-                "A strong answer states what evidence supports the choice, what alternative was rejected, and what risk should be monitored after the decision."
-            ),
-        },
+        application_block,
         {
             "type": "text",
             "heading": "Practice",

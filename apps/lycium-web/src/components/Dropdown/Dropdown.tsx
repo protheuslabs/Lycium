@@ -104,7 +104,12 @@ export default function Dropdown({
                   aria-selected={option.value === value}
                   aria-disabled={option.disabled ? "true" : undefined}
                   key={option.value}
-                  onMouseDown={(event) => event.preventDefault()}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    if (!option.disabled) {
+                      handleSelect(option.value);
+                    }
+                  }}
                   onClick={() => {
                     if (!option.disabled) {
                       handleSelect(option.value);
@@ -118,6 +123,7 @@ export default function Dropdown({
                         className={`dropdown-option-issue dropdown-option-issue-${issueTone}`}
                         aria-label={issue}
                         title={issue}
+                        data-tooltip={issue}
                       >
                         !
                       </span>

@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import sourceRecordsData from "../courseData/sourceRecords";
 import type { CourseEntry } from "../courseTypes";
@@ -12,13 +11,52 @@ import type {
 } from "@lycium/contracts";
 import { lyciumApi } from "../runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "../utils/courseValidation";
-import { hasBlockingSourceGaps, queueCourseSourceGapSuggestion } from "../utils/courseSourceGaps";
-import { generatedCourseRecordFromJob } from "../utils/courseGenerationJobs";
+import { queueCourseSourceGapSuggestion } from "../utils/courseSourceGaps";
+import {
+  courseGenerationSpecificStatusMessage,
+  courseGenerationWorkingTitle,
+  generatedCourseRecordFromJob,
+  isActiveCourseGenerationJob,
+  recoverableCourseGenerationJobId,
+} from "../utils/courseGenerationJobs";
 
 type CourseClassification = {
   category: string;
   department: string;
 };
+
+const ACTIVE_COURSE_GENERATION_JOB_STORAGE_KEY = "lycium.activeCourseGenerationJobId";
+const COURSE_GENERATION_POLL_INTERVAL_MS = 2500;
+
+type PollCourseGenerationOptions = {
+  clearPromptOnComplete?: boolean;
+  openOnComplete?: boolean;
+};
+
+function generationWorkflowMessage(job: LyciumCourseGenerationJob): string {
+  const status = job.workflow_status;
+  const message = status && typeof status === "object" && "message" in status ? status.message : null;
+  return typeof message === "string" && message.trim()
+    ? message
+    : job.message || job.current_stage || "Generating course...";
+}
+
+function readActiveGenerationJobId(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(ACTIVE_COURSE_GENERATION_JOB_STORAGE_KEY);
+}
+
+function writeActiveGenerationJobId(jobId: string | number): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(ACTIVE_COURSE_GENERATION_JOB_STORAGE_KEY, String(jobId));
+}
+
+function clearActiveGenerationJobId(jobId?: string | number): void {
+  if (typeof window === "undefined") return;
+  if (jobId === undefined || window.localStorage.getItem(ACTIVE_COURSE_GENERATION_JOB_STORAGE_KEY) === String(jobId)) {
+    window.localStorage.removeItem(ACTIVE_COURSE_GENERATION_JOB_STORAGE_KEY);
+  }
+}
 
 export function fileToGenerationPayload(file: File): Promise<LyciumGenerationInputFilePayload> {
   return new Promise((resolve, reject) => {
@@ -60,7 +98,11 @@ export function useCourseGenerationActions({
 }: UseCourseGenerationActionsArgs) {
   const [generateStatus, setGenerateStatus] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [generateMessage, setGenerateMessage] = useState("");
+  const [generateProgress, setGenerateProgress] = useState(0);
+  const [generateTitle, setGenerateTitle] = useState("New Course");
   const [publishingCourseKey, setPublishingCourseKey] = useState<string | null>(null);
+  const activePollJobIdRef = useRef<string | null>(null);
+  const mountedRef = useRef(false);
 
   const entryFromGeneratedRecord = useCallback((record: LyciumGeneratedCourseRecord): CourseEntry => ({
     key: `remote-${record.id}`,
@@ -78,6 +120,143 @@ export function useCourseGenerationActions({
     return record ? entryFromGeneratedRecord(record) : course;
   }, [entryFromGeneratedRecord]);
 
+  const syncGenerationStatusFromJob = useCallback((job: LyciumCourseGenerationJob) => {
+    setGenerateProgress(job.progress ?? 0);
+    setGenerateMessage(courseGenerationSpecificStatusMessage(job) || generationWorkflowMessage(job));
+    setGenerateTitle(courseGenerationWorkingTitle(job) || "New Course");
+  }, []);
+
+  const finishCourseGenerationJob = useCallback((
+    job: LyciumCourseGenerationJob,
+    options: PollCourseGenerationOptions = {},
+  ) => {
+    if (job.status === "failed") {
+      throw new Error(job.error || job.message || "Course generation failed.");
+    }
+
+    const generatedSnapshot = generatedCourseRecordFromJob(job);
+    if (!generatedSnapshot) {
+      throw new Error("Course generation finished without a ready course snapshot.");
+    }
+
+    const entry = entryFromGeneratedRecord(generatedSnapshot);
+    const validation = validateCourseEntry(entry, {
+      centralSourceRecords: sourceRecordsData.sources,
+      requireSources: entry.status !== "needs_sources",
+    });
+    if (!validation.valid) {
+      throw new Error(`Generated course failed validation: ${formatCourseValidationErrors(validation.errors)}`);
+    }
+    setCourses((prev) => {
+      const existingIndex = prev.findIndex((current) => (
+        current.key === entry.key ||
+        (entry.snapshotId !== undefined && current.snapshotId === entry.snapshotId)
+      ));
+      if (existingIndex < 0) return [entry, ...prev];
+      return prev.map((current, index) => (index === existingIndex ? entry : current));
+    });
+    if (options.clearPromptOnComplete !== false) {
+      setPrompt("");
+    }
+    setGenerateStatus("success");
+    setGenerateProgress(1);
+    setGenerateTitle(entry.title);
+    setGenerateMessage(
+      entry.status === "needs_sources"
+        ? "Course generated; sources need review."
+        : entry.status === "needs_revision"
+        ? "Course generated; review gates need attention."
+        : "Course generated and ready for review."
+    );
+    if (options.openOnComplete !== false) {
+      void openCourseByEntry(entry);
+    }
+  }, [entryFromGeneratedRecord, openCourseByEntry, setCourses, setPrompt]);
+
+  const pollCourseGenerationJob = useCallback(async (
+    initialJob: LyciumCourseGenerationJob,
+    options: PollCourseGenerationOptions = {},
+  ) => {
+    const jobId = String(initialJob.id);
+    activePollJobIdRef.current = jobId;
+    writeActiveGenerationJobId(jobId);
+    setGenerateStatus("loading");
+
+    try {
+      let job = initialJob;
+      while (isActiveCourseGenerationJob(job)) {
+        if (!mountedRef.current || activePollJobIdRef.current !== jobId) return;
+        syncGenerationStatusFromJob(job);
+        await new Promise((resolve) => window.setTimeout(resolve, COURSE_GENERATION_POLL_INTERVAL_MS));
+        if (!mountedRef.current || activePollJobIdRef.current !== jobId) return;
+        job = await lyciumApi.getCourseGenerationJob(jobId);
+      }
+
+      if (!mountedRef.current || activePollJobIdRef.current !== jobId) return;
+      syncGenerationStatusFromJob(job);
+      finishCourseGenerationJob(job, options);
+      clearActiveGenerationJobId(jobId);
+      activePollJobIdRef.current = null;
+    } catch (err) {
+      if (!mountedRef.current || activePollJobIdRef.current !== jobId) return;
+      console.warn("Course generation failed:", err);
+      clearActiveGenerationJobId(jobId);
+      activePollJobIdRef.current = null;
+      setGenerateStatus("error");
+      setGenerateProgress(0);
+      setGenerateMessage(err instanceof Error ? err.message : "Course generation failed. Is the API running?");
+    }
+  }, [finishCourseGenerationJob, syncGenerationStatusFromJob]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      activePollJobIdRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function recoverActiveGenerationJob() {
+      if (activePollJobIdRef.current) return;
+      let job: LyciumCourseGenerationJob | null = null;
+      const storedJobId = readActiveGenerationJobId();
+
+      if (storedJobId) {
+        try {
+          job = await lyciumApi.getCourseGenerationJob(storedJobId);
+          if (!cancelled) {
+            void pollCourseGenerationJob(job, { clearPromptOnComplete: false, openOnComplete: false });
+          }
+          return;
+        } catch (err) {
+          console.warn("Could not recover saved course generation job:", err);
+          clearActiveGenerationJobId(storedJobId);
+        }
+      }
+
+      const runs = await lyciumApi.listGenerationRuns({ status: "running", limit: 10 });
+      const runningJobId = recoverableCourseGenerationJobId(runs);
+      job = runningJobId ? await lyciumApi.getCourseGenerationJob(runningJobId) : null;
+
+      if (cancelled || !job || !isActiveCourseGenerationJob(job)) {
+        return;
+      }
+
+      void pollCourseGenerationJob(job, { clearPromptOnComplete: false, openOnComplete: false });
+    }
+
+    void recoverActiveGenerationJob().catch((err) => {
+      console.warn("Could not recover active course generation:", err);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pollCourseGenerationJob]);
+
   const handleGenerateCourse = async (
     evt: FormEvent<HTMLFormElement>,
     sourceLinks: string[] = [],
@@ -92,7 +271,9 @@ export function useCourseGenerationActions({
     }
     if (!prompt.trim() || !classification?.category || !classification.department) return;
     setGenerateStatus("loading");
-    setGenerateMessage("Starting course generation...");
+    setGenerateProgress(0);
+    setGenerateTitle("New Course");
+    setGenerateMessage("Creating course template...");
 
     try {
       const inputArtifacts = sourceFiles.length
@@ -110,40 +291,11 @@ export function useCourseGenerationActions({
         source_urls: sourceLinks,
         input_artifacts: inputArtifacts,
       });
-      while (job.status === "queued" || job.status === "running") {
-        const percent = Math.round((job.progress ?? 0) * 100);
-        setGenerateMessage(`${percent}% · ${job.message || job.current_stage || "Generating course..."}`);
-        await new Promise((resolve) => window.setTimeout(resolve, 2500));
-        job = await lyciumApi.getCourseGenerationJob(job.id);
-      }
-
-      if (job.status === "failed") {
-        throw new Error(job.error || job.message || "Course generation failed.");
-      }
-
-      const generatedSnapshot = generatedCourseRecordFromJob(job);
-      if (!generatedSnapshot) {
-        throw new Error("Course generation finished without a ready course snapshot.");
-      }
-
-      const entry = entryFromGeneratedRecord(generatedSnapshot);
-      const validation = validateCourseEntry(entry, {
-        centralSourceRecords: sourceRecordsData.sources,
-        requireSources: true,
-      });
-      if (!validation.valid) {
-        throw new Error(`Generated course failed validation: ${formatCourseValidationErrors(validation.errors)}`);
-      }
-      setCourses((prev) => [entry, ...prev]);
-      setPrompt("");
-      setGenerateStatus("success");
-      setGenerateMessage("Course generated and ready for review.");
-      if (!hasBlockingSourceGaps(entry)) {
-        void openCourseByEntry(entry);
-      }
+      await pollCourseGenerationJob(job, { clearPromptOnComplete: true, openOnComplete: true });
     } catch (err) {
       console.warn("Course generation failed:", err);
       setGenerateStatus("error");
+      setGenerateProgress(0);
       setGenerateMessage(err instanceof Error ? err.message : "Course generation failed. Is the API running?");
     }
   };
@@ -228,6 +380,8 @@ export function useCourseGenerationActions({
   return {
     generateStatus,
     generateMessage,
+    generateProgress,
+    generateTitle,
     publishingCourseKey,
     handleGenerateCourse,
     handlePublishCourse,

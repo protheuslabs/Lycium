@@ -92,7 +92,7 @@ def test_course_generation_jobs_accept_url_file_mixes(
         "app.routes.local_routes.validate_agent_api_key",
         lambda *args, **kwargs: _mock_models("kimi-k2.6:cloud", "llama3.1:70b"),
     )
-    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_queue", lambda: None)
     saved = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
     assert saved.status_code == 200, saved.text
 
@@ -108,6 +108,27 @@ def test_course_generation_jobs_accept_url_file_mixes(
     assert job["request"]["generation_readiness"]["ready"] is True
     assert job["request"]["generation_readiness"]["status"] == "ready"
     assert job["request"]["generation_readiness"]["sourceEvidence"]["submittedEvidenceCount"] >= 3
+
+
+def test_course_generation_jobs_enqueue_zero_source_active_generation(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr(
+        "app.routes.local_routes.validate_agent_api_key",
+        lambda *args, **kwargs: _mock_models("kimi-k2.6:cloud"),
+    )
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_queue", lambda: None)
+    saved = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
+    assert saved.status_code == 200, saved.text
+
+    response = client.post("/v1/agent/courses/jobs", json=_generation_payload([], []))
+
+    assert response.status_code == 202, response.text
+    job = response.json()
+    assert job["status"] == "queued"
+    assert job["request"]["source_urls"] == []
+    assert job["request"]["input_artifacts"] == []
+    assert job["request"]["generation_readiness"]["ready"] is False
+    assert job["request"]["generation_readiness"]["status"] == "needs_sources"
+    assert job.get("course_snapshot") is None
 
 
 def test_course_generation_jobs_hold_under_sourced_url_file_mix_for_source_gaps(client, isolated_local_data) -> None:

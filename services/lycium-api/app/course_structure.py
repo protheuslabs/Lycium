@@ -104,6 +104,26 @@ def block_text(block: dict[str, Any]) -> str:
                 values.extend(str(concept.get(key) or "") for key in ("name", "description"))
     if is_single_concept_card_block(block):
         values.extend(str(block.get(key) or "") for key in ("name", "description"))
+    if block.get("type") in {"equation", "equationBlock", "equation_block"}:
+        values.extend(str(block.get(key) or "") for key in ("equation", "notation", "caption"))
+        equations = block.get("equations")
+        if isinstance(equations, list):
+            values.extend(str(equation) for equation in equations if isinstance(equation, str))
+    if block.get("type") in {"workedExample", "worked_example"}:
+        values.extend(str(block.get(key) or "") for key in ("problem", "workedAnswer", "check"))
+        for key in ("given", "find", "checks"):
+            value = block.get(key)
+            if isinstance(value, list):
+                values.extend(str(item) for item in value if isinstance(item, str))
+        steps = block.get("steps")
+        if isinstance(steps, list):
+            for step in steps:
+                if not isinstance(step, dict):
+                    continue
+                values.extend(str(step.get(key) or "") for key in ("explanation", "equation"))
+                equations = step.get("equations")
+                if isinstance(equations, list):
+                    values.extend(str(equation) for equation in equations if isinstance(equation, str))
     if isinstance(block.get("questions"), list):
         for question in block["questions"]:
             if isinstance(question, dict):

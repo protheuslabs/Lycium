@@ -147,6 +147,27 @@ def test_generation_outline_fallback_uses_prompt_goals_for_macro_example() -> No
     assert "stoichiometry" not in all_keywords
 
 
+def test_section_planning_uses_lesson_titles_when_module_concepts_are_missing() -> None:
+    report = run_module_section_plan_workflow(
+        {
+            "id": "module-1",
+            "title": "Module 1: Choice, Scarcity, and Market Coordination",
+            "lessonTitles": [
+                "Opportunity Cost and Marginal Thinking",
+                "Demand, Supply, and Market Equilibrium",
+            ],
+        },
+        fallback_source_ids=[],
+        module_number=1,
+    )
+
+    plans = report["artifacts"]["sectionPlans"]
+
+    assert plans[0]["conceptKeywords"] == ["Opportunity Cost", "Marginal Thinking"]
+    assert plans[1]["conceptKeywords"] == ["Demand", "Supply", "Market Equilibrium"]
+    assert all("Choice, Scarcity, and Market Coordination" not in plan["conceptKeywords"] for plan in plans)
+
+
 def test_needs_sources_course_preserves_coverage_handoff_metadata() -> None:
     with db.SessionLocal() as session:
         snapshot = create_needs_sources_course_snapshot(

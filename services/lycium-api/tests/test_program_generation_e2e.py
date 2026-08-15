@@ -447,7 +447,7 @@ def test_program_course_shell_resumes_with_source_packet_into_quality_gated_cour
         "app.routes.course_source_gap_routes.require_verified_active_agent_profile",
         lambda: {"provider_id": "local-model", "model": "test-model", "agent_api_key": "local"},
     )
-    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_job", lambda _job_id: None)
+    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_queue", lambda: None)
     resume_response = client.post(
         f"/v1/courses/{shell_id}/source-gaps/resume",
         json={"source_packet": source_packet},

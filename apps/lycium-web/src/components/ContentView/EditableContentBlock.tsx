@@ -72,6 +72,45 @@ function imageCreditLine(item: ContentBlock) {
     .join(" · ");
 }
 
+function stringItems(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim())
+    : [];
+}
+
+function workedExampleAnswer(block: ContentBlock): string {
+  const rawAnswer = (block as Record<string, unknown>).workedAnswer ?? (block as Record<string, unknown>).answer;
+  return typeof rawAnswer === "string" || typeof rawAnswer === "number" ? String(rawAnswer) : "";
+}
+
+function workedExampleCheckItems(block: ContentBlock): string[] {
+  const checks = stringItems(block.checks);
+  if (checks.length > 0) {
+    return checks;
+  }
+  return typeof block.check === "string" && block.check.trim() ? [block.check.trim()] : [];
+}
+
+function workedExampleSteps(block: ContentBlock) {
+  return Array.isArray(block.steps)
+    ? block.steps.filter((step) => step && typeof step === "object")
+    : [];
+}
+
+function equationBlockLines(block: ContentBlock): string[] {
+  const lines = [
+    ...(typeof block.equation === "string" && block.equation.trim() ? [block.equation.trim()] : []),
+    ...stringItems(block.equations),
+  ];
+  if (lines.length > 0) {
+    return lines;
+  }
+  const fallback = block.value ?? block.text ?? block.body;
+  return typeof fallback === "string" && fallback.trim()
+    ? fallback.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+    : [];
+}
+
 export default function EditableContentBlock({
   block,
   blockIndex,
@@ -225,6 +264,153 @@ export default function EditableContentBlock({
         </h3>,
         undefined,
         false,
+      );
+    }
+
+    case "equation":
+    case "equationBlock":
+    case "equation_block": {
+      const title = block.title ?? block.heading ?? "";
+      const lines = equationBlockLines(block);
+      const caption = block.caption ?? block.description ?? "";
+
+      return editShell(
+        <figure className="equation-block">
+          {title && (
+            <figcaption className="equation-block-title course-editable-line">
+              <span className="course-editable-line-content">{renderCitationText(title, onCitationClick)}</span>
+              {isEditMode && (
+                <EditPencilButton
+                  label="Edit equation title"
+                  onClick={() => promptForText("Edit equation title", title, (nextTitle) => updateBlock({ ...block, title: nextTitle }))}
+                />
+              )}
+            </figcaption>
+          )}
+          <div className="equation-block-lines" aria-label={title || "Equation"}>
+            {(lines.length > 0 ? lines : ["equation = value"]).map((equation, equationIndex) => (
+              <code key={`${equationIndex}-${equation}`}>{equation}</code>
+            ))}
+          </div>
+          {caption && (
+            <figcaption className="equation-block-caption course-editable-line">
+              <span className="course-editable-line-content">{renderCitationText(caption, onCitationClick)}</span>
+              {isEditMode && (
+                <EditPencilButton
+                  label="Edit equation caption"
+                  onClick={() => promptForText("Edit equation caption", caption, (nextCaption) => updateBlock({ ...block, caption: nextCaption }))}
+                />
+              )}
+            </figcaption>
+          )}
+        </figure>,
+        <EditPencilButton
+          label="Edit equation lines"
+          onClick={() => promptForText("Edit equation lines", lines.join("\n"), (value) => updateBlock({
+            ...block,
+            equations: value
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter(Boolean),
+          }))}
+        />,
+      );
+    }
+
+    case "workedExample":
+    case "worked_example": {
+      const title = block.title ?? block.heading ?? "Worked example";
+      const problem = block.problem ?? block.value ?? block.text ?? "";
+      const given = stringItems(block.given);
+      const find = stringItems(block.find);
+      const steps = workedExampleSteps(block);
+      const answer = workedExampleAnswer(block);
+      const checks = workedExampleCheckItems(block);
+
+      return editShell(
+        <article className="worked-example-block">
+          <div className="worked-example-header course-editable-line">
+            <h3 className="course-editable-line-content">
+              {renderCitationText(title, onCitationClick)}
+              {!problem && blockCitation}
+            </h3>
+            {isEditMode && (
+              <EditPencilButton
+                label="Edit worked example title"
+                onClick={() => promptForText("Edit worked example title", title, (nextTitle) => updateBlock({ ...block, title: nextTitle }))}
+              />
+            )}
+          </div>
+
+          {problem && (
+            <div className="worked-example-section">
+              <h4>Problem</h4>
+              <p className="course-editable-line">
+                <span className="course-editable-line-content">
+                  {renderCitationText(problem, onCitationClick)}
+                </span>
+                {isEditMode && (
+                  <EditPencilButton
+                    label="Edit worked example problem"
+                    onClick={() => promptForText("Edit worked example problem", problem, (nextProblem) => updateBlock({ ...block, problem: nextProblem }))}
+                  />
+                )}
+              </p>
+            </div>
+          )}
+
+          {(given.length > 0 || find.length > 0) && (
+            <div className="worked-example-two-column">
+              {given.length > 0 && <WorkedExampleList title="Given" items={given} onCitationClick={onCitationClick} />}
+              {find.length > 0 && <WorkedExampleList title="Find" items={find} onCitationClick={onCitationClick} />}
+            </div>
+          )}
+
+          {steps.length > 0 && (
+            <div className="worked-example-section">
+              <h4>Solution</h4>
+              <ol className="worked-example-steps">
+                {steps.map((step, stepIndex) => {
+                  const equations = [
+                    ...(typeof step.equation === "string" && step.equation.trim() ? [step.equation.trim()] : []),
+                    ...stringItems(step.equations),
+                  ];
+                  return (
+                    <li key={`${stepIndex}-${step.explanation ?? equations.join("|")}`}>
+                      {step.explanation && <p>{renderCitationText(step.explanation, onCitationClick)}</p>}
+                      {equations.length > 0 && (
+                        <div className="worked-example-equations" aria-label={`Equation step ${stepIndex + 1}`}>
+                          {equations.map((equation, equationIndex) => (
+                            <code key={`${equationIndex}-${equation}`}>{equation}</code>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          )}
+
+          {answer && (
+            <div className="worked-example-answer">
+              <h4>Answer</h4>
+              <p>{renderCitationText(answer, onCitationClick)}</p>
+            </div>
+          )}
+
+          {checks.length > 0 && <WorkedExampleList title="Check" items={checks} onCitationClick={onCitationClick} />}
+        </article>,
+        <>
+          <EditPencilButton
+            label="Edit worked example title"
+            onClick={() => promptForText("Edit worked example title", title, (nextTitle) => updateBlock({ ...block, title: nextTitle }))}
+          />
+          <EditPencilButton
+            label="Edit worked example answer"
+            onClick={() => promptForText("Edit worked example answer", answer, (workedAnswer) => updateBlock({ ...block, workedAnswer }))}
+          />
+        </>,
       );
     }
 
@@ -415,6 +601,27 @@ function BlockCitationBadge({
         [!]
       </button>
     </sup>
+  );
+}
+
+function WorkedExampleList({
+  title,
+  items,
+  onCitationClick,
+}: {
+  title: string;
+  items: string[];
+  onCitationClick?: (citationIndex: number) => void;
+}) {
+  return (
+    <div className="worked-example-section">
+      <h4>{title}</h4>
+      <ul>
+        {items.map((item, index) => (
+          <li key={`${index}-${item}`}>{renderCitationText(item, onCitationClick)}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

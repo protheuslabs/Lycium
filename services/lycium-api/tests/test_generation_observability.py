@@ -220,11 +220,17 @@ def test_generation_job_mirrors_file_backed_source_gap_resume_report(client, tmp
     monkeypatch.setattr(
         "app.jobs.assess_course_quality",
         lambda *_args, **_kwargs: {
+            "gate": "generation",
             "passed": False,
             "score": 0.72,
             "errors": ["source_grounding: Missing section-level citation support."],
             "warnings": [],
+            "metrics": {},
             "gates": [{"gate": "source_grounding", "status": "failed"}],
+            "evals": None,
+            "workflow": {"gates": [{"gate": "source_grounding", "status": "failed"}]},
+            "checkedAt": "2026-08-14T00:00:00+00:00",
+            "contractVersion": "COURSE_AGENT_CONTRACT.md",
         },
     )
 
@@ -278,7 +284,16 @@ def test_generation_job_mirrors_file_backed_source_gap_resume_report(client, tmp
     mirrored = json.loads(mirror_path.read_text())
     mirrored_summary = mirrored["run"]["result_summary"]
 
-    assert run_payload["status"] == "failed"
+    job_response = client.get(f"/v1/agent/courses/jobs/{job_id}")
+    assert job_response.status_code == 200, job_response.text
+    job_payload = job_response.json()
+
+    assert run_payload["status"] == "completed"
+    assert run_payload["current_stage"] == "needs_revision"
+    assert job_payload["status"] == "ready"
+    assert job_payload["quality_report"]["passed"] is False
+    assert job_payload["course_snapshot"]["status"] == "needs_revision"
+    assert job_payload["message"] == "Course generated; review gates need attention."
     assert mirrored_summary["inputs"]["sourceUrlCount"] == 2
     assert mirrored_summary["inputs"]["inputArtifactCount"] == 1
     assert mirrored_summary["inputs"]["usableInputArtifactCount"] == 1
@@ -295,3 +310,55 @@ def test_generation_job_mirrors_file_backed_source_gap_resume_report(client, tmp
     assert mirrored_summary["sourceCorpus"]["excludedSourceCount"] == 1
     assert mirrored_summary["gateSummary"]["failedGates"] == ["source_grounding"]
     assert mirrored_summary["qualityScore"] == 0.72
+    assert mirrored_summary["qualityPassed"] is False
+
+
+def test_synchronous_agent_generation_saves_needs_revision_when_quality_fails(client, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.routes.course_outline_routes.generation_readiness_for_request",
+        lambda *_args, **_kwargs: {"ready": True, "status": "ready"},
+    )
+    monkeypatch.setattr(
+        "app.routes.course_outline_routes.require_verified_active_agent_profile",
+        lambda: {"agent_api_key": "test-key", "provider_id": "local-model", "model": "test-model"},
+    )
+    monkeypatch.setattr(
+        "app.routes.course_outline_routes.generate_course_with_agent_staged",
+        lambda **_kwargs: SimpleNamespace(
+            course={"title": "Quality Needs Work", "modules": [], "metadata": {}},
+            trace={"mode": "staged-llm-agent", "stages": []},
+        ),
+    )
+    monkeypatch.setattr(
+        "app.routes.course_outline_routes.assess_agent_generation_result",
+        lambda *_args, **_kwargs: {
+            "gate": "review",
+            "passed": False,
+            "score": 0.68,
+            "errors": ["outline_coverage: Missing planned concept coverage."],
+            "warnings": [],
+            "metrics": {},
+            "gates": [{"gate": "outline_coverage", "status": "failed"}],
+            "evals": None,
+            "workflow": {"gates": [{"gate": "outline_coverage", "status": "failed"}]},
+            "checkedAt": "2026-08-14T00:00:00+00:00",
+            "contractVersion": "COURSE_AGENT_CONTRACT.md",
+        },
+    )
+
+    response = client.post(
+        "/v1/agent/courses/generate",
+        json={
+            "prompt": "Create an undergrad quality-gate test course",
+            "level": "undergrad",
+            "category": "business-management",
+            "department": "economics",
+            "desired_module_count": 1,
+            "expected_duration_minutes": 90,
+        },
+    )
+
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["status"] == "needs_revision"
+    assert body["generation_trace"]["quality_report"]["passed"] is False

@@ -76,7 +76,7 @@ def test_local_source_gap_resume_publish_progress_workflow(client, monkeypatch) 
         "app.routes.course_source_gap_routes.require_verified_active_agent_profile",
         lambda: {"provider_id": "local-model", "model": "mvp-test-model", "agent_api_key": "local"},
     )
-    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_source_gap_routes.run_agent_course_generation_queue", lambda: None)
 
     queued = client.post(
         f"/v1/courses/{source_gap_snapshot_id}/source-gaps/resume",

@@ -27,6 +27,17 @@ def _source_record_count(course: dict[str, Any]) -> int:
     return 0
 
 
+def _is_needs_sources_course(course: dict[str, Any]) -> bool:
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    readiness = metadata.get("generationReadiness") if isinstance(metadata.get("generationReadiness"), dict) else {}
+    statuses = {
+        str(course.get("status") or "").strip(),
+        str(metadata.get("status") or "").strip(),
+        str(readiness.get("status") or "").strip(),
+    }
+    return "needs_sources" in statuses
+
+
 def _iter_sections(course: dict[str, Any]):
     for module in course.get("modules", []):
         if not isinstance(module, dict):
@@ -49,19 +60,27 @@ def assess_course_quality(course: dict[str, Any], *, gate: str = "publish") -> d
     workflow_report = run_course_generation_workflow(course)
     workflow = workflow_report.model_dump(mode="json")
     eval_report = run_course_quality_evals(course)
-    errors = [
-        f"{gate_result['gate']}: {issue['message']}"
-        for gate_result in workflow["gates"]
-        for issue in gate_result["issues"]
-        if issue["severity"] == "error"
-    ]
-    errors.extend(
-        f"{dimension['label']}: {finding['message']}"
-        for dimension in eval_report["dimensions"]
-        for finding in dimension["findings"]
-        if finding["severity"] == "error"
-    )
     warnings: list[str] = []
+    errors: list[str] = []
+    source_gap_generation_draft = gate == "generation" and _is_needs_sources_course(course)
+    for gate_result in workflow["gates"]:
+        for issue in gate_result["issues"]:
+            if issue["severity"] != "error":
+                continue
+            message = f"{gate_result['gate']}: {issue['message']}"
+            if source_gap_generation_draft and gate_result["gate"] == "review_publish":
+                warnings.append(message)
+            else:
+                errors.append(message)
+    for dimension in eval_report["dimensions"]:
+        for finding in dimension["findings"]:
+            if finding["severity"] != "error":
+                continue
+            message = f"{dimension['label']}: {finding['message']}"
+            if source_gap_generation_draft and dimension["key"] == "source_grounding":
+                warnings.append(message)
+            else:
+                errors.append(message)
     sections = list(_iter_sections(course))
     modules = [module for module in course.get("modules", []) if isinstance(module, dict)]
     learn_sections = [section for section in sections if section.get("pageType") == "learn"]

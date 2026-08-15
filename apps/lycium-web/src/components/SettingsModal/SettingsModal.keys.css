@@ -282,7 +282,8 @@
 }
 
 .settings-key-row[data-connection-status="unverified"] .settings-key-state,
-.settings-key-row[data-connection-status="missing_model"] .settings-key-state {
+.settings-key-row[data-connection-status="missing_model"] .settings-key-state,
+.settings-key-row[data-connection-status="model_error"] .settings-key-state {
   color: #7c2d12;
   background: rgba(251, 146, 60, 0.22);
 }

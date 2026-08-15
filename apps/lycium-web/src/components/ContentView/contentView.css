@@ -124,6 +124,144 @@
   justify-content: flex-end;
 }
 
+.worked-example-block {
+  display: grid;
+  gap: 1rem;
+  margin: 1.35rem 0;
+  padding: 1rem;
+  border: 1px solid var(--lycium-color-border, rgba(31, 41, 55, 0.14));
+  border-left: 4px solid #4a6cf7;
+  border-radius: 8px;
+  background: rgba(74, 108, 247, 0.045);
+}
+
+.worked-example-header h3,
+.worked-example-section h4,
+.worked-example-answer h4 {
+  margin: 0;
+}
+
+.worked-example-header h3 {
+  color: var(--text-primary, #162018);
+  font-size: 1.02rem;
+}
+
+.worked-example-section,
+.worked-example-answer {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.worked-example-section h4,
+.worked-example-answer h4 {
+  color: var(--text-primary, #162018);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.worked-example-section p,
+.worked-example-answer p,
+.worked-example-section ul,
+.worked-example-steps {
+  margin: 0;
+}
+
+.worked-example-section ul,
+.worked-example-steps {
+  padding-left: 1.2rem;
+}
+
+.worked-example-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.worked-example-steps {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.worked-example-steps li {
+  padding-left: 0.2rem;
+}
+
+.worked-example-steps p {
+  margin: 0 0 0.45rem;
+}
+
+.worked-example-equations {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+}
+
+.worked-example-equations code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid rgba(74, 108, 247, 0.18);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.74);
+  color: #1f2937;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  white-space: pre;
+}
+
+.equation-block {
+  display: grid;
+  gap: 0.45rem;
+  margin: 1rem 0;
+}
+
+.equation-block-title,
+.equation-block-caption {
+  margin: 0;
+  color: var(--text-secondary, #4b5563);
+  font-size: 0.9rem;
+}
+
+.equation-block-title {
+  color: var(--text-primary, #162018);
+  font-weight: 700;
+}
+
+.equation-block-lines {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+}
+
+.equation-block-lines code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.7rem;
+  border-left: 3px solid #4a6cf7;
+  background: rgba(31, 41, 55, 0.045);
+  color: #111827;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.worked-example-answer {
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.08);
+}
+
 .progress-percentage {
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
@@ -425,6 +563,42 @@
     color: #fca5a5;
   }
 
+  .worked-example-block {
+    border-color: #303033;
+    border-left-color: #b9c8ff;
+    background: rgba(128, 150, 255, 0.08);
+  }
+
+  .worked-example-header h3,
+  .worked-example-section h4,
+  .worked-example-answer h4 {
+    color: #f8fafc;
+  }
+
+  .worked-example-equations code {
+    border-color: rgba(185, 200, 255, 0.24);
+    background: rgba(15, 23, 42, 0.72);
+    color: #e5e7eb;
+  }
+
+  .equation-block-title {
+    color: #f8fafc;
+  }
+
+  .equation-block-caption {
+    color: #cbd5e1;
+  }
+
+  .equation-block-lines code {
+    border-left-color: #b9c8ff;
+    background: rgba(15, 23, 42, 0.72);
+    color: #e5e7eb;
+  }
+
+  .worked-example-answer {
+    background: rgba(74, 222, 128, 0.08);
+  }
+
   .concept-card-stack-title {
     color: #f8fafc;
   }
@@ -455,6 +629,12 @@
     background: #3a3a3d;
     border-color: #3a3a3d;
     color: rgba(255, 255, 255, 0.62);
+  }
+}
+
+@media (max-width: 680px) {
+  .worked-example-two-column {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -490,6 +670,42 @@
     linear-gradient(145deg, rgba(31, 41, 55, 0.98), rgba(15, 23, 42, 0.96)),
     #171717;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .worked-example-block {
+  border-color: #303033;
+  border-left-color: #b9c8ff;
+  background: rgba(128, 150, 255, 0.08);
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .worked-example-header h3,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .worked-example-section h4,
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .worked-example-answer h4 {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .worked-example-equations code {
+  border-color: rgba(185, 200, 255, 0.24);
+  background: rgba(15, 23, 42, 0.72);
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .equation-block-title {
+  color: #f8fafc;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .equation-block-caption {
+  color: #cbd5e1;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .equation-block-lines code {
+  border-left-color: #b9c8ff;
+  background: rgba(15, 23, 42, 0.72);
+  color: #e5e7eb;
+}
+
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .worked-example-answer {
+  background: rgba(74, 222, 128, 0.08);
 }
 
 html[data-theme="light"] .content-view {

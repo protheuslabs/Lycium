@@ -373,6 +373,131 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
     assert result.course["metadata"]["courseBuildOutline"]["modules"][0]["planningSource"] == "source_packet"
 
 
+def test_staged_agent_generates_with_zero_sources(monkeypatch) -> None:
+    def fake_plan_call(*args: Any, **kwargs: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+        return (
+            {
+                "title": "Introductory Macroeconomics",
+                "shortDescription": "A draft course that teaches core macroeconomics without source claims.",
+                "difficultyLevel": "undergrad",
+                "modules": [
+                    {
+                        "title": "GDP and National Income",
+                        "objective": "Explain GDP, its components, and common measurement limits.",
+                        "sections": [
+                            {
+                                "title": "GDP foundations",
+                                "learning_objectives": ["Define GDP and distinguish nominal from real GDP."],
+                                "concept_keywords": ["GDP", "nominal GDP", "real GDP"],
+                            }
+                        ],
+                    }
+                ],
+            },
+            {"usage": {}},
+        )
+
+    def fake_module_bundle(**kwargs: Any) -> dict[str, Any]:
+        module_outline = kwargs["module_outline"]
+        return {
+            "module": {
+                "id": "module-1",
+                "title": module_outline["title"],
+                "sections": [
+                    {
+                        "id": "section-1",
+                        "title": "GDP foundations",
+                        "pageType": "learn",
+                        "sectionType": "lesson",
+                        "sourceIds": [],
+                        "content": [
+                            {"type": "text", "value": "Gross domestic product measures the market value of final goods and services produced within an economy during a period."},
+                            {"type": "heading", "title": "Concepts introduced"},
+                            {
+                                "type": "conceptCard",
+                                "title": "GDP",
+                                "description": "GDP is a production measure, so it excludes most intermediate goods and nonmarket work.",
+                                "items": ["Final goods and services", "Produced within a country", "Measured over time"],
+                            },
+                        ],
+                    },
+                    {
+                        "id": "section-quiz",
+                        "title": "Quiz: GDP",
+                        "pageType": "apply",
+                        "sectionType": "assessment",
+                        "content": [
+                            {
+                                "type": "quiz",
+                                "questions": [
+                                    {
+                                        "id": f"q{index}",
+                                        "question": f"Which choice best applies GDP measurement rule {index}?",
+                                        "options": [
+                                            "Count only final production during the period.",
+                                            "Count every intermediate sale separately.",
+                                            "Count only financial asset trades.",
+                                            "Ignore market production.",
+                                        ],
+                                        "answers": [0],
+                                        "conceptIds": ["GDP"],
+                                    }
+                                    for index in range(1, 11)
+                                ],
+                            }
+                        ],
+                    },
+                    {
+                        "id": "section-summary",
+                        "title": "Module 1 Concept Review",
+                        "pageType": "learn",
+                        "sectionType": "summary",
+                        "sourceIds": [],
+                        "content": [
+                            {"type": "heading", "title": "Module concepts"},
+                            {
+                                "type": "conceptCard",
+                                "title": "GDP",
+                                "description": "GDP summarizes final production, not every valuable activity.",
+                                "sourceSectionId": "section-1",
+                            },
+                        ],
+                    },
+                ],
+            },
+            "usage": [],
+            "stages": [{"stage": "module_1", "status": "passed"}],
+            "media_logs": [],
+        }
+
+    monkeypatch.setattr("app.course_agent_staged.get_agent_provider", lambda _provider_id: {"id": "test", "defaultModel": "test"})
+    monkeypatch.setattr("app.course_agent_staged.assess_agent_model_capability", lambda _provider, _model: {"status": "ok"})
+    monkeypatch.setattr("app.course_agent_staged._model_json", fake_plan_call)
+    monkeypatch.setattr("app.course_agent_staged._generate_module_bundle", fake_module_bundle)
+
+    result = generate_course_with_agent_staged(
+        prompt="Create an introductory macroeconomics course",
+        api_key="test",
+        provider_id="test",
+        level="undergrad",
+        language="English",
+        source_policy="balanced",
+        desired_module_count=1,
+        expected_duration_minutes=60,
+        source_urls=[],
+        category="business-management",
+        department="economics",
+    )
+
+    assert result.trace["stages"][0] == {"stage": "course_plan", "status": "passed"}
+    assert result.trace["generation_readiness"]["status"] == "needs_sources"
+    assert result.trace["generation_readiness"]["ready"] is False
+    assert result.course["sourceRecords"] == []
+    assert result.course["status"] == "needs_sources"
+    assert result.course["metadata"]["status"] == "needs_sources"
+    assert result.course["modules"][0]["sections"][0]["content"]
+
+
 def test_staged_agent_can_build_outline_packet_from_compiled_source_corpus() -> None:
     source_corpus = SourceCorpusPreflight(
         synthesis={

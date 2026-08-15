@@ -61,6 +61,7 @@ def build_course_snapshot_from_agent_result(
     structure["metadata"] = {
         **metadata,
         **({"generationReadiness": effective_readiness} if isinstance(effective_readiness, dict) else {}),
+        **({"status": status} if status == "needs_sources" else {}),
         "courseHealth": summarize_course_health(
             course_key=str(generated.course.get("id") or generated.course.get("slug") or generated.course.get("title") or "generated-course"),
             course_title=str(generated.course.get("title") or "Generated course"),
@@ -69,6 +70,8 @@ def build_course_snapshot_from_agent_result(
             lifecycle_status=status,
         ),
     }
+    if status == "needs_sources":
+        structure["status"] = status
     snapshot = CourseSnapshot(
         learner_id=learner_id,
         draft_id=None,

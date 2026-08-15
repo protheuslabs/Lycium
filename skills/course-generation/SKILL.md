@@ -123,7 +123,9 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - descriptions should be concise definitions of the concept, not prose summaries of the page
 11. Use editor-native content blocks for generated output:
    - generated sections must be easy for a human to tweak in the course editor
-   - use atomic `text`, `heading`, `conceptCard`, `image`, `visual`, `video`, `iframe`, `quiz`, `flashcardSet`, `project`, `rubric`, and `submission` blocks or objects instead of monolithic markdown or large nested block payloads
+   - use atomic `text`, `heading`, `conceptCard`, `equation`, `workedExample`, `image`, `visual`, `video`, `iframe`, `quiz`, `flashcardSet`, `project`, `rubric`, and `submission` blocks or objects instead of monolithic markdown or large nested block payloads
+   - use `equation` for standalone formulas, symbolic relationships, or calculation lines that need code-like alignment
+   - use `workedExample` only for quantitative, formal, technical, or procedural problems where the learner should see repeatable work; do not use it for interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts
    - use one `conceptCard` block per concept; do not generate a single `conceptCards` stack except when preserving or repairing a legacy course
    - video blocks should not include a filler title by default; use a separate `heading` block if the video needs a visible label
    - quiz questions should include `multiple: true` only when the UI should render checkboxes; single-answer questions should use `answers: [index]` and omit `multiple` or set it false

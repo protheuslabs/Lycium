@@ -104,6 +104,12 @@ export type LyciumProjectGraderWorkflow = {
   feedbackPolicy?: string;
 };
 
+export type LyciumWorkedExampleStep = {
+  explanation?: string;
+  equation?: string;
+  equations?: string[];
+};
+
 export type LyciumVideoClip = {
   startSeconds?: number | string;
   endSeconds?: number | string;
@@ -143,6 +149,16 @@ export type LyciumCourseBlock = {
   answers?: number[];
   name?: string;
   description?: string;
+  equation?: string;
+  equations?: string[];
+  notation?: string;
+  problem?: string;
+  given?: string[];
+  find?: string[];
+  steps?: LyciumWorkedExampleStep[];
+  workedAnswer?: string;
+  check?: string;
+  checks?: string[];
   timed?: "t" | "f" | boolean;
   maxAttempts?: number | string;
   max_attempts?: number | string;
@@ -488,6 +504,8 @@ export type LyciumCourseGenerationJob = {
   progress?: number;
   current_stage?: string | null;
   message?: string | null;
+  workflow_status?: Record<string, unknown> | null;
+  working_title?: string | null;
   course?: LyciumCourseData | null;
   quality_report?: LyciumCourseQualityReport | null;
   trace?: Record<string, unknown>;

@@ -376,13 +376,14 @@ def complete_generation_run(
     quality_report: dict[str, Any],
     course_snapshot_id: int | None = None,
     course_build_task: dict[str, Any] | None = None,
+    current_stage: str | None = None,
 ) -> None:
     run = generation_run_for_job(session, job_id)
     if run is None:
         return
     run.status = "completed" if accepted else "failed"
     run.progress = 1.0
-    run.current_stage = "ready_for_review" if accepted else "quality_eval"
+    run.current_stage = current_stage or ("ready_for_review" if accepted else "quality_eval")
     run.message = message
     run.course_snapshot_id = course_snapshot_id
     run.trace = _safe_trace(trace)

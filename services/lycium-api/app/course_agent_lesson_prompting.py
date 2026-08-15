@@ -52,6 +52,34 @@ def _staged_module_messages(
                         "Assessment does not always mean quiz. Use quiz blocks for short or longer tests, and use project blocks for projects, labs, simulations, portfolio tasks, or rubric-graded applied evidence. "
                         "Project blocks must live in Apply sections and include instructions, requiredEvidence, rubric.criteria, submission.acceptedTypes, and graderWorkflow metadata."
                     ),
+                    "block_selection_rule": (
+                        "Default Learn sections should use explanation text, guided practice text, and concept cards. "
+                        "Add equation blocks for standalone formulas or symbolic relationships. "
+                        "Add workedExample blocks only for quantitative, formal, technical, or procedural problems where learners need repeatable problem/given/find/steps/answer/check work. "
+                        "Do not use workedExample blocks for interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts."
+                    ),
+                    "optional_quantitative_or_procedural_blocks": [
+                        {
+                            "type": "equation",
+                            "title": "Relationship",
+                            "equations": ["target = known relationship"],
+                            "notation": "ascii",
+                            "caption": "Use readable ASCII math and include units when relevant.",
+                        },
+                        {
+                            "type": "workedExample",
+                            "title": "Worked example",
+                            "problem": "Solve a concrete quantitative, formal, technical, or procedural problem.",
+                            "given": ["Known value, condition, formula, or constraint."],
+                            "find": ["Target value, classification, output, or procedure result."],
+                            "steps": [
+                                {"explanation": "Set up the relationship or procedure.", "equation": "target = known relationship"},
+                                {"explanation": "Substitute, simplify, compute, or execute the rule.", "equation": "target = simplified result"},
+                            ],
+                            "workedAnswer": "Final answer with units or interpretation.",
+                            "check": "Check the units, sign, direction, assumption, or practical meaning.",
+                        },
+                    ],
                     "project_section_shape_when_needed": {
                         "id": f"module-{module_number}-project",
                         "title": "Project: Applied module task",
@@ -86,8 +114,7 @@ def _staged_module_messages(
                                 "sourceIds": source_ids,
                                 "content": [
                                     {"type": "text", "heading": "Explanation", "value": "Direct learner-facing teaching prose."},
-                                    {"type": "text", "heading": "Worked example", "value": "Concrete example."},
-                                    {"type": "text", "heading": "Practice", "value": "Learner action prompt."},
+                                    {"type": "text", "heading": "Guided practice", "value": "Learner action prompt, self-check, or evidence-based practice activity."},
                                     {
                                         "type": "heading",
                                         "title": "Concepts introduced",
@@ -190,6 +217,34 @@ def _staged_lesson_messages(
                         "Treat section_outline as binding when present. Teach section_outline.concept_keywords, "
                         "preserve section_outline.sourceIds as the section sourceIds, and only use inline citation markers for those assigned sources."
                     ),
+                    "block_selection_rule": (
+                        "Default Learn sections should use explanation text, guided practice text, and concept cards. "
+                        "Add equation blocks for standalone formulas or symbolic relationships. "
+                        "Add workedExample blocks only for quantitative, formal, technical, or procedural problems where learners need repeatable problem/given/find/steps/answer/check work. "
+                        "Do not use workedExample blocks for interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts."
+                    ),
+                    "optional_quantitative_or_procedural_blocks": [
+                        {
+                            "type": "equation",
+                            "title": "Relationship",
+                            "equations": ["target = known relationship"],
+                            "notation": "ascii",
+                            "caption": "Use readable ASCII math and include units when relevant.",
+                        },
+                        {
+                            "type": "workedExample",
+                            "title": "Worked example",
+                            "problem": "Solve a concrete quantitative, formal, technical, or procedural problem.",
+                            "given": ["Known value, condition, formula, or constraint."],
+                            "find": ["Target value, classification, output, or procedure result."],
+                            "steps": [
+                                {"explanation": "Set up the relationship or procedure. Use inline citation markers only when they resolve to assigned sources.", "equation": "target = known relationship"},
+                                {"explanation": "Substitute, simplify, compute, or execute the rule.", "equation": "target = simplified result"},
+                            ],
+                            "workedAnswer": "Final answer with units or interpretation.",
+                            "check": "Check the units, sign, direction, assumption, or practical meaning.",
+                        },
+                    ],
                     "required_shape": {
                         "id": (lesson_outline or {}).get("id") or f"module-{module_number}-lesson-{lesson_number}",
                         "title": lesson_title,
@@ -198,8 +253,7 @@ def _staged_lesson_messages(
                         "sourceIds": source_ids,
                         "content": [
                             {"type": "text", "heading": "Explanation", "value": "Teach the core idea directly in learner-facing prose. Add [1] when the sentence is grounded in the first local source."},
-                            {"type": "text", "heading": "Worked example", "value": "Show a concrete problem or classification example with reasoning. Use inline citation markers only when they resolve to course-wide source index entries also connected to this section or block through sourceIds."},
-                            {"type": "text", "heading": "Practice", "value": "Give the learner a short action prompt or self-check."},
+                            {"type": "text", "heading": "Guided practice", "value": "Give the learner a short action prompt, self-check, or evidence-based practice activity."},
                             {
                                 "type": "heading",
                                 "title": "Concepts introduced",

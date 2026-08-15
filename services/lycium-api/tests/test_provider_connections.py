@@ -6,10 +6,13 @@ from typing import Iterator
 
 import pytest
 
+from app import db
 from app.config import SETTINGS
 from app.course_agent_providers import RUNTIME_BRIDGE_PATH
 from app.course_agent_types import CourseAgentError
-from app.local_store import get_active_agent_profile
+from app.jobs import run_agent_course_generation_job
+from app.local_store import get_active_agent_profile, mark_agent_model_error, require_verified_active_agent_profile
+from app.models import Job
 
 
 @pytest.fixture()
@@ -145,7 +148,7 @@ def test_underpowered_local_model_is_saved_but_blocks_course_generation(client, 
         "app.routes.local_routes.validate_agent_api_key",
         lambda *args, **kwargs: _mock_models("qwen2.5:3b", "llama3.1:70b"),
     )
-    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_queue", lambda: None)
 
     saved = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
 
@@ -259,6 +262,80 @@ def test_model_update_refreshes_stale_saved_model_cache(client, monkeypatch, iso
     assert [model["id"] for model in key["models"]] == ["codex", "gpt-5.5"]
 
 
+def test_model_error_marker_keeps_model_visible_but_blocks_generation(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr(
+        "app.routes.local_routes.validate_agent_api_key",
+        lambda *args, **kwargs: _mock_models("kimi-k2.6:cloud", "kimi-k3:cloud"),
+    )
+    saved = client.put(
+        "/v1/local/settings",
+        json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"},
+    )
+    key_id = saved.json()["agent_keys"][0]["id"]
+    selected = client.put("/v1/local/settings/key-model", json={"key_id": key_id, "model": "kimi-k3:cloud"})
+    assert selected.status_code == 200, selected.text
+
+    marked = mark_agent_model_error(key_id, "kimi-k3:cloud", "402 Payment Required: extra usage balance is empty.")
+
+    key = marked["agent_keys"][0]
+    kimi_k3 = next(model for model in key["models"] if model["id"] == "kimi-k3:cloud")
+    assert kimi_k3["disabled"] is True
+    assert "402 Payment Required" in kimi_k3["error"]
+    with pytest.raises(ValueError, match="kimi-k3:cloud is currently unavailable"):
+        require_verified_active_agent_profile()
+
+
+def test_generation_job_marks_payment_blocked_model(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr(
+        "app.routes.local_routes.validate_agent_api_key",
+        lambda *args, **kwargs: _mock_models("kimi-k2.6:cloud", "kimi-k3:cloud"),
+    )
+    saved = client.put(
+        "/v1/local/settings",
+        json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"},
+    )
+    key_id = saved.json()["agent_keys"][0]["id"]
+
+    def fail_with_payment_error(**_kwargs):
+        raise CourseAgentError(
+            "LLM API rejected the request after 1 attempt(s): 402 Payment Required: extra usage balance is empty.",
+            trace={
+                "provider_http_status": 402,
+                "provider_attempts": [
+                    {"attempt": 1, "status_code": 402, "detail": "extra usage balance is empty."}
+                ],
+                "provider_id": "local-model",
+                "model": "kimi-k2.6:cloud",
+            },
+        )
+
+    monkeypatch.setattr("app.jobs.generate_course_with_agent_staged", fail_with_payment_error)
+    with db.SessionLocal() as session:
+        job = Job(
+            job_type="agent_generate_course_staged",
+            payload={
+                "prompt": "Create a test course",
+                "provider_id": "local-model",
+                "model": "kimi-k2.6:cloud",
+                "desired_module_count": 1,
+            },
+            status="queued",
+            result={},
+        )
+        session.add(job)
+        session.flush()
+        job_id = job.id
+        session.commit()
+
+    run_agent_course_generation_job(job_id)
+
+    settings = client.get("/v1/local/settings").json()
+    key = next(agent_key for agent_key in settings["agent_keys"] if agent_key["id"] == key_id)
+    model = next(model for model in key["models"] if model["id"] == "kimi-k2.6:cloud")
+    assert model["disabled"] is True
+    assert "402 Payment Required" in model["error"]
+
+
 def test_active_provider_switch_persists_selected_provider_and_model(client, monkeypatch, isolated_local_data) -> None:
     monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", _provider_models)
 
@@ -288,7 +365,7 @@ def test_active_provider_switch_persists_selected_provider_and_model(client, mon
 
 def test_generation_job_uses_active_provider_model_after_switch(client, monkeypatch, isolated_local_data) -> None:
     monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", _provider_models)
-    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_queue", lambda: None)
     client.put("/v1/local/settings", json={"provider_id": "openai", "agent_api_key": "sk-valid-openai"})
     anthropic = client.put("/v1/local/settings", json={"provider_id": "anthropic", "agent_api_key": "sk-valid-anthropic"})
     anthropic_key = next(key for key in anthropic.json()["agent_keys"] if key["provider_id"] == "anthropic")
@@ -339,7 +416,7 @@ def test_unverified_active_local_key_blocks_generation(client, monkeypatch, isol
 
 def test_generation_job_preserves_bounded_stage_timeout(client, monkeypatch, isolated_local_data) -> None:
     monkeypatch.setattr("app.routes.local_routes.validate_agent_api_key", _provider_models)
-    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_job", lambda job_id: None)
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_queue", lambda: None)
     client.put("/v1/local/settings", json={"provider_id": "openai", "agent_api_key": "sk-valid-openai"})
 
     response = client.post(

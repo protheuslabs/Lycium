@@ -66,6 +66,38 @@ def test_curriculum_context_derives_requirements_origins_and_source_slots() -> N
     assert "benchmark_intake" in context["workflowGates"]
 
 
+def test_prompt_only_synthetic_context_does_not_override_model_outline() -> None:
+    context = compile_curriculum_benchmark_context(
+        prompt=(
+            "Create an introductory microeconomics course for college students. "
+            "It should teach scarcity, opportunity cost, supply and demand, elasticity, "
+            "consumer choice, production costs, market structures, externalities, and public goods."
+        ),
+        source_urls=[],
+        category="business-management",
+        department="economics",
+    )
+    modules = _coerce_plan_modules(
+        {
+            "modules": [
+                {
+                    "id": "module-1",
+                    "title": "Module 1: Supply, Demand, and Market Equilibrium",
+                    "lessonTitles": ["Demand", "Supply", "Equilibrium"],
+                }
+            ]
+        },
+        4,
+        benchmark_context=context,
+    )
+
+    assert context["curriculumBenchmarks"][0]["id"] == "benchmark-generated-intake"
+    assert context["requirementOrigins"] == []
+    assert context["sourceSlots"] == []
+    assert modules[0]["title"] == "Module 1: Supply, Demand, and Market Equilibrium"
+    assert all("Students" not in module["title"] for module in modules)
+
+
 def test_source_corpus_preflight_filters_irrelevant_sources() -> None:
     preflight = compile_source_corpus_preflight(
         prompt="Macroeconomics Principles covering GDP, inflation, unemployment, aggregate demand, monetary policy, and trade",
@@ -471,4 +503,3 @@ def test_curriculum_artifacts_are_persisted_as_course_records(client) -> None:
     response = client.get(f"/v1/courses/{course_snapshot_id}/curriculum-artifacts")
     assert response.status_code == 200, response.text
     assert response.json()["artifactReferences"] == artifacts["artifactReferences"]
-

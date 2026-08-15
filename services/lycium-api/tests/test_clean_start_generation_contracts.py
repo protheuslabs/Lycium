@@ -22,6 +22,8 @@ from app.course_agent_source_context import build_source_context_index, compact_
 from app.file_input_reader import read_generation_input_files
 from app.course_outline_from_source_packet import build_outline_from_source_packet
 from app.course_source_gaps import _attach_source_index_suggestions
+from app.course_agent_contract import validate_course_contract
+from app.course_quality import assess_course_quality
 from app.course_quality_evals import run_course_quality_evals
 from app.source_packet_quality_gate import source_packet_quality_gate
 from app.source_corpus import SourceCorpusPreflight, compile_generation_source_corpus
@@ -44,6 +46,18 @@ def _content_blocks(course: dict[str, Any]) -> list[dict[str, Any]]:
                 continue
             blocks.extend(block for block in section.get("content", []) if isinstance(block, dict))
     return blocks
+
+
+def _without_source_refs(value: Any) -> Any:
+    if isinstance(value, list):
+        return [_without_source_refs(item) for item in value]
+    if isinstance(value, dict):
+        return {
+            key: _without_source_refs(item)
+            for key, item in value.items()
+            if key not in {"sourceIds", "sourceRecords"}
+        }
+    return value
 
 
 def test_strict_source_packet_gate_blocks_publishable_full_course_claims_without_packet() -> None:
@@ -137,6 +151,27 @@ def test_under_sourced_generation_fixture_stays_as_review_marked_best_effort_dra
     assert draft["metadata"]["sourceGaps"][0]["severity"] == "blocking"
     assert draft["modules"][0]["sections"][0]["sectionType"] == "lesson"
     assert all(block.get("type") != "quiz" for block in _content_blocks(draft))
+
+
+def test_needs_sources_generation_save_allows_complete_zero_source_course() -> None:
+    course = _without_source_refs(source_backed_course_from_scenario("intro-programming-foundations"))
+    course["sourceIds"] = []
+    course["sourceRecords"] = []
+    course["status"] = "needs_sources"
+    metadata = course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+    course["metadata"] = {
+        **metadata,
+        "status": "needs_sources",
+        "generationReadiness": {"status": "needs_sources", "ready": False},
+    }
+
+    validation_errors = validate_course_contract(course)
+    generation_quality = assess_course_quality(course, gate="generation")
+    publish_quality = assess_course_quality(course, gate="publish")
+
+    assert not validation_errors
+    assert generation_quality["passed"] is True
+    assert publish_quality["passed"] is False
 
 
 def test_generated_course_fixture_uses_editor_native_blocks_only() -> None:

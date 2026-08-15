@@ -11,9 +11,7 @@
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  background:
-    linear-gradient(90deg, rgba(42, 126, 255, 0.22) 0%, rgba(139, 92, 246, 0.18) 100%),
-    #111112;
+  background: #000000;
 }
 
 .top-bar-title {
@@ -53,9 +51,9 @@
 
 .top-bar-icon-button {
   --top-bar-button-glyph-size: 1.08rem;
-  --top-bar-button-surface: rgba(255, 255, 255, 0.1);
+  --top-bar-button-surface: transparent;
   --top-bar-button-border: rgba(255, 255, 255, 0.2);
-  --top-bar-button-hover-surface: rgba(255, 255, 255, 0.16);
+  --top-bar-button-hover-surface: transparent;
   --top-bar-button-hover-border: rgba(183, 246, 200, 0.46);
 
   width: 2.4rem;
@@ -69,7 +67,7 @@
   color: #f8fbff;
   text-decoration: none;
   background: var(--top-bar-button-surface);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-shadow: none;
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease,
@@ -125,9 +123,7 @@
   border-color: var(--top-bar-button-hover-border);
   color: #ffffff;
   background: var(--top-bar-button-hover-surface);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 0 0 1px rgba(183, 246, 200, 0.08);
+  box-shadow: none;
   outline: none;
 }
 
@@ -143,9 +139,7 @@
 }
 
 html[data-theme="light"] .top-bar {
-  background:
-    linear-gradient(90deg, rgba(42, 126, 255, 0.34) 0%, rgba(139, 92, 246, 0.24) 100%),
-    #242833;
+  background: #000000;
 }
 
 html[data-theme="light"] .top-bar-title {
@@ -158,9 +152,9 @@ html[data-theme="light"] .top-bar-title::after {
 }
 
 html[data-theme="light"] .top-bar-icon-button {
-  --top-bar-button-surface: rgba(255, 255, 255, 0.12);
+  --top-bar-button-surface: transparent;
   --top-bar-button-border: rgba(255, 255, 255, 0.26);
-  --top-bar-button-hover-surface: rgba(255, 255, 255, 0.18);
+  --top-bar-button-hover-surface: transparent;
   --top-bar-button-hover-border: rgba(183, 246, 200, 0.5);
 
   color: #f8fbff;

@@ -9,6 +9,7 @@ def test_generation_run_history_aliases_and_local_mirror(client, tmp_path, monke
     local_data_dir = tmp_path / "local-data"
     monkeypatch.setattr("app.local_store_core.ensure_local_data_dirs", lambda: local_data_dir)
     monkeypatch.setattr("app.local_store_generation_runs.ensure_local_data_dirs", lambda: local_data_dir)
+    monkeypatch.setattr("app.routes.course_generation_run_routes.run_agent_course_generation_queue", lambda: None)
 
     with db.SessionLocal() as session:
         job = Job(
@@ -64,4 +65,4 @@ def test_generation_run_history_aliases_and_local_mirror(client, tmp_path, monke
     resume_response = client.post(f"/v1/generation-runs/{run_id}/resume")
     assert resume_response.status_code == 202, resume_response.text
     assert resume_response.json()["id"] == job_id
-    assert resume_response.json()["status"] in {"queued", "running", "failed", "completed"}
+    assert resume_response.json()["status"] == "queued"

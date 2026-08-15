@@ -65,14 +65,44 @@ Canonical Learn section block pattern:
 ```json
 [
   { "type": "text", "heading": "Explanation", "value": "Teach the idea directly." },
-  { "type": "text", "heading": "Worked example", "value": "Show the idea in a concrete situation." },
-  { "type": "text", "heading": "Practice", "value": "Ask the learner to apply the idea." },
+  { "type": "text", "heading": "Guided practice", "value": "Ask the learner to apply the idea in words, evidence, or a short activity." },
   { "type": "heading", "title": "Concepts introduced" },
   { "type": "conceptCard", "title": "Raw concept name", "description": "Concise definition." }
 ]
 ```
 
-Generated courses must use the same atomic block grammar the course editor creates. Prefer `text`, `heading`, `conceptCard`, `image`/`visual`, `video`, `iframe`, `quiz`, and `project` blocks. Do not generate monolithic markdown, plain-string content, or large `conceptCards` stacks except when repairing legacy courses.
+Optional quantitative, technical, or procedural block pattern:
+
+```json
+[
+  {
+    "type": "equation",
+    "title": "Relationship",
+    "equations": ["target = known relationship"],
+    "notation": "ascii",
+    "caption": "Use readable ASCII math for now and include units when relevant."
+  },
+  {
+    "type": "workedExample",
+    "title": "Worked example",
+    "problem": "Solve a concrete quantitative, formal, technical, or procedural problem.",
+    "given": ["Known value, condition, formula, or constraint."],
+    "find": ["Target value, classification, output, or procedure result."],
+    "steps": [
+      { "explanation": "Set up the relationship or procedure.", "equation": "target = known relationship" },
+      { "explanation": "Substitute, simplify, compute, or execute the rule.", "equation": "target = simplified result" }
+    ],
+    "workedAnswer": "Final answer with units or interpretation.",
+    "check": "Check the units, sign, direction, assumption, or practical meaning."
+  }
+]
+```
+
+Generated courses must use the same atomic block grammar the course editor creates. Prefer `text`, `heading`, `conceptCard`, `equation`, `workedExample`, `image`/`visual`, `video`, `iframe`, `quiz`, and `project` blocks. Do not generate monolithic markdown, plain-string content, or large `conceptCards` stacks except when repairing legacy courses.
+
+Use `equation` for standalone formulas, symbolic relationships, calculations, and equation lines that need code-like alignment.
+
+Use `workedExample` only for quantitative, formal, technical, or procedural examples where the learner should see repeatable work. Do not use `workedExample` for interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts; use `text`, `heading`, and `conceptCard` blocks for those. Equation rows inside worked examples should be plain strings in `steps[].equation` or `steps[].equations`; use readable ASCII math for now, include units when relevant, and keep each step tied to the problem.
 
 Canonical image/visual block pattern:
 
