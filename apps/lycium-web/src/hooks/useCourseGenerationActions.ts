@@ -13,9 +13,11 @@ import { lyciumApi } from "../runtime/appRuntime";
 import { formatCourseValidationErrors, validateCourseEntry } from "../utils/courseValidation";
 import { queueCourseSourceGapSuggestion } from "../utils/courseSourceGaps";
 import {
+  courseGenerationFailureMessage,
   courseGenerationSpecificStatusMessage,
   courseGenerationWorkingTitle,
   generatedCourseRecordFromJob,
+  humanReadableCourseGenerationError,
   isActiveCourseGenerationJob,
   recoverableCourseGenerationJobId,
 } from "../utils/courseGenerationJobs";
@@ -101,6 +103,7 @@ export function useCourseGenerationActions({
   const [generateProgress, setGenerateProgress] = useState(0);
   const [generateTitle, setGenerateTitle] = useState("New Course");
   const [publishingCourseKey, setPublishingCourseKey] = useState<string | null>(null);
+  const [failedGenerationJobId, setFailedGenerationJobId] = useState<string | null>(null);
   const activePollJobIdRef = useRef<string | null>(null);
   const mountedRef = useRef(false);
 
@@ -131,7 +134,7 @@ export function useCourseGenerationActions({
     options: PollCourseGenerationOptions = {},
   ) => {
     if (job.status === "failed") {
-      throw new Error(job.error || job.message || "Course generation failed.");
+      throw new Error(courseGenerationFailureMessage(job));
     }
 
     const generatedSnapshot = generatedCourseRecordFromJob(job);
@@ -159,6 +162,7 @@ export function useCourseGenerationActions({
       setPrompt("");
     }
     setGenerateStatus("success");
+    setFailedGenerationJobId(null);
     setGenerateProgress(1);
     setGenerateTitle(entry.title);
     setGenerateMessage(
@@ -194,6 +198,11 @@ export function useCourseGenerationActions({
 
       if (!mountedRef.current || activePollJobIdRef.current !== jobId) return;
       syncGenerationStatusFromJob(job);
+      if (job.status === "failed") {
+        setFailedGenerationJobId(jobId);
+      } else {
+        setFailedGenerationJobId(null);
+      }
       finishCourseGenerationJob(job, options);
       clearActiveGenerationJobId(jobId);
       activePollJobIdRef.current = null;
@@ -204,7 +213,7 @@ export function useCourseGenerationActions({
       activePollJobIdRef.current = null;
       setGenerateStatus("error");
       setGenerateProgress(0);
-      setGenerateMessage(err instanceof Error ? err.message : "Course generation failed. Is the API running?");
+      setGenerateMessage(humanReadableCourseGenerationError(err instanceof Error ? err.message : err));
     }
   }, [finishCourseGenerationJob, syncGenerationStatusFromJob]);
 
@@ -271,6 +280,7 @@ export function useCourseGenerationActions({
     }
     if (!prompt.trim() || !classification?.category || !classification.department) return;
     setGenerateStatus("loading");
+    setFailedGenerationJobId(null);
     setGenerateProgress(0);
     setGenerateTitle("New Course");
     setGenerateMessage("Creating course template...");
@@ -296,9 +306,36 @@ export function useCourseGenerationActions({
       console.warn("Course generation failed:", err);
       setGenerateStatus("error");
       setGenerateProgress(0);
-      setGenerateMessage(err instanceof Error ? err.message : "Course generation failed. Is the API running?");
+      setGenerateMessage(humanReadableCourseGenerationError(err instanceof Error ? err.message : err));
     }
   };
+
+  const handleRetryGenerateCourse = useCallback(async () => {
+    if (!failedGenerationJobId) {
+      setGenerateStatus("error");
+      setGenerateMessage("There is no saved generation request to retry.");
+      return;
+    }
+    if (!activeAiReady) {
+      setGenerateStatus("error");
+      setGenerateMessage(aiLockedReason || "Connect and verify an active AI model before retrying course generation.");
+      return;
+    }
+
+    setGenerateStatus("loading");
+    setGenerateProgress(0);
+    setGenerateMessage("Retrying from the saved request...");
+
+    try {
+      const job = await lyciumApi.resumeCourseGenerationJob(failedGenerationJobId);
+      await pollCourseGenerationJob(job, { clearPromptOnComplete: true, openOnComplete: true });
+    } catch (err) {
+      console.warn("Course generation retry failed:", err);
+      setGenerateStatus("error");
+      setGenerateProgress(0);
+      setGenerateMessage(humanReadableCourseGenerationError(err instanceof Error ? err.message : err));
+    }
+  }, [activeAiReady, aiLockedReason, failedGenerationJobId, pollCourseGenerationJob]);
 
   const handlePublishCourse = useCallback(
     async (course: CourseEntry) => {
@@ -384,6 +421,7 @@ export function useCourseGenerationActions({
     generateTitle,
     publishingCourseKey,
     handleGenerateCourse,
+    handleRetryGenerateCourse,
     handlePublishCourse,
     handleResumeCourseSourceGap,
   };

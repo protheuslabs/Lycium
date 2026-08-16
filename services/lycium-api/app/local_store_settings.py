@@ -395,19 +395,28 @@ def update_agent_key_model(key_id: str, model: str) -> dict[str, Any]:
     for key in secret["agent_keys"]:
         if key["id"] != key_id:
             continue
+        provider_id = str(key.get("provider_id") or "")
+        try:
+            provider = get_agent_provider(provider_id)
+        except CourseAgentError:
+            provider = {}
+        should_probe_selected_model = str(provider.get("generationAdapter") or "") == "local-agent-runtime"
         available_model_ids = {
             available_model["id"]
             for available_model in key.get("models", [])
             if not available_model.get("disabled") and not available_model.get("error")
         }
-        if available_model_ids and cleaned_model not in available_model_ids:
+        if should_probe_selected_model or (available_model_ids and cleaned_model not in available_model_ids):
             try:
                 refreshed_models = validate_agent_api_key(
                     str(key.get("agent_api_key") or ""),
-                    provider_id=str(key.get("provider_id") or ""),
+                    provider_id=provider_id,
                     model=cleaned_model,
+                    probe_model=should_probe_selected_model,
                 )
             except CourseAgentError as exc:
+                if exc.trace.get("model_probe"):
+                    mark_agent_model_error(key_id, cleaned_model, str(exc))
                 raise ValueError(f"Model is not available for this API key. {exc}") from exc
             normalized_models = normalize_model_records(refreshed_models, cleaned_model)
             refreshed_model_ids = {

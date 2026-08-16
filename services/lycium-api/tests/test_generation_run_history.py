@@ -10,11 +10,15 @@ def test_generation_run_history_aliases_and_local_mirror(client, tmp_path, monke
     monkeypatch.setattr("app.local_store_core.ensure_local_data_dirs", lambda: local_data_dir)
     monkeypatch.setattr("app.local_store_generation_runs.ensure_local_data_dirs", lambda: local_data_dir)
     monkeypatch.setattr("app.routes.course_generation_run_routes.run_agent_course_generation_queue", lambda: None)
+    monkeypatch.setattr(
+        "app.routes.course_generation_run_routes.require_verified_active_agent_profile",
+        lambda: {"model": "retry-model"},
+    )
 
     with db.SessionLocal() as session:
         job = Job(
             job_type="agent_generate_course_staged",
-            payload={"prompt": "Build a public health course", "source_urls": ["https://example.edu/a"]},
+            payload={"prompt": "Build a public health course", "source_urls": ["https://example.edu/a"], "model": "failed-model"},
             status="failed",
             result={"message": "Needs review."},
         )
@@ -66,3 +70,4 @@ def test_generation_run_history_aliases_and_local_mirror(client, tmp_path, monke
     assert resume_response.status_code == 202, resume_response.text
     assert resume_response.json()["id"] == job_id
     assert resume_response.json()["status"] == "queued"
+    assert resume_response.json()["request"]["model"] == "retry-model"

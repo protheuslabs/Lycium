@@ -9,6 +9,7 @@ from app.db import get_session
 from app.generation_eval_reports import build_generation_eval_trend, load_generation_eval_runs
 from app.generation_observability import generation_run_payload, get_generation_run, list_generation_runs
 from app.jobs import run_agent_course_generation_queue
+from app.local_store import require_verified_active_agent_profile
 from app.models import Job
 from app.routes.course_generation_responses import course_generation_job_response
 from app.schemas import CourseGenerationJobRead, GenerationRunRead
@@ -24,6 +25,15 @@ def _resume_agent_course_generation_job(
         raise HTTPException(status_code=404, detail="Course generation job not found.")
     if job.status == "running":
         return course_generation_job_response(job)
+    try:
+        active_profile = require_verified_active_agent_profile()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    payload = dict(job.payload or {})
+    active_model = str(active_profile.get("model") or "").strip()
+    if active_model:
+        payload["model"] = active_model
+    job.payload = payload
     job.status = "pending"
     job.error = None
     job.result = {**(job.result or {}), "message": "Generation re-queued from the saved request."}

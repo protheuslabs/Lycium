@@ -60,6 +60,14 @@ def build_course_snapshot_from_agent_result(
     metadata = structure.get("metadata") if isinstance(structure.get("metadata"), dict) else {}
     structure["metadata"] = {
         **metadata,
+        "generationPrompt": prompt,
+        "generationRequest": {
+            "contractVersion": "course-generation-request-reference-v1",
+            "prompt": prompt,
+            "language": language,
+            "level": level,
+            "sourcePolicy": source_policy,
+        },
         **({"generationReadiness": effective_readiness} if isinstance(effective_readiness, dict) else {}),
         **({"status": status} if status == "needs_sources" else {}),
         "courseHealth": summarize_course_health(

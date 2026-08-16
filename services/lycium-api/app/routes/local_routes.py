@@ -45,6 +45,7 @@ from app.local_store import (
     local_data_security_status,
     local_data_storage_status,
     local_settings_summary,
+    mark_agent_model_error,
     read_course_bookmark,
     read_course_feedback,
     read_course_health,
@@ -245,14 +246,19 @@ def register(app: FastAPI) -> None:
         profile = get_agent_profile_by_id(payload.key_id)
         if not profile:
             raise HTTPException(status_code=404, detail="API key not found.")
+        provider: dict[str, Any] = {}
         try:
             provider = get_agent_provider(str(profile.get("provider_id") or ""))
+            current_model = str(profile.get("model") or "").strip()
+            should_probe_selected_model = (
+                str(provider.get("generationAdapter") or "") == "local-agent-runtime" and bool(current_model)
+            )
             models = validate_agent_api_key(
                 str(profile.get("agent_api_key") or ""),
                 provider_id=str(profile.get("provider_id") or ""),
-                model=str(profile.get("model") or "") or None,
+                model=current_model or None,
+                probe_model=should_probe_selected_model,
             )
-            current_model = str(profile.get("model") or "").strip()
             available_model_ids = {str(model.get("id") or "") for model in models}
             default_model = str(provider.get("defaultModel") or "").strip()
             selected_model = (
@@ -276,6 +282,11 @@ def register(app: FastAPI) -> None:
                 connection_status="unverified",
                 connection_message=str(exc),
             )
+            if exc.trace.get("model_probe"):
+                try:
+                    mark_agent_model_error(payload.key_id, str(exc.trace.get("model") or ""), str(exc))
+                except ValueError:
+                    pass
             if is_local_provider:
                 return local_settings_summary()
             raise HTTPException(status_code=400, detail=str(exc)) from exc

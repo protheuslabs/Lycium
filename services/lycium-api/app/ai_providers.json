@@ -162,6 +162,41 @@
         {
           "id": "codex",
           "label": "Codex runtime"
+        },
+        {
+          "id": "gpt-5.6-sol",
+          "label": "GPT-5.6 Sol",
+          "warning": "Documented Codex model; availability depends on this Codex account."
+        },
+        {
+          "id": "gpt-5.6-terra",
+          "label": "GPT-5.6 Terra",
+          "warning": "Documented Codex model; availability depends on this Codex account."
+        },
+        {
+          "id": "gpt-5.6-luna",
+          "label": "GPT-5.6 Luna",
+          "warning": "Documented Codex model; availability depends on this Codex account."
+        },
+        {
+          "id": "gpt-5.5",
+          "label": "GPT-5.5",
+          "warning": "Documented Codex model; availability depends on this Codex account."
+        },
+        {
+          "id": "gpt-5.4",
+          "label": "GPT-5.4",
+          "warning": "Documented Codex model; availability depends on this Codex account."
+        },
+        {
+          "id": "gpt-5.4-mini",
+          "label": "GPT-5.4 Mini",
+          "warning": "Documented Codex model; availability depends on this Codex account."
+        },
+        {
+          "id": "gpt-5.3-codex-spark",
+          "label": "GPT-5.3 Codex Spark",
+          "warning": "Documented Codex model; availability depends on this Codex account."
         }
       ],
       "localProvider": true,

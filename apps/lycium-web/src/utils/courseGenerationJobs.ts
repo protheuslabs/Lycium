@@ -16,6 +16,45 @@ function textValue(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+export function humanReadableCourseGenerationError(error: unknown): string {
+  const text = textValue(error);
+  if (!text) {
+    return "Course generation stopped before the course was finished. Try again from the saved request.";
+  }
+  const lowered = text.toLowerCase();
+
+  if (["402", "payment required", "extra usage", "balance is empty", "insufficient_quota"].some((marker) => lowered.includes(marker))) {
+    return "The selected model needs extra credits or billing before it can generate this course. Choose another model or add credits, then try again.";
+  }
+  if (["401", "403", "unauthorized", "forbidden", "api key", "invalid key", "authentication"].some((marker) => lowered.includes(marker))) {
+    return "The provider rejected the saved credentials. Check the API key or account connection in Settings, then try again.";
+  }
+  if (["model is not available", "model_not_found", "unknown model", "currently unavailable"].some((marker) => lowered.includes(marker))) {
+    return "The selected model is not available for this provider right now. Choose another model in Settings, then try again.";
+  }
+  if (["rate limit", "429", "too many requests"].some((marker) => lowered.includes(marker))) {
+    return "The provider is rate limiting requests right now. Wait a bit, then try again.";
+  }
+  if (["timed out", "timeout"].some((marker) => lowered.includes(marker))) {
+    return "The provider took too long to respond. Try again, or switch to a faster model in Settings.";
+  }
+  if (["not found on path", "bridge could not be started", "bridge command was not found"].some((marker) => lowered.includes(marker))) {
+    return "Lycium could not start the local AI runtime. Check the bridge command in Settings, then try again.";
+  }
+  if (["valid json", "json object", "usable text content"].some((marker) => lowered.includes(marker))) {
+    return "The model responded in a format Lycium could not use. Try again, or switch to a stronger model.";
+  }
+  if (["llm api", "provider", "bridge generation failed"].some((marker) => lowered.includes(marker))) {
+    return "The selected AI provider stopped before the course was finished. Try again, or choose another model in Settings.";
+  }
+
+  return "Course generation stopped before the course was finished. Try again from the saved request.";
+}
+
+export function courseGenerationFailureMessage(job: LyciumCourseGenerationJob): string {
+  return textValue(job.user_error) || humanReadableCourseGenerationError(job.error || job.message);
+}
+
 function recordList(value: unknown): RecordLike[] {
   return Array.isArray(value)
     ? value.filter((item): item is RecordLike => Boolean(item) && typeof item === "object" && !Array.isArray(item))

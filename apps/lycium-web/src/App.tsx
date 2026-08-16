@@ -329,6 +329,7 @@ function App({ initialPath }: AppProps = {}) {
     generateTitle,
     publishingCourseKey,
     handleGenerateCourse,
+    handleRetryGenerateCourse,
     handlePublishCourse,
     handleResumeCourseSourceGap,
   } = useCourseGenerationActions({
@@ -431,6 +432,7 @@ function App({ initialPath }: AppProps = {}) {
           onPromptChange={setPrompt}
           onLevelChange={setLevel}
           onGenerateCourse={handleGenerateCourse}
+          onRetryGenerateCourse={handleRetryGenerateCourse}
           onOpenCourse={openCourseByEntry}
           onQueueCourseSourceGap={queueCourseSourceGap}
           onResumeCourseSourceGap={handleResumeCourseSourceGap}

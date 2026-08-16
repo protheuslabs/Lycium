@@ -52,6 +52,7 @@ type CourseCatalogProps = {
     classification: { category: string; department: string },
     sourceFiles: File[],
   ) => void;
+  onRetryGenerateCourse: () => void;
   onOpenCourse: (course: CourseEntry) => void;
   onQueueCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string) => void;
   onResumeCourseSourceGap: (course: CourseEntry, gapId: string, url: string, description: string, files: File[]) => void;
@@ -119,6 +120,7 @@ export default function CourseCatalog({
   onPromptChange,
   onLevelChange,
   onGenerateCourse,
+  onRetryGenerateCourse,
   onOpenCourse,
   onQueueCourseSourceGap,
   onResumeCourseSourceGap,
@@ -381,7 +383,7 @@ export default function CourseCatalog({
                 onOpenCourse={onOpenCourse}
                 onOpenInfo={setInfoCourse}
                 onOpenSettings={() => onOpenSettings()}
-                onRetryGenerate={() => createCourseModal.setIsOpen(true)}
+                onRetryGenerate={onRetryGenerateCourse}
                 onSearchPrerequisite={catalogControls.handlePrerequisiteSearch}
                 selectionMode={catalogSelectionMode}
                 onToggleCourseSelection={onToggleClusterCourseSelection}

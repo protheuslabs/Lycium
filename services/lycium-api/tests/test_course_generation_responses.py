@@ -6,14 +6,20 @@ from types import SimpleNamespace
 from app.routes.course_generation_responses import course_generation_job_response
 
 
-def _job(result: dict, payload: dict | None = None) -> SimpleNamespace:
+def _job(
+    result: dict,
+    payload: dict | None = None,
+    *,
+    status: str = "running",
+    error: str | None = None,
+) -> SimpleNamespace:
     now = datetime.now(UTC)
     return SimpleNamespace(
         id=1,
-        status="running",
+        status=status,
         payload=payload or {"prompt": "Generate me a course about macroeconomics"},
         result=result,
-        error=None,
+        error=error,
         created_at=now,
         updated_at=now,
     )
@@ -60,3 +66,20 @@ def test_course_generation_job_response_prefers_partial_course_title() -> None:
     )
 
     assert response["working_title"] == "Microeconomics: Choice and Markets"
+
+
+def test_course_generation_job_response_humanizes_provider_errors() -> None:
+    response = course_generation_job_response(
+        _job(
+            {"current_stage": "section_fill_generation", "progress": 0.45, "message": "Course generation failed."},
+            status="failed",
+            error="LLM API rejected the request after 1 attempt(s): 402 Payment Required: this model uses extra usage only and your extra usage balance is empty.",
+        )
+    )
+
+    assert response["error"].startswith("LLM API rejected")
+    assert response["user_error"] == (
+        "The selected model needs extra credits or billing before it can generate this course. "
+        "Choose another model or add credits, then try again."
+    )
+    assert response["message"] == response["user_error"]

@@ -222,6 +222,7 @@ class CourseGenerationJobRead(BaseModel):
     trace: dict[str, Any] = Field(default_factory=dict)
     course_snapshot: dict[str, Any] | None = None
     error: str | None = None
+    user_error: str | None = None
     created_at: datetime
     updated_at: datetime
 

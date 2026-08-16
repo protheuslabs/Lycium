@@ -13,32 +13,10 @@ from typing import Any
 
 
 DEFAULT_TIMEOUT_SECONDS = 900
+PROVIDERS_PATH = Path(__file__).resolve().parents[1] / "app" / "ai_providers.json"
 
 CODEX_ACCOUNT_DEFAULT_MODEL = {"id": "codex", "label": "Codex account default"}
-CODEX_DOCUMENTED_MODELS = (
-    {"id": "gpt-5.6-sol", "label": "GPT-5.6 Sol"},
-    {"id": "gpt-5.6-terra", "label": "GPT-5.6 Terra"},
-    {"id": "gpt-5.6-luna", "label": "GPT-5.6 Luna"},
-    {"id": "gpt-5.5", "label": "GPT-5.5"},
-    {"id": "gpt-5.4", "label": "GPT-5.4"},
-    {"id": "gpt-5.4-mini", "label": "GPT-5.4 Mini"},
-    {"id": "gpt-5.3-codex-spark", "label": "GPT-5.3 Codex Spark"},
-)
-CODEX_DOCUMENTED_FALLBACK_WARNING = "Documented Codex model; availability depends on this Codex account."
-
 CLAUDE_CODE_ACCOUNT_DEFAULT_MODEL = {"id": "claude-code", "label": "Claude Code account default"}
-CLAUDE_CODE_DOCUMENTED_MODELS = (
-    {"id": "sonnet", "label": "Sonnet alias"},
-    {"id": "opus", "label": "Opus alias"},
-    {"id": "fable", "label": "Fable alias"},
-    {"id": "haiku", "label": "Haiku alias"},
-    {"id": "claude-sonnet-5", "label": "Claude Sonnet 5"},
-    {"id": "claude-opus-5", "label": "Claude Opus 5"},
-    {"id": "claude-fable-5", "label": "Claude Fable 5"},
-    {"id": "claude-haiku-4-5", "label": "Claude Haiku 4.5"},
-    {"id": "claude-haiku-4-5-20251001", "label": "Claude Haiku 4.5 20251001"},
-)
-CLAUDE_CODE_DOCUMENTED_FALLBACK_WARNING = "Claude Code model selector; availability depends on this Claude account and CLI configuration."
 
 
 def _read_request() -> dict[str, Any]:
@@ -105,6 +83,54 @@ def _append_model(
     seen.add(cleaned_id)
 
 
+def _static_runtime_provider(runtime: str) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(PROVIDERS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    providers = payload.get("providers") if isinstance(payload, dict) else None
+    if not isinstance(providers, list):
+        return None
+    for provider in providers:
+        if not isinstance(provider, dict):
+            continue
+        if str(provider.get("generationAdapter") or "") != "local-agent-runtime":
+            continue
+        runtime_kind = str(provider.get("runtimeKind") or provider.get("id") or "").strip()
+        if runtime_kind == runtime:
+            return provider
+    return None
+
+
+def _append_static_model(models: list[dict[str, Any]], seen: set[str], raw_model: dict[str, Any]) -> None:
+    model_id = str(raw_model.get("id") or raw_model.get("name") or "").strip()
+    label = str(raw_model.get("label") or raw_model.get("displayName") or model_id).strip()
+    warning = str(raw_model.get("warning") or "").strip() or None
+    error = str(raw_model.get("error") or "").strip() or None
+    _append_model(
+        models,
+        seen,
+        model_id,
+        label,
+        warning=warning,
+        error=error,
+        disabled=bool(raw_model.get("disabled")),
+    )
+
+
+def _static_models_for_runtime(runtime: str) -> list[dict[str, Any]]:
+    provider = _static_runtime_provider(runtime)
+    raw_models = provider.get("staticModels") if provider else None
+    if not isinstance(raw_models, list):
+        return []
+    models: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for raw_model in raw_models:
+        if isinstance(raw_model, dict):
+            _append_static_model(models, seen, raw_model)
+    return models
+
+
 def _cached_codex_models() -> list[dict[str, Any]]:
     for path in _codex_cache_paths():
         if not path.exists():
@@ -134,14 +160,25 @@ def _cached_codex_models() -> list[dict[str, Any]]:
 def _codex_models() -> list[dict[str, Any]]:
     models: list[dict[str, Any]] = []
     seen: set[str] = set()
-    _append_model(models, seen, CODEX_ACCOUNT_DEFAULT_MODEL["id"], CODEX_ACCOUNT_DEFAULT_MODEL["label"])
+    static_models = _static_models_for_runtime("codex")
+    default_model = next((model for model in static_models if model["id"] == "codex"), CODEX_ACCOUNT_DEFAULT_MODEL)
+    _append_model(models, seen, default_model["id"], default_model.get("label"))
 
     for model in _cached_codex_models():
         _append_model(models, seen, str(model.get("id") or ""), str(model.get("label") or ""))
 
-    for model in CODEX_DOCUMENTED_MODELS:
-        warning = None if model["id"] in seen else CODEX_DOCUMENTED_FALLBACK_WARNING
-        _append_model(models, seen, model["id"], model["label"], warning=warning)
+    for model in static_models:
+        if model["id"] == "codex":
+            continue
+        _append_model(
+            models,
+            seen,
+            model["id"],
+            model.get("label"),
+            warning=model.get("warning"),
+            error=model.get("error"),
+            disabled=bool(model.get("disabled")),
+        )
 
     return models
 
@@ -149,18 +186,10 @@ def _codex_models() -> list[dict[str, Any]]:
 def _models_for_runtime(runtime: str) -> list[dict[str, Any]]:
     if runtime == "codex":
         return _codex_models()
-    models: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    _append_model(models, seen, CLAUDE_CODE_ACCOUNT_DEFAULT_MODEL["id"], CLAUDE_CODE_ACCOUNT_DEFAULT_MODEL["label"])
-    for model in CLAUDE_CODE_DOCUMENTED_MODELS:
-        _append_model(
-            models,
-            seen,
-            model["id"],
-            model["label"],
-            warning=CLAUDE_CODE_DOCUMENTED_FALLBACK_WARNING,
-        )
-    return models
+    models = _static_models_for_runtime(runtime)
+    if models:
+        return models
+    return [CLAUDE_CODE_ACCOUNT_DEFAULT_MODEL]
 
 
 def _messages_to_prompt(messages: list[dict[str, Any]], response_format: str) -> str:

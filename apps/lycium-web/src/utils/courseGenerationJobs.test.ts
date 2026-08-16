@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { LyciumCourseData, LyciumCourseGenerationJob } from "@lycium/contracts";
 import {
+  courseGenerationFailureMessage,
   courseGenerationSpecificStatusMessage,
   courseGenerationWorkingTitle,
   generatedCourseRecordFromJob,
+  humanReadableCourseGenerationError,
   isActiveCourseGenerationJob,
   recoverableCourseGenerationJobId,
 } from "./courseGenerationJobs";
@@ -98,6 +100,19 @@ describe("course generation job recovery helpers", () => {
       { job_id: 9, run_type: "other_generation", status: "running" },
       { job_id: 10, run_type: "agent_generate_course_staged", status: "running" },
     ])).toBe("10");
+  });
+
+  it("uses friendly course generation failures over raw provider output", () => {
+    expect(humanReadableCourseGenerationError(
+      "LLM API rejected the request after 1 attempt(s): 402 Payment Required: this model uses extra usage only.",
+    )).toBe(
+      "The selected model needs extra credits or billing before it can generate this course. Choose another model or add credits, then try again.",
+    );
+    expect(courseGenerationFailureMessage(job({
+      status: "failed",
+      error: "LLM API rejected the request after 1 attempt(s): 402 Payment Required",
+      user_error: "Choose another model.",
+    }))).toBe("Choose another model.");
   });
 
   it("describes the module being created", () => {

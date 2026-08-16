@@ -42,6 +42,9 @@ def test_agent_snapshot_preserves_positive_generation_readiness() -> None:
         session.commit()
 
     assert structure["metadata"]["generationReadiness"] == readiness
+    assert structure["metadata"]["generationPrompt"] == "Create a readiness-preserved course"
+    assert structure["metadata"]["generationRequest"]["prompt"] == "Create a readiness-preserved course"
+    assert structure["metadata"]["generationRequest"]["sourcePolicy"] == "balanced"
     assert generation_trace["generation_readiness"] == readiness
 
 

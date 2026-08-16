@@ -465,6 +465,33 @@ def _validate_local_agent_runtime(provider: dict[str, Any], command: str) -> lis
     return models or _static_agent_models(provider)
 
 
+def _probe_local_agent_runtime_model(provider: dict[str, Any], command: str, model: str) -> None:
+    selected_model = model.strip()
+    if not selected_model:
+        return
+    label = str(provider.get("label") or provider.get("id") or "Agent runtime")
+    messages = [
+        {
+            "role": "system",
+            "content": "You are checking whether this Lycium runtime model can answer with JSON.",
+        },
+        {"role": "user", "content": 'Return exactly {"ok": true}.'},
+    ]
+    try:
+        _call_local_agent_runtime(
+            provider,
+            command,
+            messages,
+            selected_model,
+            timeout_seconds=min(45, SETTINGS.agent_timeout_seconds),
+        )
+    except CourseAgentError as exc:
+        raise CourseAgentError(
+            f"{label} selected model {selected_model} failed probe: {exc}",
+            trace={**exc.trace, "model": selected_model, "model_probe": True},
+        ) from exc
+
+
 def detect_local_agent_endpoint(provider_id: str) -> tuple[str, list[ModelRecord]] | None:
     provider = get_agent_provider(provider_id)
     if provider.get("generationAdapter") != "ollama-chat":
@@ -606,7 +633,11 @@ def _call_local_agent_runtime(
     if result.returncode != 0:
         detail = (result.stderr or result.stdout or "").strip()[:500]
         raise CourseAgentError(f"{label} bridge generation failed: {detail or f'exit code {result.returncode}'}")
-    return _parse_runtime_bridge_output(provider, result.stdout)
+    payload = _parse_runtime_bridge_output(provider, result.stdout)
+    if payload.get("ok") is False:
+        detail = str(payload.get("error") or payload.get("message") or "Bridge reported that generation failed.")
+        raise CourseAgentError(f"{label} bridge generation failed: {detail}")
+    return payload
 
 
 def _post_json(
@@ -688,13 +719,21 @@ def call_agent_model(
     return _call_openai_chat_completions(provider, api_key, messages, model, timeout_seconds=timeout_seconds)
 
 
-def validate_agent_api_key(api_key: str, provider_id: str = "openai", model: str | None = None) -> list[ModelRecord]:
+def validate_agent_api_key(
+    api_key: str,
+    provider_id: str = "openai",
+    model: str | None = None,
+    *,
+    probe_model: bool = False,
+) -> list[ModelRecord]:
     provider = get_agent_provider(provider_id)
     if provider.get("generationAdapter") == "local-agent-runtime":
         models = _validate_local_agent_runtime(provider, api_key)
         selected_model = model or provider.get("defaultModel") or (models[0]["id"] if models else SETTINGS.agent_model)
         if selected_model and not any(record["id"] == selected_model for record in models):
             models.insert(0, {"id": str(selected_model), "label": str(selected_model)})
+        if probe_model and selected_model:
+            _probe_local_agent_runtime_model(provider, api_key, str(selected_model))
         return models
 
     models = fetch_agent_models(provider_id, api_key)

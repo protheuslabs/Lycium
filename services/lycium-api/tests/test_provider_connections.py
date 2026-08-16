@@ -75,7 +75,7 @@ def test_codex_runtime_bridge_reports_cached_and_documented_models() -> None:
     assert next(model for model in models if model["id"] == "gpt-5.6-sol").get("label")
 
 
-def test_claude_code_runtime_bridge_reports_documented_model_selectors() -> None:
+def test_claude_code_runtime_bridge_reports_configured_model_selectors() -> None:
     spec = importlib.util.spec_from_file_location("agent_runtime_bridge", RUNTIME_BRIDGE_PATH)
     assert spec is not None and spec.loader is not None
     bridge = importlib.util.module_from_spec(spec)
@@ -281,6 +281,42 @@ def test_model_update_refreshes_stale_saved_model_cache(client, monkeypatch, iso
     key = updated.json()["agent_keys"][0]
     assert key["model"] == "gpt-5.5"
     assert [model["id"] for model in key["models"]] == ["codex", "gpt-5.5"]
+
+
+def test_local_runtime_model_update_marks_failed_selected_model(client, monkeypatch, isolated_local_data) -> None:
+    monkeypatch.setattr(
+        "app.routes.local_routes.validate_agent_api_key",
+        lambda *args, **kwargs: _mock_models("claude-code", "sonnet"),
+    )
+    saved = client.put(
+        "/v1/local/settings",
+        json={
+            "provider_id": "claude-code-runtime",
+            "agent_api_key": "python3 services/lycium-api/scripts/agent_runtime_bridge.py --runtime claude-code",
+        },
+    )
+    assert saved.status_code == 200, saved.text
+    key_id = saved.json()["agent_keys"][0]["id"]
+
+    def fail_model_probe(*_args, **kwargs):
+        assert kwargs["provider_id"] == "claude-code-runtime"
+        assert kwargs["model"] == "sonnet"
+        assert kwargs["probe_model"] is True
+        raise CourseAgentError(
+            "Claude Code selected model sonnet failed probe: 402 Payment Required.",
+            trace={"model": "sonnet", "model_probe": True},
+        )
+
+    monkeypatch.setattr("app.local_store_settings.validate_agent_api_key", fail_model_probe)
+    updated = client.put("/v1/local/settings/key-model", json={"key_id": key_id, "model": "sonnet"})
+
+    assert updated.status_code == 400, updated.text
+    settings = client.get("/v1/local/settings").json()
+    key = settings["agent_keys"][0]
+    assert key["model"] == "claude-code"
+    sonnet = next(model for model in key["models"] if model["id"] == "sonnet")
+    assert sonnet["disabled"] is True
+    assert "402 Payment Required" in sonnet["error"]
 
 
 def test_model_error_marker_keeps_model_visible_but_blocks_generation(client, monkeypatch, isolated_local_data) -> None:
