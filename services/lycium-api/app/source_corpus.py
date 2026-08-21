@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 from app.config import SETTINGS
 from app.source_input_artifacts import prepare_source_inputs
 from app.source_index_client import SourceIndexClient, SourceIndexClientError, source_index_client_configured
+from app.source_index_packet_adapter import source_packet_generation_handoff
 from app.source_corpus_terms import AMBIGUOUS_RELEVANCE_TERMS, STOPWORDS, TOKEN_ALIASES
 from app.source_relevance import decide_source_relevance
 
@@ -248,49 +249,46 @@ def _source_packet_context_id(prompt: str, source_urls: list[str]) -> str:
 
 
 def _source_packet_to_preflight(packet: dict[str, Any]) -> SourceCorpusPreflight:
-    synthesis = packet.get("synthesis") if isinstance(packet.get("synthesis"), dict) else {}
-    synthesis = dict(synthesis)
-    source_documents = [
-        document
-        for document in packet.get("source_documents", [])
-        if isinstance(document, dict) and str(document.get("url") or "").strip()
-    ]
-    source_urls = [str(document.get("url")) for document in source_documents]
-    if not source_urls:
-        for source in packet.get("sources", []):
-            source_record = source.get("source") if isinstance(source, dict) else None
-            if isinstance(source_record, dict) and str(source_record.get("canonical_url") or "").strip():
-                source_urls.append(str(source_record.get("canonical_url")))
-    input_artifacts = [
-        {
-            "id": str(document.get("inputArtifactId")),
-            "kind": str(document.get("inputArtifactKind") or "document"),
-            "title": str(document.get("title") or document.get("inputArtifactId") or "Input artifact"),
-            "filename": "",
-            "mimeType": str(document.get("contentType") or document.get("content_type") or ""),
-            "sourceUrl": "",
-            "sourceDocumentUrl": str(document.get("url") or ""),
-            "extractionStatus": "extracted",
-            "textLength": len(str(document.get("text") or document.get("rawText") or document.get("content") or "")),
-        }
-        for document in source_documents
-        if document.get("inputArtifactId")
-    ]
+    handoff = source_packet_generation_handoff(packet)
+    return SourceCorpusPreflight(
+        synthesis=handoff.synthesis,
+        source_urls=handoff.source_urls,
+        source_documents=handoff.source_documents,
+        input_artifacts=handoff.input_artifacts,
+    )
+
+
+def _source_packet_has_generation_evidence(packet: dict[str, Any]) -> bool:
+    return bool(
+        [
+            document
+            for document in packet.get("source_documents", [])
+            if isinstance(document, dict) and str(document.get("url") or "").strip()
+        ]
+        or [evidence for evidence in packet.get("evidence", []) if isinstance(evidence, dict)]
+    )
+
+
+def _source_packet_empty_fallback(
+    fallback: SourceCorpusPreflight,
+    *,
+    source_packet: dict[str, Any],
+) -> SourceCorpusPreflight:
+    synthesis = dict(fallback.synthesis)
+    quality = source_packet.get("quality") if isinstance(source_packet.get("quality"), dict) else {}
     synthesis["sourcePacket"] = {
-        "contractVersion": str(packet.get("contract_version") or SOURCE_PACKET_CONTRACT_VERSION),
-        "contextId": packet.get("context_id"),
-        "sourceCount": len(packet.get("sources", []) if isinstance(packet.get("sources"), list) else []),
-        "sourceDocumentCount": len(source_documents),
-        "warnings": packet.get("warnings") if isinstance(packet.get("warnings"), list) else [],
-        "quality": packet.get("quality") if isinstance(packet.get("quality"), dict) else {},
+        "contractVersion": str(source_packet.get("contract_version") or SOURCE_PACKET_CONTRACT_VERSION),
+        "status": "empty",
+        "packetId": source_packet.get("packet_id"),
+        "contextId": source_packet.get("context_id"),
+        "quality": quality,
+        "warnings": source_packet.get("warnings") if isinstance(source_packet.get("warnings"), list) else [],
     }
-    if input_artifacts:
-        synthesis["inputArtifacts"] = input_artifacts
     return SourceCorpusPreflight(
         synthesis=synthesis,
-        source_urls=source_urls,
-        source_documents=source_documents,
-        input_artifacts=input_artifacts,
+        source_urls=fallback.source_urls,
+        source_documents=fallback.source_documents,
+        input_artifacts=fallback.input_artifacts,
     )
 
 
@@ -337,7 +335,7 @@ def compile_generation_source_corpus(
                 source_documents=fallback.source_documents,
             )
 
-    if source_index_client_configured() and normalized_urls:
+    if source_index_client_configured():
         try:
             packet = SourceIndexClient().create_source_packet(
                 consumer="lycium-course-generation",
@@ -348,7 +346,16 @@ def compile_generation_source_corpus(
                 source_documents=prepared_documents,
                 snapshot_limit=1,
             )
-            return _source_packet_to_preflight(packet)
+            if _source_packet_has_generation_evidence(packet):
+                return _source_packet_to_preflight(packet)
+            fallback = compile_source_corpus_preflight(
+                prompt=prompt,
+                source_urls=normalized_urls,
+                fetch_sources=fetch_sources,
+                source_documents=source_documents,
+                input_artifacts=input_artifacts,
+            )
+            return _source_packet_empty_fallback(fallback, source_packet=packet)
         except SourceIndexClientError as exc:
             fallback = compile_source_corpus_preflight(
                 prompt=prompt,
@@ -367,6 +374,7 @@ def compile_generation_source_corpus(
                 synthesis=synthesis,
                 source_urls=fallback.source_urls,
                 source_documents=fallback.source_documents,
+                input_artifacts=fallback.input_artifacts,
             )
 
     return compile_source_corpus_preflight(

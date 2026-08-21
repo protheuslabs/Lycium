@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 
@@ -141,6 +143,112 @@ REMOTE_SOURCE_PACKET = {
     },
 }
 
+REMOTE_EXTERNAL_SOURCE_PACKET = {
+    "contract_version": "source-packet-v1",
+    "packet_id": "packet_remote_macroeconomics",
+    "generated_at": "2026-05-30T00:00:00Z",
+    "producer": {
+        "service": "protheus-source-index",
+        "version": "0.1.0",
+        "environment": "test",
+        "schema_id": "https://protheuslabs.dev/source-index/schemas/source-packet-v1.schema.json",
+    },
+    "consumer": "lycium-course-generation",
+    "context_id": "macroeconomics",
+    "target": {
+        "target_id": "course:macroeconomics-principles",
+        "target_type": "course",
+        "title": "Principles of Macroeconomics",
+        "description": "Introductory undergraduate macroeconomics.",
+        "concepts": ["GDP", "inflation"],
+        "requirements": ["support course template generation"],
+        "metadata": {},
+    },
+    "evidence": [
+        {
+            "evidence_id": "ev_remote_macroeconomics",
+            "evidence_ref": "src_remote_macroeconomics#metadata",
+            "source_public_id": "src_remote_macroeconomics",
+            "snapshot_public_id": "snap_remote_macroeconomics",
+            "chunk_public_id": "chunk_remote_macroeconomics",
+            "locator": {
+                "locator_type": "url",
+                "value": "https://openstax.org/details/books/principles-macroeconomics-3e",
+                "canonical": True,
+                "label": "OpenStax Principles of Macroeconomics 3e",
+            },
+            "heading": "National output and inflation",
+            "concepts": ["GDP", "inflation"],
+            "citation": {
+                "title": "Principles of Macroeconomics 3e",
+                "url": "https://openstax.org/details/books/principles-macroeconomics-3e",
+                "authors": ["David Shapiro"],
+                "publisher": "OpenStax",
+                "published_at": "2022",
+                "accessed_at": "2026-05-30T00:00:00Z",
+            },
+            "relevance": {
+                "score": 0.91,
+                "matched_terms": ["macroeconomics", "inflation"],
+                "matched_concepts": ["GDP", "inflation"],
+                "reason": "Candidate matched target concepts and passed static export gates.",
+            },
+            "compliance": {
+                "level": "metadata_only",
+                "allowed_operations": ["metadata", "citation", "internal_index"],
+                "packet_text_allowed": False,
+                "warnings": ["Packet text is withheld; this static export includes metadata and citation only."],
+            },
+        }
+    ],
+    "sources": [
+        {
+            "source_public_id": "src_remote_macroeconomics",
+            "locators": [
+                {
+                    "locator_type": "url",
+                    "value": "https://openstax.org/details/books/principles-macroeconomics-3e",
+                    "canonical": True,
+                    "label": "OpenStax Principles of Macroeconomics 3e",
+                }
+            ],
+            "source_type": "open_textbook",
+            "lifecycle_state": "usable",
+            "license": "CC BY-NC-SA 4.0",
+            "data_classification": "public",
+            "compliance_level": "metadata_only",
+            "title": "Principles of Macroeconomics 3e",
+            "provider": "OpenStax",
+            "domain": "openstax.org",
+            "source_roles": ["open_textbook", "curriculum_benchmark", "lesson_evidence"],
+            "tags": ["economics", "macroeconomics"],
+            "concepts": ["GDP", "inflation", "unemployment"],
+        }
+    ],
+    "coverage": {
+        "requested_concepts": ["GDP", "inflation"],
+        "covered_concepts": ["GDP", "inflation"],
+        "uncovered_concepts": [],
+        "coverage_score": 1.0,
+    },
+    "quality": {
+        "status": "usable",
+        "score": 0.89,
+        "warnings": ["Some included sources are metadata-only until source-text use is reviewed."],
+        "included_source_count": 1,
+        "included_evidence_count": 1,
+        "average_relevance_score": 0.91,
+    },
+    "trace": {
+        "retrieval_strategy": "static-corpus-export-v1",
+        "candidate_count": 1,
+        "included_count": 1,
+        "excluded_count": 0,
+        "decisions": [],
+        "thresholds": {"minimum_candidate_score": 0.15},
+    },
+}
+
 REMOTE_IMPORT_REPORT = {
     "contract_version": "source-import-batch-v1",
     "batch_id": "remote-macroeconomics",
@@ -169,6 +277,29 @@ def _low_concept_coverage_packet() -> dict:
             "coveredConceptCandidateCount": 1,
             "conceptCoverageRatio": 0.25,
             "uncoveredConceptCandidates": ["inflation", "monetary policy", "aggregate demand"],
+        },
+    }
+
+
+def _empty_external_source_packet() -> dict:
+    return {
+        **REMOTE_EXTERNAL_SOURCE_PACKET,
+        "packet_id": "packet_empty_macroeconomics",
+        "evidence": [],
+        "sources": [],
+        "coverage": {
+            "requested_concepts": ["GDP", "inflation"],
+            "covered_concepts": [],
+            "uncovered_concepts": ["GDP", "inflation"],
+            "coverage_score": 0.0,
+        },
+        "quality": {
+            "status": "empty",
+            "score": 0.0,
+            "warnings": ["No static corpus sources matched the packet request."],
+            "included_source_count": 0,
+            "included_evidence_count": 0,
+            "average_relevance_score": 0.0,
         },
     }
 
@@ -222,12 +353,15 @@ def test_source_index_client_uses_http_contract_for_corpus_runs() -> None:
     assert fetched["decisions"][0]["decision"] == "included"
 
 
-def test_source_index_client_uses_http_contract_for_source_packets() -> None:
+def test_source_index_client_uses_standalone_http_contract_for_source_packets() -> None:
+    requests: list[dict] = []
+
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "POST" and request.url.path == "/v1/index/source-packets":
-            return httpx.Response(201, json=REMOTE_SOURCE_PACKET)
-        if request.method == "GET" and request.url.path == "/v1/index/source-packets/3":
-            return httpx.Response(200, json=REMOTE_SOURCE_PACKET)
+            return httpx.Response(500, json={"detail": "legacy endpoint should not be used"})
+        if request.method == "POST" and request.url.path == "/v1/source-packets":
+            requests.append(json.loads(request.content))
+            return httpx.Response(200, json=REMOTE_EXTERNAL_SOURCE_PACKET)
         return httpx.Response(404, json={"detail": "not found"})
 
     client = SourceIndexClient(base_url="http://source-index.test", transport=httpx.MockTransport(handler))
@@ -246,10 +380,47 @@ def test_source_index_client_uses_http_contract_for_source_packets() -> None:
         ],
     )
 
+    request_payload = requests[0]
+    assert packet["packet_id"] == "packet_remote_macroeconomics"
+    assert request_payload["target"]["target_type"] == "course"
+    assert request_payload["target"]["metadata"]["submitted_source_urls"] == ["https://example.edu/catalog/macroeconomics"]
+    assert "macroeconomics" in {concept.lower() for concept in request_payload["target"]["concepts"]}
+
+
+def test_source_index_client_falls_back_to_legacy_source_packet_endpoint() -> None:
+    paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        paths.append(request.url.path)
+        if request.method == "POST" and request.url.path == "/v1/source-packets":
+            return httpx.Response(404, json={"detail": "not found"})
+        if request.method == "POST" and request.url.path == "/v1/index/source-packets":
+            return httpx.Response(201, json=REMOTE_SOURCE_PACKET)
+        if request.method == "GET" and request.url.path == "/v1/source-packets/3":
+            return httpx.Response(404, json={"detail": "not found"})
+        if request.method == "GET" and request.url.path == "/v1/index/source-packets/3":
+            return httpx.Response(200, json=REMOTE_SOURCE_PACKET)
+        return httpx.Response(404, json={"detail": "not found"})
+
+    client = SourceIndexClient(base_url="http://source-index.test", transport=httpx.MockTransport(handler))
+
+    packet = client.create_source_packet(
+        consumer="lycium-course-generation",
+        context_id="macroeconomics",
+        prompt="macroeconomics principles",
+        source_urls=["https://example.edu/catalog/macroeconomics"],
+    )
+
     assert packet["contract_version"] == "source-packet-v1"
     assert packet["source_documents"][0]["snapshotId"] == "snap_remote_macroeconomics"
     assert packet["quality"]["status"] == "usable"
     assert client.get_source_packet(3)["contract_version"] == "source-packet-v1"
+    assert paths == [
+        "/v1/source-packets",
+        "/v1/index/source-packets",
+        "/v1/source-packets/3",
+        "/v1/index/source-packets/3",
+    ]
 
 
 def test_source_index_client_uses_http_contract_for_bulk_imports() -> None:
@@ -285,7 +456,96 @@ def test_generation_source_corpus_accepts_source_packet_payload() -> None:
     assert preflight.source_urls == ["https://example.edu/catalog/macroeconomics"]
     assert preflight.source_documents[0]["snapshotId"] == "snap_remote_macroeconomics"
     assert preflight.synthesis["sourcePacket"]["contractVersion"] == "source-packet-v1"
+    assert preflight.synthesis["sourcePacket"]["packetId"] == "source-packet-remote-macroeconomics"
     assert preflight.synthesis["sourcePacket"]["quality"]["status"] == "usable"
+
+
+def test_generation_source_corpus_accepts_standalone_source_index_packet() -> None:
+    preflight = compile_generation_source_corpus(
+        prompt="macroeconomics principles",
+        source_urls=[],
+        source_packet=REMOTE_EXTERNAL_SOURCE_PACKET,
+    )
+
+    source_packet = preflight.synthesis["sourcePacket"]
+    quality = source_packet["quality"]
+
+    assert preflight.source_urls == ["https://openstax.org/details/books/principles-macroeconomics-3e"]
+    assert preflight.source_documents[0]["sourceIndexRef"]["packetId"] == "packet_remote_macroeconomics"
+    assert preflight.source_documents[0]["evidenceRef"] == "src_remote_macroeconomics#metadata"
+    assert "metadata evidence" in preflight.source_documents[0]["text"]
+    assert source_packet["packetId"] == "packet_remote_macroeconomics"
+    assert source_packet["evidenceRefs"] == ["src_remote_macroeconomics#metadata"]
+    assert quality["status"] == "usable"
+    assert quality["conceptCoverageRatio"] == 1.0
+    assert quality["conceptCandidateCount"] == 2
+    assert quality["sourceIndexQuality"]["score"] == 0.89
+
+
+def test_generation_source_corpus_requests_remote_source_index_packet(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    class FakeSourceIndexClient:
+        def create_source_packet(self, **kwargs):
+            calls.append(kwargs)
+            return REMOTE_EXTERNAL_SOURCE_PACKET
+
+    monkeypatch.setattr("app.source_corpus.source_index_client_configured", lambda: True)
+    monkeypatch.setattr("app.source_corpus.SourceIndexClient", FakeSourceIndexClient)
+
+    preflight = compile_generation_source_corpus(
+        prompt="macroeconomics principles",
+        source_urls=["https://example.edu/catalog/macroeconomics"],
+        fetch_sources=False,
+    )
+
+    assert calls[0]["consumer"] == "lycium-course-generation"
+    assert calls[0]["source_urls"] == ["https://example.edu/catalog/macroeconomics"]
+    assert preflight.synthesis["sourcePacket"]["packetId"] == "packet_remote_macroeconomics"
+    assert preflight.source_documents[0]["sourceIndexRef"]["service"] == "protheus-source-index"
+
+
+def test_generation_source_corpus_requests_remote_source_index_packet_without_submitted_urls(monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    class FakeSourceIndexClient:
+        def create_source_packet(self, **kwargs):
+            calls.append(kwargs)
+            return REMOTE_EXTERNAL_SOURCE_PACKET
+
+    monkeypatch.setattr("app.source_corpus.source_index_client_configured", lambda: True)
+    monkeypatch.setattr("app.source_corpus.SourceIndexClient", FakeSourceIndexClient)
+
+    preflight = compile_generation_source_corpus(
+        prompt="macroeconomics principles",
+        source_urls=[],
+        fetch_sources=False,
+    )
+
+    assert calls[0]["source_urls"] == []
+    assert preflight.synthesis["sourcePacket"]["packetId"] == "packet_remote_macroeconomics"
+    assert preflight.source_urls == ["https://openstax.org/details/books/principles-macroeconomics-3e"]
+
+
+def test_generation_source_corpus_empty_remote_packet_falls_back_without_source_gate_payload(monkeypatch) -> None:
+    class FakeSourceIndexClient:
+        def create_source_packet(self, **_kwargs):
+            return _empty_external_source_packet()
+
+    monkeypatch.setattr("app.source_corpus.source_index_client_configured", lambda: True)
+    monkeypatch.setattr("app.source_corpus.SourceIndexClient", FakeSourceIndexClient)
+
+    preflight = compile_generation_source_corpus(
+        prompt="unindexed experimental course",
+        source_urls=[],
+        fetch_sources=False,
+    )
+
+    assert preflight.source_urls == []
+    assert preflight.source_documents == []
+    assert preflight.synthesis["sourcePacket"]["status"] == "empty"
+    assert preflight.synthesis["sourcePacket"]["packetId"] == "packet_empty_macroeconomics"
+    assert "conceptCoverageRatio" not in preflight.synthesis["sourcePacket"]["quality"]
 
 
 def test_direct_course_generation_blocks_low_concept_coverage_source_packet(client) -> None:

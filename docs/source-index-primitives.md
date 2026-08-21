@@ -27,6 +27,19 @@ Every `source-packet-v1` has a portable root envelope:
 
 Downstream tools should use `packet_id` for logs, generation traces, and handoff records instead of relying on Source Index database IDs.
 
+## Lycium API bridge
+
+When `LYCIUM_SOURCE_INDEX_API_URL` is configured, Lycium course generation asks the standalone Source Index service for `POST /v1/source-packets`. The request is product-neutral: Lycium sends a course-shaped target descriptor derived from the prompt/context instead of Lycium course JSON.
+
+Lycium keeps the packet boundary adapter-shaped:
+
+- standalone Source Index packets are normalized into generation source documents, source-corpus synthesis, and source-strength evidence;
+- packet IDs, source public IDs, snapshot/chunk IDs, evidence refs, quality, coverage, target metadata, and producer metadata are preserved in generation traces;
+- course snapshots keep citation/display metadata and packet receipts for reproducibility, not a canonical copy of the Source Index database;
+- if the standalone packet endpoint is unavailable but the old transitional Lycium endpoint exists, the client falls back to `/v1/index/source-packets`.
+
+Metadata-only packets are valid planning and citation evidence, but they are not the same as source-text-backed lesson evidence. When `packet_text_allowed` is false, Lycium uses the packet as citation/source metadata and should not pretend it received full excerpts.
+
 ## Developer UI
 
 When the web app is pointed at a local API, `/source-index` opens a small developer panel for pasting a generic batch, entering a prompt, importing sources, and generating a source packet.

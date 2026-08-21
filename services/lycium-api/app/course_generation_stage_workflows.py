@@ -1040,7 +1040,7 @@ def _lesson_guided_practice_block(concepts: list[str], source_ids: list[str]) ->
         "type": "text",
         "heading": "Guided practice",
         "value": (
-            f"Apply {focus} by writing a short explanation that names the situation, identifies the evidence or example that matters, "
+            f"Apply {focus} by writing a short explanation that names a realistic case, identifies the evidence or example that matters, "
             f"and explains how {supporting} changes the interpretation. End by naming one limitation or unanswered question that would need more support."
         ),
         "sourceIds": source_ids,
@@ -1927,7 +1927,6 @@ def run_module_apply_section_workflow(
 ) -> dict[str, Any]:
     module_id = str(module_outline.get("id") or f"module-{module_number}")
     module_title = str(module_outline.get("title") or f"Module {module_number}")
-    module_source_ids = _source_ids_from_outline(module_outline, fallback_source_ids or _strings(module_outline.get("sourceIds")))
     lesson_sections = [
         section
         for section in filled_lesson_sections
@@ -2006,14 +2005,7 @@ def run_module_apply_section_workflow(
     question_count = sum(len(_quiz_questions(block)) for block in quiz_blocks)
     valid_question_count = sum(_valid_quiz_question_count(_quiz_questions(block)) for block in quiz_blocks)
     taught_concepts = [str(concept.get("title") or "") for concept in concepts if str(concept.get("title") or "").strip()]
-    quiz_text_parts: list[str] = []
     quiz_questions = [question for block in quiz_blocks for question in _quiz_questions(block)]
-    for question in quiz_questions:
-        quiz_text_parts.append(str(question.get("question") or ""))
-        options = question.get("options")
-        if isinstance(options, list):
-            quiz_text_parts.extend(str(option) for option in options)
-    quiz_text = " ".join(quiz_text_parts).lower()
     bad_template_phrase_count = _quiz_bad_template_phrase_count(quiz_questions)
     target_concept_ids = _target_concept_ids_from_assessment_plan(assessment_plan)
     quiz_assessed_concept_ids = _concept_ids_from_quiz_questions(quiz_questions)
