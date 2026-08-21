@@ -507,6 +507,7 @@ export default function EditableContentBlock({
         <QuizBlock
           data={block}
           name={quizKey}
+          storageKey={courseKey}
           isEditMode={isEditMode}
           onDataChange={(nextData) => updateBlock({ ...block, ...nextData } as ContentBlock)}
           onSubmissionChange={onQuizSubmissionChange}

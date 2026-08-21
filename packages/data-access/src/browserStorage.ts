@@ -48,12 +48,12 @@ export function getCourseFeedbackStorageKey(courseKey: string): string {
   return `lycium-course-feedback-${courseKey}`;
 }
 
-export function getQuizProgressStorageKey(quizKey: string): string {
-  return `lycium-quiz-progress-${quizKey || "quiz"}`;
+export function getQuizProgressStorageKey(courseKey: string, quizKey: string): string {
+  return `lycium-quiz-progress-${courseKey || "course"}-${quizKey || "quiz"}`;
 }
 
-export function getQuizMarkerStorageKey(quizKey: string): string {
-  return `lycium-quiz-marker-${quizKey || "quiz"}`;
+export function getQuizMarkerStorageKey(courseKey: string, quizKey: string): string {
+  return `lycium-quiz-marker-${courseKey || "course"}-${quizKey || "quiz"}`;
 }
 
 export function getLocalCourseDraftsStorageKey(): string {
@@ -146,24 +146,24 @@ export function createBrowserStorageRepository() {
       getLocalStorage()?.setItem("lycium-theme-mode", mode);
     },
 
-    readQuizProgress(quizKey: string): LyciumQuizProgressRecord | null {
-      return readJson<LyciumQuizProgressRecord>(getQuizProgressStorageKey(quizKey));
+    readQuizProgress(courseKey: string, quizKey: string): LyciumQuizProgressRecord | null {
+      return readJson<LyciumQuizProgressRecord>(getQuizProgressStorageKey(courseKey, quizKey));
     },
 
-    writeQuizProgress(quizKey: string, progress: LyciumQuizProgressRecord): void {
-      writeJson(getQuizProgressStorageKey(quizKey), progress);
+    writeQuizProgress(courseKey: string, quizKey: string, progress: LyciumQuizProgressRecord): void {
+      writeJson(getQuizProgressStorageKey(courseKey, quizKey), progress);
     },
 
-    readQuizMarkers(quizKey: string): boolean[] | null {
-      return readJson<boolean[]>(getQuizMarkerStorageKey(quizKey));
+    readQuizMarkers(courseKey: string, quizKey: string): boolean[] | null {
+      return readJson<boolean[]>(getQuizMarkerStorageKey(courseKey, quizKey));
     },
 
-    writeQuizMarkers(quizKey: string, markers: boolean[]): void {
-      writeJson(getQuizMarkerStorageKey(quizKey), markers);
+    writeQuizMarkers(courseKey: string, quizKey: string, markers: boolean[]): void {
+      writeJson(getQuizMarkerStorageKey(courseKey, quizKey), markers);
     },
 
-    removeQuizMarkers(quizKey: string): void {
-      getLocalStorage()?.removeItem(getQuizMarkerStorageKey(quizKey));
+    removeQuizMarkers(courseKey: string, quizKey: string): void {
+      getLocalStorage()?.removeItem(getQuizMarkerStorageKey(courseKey, quizKey));
     },
   };
 }

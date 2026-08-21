@@ -28,6 +28,7 @@ const browserStorage = createBrowserStorageRepository();
 type QuizBlockProps = {
   data: QuizPayload;
   name: string;
+  storageKey?: string;
   isEditMode?: boolean;
   onDataChange?: (data: QuizPayload) => void;
   onSubmissionChange?: (quizKey: string, submitted: boolean) => void;
@@ -55,6 +56,7 @@ export default function QuizBlock(props: QuizBlockProps) {
 function ClientQuizBlock({
   data,
   name,
+  storageKey = name,
   isEditMode = false,
   onDataChange,
   onSubmissionChange,
@@ -71,8 +73,8 @@ function ClientQuizBlock({
         isEditMode,
         questionBank,
         questionsPerAttempt,
-        persistedProgress: browserStorage.readQuizProgress(name),
-        persistedMarkers: browserStorage.readQuizMarkers(name),
+        persistedProgress: browserStorage.readQuizProgress(storageKey, name),
+        persistedMarkers: browserStorage.readQuizMarkers(storageKey, name),
       });
     } catch {
       return restoreQuizSession({ isEditMode, questionBank, questionsPerAttempt });
@@ -106,6 +108,7 @@ function ClientQuizBlock({
   useEffect(() => {
     if (initialSession.attemptStarted && !initialSession.submitted && !isEditMode) {
       browserStorage.writeQuizProgress(
+        storageKey,
         name,
         {
           startedAt: new Date(initialSession.startedAtMs).toISOString(),
@@ -120,7 +123,7 @@ function ClientQuizBlock({
     }
 
     onSubmissionChange?.(name, initialSession.submitted);
-  }, [initialSession, isEditMode, name, onSubmissionChange]);
+  }, [initialSession, isEditMode, name, onSubmissionChange, storageKey]);
 
   const handleSubmit = useCallback(() => {
     if (!attemptStarted) {
@@ -158,6 +161,7 @@ function ClientQuizBlock({
     setAttemptCount(nextAttemptCount);
     setAttemptHistory(nextAttemptHistory);
     browserStorage.writeQuizProgress(
+      storageKey,
       name,
       {
         startedAt: new Date(startedAtMs).toISOString(),
@@ -180,7 +184,7 @@ function ClientQuizBlock({
       timed: timerDuration !== null || isTimed,
       passed,
     });
-  }, [attemptCount, attemptHistory, attemptOrder, attemptStarted, isTimed, name, onProgressChange, onSubmissionChange, passPercentage, questionsWithTiming, selectedByQuestion, startedAtMs, timerDuration]);
+  }, [attemptCount, attemptHistory, attemptOrder, attemptStarted, isTimed, name, onProgressChange, onSubmissionChange, passPercentage, questionsWithTiming, selectedByQuestion, startedAtMs, storageKey, timerDuration]);
 
   useEffect(() => {
     if (isEditMode || submitted || !attemptStarted) {
@@ -254,7 +258,7 @@ function ClientQuizBlock({
     setQuestionMarked((prev) => {
       const nextState = [...prev];
       nextState[questionIndex] = !nextState[questionIndex];
-      browserStorage.writeQuizMarkers(name, nextState);
+      browserStorage.writeQuizMarkers(storageKey, name, nextState);
       return nextState;
     });
   };
@@ -299,8 +303,9 @@ function ClientQuizBlock({
     const nextStartedAtMs = Date.now();
     setStartedAtMs(nextStartedAtMs);
     setElapsedSeconds(0);
-    browserStorage.removeQuizMarkers(name);
+    browserStorage.removeQuizMarkers(storageKey, name);
     browserStorage.writeQuizProgress(
+      storageKey,
       name,
       {
         startedAt: new Date(nextStartedAtMs).toISOString(),
