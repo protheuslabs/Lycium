@@ -39,6 +39,7 @@ from app.course_generation_stage_workflows import (
     compact_module_apply_workflow_reports,
     compact_stage_workflow_report,
     run_course_module_outline_workflow,
+    run_course_template_workflow,
     run_module_apply_section_workflow,
     run_module_assembly_workflow,
     run_module_section_plan_workflow,
@@ -278,10 +279,43 @@ def generate_course_with_agent_staged(
     if max_stage_timeout_seconds is not None:
         trace["max_stage_timeout_seconds"] = max_stage_timeout_seconds
 
+    course_template = previous_trace.get("course_template") if isinstance(previous_trace.get("course_template"), dict) else None
+    outline_packet = _source_packet_for_outline(source_packet=source_packet, source_corpus=source_corpus)
+    if course_template is None:
+        _emit_workflow_status(
+            on_workflow_status,
+            stage="course_template_generation",
+            trace=trace,
+            progress=0.04,
+        )
+        course_template_report = run_course_template_workflow(
+            prompt=prompt,
+            level=level,
+            desired_module_count=desired_module_count,
+            expected_duration_minutes=expected_duration_minutes,
+            source_policy=source_policy,
+            source_packet=outline_packet,
+            category=category,
+            department=department,
+        )
+        course_template = course_template_report["artifacts"]["courseTemplate"]
+        if not any(stage.get("stage") == "course_template_generation" for stage in trace["stage_workflows"] if isinstance(stage, dict)):
+            trace["stage_workflows"].append(compact_stage_workflow_report(course_template_report))
+        if course_template_report["status"] == "failed":
+            reasons = [
+                str(issue.get("message"))
+                for issue in course_template_report.get("issues", [])
+                if isinstance(issue, dict) and issue.get("severity") == "error"
+            ]
+            raise CourseAgentError(
+                "Course template generation failed: " + "; ".join(reasons or ["template handoff did not pass validation"]),
+                trace=trace,
+            )
+    trace["course_template"] = course_template
+
     resumed_plan = previous_trace.get("plan") if isinstance(previous_trace.get("plan"), dict) else None
     course_build_outline_plan = None
     if not resumed_plan:
-        outline_packet = _source_packet_for_outline(source_packet=source_packet, source_corpus=source_corpus)
         outline_planning_source = _outline_planning_source(source_packet, source_corpus)
         course_build_outline_plan = _course_build_outline_plan_from_resume_course(
             resume_course
@@ -339,6 +373,7 @@ def generate_course_with_agent_staged(
                     department=department,
                     source_urls=effective_source_urls,
                     benchmark_context=benchmark_context,
+                    course_template=course_template,
                 ),
             )
     except CourseAgentError as exc:
@@ -346,6 +381,22 @@ def generate_course_with_agent_staged(
         raise CourseAgentError(str(exc), trace={**trace, **getattr(exc, "trace", {})}) from exc
     if not resumed_plan and not course_build_outline_plan:
         trace["stages"].append({"stage": "course_plan", "status": "passed"})
+
+    template_title = str(course_template.get("title") or "").strip() if isinstance(course_template, dict) else ""
+    prompt_title = prompt.strip().rstrip(".")
+    plan_title = str(plan.get("title") or "").strip()
+    if template_title and (
+        not plan_title
+        or plan_title.lower() == prompt_title.lower()
+        or plan_title.lower() in {"generated course", "untitled course"}
+    ):
+        plan["title"] = template_title
+    if isinstance(course_template, dict):
+        if not str(plan.get("shortDescription") or "").strip() and str(course_template.get("shortDescription") or "").strip():
+            plan["shortDescription"] = str(course_template["shortDescription"])
+        if not isinstance(plan.get("scope"), dict) and isinstance(course_template.get("scope"), dict):
+            plan["scope"] = course_template["scope"]
+        plan["courseTemplate"] = course_template
 
     title = str(plan.get("title") or "Generated course")
     plan["sourceCorpusSynthesis"] = source_corpus.synthesis
@@ -417,6 +468,7 @@ def generate_course_with_agent_staged(
             level=level,
             category=category,
             department=department,
+            course_template=course_template,
         ),
     )
 
@@ -475,6 +527,7 @@ def generate_course_with_agent_staged(
                         level=level,
                         category=category,
                         department=department,
+                        course_template=course_template,
                     )
                     failed_trace = getattr(exc, "trace", {})
                     trace["stages"].extend(failed_trace.get("stages", []) if isinstance(failed_trace, dict) else [])
@@ -505,6 +558,7 @@ def generate_course_with_agent_staged(
                         level=level,
                         category=category,
                         department=department,
+                        course_template=course_template,
                     ),
                 )
 
@@ -536,6 +590,7 @@ def generate_course_with_agent_staged(
                 level=level,
                 category=category,
                 department=department,
+                course_template=course_template,
             )
             failed_trace = getattr(exc, "trace", {})
             trace["stages"].extend(failed_trace.get("stages", []) if isinstance(failed_trace, dict) else [])
@@ -566,6 +621,7 @@ def generate_course_with_agent_staged(
                 level=level,
                 category=category,
                 department=department,
+                course_template=course_template,
             ),
         )
 
@@ -593,6 +649,8 @@ def generate_course_with_agent_staged(
         },
         "modules": modules,
     }
+    if isinstance(course_template, dict):
+        course_payload["metadata"]["courseTemplate"] = course_template
     if source_corpus.input_artifacts:
         course_payload["metadata"]["inputArtifacts"] = source_corpus.input_artifacts
     if isinstance(plan.get("sourceOutline"), dict):

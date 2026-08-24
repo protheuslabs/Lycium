@@ -131,6 +131,7 @@ def _staged_plan_messages(
     department: str | None,
     source_urls: list[str] | None,
     benchmark_context: dict | None = None,
+    course_template: dict | None = None,
 ) -> list[dict[str, str]]:
     source_ids = _source_ids_for_input(source_urls)
     return [
@@ -157,6 +158,12 @@ def _staged_plan_messages(
                     "source_urls": source_urls or [],
                     "available_source_ids": source_ids,
                     "curriculum_benchmark_context": benchmark_context or {},
+                    "course_template_handoff": course_template or {},
+                    "course_template_instruction": (
+                        "Treat course_template_handoff as the first-stage course contract when present. "
+                        "Preserve its resolved title, shortDescription, scope, learning outcomes, coverage checklist item IDs, and source packet handoff. "
+                        "The module plan must assign every required coverage item to at least one module without writing learner-facing lesson content yet."
+                    ),
                     "benchmark_instruction": (
                         "Use curriculum_benchmark_context.requirementOrigins to build the course skeleton. "
                         "Do not let source availability alone decide the curriculum sequence."

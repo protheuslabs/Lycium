@@ -4,6 +4,11 @@ import re
 from typing import Any, Literal
 
 from app.course_generation_scenario_specs import COURSE_SCENARIOS, PROGRAM_SCENARIOS
+from app.course_generation_stage_workflows import (
+    COURSE_MODULE_OUTLINE_CONTRACT,
+    COURSE_TEMPLATE_ARTIFACT_CONTRACT,
+    COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT,
+)
 from app.course_source_integrity import assess_course_source_integrity
 from app.course_quality import assess_course_quality
 
@@ -44,6 +49,10 @@ def _has_items(value: Any) -> bool:
 
 def _text(value: Any) -> str:
     return value if isinstance(value, str) else ""
+
+
+def _strings(value: Any) -> list[str]:
+    return [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
 
 
 def _normalize(value: str) -> str:
@@ -176,6 +185,180 @@ def _course_metrics(course: dict[str, Any]) -> dict[str, Any]:
 
 def _metadata(course: dict[str, Any]) -> dict[str, Any]:
     return course.get("metadata") if isinstance(course.get("metadata"), dict) else {}
+
+
+def _contains_materialization_payload(value: Any) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in ("courseWrapper", "activeGenerationPlan", "courseBuildTask", "modules", "sections", "content")):
+            return True
+        return any(_contains_materialization_payload(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_contains_materialization_payload(item) for item in value)
+    return False
+
+
+def _course_template_from_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), dict) else {}
+    if isinstance(artifacts.get("courseTemplate"), dict):
+        quality = artifacts.get("courseTemplateQualityReport") if isinstance(artifacts.get("courseTemplateQualityReport"), dict) else {}
+        return artifacts["courseTemplate"], quality
+    if payload.get("contractVersion") == COURSE_TEMPLATE_ARTIFACT_CONTRACT:
+        return payload, {}
+    if isinstance(payload.get("courseTemplate"), dict):
+        quality = payload.get("courseTemplateQualityReport") if isinstance(payload.get("courseTemplateQualityReport"), dict) else {}
+        return payload["courseTemplate"], quality
+    return {}, {}
+
+
+def _template_text_blob(template: dict[str, Any]) -> str:
+    parts = [
+        _text(template.get("title")),
+        _text(template.get("shortDescription")),
+        _text(template.get("category")),
+        _text(template.get("department")),
+    ]
+    scope = template.get("scope") if isinstance(template.get("scope"), dict) else {}
+    parts.extend(str(value) for value in scope.values() if isinstance(value, str))
+    for outcome in _items(template.get("learningOutcomes")):
+        parts.append(_text(outcome.get("outcome")))
+    checklist = template.get("courseCoverageChecklist") if isinstance(template.get("courseCoverageChecklist"), dict) else {}
+    for item in _items(checklist.get("requiredItems")):
+        parts.extend(_text(item.get(key)) for key in ("title", "description"))
+        parts.extend(str(value) for value in item.get("mustTeach", []) if isinstance(value, str))
+        for section_plan in _items(item.get("sectionPlans")):
+            parts.extend(_text(section_plan.get(key)) for key in ("title", "learningObjective"))
+            parts.extend(str(value) for value in section_plan.get("mustTeach", []) if isinstance(value, str))
+    return "\n".join(part for part in parts if part)
+
+
+def _template_title_check(template: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+    title = str(template.get("title") or "").strip()
+    normalized_title = _normalize(title)
+    label_tokens = [token for token in _normalize(str(spec.get("label") or "")).split() if len(token) > 3]
+    matched_tokens = [token for token in label_tokens if f" {token} " in f" {normalized_title} "]
+    banned_fragments = ("covering", "including", "source gap", "needs sources")
+    findings = [
+        *([] if title else [_finding("error", "Course template must resolve a non-empty title.", "title")]),
+        *(
+            []
+            if len(matched_tokens) >= max(1, min(2, len(label_tokens)))
+            else [_finding("error", "Resolved title does not preserve enough of the requested course identity.", "title")]
+        ),
+        *(
+            []
+            if not any(fragment in normalized_title for fragment in banned_fragments)
+            else [_finding("error", "Resolved title still contains prompt or workflow-state wording.", "title")]
+        ),
+    ]
+    return _check(
+        key="template_title",
+        label="Resolved course title",
+        score=0.4 * bool(title)
+        + 0.4 * (len(matched_tokens) >= max(1, min(2, len(label_tokens))))
+        + 0.2 * (not any(fragment in normalized_title for fragment in banned_fragments)),
+        findings=findings,
+        metrics={"title": title, "matchedLabelTokenCount": len(matched_tokens), "labelTokenCount": len(label_tokens)},
+    )
+
+
+def _template_handoff_check(template: dict[str, Any], quality: dict[str, Any]) -> dict[str, Any]:
+    checklist = template.get("courseCoverageChecklist") if isinstance(template.get("courseCoverageChecklist"), dict) else {}
+    required_items = _items(checklist.get("requiredItems"))
+    learning_outcomes = _items(template.get("learningOutcomes"))
+    handoff = template.get("handoff") if isinstance(template.get("handoff"), dict) else {}
+    scope = template.get("scope") if isinstance(template.get("scope"), dict) else {}
+    required_ids = [str(item.get("id")) for item in required_items if str(item.get("id") or "").strip()]
+    handoff_ids = [str(item) for item in handoff.get("requiredCoverageItemIds", []) if str(item).strip()]
+    has_scope = all(str(scope.get(key) or "").strip() for key in ("audience", "level", "duration", "outcome", "assessmentExpectations"))
+    coverage_handoff_matches = bool(required_ids) and handoff_ids == required_ids
+    no_materialization = not _contains_materialization_payload(template)
+    quality_passed = quality.get("contractVersion") == COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT and bool(quality.get("passed"))
+    findings = [
+        *([] if template.get("contractVersion") == COURSE_TEMPLATE_ARTIFACT_CONTRACT else [_finding("error", "Template artifact contract is missing or wrong.", "contractVersion")]),
+        *([] if str(template.get("shortDescription") or "").strip() else [_finding("error", "Template needs a learner-facing shortDescription.", "shortDescription")]),
+        *([] if has_scope else [_finding("error", "Template scope is missing required handoff fields.", "scope")]),
+        *([] if len(learning_outcomes) >= 3 else [_finding("error", "Template needs at least three learning outcomes.", "learningOutcomes")]),
+        *([] if all(_items(item.get("sectionPlans")) and _strings(item.get("mustTeach")) for item in required_items) else [_finding("error", "Coverage items need mustTeach values and section-plan hints.", "courseCoverageChecklist.requiredItems")]),
+        *([] if handoff.get("nextWorkflow") == COURSE_MODULE_OUTLINE_CONTRACT else [_finding("error", "Template handoff must point to module outline generation.", "handoff.nextWorkflow")]),
+        *([] if coverage_handoff_matches else [_finding("error", "Handoff coverage item IDs must exactly match checklist item IDs.", "handoff.requiredCoverageItemIds")]),
+        *([] if no_materialization else [_finding("error", "Template workflow must not materialize modules, sections, build tasks, or content.")]),
+        *([] if quality_passed else [_finding("error", "Template quality report must pass.", "courseTemplateQualityReport")]),
+    ]
+    return _check(
+        key="template_handoff",
+        label="First-stage handoff shape",
+        score=(
+            0.1 * (template.get("contractVersion") == COURSE_TEMPLATE_ARTIFACT_CONTRACT)
+            + 0.1 * bool(str(template.get("shortDescription") or "").strip())
+            + 0.15 * has_scope
+            + 0.15 * (len(learning_outcomes) >= 3)
+            + 0.15 * all(_items(item.get("sectionPlans")) and _strings(item.get("mustTeach")) for item in required_items)
+            + 0.1 * (handoff.get("nextWorkflow") == COURSE_MODULE_OUTLINE_CONTRACT)
+            + 0.1 * coverage_handoff_matches
+            + 0.1 * no_materialization
+            + 0.05 * quality_passed
+        ),
+        findings=findings,
+        metrics={
+            "learningOutcomeCount": len(learning_outcomes),
+            "requiredCoverageItemCount": len(required_items),
+            "handoffCoverageItemCount": len(handoff_ids),
+            "materializedPayloadPresent": int(not no_materialization),
+            "qualityPassed": int(quality_passed),
+        },
+    )
+
+
+def _template_taxonomy_check(template: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+    return _check(
+        key="template_taxonomy",
+        label="Template taxonomy preservation",
+        score=(
+            0.5 * (template.get("category") == spec["expectedCategory"])
+            + 0.5 * (template.get("department") == spec["expectedDepartment"])
+        ),
+        findings=[
+            *([] if template.get("category") == spec["expectedCategory"] else [_finding("error", f"Expected category {spec['expectedCategory']}.", "category")]),
+            *([] if template.get("department") == spec["expectedDepartment"] else [_finding("error", f"Expected department {spec['expectedDepartment']}.", "department")]),
+        ],
+        metrics={"category": template.get("category"), "department": template.get("department")},
+    )
+
+
+def _template_description_check(template: dict[str, Any]) -> dict[str, Any]:
+    description = str(template.get("shortDescription") or "")
+    normalized = _normalize(description)
+    meta_terms = ("template", "handoff", "workflow", "staged module", "generated artifact")
+    findings = [
+        *([] if 60 <= len(description) <= 180 else [_finding("warning", "Catalog description should be concise but substantial.", "shortDescription")]),
+        *([] if not any(term in normalized for term in meta_terms) else [_finding("error", "Catalog description should describe the course, not the workflow artifact.", "shortDescription")]),
+    ]
+    return _check(
+        key="template_description",
+        label="Learner-facing catalog description",
+        score=0.55 * (60 <= len(description) <= 180) + 0.45 * (not any(term in normalized for term in meta_terms)),
+        findings=findings,
+        metrics={"descriptionLength": len(description), "metaTermCount": sum(1 for term in meta_terms if term in normalized)},
+    )
+
+
+def evaluate_course_template_generation_scenario(template_payload: dict[str, Any], scenario_id: str) -> dict[str, Any]:
+    if scenario_id not in COURSE_SCENARIOS:
+        raise ValueError(f"Unknown course generation scenario '{scenario_id}'")
+    spec = COURSE_SCENARIOS[scenario_id]
+    template, quality = _course_template_from_payload(template_payload)
+    text_blob = _template_text_blob(template)
+    min_coverage = float(spec.get("minTemplateRequiredKeywordCoverage") or 0.95)
+    checks = [
+        _template_title_check(template, spec),
+        _template_taxonomy_check(template, spec),
+        _template_handoff_check(template, quality),
+        _template_description_check(template),
+        _coverage_check(text_blob, spec["requiredKeywords"], min_coverage),
+        _specificity_check(text_blob),
+    ]
+    return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course_template", checks=checks)
+
 
 def _source_gap_metrics(course: dict[str, Any]) -> dict[str, Any]:
     metadata = _metadata(course)

@@ -9,6 +9,9 @@ from app.course_generation_stage_workflows import (
     CLUSTER_QUALITY_REPORT_CONTRACT,
     COURSE_MODULE_OUTLINE_CONTRACT,
     COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
+    COURSE_TEMPLATE_ARTIFACT_CONTRACT,
+    COURSE_TEMPLATE_CONTRACT,
+    COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT,
     COURSE_WRAPPER_GENERATION_CONTRACT,
     COURSE_WRAPPER_QUALITY_REPORT_CONTRACT,
     MODULE_ASSESSMENT_PLAN_CONTRACT,
@@ -24,6 +27,7 @@ from app.course_generation_stage_workflows import (
     STAGE_WORKFLOW_VERSION,
     run_cluster_generation_workflow,
     run_course_module_outline_workflow,
+    run_course_template_workflow,
     run_course_wrapper_generation_workflow,
     run_module_assessment_plan_workflow,
     run_module_apply_section_workflow,
@@ -68,6 +72,83 @@ def _source_packet() -> dict:
             }
         ],
     }
+
+
+def test_course_template_workflow_returns_first_stage_handoff() -> None:
+    result = run_course_template_workflow(
+        prompt=(
+            "Create a macroeconomics principles course covering economic measurement, gross domestic product, "
+            "inflation, unemployment, aggregate demand, and monetary policy."
+        ),
+        level="undergrad",
+        target_audience="first-year college learners",
+        desired_module_count=6,
+        expected_duration_minutes=1200,
+        source_packet={
+            "contract_version": "source-packet-v1",
+            "quality": {"status": "usable", "conceptCoverageRatio": 1.0},
+            "sources": [
+                {"source_public_id": "source-openstax-macro", "title": "OpenStax Macroeconomics"},
+                {"source_public_id": "source-bea-gdp", "title": "BEA GDP"},
+            ],
+        },
+        category="business-management",
+        department="economics",
+    )
+
+    assert result["workflowVersion"] == STAGE_WORKFLOW_VERSION
+    assert result["contractVersion"] == COURSE_TEMPLATE_CONTRACT
+    assert result["stage"] == "course_template_generation"
+    assert result["status"] == "passed"
+    template = result["artifacts"]["courseTemplate"]
+    quality = result["artifacts"]["courseTemplateQualityReport"]
+    required_items = template["courseCoverageChecklist"]["requiredItems"]
+
+    assert template["contractVersion"] == COURSE_TEMPLATE_ARTIFACT_CONTRACT
+    assert template["title"] == "Macroeconomics Principles Course"
+    assert template["category"] == "business-management"
+    assert template["department"] == "economics"
+    assert template["sourceIds"] == ["source-openstax-macro", "source-bea-gdp"]
+    assert template["scope"]["audience"] == "first-year college learners"
+    assert template["scope"]["level"] == "undergrad"
+    assert template["scope"]["evidenceMode"] == "source_packet"
+    assert len(template["learningOutcomes"]) >= 3
+    assert template["handoff"]["nextWorkflow"] == COURSE_MODULE_OUTLINE_CONTRACT
+    assert template["handoff"]["desiredModuleCount"] == 6
+    assert template["handoff"]["coverageChecklistContract"] == "course-coverage-checklist-v1"
+    assert template["handoff"]["requiredCoverageItemIds"] == [item["id"] for item in required_items]
+    assert {item["title"] for item in required_items} >= {
+        "Economic Measurement",
+        "Gross Domestic Product",
+        "Inflation",
+        "Unemployment",
+        "Aggregate Demand",
+        "Monetary Policy",
+    }
+    assert all(item["mustTeach"] for item in required_items)
+    assert all(item["sectionPlans"] for item in required_items)
+    assert "modules" not in template
+    assert not _contains_course_materialization_payload(template)
+    assert quality["contractVersion"] == COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT
+    assert quality["passed"] is True
+    assert quality["metrics"]["requiredCoverageItemCount"] == len(required_items)
+    assert quality["policy"]["materializesLearnerContent"] is False
+
+
+def test_course_template_workflow_blocks_empty_prompt_but_keeps_handoff_shape() -> None:
+    result = run_course_template_workflow(prompt="   ", desired_module_count=3)
+
+    assert result["contractVersion"] == COURSE_TEMPLATE_CONTRACT
+    assert result["status"] == "failed"
+    template = result["artifacts"]["courseTemplate"]
+    quality = result["artifacts"]["courseTemplateQualityReport"]
+
+    assert template["contractVersion"] == COURSE_TEMPLATE_ARTIFACT_CONTRACT
+    assert template["handoff"]["nextWorkflow"] == COURSE_MODULE_OUTLINE_CONTRACT
+    assert quality["passed"] is False
+    assert "Course template needs a resolved course title." in quality["reasons"]
+    assert "modules" not in template
+    assert not _contains_course_materialization_payload(template)
 
 
 def _course_shell_from_wrapper(wrapper: dict) -> dict:

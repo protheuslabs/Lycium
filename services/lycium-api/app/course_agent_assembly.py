@@ -100,6 +100,7 @@ def _partial_course_from_stages(
     level: str | None,
     category: str | None = None,
     department: str | None = None,
+    course_template: dict | None = None,
 ) -> dict:
     title = str((plan or {}).get("title") or "Partially generated course")
     source_ids = [str(record["id"]) for record in source_records]
@@ -131,6 +132,8 @@ def _partial_course_from_stages(
     }
     if isinstance((plan or {}).get("sourceOutline"), dict):
         course_payload["metadata"]["courseBuildOutline"] = (plan or {})["sourceOutline"]
+    if isinstance(course_template, dict):
+        course_payload["metadata"]["courseTemplate"] = course_template
     if isinstance((plan or {}).get("sourceCorpusSynthesis"), dict):
         course_payload["metadata"]["sourceCorpusSynthesis"] = (plan or {})["sourceCorpusSynthesis"]
     if isinstance((plan or {}).get("inputArtifacts"), list):

@@ -53,6 +53,18 @@ def _title_from_prompt(prompt: str) -> str:
         flags=re.IGNORECASE,
     )
     cleaned = re.sub(
+        r"\s+(?:covering|including|that\s+covers|that\s+includes|with)\s+.+$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
+        r"^(?:course|class)\s+(?:about|on|covering|including|with)\s+(.+)$",
+        r"\1 Course",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(
         r"\s+for\s+(?:first[- ]year|college|undergraduate|undergrad|high[- ]school|postgraduate|postgrad|students?|learners?|beginners?|introductory)\b.*$",
         "",
         cleaned,

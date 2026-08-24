@@ -10,6 +10,7 @@ from app.retrieval import tokenize
 COURSE_COVERAGE_CHECKLIST_CONTRACT = "course-coverage-checklist-v1"
 COURSE_COVERAGE_ALLOCATION_REPORT_CONTRACT = "course-coverage-allocation-report-v1"
 COURSE_COVERAGE_OUTLINE_CONTRACT = "course-outline-from-coverage-checklist-v1"
+MAX_REQUIRED_COVERAGE_ITEMS = 20
 
 GENERIC_FILLER_TERMS = {
     "application",
@@ -133,7 +134,7 @@ def _topic_phrases_from_prompt(prompt: str) -> list[str]:
     chunks = [chunk for chunk in re.split(r"\s*(?:,|;)\s*", topic_clause) if chunk.strip()]
     if len(chunks) <= 1:
         chunks = [chunk for chunk in re.split(r"\s+\band\b\s+", topic_clause, flags=re.IGNORECASE) if chunk.strip()]
-    return _unique([_clean_topic_phrase(chunk) for chunk in chunks], limit=12)
+    return _unique([_clean_topic_phrase(chunk) for chunk in chunks], limit=MAX_REQUIRED_COVERAGE_ITEMS)
 
 
 def _phrase_is_specific(phrase: str) -> bool:
@@ -142,7 +143,7 @@ def _phrase_is_specific(phrase: str) -> bool:
 
 
 def _goal_topics(goals: list[str]) -> list[str]:
-    return _unique([_clean_topic_phrase(goal) for goal in goals], limit=12)
+    return _unique([_clean_topic_phrase(goal) for goal in goals], limit=MAX_REQUIRED_COVERAGE_ITEMS)
 
 
 def _token_topics(prompt: str, title: str) -> list[str]:

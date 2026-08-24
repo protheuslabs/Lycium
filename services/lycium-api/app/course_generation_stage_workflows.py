@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 from app.course_agent_assembly import _coerce_generated_section, _module_lesson_outlines, _source_ids_from_outline
 from app.course_agent_staged_support import _infer_pacing_label, _normalize_summary_for_pacing, _with_generation_outline_metadata
+from app.course_coverage_checklists import COURSE_COVERAGE_CHECKLIST_CONTRACT, build_course_coverage_checklist
 from app.course_outline_from_source_packet import (
     COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
     SOURCE_PACKET_OUTLINE_CONTRACT_VERSION,
@@ -13,6 +14,7 @@ from app.course_outline_from_source_packet import (
     build_outline_from_source_packet,
 )
 from app.course_block_policy import supports_worked_example
+from app.generation_helpers import _stable_id, _title_from_prompt
 from app.curriculum_assembly_policy import (
     cluster_generation_threshold_report,
     curriculum_assembly_threshold_policy,
@@ -36,6 +38,9 @@ PROGRAM_GENERATION_CONTRACT = "program-generation-workflow-v1"
 CLUSTER_GENERATION_CONTRACT = "cluster-generation-workflow-v1"
 CLUSTER_PLAN_CONTRACT = "cluster-plan-v1"
 CLUSTER_QUALITY_REPORT_CONTRACT = "cluster-quality-report-v1"
+COURSE_TEMPLATE_CONTRACT = "course-template-workflow-v1"
+COURSE_TEMPLATE_ARTIFACT_CONTRACT = "course-template-v1"
+COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT = "course-template-quality-report-v1"
 COURSE_WRAPPER_GENERATION_CONTRACT = "course-wrapper-generation-workflow-v1"
 COURSE_MODULE_OUTLINE_CONTRACT = "course-module-outline-workflow-v1"
 MODULE_SECTION_PLAN_CONTRACT = "module-section-plan-workflow-v1"
@@ -129,6 +134,315 @@ def _status_from_issues(issues: list[dict[str, Any]]) -> StageStatus:
     if any(issue.get("severity") == "error" for issue in issues):
         return "failed"
     return "needs_review" if issues else "passed"
+
+
+def _duration_label(minutes: int) -> str:
+    if minutes <= 0:
+        return "unspecified"
+    hours = round(minutes / 60)
+    return f"{hours} hours" if hours != 1 else "1 hour"
+
+
+def _packet_quality_value(source_packet: dict[str, Any] | None, key: str) -> Any:
+    if not isinstance(source_packet, dict):
+        return None
+    quality = source_packet.get("quality") if isinstance(source_packet.get("quality"), dict) else {}
+    snake_key = re.sub(r"(?<!^)([A-Z])", r"_\1", key).lower()
+    return quality.get(key) or quality.get(snake_key) or source_packet.get(key) or source_packet.get(snake_key)
+
+
+def _source_ids_from_packet(source_packet: dict[str, Any] | None) -> list[str]:
+    if not isinstance(source_packet, dict):
+        return []
+    source_ids: list[str] = []
+    for document in _items(source_packet.get("source_documents")):
+        for value in (
+            document.get("courseSourceId"),
+            document.get("sourceId"),
+            document.get("source_public_id"),
+            document.get("sourcePublicId"),
+            document.get("id"),
+        ):
+            clean = str(value or "").strip()
+            if clean:
+                source_ids.append(clean)
+    for source in _items(source_packet.get("sources")):
+        for value in (
+            source.get("courseSourceId"),
+            source.get("sourceId"),
+            source.get("source_public_id"),
+            source.get("sourcePublicId"),
+            source.get("id"),
+        ):
+            clean = str(value or "").strip()
+            if clean:
+                source_ids.append(clean)
+    return _unique_strings(source_ids, limit=20)
+
+
+def _topic_phrases_from_source_packet(source_packet: dict[str, Any] | None) -> list[str]:
+    if not isinstance(source_packet, dict):
+        return []
+    snippets: list[str] = []
+    for source in [*_items(source_packet.get("source_documents")), *_items(source_packet.get("sources"))]:
+        for key in ("title", "description", "summary", "abstract", "text", "content"):
+            value = source.get(key)
+            if isinstance(value, str) and value.strip():
+                snippets.append(value[:800])
+    phrases: list[str] = []
+    for snippet in snippets:
+        clean = re.sub(r"https?://\S+", " ", snippet)
+        clean = re.sub(r"\([^)]*\)", " ", clean)
+        chunks = re.split(r"\s*(?:,|;|\n|\.|\band\b)\s*", clean, flags=re.IGNORECASE)
+        for chunk in chunks:
+            phrase = re.sub(r"\s+", " ", chunk).strip(" -:,.")
+            words = phrase.split()
+            if 1 <= len(words) <= 6:
+                phrases.append(phrase)
+    return _unique_strings(phrases, limit=12)
+
+
+def _course_template_learning_outcomes(
+    *,
+    title: str,
+    checklist: dict[str, Any],
+    goals: list[str],
+) -> list[dict[str, Any]]:
+    items = _items(checklist.get("requiredItems"))
+    outcomes: list[dict[str, Any]] = []
+    for index, goal in enumerate(_unique_strings(goals, limit=4), start=1):
+        outcomes.append(
+            {
+                "id": _stable_id("outcome", title, goal, str(index)),
+                "outcome": goal,
+                "coverageItemIds": [
+                    str(item.get("id"))
+                    for item in items[index - 1 : index]
+                    if str(item.get("id") or "").strip()
+                ],
+            }
+        )
+    for item in items:
+        if len(outcomes) >= 4:
+            break
+        item_title = str(item.get("title") or title).strip()
+        item_id = str(item.get("id") or "").strip()
+        outcome = f"Explain and apply {item_title.lower()} in course-level work."
+        outcomes.append(
+            {
+                "id": _stable_id("outcome", title, item_title, str(len(outcomes) + 1)),
+                "outcome": outcome,
+                "coverageItemIds": [item_id] if item_id else [],
+            }
+        )
+    if len(outcomes) < 3:
+        fallback_outcomes = [
+            f"Describe the core vocabulary and boundaries of {title}.",
+            f"Use evidence to reason about realistic {title.lower()} problems.",
+            f"Connect major ideas in {title} to assessment-ready examples.",
+        ]
+        for outcome in fallback_outcomes:
+            if len(outcomes) >= 3:
+                break
+            outcomes.append(
+                {
+                    "id": _stable_id("outcome", title, outcome, str(len(outcomes) + 1)),
+                    "outcome": outcome,
+                    "coverageItemIds": [],
+                }
+            )
+    return outcomes
+
+
+def _course_template_topic_phrase(required_items: list[dict[str, Any]], fallback_title: str) -> str:
+    titles = _unique_strings(
+        [
+            str(item.get("title") or "").strip().lower()
+            for item in required_items
+            if str(item.get("title") or "").strip()
+        ],
+        limit=3,
+    )
+    if len(titles) >= 3:
+        return f"{titles[0]}, {titles[1]}, and {titles[2]}"
+    if len(titles) == 2:
+        return f"{titles[0]} and {titles[1]}"
+    if len(titles) == 1:
+        return titles[0]
+    return fallback_title.lower()
+
+
+def _course_template_short_description(title: str, required_items: list[dict[str, Any]], level: str | None) -> str:
+    level_label = str(level or "introductory").strip().lower()
+    topic_phrase = _course_template_topic_phrase(required_items, title)
+    return f"An {level_label} course that builds working knowledge of {topic_phrase} through structured lessons and applied checks."
+
+
+def _course_template_outcome(title: str, required_items: list[dict[str, Any]]) -> str:
+    topic_phrase = _course_template_topic_phrase(required_items, title)
+    return f"Use {topic_phrase} to explain core ideas, analyze realistic cases, and prepare for course-level assessments."
+
+
+def _build_course_template_quality_report(
+    template: dict[str, Any],
+    *,
+    source_packet: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    checklist = template.get("courseCoverageChecklist") if isinstance(template.get("courseCoverageChecklist"), dict) else {}
+    required_items = _items(checklist.get("requiredItems"))
+    learning_outcomes = _items(template.get("learningOutcomes"))
+    scope = template.get("scope") if isinstance(template.get("scope"), dict) else {}
+    issues: list[dict[str, Any]] = []
+    if not str(template.get("title") or "").strip() or template.get("title") == "Untitled Course":
+        issues.append(_issue("error", "Course template needs a resolved course title.", "title"))
+    if not str(template.get("shortDescription") or "").strip():
+        issues.append(_issue("error", "Course template needs a catalog shortDescription.", "shortDescription"))
+    for key in ("audience", "level", "outcome", "duration", "assessmentExpectations"):
+        if not str(scope.get(key) or "").strip():
+            issues.append(_issue("error", f"Course template scope is missing {key}.", f"scope.{key}"))
+    if len(learning_outcomes) < 3:
+        issues.append(_issue("error", "Course template needs at least three learning outcomes.", "learningOutcomes"))
+    if len(required_items) < 3:
+        issues.append(_issue("warning", "Course template has fewer than three required coverage items.", "courseCoverageChecklist.requiredItems"))
+    if any(not _strings(item.get("mustTeach")) for item in required_items):
+        issues.append(_issue("error", "Every coverage item needs mustTeach terms.", "courseCoverageChecklist.requiredItems[].mustTeach"))
+    if any(not _items(item.get("sectionPlans")) for item in required_items):
+        issues.append(_issue("error", "Every coverage item needs downstream section-plan hints.", "courseCoverageChecklist.requiredItems[].sectionPlans"))
+    if _has_course_materialization_payload(template):
+        issues.append(_issue("error", "Course template workflow must not materialize modules, sections, build tasks, or content.", "courseTemplate"))
+
+    packet_status = _packet_quality_value(source_packet, "status")
+    if source_packet is not None and str(packet_status or "").lower() not in {"usable", "passed", "ready", ""}:
+        issues.append(_issue("warning", "Source packet is not fully usable; template should be treated as prompt-inferred.", "sourcePacket.quality.status"))
+
+    status = _status_from_issues(issues)
+    return {
+        "contractVersion": COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT,
+        "status": status,
+        "passed": status == "passed",
+        "reasons": [issue["message"] for issue in issues if issue.get("severity") == "error"],
+        "warnings": [issue["message"] for issue in issues if issue.get("severity") == "warning"],
+        "metrics": {
+            "learningOutcomeCount": len(learning_outcomes),
+            "requiredCoverageItemCount": len(required_items),
+            "sourceIdCount": len(_strings(template.get("sourceIds"))),
+            "hasMaterializedCourseContent": _has_course_materialization_payload(template),
+            "sourcePacketQualityStatus": packet_status,
+            "sourcePacketConceptCoverageRatio": _packet_quality_value(source_packet, "conceptCoverageRatio"),
+        },
+        "policy": {
+            "materializesLearnerContent": False,
+            "createsModules": False,
+            "requiresCoverageChecklist": True,
+            "requiresLearningOutcomes": True,
+            "nextWorkflow": COURSE_MODULE_OUTLINE_CONTRACT,
+            "coverageChecklistContract": COURSE_COVERAGE_CHECKLIST_CONTRACT,
+        },
+    }
+
+
+def run_course_template_workflow(
+    *,
+    prompt: str,
+    level: str | None = None,
+    target_audience: str | None = None,
+    learning_goals: list[str] | None = None,
+    desired_module_count: int = 8,
+    expected_duration_minutes: int = 180,
+    source_policy: str = "balanced",
+    source_packet: dict[str, Any] | None = None,
+    category: str | None = None,
+    department: str | None = None,
+) -> dict[str, Any]:
+    title = _title_from_prompt(prompt)
+    goals = _strings(learning_goals or [])
+    checklist = build_course_coverage_checklist(
+        prompt=prompt,
+        title=title,
+        level=level,
+        goals=goals,
+    )
+    source_packet_terms = _topic_phrases_from_source_packet(source_packet)
+    if len(_items(checklist.get("requiredItems"))) < 3 and source_packet_terms and not goals:
+        checklist = build_course_coverage_checklist(
+            prompt=prompt,
+            title=title,
+            level=level,
+            goals=source_packet_terms,
+        )
+        checklist["source"] = "source_packet_terms"
+    required_items = _items(checklist.get("requiredItems"))
+    source_ids = _source_ids_from_packet(source_packet)
+    template = {
+        "contractVersion": COURSE_TEMPLATE_ARTIFACT_CONTRACT,
+        "title": title,
+        "shortDescription": _course_template_short_description(title, required_items, level),
+        "category": category,
+        "department": department,
+        "sourceIds": source_ids,
+        "scope": {
+            "audience": target_audience or f"{level or 'general'} learners",
+            "level": level or "unspecified",
+            "duration": _duration_label(expected_duration_minutes),
+            "outcome": _course_template_outcome(title, required_items),
+            "prerequisites": [],
+            "exclusions": [],
+            "assessmentExpectations": "Use Apply sections after lesson content is generated.",
+            "sourcePolicy": source_policy,
+            "evidenceMode": "source_packet" if source_packet else "prompt_inferred",
+        },
+        "learningOutcomes": _course_template_learning_outcomes(
+            title=title,
+            checklist=checklist,
+            goals=goals,
+        ),
+        "courseCoverageChecklist": checklist,
+        "handoff": {
+            "nextWorkflow": COURSE_MODULE_OUTLINE_CONTRACT,
+            "desiredModuleCount": desired_module_count,
+            "coverageChecklistContract": checklist.get("contractVersion"),
+            "requiredCoverageItemIds": [
+                str(item.get("id"))
+                for item in required_items
+                if str(item.get("id") or "").strip()
+            ],
+            "mustPreserve": [
+                "courseCoverageChecklist.requiredItems[].id",
+                "courseCoverageChecklist.requiredItems[].mustTeach",
+                "learningOutcomes[].coverageItemIds",
+                "scope",
+            ],
+        },
+        "sourcePacketHandoff": {
+            "contractVersion": source_packet.get("contract_version") or source_packet.get("contractVersion"),
+            "qualityStatus": _packet_quality_value(source_packet, "status"),
+            "conceptCoverageRatio": _packet_quality_value(source_packet, "conceptCoverageRatio"),
+            "sourceIds": source_ids,
+        }
+        if isinstance(source_packet, dict)
+        else None,
+    }
+    if template["sourcePacketHandoff"] is None:
+        template.pop("sourcePacketHandoff")
+    quality_report = _build_course_template_quality_report(template, source_packet=source_packet)
+    issues = [
+        _issue("error" if reason in quality_report["reasons"] else "warning", reason)
+        for reason in [*quality_report["reasons"], *quality_report["warnings"]]
+    ]
+    return _workflow_result(
+        stage="course_template_generation",
+        contract_version=COURSE_TEMPLATE_CONTRACT,
+        status=quality_report["status"],
+        issues=issues,
+        metrics={
+            "learningOutcomeCount": quality_report["metrics"]["learningOutcomeCount"],
+            "requiredCoverageItemCount": quality_report["metrics"]["requiredCoverageItemCount"],
+            "sourceIdCount": quality_report["metrics"]["sourceIdCount"],
+            "desiredModuleCount": desired_module_count,
+            "templateQualityStatus": quality_report["status"],
+        },
+        artifacts={"courseTemplate": template, "courseTemplateQualityReport": quality_report},
+    )
 
 
 def run_program_brief_workflow(
@@ -2277,6 +2591,9 @@ __all__ = [
     "CLUSTER_QUALITY_REPORT_CONTRACT",
     "COURSE_MODULE_OUTLINE_CONTRACT",
     "COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT",
+    "COURSE_TEMPLATE_ARTIFACT_CONTRACT",
+    "COURSE_TEMPLATE_CONTRACT",
+    "COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT",
     "COURSE_WRAPPER_GENERATION_CONTRACT",
     "COURSE_WRAPPER_QUALITY_REPORT_CONTRACT",
     "MODULE_ASSESSMENT_PLAN_CONTRACT",
@@ -2297,6 +2614,7 @@ __all__ = [
     "compact_stage_workflow_report",
     "run_cluster_generation_workflow",
     "run_course_module_outline_workflow",
+    "run_course_template_workflow",
     "run_course_wrapper_generation_workflow",
     "run_module_assessment_plan_workflow",
     "run_module_apply_section_workflow",

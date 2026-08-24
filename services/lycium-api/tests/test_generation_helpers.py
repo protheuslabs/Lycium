@@ -15,6 +15,11 @@ from app.generation_helpers import _title_from_prompt
             "Create a macroeconomics principles course for first-year college students.",
             "Macroeconomics Principles Course",
         ),
+        (
+            "Create a macroeconomics principles course covering economic measurement, gross domestic product, inflation, unemployment, aggregate demand, and monetary policy.",
+            "Macroeconomics Principles Course",
+        ),
+        ("Create a course about public speaking and communication", "Public Speaking And Communication Course"),
     ],
 )
 def test_title_from_prompt_removes_commands_and_workflow_state(prompt: str, expected: str) -> None:

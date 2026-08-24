@@ -2,33 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.course_agent_assembly import _coerce_generated_section, _module_lesson_outlines
-from app.course_agent_response import extract_message_content
-from app.course_agent_types import CourseAgentError
-from app.course_build_tasks import (
-    transition_course_build_task_from_outline,
-    transition_course_build_task_from_quality_report,
-)
+from app.course_agent_assembly import _module_lesson_outlines
 from app.course_build_task_resume import apply_course_build_resume_inputs
 from app.course_agent_staged import (
     _course_build_outline_plan_from_resume_course,
     _course_build_outline_plan_from_source_packet,
-    _outline_planning_source,
     _source_packet_for_outline,
     generate_course_with_agent_staged,
 )
-from app.course_agent_staged_support import _with_generation_outline_metadata
-from app.course_agent_source_context import build_source_context_index, compact_source_context_for_stage
 from app.file_input_reader import read_generation_input_files
-from app.course_outline_from_source_packet import build_outline_from_source_packet
-from app.course_source_gaps import _attach_source_index_suggestions
-from app.course_quality_evals import run_course_quality_evals
-from app.source_packet_quality_gate import source_packet_quality_gate
 from app.source_corpus import SourceCorpusPreflight, compile_generation_source_corpus
-from tests.course_generation_fixture_builders import (
-    source_backed_course_from_scenario,
-    under_sourced_course_draft_from_scenario,
-)
 
 
 EDITOR_NATIVE_BLOCK_TYPES = {"text", "heading", "conceptCard", "video", "iframe", "quiz"}
@@ -358,6 +341,7 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
     assert result.trace["module_planning"]["source"] == "source_packet_outline"
     stage_workflow_stages = [stage["stage"] for stage in result.trace["stage_workflows"]]
     assert stage_workflow_stages == [
+        "course_template_generation",
         "course_module_outline_generation",
         "module_section_plan_generation",
         "section_fill_generation",
@@ -368,6 +352,8 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
     ]
     assert all(stage["status"] == "passed" for stage in result.trace["stage_workflows"])
     assert result.course["metadata"]["generationPlan"]["planningSource"] == "source_packet_outline"
+    assert result.course["metadata"]["courseTemplate"]["handoff"]["nextWorkflow"] == "course-module-outline-workflow-v1"
+    assert result.course["metadata"]["courseTemplate"]["sourcePacketHandoff"]["qualityStatus"] == "usable"
     assert result.course["metadata"]["sourceCorpusSynthesis"]["sourcePacket"]["quality"]["conceptCoverageRatio"] == 1
     assert result.course["metadata"]["courseBuildOutline"]["contractVersion"] == "course-outline-from-source-packet-v1"
     assert result.course["metadata"]["courseBuildOutline"]["modules"][0]["planningSource"] == "source_packet"
@@ -495,6 +481,8 @@ def test_staged_agent_generates_with_zero_sources(monkeypatch) -> None:
     assert result.course["sourceRecords"] == []
     assert result.course["status"] == "needs_sources"
     assert result.course["metadata"]["status"] == "needs_sources"
+    assert result.course["metadata"]["courseTemplate"]["title"] == "Introductory Macroeconomics Course"
+    assert result.course["metadata"]["courseTemplate"]["scope"]["evidenceMode"] == "prompt_inferred"
     assert result.course["modules"][0]["sections"][0]["content"]
 
 
