@@ -6,6 +6,7 @@ from typing import Any, Literal
 from app.course_generation_scenario_specs import COURSE_SCENARIOS, PROGRAM_SCENARIOS
 from app.course_generation_stage_workflows import (
     COURSE_MODULE_OUTLINE_CONTRACT,
+    COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
     COURSE_TEMPLATE_ARTIFACT_CONTRACT,
     COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT,
 )
@@ -197,6 +198,16 @@ def _contains_materialization_payload(value: Any) -> bool:
     return False
 
 
+def _contains_module_outline_materialization_payload(value: Any) -> bool:
+    if isinstance(value, dict):
+        if any(key in value for key in ("sections", "content", "blocks", "lessonText", "body", "markdown", "html")):
+            return True
+        return any(_contains_module_outline_materialization_payload(child) for child in value.values())
+    if isinstance(value, list):
+        return any(_contains_module_outline_materialization_payload(item) for item in value)
+    return False
+
+
 def _course_template_from_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), dict) else {}
     if isinstance(artifacts.get("courseTemplate"), dict):
@@ -207,6 +218,19 @@ def _course_template_from_payload(payload: dict[str, Any]) -> tuple[dict[str, An
     if isinstance(payload.get("courseTemplate"), dict):
         quality = payload.get("courseTemplateQualityReport") if isinstance(payload.get("courseTemplateQualityReport"), dict) else {}
         return payload["courseTemplate"], quality
+    return {}, {}
+
+
+def _module_outline_from_payload(payload: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), dict) else {}
+    if isinstance(artifacts.get("outline"), dict):
+        quality = artifacts.get("outlineQualityReport") if isinstance(artifacts.get("outlineQualityReport"), dict) else {}
+        return artifacts["outline"], quality
+    if isinstance(payload.get("outline"), dict):
+        quality = payload.get("outlineQualityReport") if isinstance(payload.get("outlineQualityReport"), dict) else {}
+        return payload["outline"], quality
+    if isinstance(payload.get("modules"), list):
+        return payload, {}
     return {}, {}
 
 
@@ -228,6 +252,24 @@ def _template_text_blob(template: dict[str, Any]) -> str:
         for section_plan in _items(item.get("sectionPlans")):
             parts.extend(_text(section_plan.get(key)) for key in ("title", "learningObjective"))
             parts.extend(str(value) for value in section_plan.get("mustTeach", []) if isinstance(value, str))
+    return "\n".join(part for part in parts if part)
+
+
+def _module_outline_text_blob(outline: dict[str, Any]) -> str:
+    parts = [
+        _text(outline.get("title")),
+        _text(outline.get("shortDescription")),
+        _text(outline.get("summary")),
+    ]
+    for module in _items(outline.get("modules")):
+        parts.extend(_text(module.get(key)) for key in ("title", "description", "summary", "objective"))
+        parts.extend(_strings(module.get("learning_objectives") or module.get("learningObjectives")))
+        parts.extend(_strings(module.get("concept_keywords") or module.get("conceptKeywords") or module.get("concepts")))
+        parts.extend(_strings(module.get("coverageMustTeach")))
+    checklist = outline.get("courseCoverageChecklist") if isinstance(outline.get("courseCoverageChecklist"), dict) else {}
+    for item in _items(checklist.get("requiredItems")):
+        parts.extend(_text(item.get(key)) for key in ("title", "description"))
+        parts.extend(_strings(item.get("mustTeach")))
     return "\n".join(part for part in parts if part)
 
 
@@ -358,6 +400,118 @@ def evaluate_course_template_generation_scenario(template_payload: dict[str, Any
         _specificity_check(text_blob),
     ]
     return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course_template", checks=checks)
+
+
+def _module_outline_shape_check(payload: dict[str, Any], outline: dict[str, Any], quality: dict[str, Any], spec: dict[str, Any]) -> dict[str, Any]:
+    modules = _items(outline.get("modules"))
+    quality_metrics = quality.get("metrics") if isinstance(quality.get("metrics"), dict) else {}
+    no_materialization = not _contains_module_outline_materialization_payload(outline)
+    titled_modules = [module for module in modules if str(module.get("title") or "").strip()]
+    objective_modules = [
+        module
+        for module in modules
+        if _strings(module.get("learning_objectives") or module.get("learningObjectives"))
+    ]
+    concept_modules = [
+        module
+        for module in modules
+        if _strings(module.get("concept_keywords") or module.get("conceptKeywords") or module.get("concepts"))
+    ]
+    sourced_modules = [module for module in modules if _strings(module.get("sourceIds"))]
+    target_section_modules = [module for module in modules if int(module.get("targetSectionCount") or 0) >= 2]
+    quality_passed = quality.get("contractVersion") == COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT and bool(quality.get("passed"))
+    findings = [
+        *([] if payload.get("contractVersion") in {None, COURSE_MODULE_OUTLINE_CONTRACT} else [_finding("error", "Module outline workflow contract is wrong.", "contractVersion")]),
+        *([] if len(modules) >= int(spec["minModules"]) else [_finding("error", f"Expected at least {spec['minModules']} module outlines.", "modules")]),
+        *([] if len(titled_modules) == len(modules) else [_finding("error", "Every module outline needs a title.", "modules[].title")]),
+        *([] if len(objective_modules) == len(modules) else [_finding("error", "Every module outline needs learning objectives.", "modules[].learning_objectives")]),
+        *([] if len(concept_modules) == len(modules) else [_finding("error", "Every module outline needs concept keywords.", "modules[].concept_keywords")]),
+        *([] if len(sourced_modules) == len(modules) else [_finding("error", "Every source-backed module outline needs source IDs.", "modules[].sourceIds")]),
+        *([] if len(target_section_modules) == len(modules) else [_finding("error", "Every module outline needs a target section count.", "modules[].targetSectionCount")]),
+        *([] if no_materialization else [_finding("error", "Module outline workflow must not create section plans, sections, or learner-facing content.")]),
+        *([] if quality_passed else [_finding("error", "Module outline quality report must pass.", "outlineQualityReport")]),
+    ]
+    return _check(
+        key="module_outline_shape",
+        label="Module outline handoff shape",
+        score=(
+            0.1 * (payload.get("contractVersion") in {None, COURSE_MODULE_OUTLINE_CONTRACT})
+            + 0.15 * min(1.0, len(modules) / max(1, int(spec["minModules"])))
+            + 0.1 * (len(titled_modules) == len(modules))
+            + 0.1 * (len(objective_modules) == len(modules))
+            + 0.1 * (len(concept_modules) == len(modules))
+            + 0.1 * (len(sourced_modules) == len(modules))
+            + 0.1 * (len(target_section_modules) == len(modules))
+            + 0.15 * no_materialization
+            + 0.1 * quality_passed
+        ),
+        findings=findings,
+        metrics={
+            "moduleCount": len(modules),
+            "minimumModuleCount": int(spec["minModules"]),
+            "titledModuleCount": len(titled_modules),
+            "objectiveModuleCount": len(objective_modules),
+            "conceptModuleCount": len(concept_modules),
+            "sourcedModuleCount": len(sourced_modules),
+            "targetSectionModuleCount": len(target_section_modules),
+            "materializedPayloadPresent": int(not no_materialization),
+            "qualityPassed": int(quality_passed),
+            "qualityRequiredCoverageItemCount": quality_metrics.get("requiredCoverageItemCount", 0),
+        },
+    )
+
+
+def _module_outline_coverage_assignment_check(outline: dict[str, Any], quality: dict[str, Any]) -> dict[str, Any]:
+    modules = _items(outline.get("modules"))
+    checklist = outline.get("courseCoverageChecklist") if isinstance(outline.get("courseCoverageChecklist"), dict) else {}
+    required_ids = {
+        str(item.get("id"))
+        for item in _items(checklist.get("requiredItems"))
+        if str(item.get("id") or "").strip()
+    }
+    assigned_ids = {
+        str(item_id)
+        for module in modules
+        for item_id in _strings(module.get("assignedCoverageItemIds"))
+    }
+    quality_metrics = quality.get("metrics") if isinstance(quality.get("metrics"), dict) else {}
+    quality_unassigned = int(quality_metrics.get("unassignedCoverageItemCount") or 0)
+    unassigned_ids = sorted(required_ids - assigned_ids)
+    findings = [
+        *([] if required_ids else [_finding("error", "Module outline should preserve the course coverage checklist.", "courseCoverageChecklist")]),
+        *([] if not unassigned_ids else [_finding("error", f"Coverage items were not assigned to modules: {', '.join(unassigned_ids[:6])}.", "modules[].assignedCoverageItemIds")]),
+        *([] if quality_unassigned == 0 else [_finding("error", "Module outline quality report found unassigned coverage items.", "outlineQualityReport.coverageAllocation")]),
+    ]
+    return _check(
+        key="module_outline_coverage_assignment",
+        label="Required coverage assigned to modules",
+        score=0.35 * bool(required_ids)
+        + 0.45 * (not unassigned_ids)
+        + 0.2 * (quality_unassigned == 0),
+        findings=findings,
+        metrics={
+            "requiredCoverageItemCount": len(required_ids),
+            "assignedCoverageItemCount": len(assigned_ids & required_ids),
+            "unassignedCoverageItemCount": len(unassigned_ids),
+            "qualityUnassignedCoverageItemCount": quality_unassigned,
+        },
+    )
+
+
+def evaluate_course_module_outline_generation_scenario(outline_payload: dict[str, Any], scenario_id: str) -> dict[str, Any]:
+    if scenario_id not in COURSE_SCENARIOS:
+        raise ValueError(f"Unknown course generation scenario '{scenario_id}'")
+    spec = COURSE_SCENARIOS[scenario_id]
+    outline, quality = _module_outline_from_payload(outline_payload)
+    text_blob = _module_outline_text_blob(outline)
+    min_coverage = float(spec.get("minModuleOutlineRequiredKeywordCoverage") or 0.95)
+    checks = [
+        _module_outline_shape_check(outline_payload, outline, quality, spec),
+        _module_outline_coverage_assignment_check(outline, quality),
+        _coverage_check(text_blob, spec["requiredKeywords"], min_coverage),
+        _specificity_check(text_blob),
+    ]
+    return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course_module_outline", checks=checks)
 
 
 def _source_gap_metrics(course: dict[str, Any]) -> dict[str, Any]:

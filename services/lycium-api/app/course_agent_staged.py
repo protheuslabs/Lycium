@@ -73,6 +73,79 @@ def _emit_workflow_status(
     on_workflow_status(payload)
 
 
+def _list_items(value: object) -> list[dict]:
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+
+
+def _list_strings(value: object) -> list[str]:
+    return [str(item).strip() for item in value if str(item).strip()] if isinstance(value, list) else []
+
+
+def _unique_strings(values: list[object], *, limit: int | None = None) -> list[str]:
+    rows: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        clean = str(value or "").strip()
+        key = clean.lower()
+        if not clean or key in seen:
+            continue
+        rows.append(clean)
+        seen.add(key)
+        if limit is not None and len(rows) >= limit:
+            break
+    return rows
+
+
+def _apply_course_template_coverage_to_modules(module_outlines: list[dict], course_template: dict | None) -> list[dict]:
+    checklist = (
+        course_template.get("courseCoverageChecklist")
+        if isinstance(course_template, dict) and isinstance(course_template.get("courseCoverageChecklist"), dict)
+        else {}
+    )
+    required_items = _list_items(checklist.get("requiredItems"))
+    if not module_outlines or not required_items:
+        return module_outlines
+
+    required_ids = [str(item.get("id") or "").strip() for item in required_items if str(item.get("id") or "").strip()]
+    assigned_ids = {
+        item_id
+        for module in module_outlines
+        for item_id in _list_strings(module.get("assignedCoverageItemIds"))
+    }
+    missing_items = [item for item in required_items if str(item.get("id") or "").strip() and str(item.get("id")).strip() not in assigned_ids]
+    if not missing_items:
+        return module_outlines
+
+    modules = [dict(module) for module in module_outlines]
+    module_count = len(modules)
+    for module_index, module in enumerate(modules):
+        start = module_index * len(missing_items) // module_count
+        end = (module_index + 1) * len(missing_items) // module_count
+        bucket = missing_items[start:end]
+        if not bucket:
+            continue
+        bucket_ids = [str(item.get("id")) for item in bucket if str(item.get("id") or "").strip()]
+        bucket_terms = _unique_strings(
+            [
+                *(item.get("title") for item in bucket),
+                *(
+                    term
+                    for item in bucket
+                    for term in (item.get("mustTeach") if isinstance(item.get("mustTeach"), list) else [])
+                ),
+            ],
+            limit=16,
+        )
+        module["assignedCoverageItemIds"] = _unique_strings([*_list_strings(module.get("assignedCoverageItemIds")), *bucket_ids])
+        module["coverageMustTeach"] = _unique_strings([*_list_strings(module.get("coverageMustTeach")), *bucket_terms], limit=20)
+        module["concept_keywords"] = _unique_strings([*_list_strings(module.get("concept_keywords") or module.get("conceptKeywords")), *bucket_terms], limit=20)
+        module["coverageAllocationStatus"] = "assigned"
+    if required_ids:
+        for module in modules:
+            module.setdefault("coverageChecklistContract", checklist.get("contractVersion"))
+    return modules
+
+
 def _lesson_sections_for_stage_reports(module: dict) -> list[dict]:
     sections = module.get("sections") if isinstance(module.get("sections"), list) else []
     return [
@@ -418,6 +491,7 @@ def generate_course_with_agent_staged(
         desired_module_count,
         benchmark_context=None if course_build_outline_plan else benchmark_context,
     )
+    module_outlines = _apply_course_template_coverage_to_modules(module_outlines, course_template)
     module_planning_source = (
         str(course_build_outline_plan.get("planningSource") or "course_build_outline")
         if course_build_outline_plan
@@ -443,6 +517,7 @@ def generate_course_with_agent_staged(
             run_course_module_outline_workflow(
                 prompt=prompt,
                 desired_module_count=desired_module_count,
+                course_template=course_template,
                 outline={
                     **plan,
                     "modules": module_outlines,

@@ -750,6 +750,7 @@ def test_course_module_outline_workflow_is_testable_from_source_packet() -> None
         "requiresModuleObjectives": True,
         "requiresModuleConcepts": True,
         "requiresSourceMappingWhenSourcePacketProvided": True,
+        "requiresCoverageAssignmentWhenChecklistProvided": True,
     }
     assert all(module["status"] == "passed" for module in quality["moduleProfiles"])
 

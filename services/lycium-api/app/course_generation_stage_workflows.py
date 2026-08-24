@@ -1007,7 +1007,13 @@ def run_course_module_outline_workflow(
     desired_module_count: int = 4,
     sections_per_module: int = 2,
     outline: dict[str, Any] | None = None,
+    course_template: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    coverage_checklist = (
+        course_template.get("courseCoverageChecklist")
+        if isinstance(course_template, dict) and isinstance(course_template.get("courseCoverageChecklist"), dict)
+        else None
+    )
     outline = (
         dict(outline)
         if isinstance(outline, dict)
@@ -1017,6 +1023,7 @@ def run_course_module_outline_workflow(
             desired_module_count=desired_module_count,
             sections_per_module=sections_per_module,
             include_section_outlines=False,
+            coverage_checklist=coverage_checklist,
         )
     )
     modules = _items(outline.get("modules"))
@@ -1026,6 +1033,7 @@ def run_course_module_outline_workflow(
         source_packet=source_packet,
         desired_module_count=desired_module_count,
         sections_per_module=sections_per_module,
+        coverage_checklist=coverage_checklist,
     )
     issues: list[dict[str, Any]] = []
     if not modules:
@@ -1055,6 +1063,12 @@ def run_course_module_outline_workflow(
             if isinstance(quality_report.get("metrics"), dict)
             else 0,
             "sourceMappedSectionCount": quality_report.get("metrics", {}).get("sourceMappedSectionCount", 0)
+            if isinstance(quality_report.get("metrics"), dict)
+            else 0,
+            "requiredCoverageItemCount": quality_report.get("metrics", {}).get("requiredCoverageItemCount", 0)
+            if isinstance(quality_report.get("metrics"), dict)
+            else 0,
+            "moduleAssignedCoverageItemCount": quality_report.get("metrics", {}).get("moduleAssignedCoverageItemCount", 0)
             if isinstance(quality_report.get("metrics"), dict)
             else 0,
         },

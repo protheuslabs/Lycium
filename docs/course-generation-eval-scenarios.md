@@ -50,6 +50,7 @@ Assertions:
 
 - The first active workflow emits a passing `course-template-v1` artifact before module outline generation.
 - The template handoff resolves a clean title, learner-facing short description, scope, learning outcomes, source/source-packet references, and coverage checklist without creating modules, sections, or learner-facing content.
+- The module-outline workflow consumes the template coverage checklist and emits source-backed module outlines with assigned coverage item IDs, objectives, concepts, source IDs, and target section counts without creating section plans or learner-facing content.
 - Course level is undergraduate.
 - College/category and department are selected from the taxonomy.
 - Course has 10-20 modules or weeks.
@@ -126,12 +127,13 @@ Assertions:
 
 ## Automated Coverage
 
-The backend scenario checks live in `services/lycium-api/tests/test_course_generation_scenarios.py` and `services/lycium-api/tests/test_course_template_generation_scenarios.py`.
+The backend scenario checks live in `services/lycium-api/tests/test_course_generation_scenarios.py`, `services/lycium-api/tests/test_course_template_generation_scenarios.py`, and `services/lycium-api/tests/test_course_module_outline_generation_scenarios.py`.
 
 Current automated coverage includes:
 
 - Scenario registry checks for golden course templates, under-sourced prompts, and full-stack program scenarios.
 - Golden course template workflow checks across all 10 dataset courses, including title cleanup, taxonomy preservation, first-stage handoff shape, required-topic coverage, and rejection of materialized payloads or workflow-facing catalog descriptions.
+- Golden course module-outline workflow checks across all 10 dataset courses, including coverage assignment from the template checklist, module objectives/concepts/source IDs, no section/content payloads, and rejection of unassigned coverage.
 - Macroeconomics Principles acceptance and rejection checks through the generic golden-template path.
 - Golden dataset checks that course-specific benchmark/source data lives in JSON rather than evaluator code.
 - Intro programming and software engineering methods source-backed fixture checks.
