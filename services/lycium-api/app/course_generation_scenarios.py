@@ -9,6 +9,7 @@ from app.course_generation_stage_workflows import (
     COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
     COURSE_TEMPLATE_ARTIFACT_CONTRACT,
     COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT,
+    MODULE_SECTION_PLAN_CONTRACT,
 )
 from app.course_source_integrity import assess_course_source_integrity
 from app.course_quality import assess_course_quality
@@ -512,6 +513,223 @@ def evaluate_course_module_outline_generation_scenario(outline_payload: dict[str
         _specificity_check(text_blob),
     ]
     return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="course_module_outline", checks=checks)
+
+
+def _module_section_plan_reports_from_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    if payload.get("contractVersion") == MODULE_SECTION_PLAN_CONTRACT:
+        return [payload]
+    if isinstance(payload.get("moduleSectionPlanReports"), list):
+        return [report for report in payload["moduleSectionPlanReports"] if isinstance(report, dict)]
+    if isinstance(payload.get("reports"), list):
+        return [report for report in payload["reports"] if isinstance(report, dict)]
+    artifacts = payload.get("artifacts") if isinstance(payload.get("artifacts"), dict) else {}
+    if artifacts.get("sectionPlans") is not None or artifacts.get("plannedSections") is not None:
+        return [payload]
+    return []
+
+
+def _module_section_plan_checklist_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(payload.get("courseCoverageChecklist"), dict):
+        return payload["courseCoverageChecklist"]
+    outline = payload.get("outline") if isinstance(payload.get("outline"), dict) else {}
+    if isinstance(outline.get("courseCoverageChecklist"), dict):
+        return outline["courseCoverageChecklist"]
+    template = payload.get("courseTemplate") if isinstance(payload.get("courseTemplate"), dict) else {}
+    if isinstance(template.get("courseCoverageChecklist"), dict):
+        return template["courseCoverageChecklist"]
+    return {}
+
+
+def _module_section_plan_text_blob(reports: list[dict[str, Any]], checklist: dict[str, Any]) -> str:
+    parts: list[str] = []
+    for item in _items(checklist.get("requiredItems")):
+        parts.extend(_text(item.get(key)) for key in ("title", "description"))
+        parts.extend(_strings(item.get("mustTeach")))
+    for report in reports:
+        artifacts = report.get("artifacts") if isinstance(report.get("artifacts"), dict) else {}
+        module_outline = artifacts.get("moduleOutline") if isinstance(artifacts.get("moduleOutline"), dict) else {}
+        parts.extend(_text(module_outline.get(key)) for key in ("title", "description", "summary", "objective"))
+        parts.extend(_strings(module_outline.get("learning_objectives") or module_outline.get("learningObjectives")))
+        parts.extend(_strings(module_outline.get("concept_keywords") or module_outline.get("conceptKeywords")))
+        for section_plan in _items(artifacts.get("sectionPlans")):
+            parts.extend(_text(section_plan.get(key)) for key in ("title", "description"))
+            parts.extend(_strings(section_plan.get("learningObjectives")))
+            parts.extend(_strings(section_plan.get("conceptKeywords")))
+            parts.extend(_strings(section_plan.get("coverageMustTeach")))
+        for section in _items(artifacts.get("plannedSections")):
+            metadata = section.get("metadata") if isinstance(section.get("metadata"), dict) else {}
+            generation_outline = (
+                metadata.get("generationOutline")
+                if isinstance(metadata.get("generationOutline"), dict)
+                else {}
+            )
+            parts.extend(_text(section.get(key)) for key in ("title", "description"))
+            parts.extend(_strings(generation_outline.get("plannedLearningObjectives")))
+            parts.extend(_strings(generation_outline.get("plannedConceptKeywords")))
+            parts.extend(_strings(generation_outline.get("coverageMustTeach")))
+    return "\n".join(part for part in parts if part)
+
+
+def _planned_section_generation_outline(section: dict[str, Any]) -> dict[str, Any]:
+    metadata = section.get("metadata") if isinstance(section.get("metadata"), dict) else {}
+    return metadata.get("generationOutline") if isinstance(metadata.get("generationOutline"), dict) else {}
+
+
+def _module_section_plan_shape_check(reports: list[dict[str, Any]]) -> dict[str, Any]:
+    all_section_plans = []
+    all_planned_sections = []
+    report_contracts_ok = all(report.get("contractVersion") == MODULE_SECTION_PLAN_CONTRACT for report in reports)
+    report_statuses_ok = all(report.get("status") == "passed" for report in reports)
+    matching_counts = True
+    planned_module_counts_match = True
+    for report in reports:
+        artifacts = report.get("artifacts") if isinstance(report.get("artifacts"), dict) else {}
+        section_plans = _items(artifacts.get("sectionPlans"))
+        planned_sections = _items(artifacts.get("plannedSections"))
+        planned_module = artifacts.get("plannedModule") if isinstance(artifacts.get("plannedModule"), dict) else {}
+        planned_module_sections = _items(planned_module.get("sections"))
+        matching_counts = matching_counts and bool(section_plans) and len(section_plans) == len(planned_sections)
+        planned_module_counts_match = planned_module_counts_match and len(planned_module_sections) == len(planned_sections)
+        all_section_plans.extend(section_plans)
+        all_planned_sections.extend(planned_sections)
+
+    titled_plans = [plan for plan in all_section_plans if str(plan.get("title") or "").strip()]
+    objective_plans = [plan for plan in all_section_plans if _strings(plan.get("learningObjectives"))]
+    concept_plans = [plan for plan in all_section_plans if _strings(plan.get("conceptKeywords"))]
+    sourced_plans = [plan for plan in all_section_plans if _strings(plan.get("sourceIds"))]
+    titled_sections = [section for section in all_planned_sections if str(section.get("title") or "").strip()]
+    empty_sections = [section for section in all_planned_sections if section.get("content") == []]
+    sections_without_local_sources = [section for section in all_planned_sections if not _strings(section.get("sourceIds"))]
+    outlined_sections = []
+    for section in all_planned_sections:
+        outline = _planned_section_generation_outline(section)
+        if (
+            outline.get("contentStatus") == "planned_empty"
+            and outline.get("nextWorkflow") == "section_fill"
+            and str(outline.get("plannedDescription") or "").strip()
+            and _strings(outline.get("plannedLearningObjectives"))
+            and _strings(outline.get("plannedConceptKeywords"))
+            and (_strings(outline.get("candidateSourceIds")) or _strings(outline.get("plannedSourceIds")))
+        ):
+            outlined_sections.append(section)
+
+    findings = [
+        *([] if reports else [_finding("error", "Module section planning payload has no workflow reports.")]),
+        *([] if report_contracts_ok else [_finding("error", "Module section planning workflow contract is wrong.", "contractVersion")]),
+        *([] if report_statuses_ok else [_finding("error", "Every module section planning report should pass.", "status")]),
+        *([] if matching_counts else [_finding("error", "Each report should have matching sectionPlans and plannedSections.", "artifacts")]),
+        *([] if planned_module_counts_match else [_finding("error", "plannedModule.sections should match plannedSections.", "artifacts.plannedModule.sections")]),
+        *([] if len(titled_plans) == len(all_section_plans) else [_finding("error", "Every section plan needs a title.", "sectionPlans[].title")]),
+        *([] if len(objective_plans) == len(all_section_plans) else [_finding("error", "Every section plan needs learning objectives.", "sectionPlans[].learningObjectives")]),
+        *([] if len(concept_plans) == len(all_section_plans) else [_finding("error", "Every section plan needs concept keywords.", "sectionPlans[].conceptKeywords")]),
+        *([] if len(sourced_plans) == len(all_section_plans) else [_finding("error", "Every section plan needs candidate source IDs.", "sectionPlans[].sourceIds")]),
+        *([] if len(titled_sections) == len(all_planned_sections) else [_finding("error", "Every planned section shell needs a title.", "plannedSections[].title")]),
+        *([] if len(empty_sections) == len(all_planned_sections) else [_finding("error", "Planned section shells must keep content empty until section fill.", "plannedSections[].content")]),
+        *([] if len(sections_without_local_sources) == len(all_planned_sections) else [_finding("error", "Planned empty shells should not attach local source footers before content fill.", "plannedSections[].sourceIds")]),
+        *([] if len(outlined_sections) == len(all_planned_sections) else [_finding("error", "Planned section shells need hidden generation-outline handoff metadata.", "plannedSections[].metadata.generationOutline")]),
+    ]
+    total_plans = len(all_section_plans)
+    total_sections = len(all_planned_sections)
+    return _check(
+        key="module_section_plan_shape",
+        label="Section-planning handoff shape",
+        score=(
+            0.08 * bool(reports)
+            + 0.08 * report_contracts_ok
+            + 0.08 * report_statuses_ok
+            + 0.08 * matching_counts
+            + 0.08 * planned_module_counts_match
+            + 0.08 * (len(titled_plans) == total_plans)
+            + 0.08 * (len(objective_plans) == total_plans)
+            + 0.08 * (len(concept_plans) == total_plans)
+            + 0.08 * (len(sourced_plans) == total_plans)
+            + 0.08 * (len(titled_sections) == total_sections)
+            + 0.1 * (len(empty_sections) == total_sections)
+            + 0.1 * (len(outlined_sections) == total_sections)
+            + 0.1 * (len(sections_without_local_sources) == total_sections)
+        ),
+        findings=findings,
+        metrics={
+            "reportCount": len(reports),
+            "sectionPlanCount": total_plans,
+            "plannedSectionCount": total_sections,
+            "emptyPlannedSectionCount": len(empty_sections),
+            "handoffMetadataSectionCount": len(outlined_sections),
+            "localSourceFooterSectionCount": total_sections - len(sections_without_local_sources),
+        },
+    )
+
+
+def _module_section_plan_coverage_assignment_check(
+    reports: list[dict[str, Any]],
+    checklist: dict[str, Any],
+) -> dict[str, Any]:
+    required_ids = {
+        str(item.get("id"))
+        for item in _items(checklist.get("requiredItems"))
+        if str(item.get("id") or "").strip()
+    }
+    plan_assigned_ids = set()
+    section_assigned_ids = set()
+    unassigned_plan_count = 0
+    unassigned_section_count = 0
+    for report in reports:
+        artifacts = report.get("artifacts") if isinstance(report.get("artifacts"), dict) else {}
+        for section_plan in _items(artifacts.get("sectionPlans")):
+            assigned_ids = set(_strings(section_plan.get("assignedCoverageItemIds")))
+            if not assigned_ids:
+                unassigned_plan_count += 1
+            plan_assigned_ids.update(assigned_ids)
+        for section in _items(artifacts.get("plannedSections")):
+            outline = _planned_section_generation_outline(section)
+            assigned_ids = set(_strings(section.get("assignedCoverageItemIds")) or _strings(outline.get("assignedCoverageItemIds")))
+            if not assigned_ids or not _strings(outline.get("coverageMustTeach")):
+                unassigned_section_count += 1
+            section_assigned_ids.update(assigned_ids)
+
+    unassigned_required_ids = sorted(required_ids - (plan_assigned_ids | section_assigned_ids))
+    findings = [
+        *([] if required_ids else [_finding("error", "Module section planning should preserve the course coverage checklist.", "courseCoverageChecklist")]),
+        *([] if not unassigned_required_ids else [_finding("error", f"Coverage items were not assigned to planned sections: {', '.join(unassigned_required_ids[:6])}.", "plannedSections[].assignedCoverageItemIds")]),
+        *([] if unassigned_plan_count == 0 else [_finding("error", "Every section plan should carry assigned coverage item IDs.", "sectionPlans[].assignedCoverageItemIds")]),
+        *([] if unassigned_section_count == 0 else [_finding("error", "Every planned section should carry assigned coverage IDs and coverageMustTeach metadata.", "plannedSections[].metadata.generationOutline")]),
+    ]
+    return _check(
+        key="module_section_plan_coverage_assignment",
+        label="Required coverage assigned to planned sections",
+        score=(
+            0.25 * bool(required_ids)
+            + 0.35 * (not unassigned_required_ids)
+            + 0.2 * (unassigned_plan_count == 0)
+            + 0.2 * (unassigned_section_count == 0)
+        ),
+        findings=findings,
+        metrics={
+            "requiredCoverageItemCount": len(required_ids),
+            "planAssignedCoverageItemCount": len(required_ids & plan_assigned_ids),
+            "sectionAssignedCoverageItemCount": len(required_ids & section_assigned_ids),
+            "unassignedCoverageItemCount": len(unassigned_required_ids),
+            "unassignedSectionPlanCount": unassigned_plan_count,
+            "unassignedPlannedSectionCount": unassigned_section_count,
+        },
+    )
+
+
+def evaluate_module_section_plan_generation_scenario(section_plan_payload: dict[str, Any], scenario_id: str) -> dict[str, Any]:
+    if scenario_id not in COURSE_SCENARIOS:
+        raise ValueError(f"Unknown course generation scenario '{scenario_id}'")
+    spec = COURSE_SCENARIOS[scenario_id]
+    reports = _module_section_plan_reports_from_payload(section_plan_payload)
+    checklist = _module_section_plan_checklist_from_payload(section_plan_payload)
+    text_blob = _module_section_plan_text_blob(reports, checklist)
+    min_coverage = float(spec.get("minSectionPlanRequiredKeywordCoverage") or 0.95)
+    checks = [
+        _module_section_plan_shape_check(reports),
+        _module_section_plan_coverage_assignment_check(reports, checklist),
+        _coverage_check(text_blob, spec["requiredKeywords"], min_coverage),
+        _specificity_check(text_blob),
+    ]
+    return _scenario_report(scenario_id=scenario_id, label=spec["label"], kind="module_section_plan", checks=checks)
 
 
 def _source_gap_metrics(course: dict[str, Any]) -> dict[str, Any]:

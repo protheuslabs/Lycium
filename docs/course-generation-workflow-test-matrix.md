@@ -39,7 +39,7 @@ This document tracks the workflow-level tests for Lycium generation. Update it w
 | Outline transition to section generation | `outline-transition-report-v1`, `course-build-resume-report-v1` | `test_course_generation_stage_workflows.py`, `test_program_generation_eval_scenarios.py`, `test_clean_start_generation_contracts.py` | Passing | Verifies wrapper resumes advance from `outline_ready` to `section_generation_ready`, preserve valid explicit or derived outlines, and keep weak outlines blocked with reasons. |
 | Course coverage checklist | `course-coverage-checklist-v1`, `course-outline-from-coverage-checklist-v1`, `course-coverage-allocation-report-v1` | `test_course_coverage_checklists.py`, `test_source_gap_resume.py` | Passing | Verifies fallback or under-sourced courses start from a concrete required-topic inventory, assign every item to modules and planned sections, and preserve coverage handoff metadata for later rebuilds. |
 | Course module outline generation | `course-module-outline-workflow-v1`, `course-module-outline-quality-report-v1` | `test_course_generation_stage_workflows.py`, `test_course_module_outline_generation_scenarios.py`, `test_clean_start_generation_staged_outline.py` | Passing | Validates source-packet quality, module titles, module objectives, module concepts, module source mapping, target section counts, duplicate titles, no section/content payload, course-template coverage assignment, and all 10 golden dataset scenarios. |
-| Module section planning | `module-section-plan-workflow-v1` | `test_course_generation_stage_workflows.py` | Passing | Expands one module outline into section-plan records and planned course/module sections with titles, planning descriptions, objectives, concepts, source IDs, and empty `content` arrays; covers target-count overrides, no learner-facing content payload, duplicate embedded lesson titles, and thin embedded lesson plans. |
+| Module section planning | `module-section-plan-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_module_section_plan_generation_scenarios.py` | Passing | Expands one module outline into section-plan records and planned course/module sections with titles, planning descriptions, objectives, concepts, candidate source IDs, coverage handoff IDs, hidden generation metadata, and empty `content` arrays; covers all 10 golden dataset scenarios plus target-count overrides, no learner-facing content payload, duplicate embedded lesson titles, and thin embedded lesson plans. |
 | Section fill generation | `section-fill-workflow-v1` | `test_course_generation_stage_workflows.py`, `test_clean_start_generation_staged_outline.py` | Passing | Replaces planned empty section shells with editor-native content blocks, preserves generation-outline metadata, records only explicitly used section/block source refs, and blocks unfilled shells from being treated as generated content. |
 | Module assessment planning | `module-assessment-plan-workflow-v1` | `test_course_generation_stage_workflows.py` | Passing | Inspects filled lesson concepts and module requirements to route Apply sections to quiz/test or project-style evidence, including assessment kind, scale, coverage scope, 70% default minimum coverage, target section IDs, target concept IDs, target coverage item IDs, and inherited quiz/project specs. |
 | Module quiz/test assessment generation | `module-quiz-assessment-workflow-v1` | `test_course_generation_stage_workflows.py` | Passing | Generates realistic quiz/test questions from taught concepts, blocks the old generic mastery-question template, requires at least 10 valid questions for module quizzes, enforces minimum target-content coverage, and omits source refs/source footers. |
@@ -76,6 +76,7 @@ python3 -m pytest \
   services/lycium-api/tests/test_course_generation_stage_workflows.py \
   services/lycium-api/tests/test_course_template_generation_scenarios.py \
   services/lycium-api/tests/test_course_module_outline_generation_scenarios.py \
+  services/lycium-api/tests/test_module_section_plan_generation_scenarios.py \
   services/lycium-api/tests/test_course_coverage_checklists.py \
   services/lycium-api/tests/test_clean_start_generation_staged_outline.py -q
 
@@ -92,12 +93,13 @@ python3 -m ruff check \
   services/lycium-api/app/course_agent_assembly.py \
   services/lycium-api/tests/test_course_template_generation_scenarios.py \
   services/lycium-api/tests/test_course_module_outline_generation_scenarios.py \
+  services/lycium-api/tests/test_module_section_plan_generation_scenarios.py \
   services/lycium-api/tests/test_course_generation_stage_workflows.py \
   services/lycium-api/tests/test_generation_helpers.py \
   services/lycium-api/tests/test_clean_start_generation_staged_outline.py
 ```
 
-Result: `py_compile` passed, focused workflow tests `62 passed`, broader API regression `303 passed`, and ruff passed on the touched files.
+Result: `py_compile` passed, focused workflow tests `65 passed`, broader API regression `306 passed`, and ruff passed on the touched files.
 
 Additional checks:
 
