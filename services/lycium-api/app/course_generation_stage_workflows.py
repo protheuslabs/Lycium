@@ -1,3 +1,10 @@
+"""Deterministic implementations for Lycium's generation stage workflows.
+
+Contract metadata, public stage names, status messages, and stage order live in
+`course_generation_stage_registry`; this module re-exports the legacy constants
+while keeping the runner implementations in one place.
+"""
+
 from __future__ import annotations
 
 import re
@@ -14,6 +21,29 @@ from app.course_outline_from_source_packet import (
     build_outline_from_source_packet,
 )
 from app.course_block_policy import supports_worked_example
+from app.course_generation_stage_registry import (
+    APPLY_NESTED_REPORT_ARTIFACT_KEYS,
+    CLUSTER_GENERATION_CONTRACT,
+    CLUSTER_PLAN_CONTRACT,
+    CLUSTER_QUALITY_REPORT_CONTRACT,
+    COURSE_MODULE_OUTLINE_CONTRACT,
+    COURSE_TEMPLATE_ARTIFACT_CONTRACT,
+    COURSE_TEMPLATE_CONTRACT,
+    COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT,
+    COURSE_WRAPPER_GENERATION_CONTRACT,
+    MODULE_ASSESSMENT_PLAN_CONTRACT,
+    MODULE_APPLY_SECTION_CONTRACT,
+    MODULE_ASSEMBLY_CONTRACT,
+    MODULE_PROJECT_ASSESSMENT_CONTRACT,
+    MODULE_QUIZ_ASSESSMENT_CONTRACT,
+    MODULE_SECTION_PLAN_CONTRACT,
+    MODULE_SUMMARY_SECTION_CONTRACT,
+    PROGRAM_BRIEF_CONTRACT,
+    PROGRAM_GENERATION_CONTRACT,
+    REQUIREMENT_GROUP_PLAN_CONTRACT,
+    SECTION_FILL_CONTRACT,
+    STAGE_WORKFLOW_VERSION,
+)
 from app.generation_helpers import _stable_id, _title_from_prompt
 from app.curriculum_assembly_policy import (
     cluster_generation_threshold_report,
@@ -28,30 +58,7 @@ from app.program_course_scaffold import (
 )
 from app.program_validation import validate_program_contract
 
-STAGE_WORKFLOW_VERSION = "course-generation-stage-workflows-v1"
-
 StageStatus = Literal["passed", "needs_review", "failed"]
-
-PROGRAM_BRIEF_CONTRACT = "program-brief-workflow-v1"
-REQUIREMENT_GROUP_PLAN_CONTRACT = "requirement-group-plan-workflow-v1"
-PROGRAM_GENERATION_CONTRACT = "program-generation-workflow-v1"
-CLUSTER_GENERATION_CONTRACT = "cluster-generation-workflow-v1"
-CLUSTER_PLAN_CONTRACT = "cluster-plan-v1"
-CLUSTER_QUALITY_REPORT_CONTRACT = "cluster-quality-report-v1"
-COURSE_TEMPLATE_CONTRACT = "course-template-workflow-v1"
-COURSE_TEMPLATE_ARTIFACT_CONTRACT = "course-template-v1"
-COURSE_TEMPLATE_QUALITY_REPORT_CONTRACT = "course-template-quality-report-v1"
-COURSE_WRAPPER_GENERATION_CONTRACT = "course-wrapper-generation-workflow-v1"
-COURSE_MODULE_OUTLINE_CONTRACT = "course-module-outline-workflow-v1"
-MODULE_SECTION_PLAN_CONTRACT = "module-section-plan-workflow-v1"
-SECTION_FILL_CONTRACT = "section-fill-workflow-v1"
-MODULE_ASSESSMENT_PLAN_CONTRACT = "module-assessment-plan-workflow-v1"
-MODULE_QUIZ_ASSESSMENT_CONTRACT = "module-quiz-assessment-workflow-v1"
-MODULE_PROJECT_ASSESSMENT_CONTRACT = "module-project-assessment-workflow-v1"
-MODULE_APPLY_SECTION_CONTRACT = "module-apply-section-workflow-v1"
-MODULE_SUMMARY_SECTION_CONTRACT = "module-summary-section-workflow-v1"
-MODULE_ASSEMBLY_CONTRACT = "module-assembly-workflow-v1"
-APPLY_NESTED_REPORT_ARTIFACT_KEYS = ("assessmentPlanReport", "assessmentSubWorkflowReport")
 
 
 def _now() -> str:

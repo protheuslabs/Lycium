@@ -1,6 +1,6 @@
 # Course Generation Workflow Test Matrix
 
-Last updated: 2026-08-23
+Last updated: 2026-08-26
 
 This document tracks the workflow-level tests for Lycium generation. Update it whenever a workflow stage is added, split, or promoted from smoke coverage to stronger integration coverage.
 
@@ -16,6 +16,7 @@ This document tracks the workflow-level tests for Lycium generation. Update it w
 - Passive generation plans, organizes, links, or proposes curriculum. It emits program contracts, clusters, course wrappers, source requests, fit evidence, and review candidates. It should not create learner-facing lessons or silently attach parent structures when threshold or review gates are missing.
 - Active generation materializes source-backed course content. It advances source packets into outlines, module plans, section plans, section content, module assembly, active batches, quality reports, and review promotion.
 - Passive workflows hand off to active workflows through explicit artifacts: course wrappers, source requests, source packets, course build tasks, `metadata.activeGenerationPlan`, and `metadata.courseBuildOutline`.
+- Stage workflow keys, contract versions, public stage names, UI status messages, passive/active ordering, and next-workflow handoffs live in `services/lycium-api/app/course_generation_stage_registry.py`. The large stage implementation module re-exports the contract constants for backward-compatible imports.
 
 ## Passive Planning Workflows
 
@@ -58,56 +59,33 @@ This document tracks the workflow-level tests for Lycium generation. Update it w
 
 ## Latest Verification
 
-Run on 2026-08-23:
+Run on 2026-08-26:
 
 ```bash
 python3 -m py_compile \
+  services/lycium-api/app/course_generation_stage_registry.py \
   services/lycium-api/app/course_generation_stage_workflows.py \
-  services/lycium-api/app/course_generation_scenarios.py \
-  services/lycium-api/app/course_coverage_checklists.py \
-  services/lycium-api/app/course_outline_from_source_packet.py \
-  services/lycium-api/app/generation_helpers.py \
-  services/lycium-api/app/course_agent_prompting.py \
-  services/lycium-api/app/course_agent_staged.py \
-  services/lycium-api/app/course_agent_assembly.py
+  services/lycium-api/app/course_generation_status.py
 
 python3 -m pytest \
-  services/lycium-api/tests/test_generation_helpers.py \
+  services/lycium-api/tests/test_course_generation_stage_registry.py \
+  services/lycium-api/tests/test_course_generation_status.py \
   services/lycium-api/tests/test_course_generation_stage_workflows.py \
-  services/lycium-api/tests/test_course_template_generation_scenarios.py \
-  services/lycium-api/tests/test_course_module_outline_generation_scenarios.py \
-  services/lycium-api/tests/test_module_section_plan_generation_scenarios.py \
-  services/lycium-api/tests/test_course_coverage_checklists.py \
-  services/lycium-api/tests/test_clean_start_generation_staged_outline.py -q
+  -q
 
 python3 -m pytest services/lycium-api/tests -q
 
 python3 -m ruff check \
-  services/lycium-api/app/course_generation_scenarios.py \
+  services/lycium-api/app/course_generation_stage_registry.py \
   services/lycium-api/app/course_generation_stage_workflows.py \
-  services/lycium-api/app/course_coverage_checklists.py \
-  services/lycium-api/app/course_outline_from_source_packet.py \
-  services/lycium-api/app/generation_helpers.py \
-  services/lycium-api/app/course_agent_prompting.py \
-  services/lycium-api/app/course_agent_staged.py \
-  services/lycium-api/app/course_agent_assembly.py \
-  services/lycium-api/tests/test_course_template_generation_scenarios.py \
-  services/lycium-api/tests/test_course_module_outline_generation_scenarios.py \
-  services/lycium-api/tests/test_module_section_plan_generation_scenarios.py \
-  services/lycium-api/tests/test_course_generation_stage_workflows.py \
-  services/lycium-api/tests/test_generation_helpers.py \
-  services/lycium-api/tests/test_clean_start_generation_staged_outline.py
-```
+  services/lycium-api/app/course_generation_status.py \
+  services/lycium-api/tests/test_course_generation_stage_registry.py \
+  services/lycium-api/tests/test_course_generation_status.py
 
-Result: `py_compile` passed, focused workflow tests `65 passed`, broader API regression `306 passed`, and ruff passed on the touched files.
-
-Additional checks:
-
-```bash
 git diff --check
 ```
 
-Result: passed.
+Result: `py_compile` passed, focused registry/workflow tests `42 passed`, broader API regression `311 passed`, ruff passed on touched files, and `git diff --check` passed.
 
 ## Next Workflow Target
 

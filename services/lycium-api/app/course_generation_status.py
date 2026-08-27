@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.course_generation_stage_registry import stage_workflow_definition, stage_workflow_status_message
+
 COURSE_GENERATION_STATUS_CONTRACT = "course-generation-workflow-status-v1"
 
 COURSE_GENERATION_WORKFLOW_MESSAGES = {
     "queued": "Queued for course generation...",
-    "course_template": "Creating course template...",
-    "modules": "Creating modules...",
-    "sections": "Creating sections...",
-    "section_content": "Writing section content...",
+    "course_template": stage_workflow_status_message("course_template"),
+    "modules": stage_workflow_status_message("course_module_outline"),
+    "sections": stage_workflow_status_message("module_section_plan"),
+    "section_content": stage_workflow_status_message("section_fill"),
     "review": "Checking course quality...",
     "sources": "Checking sources...",
     "needs_sources": "Course generated; sources need review.",
@@ -25,6 +27,9 @@ def workflow_key_for_generation_stage(stage: str | None) -> str:
         return "queued"
     if not normalized:
         return "course_template"
+    workflow = stage_workflow_definition(normalized)
+    if workflow is not None:
+        return workflow.ui_group
     if normalized in {"source_coverage", "source_strength", "source_packet_quality"}:
         return "sources"
     if normalized in {"course_plan", "course_template_generation", "benchmark_intake"}:
@@ -65,12 +70,14 @@ def course_generation_workflow_status(
     detail: str | None = None,
     trace: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    stage_value = str(stage or "").strip()
     workflow = workflow_key_for_generation_stage(stage)
+    definition = stage_workflow_definition(stage_value.lower())
     return {
         "contractVersion": COURSE_GENERATION_STATUS_CONTRACT,
         "workflow": workflow,
-        "stage": str(stage or "").strip() or None,
-        "message": COURSE_GENERATION_WORKFLOW_MESSAGES[workflow],
+        "stage": stage_value or None,
+        "message": definition.status_message if definition else COURSE_GENERATION_WORKFLOW_MESSAGES[workflow],
         "detail": str(detail or "").strip() or None,
         "progress": None if progress is None else round(max(0.0, min(1.0, float(progress))), 4),
         "stageWorkflowCount": len(trace.get("stage_workflows", [])) if isinstance(trace, dict) and isinstance(trace.get("stage_workflows"), list) else 0,
