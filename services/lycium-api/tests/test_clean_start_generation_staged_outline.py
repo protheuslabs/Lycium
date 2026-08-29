@@ -563,9 +563,10 @@ def test_file_reader_primitive_returns_generation_input_artifacts() -> None:
     artifact = result["artifacts"][0]
 
     assert result["contractVersion"] == "lycium-file-reader-v1"
-    assert result["replaceableBy"] == "infring-os-file-reader"
+    assert result["replaceableBy"] == "external-source-extractor"
     assert result["extractedArtifactCount"] == 1
     assert artifact["kind"] == "markdown"
     assert artifact["extractionStatus"] == "extracted"
+    assert artifact["normalizedDocument"]["contractVersion"] == "normalized-document-v1"
     assert artifact["sourceDocumentUrl"].startswith("artifact://")
     assert "Stoichiometry" in artifact["extractedText"]

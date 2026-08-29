@@ -191,8 +191,16 @@ def compile_source_corpus_preflight(
         "fetchStatus",
         "inputArtifactId",
         "inputArtifactKind",
+        "inputArtifactOrigin",
         "sourceIndexRef",
         "sourceType",
+        "sourceRef",
+        "normalizedDocumentId",
+        "directEvidenceRef",
+        "evidenceChunks",
+        "citation",
+        "snapshot",
+        "extractor",
         "trustBaseline",
     }
     selected_documents = [

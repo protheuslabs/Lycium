@@ -17,6 +17,11 @@ class Settings:
     agent_timeout_seconds: float
     source_index_api_url: str | None
     source_index_timeout_seconds: float
+    source_extractor_api_url: str | None
+    source_extractor_command: str | None
+    source_extractor_working_dir: Path | None
+    source_extractor_timeout_seconds: float
+    source_extractor_local_fallback_enabled: bool
 
 
 def _default_db_path() -> Path:
@@ -27,6 +32,13 @@ def _default_db_path() -> Path:
 def _default_local_data_path() -> Path:
     root = Path(__file__).resolve().parents[3]
     return root / ".lycium-local"
+
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def load_settings() -> Settings:
@@ -46,6 +58,13 @@ def load_settings() -> Settings:
         agent_timeout_seconds=float(os.getenv("LYCIUM_AGENT_TIMEOUT_SECONDS", "120")),
         source_index_api_url=os.getenv("LYCIUM_SOURCE_INDEX_API_URL") or None,
         source_index_timeout_seconds=float(os.getenv("LYCIUM_SOURCE_INDEX_TIMEOUT_SECONDS", "20")),
+        source_extractor_api_url=os.getenv("LYCIUM_SOURCE_EXTRACTOR_API_URL") or None,
+        source_extractor_command=os.getenv("LYCIUM_SOURCE_EXTRACTOR_COMMAND") or None,
+        source_extractor_working_dir=Path(os.environ["LYCIUM_SOURCE_EXTRACTOR_CWD"])
+        if os.getenv("LYCIUM_SOURCE_EXTRACTOR_CWD")
+        else None,
+        source_extractor_timeout_seconds=float(os.getenv("LYCIUM_SOURCE_EXTRACTOR_TIMEOUT_SECONDS", "45")),
+        source_extractor_local_fallback_enabled=_env_bool("LYCIUM_SOURCE_EXTRACTOR_LOCAL_FALLBACK", False),
     )
 
 

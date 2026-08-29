@@ -1,136 +1,78 @@
 from __future__ import annotations
 
-import base64
-import hashlib
-from io import BytesIO
-from pathlib import Path
 from typing import Any
 
-try:
-    from pypdf import PdfReader
-except ImportError:  # pragma: no cover - optional dependency may be absent in minimal deployments.
-    PdfReader = None  # type: ignore[assignment]
-
-from app.source_input_artifacts import normalize_generation_input_artifacts
+from app.source_extraction import extract_source_file, extract_source_files
+from app.source_extraction.contracts import LOCAL_EXTRACTOR_NAME, LOCAL_EXTRACTOR_REPLACEABLE_BY
 
 
 FILE_READER_CONTRACT_VERSION = "lycium-file-reader-v1"
-MAX_FILE_READER_TEXT_CHARS = 240_000
-TEXT_KINDS = {"text", "txt", "markdown", "md", "transcript", "html"}
 
 
-def _sha256(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
+def _reader_adapter_from_document(document: dict[str, Any]) -> str:
+    extractor = document.get("extractor") if isinstance(document.get("extractor"), dict) else {}
+    extractor_name = str(extractor.get("name") or "").strip()
+    if extractor_name == LOCAL_EXTRACTOR_NAME:
+        return "lycium-local"
+    return extractor_name or str(extractor.get("adapter") or "source-extractor").strip()
 
 
-def _decode_base64(value: str) -> bytes:
-    try:
-        return base64.b64decode(value, validate=True)
-    except ValueError:
-        return base64.b64decode(value)
-
-
-def _kind_from_filename(filename: str, fallback: str | None = None) -> str:
-    suffix = Path(filename).suffix.lower()
-    if suffix == ".pdf":
-        return "pdf"
-    if suffix in {".txt"}:
-        return "text"
-    if suffix in {".md", ".markdown"}:
-        return "markdown"
-    if suffix in {".html", ".htm"}:
-        return "html"
-    if suffix in {".docx", ".doc"}:
-        return "document"
-    if suffix in {".pptx", ".ppt"}:
-        return "slides"
-    return str(fallback or "unknown").lower()
-
-
-def _read_text_bytes(data: bytes) -> tuple[str, list[str]]:
-    warnings: list[str] = []
-    for encoding in ("utf-8", "utf-16", "latin-1"):
-        try:
-            return data.decode(encoding)[:MAX_FILE_READER_TEXT_CHARS], warnings
-        except UnicodeDecodeError:
-            continue
-    warnings.append("text_decode_fallback_used")
-    return data.decode("utf-8", errors="replace")[:MAX_FILE_READER_TEXT_CHARS], warnings
-
-
-def _read_pdf_bytes(data: bytes) -> tuple[str, list[str]]:
-    warnings: list[str] = []
-    if PdfReader is None:
-        return "", ["pdf_reader_unavailable"]
-    try:
-        reader = PdfReader(BytesIO(data))
-        parts: list[str] = []
-        for page_number, page in enumerate(reader.pages, start=1):
-            try:
-                page_text = page.extract_text() or ""
-            except Exception:
-                warnings.append(f"pdf_page_{page_number}_extract_failed")
-                page_text = ""
-            if page_text.strip():
-                parts.append(page_text)
-            if sum(len(part) for part in parts) >= MAX_FILE_READER_TEXT_CHARS:
-                warnings.append("text_truncated")
-                break
-        text = "\n".join(parts)[:MAX_FILE_READER_TEXT_CHARS]
-        if not text.strip():
-            warnings.append("pdf_text_empty_or_scanned")
-        return text, warnings
-    except Exception as exc:
-        return "", [f"pdf_extract_failed:{str(exc)[:120]}"]
+def generation_input_artifact_from_normalized_document(document: dict[str, Any]) -> dict[str, Any]:
+    source = document.get("source") if isinstance(document.get("source"), dict) else {}
+    locator = source.get("locator") if isinstance(source.get("locator"), dict) else {}
+    snapshot = document.get("snapshot") if isinstance(document.get("snapshot"), dict) else {}
+    evidence = document.get("evidence") if isinstance(document.get("evidence"), list) else []
+    extracted_text = "\n\n".join(
+        str(chunk.get("text") or "").strip()
+        for chunk in evidence
+        if isinstance(chunk, dict) and str(chunk.get("text") or "").strip()
+    )
+    artifact_kind = str(locator.get("kind") or "").strip()
+    if not artifact_kind:
+        artifact_kind = "pdf" if str(locator.get("filename") or "").lower().endswith(".pdf") else "document"
+    return {
+        "id": str(document.get("documentId") or ""),
+        "kind": artifact_kind,
+        "filename": str(locator.get("filename") or ""),
+        "title": str(source.get("title") or document.get("documentId") or "Input artifact"),
+        "mimeType": str(locator.get("mimeType") or snapshot.get("mimeType") or ""),
+        "sourceUrl": str(locator.get("sourceUrl") or ""),
+        "sourceDocumentUrl": str(locator.get("sourceDocumentUrl") or ""),
+        "extractedText": extracted_text,
+        "extractionStatus": str(document.get("status") or "failed"),
+        "extractionWarnings": document.get("warnings") if isinstance(document.get("warnings"), list) else [],
+        "textLength": int(snapshot.get("textLength") or len(extracted_text)),
+        "contentHash": str(snapshot.get("contentHash") or ""),
+        "normalizedDocumentId": str(document.get("documentId") or ""),
+        "sourceRef": str(source.get("sourceRef") or ""),
+        "evidenceChunkCount": len(evidence),
+        "citation": document.get("citation") if isinstance(document.get("citation"), dict) else {},
+        "normalizedDocument": document,
+        "reader": {"contractVersion": FILE_READER_CONTRACT_VERSION, "adapter": _reader_adapter_from_document(document)},
+    }
 
 
 def read_generation_input_file(file_payload: dict[str, Any], *, index: int = 1) -> dict[str, Any]:
-    filename = str(file_payload.get("filename") or file_payload.get("name") or f"input-file-{index}").strip()
-    mime_type = str(file_payload.get("mimeType") or file_payload.get("mime_type") or "").strip()
-    kind = _kind_from_filename(filename, str(file_payload.get("kind") or file_payload.get("type") or ""))
-    raw_text = str(file_payload.get("text") or file_payload.get("content") or "").encode("utf-8")
-    data = raw_text
-    if file_payload.get("base64"):
-        data = _decode_base64(str(file_payload["base64"]))
-
-    if kind == "pdf" or mime_type == "application/pdf":
-        extracted_text, warnings = _read_pdf_bytes(data)
-    elif kind in TEXT_KINDS or mime_type.startswith("text/"):
-        extracted_text, warnings = _read_text_bytes(data)
-    else:
-        extracted_text, warnings = "", [f"unsupported_file_kind:{kind or 'unknown'}"]
-
-    content_hash = _sha256(data)
-    extraction_status = "extracted" if extracted_text.strip() else "unsupported" if warnings and warnings[0].startswith("unsupported") else "failed"
-    artifact = {
-        "id": str(file_payload.get("id") or f"file-{content_hash[:16]}"),
-        "kind": kind,
-        "filename": filename,
-        "title": str(file_payload.get("title") or filename),
-        "mimeType": mime_type,
-        "sourceUrl": str(file_payload.get("sourceUrl") or file_payload.get("source_url") or ""),
-        "extractedText": extracted_text,
-        "extractionStatus": extraction_status,
-        "extractionWarnings": warnings,
-        "textLength": len(extracted_text),
-        "contentHash": content_hash,
-        "reader": {"contractVersion": FILE_READER_CONTRACT_VERSION, "adapter": "lycium-local"},
-    }
-    normalized = normalize_generation_input_artifacts([artifact])[0]
-    return {**artifact, **normalized}
+    return generation_input_artifact_from_normalized_document(extract_source_file(file_payload, index=index))
 
 
 def read_generation_input_files(files: list[dict[str, Any]] | None) -> dict[str, Any]:
+    extraction_run = extract_source_files(files)
+    normalized_documents = extraction_run["normalizedDocuments"]
     artifacts = [
-        read_generation_input_file(file_payload, index=index)
-        for index, file_payload in enumerate(files or [], start=1)
-        if isinstance(file_payload, dict)
+        generation_input_artifact_from_normalized_document(document)
+        for document in normalized_documents
+        if isinstance(document, dict)
     ]
+    extracted_artifacts = [artifact for artifact in artifacts if artifact.get("extractionStatus") == "extracted"]
     return {
         "contractVersion": FILE_READER_CONTRACT_VERSION,
-        "provider": "lycium-local",
-        "replaceableBy": "infring-os-file-reader",
+        "provider": str(extraction_run.get("provider") or "lycium-local"),
+        "replaceableBy": extraction_run.get("replaceableBy") or LOCAL_EXTRACTOR_REPLACEABLE_BY,
         "artifactCount": len(artifacts),
-        "extractedArtifactCount": len([artifact for artifact in artifacts if artifact.get("extractionStatus") == "extracted"]),
+        "extractedArtifactCount": len(extracted_artifacts),
         "artifacts": artifacts,
+        "extractionRun": extraction_run,
+        "normalizedDocuments": normalized_documents,
+        "sourceRegistrationCandidates": extraction_run["sourceRegistrationCandidates"],
     }

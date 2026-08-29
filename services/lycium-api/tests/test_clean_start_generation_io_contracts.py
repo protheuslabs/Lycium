@@ -5,33 +5,11 @@ from typing import Any
 
 from fastapi.testclient import TestClient
 
-from app.course_agent_assembly import _coerce_generated_section, _module_lesson_outlines
 from app.course_agent_response import extract_message_content
 from app.course_agent_types import CourseAgentError
-from app.course_build_tasks import (
-    transition_course_build_task_from_outline,
-    transition_course_build_task_from_quality_report,
-)
-from app.course_build_task_resume import apply_course_build_resume_inputs
-from app.course_agent_staged import (
-    _course_build_outline_plan_from_resume_course,
-    _course_build_outline_plan_from_source_packet,
-    _outline_planning_source,
-    _source_packet_for_outline,
-    generate_course_with_agent_staged,
-)
-from app.course_agent_staged_support import _with_generation_outline_metadata
 from app.course_agent_source_context import build_source_context_index, compact_source_context_for_stage
 from app.file_input_reader import read_generation_input_files
-from app.course_outline_from_source_packet import build_outline_from_source_packet
-from app.course_source_gaps import _attach_source_index_suggestions
-from app.course_quality_evals import run_course_quality_evals
-from app.source_packet_quality_gate import source_packet_quality_gate
-from app.source_corpus import SourceCorpusPreflight, compile_generation_source_corpus
-from tests.course_generation_fixture_builders import (
-    source_backed_course_from_scenario,
-    under_sourced_course_draft_from_scenario,
-)
+from app.source_corpus import compile_generation_source_corpus
 
 
 EDITOR_NATIVE_BLOCK_TYPES = {"text", "heading", "conceptCard", "video", "iframe", "quiz"}
@@ -137,11 +115,13 @@ def test_file_input_reader_extracts_multiple_browser_file_payloads() -> None:
     artifacts = result["artifacts"]
 
     assert result["contractVersion"] == "lycium-file-reader-v1"
-    assert result["replaceableBy"] == "infring-os-file-reader"
+    assert result["replaceableBy"] == "external-source-extractor"
     assert result["artifactCount"] == 3
     assert result["extractedArtifactCount"] == 2
+    assert result["normalizedDocuments"][0]["contractVersion"] == "normalized-document-v1"
     assert artifacts[0]["kind"] == "markdown"
     assert artifacts[0]["extractionStatus"] == "extracted"
+    assert artifacts[0]["normalizedDocumentId"] == result["normalizedDocuments"][0]["documentId"]
     assert artifacts[0]["sourceDocumentUrl"].startswith("artifact://")
     assert "Stoichiometry" in artifacts[0]["extractedText"]
     assert artifacts[1]["kind"] == "text"
@@ -173,6 +153,7 @@ def test_input_artifacts_read_endpoint_returns_generation_ready_artifacts(client
     assert payload["contractVersion"] == "lycium-file-reader-v1"
     assert payload["artifactCount"] == 1
     assert payload["extractedArtifactCount"] == 1
+    assert payload["normalizedDocuments"][0]["contractVersion"] == "normalized-document-v1"
     assert artifact["extractionStatus"] == "extracted"
     assert artifact["sourceDocumentUrl"].startswith("artifact://")
     assert artifact["reader"]["adapter"] == "lycium-local"

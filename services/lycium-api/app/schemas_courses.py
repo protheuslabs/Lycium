@@ -98,6 +98,9 @@ class FileInputReadResponse(BaseModel):
     artifactCount: int
     extractedArtifactCount: int
     artifacts: list[dict[str, Any]] = Field(default_factory=list)
+    extractionRun: dict[str, Any] | None = None
+    normalizedDocuments: list[dict[str, Any]] = Field(default_factory=list)
+    sourceRegistrationCandidates: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class CourseSourceGapResumeRequest(BaseModel):

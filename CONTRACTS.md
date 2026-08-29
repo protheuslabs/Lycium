@@ -32,6 +32,9 @@ This package owns:
 4. Product slice contract
    `MVP_VERTICAL_SLICE.md` defines the current product boundary and what must be true before a generated course reaches learners.
 
+5. Source extraction contract
+   Direct PDFs, uploaded documents, pasted text, and later connector artifacts should pass through `source-extraction-request-v1` and return `source-extraction-run-v1` plus `normalized-document-v1` evidence. Lycium may use its local reader for development, but the stable boundary is `external-source-extractor`: a command or HTTP adapter for a proven external extractor repo housed under the backend. See `docs/external-extractor-integration.md`.
+
 ## Frontend Rule
 
 The web app should import course types and validation from `@lycium/contracts`.

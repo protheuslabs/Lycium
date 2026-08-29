@@ -12,9 +12,22 @@ describe("Lycium local API file input extraction", () => {
         JSON.stringify({
           contractVersion: "lycium-file-reader-v1",
           provider: "lycium-local",
-          replaceableBy: "infring-os-file-reader",
+          replaceableBy: "external-source-extractor",
           artifactCount: 1,
           extractedArtifactCount: 1,
+          normalizedDocuments: [
+            {
+              contractVersion: "normalized-document-v1",
+              documentId: "file-abc123",
+              status: "extracted",
+            },
+          ],
+          sourceRegistrationCandidates: [
+            {
+              contractVersion: "source-registration-candidate-v1",
+              documentId: "file-abc123",
+            },
+          ],
           artifacts: [
             {
               id: "file-abc123",
@@ -63,6 +76,7 @@ describe("Lycium local API file input extraction", () => {
       ],
     });
     expect(result.artifacts[0]?.sourceDocumentUrl).toBe("artifact://file-abc123");
+    expect(result.normalizedDocuments?.[0]?.contractVersion).toBe("normalized-document-v1");
     expect(result.extractedArtifactCount).toBe(1);
   });
 });

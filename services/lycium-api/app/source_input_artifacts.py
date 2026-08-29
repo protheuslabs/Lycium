@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from app.source_extraction.source_packet_adapter import source_documents_from_normalized_documents
+
 
 MAX_INPUT_ARTIFACT_TEXT_CHARS = 200_000
 
@@ -13,6 +15,13 @@ def _flatten_text(value: Any) -> str:
     if isinstance(value, dict):
         return " ".join(_flatten_text(item) for item in value.values())
     return str(value or "")
+
+
+def _int_value(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _slug(value: str) -> str:
@@ -103,6 +112,9 @@ def normalize_generation_input_artifacts(input_artifacts: list[dict[str, Any]] |
                 "sourceDocumentUrl": _artifact_url(artifact, artifact_id),
                 "extractionStatus": str(artifact.get("extractionStatus") or artifact.get("extraction_status") or ("extracted" if text else "missing_text")),
                 "textLength": len(text),
+                "normalizedDocumentId": str(artifact.get("normalizedDocumentId") or "").strip(),
+                "sourceRef": str(artifact.get("sourceRef") or "").strip(),
+                "evidenceChunkCount": _int_value(artifact.get("evidenceChunkCount")),
             }
         )
     return artifacts
@@ -113,6 +125,12 @@ def source_documents_from_input_artifacts(input_artifacts: list[dict[str, Any]] 
     for index, artifact in enumerate(input_artifacts or [], start=1):
         if not isinstance(artifact, dict):
             continue
+        normalized_document = artifact.get("normalizedDocument")
+        if isinstance(normalized_document, dict):
+            normalized_documents = source_documents_from_normalized_documents([normalized_document])
+            if normalized_documents:
+                documents.extend(normalized_documents)
+                continue
         text = _artifact_text(artifact)
         if not text:
             continue

@@ -10,7 +10,8 @@ Lycium web and Lycium backend services should stay in the same repository for no
 That means:
 
 - Lycium web owns the public app, learner profile, course UX, AI classroom, progress, portfolio, and credentials.
-- Lycium backend owns ingestion, extraction, cataloging, trust scoring, graph construction, hybrid retrieval, coverage maps, and generation orchestration.
+- Lycium backend owns ingestion coordination, extraction coordination, cataloging, trust scoring, graph construction, hybrid retrieval, coverage maps, and generation orchestration.
+- External extractor integration should become the replaceable document-extraction boundary for PDFs, documents, transcripts, tables, OCR, and cleaned evidence chunks.
 - Shared contracts should live in internal packages and be consumed by both sides.
 
 ## Recommended Stack
@@ -44,7 +45,7 @@ Reason:
 
 Reason:
 
-- The Lycium backend is scraping, parsing, PDF handling, OCR, transcript work, extraction pipelines, ranking, and orchestration heavy. Python is the stronger language for that workload.
+- The Lycium backend and adjacent extractor service are scraping, parsing, PDF handling, OCR, transcript work, extraction pipeline, ranking, and orchestration heavy. Python is the stronger language for that workload.
 - FastAPI, Pydantic, and SQLAlchemy give you a fast API layer with strong typed contracts and mature Postgres support.
 
 ### Data Layer
@@ -174,7 +175,20 @@ Responsibilities:
 
 These workers should be asynchronous and queue-driven.
 
-### 4. Canonical Data Stores
+### 4. External Extractor Integration
+
+Responsibilities:
+
+- command or HTTP adapters for a housed external extractor repo
+- direct PDF, document, text, transcript, and media-source extraction through that repo
+- adapter routing inside the external repo for Docling, OCR-capable PDF tooling, and later broad document parsers
+- normalized document, evidence chunk, citation, warning, and extractor provenance contracts
+- explicit OCR requests rather than hidden best-effort OCR
+- optional Source Index registration candidates after extraction
+
+Lycium keeps a local `pypdf` and plain-text reader only as a development fallback. The course generator should depend on `normalized-document-v1` evidence, not on Docling, PyMuPDF, Tika, or any other specific extractor library.
+
+### 5. Canonical Data Stores
 
 Use separate logical storage layers:
 

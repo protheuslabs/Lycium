@@ -486,6 +486,9 @@ export type LyciumGenerationInputArtifactReadResponse = {
   artifactCount: number;
   extractedArtifactCount: number;
   artifacts: Record<string, unknown>[];
+  extractionRun?: Record<string, unknown> | null;
+  normalizedDocuments?: Record<string, unknown>[];
+  sourceRegistrationCandidates?: Record<string, unknown>[];
 };
 
 export type LyciumCourseGenerationExperiment = {

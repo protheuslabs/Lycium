@@ -138,6 +138,11 @@ NEXT_PUBLIC_LYCIUM_API_URL=http://127.0.0.1:8000
 NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL=https://example.com/catalog.json
 NEXT_PUBLIC_LYCIUM_COURSE_BASE_URL=https://example.com/courses
 LYCIUM_API_TOKEN=optional-bearer-token-for-non-public-API-runtimes
+LYCIUM_SOURCE_EXTRACTOR_COMMAND="python services/lycium-api/external-extractors/docling-wrapper/extract.py"
+LYCIUM_SOURCE_EXTRACTOR_CWD=/absolute/path/to/Lyceum
+LYCIUM_SOURCE_EXTRACTOR_API_URL=http://127.0.0.1:8010
+LYCIUM_SOURCE_EXTRACTOR_TIMEOUT_SECONDS=45
+LYCIUM_SOURCE_EXTRACTOR_LOCAL_FALLBACK=false
 LYCIUM_SOURCE_INDEX_API_URL=http://127.0.0.1:8100
 LYCIUM_SOURCE_INDEX_TIMEOUT_SECONDS=20
 ```
@@ -191,6 +196,12 @@ http://127.0.0.1:8100
 ```
 
 When `LYCIUM_SOURCE_INDEX_API_URL` is set on the Lycium API, Lycium routes `/v1/index/*` requests to this standalone service and uses its snapshots as upstream evidence for curriculum benchmark extraction. When the variable is unset, Lycium uses its transitional internal source tables for local development.
+
+### Source extractor integration
+
+Lycium can read direct text, Markdown, HTML-ish text, and text-backed PDFs locally for development. For richer PDF, document, table, layout, or explicit OCR extraction, download an external extractor repo under `services/lycium-api/external-extractors/` and configure `LYCIUM_SOURCE_EXTRACTOR_COMMAND` to call its wrapper script. If the external repo ships as a server, configure `LYCIUM_SOURCE_EXTRACTOR_API_URL` instead.
+
+The extractor integration should use proven parser adapters such as Docling behind the wrapper contract instead of putting heavy extraction libraries directly inside course generation. See `docs/external-extractor-integration.md`.
 
 ## Useful commands
 

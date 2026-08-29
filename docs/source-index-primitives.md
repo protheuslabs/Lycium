@@ -19,6 +19,29 @@ Each source packet includes a `quality` summary. Downstream generators should tr
 
 The packet quality report is the first reusable evidence-health primitive for Lycium and future Protheus research systems. It reports document, snapshot, and evidence coverage; duplicate canonical URLs; broken-link counts; source type mix; average trust; freshness and verification coverage; stale verification count; curriculum-benchmark source count; benchmark usefulness ratio; and quality warnings.
 
+## Direct source extraction
+
+Source Index owns durable evidence identity and retrieval, but it should not be the mandatory extraction hop for sources Lycium already has. User-uploaded PDFs, text files, Markdown notes, pasted source text, and later fetched direct URLs should use the extractor path first:
+
+```text
+direct file/source -> extractor -> normalized-document-v1 -> Lycium generation
+                                                 |
+                                                 -> optional Source Index registration
+```
+
+The first extractor integration lives in the Lycium backend under `services/lycium-api/app/source_extraction/` and is shaped so an external extractor repo can replace the local reader. The current local reader supports plain text, Markdown, HTML-ish text payloads, and text-backed PDFs through `pypdf`; scanned PDF/OCR support should come from the external extractor path instead of custom Lycium parsing.
+
+When `LYCIUM_SOURCE_EXTRACTOR_COMMAND` is configured, Lycium sends direct file extraction to that housed external repo wrapper over stdin/stdout JSON. When `LYCIUM_SOURCE_EXTRACTOR_API_URL` is configured, Lycium sends direct file extraction to `POST /v1/extractions`. If no external extractor is configured, the local reader remains available for offline development. See `docs/external-extractor-integration.md` for the integration contract and adapter strategy.
+
+Extractor output should preserve citable evidence before any Source Index registration:
+
+- `normalized-document-v1`: source locator, snapshot hash, extracted evidence chunks, citation metadata, extractor provenance, and extraction status.
+- `evidence-chunk-v1`: bounded text chunks with document ID, source ref, content hash, location/page metadata, and citation metadata.
+- `source-citation-v1`: title, filename or URL, source ref, and page when available.
+- `source-registration-candidate-v1`: an optional handoff envelope for Source Index canonicalization and dedupe.
+
+Lycium can generate from direct extracted evidence without waiting for Source Index. If Source Index later stores the same hash, Lycium can upgrade provenance to durable Source Index IDs without regenerating the course.
+
 Every `source-packet-v1` has a portable root envelope:
 
 - `packet_id`: a stable packet identifier derived from consumer, context, prompt, and included source URLs.
