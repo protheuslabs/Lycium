@@ -134,7 +134,24 @@ def _resume_modules_from_course(resume_course: dict | None, desired_module_count
     modules = resume_course.get("modules")
     if not isinstance(modules, list):
         return []
-    return [module for module in modules[:desired_module_count] if isinstance(module, dict)]
+    resumable_modules: list[dict] = []
+    for module in modules[:desired_module_count]:
+        if not isinstance(module, dict) or not _module_has_filled_content(module):
+            break
+        resumable_modules.append(module)
+    return resumable_modules
+
+
+def _module_has_filled_content(module: dict) -> bool:
+    sections = module.get("sections")
+    if not isinstance(sections, list):
+        return False
+    return any(
+        isinstance(section, dict)
+        and isinstance(section.get("content"), list)
+        and len(section["content"]) > 0
+        for section in sections
+    )
 
 
 def _resume_trace(value: dict | None) -> dict:

@@ -12,7 +12,6 @@ from app.source_extraction.service_client import (
     SourceExtractorClient,
     SourceExtractorCommandClient,
     SourceExtractorClientError,
-    source_extractor_client_configured,
 )
 
 
@@ -22,11 +21,17 @@ class SourceExtractorClientLike(Protocol):
 
 def _remote_extraction_client() -> SourceExtractorClientLike | None:
     if SETTINGS.source_extractor_command:
-        return SourceExtractorCommandClient()
+        cwd = str(SETTINGS.source_extractor_working_dir) if SETTINGS.source_extractor_working_dir else None
+        return SourceExtractorCommandClient(
+            command=SETTINGS.source_extractor_command,
+            cwd=cwd,
+            timeout_seconds=SETTINGS.source_extractor_timeout_seconds,
+        )
     if SETTINGS.source_extractor_api_url:
-        return SourceExtractorClient()
-    if not source_extractor_client_configured():
-        return None
+        return SourceExtractorClient(
+            base_url=SETTINGS.source_extractor_api_url,
+            timeout_seconds=SETTINGS.source_extractor_timeout_seconds,
+        )
     return None
 
 
@@ -67,7 +72,7 @@ def extract_source_file(
     index: int = 1,
     extractor_client: SourceExtractorClientLike | None = None,
 ) -> dict[str, Any]:
-    if extractor_client is None and not source_extractor_client_configured():
+    if extractor_client is None and not (SETTINGS.source_extractor_command or SETTINGS.source_extractor_api_url):
         return extract_source_file_local(file_payload, index=index)
 
     run = extract_source_files([file_payload], extractor_client=extractor_client)

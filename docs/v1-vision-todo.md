@@ -173,6 +173,7 @@ Todo:
 - Add source-index search tooling that course generation can call before asking users for more sources.
 - Add source candidate matching so new sources can be suggested for existing courses, concepts, or source gaps.
 - Add extraction support for syllabus/catalog-like HTML, PDFs, and structured academic pages.
+- Add large-source document maps/source digests for book-length PDFs, textbooks, manuals, and reports. Extractors should attempt table-of-contents, chapter, heading, page, glossary/index term, figure, table, equation, example, exercise, and summary extraction so early course planning can use compact structure instead of full source text.
 - Add source packet quality scoring for relevance, freshness, trust, accessibility, duplicates, and broken links.
 - Add import/export formats that can move source-index records to a future standalone database.
 

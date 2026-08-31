@@ -101,22 +101,25 @@ def normalize_generation_input_artifacts(input_artifacts: list[dict[str, Any]] |
         artifact_id = _artifact_id(artifact, index)
         text = _artifact_text(artifact)
         title = _artifact_title(artifact, artifact_id)
-        artifacts.append(
-            {
-                "id": artifact_id,
-                "kind": _artifact_kind(artifact),
-                "title": title,
-                "filename": str(artifact.get("filename") or artifact.get("name") or "").strip(),
-                "mimeType": str(artifact.get("mimeType") or artifact.get("mime_type") or "").strip(),
-                "sourceUrl": str(artifact.get("url") or artifact.get("sourceUrl") or artifact.get("source_url") or "").strip(),
-                "sourceDocumentUrl": _artifact_url(artifact, artifact_id),
-                "extractionStatus": str(artifact.get("extractionStatus") or artifact.get("extraction_status") or ("extracted" if text else "missing_text")),
-                "textLength": len(text),
-                "normalizedDocumentId": str(artifact.get("normalizedDocumentId") or "").strip(),
-                "sourceRef": str(artifact.get("sourceRef") or "").strip(),
-                "evidenceChunkCount": _int_value(artifact.get("evidenceChunkCount")),
-            }
-        )
+        row = {
+            "id": artifact_id,
+            "kind": _artifact_kind(artifact),
+            "title": title,
+            "filename": str(artifact.get("filename") or artifact.get("name") or "").strip(),
+            "mimeType": str(artifact.get("mimeType") or artifact.get("mime_type") or "").strip(),
+            "sourceUrl": str(artifact.get("url") or artifact.get("sourceUrl") or artifact.get("source_url") or "").strip(),
+            "sourceDocumentUrl": _artifact_url(artifact, artifact_id),
+            "extractionStatus": str(artifact.get("extractionStatus") or artifact.get("extraction_status") or ("extracted" if text else "missing_text")),
+            "textLength": len(text),
+            "normalizedDocumentId": str(artifact.get("normalizedDocumentId") or "").strip(),
+            "sourceRef": str(artifact.get("sourceRef") or "").strip(),
+            "evidenceChunkCount": _int_value(artifact.get("evidenceChunkCount")),
+        }
+        if isinstance(artifact.get("reader"), dict):
+            row["reader"] = artifact["reader"]
+        if isinstance(artifact.get("citation"), dict):
+            row["citation"] = artifact["citation"]
+        artifacts.append(row)
     return artifacts
 
 
@@ -129,24 +132,36 @@ def source_documents_from_input_artifacts(input_artifacts: list[dict[str, Any]] 
         if isinstance(normalized_document, dict):
             normalized_documents = source_documents_from_normalized_documents([normalized_document])
             if normalized_documents:
-                documents.extend(normalized_documents)
+                for document in normalized_documents:
+                    if isinstance(artifact.get("reader"), dict) and artifact["reader"]:
+                        document = {**document, "reader": artifact["reader"]}
+                    documents.append(document)
                 continue
         text = _artifact_text(artifact)
         if not text:
             continue
         artifact_id = _artifact_id(artifact, index)
         mime_type = str(artifact.get("mimeType") or artifact.get("mime_type") or "text/plain")
-        documents.append(
-            {
-                "url": _artifact_url(artifact, artifact_id),
-                "title": _artifact_title(artifact, artifact_id),
-                "text": text,
-                "contentType": mime_type or "text/plain",
-                "fetchStatus": "provided",
-                "inputArtifactId": artifact_id,
-                "inputArtifactKind": _artifact_kind(artifact),
-            }
-        )
+        document = {
+            "url": _artifact_url(artifact, artifact_id),
+            "title": _artifact_title(artifact, artifact_id),
+            "filename": str(artifact.get("filename") or artifact.get("name") or "").strip(),
+            "mimeType": mime_type,
+            "sourceDocumentUrl": _artifact_url(artifact, artifact_id),
+            "text": text,
+            "contentType": mime_type or "text/plain",
+            "fetchStatus": "provided",
+            "inputArtifactId": artifact_id,
+            "inputArtifactKind": _artifact_kind(artifact),
+        }
+        for key in ("sourceRef", "normalizedDocumentId", "directEvidenceRef"):
+            value = str(artifact.get(key) or "").strip()
+            if value:
+                document[key] = value
+        for key in ("citation", "reader", "extractor", "snapshot"):
+            if isinstance(artifact.get(key), dict) and artifact[key]:
+                document[key] = artifact[key]
+        documents.append(document)
     return documents
 
 

@@ -22,6 +22,15 @@ export function sourceCitationNumber(sourceId: string | undefined, courseSourceI
   return courseSourceIndex.get(sourceId) ?? null;
 }
 
+export function isExternalSourceUrl(url: string | undefined) {
+  return /^https?:\/\//i.test(url ?? "");
+}
+
+export function sourceRecordMeta(source: SourceRecord) {
+  const filename = source.filename && source.filename !== source.title ? source.filename : "";
+  return [source.author, source.publisher, filename, source.mimeType || source.type].filter(Boolean).join(" | ");
+}
+
 export function getSourcesByIds(sourceIds: string[] | undefined, sources: SourceRecord[], courseSourceIndex?: CourseSourceIndex) {
   if (!Array.isArray(sourceIds) || sourceIds.length === 0) {
     return [];

@@ -278,6 +278,7 @@ Canonical module/week-summary concept-card block:
 - Do not render source footers for Apply/assessment sections.
 - If a block fetches or embeds material from a link, it must reference the source record for that link.
 - Generated courses must include course-level `sourceRecords` for generated/local-only sources or reference existing central source records.
+- Uploaded files, PDFs, source packets, and other input artifacts used during generation must become course-level source records with file/citation metadata such as filename, MIME type, source document URL, source ref, extractor/reader provenance, and citation data when available. Do not store full extracted source text inside the source record.
 - Do not accept unresolved `sourceIds` in generated courses.
 
 ## Course Health Rules

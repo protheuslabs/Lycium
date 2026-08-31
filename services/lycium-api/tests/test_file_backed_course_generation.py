@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import sys
+import shlex
+from dataclasses import replace
+from pathlib import Path
 from typing import Any
 
 from app.course_agent_staged import generate_course_with_agent_staged
 from app.file_input_reader import read_generation_input_files
+from app.source_extraction import dispatcher as dispatcher_module
 
 
 def _quiz_questions() -> list[dict[str, Any]]:
@@ -19,6 +24,23 @@ def _quiz_questions() -> list[dict[str, Any]]:
 
 
 def test_staged_generation_produces_valid_course_from_file_artifacts(monkeypatch) -> None:
+    wrapper_path = (
+        Path(__file__).resolve().parents[1]
+        / "external-extractors"
+        / "docling-wrapper"
+        / "docling_wrapper"
+        / "extract.py"
+    )
+    monkeypatch.setattr(
+        dispatcher_module,
+        "SETTINGS",
+        replace(
+            dispatcher_module.SETTINGS,
+            source_extractor_command=f"{shlex.quote(sys.executable)} {shlex.quote(str(wrapper_path))}",
+            source_extractor_working_dir=wrapper_path.parents[1],
+            source_extractor_local_fallback_enabled=False,
+        ),
+    )
     reader_result = read_generation_input_files(
         [
             {
@@ -47,6 +69,8 @@ def test_staged_generation_produces_valid_course_from_file_artifacts(monkeypatch
             },
         ]
     )
+    assert reader_result["provider"] == "lycium-docling-wrapper"
+    assert reader_result["artifacts"][0]["reader"]["adapter"] == "lycium-docling-wrapper"
     captured_source_context_indexes: list[dict[str, Any]] = []
 
     def fail_plan_call(*_args: Any, **_kwargs: Any) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -170,7 +194,24 @@ def test_staged_generation_produces_valid_course_from_file_artifacts(monkeypatch
     assert len(captured_source_context_indexes) == 1
     assert set(captured_source_context_indexes[0]) == {"input-source-1", "input-source-2", "input-source-3"}
     assert course["metadata"]["inputArtifacts"][0]["filename"] == "stoichiometry-notes.txt"
+    assert course["metadata"]["inputArtifacts"][0]["normalizedDocumentId"]
     assert course["metadata"]["sourceCorpusSynthesis"]["metrics"]["includedInputArtifactCount"] == 3
-    assert course["sourceRecords"][0]["url"].startswith("artifact://")
+    first_source_record = course["sourceRecords"][0]
+    assert first_source_record["id"] == "input-source-1"
+    assert first_source_record["type"] == "text"
+    assert first_source_record["title"] == "stoichiometry-notes.txt"
+    assert first_source_record["url"].startswith("artifact://")
+    assert first_source_record["filename"] == "stoichiometry-notes.txt"
+    assert first_source_record["mimeType"] == "text/plain"
+    assert first_source_record["sourceDocumentUrl"] == first_source_record["url"]
+    assert first_source_record["sourceRef"].startswith("file:sha256:")
+    assert first_source_record["normalizedDocumentId"] == first_source_record["inputArtifactId"]
+    assert first_source_record["inputArtifactKind"] == "text"
+    assert first_source_record["inputArtifactOrigin"] == "uploaded_file"
+    assert first_source_record["citation"]["filename"] == "stoichiometry-notes.txt"
+    assert first_source_record["reader"]["adapter"] == "lycium-docling-wrapper"
+    assert first_source_record["extractor"]["adapter"] in {"plain-text", "text", "docling"}
+    assert first_source_record["evidenceChunkCount"] >= 1
+    assert "text" not in first_source_record
     assert course["modules"][0]["sections"][0]["content"][0]["sourceIds"] == ["input-source-1"]
     assert course["modules"][0]["sections"][1]["content"][0]["questions"][0]["answers"] == [0]

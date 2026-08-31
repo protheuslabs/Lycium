@@ -4,6 +4,8 @@ import re
 from collections import Counter
 from typing import Any
 
+from app.generation_helpers import _title_from_prompt_or_source
+
 SOURCE_PACKET_OUTLINE_CONTRACT_VERSION = "course-outline-from-source-packet-v1"
 COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT = "course-module-outline-quality-report-v1"
 TOKEN_RE = re.compile(r"[a-z][a-z0-9+#.-]{2,}")
@@ -16,6 +18,7 @@ STOPWORDS = {
     "answers",
     "appendix",
     "are",
+    "attached",
     "before",
     "catalog",
     "chapter",
@@ -29,11 +32,17 @@ STOPWORDS = {
     "covers",
     "covering",
     "create",
+    "document",
+    "documents",
     "edu",
     "example",
     "exercise",
     "exercises",
     "fallacies",
+    "file",
+    "files",
+    "focus",
+    "focused",
     "from",
     "into",
     "learn",
@@ -48,6 +57,7 @@ STOPWORDS = {
     "preface",
     "practice",
     "program",
+    "provided",
     "purpose",
     "section",
     "sections",
@@ -55,6 +65,7 @@ STOPWORDS = {
     "self-check",
     "source",
     "sources",
+    "uploaded",
     "student",
     "students",
     "study",
@@ -71,6 +82,7 @@ STOPWORDS = {
     "units",
     "using",
     "with",
+    "pdf",
 }
 
 GENERIC_BOOK_PHRASES = {
@@ -667,6 +679,7 @@ def build_outline_from_source_packet(
 ) -> dict[str, Any]:
     module_count = max(1, min(20, desired_module_count))
     section_count = max(2, min(6, sections_per_module))
+    resolved_title = _title_from_prompt_or_source(prompt, source_packet)
     coverage_items = _coverage_items(coverage_checklist)
     coverage_buckets = _coverage_buckets(coverage_items, module_count)
     terms = [_coverage_module_focus(bucket, index) for index, bucket in enumerate(coverage_buckets, start=1)] or _candidate_terms(prompt, source_packet, module_count)
@@ -741,8 +754,8 @@ def build_outline_from_source_packet(
 
     outline = {
         "contractVersion": SOURCE_PACKET_OUTLINE_CONTRACT_VERSION,
-        "title": _title(prompt),
-        "shortDescription": f"Draft outline derived from source packet evidence for: {prompt[:120].strip()}",
+        "title": resolved_title,
+        "shortDescription": f"Draft outline derived from source packet evidence for {resolved_title}.",
         "summary": "This is a planning outline derived from accepted source-packet evidence, not final learner-facing content.",
         "modules": modules,
         "provenance": {

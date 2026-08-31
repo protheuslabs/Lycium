@@ -24,7 +24,7 @@ from app.course_generation_service import (
     build_course_snapshot_from_agent_result,
     validate_generation_taxonomy_input,
 )
-from app.course_generation_job_helpers import job_payload_from_course_request, source_gap_job_result
+from app.course_generation_job_helpers import job_payload_from_course_request
 from app.course_generation_route_inputs import generation_readiness_for_request, generation_source_urls
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
@@ -117,16 +117,6 @@ from app.schemas import (
     SourceRead,
     UpdateOutlineRequest,
 )
-
-
-def _has_submitted_generation_evidence(readiness: dict[str, Any]) -> bool:
-    source_evidence = readiness.get("sourceEvidence") if isinstance(readiness.get("sourceEvidence"), dict) else {}
-    evidence_counts = (
-        source_evidence.get("sourceUrlCount"),
-        source_evidence.get("usableInputArtifactCount"),
-        source_evidence.get("submittedEvidenceCount"),
-    )
-    return any(int(count or 0) > 0 for count in evidence_counts)
 
 
 def register(app: FastAPI) -> None:
@@ -440,39 +430,6 @@ def register(app: FastAPI) -> None:
             agent_profile = get_active_agent_profile()
             if agent_profile is not None:
                 agent_profile = require_verified_active_agent_profile()
-            has_submitted_evidence = _has_submitted_generation_evidence(readiness)
-            if not bool(readiness["ready"]) and has_submitted_evidence:
-                job = enqueue_job(
-                    session,
-                    job_type="agent_generate_course_staged",
-                    payload=job_payload_from_course_request(
-                        payload,
-                        source_urls,
-                        model=payload.model or (agent_profile or {}).get("model"),
-                        generation_readiness=readiness,
-                    ),
-                )
-                snapshot = create_needs_sources_course_snapshot(
-                    session,
-                    prompt=payload.prompt,
-                    learner_id=payload.learner_id,
-                    level=payload.level,
-                    language=payload.language,
-                    source_policy=payload.source_policy,
-                    desired_module_count=payload.desired_module_count,
-                    expected_duration_minutes=payload.expected_duration_minutes,
-                    source_urls=source_urls,
-                    source_packet=payload.source_packet,
-                    source_gate=readiness.get("sourceGate"),
-                    generation_readiness=readiness,
-                    category=payload.category,
-                    department=payload.department,
-                )
-                save_course_snapshot(snapshot)
-                source_gap_job_result(session, job, snapshot)
-                session.commit()
-                session.refresh(job)
-                return course_generation_job_response(job)
             agent_profile = agent_profile or require_verified_active_agent_profile()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc

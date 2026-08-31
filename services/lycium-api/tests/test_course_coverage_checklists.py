@@ -84,6 +84,24 @@ def test_prompt_phrase_cleanup_removes_leading_conjunctions() -> None:
     assert all(not title.startswith("And ") for title in titles)
 
 
+def test_attachment_prompt_uses_focus_clause_for_coverage_not_file_reference() -> None:
+    checklist = build_course_coverage_checklist(
+        prompt=(
+            "Create an undergraduate course based on the attached Machine Learning Systems PDF. "
+            "Focus on architecture, data, training, evaluation, deployment, scaling, monitoring, "
+            "and operational tradeoffs of production machine learning systems."
+        ),
+        level="undergrad",
+    )
+    titles = {item["title"] for item in checklist["requiredItems"]}
+    title_blob = " ".join(titles).lower()
+
+    assert checklist["source"] == "prompt_phrases"
+    assert {"Architecture", "Data", "Training", "Evaluation", "Deployment"}.issubset(titles)
+    assert "attached" not in title_blob
+    assert "pdf" not in title_blob
+
+
 def test_coverage_outline_assigns_required_items_to_modules_and_sections() -> None:
     outline = build_outline_from_coverage_checklist(
         prompt="Create an undergraduate macroeconomics course.",

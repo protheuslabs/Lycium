@@ -601,25 +601,62 @@ def test_llm_course_generation_blocks_low_concept_coverage_packet_before_model_c
     assert exc_info.value.trace["source_packet_quality_gate"]["gate"] == "source_packet_quality"
 
 
-def test_staged_llm_course_generation_blocks_low_concept_coverage_packet_before_model_call() -> None:
-    with pytest.raises(CourseAgentError) as exc_info:
-        generate_course_with_agent_staged(
-            prompt="macroeconomics principles",
-            api_key="not-used",
-            provider_id="provider-should-not-be-needed",
-            level="undergrad",
-            language="en",
-            source_policy="balanced",
-            desired_module_count=3,
-            expected_duration_minutes=180,
-            source_packet=_low_concept_coverage_packet(),
-            category="business-management",
-            department="economics",
-        )
+def test_staged_llm_course_generation_records_low_concept_coverage_packet_without_preflight_block(monkeypatch) -> None:
+    def fake_module_bundle(**kwargs):
+        module_outline = kwargs["module_outline"]
+        source_ids = kwargs["source_ids"]
+        return {
+            "module": {
+                "id": f"module-{kwargs['module_number']}",
+                "title": module_outline["title"],
+                "sourceIds": source_ids,
+                "sections": [
+                    {
+                        "id": f"module-{kwargs['module_number']}-lesson",
+                        "title": f"{module_outline['title']} lesson",
+                        "pageType": "learn",
+                        "sectionType": "lesson",
+                        "sourceIds": source_ids[:1],
+                        "content": [
+                            {"type": "text", "value": "Low source coverage is still carried as advisory generation evidence."},
+                            {"type": "heading", "title": "Concepts introduced"},
+                            {
+                                "type": "conceptCard",
+                                "title": "Macroeconomics",
+                                "description": "A course concept generated while source coverage remains advisory.",
+                                "sourceIds": source_ids[:1],
+                            },
+                        ],
+                    }
+                ],
+            },
+            "usage": [],
+            "stages": [],
+            "media_logs": [],
+        }
 
-    assert "Source packet concept coverage is below policy" in str(exc_info.value)
-    assert exc_info.value.trace["failed_stage"] == "source_packet_quality"
-    assert exc_info.value.trace["source_packet_quality_gate"]["gate"] == "source_packet_quality"
+    monkeypatch.setattr("app.course_agent_staged.get_agent_provider", lambda _provider_id: {"id": "test", "defaultModel": "test"})
+    monkeypatch.setattr("app.course_agent_staged.assess_agent_model_capability", lambda _provider, _model: {"status": "ok"})
+    monkeypatch.setattr("app.course_agent_staged._generate_module_bundle", fake_module_bundle)
+
+    result = generate_course_with_agent_staged(
+        prompt="macroeconomics principles",
+        api_key="not-used",
+        provider_id="provider-should-not-be-needed",
+        level="undergrad",
+        language="en",
+        source_policy="balanced",
+        desired_module_count=3,
+        expected_duration_minutes=180,
+        source_packet=_low_concept_coverage_packet(),
+        category="business-management",
+        department="economics",
+        enforce_contract=False,
+    )
+
+    assert result.trace["source_packet_quality_gate"]["gate"] == "source_packet_quality"
+    assert result.trace["source_packet_quality_gate"]["status"] == "failed"
+    assert result.course["metadata"]["generationReadiness"]["ready"] is False
 
 
 def test_index_source_upsert_canonicalizes_and_dedupes(client) -> None:

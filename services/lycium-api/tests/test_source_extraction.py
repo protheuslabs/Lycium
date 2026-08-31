@@ -7,6 +7,7 @@ from dataclasses import replace
 from typing import Any
 
 import httpx
+import pytest
 
 from app.file_input_reader import read_generation_input_files
 from app.source_corpus import compile_generation_source_corpus
@@ -269,6 +270,24 @@ def test_remote_extractor_failure_falls_back_to_local_extraction_when_enabled(mo
     assert result["normalizedDocuments"][0]["status"] == "extracted"
 
 
+def test_remote_extractor_failure_raises_without_local_fallback(monkeypatch) -> None:
+    monkeypatch.setattr(
+        dispatcher_module,
+        "SETTINGS",
+        replace(dispatcher_module.SETTINGS, source_extractor_local_fallback_enabled=False),
+    )
+
+    class FailingExtractorClient:
+        def extract_files(self, _files: list[dict[str, Any]] | None) -> dict[str, Any]:
+            raise SourceExtractorClientError("Source Extractor request failed: connection refused")
+
+    with pytest.raises(SourceExtractorClientError, match="connection refused"):
+        extract_source_files(
+            [{"filename": "fallback-notes.txt", "mimeType": "text/plain", "text": "Fallback extraction is disabled."}],
+            extractor_client=FailingExtractorClient(),
+        )
+
+
 def test_file_input_reader_keeps_legacy_artifacts_and_normalized_documents() -> None:
     result = read_generation_input_files(
         [
@@ -329,6 +348,9 @@ def test_normalized_documents_adapt_to_generation_source_documents() -> None:
 
     assert len(source_documents) == 1
     assert source_documents[0]["sourceType"] == "direct_evidence"
+    assert source_documents[0]["filename"] == "macroeconomics-syllabus.txt"
+    assert source_documents[0]["mimeType"] == "text/plain"
+    assert source_documents[0]["sourceDocumentUrl"].startswith("artifact://")
     assert source_documents[0]["normalizedDocumentId"] == reader_result["normalizedDocuments"][0]["documentId"]
     assert source_documents[0]["evidenceChunks"][0]["citation"]["filename"] == "macroeconomics-syllabus.txt"
 
@@ -355,5 +377,6 @@ def test_source_corpus_preflight_preserves_direct_evidence_metadata() -> None:
 
     assert corpus.synthesis["metrics"]["includedInputArtifactCount"] == 1
     assert corpus.source_documents[0]["sourceType"] == "direct_evidence"
+    assert corpus.source_documents[0]["filename"] == "macroeconomics-syllabus.txt"
     assert corpus.source_documents[0]["directEvidenceRef"].startswith("file:sha256:")
     assert corpus.source_documents[0]["evidenceChunks"][0]["contractVersion"] == "evidence-chunk-v1"

@@ -40,6 +40,8 @@ Extractor output should preserve citable evidence before any Source Index regist
 - `source-citation-v1`: title, filename or URL, source ref, and page when available.
 - `source-registration-candidate-v1`: an optional handoff envelope for Source Index canonicalization and dedupe.
 
+Roadmap for large sources: extractors should eventually emit a compact document map or source digest for book-length PDFs, manuals, and reports. That map should capture table of contents structure, headings, chapters, index/glossary terms, figures, tables, equations, examples, exercises, summaries, and stable chunk refs. Lycium can use that structure for course templates and module outlines, while section fill retrieves only the bounded excerpts it needs.
+
 Lycium can generate from direct extracted evidence without waiting for Source Index. If Source Index later stores the same hash, Lycium can upgrade provenance to durable Source Index IDs without regenerating the course.
 
 Every `source-packet-v1` has a portable root envelope:

@@ -137,6 +137,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
 12. Record all sources centrally and reference them from the course:
    - add source records to `apps/lycium-web/src/courseData/sourceRecords/`
    - use `sourceIds` at course/module scope for available source catalogs, and at section/block scope only for sources actually used in that section or block
+   - when uploaded files, PDFs, source packets, or other input artifacts are used during generation, create course-level source records for them with file/citation metadata such as filename, MIME type, source document URL, source ref, extractor/reader provenance, and citation data when available; do not store full extracted source text inside the source record
    - when many sources are submitted, run source corpus preflight and use only included sources as course evidence unless a reviewer restores an excluded source
    - when source packets are available, prefer `source-packet-v1` evidence over loose URL lists so generation uses imported snapshots, source decisions, and evidence refs
    - during source enrichment, query Source Index search (`source-index-search-v1`) for missing concepts, replacement sources, benchmark evidence, and media candidates before asking the user for more sources

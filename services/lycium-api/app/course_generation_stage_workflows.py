@@ -44,7 +44,7 @@ from app.course_generation_stage_registry import (
     SECTION_FILL_CONTRACT,
     STAGE_WORKFLOW_VERSION,
 )
-from app.generation_helpers import _stable_id, _title_from_prompt
+from app.generation_helpers import _stable_id, _title_from_prompt_or_source
 from app.curriculum_assembly_policy import (
     cluster_generation_threshold_report,
     curriculum_assembly_threshold_policy,
@@ -361,7 +361,7 @@ def run_course_template_workflow(
     category: str | None = None,
     department: str | None = None,
 ) -> dict[str, Any]:
-    title = _title_from_prompt(prompt)
+    title = _title_from_prompt_or_source(prompt, source_packet)
     goals = _strings(learning_goals or [])
     checklist = build_course_coverage_checklist(
         prompt=prompt,

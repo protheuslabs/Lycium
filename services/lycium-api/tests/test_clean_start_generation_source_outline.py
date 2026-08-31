@@ -195,3 +195,33 @@ def test_source_packet_outline_filters_book_front_matter_noise() -> None:
     assert any(keyword in keywords for keyword in ("deployment monitoring", "reliability engineering", "feature stores"))
 
 
+def test_source_packet_outline_prefers_document_title_for_attachment_prompt() -> None:
+    outline = build_outline_from_source_packet(
+        prompt=(
+            "Create an undergraduate course based on the attached Machine Learning Systems PDF. "
+            "Focus on architecture, data, training, evaluation, deployment, scaling, monitoring, "
+            "and operational tradeoffs of production machine learning systems."
+        ),
+        desired_module_count=3,
+        sections_per_module=2,
+        source_packet={
+            "contract_version": "source-packet-v1",
+            "source_documents": [
+                {
+                    "title": "Machine Learning Systems.pdf",
+                    "filename": "Machine Learning Systems.pdf",
+                    "url": "artifact://machine-learning-systems",
+                    "text": (
+                        "Machine learning systems cover data pipelines, model training, evaluation, "
+                        "deployment, monitoring, scaling, reliability engineering, and production inference."
+                    ),
+                }
+            ],
+        },
+    )
+
+    assert outline["title"] == "Machine Learning Systems"
+    assert outline["shortDescription"] == "Draft outline derived from source packet evidence for Machine Learning Systems."
+    assert "attached" not in outline["title"].lower()
+    assert "pdf" not in outline["title"].lower()
+

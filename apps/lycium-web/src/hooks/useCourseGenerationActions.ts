@@ -311,7 +311,19 @@ export function useCourseGenerationActions({
   };
 
   const handleRetryGenerateCourse = useCallback(async () => {
-    if (!failedGenerationJobId) {
+    let retryJobId = failedGenerationJobId;
+    if (!retryJobId) {
+      try {
+        const runs = await lyciumApi.listGenerationRuns({ status: "failed", limit: 10 });
+        const failedRun = runs.find((run) => (
+          run.run_type === "agent_generate_course_staged" && run.job_id
+        ));
+        retryJobId = failedRun?.job_id ? String(failedRun.job_id) : null;
+      } catch (err) {
+        console.warn("Could not find a failed generation run to retry:", err);
+      }
+    }
+    if (!retryJobId) {
       setGenerateStatus("error");
       setGenerateMessage("There is no saved generation request to retry.");
       return;
@@ -327,7 +339,7 @@ export function useCourseGenerationActions({
     setGenerateMessage("Retrying from the saved request...");
 
     try {
-      const job = await lyciumApi.resumeCourseGenerationJob(failedGenerationJobId);
+      const job = await lyciumApi.resumeCourseGenerationJob(retryJobId);
       await pollCourseGenerationJob(job, { clearPromptOnComplete: true, openOnComplete: true });
     } catch (err) {
       console.warn("Course generation retry failed:", err);

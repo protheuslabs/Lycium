@@ -11,7 +11,7 @@ import EditableSectionContent from "./EditableSectionContent";
 import SectionRefreshControl from "./SectionRefreshControl";
 import { EditPencilButton, promptForBlockType, promptForText } from "./CourseEditControls";
 import type { ContentBlock, Section, SourceRecord } from "./contentViewTypes";
-import { buildCourseSourceIndex, getSectionSources, sourceCitationNumber } from "./sourceCitationUtils";
+import { buildCourseSourceIndex, getSectionSources, isExternalSourceUrl, sourceCitationNumber } from "./sourceCitationUtils";
 import { createBlockTemplate, stripModulePrefix } from "../CourseEditing/courseEditPrimitives";
 import { useSectionQuizStatus } from "./useSectionQuizStatus";
 import { hasSubmittedProject, projectKeyFor } from "./projectSubmissionStatus";
@@ -389,7 +389,7 @@ export default function ContentView({
                     tabIndex={-1}
                   >
                     <span className="source-reference-index">[{citationIndex ?? "?"}]</span>
-                    {source.url ? (
+                    {isExternalSourceUrl(source.url) ? (
                       <a href={source.url} target="_blank" rel="noreferrer">
                         {source.title}
                       </a>
@@ -448,7 +448,7 @@ export default function ContentView({
                       <span className="source-reference-index">[{citationIndex ?? "?"}]</span>
                       <span>{source.title}</span>
                     </button>
-                    {source.url && (
+                    {isExternalSourceUrl(source.url) && (
                       <a href={source.url} target="_blank" rel="noreferrer" aria-label={`Open ${source.title}`}>
                         <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
                           <path d="M8 5l8 7-8 7" />

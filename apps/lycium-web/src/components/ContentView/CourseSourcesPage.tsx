@@ -1,7 +1,7 @@
 import SourceSuggestionButton from "../CourseFeedback/SourceSuggestionButton";
 import type { SourceRecord } from "./contentViewTypes";
 import type { CourseSourceIndex } from "./sourceCitationUtils";
-import { sourceCitationNumber } from "./sourceCitationUtils";
+import { isExternalSourceUrl, sourceCitationNumber, sourceRecordMeta } from "./sourceCitationUtils";
 
 type CourseSourcesPageProps = {
   courseKey: string;
@@ -30,16 +30,14 @@ export default function CourseSourcesPage({ courseKey, courseTitle, sources, cou
               <li id={`course-source-reference-${citationNumber ?? source.id}`} key={source.id}>
                 <span className="source-reference-index">[{citationNumber ?? "?"}]</span>
                 <div className="course-source-card-body">
-                  {source.url ? (
+                  {isExternalSourceUrl(source.url) ? (
                     <a href={source.url} target="_blank" rel="noreferrer">
                       {source.title}
                     </a>
                   ) : (
                     <strong>{source.title}</strong>
                   )}
-                  <div className="course-source-meta">
-                    {[source.author, source.publisher, source.type].filter(Boolean).join(" | ")}
-                  </div>
+                  <div className="course-source-meta">{sourceRecordMeta(source)}</div>
                 </div>
               </li>
             );

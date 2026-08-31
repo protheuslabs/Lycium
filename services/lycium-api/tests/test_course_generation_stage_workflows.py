@@ -135,6 +135,49 @@ def test_course_template_workflow_returns_first_stage_handoff() -> None:
     assert quality["policy"]["materializesLearnerContent"] is False
 
 
+def test_course_template_workflow_prefers_pdf_title_for_attachment_prompt() -> None:
+    result = run_course_template_workflow(
+        prompt=(
+            "Create an undergraduate course based on the attached Machine Learning Systems PDF. "
+            "Focus on architecture, data, training, evaluation, deployment, scaling, monitoring, "
+            "and operational tradeoffs of production machine learning systems."
+        ),
+        level="undergrad",
+        target_audience="college learners",
+        desired_module_count=8,
+        expected_duration_minutes=1200,
+        source_packet={
+            "contract_version": "source-packet-v1",
+            "quality": {"status": "usable", "conceptCoverageRatio": 1.0},
+            "source_documents": [
+                {
+                    "courseSourceId": "input-source-1",
+                    "title": "Machine Learning Systems.pdf",
+                    "filename": "Machine Learning Systems.pdf",
+                    "url": "artifact://machine-learning-systems",
+                    "text": (
+                        "Machine learning systems cover data pipelines, model training, evaluation, "
+                        "deployment, monitoring, scaling, reliability engineering, and production inference."
+                    ),
+                }
+            ],
+        },
+        category="computing-information-sciences",
+        department="artificial-intelligence",
+    )
+
+    template = result["artifacts"]["courseTemplate"]
+    required_titles = {item["title"] for item in template["courseCoverageChecklist"]["requiredItems"]}
+    required_title_blob = " ".join(required_titles).lower()
+
+    assert result["status"] == "passed"
+    assert template["title"] == "Machine Learning Systems"
+    assert template["courseCoverageChecklist"]["source"] == "prompt_phrases"
+    assert {"Architecture", "Data", "Training", "Evaluation", "Deployment"}.issubset(required_titles)
+    assert "attached" not in required_title_blob
+    assert "pdf" not in required_title_blob
+
+
 def test_course_template_workflow_blocks_empty_prompt_but_keeps_handoff_shape() -> None:
     result = run_course_template_workflow(prompt="   ", desired_module_count=3)
 

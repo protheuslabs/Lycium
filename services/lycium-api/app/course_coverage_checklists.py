@@ -104,17 +104,30 @@ def _coverage_item(
 
 
 TOPIC_CLAUSE_PATTERN = re.compile(
-    r"\b(?:covering|including|includes|include|about|on|with)\b(?P<topics>.+)$",
+    r"\b(?:covering|including|includes|include)\b(?P<topics>.+)$",
+    flags=re.IGNORECASE,
+)
+FOCUS_CLAUSE_PATTERN = re.compile(
+    r"\b(?:focus(?:ed|es)?\s+on|with\s+a\s+focus\s+on)\b(?P<topics>.+)$",
+    flags=re.IGNORECASE,
+)
+COURSE_TOPIC_CLAUSE_PATTERN = re.compile(
+    r"\b(?:course|class)\s+(?:about|on|with)\b(?P<topics>.+)$",
     flags=re.IGNORECASE,
 )
 LEADING_GOAL_VERB_PATTERN = re.compile(
     r"^(?:understand|explain|apply|analyze|analyse|evaluate|describe|learn|use|identify|interpret|compare|create)\s+",
     flags=re.IGNORECASE,
 )
+SOURCE_REFERENCE_PATTERN = re.compile(
+    r"\b(?:attached|uploaded|provided)\b.*\b(?:pdf|document|file|book|textbook|source|notes?|article|paper|slides?)\b",
+    flags=re.IGNORECASE,
+)
 
 
 def _clean_topic_phrase(value: str) -> str:
     clean = re.sub(r"\s+", " ", str(value or "")).strip(" -:;,.")
+    clean = re.sub(r"^(?:focus(?:ed|es)?\s+on|with\s+a\s+focus\s+on)\s+", "", clean, flags=re.IGNORECASE)
     clean = LEADING_GOAL_VERB_PATTERN.sub("", clean).strip(" -:;,.")
     clean = re.sub(r"^(?:and|or)\s+", "", clean, flags=re.IGNORECASE).strip(" -:;,.")
     clean = re.sub(
@@ -126,15 +139,45 @@ def _clean_topic_phrase(value: str) -> str:
     return clean
 
 
+def _is_source_reference_phrase(value: str) -> bool:
+    return bool(SOURCE_REFERENCE_PATTERN.search(value)) or bool(
+        re.fullmatch(
+            r"(?:the\s+)?(?:attached|uploaded|provided|source|sources|pdf|document|file|book|textbook|notes?|article|paper|slides?)(?:\s+\d+)?",
+            value.strip(),
+            flags=re.IGNORECASE,
+        )
+    )
+
+
+def _topic_clause_from_prompt(prompt: str) -> str:
+    for pattern in (TOPIC_CLAUSE_PATTERN, FOCUS_CLAUSE_PATTERN, COURSE_TOPIC_CLAUSE_PATTERN):
+        matches = list(pattern.finditer(prompt))
+        for match in reversed(matches):
+            topic_clause = str(match.group("topics") or "").strip()
+            if topic_clause and not _is_source_reference_phrase(topic_clause):
+                return topic_clause
+    return ""
+
+
 def _topic_phrases_from_prompt(prompt: str) -> list[str]:
-    match = TOPIC_CLAUSE_PATTERN.search(prompt)
-    if not match:
+    topic_clause = _topic_clause_from_prompt(prompt)
+    if not topic_clause:
         return []
-    topic_clause = re.split(r"\b(?:for|to)\s+(?:first[- ]year|college|undergraduate|undergrad|students?|learners?|beginners?)\b", match.group("topics"), maxsplit=1, flags=re.IGNORECASE)[0]
+    topic_clause = re.split(r"\b(?:for|to)\s+(?:first[- ]year|college|undergraduate|undergrad|students?|learners?|beginners?)\b", topic_clause, maxsplit=1, flags=re.IGNORECASE)[0]
+    topic_clause = re.split(r"[.?!]\s+", topic_clause, maxsplit=1)[0]
     chunks = [chunk for chunk in re.split(r"\s*(?:,|;)\s*", topic_clause) if chunk.strip()]
     if len(chunks) <= 1:
         chunks = [chunk for chunk in re.split(r"\s+\band\b\s+", topic_clause, flags=re.IGNORECASE) if chunk.strip()]
-    return _unique([_clean_topic_phrase(chunk) for chunk in chunks], limit=MAX_REQUIRED_COVERAGE_ITEMS)
+    return _unique(
+        [
+            clean
+            for chunk in chunks
+            if not _is_source_reference_phrase(chunk)
+            for clean in [_clean_topic_phrase(chunk)]
+            if clean and not _is_source_reference_phrase(clean)
+        ],
+        limit=MAX_REQUIRED_COVERAGE_ITEMS,
+    )
 
 
 def _phrase_is_specific(phrase: str) -> bool:

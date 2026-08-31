@@ -7,6 +7,7 @@ from app.course_build_task_resume import apply_course_build_resume_inputs
 from app.course_agent_staged import (
     _course_build_outline_plan_from_resume_course,
     _course_build_outline_plan_from_source_packet,
+    _outline_planning_source,
     _source_packet_for_outline,
     generate_course_with_agent_staged,
 )
@@ -548,6 +549,77 @@ def test_generation_source_corpus_accepts_file_derived_input_artifacts() -> None
     assert source_corpus.synthesis["metrics"]["includedInputArtifactCount"] == 1
     assert plan is not None
     assert plan["modules"][0]["sourceIds"] == ["input-source-1"]
+
+
+def test_source_corpus_outline_plans_file_and_web_documents_the_same(monkeypatch) -> None:
+    monkeypatch.setattr("app.source_corpus.source_index_client_configured", lambda: False)
+    prompt = (
+        "Create a machine learning systems course covering data pipelines, model training, "
+        "evaluation, deployment monitoring, feature stores, and production inference."
+    )
+    evidence = (
+        "Data pipelines, model training, evaluation, deployment monitoring, feature stores, "
+        "and production inference are core machine learning systems concepts."
+    )
+
+    web_corpus = compile_generation_source_corpus(
+        prompt=prompt,
+        source_urls=["https://example.edu/source"],
+        fetch_sources=False,
+        source_documents=[
+            {
+                "url": "https://example.edu/source",
+                "title": "Machine Learning Systems",
+                "text": evidence,
+                "fetchStatus": "fetched",
+            }
+        ],
+    )
+    file_corpus = compile_generation_source_corpus(
+        prompt=prompt,
+        source_urls=[],
+        fetch_sources=False,
+        input_artifacts=[
+            {
+                "id": "ml-systems",
+                "kind": "pdf",
+                "filename": "machine-learning-systems.pdf",
+                "title": "Machine Learning Systems",
+                "mimeType": "application/pdf",
+                "extractedText": evidence,
+            }
+        ],
+    )
+
+    web_plan = _source_corpus_outline_plan(prompt=prompt, source_corpus=web_corpus)
+    file_plan = _source_corpus_outline_plan(prompt=prompt, source_corpus=file_corpus)
+
+    assert _outline_planning_source(None, web_corpus) == "source_corpus_outline"
+    assert _outline_planning_source(None, file_corpus) == "source_corpus_outline"
+    assert web_plan["planningSource"] == "source_corpus_outline"
+    assert file_plan["planningSource"] == "source_corpus_outline"
+    assert web_corpus.synthesis["metrics"]["includedSourceCount"] == 1
+    assert file_corpus.synthesis["metrics"]["includedSourceCount"] == 1
+    assert file_corpus.synthesis["metrics"]["includedInputArtifactCount"] == 1
+    assert [module["title"] for module in web_plan["modules"]] == [module["title"] for module in file_plan["modules"]]
+    assert [module["concept_keywords"] for module in web_plan["modules"]] == [
+        module["concept_keywords"] for module in file_plan["modules"]
+    ]
+    assert all(module["sourceIds"] == ["input-source-1"] for module in web_plan["modules"])
+    assert all(module["sourceIds"] == ["input-source-1"] for module in file_plan["modules"])
+
+
+def _source_corpus_outline_plan(*, prompt: str, source_corpus: SourceCorpusPreflight) -> dict[str, Any]:
+    packet = _source_packet_for_outline(source_packet=None, source_corpus=source_corpus)
+    plan = _course_build_outline_plan_from_source_packet(
+        prompt=prompt,
+        source_packet=packet,
+        desired_module_count=3,
+    )
+    assert plan is not None
+    if plan.get("planningSource") == "source_packet_outline":
+        plan["planningSource"] = _outline_planning_source(None, source_corpus)
+    return plan
 
 
 def test_file_reader_primitive_returns_generation_input_artifacts() -> None:

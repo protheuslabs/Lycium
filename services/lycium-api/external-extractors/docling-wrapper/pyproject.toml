@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lycium-docling-wrapper"
+version = "0.1.0"
+description = "External Docling adapter that emits Lycium source extraction contracts."
+requires-python = ">=3.10"
+dependencies = [
+  "docling>=2,<3",
+  "pypdf>=5,<7",
+]
+
+[project.scripts]
+lycium-docling-extract = "docling_wrapper.extract:main"
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.3,<9",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["docling_wrapper"]

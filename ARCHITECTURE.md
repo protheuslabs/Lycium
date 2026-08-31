@@ -183,6 +183,7 @@ Responsibilities:
 - direct PDF, document, text, transcript, and media-source extraction through that repo
 - adapter routing inside the external repo for Docling, OCR-capable PDF tooling, and later broad document parsers
 - normalized document, evidence chunk, citation, warning, and extractor provenance contracts
+- optional large-source document maps/source digests for tables of contents, headings, index terms, figures, tables, equations, examples, exercises, summaries, and stable chunk refs
 - explicit OCR requests rather than hidden best-effort OCR
 - optional Source Index registration candidates after extraction
 

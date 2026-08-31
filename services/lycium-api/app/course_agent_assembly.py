@@ -9,23 +9,24 @@ from app.course_agent_contract import normalize_course
 from app.course_agent_providers import call_agent_model
 from app.course_agent_response import extract_message_content, json_from_model_text
 from app.course_agent_types import CourseAgentError
+from app.course_source_packet_mapping import source_records_from_inputs
 
 CourseGenerationCheckpoint = Callable[[dict[str, Any]], None]
 
 
-def _input_source_records(source_urls: list[str] | None, course_title: str) -> list[dict[str, object]]:
-    records: list[dict[str, object]] = []
-    for index, source_url in enumerate(source_urls or [], start=1):
-        records.append(
-            {
-                "id": f"input-source-{index}",
-                "type": "web",
-                "title": f"Submitted source {index}",
-                "url": source_url,
-                "usedByCourseTitles": [course_title],
-            }
-        )
-    return records
+def _input_source_records(
+    source_urls: list[str] | None,
+    course_title: str,
+    *,
+    source_documents: list[dict[str, Any]] | None = None,
+    source_corpus_synthesis: dict[str, Any] | None = None,
+) -> list[dict[str, object]]:
+    return source_records_from_inputs(
+        source_urls,
+        course_title,
+        source_documents=source_documents,
+        source_corpus_synthesis=source_corpus_synthesis,
+    )
 
 
 def _merge_input_sources(course: dict, source_urls: list[str] | None) -> dict:

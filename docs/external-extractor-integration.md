@@ -19,8 +19,8 @@ Lycium supports two external integration modes.
 Use a command when the external repo is downloaded into the backend and exposed through a wrapper script:
 
 ```text
-LYCIUM_SOURCE_EXTRACTOR_COMMAND="python services/lycium-api/external-extractors/docling-wrapper/extract.py"
-LYCIUM_SOURCE_EXTRACTOR_CWD=/absolute/path/to/Lyceum
+LYCIUM_SOURCE_EXTRACTOR_COMMAND="/absolute/path/to/services/lycium-api/external-extractors/docling-wrapper/.venv/bin/python -m docling_wrapper.extract"
+LYCIUM_SOURCE_EXTRACTOR_CWD=/absolute/path/to/services/lycium-api/external-extractors/docling-wrapper
 ```
 
 Use HTTP when the external extractor repo ships or is wrapped as a server:
@@ -36,6 +36,8 @@ POST /v1/extractions
 ```
 
 If no external extractor is configured, Lycium uses the existing local plain-text and `pypdf` reader as an offline fallback. If an external extractor is configured and fails, Lycium should fail visibly by default. Set `LYCIUM_SOURCE_EXTRACTOR_LOCAL_FALLBACK=true` only for development sessions where fallback is preferred.
+
+`LYCIUM_SOURCE_EXTRACTOR_COMMAND` is parsed with shell-style argument splitting. Quote any path segment that contains spaces.
 
 ## Request Contract
 
@@ -72,6 +74,20 @@ The service returns the same evidence contracts Lycium already consumes:
 
 The normalized document is the important portable object. It should include source locator metadata, snapshot hash, bounded evidence chunks, page or structural location metadata, citation metadata, extractor provenance, warnings, and extraction status.
 
+## Large-Source Roadmap
+
+Large sources such as textbooks, long PDFs, manuals, and book-length reports should eventually return a compact document map alongside evidence chunks. Early course planning stages should prefer that map over rereading the whole extracted text.
+
+Future extractor capabilities should attempt to preserve:
+
+- table of contents entries and hierarchy;
+- chapter, heading, page, section, appendix, glossary, and index-term structure;
+- figure, table, equation, example, exercise, and summary locations;
+- a compact concept inventory and source digest derived from structural signals;
+- stable chunk refs so course template, module outline, section planning, and section fill workflows can request the smallest useful evidence for their stage.
+
+This should stay optional and adapter-shaped. If an extractor cannot emit a document map, Lycium should fall back to bounded evidence chunks and deterministic source-corpus summaries. The target future contract can be versioned separately, such as `document-map-v1` or `source-digest-v1`, without changing the base `normalized-document-v1` evidence contract.
+
 ## Adapter Strategy
 
 The external repo or wrapper should choose adapters behind the contract:
@@ -102,8 +118,9 @@ If Source Index later canonicalizes the same source hash, Lycium can upgrade pro
 
 1. Keep Lycium's local extractor as a simple fallback.
 2. Add command and HTTP integration boundaries in Lycium.
-3. Download an external extractor repo into `services/lycium-api/external-extractors/` or wire it as a submodule.
-4. Add a thin wrapper script in that housed repo that reads `source-extraction-request-v1` from stdin and emits `source-extraction-run-v1`.
-5. Use Docling as the first advanced external extractor candidate unless testing shows a better fit.
+3. Use `services/lycium-api/external-extractors/docling-wrapper/` as the first wrapper package.
+4. Install Docling as that wrapper's dependency, not as a `lycium-api` dependency.
+5. Run `corepack pnpm test:docling-wrapper` plus the file-backed course generation tests before using it in the app.
 6. Add OCR as a separate explicit capability with its own tests, costs, warnings, and provenance.
 7. Let Source Index ingest normalized documents after extraction rather than re-extracting the same source.
+8. Add large-source document-map/source-digest extraction so book-length inputs can guide course template and module planning without sending full extracted text through every workflow.

@@ -20,6 +20,10 @@ from app.generation_helpers import _title_from_prompt
             "Macroeconomics Principles Course",
         ),
         ("Create a course about public speaking and communication", "Public Speaking And Communication Course"),
+        (
+            "Create an undergraduate course based on the attached Machine Learning Systems PDF. Focus on architecture, data, training, and deployment.",
+            "Machine Learning Systems",
+        ),
     ],
 )
 def test_title_from_prompt_removes_commands_and_workflow_state(prompt: str, expected: str) -> None:

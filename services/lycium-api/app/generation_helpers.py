@@ -38,6 +38,130 @@ def _stable_id(prefix: str, *parts: str) -> str:
     return f"{prefix}-{digest}"
 
 
+SOURCE_TITLE_FILE_NOUNS = (
+    "pdf",
+    "document",
+    "file",
+    "book",
+    "textbook",
+    "source",
+    "sources",
+    "notes",
+    "article",
+    "paper",
+    "slide deck",
+    "slides",
+)
+GENERIC_SOURCE_TITLES = {
+    "direct source",
+    "input artifact",
+    "provided source",
+    "submitted source",
+    "uploaded source",
+}
+
+
+def _smart_title(value: str) -> str:
+    words = []
+    for word in value.split():
+        words.append(word if word.isupper() else word[:1].upper() + word[1:].lower())
+    return " ".join(words)
+
+
+def _clean_source_title(value: str) -> str:
+    clean = re.sub(r"\s+", " ", str(value or "")).strip(" -:;,.")
+    if not clean:
+        return ""
+    clean = clean.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+    clean = re.sub(r"\.(?:pdf|txt|md|markdown|docx?|pptx?|html?)$", "", clean, flags=re.IGNORECASE)
+    clean = re.sub(
+        r"\s+(?:pdf|document|file|book|textbook|source|notes?|article|paper|slide deck|slides)$",
+        "",
+        clean,
+        flags=re.IGNORECASE,
+    )
+    clean = re.sub(r"\s+", " ", clean).strip(" -:;,.")
+    if not clean:
+        return ""
+    if re.fullmatch(r"(?:submitted|provided|uploaded|input)\s+source\s+\d+", clean, flags=re.IGNORECASE):
+        return ""
+    if clean.lower() in GENERIC_SOURCE_TITLES:
+        return ""
+    return _smart_title(clean)
+
+
+def _candidate_document_title(document: dict[str, Any]) -> str:
+    citation = document.get("citation") if isinstance(document.get("citation"), dict) else {}
+    source = document.get("source") if isinstance(document.get("source"), dict) else {}
+    locator = source.get("locator") if isinstance(source.get("locator"), dict) else {}
+    candidates = [
+        document.get("title"),
+        document.get("source_title"),
+        document.get("sourceTitle"),
+        document.get("filename"),
+        document.get("fileName"),
+        citation.get("title"),
+        citation.get("filename"),
+        locator.get("filename"),
+        source.get("title"),
+    ]
+    for candidate in candidates:
+        title = _clean_source_title(str(candidate or ""))
+        if title:
+            return title
+    return ""
+
+
+def _source_packet_documents(source_packet: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(source_packet, dict):
+        return []
+    for key in ("source_documents", "sourceDocuments", "sources"):
+        value = source_packet.get(key)
+        if isinstance(value, list):
+            return [item for item in value if isinstance(item, dict)]
+    return []
+
+
+def _title_from_source_packet(source_packet: dict[str, Any] | None) -> str:
+    for document in _source_packet_documents(source_packet):
+        title = _candidate_document_title(document)
+        if title:
+            return title
+    return ""
+
+
+def _attachment_title_from_prompt(prompt: str) -> str:
+    normalized = re.sub(r"\s+", " ", str(prompt or "")).strip()
+    patterns = (
+        r"\b(?:based\s+on|from|using)\s+(?:the\s+)?(?:attached|uploaded|provided)\s+(?P<title>.+?)(?:[.;,]|$)",
+        r"\b(?:attached|uploaded|provided)\s+(?P<title>.+?)(?:[.;,]|$)",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, normalized, flags=re.IGNORECASE)
+        if not match:
+            continue
+        raw_title = re.sub(
+            rf"\b(?:{'|'.join(re.escape(noun) for noun in SOURCE_TITLE_FILE_NOUNS)})\b",
+            " ",
+            match.group("title"),
+            flags=re.IGNORECASE,
+        )
+        title = _clean_source_title(raw_title)
+        if title and len(title.split()) <= 8:
+            return title
+    return ""
+
+
+def _prompt_references_attached_source(prompt: str) -> bool:
+    return bool(
+        re.search(
+            r"\b(?:attached|uploaded|provided)\b.*\b(?:pdf|document|file|book|textbook|source|notes?|article|paper|slides?)\b",
+            str(prompt or ""),
+            flags=re.IGNORECASE,
+        )
+    )
+
+
 def _title_from_prompt(prompt: str) -> str:
     cleaned = re.sub(r"\s+", " ", prompt).strip()
     cleaned = re.sub(
@@ -52,6 +176,9 @@ def _title_from_prompt(prompt: str) -> str:
         cleaned,
         flags=re.IGNORECASE,
     )
+    attachment_title = _attachment_title_from_prompt(cleaned)
+    if attachment_title:
+        return attachment_title
     cleaned = re.sub(
         r"\s+(?:covering|including|that\s+covers|that\s+includes|with)\s+.+$",
         "",
@@ -74,6 +201,16 @@ def _title_from_prompt(prompt: str) -> str:
     if len(cleaned) <= 64:
         return cleaned.title()
     return f"{cleaned[:61].strip().title()}..."
+
+
+def _title_from_prompt_or_source(prompt: str, source_packet: dict[str, Any] | None = None) -> str:
+    source_title = _title_from_source_packet(source_packet)
+    if source_title and _prompt_references_attached_source(prompt):
+        return source_title
+    prompt_title = _title_from_prompt(prompt)
+    if prompt_title != "Untitled Course":
+        return prompt_title
+    return source_title or prompt_title
 
 
 def _extract_goals(prompt: str, explicit_goals: list[str], tokens: list[str]) -> list[str]:

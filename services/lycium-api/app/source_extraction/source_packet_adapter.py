@@ -55,12 +55,17 @@ def source_documents_from_normalized_documents(normalized_documents: list[dict[s
         source = document.get("source") if isinstance(document.get("source"), dict) else {}
         source_ref = str(source.get("sourceRef") or citation.get("sourceRef") or "").strip()
         url = str(locator.get("sourceUrl") or citation.get("url") or "").strip() or source_document_url(document_id)
+        filename = str(locator.get("filename") or citation.get("filename") or "").strip()
+        mime_type = _content_type(document)
         documents.append(
             {
                 "url": url,
                 "title": _source_title(document),
+                "filename": filename,
+                "mimeType": mime_type,
+                "sourceDocumentUrl": str(locator.get("sourceDocumentUrl") or url).strip(),
                 "text": text,
-                "contentType": _content_type(document),
+                "contentType": mime_type,
                 "fetchStatus": "provided",
                 "inputArtifactId": document_id,
                 "inputArtifactKind": str(locator.get("kind") or "document"),

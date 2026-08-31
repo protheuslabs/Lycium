@@ -63,6 +63,16 @@ def _generation_payload(source_urls: list[str], input_artifacts: list[dict[str, 
     }
 
 
+def _save_active_local_model(client, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.routes.local_routes.validate_agent_api_key",
+        lambda *args, **kwargs: _mock_models("kimi-k2.6:cloud"),
+    )
+    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_queue", lambda: None)
+    saved = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
+    assert saved.status_code == 200, saved.text
+
+
 @pytest.mark.parametrize(
     ("source_urls", "artifact_count", "label"),
     [
@@ -88,13 +98,7 @@ def test_course_generation_jobs_accept_url_file_mixes(
     artifact_count: int,
     label: str,
 ) -> None:
-    monkeypatch.setattr(
-        "app.routes.local_routes.validate_agent_api_key",
-        lambda *args, **kwargs: _mock_models("kimi-k2.6:cloud", "llama3.1:70b"),
-    )
-    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_queue", lambda: None)
-    saved = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
-    assert saved.status_code == 200, saved.text
+    _save_active_local_model(client, monkeypatch)
 
     artifacts = _macro_input_artifacts()[:artifact_count]
     response = client.post("/v1/agent/courses/jobs", json=_generation_payload(source_urls, artifacts))
@@ -111,13 +115,7 @@ def test_course_generation_jobs_accept_url_file_mixes(
 
 
 def test_course_generation_jobs_enqueue_zero_source_active_generation(client, monkeypatch, isolated_local_data) -> None:
-    monkeypatch.setattr(
-        "app.routes.local_routes.validate_agent_api_key",
-        lambda *args, **kwargs: _mock_models("kimi-k2.6:cloud"),
-    )
-    monkeypatch.setattr("app.routes.course_outline_routes.run_agent_course_generation_queue", lambda: None)
-    saved = client.put("/v1/local/settings", json={"provider_id": "local-model", "agent_api_key": "http://localhost:11434"})
-    assert saved.status_code == 200, saved.text
+    _save_active_local_model(client, monkeypatch)
 
     response = client.post("/v1/agent/courses/jobs", json=_generation_payload([], []))
 
@@ -131,7 +129,9 @@ def test_course_generation_jobs_enqueue_zero_source_active_generation(client, mo
     assert job.get("course_snapshot") is None
 
 
-def test_course_generation_jobs_hold_under_sourced_url_file_mix_for_source_gaps(client, isolated_local_data) -> None:
+def test_course_generation_jobs_enqueue_under_sourced_url_file_mix(client, monkeypatch, isolated_local_data) -> None:
+    _save_active_local_model(client, monkeypatch)
+
     response = client.post(
         "/v1/agent/courses/jobs",
         json=_generation_payload(["https://example.edu/macroeconomics/syllabus"], _macro_input_artifacts()[:1]),
@@ -139,14 +139,17 @@ def test_course_generation_jobs_hold_under_sourced_url_file_mix_for_source_gaps(
 
     assert response.status_code == 202, response.text
     job = response.json()
-    assert job["status"] == "ready"
-    assert job["current_stage"] == "source_coverage"
-    assert job["course_snapshot"]["status"] == "needs_sources"
+    assert job["status"] == "queued"
+    assert job["current_stage"] == "queued"
+    assert job.get("course_snapshot") is None
     assert job["request"]["source_urls"] == ["https://example.edu/macroeconomics/syllabus"]
     assert len(job["request"]["input_artifacts"]) == 1
+    assert job["request"]["generation_readiness"]["status"] == "needs_sources"
 
 
-def test_course_generation_jobs_hold_low_packet_concept_coverage_for_source_gaps(client, isolated_local_data) -> None:
+def test_course_generation_jobs_enqueue_low_packet_concept_coverage(client, monkeypatch, isolated_local_data) -> None:
+    _save_active_local_model(client, monkeypatch)
+
     response = client.post(
         "/v1/agent/courses/jobs",
         json={
@@ -171,9 +174,10 @@ def test_course_generation_jobs_hold_low_packet_concept_coverage_for_source_gaps
 
     assert response.status_code == 202, response.text
     job = response.json()
-    readiness = job["course"]["metadata"]["generationReadiness"]
-    assert job["status"] == "ready"
-    assert job["current_stage"] == "source_coverage"
+    readiness = job["request"]["generation_readiness"]
+    assert job["status"] == "queued"
+    assert job["current_stage"] == "queued"
+    assert job.get("course_snapshot") is None
     assert readiness["status"] == "needs_sources"
     assert readiness["sourceEvidence"]["submittedEvidenceCount"] == 3
     assert readiness["conceptCoverage"]["uncoveredConcepts"] == ["inflation", "monetary policy"]

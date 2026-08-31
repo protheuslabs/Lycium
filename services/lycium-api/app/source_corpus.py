@@ -183,12 +183,19 @@ def compile_source_corpus_preflight(
     selected_document_keys = {
         "url",
         "title",
+        "filename",
         "text",
         "rawText",
         "content",
+        "mimeType",
         "contentType",
         "content_type",
+        "author",
+        "publisher",
+        "license",
+        "publishedAt",
         "fetchStatus",
+        "sourceDocumentUrl",
         "inputArtifactId",
         "inputArtifactKind",
         "inputArtifactOrigin",
@@ -201,6 +208,7 @@ def compile_source_corpus_preflight(
         "citation",
         "snapshot",
         "extractor",
+        "reader",
         "trustBaseline",
     }
     selected_documents = [

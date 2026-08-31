@@ -50,7 +50,7 @@ from app.course_quality_evals import run_course_quality_evals
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 from app.source_corpus import compile_generation_source_corpus
 from app.course_agent_source_context import build_source_context_index, source_context_index_summary
-from app.source_packet_quality_gate import source_packet_gate_message, source_packet_quality_gate
+from app.source_packet_quality_gate import source_packet_quality_gate
 
 CourseGenerationWorkflowStatus = Callable[[dict], None]
 
@@ -288,23 +288,6 @@ def generate_course_with_agent_staged(
         input_artifacts=source_corpus.input_artifacts,
         source_urls=effective_source_urls,
     )
-    if packet_gate:
-        raise CourseAgentError(
-            source_packet_gate_message(
-                packet_gate,
-                "Source evidence is below policy; add stronger or more relevant sources before staged LLM course generation.",
-            ),
-            trace={
-                "status": "failed",
-                "failed_stage": packet_gate.get("gate") or "source_strength",
-                "source_corpus_synthesis": source_corpus.synthesis,
-                "effective_source_urls": effective_source_urls,
-                "source_packet_quality_gate": packet_gate,
-                "source_strength": packet_gate.get("artifacts", {}).get("sourceStrength") if isinstance(packet_gate.get("artifacts"), dict) else None,
-                "source_packet_id": source_packet_id,
-                "source_packet_contract": source_packet.get("contract_version") if isinstance(source_packet, dict) else None,
-            },
-        )
     benchmark_context = compile_curriculum_benchmark_context(
         prompt=prompt,
         source_urls=effective_source_urls,
@@ -343,6 +326,8 @@ def generate_course_with_agent_staged(
         "module_parallelism": min(DEFAULT_MODULE_PARALLELISM, max(1, desired_module_count)),
         "stage_workflows": list(previous_stage_workflows),
     }
+    if packet_gate:
+        trace["source_packet_quality_gate"] = packet_gate
     if previous_media_logs:
         trace["media_logs"] = list(previous_media_logs)
     trace["plan_timeout_seconds"] = _bounded_timeout_seconds(
@@ -476,7 +461,12 @@ def generate_course_with_agent_staged(
     plan["inputArtifacts"] = source_corpus.input_artifacts
     pacing_label = _infer_pacing_label(plan)
     trace["plan"] = plan
-    source_records = _input_source_records(effective_source_urls, title)
+    source_records = _input_source_records(
+        effective_source_urls,
+        title,
+        source_documents=source_corpus.source_documents,
+        source_corpus_synthesis=source_corpus.synthesis,
+    )
     source_ids = [str(record["id"]) for record in source_records]
     source_context_index = build_source_context_index(
         source_documents=source_corpus.source_documents,
