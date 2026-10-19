@@ -5,6 +5,15 @@ from app.course_source_gaps import create_needs_sources_course_snapshot
 from app.models import CourseSnapshot
 
 
+def _job_after_background(client, response):
+    job = response.json()
+    if job.get("course_snapshot") is not None:
+        return job
+    fetched = client.get(f"/v1/agent/courses/jobs/{job['id']}")
+    assert fetched.status_code == 200, fetched.text
+    return fetched.json()
+
+
 def _install_concept_gap(snapshot_id: int) -> None:
     with db.SessionLocal() as session:
         snapshot = session.get(CourseSnapshot, snapshot_id)
@@ -85,7 +94,7 @@ def test_source_gap_resume_updates_draft_then_queues_generation(client, monkeypa
         },
     )
     assert initial.status_code == 202, initial.text
-    initial_job = initial.json()
+    initial_job = _job_after_background(client, initial)
     snapshot_id = initial_job["course_snapshot"]["id"]
     assert initial_job["status"] == "ready"
     assert initial_job["current_stage"] == "source_coverage"
@@ -149,7 +158,7 @@ def test_source_gap_resume_requires_concept_relevant_sources(client, monkeypatch
         },
     )
     assert initial.status_code == 202, initial.text
-    snapshot_id = initial.json()["course_snapshot"]["id"]
+    snapshot_id = _job_after_background(client, initial)["course_snapshot"]["id"]
     _install_concept_gap(snapshot_id)
 
     irrelevant = client.post(
@@ -201,7 +210,7 @@ def test_source_gap_resume_uses_source_packet_text_for_concept_relevance(client,
         },
     )
     assert initial.status_code == 202, initial.text
-    initial_job = initial.json()
+    initial_job = _job_after_background(client, initial)
     snapshot_id = initial_job["course_snapshot"]["id"]
     initial_readiness = initial_job["course"]["metadata"]["generationReadiness"]
     assert initial_readiness["status"] == "needs_sources"
@@ -266,7 +275,7 @@ def test_source_gap_resume_accepts_input_artifacts_for_concept_relevance(client,
         },
     )
     assert initial.status_code == 202, initial.text
-    snapshot_id = initial.json()["course_snapshot"]["id"]
+    snapshot_id = _job_after_background(client, initial)["course_snapshot"]["id"]
     _install_concept_gap(snapshot_id)
     monkeypatch.setattr(
         "app.routes.course_source_gap_routes.require_verified_active_agent_profile",
@@ -327,7 +336,7 @@ def test_source_gap_resume_blocks_irrelevant_input_artifacts(client, monkeypatch
         },
     )
     assert initial.status_code == 202, initial.text
-    snapshot_id = initial.json()["course_snapshot"]["id"]
+    snapshot_id = _job_after_background(client, initial)["course_snapshot"]["id"]
     _install_concept_gap(snapshot_id)
     monkeypatch.setattr(
         "app.routes.course_source_gap_routes.require_verified_active_agent_profile",

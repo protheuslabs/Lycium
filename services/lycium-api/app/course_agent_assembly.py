@@ -271,6 +271,22 @@ def _module_lesson_outlines(module_outline: dict) -> list[dict[str, Any]]:
             lesson_outlines.append(section)
     if lesson_outlines:
         return lesson_outlines[:6]
+    raw_hints = module_outline.get("sectionPlanHints") or module_outline.get("sectionPlans")
+    if isinstance(raw_hints, list):
+        for section in raw_hints:
+            if not isinstance(section, dict):
+                continue
+            title = str(section.get("title") or "").strip()
+            lowered = title.lower()
+            section_type = str(section.get("sectionType") or section.get("section_type") or "").lower()
+            page_type = str(section.get("pageType") or section.get("page_type") or "").lower()
+            if not title or section_type in {"assessment", "summary"} or page_type == "apply":
+                continue
+            if any(marker in lowered for marker in ("quiz", "assessment", "summary", "review")):
+                continue
+            lesson_outlines.append(section)
+    if lesson_outlines:
+        return lesson_outlines[:6]
     module_title = str(module_outline.get("title") or "Module").strip()
     module_source_ids = _source_ids_from_outline(module_outline, _strings(module_outline.get("sourceIds")))
     outline_concepts = _outline_concepts(module_outline)

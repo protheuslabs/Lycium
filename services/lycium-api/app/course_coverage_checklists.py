@@ -10,6 +10,7 @@ from app.retrieval import tokenize
 COURSE_COVERAGE_CHECKLIST_CONTRACT = "course-coverage-checklist-v1"
 COURSE_COVERAGE_ALLOCATION_REPORT_CONTRACT = "course-coverage-allocation-report-v1"
 COURSE_COVERAGE_OUTLINE_CONTRACT = "course-outline-from-coverage-checklist-v1"
+SOURCE_DOCUMENT_MAP_CONTRACT = "source-document-map-v1"
 MAX_REQUIRED_COVERAGE_ITEMS = 20
 
 GENERIC_FILLER_TERMS = {
@@ -53,6 +54,29 @@ GENERIC_FILLER_TERMS = {
     "vocabulary",
 }
 
+NON_COURSE_DOCUMENT_HEADINGS = {
+    "abstract",
+    "acknowledgements",
+    "acknowledgments",
+    "author's note",
+    "about the book",
+    "bibliography",
+    "copyright",
+    "contents",
+    "dedication",
+    "glossary",
+    "index",
+    "learning goals",
+    "learning objectives",
+    "overview",
+    "preface",
+    "purpose",
+    "references",
+    "self-check answers",
+    "support our mission",
+    "table of contents",
+}
+
 
 def _slug(value: str) -> str:
     clean = re.sub(r"[^a-z0-9]+", "-", value.strip().lower())
@@ -72,6 +96,13 @@ def _unique(values: list[str], *, limit: int | None = None) -> list[str]:
         if limit is not None and len(rows) >= limit:
             break
     return rows
+
+
+def _int(value: Any, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _section_plan(title: str, must_teach: list[str], objective: str | None = None) -> dict[str, Any]:
@@ -269,6 +300,178 @@ def _generic_items(seed_terms: list[str]) -> list[dict[str, Any]]:
         )
         for term in seed_terms
     ]
+
+
+def _items(value: Any) -> list[dict[str, Any]]:
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+
+
+def _document_map_entries(document_map: dict[str, Any]) -> list[dict[str, Any]]:
+    if document_map.get("contractVersion") != SOURCE_DOCUMENT_MAP_CONTRACT:
+        return []
+    entries = _items(document_map.get("entries"))
+    return sorted(entries, key=lambda entry: _int(entry.get("order")))
+
+
+def _document_title_is_course_relevant(title: str) -> bool:
+    clean = re.sub(r"\s+", " ", str(title or "")).strip(" -:;,.")
+    if not clean:
+        return False
+    lowered = clean.lower()
+    if lowered in NON_COURSE_DOCUMENT_HEADINGS:
+        return False
+    tokens = [token for token in tokenize(clean) if token not in GENERIC_FILLER_TERMS]
+    return bool(tokens)
+
+
+def _source_documents(source_packet: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(source_packet, dict):
+        return []
+    documents = _items(source_packet.get("source_documents") or source_packet.get("sourceDocuments"))
+    return documents
+
+
+def _source_id_for_document(document: dict[str, Any], index: int) -> str:
+    for key in ("courseSourceId", "sourceId", "source_public_id", "sourcePublicId", "id"):
+        value = str(document.get(key) or "").strip()
+        if value:
+            return value
+    return f"input-source-{index}"
+
+
+def _document_map_rows(source_packet: dict[str, Any] | None) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for document_index, document in enumerate(_source_documents(source_packet), start=1):
+        document_map = document.get("documentMap") if isinstance(document.get("documentMap"), dict) else {}
+        planning_entries = document_map.get("coursePlanningEntries")
+        entries = _items(planning_entries) if isinstance(planning_entries, list) and planning_entries else _document_map_entries(document_map)
+        if not entries:
+            continue
+        source_id = _source_id_for_document(document, document_index)
+        for entry in entries:
+            title = str(entry.get("title") or "").strip()
+            if not _document_title_is_course_relevant(title):
+                continue
+            rows.append({**entry, "sourceId": source_id, "documentTitle": str(document.get("title") or "")})
+    return rows
+
+
+def _course_planning_level(rows: list[dict[str, Any]]) -> int | None:
+    levels = sorted({_int(row.get("level")) for row in rows if _int(row.get("level")) > 0})
+    for level in levels:
+        level_count = len([row for row in rows if _int(row.get("level")) == level])
+        if level_count >= 3:
+            return level
+    return levels[0] if levels else None
+
+
+def _children_for_document_map_entry(entry: dict[str, Any], rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    entry_order = _int(entry.get("order"))
+    entry_level = _int(entry.get("level"), 1)
+    children: list[dict[str, Any]] = []
+    for row in rows:
+        row_order = _int(row.get("order"))
+        row_level = _int(row.get("level"))
+        if row_order <= entry_order:
+            continue
+        if row_level <= entry_level:
+            break
+        if row_level == entry_level + 1 and _document_title_is_course_relevant(str(row.get("title") or "")):
+            children.append(row)
+    return children
+
+
+def _document_map_section_plans(entry: dict[str, Any], children: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    entry_title = str(entry.get("title") or "Course topic").strip()
+    child_titles = _unique(
+        [
+            str(child.get("title") or "").strip()
+            for child in children
+            if _document_title_is_course_relevant(str(child.get("title") or ""))
+        ],
+        limit=4,
+    )
+    if not child_titles:
+        return _topic_section_plans(entry_title)
+    plans: list[dict[str, Any]] = []
+    for child_title in child_titles[:3]:
+        keywords = _unique([child_title, entry_title, *_topic_keywords(child_title)], limit=8)
+        plans.append(
+            _section_plan(
+                child_title,
+                keywords,
+                f"Explain {child_title.lower()} as part of {entry_title.lower()} and apply it to a realistic course problem.",
+            )
+        )
+    return plans
+
+
+def build_course_coverage_checklist_from_source_packet(
+    *,
+    prompt: str,
+    title: str | None,
+    level: str | None = None,
+    source_packet: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    rows = _document_map_rows(source_packet)
+    planning_level = _course_planning_level(rows)
+    if planning_level is None:
+        return None
+    selected_entries = [
+        row
+        for row in rows
+        if _int(row.get("level")) == planning_level
+    ][:MAX_REQUIRED_COVERAGE_ITEMS]
+    if len(selected_entries) < 3:
+        return None
+
+    resolved_title = title or _title_from_prompt(prompt)
+    used_ids: set[str] = set()
+    required_items: list[dict[str, Any]] = []
+    for entry in selected_entries:
+        entry_title = str(entry.get("title") or "").strip()
+        children = _children_for_document_map_entry(entry, rows)
+        child_titles = [
+            str(child.get("title") or "").strip()
+            for child in children
+            if _document_title_is_course_relevant(str(child.get("title") or ""))
+        ]
+        must_teach = _unique([entry_title, *child_titles, *_topic_keywords(entry_title)], limit=10)
+        item = _coverage_item(
+            _coverage_item_id(entry_title, used_ids),
+            entry_title,
+            description=f"Required coverage item inferred from source document structure: {entry_title}.",
+            must_teach=must_teach,
+            section_plans=_document_map_section_plans(entry, children),
+        )
+        item["sourceIds"] = [str(entry.get("sourceId"))] if str(entry.get("sourceId") or "").strip() else []
+        item["documentMapEntryId"] = str(entry.get("id") or "")
+        item["documentMapPath"] = [str(part) for part in entry.get("path", []) if str(part).strip()] if isinstance(entry.get("path"), list) else [entry_title]
+        if isinstance(entry.get("location"), dict):
+            item["sourceLocation"] = entry["location"]
+        required_items.append(item)
+
+    return {
+        "contractVersion": COURSE_COVERAGE_CHECKLIST_CONTRACT,
+        "courseKind": "source_document_structure",
+        "title": resolved_title,
+        "level": level or "unspecified",
+        "source": "source_document_map",
+        "requiredItems": required_items,
+        "sourceStructure": {
+            "contractVersion": SOURCE_DOCUMENT_MAP_CONTRACT,
+            "planningLevel": planning_level,
+            "selectedEntryCount": len(required_items),
+            "availableEntryCount": len(rows),
+            "sourceDocumentCount": len(_source_documents(source_packet)),
+        },
+        "policy": {
+            "mustAssignEveryRequiredItemToModule": True,
+            "mustAssignEveryRequiredItemToSection": True,
+            "genericTitleTokensAreNotCoverage": sorted(GENERIC_FILLER_TERMS),
+            "preferConceptOutcomesOverTermFrequency": True,
+        },
+    }
 
 
 def build_course_coverage_checklist(

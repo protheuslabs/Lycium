@@ -106,6 +106,7 @@ def _legacy_packet_to_handoff(packet: dict[str, Any]) -> SourcePacketGenerationH
             "sourceDocumentUrl": str(document.get("url") or ""),
             "extractionStatus": "extracted",
             "textLength": len(str(document.get("text") or document.get("rawText") or document.get("content") or "")),
+            **({"documentMap": document["documentMap"]} if isinstance(document.get("documentMap"), dict) and document["documentMap"] else {}),
         }
         for document in source_documents
         if document.get("inputArtifactId")

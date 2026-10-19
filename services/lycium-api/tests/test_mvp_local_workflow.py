@@ -29,6 +29,15 @@ def _create_learner(client) -> dict:
     return response.json()
 
 
+def _job_after_background(client, response):
+    job = response.json()
+    if job.get("course_snapshot") is not None:
+        return job
+    fetched = client.get(f"/v1/agent/courses/jobs/{job['id']}")
+    assert fetched.status_code == 200, fetched.text
+    return fetched.json()
+
+
 def test_local_source_gap_resume_publish_progress_workflow(client, monkeypatch) -> None:
     learner = _create_learner(client)
     learner_id = learner["id"]
@@ -54,7 +63,7 @@ def test_local_source_gap_resume_publish_progress_workflow(client, monkeypatch) 
         },
     )
     assert initial.status_code == 202, initial.text
-    initial_job = initial.json()
+    initial_job = _job_after_background(client, initial)
     source_gap_snapshot_id = initial_job["course_snapshot"]["id"]
     assert initial_job["status"] == "ready"
     assert initial_job["current_stage"] == "source_coverage"

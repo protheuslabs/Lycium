@@ -54,6 +54,7 @@ def _course_build_outline_plan_from_source_packet(
     prompt: str,
     source_packet: dict | None,
     desired_module_count: int,
+    coverage_checklist: dict | None = None,
 ) -> dict | None:
     if not isinstance(source_packet, dict):
         return None
@@ -62,6 +63,7 @@ def _course_build_outline_plan_from_source_packet(
         source_packet=source_packet,
         desired_module_count=desired_module_count,
         include_section_outlines=False,
+        coverage_checklist=coverage_checklist,
     )
     return _course_build_outline_plan_from_outline(
         outline,

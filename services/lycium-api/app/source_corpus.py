@@ -209,6 +209,7 @@ def compile_source_corpus_preflight(
         "snapshot",
         "extractor",
         "reader",
+        "documentMap",
         "trustBaseline",
     }
     selected_documents = [

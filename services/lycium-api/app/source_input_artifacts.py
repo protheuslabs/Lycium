@@ -119,6 +119,16 @@ def normalize_generation_input_artifacts(input_artifacts: list[dict[str, Any]] |
             row["reader"] = artifact["reader"]
         if isinstance(artifact.get("citation"), dict):
             row["citation"] = artifact["citation"]
+        document_map = artifact.get("documentMap")
+        if not isinstance(document_map, dict):
+            normalized_document = artifact.get("normalizedDocument")
+            document_map = (
+                normalized_document.get("documentMap")
+                if isinstance(normalized_document, dict) and isinstance(normalized_document.get("documentMap"), dict)
+                else None
+            )
+        if isinstance(document_map, dict) and document_map:
+            row["documentMap"] = document_map
         artifacts.append(row)
     return artifacts
 
@@ -161,6 +171,9 @@ def source_documents_from_input_artifacts(input_artifacts: list[dict[str, Any]] 
         for key in ("citation", "reader", "extractor", "snapshot"):
             if isinstance(artifact.get(key), dict) and artifact[key]:
                 document[key] = artifact[key]
+        document_map = artifact.get("documentMap")
+        if isinstance(document_map, dict) and document_map:
+            document["documentMap"] = document_map
         documents.append(document)
     return documents
 

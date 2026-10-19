@@ -20,10 +20,47 @@ from app.source_extraction import (
     source_documents_from_normalized_documents,
 )
 from app.source_extraction import dispatcher as dispatcher_module
+from app.source_extraction.local import _document_map_from_entries
 
 
 def _b64(value: bytes) -> str:
     return base64.b64encode(value).decode("ascii")
+
+
+def test_pdf_document_map_compaction_preserves_whole_book_planning_entries() -> None:
+    entries = []
+    for index in range(1, 982):
+        level = 1 if index in {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 500, 700, 900} else 2
+        title = (
+            "SocratiQ AI"
+            if index == 5
+            else f"Chapter {index}"
+            if level == 1
+            else f"Topic {index}"
+        )
+        entries.append({
+            "id": f"doc-map-{index}",
+            "title": title,
+            "level": level,
+            "order": index,
+            "path": [title],
+            "source": "pdf_outline",
+        })
+
+    document_map = _document_map_from_entries(
+        "doc-1",
+        source_kind="file",
+        strategy="pdf_outline",
+        entries=entries,
+    )
+
+    assert document_map["storedEntryCount"] == 240
+    assert document_map["truncated"] is True
+    planning_titles = {entry["title"] for entry in document_map["coursePlanningEntries"]}
+    assert "Chapter 500" in planning_titles
+    assert "Chapter 700" in planning_titles
+    assert "Chapter 900" in planning_titles
+    assert "SocratiQ AI" not in planning_titles
 
 
 def _remote_normalized_document() -> dict[str, Any]:
@@ -108,6 +145,11 @@ def test_text_source_extraction_returns_normalized_document_contract() -> None:
 
 
 def test_pdf_source_extraction_preserves_page_citations(monkeypatch) -> None:
+    class FakeDestination:
+        def __init__(self, title: str, page_index: int) -> None:
+            self.title = title
+            self.page_index = page_index
+
     class FakePage:
         def __init__(self, text: str) -> None:
             self.text = text
@@ -121,6 +163,16 @@ def test_pdf_source_extraction_preserves_page_citations(monkeypatch) -> None:
                 FakePage("Vectors resolve forces into components."),
                 FakePage("Equilibrium requires sum of forces and moments to equal zero."),
             ]
+            self.outline = [
+                FakeDestination("Statics Foundations", 0),
+                [
+                    FakeDestination("Force Vectors", 0),
+                    FakeDestination("Moments", 1),
+                ],
+            ]
+
+        def get_destination_page_number(self, destination: FakeDestination) -> int:
+            return destination.page_index
 
     monkeypatch.setattr("app.source_extraction.local.PdfReader", FakePdfReader)
 
@@ -137,6 +189,15 @@ def test_pdf_source_extraction_preserves_page_citations(monkeypatch) -> None:
     assert [chunk["location"]["page"] for chunk in document["evidence"]] == [1, 2]
     assert document["evidence"][1]["citation"]["page"] == 2
     assert "moments" in document["evidence"][1]["text"]
+    assert document["documentMap"]["contractVersion"] == "source-document-map-v1"
+    assert document["documentMap"]["strategy"] == "pdf_outline"
+    assert [entry["title"] for entry in document["documentMap"]["entries"]] == [
+        "Statics Foundations",
+        "Force Vectors",
+        "Moments",
+    ]
+    assert document["documentMap"]["entries"][1]["path"] == ["Statics Foundations", "Force Vectors"]
+    assert document["documentMap"]["entries"][1]["location"]["page"] == 1
 
 
 def test_http_extractor_client_uses_external_contract_and_normalizes_response() -> None:
@@ -307,6 +368,7 @@ def test_file_input_reader_keeps_legacy_artifacts_and_normalized_documents() -> 
     assert artifact["sourceDocumentUrl"].startswith("artifact://")
     assert artifact["normalizedDocumentId"] == normalized_document["documentId"]
     assert artifact["normalizedDocument"]["contractVersion"] == "normalized-document-v1"
+    assert artifact["documentMap"]["contractVersion"] == "source-document-map-v1"
     assert result["sourceRegistrationCandidates"][0]["handoffPolicy"]["registrationRequiredForGeneration"] is False
 
 
@@ -353,6 +415,7 @@ def test_normalized_documents_adapt_to_generation_source_documents() -> None:
     assert source_documents[0]["sourceDocumentUrl"].startswith("artifact://")
     assert source_documents[0]["normalizedDocumentId"] == reader_result["normalizedDocuments"][0]["documentId"]
     assert source_documents[0]["evidenceChunks"][0]["citation"]["filename"] == "macroeconomics-syllabus.txt"
+    assert source_documents[0]["documentMap"]["contractVersion"] == "source-document-map-v1"
 
 
 def test_source_corpus_preflight_preserves_direct_evidence_metadata() -> None:
@@ -380,3 +443,4 @@ def test_source_corpus_preflight_preserves_direct_evidence_metadata() -> None:
     assert corpus.source_documents[0]["filename"] == "macroeconomics-syllabus.txt"
     assert corpus.source_documents[0]["directEvidenceRef"].startswith("file:sha256:")
     assert corpus.source_documents[0]["evidenceChunks"][0]["contractVersion"] == "evidence-chunk-v1"
+    assert corpus.source_documents[0]["documentMap"]["contractVersion"] == "source-document-map-v1"

@@ -47,6 +47,7 @@ def generation_input_artifact_from_normalized_document(document: dict[str, Any])
         "sourceRef": str(source.get("sourceRef") or ""),
         "evidenceChunkCount": len(evidence),
         "citation": document.get("citation") if isinstance(document.get("citation"), dict) else {},
+        "documentMap": document.get("documentMap") if isinstance(document.get("documentMap"), dict) else {},
         "normalizedDocument": document,
         "reader": {"contractVersion": FILE_READER_CONTRACT_VERSION, "adapter": _reader_adapter_from_document(document)},
     }

@@ -11,9 +11,11 @@ from sqlalchemy.orm import Session
 from app import db
 from app.coverage import recompute_coverage
 from app.course_agent_harness import CourseAgentError, generate_course_with_agent_staged
+from app.course_generation_job_helpers import source_gap_job_result
 from app.course_generation_status import course_generation_workflow_status
 from app.course_quality import assess_course_quality
 from app.course_generation_service import build_course_snapshot_from_agent_result
+from app.course_source_gaps import create_needs_sources_course_snapshot
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.generation import generate_course_direct
 from app.generation_observability import (
@@ -263,12 +265,48 @@ def _mark_model_error_from_generation_failure(
         return
 
 
+def _complete_known_source_gap_job(job_id: int, payload: dict[str, Any]) -> bool:
+    readiness = payload.get("generation_readiness") if isinstance(payload.get("generation_readiness"), dict) else None
+    input_artifacts = [artifact for artifact in payload.get("input_artifacts") or [] if isinstance(artifact, dict)]
+    if not readiness or bool(readiness.get("ready")) or input_artifacts:
+        return False
+
+    with db.SessionLocal() as session:
+        job = session.get(Job, job_id)
+        if job is None:
+            return True
+        snapshot = create_needs_sources_course_snapshot(
+            session,
+            prompt=str(payload.get("prompt") or ""),
+            learner_id=payload.get("learner_id"),
+            level=payload.get("level"),
+            language=str(payload.get("language") or "en"),
+            source_policy=str(payload.get("source_policy") or "balanced"),
+            desired_module_count=int(payload.get("desired_module_count") or 3),
+            expected_duration_minutes=int(payload.get("expected_duration_minutes") or 180),
+            source_urls=[str(url) for url in payload.get("source_urls") or []],
+            source_packet=payload.get("source_packet") if isinstance(payload.get("source_packet"), dict) else None,
+            category=payload.get("category"),
+            department=payload.get("department"),
+            source_gate=readiness.get("sourceGate") if isinstance(readiness.get("sourceGate"), dict) else None,
+            generation_readiness=readiness,
+        )
+        session.refresh(snapshot)
+        save_course_snapshot(snapshot)
+        source_gap_job_result(session, job, snapshot)
+        _trim_generation_job_logs(session)
+        session.commit()
+    return True
+
+
 def run_agent_course_generation_job(job_id: int) -> None:
     with db.SessionLocal() as session:
         job = session.get(Job, job_id)
         if job is None:
             return
         payload = dict(job.payload or {})
+        if _complete_known_source_gap_job(job_id, payload):
+            return
         previous_result = dict(job.result or {}) if isinstance(job.result, dict) else {}
         payload_resume_course = payload.get("resume_course") if isinstance(payload.get("resume_course"), dict) else None
         payload_resume_trace = payload.get("resume_trace") if isinstance(payload.get("resume_trace"), dict) else None

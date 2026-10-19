@@ -355,9 +355,12 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
     assert result.course["metadata"]["generationPlan"]["planningSource"] == "source_packet_outline"
     assert result.course["metadata"]["courseTemplate"]["handoff"]["nextWorkflow"] == "course-module-outline-workflow-v1"
     assert result.course["metadata"]["courseTemplate"]["sourcePacketHandoff"]["qualityStatus"] == "usable"
+    assert result.course["metadata"]["courseTemplate"]["courseCoverageChecklist"]["source"] == "source_packet_terms"
     assert result.course["metadata"]["sourceCorpusSynthesis"]["sourcePacket"]["quality"]["conceptCoverageRatio"] == 1
     assert result.course["metadata"]["courseBuildOutline"]["contractVersion"] == "course-outline-from-source-packet-v1"
-    assert result.course["metadata"]["courseBuildOutline"]["modules"][0]["planningSource"] == "source_packet"
+    assert result.course["metadata"]["courseBuildOutline"]["provenance"]["coverageRequiredItemCount"] == 5
+    assert result.course["metadata"]["courseBuildOutline"]["modules"][0]["planningSource"] == "course_template_coverage"
+    assert result.course["metadata"]["courseBuildOutline"]["modules"][0]["assignedCoverageItemIds"]
 
 
 def test_staged_agent_generates_with_zero_sources(monkeypatch) -> None:

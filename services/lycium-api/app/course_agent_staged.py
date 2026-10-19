@@ -381,6 +381,7 @@ def generate_course_with_agent_staged(
             prompt=prompt,
             source_packet=outline_packet,
             desired_module_count=desired_module_count,
+            coverage_checklist=course_template.get("courseCoverageChecklist") if isinstance(course_template, dict) else None,
         )
         if course_build_outline_plan and course_build_outline_plan.get("planningSource") == "source_packet_outline":
             course_build_outline_plan["planningSource"] = outline_planning_source

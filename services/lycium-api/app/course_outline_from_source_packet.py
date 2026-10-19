@@ -93,6 +93,27 @@ GENERIC_BOOK_PHRASES = {
     "table contents",
     "table of contents",
 }
+SOURCE_DOCUMENT_MAP_CONTRACT_VERSION = "source-document-map-v1"
+BROAD_MODULE_TITLE_TERMS = {
+    "architecture",
+    "challenge",
+    "challenges",
+    "data",
+    "deployment",
+    "engineering",
+    "evaluation",
+    "framework",
+    "infrastructure",
+    "introduction",
+    "machine",
+    "model",
+    "models",
+    "monitoring",
+    "practice",
+    "system",
+    "systems",
+    "training",
+}
 
 
 def _items(value: Any) -> list[dict[str, Any]]:
@@ -206,6 +227,70 @@ def _source_inventory(source_packet: dict[str, Any] | None) -> list[dict[str, An
         }
         for index, document in enumerate(_source_documents(source_packet), start=1)
     ]
+
+
+def _document_maps(source_documents: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        document_map
+        for document in source_documents
+        for document_map in [document.get("documentMap")]
+        if isinstance(document_map, dict)
+        and document_map.get("contractVersion") == SOURCE_DOCUMENT_MAP_CONTRACT_VERSION
+        and isinstance(document_map.get("entries"), list)
+        and document_map.get("entries")
+    ]
+
+
+def _has_planning_ready_document_map(source_documents: list[dict[str, Any]]) -> bool:
+    for document_map in _document_maps(source_documents):
+        quality = document_map.get("quality") if isinstance(document_map.get("quality"), dict) else {}
+        if quality.get("coursePlanningReady") is True:
+            return True
+        if len(_items(document_map.get("entries"))) >= 6:
+            return True
+    return False
+
+
+def _uses_source_document_map(checklist: dict[str, Any] | None) -> bool:
+    if not isinstance(checklist, dict):
+        return False
+    source_structure = checklist.get("sourceStructure") if isinstance(checklist.get("sourceStructure"), dict) else {}
+    return checklist.get("source") == "source_document_map" or source_structure.get("contractVersion") == SOURCE_DOCUMENT_MAP_CONTRACT_VERSION
+
+
+def _module_title_is_broad(title: str) -> bool:
+    clean = re.sub(r"^\s*(?:module|week)\s+\d+\s*:\s*", "", str(title or ""), flags=re.IGNORECASE).strip()
+    tokens = _tokens(clean)
+    return len(tokens) == 1 and tokens[0] in BROAD_MODULE_TITLE_TERMS
+
+
+def _module_has_specific_handoff(module: dict[str, Any]) -> bool:
+    section_hints = _items(module.get("sectionPlanHints")) or _items(module.get("sectionPlans"))
+    lesson_titles = [
+        str(title).strip()
+        for title in module.get("lessonTitles", [])
+        if str(title).strip()
+    ] if isinstance(module.get("lessonTitles"), list) else []
+    coverage_must_teach = [
+        str(item).strip()
+        for item in module.get("coverageMustTeach", [])
+        if str(item).strip()
+    ] if isinstance(module.get("coverageMustTeach"), list) else []
+    assigned_coverage = [
+        str(item).strip()
+        for item in module.get("assignedCoverageItemIds", [])
+        if str(item).strip()
+    ] if isinstance(module.get("assignedCoverageItemIds"), list) else []
+    concrete_terms = set(
+        _tokens(
+            {
+                "sectionHints": section_hints,
+                "lessonTitles": lesson_titles,
+                "coverageMustTeach": coverage_must_teach,
+            }
+        )
+    ) - BROAD_MODULE_TITLE_TERMS
+    return bool(assigned_coverage) and (bool(section_hints) or len(concrete_terms) >= 2)
 
 
 def _source_ids_for_term(term: str, source_inventory: list[dict[str, Any]]) -> list[str]:
@@ -342,6 +427,8 @@ def build_course_module_outline_quality_report(
             reasons.append("source_packet_concept_coverage_below_policy")
         if uncovered_concepts:
             reasons.append("uncovered_concepts_remaining")
+        if _has_planning_ready_document_map(source_documents) and not _uses_source_document_map(coverage_checklist):
+            reasons.append("source_document_map_not_used_for_outline")
 
     if source_packet_present and outline_row.get("contractVersion") != SOURCE_PACKET_OUTLINE_CONTRACT_VERSION:
         reasons.append("outline_contract_mismatch")
@@ -445,10 +532,18 @@ def build_course_module_outline_quality_report(
 
     duplicate_module_title_count = _dedupe_count(module_titles)
     duplicate_section_title_count = _dedupe_count(section_titles)
+    broad_module_title_count = sum(1 for title in module_titles if _module_title_is_broad(title))
+    unsupported_broad_module_title_count = sum(
+        1
+        for module, title in zip(modules, module_titles, strict=False)
+        if _module_title_is_broad(title) and not _module_has_specific_handoff(module)
+    )
     if duplicate_module_title_count:
         reasons.append("duplicate_module_titles")
     if duplicate_section_title_count:
         reasons.append("duplicate_section_titles")
+    if unsupported_broad_module_title_count >= max(2, len(modules) // 3):
+        warnings.append("broad_single_concept_module_titles")
     assigned_coverage_id_set = set(assigned_coverage_ids)
     unassigned_coverage_ids = sorted(required_coverage_ids - assigned_coverage_id_set)
     duplicate_coverage_assignment_count = sum(
@@ -484,7 +579,22 @@ def build_course_module_outline_quality_report(
             "sourceMappedSectionCount": source_mapped_section_count,
             "duplicateModuleTitleCount": duplicate_module_title_count,
             "duplicateSectionTitleCount": duplicate_section_title_count,
+            "broadModuleTitleCount": broad_module_title_count,
+            "unsupportedBroadModuleTitleCount": unsupported_broad_module_title_count,
             "materializedContentPayloadCount": materialized_content_count,
+            "planningReadyDocumentMapCount": len(
+                [
+                    document_map
+                    for document_map in _document_maps(source_documents)
+                    if (
+                        document_map.get("quality")
+                        if isinstance(document_map.get("quality"), dict)
+                        else {}
+                    ).get("coursePlanningReady")
+                    is True
+                    or len(_items(document_map.get("entries"))) >= 6
+                ]
+            ),
             "sourcePacketContractVersion": source_packet_contract,
             "sourcePacketQualityStatus": source_packet_quality.get("status"),
             "sourcePacketConceptCoverageRatio": concept_coverage_ratio,
@@ -521,7 +631,19 @@ def _document_body_text(document: dict[str, Any]) -> str:
 def _title(value: str) -> str:
     clean = re.sub(r"[_\\/-]+", " ", value).strip()
     clean = re.sub(r"\s+", " ", clean)
-    return clean.title() if clean else "Course Topic"
+    if not clean:
+        return "Course Topic"
+    words: list[str] = []
+    for word in clean.split(" "):
+        letters = re.sub(r"[^A-Za-z]", "", word)
+        if len(letters) > 1 and letters.isupper():
+            words.append(word)
+            continue
+        if any(character.isupper() for character in word[1:]) and any(character.islower() for character in word):
+            words.append(word)
+            continue
+        words.append(word[:1].upper() + word[1:].lower())
+    return " ".join(words)
 
 
 def _candidate_terms(prompt: str, source_packet: dict[str, Any] | None, limit: int) -> list[str]:
@@ -637,6 +759,7 @@ def _coverage_section_outlines(
     for item_index, item in enumerate(bucket, start=1):
         item_id = _coverage_item_id(item, item_index)
         item_title = _coverage_item_title(item, item_index)
+        item_source_ids = _outline_source_ids(item)
         section_plans = _items(item.get("sectionPlans"))
         for section_index, section_plan in enumerate(section_plans or [{}], start=1):
             title = str(section_plan.get("title") or f"{item_title} foundations").strip()
@@ -649,6 +772,12 @@ def _coverage_section_outlines(
                 limit=8,
             )
             primary_term = " ".join(must_teach) or item_title
+            section_source_ids = (
+                _outline_source_ids(section_plan)
+                or item_source_ids
+                or _source_ids_for_term(primary_term, source_inventory)
+                or module_source_ids
+            )
             sections.append(
                 {
                     "id": f"course-template-m{module_index:02d}-i{item_index:02d}-s{section_index:02d}",
@@ -660,7 +789,7 @@ def _coverage_section_outlines(
                     "assignedCoverageItemIds": [item_id],
                     "coverageItemId": item_id,
                     "coverageMustTeach": must_teach,
-                    "sourceIds": _source_ids_for_term(primary_term, source_inventory) or module_source_ids,
+                    "sourceIds": section_source_ids,
                     "estimated_minutes": 25,
                     "planningSource": "course_template_coverage",
                 }
@@ -694,10 +823,19 @@ def build_outline_from_source_packet(
         assigned_coverage_ids = [_coverage_item_id(item, index) for index, item in enumerate(coverage_bucket, start=1)]
         fallback_concepts = concept_chunks[module_index - 1] if module_index - 1 < len(concept_chunks) else [term]
         module_concepts = coverage_must_teach or fallback_concepts
-        module_focus = module_concepts[0] if module_concepts else term
+        module_focus = term if coverage_bucket else module_concepts[0] if module_concepts else term
         module_title = f"Module {module_index}: {_title(module_focus)}"
         module_source_ids = _source_ids_for_term(" ".join(module_concepts), source_inventory)
         if coverage_bucket:
+            checklist_source_ids = _unique_strings(
+                [
+                    source_id
+                    for item in coverage_bucket
+                    for source_id in _outline_source_ids(item)
+                ]
+            )
+            if checklist_source_ids:
+                module_source_ids = checklist_source_ids
             sections = _coverage_section_outlines(
                 bucket=coverage_bucket,
                 module_index=module_index,
@@ -748,6 +886,10 @@ def build_outline_from_source_packet(
             module["assignedCoverageItemIds"] = assigned_coverage_ids
             module["coverageMustTeach"] = coverage_must_teach
             module["coverageAllocationStatus"] = "assigned"
+            module["targetSectionCount"] = len(sections) or section_count
+            module["lessonTitles"] = [str(section.get("title")) for section in sections if str(section.get("title") or "").strip()]
+            module["sectionPlanHints"] = sections
+            module["coverageChecklistContract"] = coverage_checklist.get("contractVersion") if isinstance(coverage_checklist, dict) else None
         if include_section_outlines:
             module["sections"] = sections
         modules.append(module)

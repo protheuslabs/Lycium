@@ -74,6 +74,47 @@ def _source_packet() -> dict:
     }
 
 
+def _document_map_source_packet() -> dict:
+    return {
+        "contract_version": "source-packet-v1",
+        "quality": {"status": "usable", "conceptCoverageRatio": 1.0},
+        "source_documents": [
+            {
+                "courseSourceId": "input-source-1",
+                "title": "Machine Learning Systems.pdf",
+                "filename": "Machine Learning Systems.pdf",
+                "url": "artifact://machine-learning-systems",
+                "text": (
+                    "Machine learning systems engineering covers deployment paradigms, AI workflow, "
+                    "data engineering, training systems, benchmarking, and ML operations."
+                ),
+                "documentMap": {
+                    "contractVersion": "source-document-map-v1",
+                    "documentId": "ml-systems",
+                    "sourceKind": "pdf",
+                    "strategy": "pdf_outline",
+                    "entryCount": 12,
+                    "entries": [
+                        {"id": "e01", "title": "Abstract", "level": 1, "order": 1, "path": ["Abstract"]},
+                        {"id": "e02", "title": "Introduction", "level": 1, "order": 2, "path": ["Introduction"]},
+                        {"id": "e03", "title": "Defining ML Systems", "level": 2, "order": 3, "path": ["Introduction", "Defining ML Systems"]},
+                        {"id": "e04", "title": "ML Systems", "level": 1, "order": 4, "path": ["ML Systems"]},
+                        {"id": "e05", "title": "The Deployment Spectrum", "level": 2, "order": 5, "path": ["ML Systems", "The Deployment Spectrum"]},
+                        {"id": "e06", "title": "Cloud ML", "level": 2, "order": 6, "path": ["ML Systems", "Cloud ML"]},
+                        {"id": "e07", "title": "AI Workflow", "level": 1, "order": 7, "path": ["AI Workflow"]},
+                        {"id": "e08", "title": "Understanding the ML Lifecycle", "level": 2, "order": 8, "path": ["AI Workflow", "Understanding the ML Lifecycle"]},
+                        {"id": "e09", "title": "Problem Definition Stage", "level": 2, "order": 9, "path": ["AI Workflow", "Problem Definition Stage"]},
+                        {"id": "e10", "title": "Data Engineering", "level": 1, "order": 10, "path": ["Data Engineering"]},
+                        {"id": "e11", "title": "Data Pipeline Architecture", "level": 2, "order": 11, "path": ["Data Engineering", "Data Pipeline Architecture"]},
+                        {"id": "e12", "title": "References", "level": 1, "order": 12, "path": ["References"]},
+                    ],
+                    "quality": {"status": "usable", "coursePlanningReady": True, "topLevelEntryCount": 5},
+                },
+            }
+        ],
+    }
+
+
 def test_course_template_workflow_returns_first_stage_handoff() -> None:
     result = run_course_template_workflow(
         prompt=(
@@ -176,6 +217,64 @@ def test_course_template_workflow_prefers_pdf_title_for_attachment_prompt() -> N
     assert {"Architecture", "Data", "Training", "Evaluation", "Deployment"}.issubset(required_titles)
     assert "attached" not in required_title_blob
     assert "pdf" not in required_title_blob
+
+
+def test_course_template_workflow_prefers_source_document_map_over_prompt_terms() -> None:
+    result = run_course_template_workflow(
+        prompt=(
+            "Create an undergraduate course based on the attached Machine Learning Systems PDF. "
+            "Focus on architecture, data, training, evaluation, deployment, scaling, monitoring, "
+            "and operational tradeoffs of production machine learning systems."
+        ),
+        level="undergrad",
+        desired_module_count=4,
+        source_packet=_document_map_source_packet(),
+    )
+
+    template = result["artifacts"]["courseTemplate"]
+    checklist = template["courseCoverageChecklist"]
+    required_titles = [item["title"] for item in checklist["requiredItems"]]
+
+    assert result["status"] == "passed"
+    assert checklist["source"] == "source_document_map"
+    assert template["sourceStructureHandoff"]["selectedEntryCount"] == 4
+    assert required_titles == ["Introduction", "ML Systems", "AI Workflow", "Data Engineering"]
+    assert "Abstract" not in required_titles
+    assert "References" not in required_titles
+    assert checklist["requiredItems"][1]["sectionPlans"][0]["title"] == "The Deployment Spectrum"
+    assert checklist["requiredItems"][2]["mustTeach"][:3] == [
+        "AI Workflow",
+        "Understanding the ML Lifecycle",
+        "Problem Definition Stage",
+    ]
+
+
+def test_course_module_outline_workflow_uses_template_coverage_handoff() -> None:
+    template = run_course_template_workflow(
+        prompt="Create a course from the Machine Learning Systems PDF.",
+        level="undergrad",
+        desired_module_count=3,
+        source_packet=_document_map_source_packet(),
+    )["artifacts"]["courseTemplate"]
+
+    result = run_course_module_outline_workflow(
+        prompt="Create a course from the Machine Learning Systems PDF.",
+        source_packet=_document_map_source_packet(),
+        course_template=template,
+        desired_module_count=3,
+        sections_per_module=2,
+    )
+    outline = result["artifacts"]["outline"]
+    module_titles = [module["title"] for module in outline["modules"]]
+
+    assert result["status"] == "passed"
+    assert outline["provenance"]["coverageChecklistContract"] == "course-coverage-checklist-v1"
+    assert outline["provenance"]["coverageRequiredItemCount"] == 4
+    assert result["metrics"]["moduleAssignedCoverageItemCount"] == 4
+    assert any("ML Systems" in title for title in module_titles)
+    assert all(title not in {"Module 1: Training", "Module 2: Deployment"} for title in module_titles)
+    assert outline["modules"][1]["sectionPlanHints"][0]["title"] == "The Deployment Spectrum"
+    assert "sections" not in outline["modules"][1]
 
 
 def test_course_template_workflow_blocks_empty_prompt_but_keeps_handoff_shape() -> None:

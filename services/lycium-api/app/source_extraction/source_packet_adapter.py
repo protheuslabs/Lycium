@@ -78,6 +78,7 @@ def source_documents_from_normalized_documents(normalized_documents: list[dict[s
                 "citation": citation,
                 "snapshot": snapshot,
                 "extractor": document.get("extractor") if isinstance(document.get("extractor"), dict) else {},
+                "documentMap": document.get("documentMap") if isinstance(document.get("documentMap"), dict) else {},
             }
         )
     return documents

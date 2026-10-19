@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 NORMALIZED_DOCUMENT_CONTRACT_VERSION = "normalized-document-v1"
+SOURCE_DOCUMENT_MAP_CONTRACT_VERSION = "source-document-map-v1"
 EVIDENCE_CHUNK_CONTRACT_VERSION = "evidence-chunk-v1"
 SOURCE_CITATION_CONTRACT_VERSION = "source-citation-v1"
 SOURCE_REGISTRATION_CANDIDATE_CONTRACT_VERSION = "source-registration-candidate-v1"
@@ -81,7 +82,8 @@ def text_from_payload(payload: dict[str, Any]) -> bytes:
 
 
 def source_registration_candidate_from_document(document: dict[str, Any]) -> dict[str, Any]:
-    return {
+    document_map = document.get("documentMap") if isinstance(document.get("documentMap"), dict) else {}
+    candidate = {
         "contractVersion": SOURCE_REGISTRATION_CANDIDATE_CONTRACT_VERSION,
         "sourceRef": document.get("source", {}).get("sourceRef"),
         "documentId": document.get("documentId"),
@@ -96,3 +98,18 @@ def source_registration_candidate_from_document(document: dict[str, Any]) -> dic
             "sourceIndexShouldNotReExtract": True,
         },
     }
+    if document_map:
+        candidate["documentMap"] = {
+            "contractVersion": document_map.get("contractVersion"),
+            "strategy": document_map.get("strategy"),
+            "entryCount": document_map.get("entryCount") or 0,
+            "storedEntryCount": document_map.get("storedEntryCount") or len(document_map.get("entries", []))
+            if isinstance(document_map.get("entries"), list)
+            else 0,
+            "coursePlanningReady": (
+                document_map.get("quality", {}).get("coursePlanningReady")
+                if isinstance(document_map.get("quality"), dict)
+                else False
+            ),
+        }
+    return candidate

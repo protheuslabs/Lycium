@@ -13,7 +13,11 @@ from typing import Any, Literal
 
 from app.course_agent_assembly import _coerce_generated_section, _module_lesson_outlines, _source_ids_from_outline
 from app.course_agent_staged_support import _infer_pacing_label, _normalize_summary_for_pacing, _with_generation_outline_metadata
-from app.course_coverage_checklists import COURSE_COVERAGE_CHECKLIST_CONTRACT, build_course_coverage_checklist
+from app.course_coverage_checklists import (
+    COURSE_COVERAGE_CHECKLIST_CONTRACT,
+    build_course_coverage_checklist,
+    build_course_coverage_checklist_from_source_packet,
+)
 from app.course_outline_from_source_packet import (
     COURSE_MODULE_OUTLINE_QUALITY_REPORT_CONTRACT,
     SOURCE_PACKET_OUTLINE_CONTRACT_VERSION,
@@ -363,21 +367,32 @@ def run_course_template_workflow(
 ) -> dict[str, Any]:
     title = _title_from_prompt_or_source(prompt, source_packet)
     goals = _strings(learning_goals or [])
-    checklist = build_course_coverage_checklist(
-        prompt=prompt,
-        title=title,
-        level=level,
-        goals=goals,
+    checklist = (
+        build_course_coverage_checklist_from_source_packet(
+            prompt=prompt,
+            title=title,
+            level=level,
+            source_packet=source_packet,
+        )
+        if isinstance(source_packet, dict)
+        else None
     )
-    source_packet_terms = _topic_phrases_from_source_packet(source_packet)
-    if len(_items(checklist.get("requiredItems"))) < 3 and source_packet_terms and not goals:
+    if checklist is None:
         checklist = build_course_coverage_checklist(
             prompt=prompt,
             title=title,
             level=level,
-            goals=source_packet_terms,
+            goals=goals,
         )
-        checklist["source"] = "source_packet_terms"
+        source_packet_terms = _topic_phrases_from_source_packet(source_packet)
+        if len(_items(checklist.get("requiredItems"))) < 3 and source_packet_terms and not goals:
+            checklist = build_course_coverage_checklist(
+                prompt=prompt,
+                title=title,
+                level=level,
+                goals=source_packet_terms,
+            )
+            checklist["source"] = "source_packet_terms"
     required_items = _items(checklist.get("requiredItems"))
     source_ids = _source_ids_from_packet(source_packet)
     template = {
@@ -420,6 +435,7 @@ def run_course_template_workflow(
                 "scope",
             ],
         },
+        "sourceStructureHandoff": checklist.get("sourceStructure") if isinstance(checklist.get("sourceStructure"), dict) else None,
         "sourcePacketHandoff": {
             "contractVersion": source_packet.get("contract_version") or source_packet.get("contractVersion"),
             "qualityStatus": _packet_quality_value(source_packet, "status"),
@@ -431,6 +447,8 @@ def run_course_template_workflow(
     }
     if template["sourcePacketHandoff"] is None:
         template.pop("sourcePacketHandoff")
+    if template["sourceStructureHandoff"] is None:
+        template.pop("sourceStructureHandoff")
     quality_report = _build_course_template_quality_report(template, source_packet=source_packet)
     issues = [
         _issue("error" if reason in quality_report["reasons"] else "warning", reason)

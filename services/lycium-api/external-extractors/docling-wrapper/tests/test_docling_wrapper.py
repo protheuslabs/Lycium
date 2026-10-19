@@ -73,6 +73,11 @@ def test_docling_payload_uses_converter_for_non_text_inputs() -> None:
 
 
 def test_text_backed_pdf_uses_fast_pypdf_path(monkeypatch: Any) -> None:
+    class FakeDestination:
+        def __init__(self, title: str, page_index: int) -> None:
+            self.title = title
+            self.page_index = page_index
+
     class FakePage:
         def __init__(self, text: str) -> None:
             self.text = text
@@ -86,6 +91,17 @@ def test_text_backed_pdf_uses_fast_pypdf_path(monkeypatch: Any) -> None:
                 FakePage("Training pipelines need data validation and reproducible runs."),
                 FakePage("Deployment needs monitoring, scaling, and rollback plans."),
             ]
+            self.outline = [
+                FakeDestination("Training Systems", 0),
+                [
+                    FakeDestination("Data Validation", 0),
+                    FakeDestination("Reproducible Runs", 0),
+                ],
+                FakeDestination("Deployment Operations", 1),
+            ]
+
+        def get_destination_page_number(self, destination: FakeDestination) -> int:
+            return destination.page_index
 
     def fail_converter() -> Any:
         raise AssertionError("Docling should not run when pypdf extracts text.")
@@ -112,6 +128,15 @@ def test_text_backed_pdf_uses_fast_pypdf_path(monkeypatch: Any) -> None:
     assert document["extractor"]["adapter"] == "pypdf"
     assert "Training pipelines" in document["evidence"][0]["text"]
     assert "Deployment needs" in document["evidence"][0]["text"]
+    assert document["documentMap"]["contractVersion"] == "source-document-map-v1"
+    assert document["documentMap"]["strategy"] == "pdf_outline"
+    assert [entry["title"] for entry in document["documentMap"]["entries"]] == [
+        "Training Systems",
+        "Data Validation",
+        "Reproducible Runs",
+        "Deployment Operations",
+    ]
+    assert document["documentMap"]["entries"][1]["path"] == ["Training Systems", "Data Validation"]
 
 
 def test_docling_payload_disables_ocr_by_default(monkeypatch: Any) -> None:

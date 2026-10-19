@@ -50,6 +50,30 @@ OUTLINE_GENERIC_CONCEPTS = {
     "review",
     "summary",
 }
+BROAD_MODULE_TITLE_TERMS = {
+    "architecture",
+    "challenge",
+    "challenges",
+    "data",
+    "deployment",
+    "engineering",
+    "evaluation",
+    "framework",
+    "infrastructure",
+    "introduction",
+    "machine",
+    "model",
+    "models",
+    "monitoring",
+    "practice",
+    "system",
+    "systems",
+    "training",
+}
+TEMPLATED_SECTION_TITLE_SUFFIXES = (
+    "foundations",
+    "applied practice",
+)
 
 
 def _finding(severity: EvalSeverity, message: str, location: str | None = None) -> dict[str, str]:
@@ -155,6 +179,8 @@ def _eval_assessment(course: dict[str, Any]) -> dict[str, Any]:
     project_count = 0
     total_questions = 0
     valid_questions = 0
+    failed_assessment_plan_count = 0
+    low_assessment_plan_coverage_count = 0
 
     for module_index, module in enumerate(_modules(course), start=1):
         module_quiz_count = 0
@@ -163,6 +189,24 @@ def _eval_assessment(course: dict[str, Any]) -> dict[str, Any]:
             blocks = _content(section)
             quiz_blocks = [block for block in blocks if _is_quiz(block)]
             project_blocks = [block for block in blocks if _is_project(block)]
+            metadata = section.get("metadata") if isinstance(section.get("metadata"), dict) else {}
+            assessment_plan = metadata.get("assessmentPlan") if isinstance(metadata.get("assessmentPlan"), dict) else {}
+            subworkflow = assessment_plan.get("subWorkflow") if isinstance(assessment_plan.get("subWorkflow"), dict) else {}
+            if subworkflow.get("status") == "failed":
+                failed_assessment_plan_count += 1
+                findings.append(_finding("error", "Apply assessment sub-workflow failed coverage or content validation.", f"modules[{module_index}].sections[{section_index}].metadata.assessmentPlan"))
+            if assessment_plan:
+                try:
+                    coverage_ratio = float(assessment_plan.get("contentCoverageRatio"))
+                except (TypeError, ValueError):
+                    coverage_ratio = 1.0
+                try:
+                    minimum_ratio = float(assessment_plan.get("minimumContentCoverageRatio") or 0.7)
+                except (TypeError, ValueError):
+                    minimum_ratio = 0.7
+                if coverage_ratio < minimum_ratio:
+                    low_assessment_plan_coverage_count += 1
+                    findings.append(_finding("error", "Apply assessment does not cover enough planned content.", f"modules[{module_index}].sections[{section_index}].metadata.assessmentPlan.contentCoverageRatio"))
             if quiz_blocks and len(quiz_blocks) != len(blocks):
                 findings.append(_finding("error", "Quiz section mixes assessment and instructional content.", f"modules[{module_index}].sections[{section_index}]"))
             for block_index, quiz in enumerate(quiz_blocks, start=1):
@@ -222,6 +266,8 @@ def _eval_assessment(course: dict[str, Any]) -> dict[str, Any]:
             "questionCount": total_questions,
             "validQuestionRatio": round(valid_ratio, 2),
             "masteryEvidenceCoverage": round(evidence_coverage, 2),
+            "failedAssessmentPlanCount": failed_assessment_plan_count,
+            "lowAssessmentPlanCoverageCount": low_assessment_plan_coverage_count,
         },
     )
 
@@ -235,8 +281,51 @@ def _project_is_gradeable(project: dict[str, Any]) -> bool:
     rubric = project.get("rubric")
     submission = project.get("submission")
     criteria = rubric.get("criteria") if isinstance(rubric, dict) else None
-    accepted_types = submission.get("acceptedTypes") or submission.get("acceptedInputTypes") if isinstance(submission, dict) else None
+    accepted_types = None
+    if isinstance(submission, dict):
+        accepted_types = (
+            submission.get("acceptedTypes")
+            or submission.get("acceptedInputTypes")
+            or submission.get("submissionMethods")
+            or ([submission.get("submissionType")] if submission.get("submissionType") else None)
+        )
     return bool(instructions) and isinstance(criteria, list) and bool(criteria) and isinstance(accepted_types, list) and bool(accepted_types)
+
+
+def _strip_pacing_prefix(title: str) -> str:
+    return re.sub(r"^\s*(?:module|week)\s+\d+\s*:\s*", "", str(title or ""), flags=re.IGNORECASE).strip()
+
+
+def _module_has_specific_learning_evidence(module: dict[str, Any]) -> bool:
+    section_titles: list[str] = []
+    concept_titles: list[str] = []
+    for section in _sections(module):
+        if section.get("pageType") == "learn" and not _is_summary(section):
+            title = str(section.get("title") or "").strip()
+            if title and not title.lower().endswith(TEMPLATED_SECTION_TITLE_SUFFIXES):
+                section_titles.append(title)
+        for block in _content(section):
+            if _is_concept_block(block):
+                for concept in _concept_items(block):
+                    if isinstance(concept, dict):
+                        concept_title = str(concept.get("name") or concept.get("title") or "").strip()
+                        if concept_title:
+                            concept_titles.append(concept_title)
+    metadata = module.get("metadata") if isinstance(module.get("metadata"), dict) else {}
+    handoff_terms: list[str] = []
+    for key in ("coverageMustTeach", "concept_keywords", "conceptKeywords"):
+        value = module.get(key) or metadata.get(key)
+        if isinstance(value, list):
+            handoff_terms.extend(str(item).strip() for item in value if str(item).strip())
+    concrete_terms = {
+        token
+        for token in re.findall(
+            r"[a-z][a-z0-9+#.-]{2,}",
+            "\n".join(section_titles + concept_titles + handoff_terms).lower(),
+        )
+        if token not in BROAD_MODULE_TITLE_TERMS
+    }
+    return len(section_titles) >= 2 or len(concept_titles) >= 3 or len(concrete_terms) >= 3
 
 
 def _eval_concepts(course: dict[str, Any]) -> dict[str, Any]:
@@ -314,18 +403,58 @@ def _eval_specificity(course: dict[str, Any]) -> dict[str, Any]:
             findings.append(_finding("error", f"Prompt-like or placeholder prose detected: {pattern.pattern}"))
     repeated_titles = 0
     seen_titles: set[str] = set()
-    for module in _modules(course):
+    modules = _modules(course)
+    broad_module_title_count = 0
+    templated_learn_title_count = 0
+    learn_title_count = 0
+    for module_index, module in enumerate(modules, start=1):
+        module_title = _strip_pacing_prefix(str(module.get("title") or ""))
+        module_tokens = [token for token in re.findall(r"[a-z][a-z0-9+#.-]{2,}", module_title.lower())]
+        if (
+            len(module_tokens) == 1
+            and module_tokens[0] in BROAD_MODULE_TITLE_TERMS
+            and not _module_has_specific_learning_evidence(module)
+        ):
+            broad_module_title_count += 1
+            findings.append(_finding("warning", "Module title is too broad to guide a strong course handoff.", f"modules[{module_index}].title"))
         for section in _sections(module):
             title = str(section.get("title") or "").strip().lower()
             if not title:
                 continue
+            if section.get("pageType") == "learn" and not _is_summary(section):
+                learn_title_count += 1
+                if title.endswith(TEMPLATED_SECTION_TITLE_SUFFIXES):
+                    templated_learn_title_count += 1
             if title in seen_titles:
                 repeated_titles += 1
             seen_titles.add(title)
     if repeated_titles:
         findings.append(_finding("warning", "Repeated section titles may indicate template-like course content."))
-    score = 1.0 - min(0.85, placeholder_hits * 0.2 + repeated_titles * 0.03)
-    return _dimension(key="specificity", label="Course specificity", weight=0.1, score=score, findings=findings, metrics={"placeholderHitCount": placeholder_hits, "repeatedSectionTitleCount": repeated_titles})
+    templated_learn_ratio = templated_learn_title_count / learn_title_count if learn_title_count else 0
+    if broad_module_title_count >= max(2, len(modules) // 3):
+        findings.append(_finding("warning", "Many module titles are broad single-concept labels instead of source/course-specific learning arcs."))
+    if templated_learn_ratio >= 0.45:
+        findings.append(_finding("warning", "Many Learn section titles use template suffixes instead of specific planned concepts."))
+    score = 1.0 - min(
+        0.85,
+        placeholder_hits * 0.2
+        + repeated_titles * 0.03
+        + broad_module_title_count * 0.04
+        + templated_learn_ratio * 0.3,
+    )
+    return _dimension(
+        key="specificity",
+        label="Course specificity",
+        weight=0.1,
+        score=score,
+        findings=findings,
+        metrics={
+            "placeholderHitCount": placeholder_hits,
+            "repeatedSectionTitleCount": repeated_titles,
+            "broadModuleTitleCount": broad_module_title_count,
+            "templatedLearnTitleRatio": round(templated_learn_ratio, 2),
+        },
+    )
 
 
 def _eval_vertical_understanding(course: dict[str, Any]) -> dict[str, Any]:
