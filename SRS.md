@@ -8,6 +8,8 @@ This file is the entry point for the Lycium SRS. The full specification is split
 - [Functional requirements](./docs/srs/functional-requirements.md)
 - [Non-functional requirements, data/schema requirements, and architecture requirements](./docs/srs/non-functional-schema-architecture.md)
 - [Release phasing, acceptance criteria, risks, open questions, and references](./docs/srs/phasing-risks-references.md)
+- [Hosted learning MVP requirements](./docs/hosted-mvp-requirements.md)
+- [Course and program teaching quality acceptance](./docs/course-generation-quality-acceptance.md)
 
 ## Current product boundary
 

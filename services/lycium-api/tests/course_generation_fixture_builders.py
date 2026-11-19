@@ -1,8 +1,79 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from app.course_generation_scenario_specs import COURSE_SCENARIOS
+
+
+def curriculum_model_fixture(
+    title: str,
+    topics: list[tuple[str, str]],
+    *,
+    category: str,
+    department: str,
+    source_ids: list[str] | None = None,
+):
+    def respond(**kwargs):
+        request = json.loads(kwargs["messages"][1]["content"])
+        if kwargs["stage"] == "course_template_generation":
+            return {
+                "title": title,
+                "shortDescription": f"Practice {title.lower()} through problems and explanations.",
+                "audience": "First-year students",
+                "interpretation": "A standalone introductory course.",
+                "prerequisites": ["Interpret ratios and percentages"],
+                "exclusions": [],
+                "outcome": topics[-1][1],
+                "workload": {
+                    "totalMinutes": request["expected_duration_minutes"] or 8100,
+                    "durationOrigin": "requested" if request["expected_duration_minutes"] is not None else "estimated",
+                    "credits": request["credits"],
+                    "creditSystem": request["credit_system"],
+                    "creditOrigin": "requested" if request["credits"] is not None else None,
+                    "basis": "Time for instruction and practice.",
+                },
+                "topics": [
+                    {
+                        "title": name,
+                        "outcome": outcome,
+                        "depth": "apply",
+                        "mustTeach": [name],
+                        "sourceIds": source_ids or [],
+                    }
+                    for name, outcome in topics
+                ],
+            }, {}
+        if kwargs["stage"] == "course_section_plan":
+            return {
+                "modules": [{
+                    "moduleId": module["id"],
+                    "sections": [{
+                        "title": item["title"],
+                        "objective": item["description"],
+                        "assignedCoverageItemIds": [item["id"]],
+                        "mustTeach": item["mustTeach"],
+                    } for item in module["coverageItems"]],
+                } for module in request["modules"]],
+            }, {}
+        assert kwargs["stage"] == "course_plan"
+        required_topics = request["required_topics"]
+        assert [topic["title"] for topic in required_topics] == [name for name, _ in topics]
+        return {
+            "category": category,
+            "department": department,
+            "tags": [department],
+            "modules": [{
+                "id": "module-1",
+                "title": f"Module 1: {title}",
+                "learningObjectives": [outcome for _, outcome in topics],
+                "conceptKeywords": [name for name, _ in topics],
+                "assignedCoverageItemIds": [topic["id"] for topic in required_topics],
+                "sourceIds": source_ids or [],
+            }],
+        }, {}
+
+    return respond
 
 
 def _items(value: Any) -> list[dict[str, Any]]:

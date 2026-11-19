@@ -230,7 +230,7 @@ def _normalize_explicit_source_refs(section: dict, raw_section: dict, planned_so
     explicit_source_ids = [
         source_id
         for source_id in _unique_source_ids_from_value(raw_section)
-        if not planned or source_id in planned
+        if source_id in planned
     ]
     filtered = _filter_source_ids(section, set(explicit_source_ids))
     local_source_ids = _unique_source_ids_from_value(filtered)
@@ -366,7 +366,7 @@ def _generate_module_bundle(
                 source_urls=source_urls,
                 source_context=media_source_context,
             ),
-        )
+        ) if module_source_ids else ({"available": False, "reason": "No sources were available for media."}, {})
         media_block, media_skip_reason = _coerce_media_block(media_payload, module_source_ids)
         if media_block and _insert_media_block(sections, media_block):
             module_usage.append({"stage": media_stage, "usage": media_response.get("usage", {})})

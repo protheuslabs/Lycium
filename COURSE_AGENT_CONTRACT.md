@@ -60,94 +60,13 @@ Each section must contain:
 
 `content` must always be an array of block objects. It must never be a plain string.
 
-Canonical Learn section block pattern:
+## Content Formats
 
-```json
-[
-  { "type": "text", "heading": "Explanation", "value": "Teach the idea directly." },
-  { "type": "text", "heading": "Guided practice", "value": "Ask the learner to apply the idea in words, evidence, or a short activity." },
-  { "type": "heading", "title": "Concepts introduced" },
-  { "type": "conceptCard", "title": "Raw concept name", "description": "Concise definition." }
-]
-```
+The runtime appends the available content format catalog from `packages/contracts/course-content-formats.json`, filtered to the active workflow when one is specified. Use that catalog for supported block types, use cases, constraints, and example fields.
 
-Optional quantitative, technical, or procedural block pattern:
+Choose and combine formats to teach the assigned outcomes. Examples describe field shapes, not a fixed block sequence; replace their values and do not copy asset placeholders. Never invent an unsupported block type or pretend that an unavailable external resource is present.
 
-```json
-[
-  {
-    "type": "equation",
-    "title": "Relationship",
-    "equations": ["target = known relationship"],
-    "notation": "ascii",
-    "caption": "Use readable ASCII math for now and include units when relevant."
-  },
-  {
-    "type": "workedExample",
-    "title": "Worked example",
-    "problem": "Solve a concrete quantitative, formal, technical, or procedural problem.",
-    "given": ["Known value, condition, formula, or constraint."],
-    "find": ["Target value, classification, output, or procedure result."],
-    "steps": [
-      { "explanation": "Set up the relationship or procedure.", "equation": "target = known relationship" },
-      { "explanation": "Substitute, simplify, compute, or execute the rule.", "equation": "target = simplified result" }
-    ],
-    "workedAnswer": "Final answer with units or interpretation.",
-    "check": "Check the units, sign, direction, assumption, or practical meaning."
-  }
-]
-```
-
-Generated courses must use the same atomic block grammar the course editor creates. Prefer `text`, `heading`, `conceptCard`, `equation`, `workedExample`, `image`/`visual`, `video`, `iframe`, `quiz`, and `project` blocks. Do not generate monolithic markdown, plain-string content, or large `conceptCards` stacks except when repairing legacy courses.
-
-Use `equation` for standalone formulas, symbolic relationships, calculations, and equation lines that need code-like alignment.
-
-Use `workedExample` only for quantitative, formal, technical, or procedural examples where the learner should see repeatable work. Do not use `workedExample` for interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts; use `text`, `heading`, and `conceptCard` blocks for those. Equation rows inside worked examples should be plain strings in `steps[].equation` or `steps[].equations`; use readable ASCII math for now, include units when relevant, and keep each step tied to the problem.
-
-Canonical image/visual block pattern:
-
-```json
-{
-  "type": "image",
-  "url": "https://example.edu/diagram.png",
-  "alt": "Plain-language description of the diagram for screen readers.",
-  "caption": "Short caption explaining what the learner should notice.",
-  "credit": "Source or creator name",
-  "license": "License or usage note",
-  "sourceIds": ["source-1"]
-}
-```
-
-Canonical quiz section block pattern:
-
-```json
-[
-  {
-    "type": "quiz",
-    "questions": [
-      {
-        "question": "Question text",
-        "options": ["Correct answer", "Distractor A", "Distractor B", "Distractor C"],
-        "answers": [0],
-        "multiple": false,
-        "timed": "f"
-      }
-    ],
-    "maxAttempts": "",
-    "timeLimitSeconds": "",
-    "passPercentage": 70
-  }
-]
-```
-
-Canonical summary section block pattern:
-
-```json
-[
-  { "type": "heading", "title": "Module concepts" },
-  { "type": "conceptCard", "title": "Raw concept name", "description": "Concise definition.", "sourceSectionId": "module-1-section-1" }
-]
-```
+Keep content atomic and editable. Graded assessment belongs in its separate Apply workflow. Keep the course-structure rules below, including the concept inventory at the end of each lesson.
 
 ## Course Structure Rules
 
@@ -196,7 +115,7 @@ Canonical summary section block pattern:
 - If a media stage cannot find or create a reputable source-backed video block, log the skipped or failed media stage and continue generation.
 - `sourceRecords` must use reusable IDs and include source type, title, URL or local path when available, and course usage fields.
 - The course, modules, sections, and content blocks should use `sourceIds` at the most helpful level.
-- Do not invent fake URLs. If a source is not known, use a source record without a URL and mark it as `type: "unverified-reference"`.
+- Do not invent source records, URLs, or citation markers. When no evidence is supplied for a lesson, teach established subject knowledge without citations and clearly identify illustrative scenarios or data.
 
 ## Safety and Reliability Rules
 

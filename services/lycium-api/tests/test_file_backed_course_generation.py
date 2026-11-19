@@ -9,6 +9,7 @@ from typing import Any
 from app.course_agent_staged import generate_course_with_agent_staged
 from app.file_input_reader import read_generation_input_files
 from app.source_extraction import dispatcher as dispatcher_module
+from tests.course_generation_fixture_builders import curriculum_model_fixture
 
 
 def _quiz_questions() -> list[dict[str, Any]]:
@@ -73,8 +74,17 @@ def test_staged_generation_produces_valid_course_from_file_artifacts(monkeypatch
     assert reader_result["artifacts"][0]["reader"]["adapter"] == "lycium-docling-wrapper"
     captured_source_context_indexes: list[dict[str, Any]] = []
 
-    def fail_plan_call(*_args: Any, **_kwargs: Any) -> tuple[dict[str, Any], dict[str, Any]]:
-        raise AssertionError("file-backed source-corpus outline should avoid the plan LLM stage")
+    model_fixture = curriculum_model_fixture(
+        "File-backed Chemistry",
+        [
+            ("Stoichiometry", "Calculate a product mass from balanced reaction ratios."),
+            ("Equilibrium", "Compare the reaction quotient to the equilibrium constant."),
+            ("Titration", "Infer concentration from an observed endpoint."),
+        ],
+        category="natural-sciences-mathematics",
+        department="chemistry",
+        source_ids=["input-source-1", "input-source-2", "input-source-3"],
+    )
 
     def fake_module_bundle(**kwargs: Any) -> dict[str, Any]:
         source_ids = kwargs["source_ids"]
@@ -166,7 +176,7 @@ def test_staged_generation_produces_valid_course_from_file_artifacts(monkeypatch
 
     monkeypatch.setattr("app.course_agent_staged.get_agent_provider", lambda _provider_id: {"id": "test", "defaultModel": "test"})
     monkeypatch.setattr("app.course_agent_staged.assess_agent_model_capability", lambda _provider, _model: {"status": "ok"})
-    monkeypatch.setattr("app.course_agent_staged._model_json", fail_plan_call)
+    monkeypatch.setattr("app.course_agent_staged._model_json", model_fixture)
     monkeypatch.setattr("app.course_agent_staged._generate_module_bundle", fake_module_bundle)
 
     result = generate_course_with_agent_staged(
@@ -189,7 +199,7 @@ def test_staged_generation_produces_valid_course_from_file_artifacts(monkeypatch
 
     course = result.course
     assert result.trace["validation"] == {"status": "passed", "errors": []}
-    assert result.trace["module_planning"]["source"] == "source_corpus_outline"
+    assert result.trace["module_planning"]["source"] == "model_plan"
     assert result.trace["source_context"]["sourceCount"] == 3
     assert len(captured_source_context_indexes) == 1
     assert set(captured_source_context_indexes[0]) == {"input-source-1", "input-source-2", "input-source-3"}

@@ -1,0 +1,105 @@
+{
+  "formats": [
+    {
+      "type": "text",
+      "label": "Explanation and practice",
+      "workflows": ["section_fill"],
+      "useWhen": ["Explain an idea, compare alternatives, analyze evidence, or present a concrete case.", "Give guided practice, a self-check, or feedback in prose."],
+      "avoidWhen": ["A paragraph merely describes what a future writer should teach.", "A large block hides several distinct teaching steps."],
+      "requirements": ["Use plain instructional prose in value; Markdown is not rendered.", "Split distinct ideas into editable blocks. An optional heading labels the block."],
+      "example": {"type": "text", "heading": "Explanation", "value": "Explain the idea, connect it to a concrete case, and show the reasoning."}
+    },
+    {
+      "type": "heading",
+      "label": "Heading",
+      "workflows": ["section_fill", "module_summary_section"],
+      "useWhen": ["Separate meaningful parts of a lesson or introduce the concept inventory."],
+      "avoidWhen": ["The heading adds no structure or substitutes for an explanation."],
+      "requirements": ["Use title for the heading text."],
+      "example": {"type": "heading", "title": "Concepts introduced"}
+    },
+    {
+      "type": "conceptCard",
+      "label": "Concept definition",
+      "workflows": ["section_fill", "module_summary_section"],
+      "useWhen": ["Define one raw concept introduced in the lesson.", "Review a concept already taught in the module."],
+      "avoidWhen": ["The card is a whole lesson, study advice, or a prose recap."],
+      "requirements": ["Use a concise title and definition in description.", "End each lesson with a Concepts introduced heading and one card per introduced concept.", "Summary cards preserve sourceSectionId when available and introduce no new material."],
+      "example": {"type": "conceptCard", "title": "Named concept", "description": "A concise definition of this concept."}
+    },
+    {
+      "type": "equation",
+      "label": "Equation or formula",
+      "workflows": ["section_fill"],
+      "useWhen": ["Show a standalone formula, symbolic relationship, or aligned calculation lines."],
+      "avoidWhen": ["Words connected with mathematical symbols are being used as a metaphor rather than an actual relationship."],
+      "requirements": ["Use readable ASCII strings in equations; this is not a LaTeX renderer or calculation engine.", "Explain symbols, assumptions, and units in surrounding prose or caption."],
+      "example": {"type": "equation", "title": "Relationship", "equations": ["distance = speed * time"], "notation": "ascii", "caption": "Use compatible units for speed and time."}
+    },
+    {
+      "type": "workedExample",
+      "label": "Worked problem",
+      "workflows": ["section_fill"],
+      "useWhen": ["Demonstrate a quantitative, formal, technical, or procedural task whose steps the learner can repeat."],
+      "avoidWhen": ["Interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source analysis.", "The example only restates a learning goal or forces a prose argument into fake equations."],
+      "requirements": ["State the problem, known information, target, reasoning steps, final answer, and check.", "Keep equation lines as readable ASCII strings and verify calculations."],
+      "example": {
+        "type": "workedExample",
+        "title": "Worked problem",
+        "problem": "Find distance traveled at a constant speed of 3 meters per second for 4 seconds.",
+        "given": ["speed = 3 m/s", "time = 4 s"],
+        "find": ["distance in meters"],
+        "steps": [
+          {"explanation": "Multiply speed by elapsed time.", "equation": "distance = 3 m/s * 4 s = 12 m"}
+        ],
+        "workedAnswer": "The distance is 12 meters.",
+        "check": "Seconds cancel, leaving meters, and the result is positive."
+      }
+    },
+    {
+      "type": "image",
+      "label": "Image, diagram, or graph",
+      "workflows": ["section_fill"],
+      "useWhen": ["An available image helps learners inspect a spatial relationship, visual evidence, graph, or object."],
+      "avoidWhen": ["Only an imagined asset or unverified URL is available.", "The image is decorative or carries essential instruction without a text alternative."],
+      "requirements": ["Use only a supplied or verified asset URL, with descriptive alt text and a useful caption.", "Reference the actual supporting source and retain credit or license information where available.", "Do not invent an image URL or embed SVG/HTML as a replacement block."],
+      "example": {"type": "image", "url": "<provided-image-url>", "alt": "Describe the relevant visible relationship.", "caption": "Explain what the learner should notice.", "sourceIds": ["<provided-source-id>"]}
+    },
+    {
+      "type": "video",
+      "label": "Video",
+      "workflows": ["section_fill", "media"],
+      "useWhen": ["An available demonstration or animation makes a process easier to inspect."],
+      "avoidWhen": ["No supplied or verified embeddable video is available.", "The video replaces the course's own explanation or practice."],
+      "requirements": ["Use a source-backed playable or embed URL; do not invent one.", "Use integer clip.startSeconds and clip.endSeconds only when selecting a relevant excerpt.", "Omit filler titles and retain the supporting source ID."],
+      "example": {"type": "video", "url": "<provided-video-url>", "sourceIds": ["<provided-source-id>"], "clip": {"startSeconds": 0, "endSeconds": 60}}
+    },
+    {
+      "type": "iframe",
+      "label": "Embedded resource",
+      "workflows": ["section_fill"],
+      "useWhen": ["A provided embeddable resource supports exploration or a procedure the learner must practice."],
+      "avoidWhen": ["No actual compatible resource URL is available.", "The lesson would pretend to provide a native simulation, editor, or calculator that does not exist."],
+      "requirements": ["Use a supplied or verified embeddable URL and a descriptive title.", "Explain the task in surrounding text and cite the resource.", "Never substitute generated HTML or scripts for a resource URL."],
+      "example": {"type": "iframe", "title": "Relevant interactive resource", "url": "<provided-embed-url>", "sourceIds": ["<provided-source-id>"]}
+    },
+    {
+      "type": "quiz",
+      "label": "Quiz or test",
+      "workflows": ["module_quiz_assessment"],
+      "useWhen": ["Collect question-based mastery evidence for taught material."],
+      "avoidWhen": ["Writing instruction or an ungraded practice prompt inside a Learn lesson."],
+      "requirements": ["Generate through the quiz assessment workflow in a separate Apply section.", "Use question, options, and a zero-based answers array; obey the assessment plan's coverage and question-count requirements."],
+      "example": {"type": "quiz", "questions": [{"id": "q1", "question": "Which result is 3 multiplied by 4?", "options": ["12", "7", "1", "34"], "answers": [0], "multiple": false}]}
+    },
+    {
+      "type": "project",
+      "label": "Project or practical assessment",
+      "workflows": ["module_project_assessment"],
+      "useWhen": ["Assess a project, analysis, lab, portfolio, or other submitted artifact against a rubric."],
+      "avoidWhen": ["The learner only needs a short, ungraded practice activity in a lesson."],
+      "requirements": ["Generate through the project assessment workflow in a separate Apply section.", "Include instructions, required evidence, rubric criteria, a canonical submission type, and grading metadata."],
+      "example": {"type": "project", "title": "Applied task", "instructions": "Create an artifact demonstrating the assigned outcome.", "requiredEvidence": ["Artifact and explanation of the method."], "submissionType": "text", "rubric": {"criteria": [{"id": "criterion-1", "title": "Reasoning", "points": 4, "description": "The method is correct and justified."}]}, "graderWorkflow": {"grader": "agent", "allowedContext": ["course", "rubric", "submission"]}}
+    }
+  ]
+}

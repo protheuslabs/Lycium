@@ -25,9 +25,11 @@
 - Course template generation should be the first active course-content workflow. It should emit a `course-template-v1` artifact and `course-template-quality-report-v1` with resolved title, short description, scope, learning outcomes, source packet/source ID handoff, and course coverage checklist before module planning. It must not create modules, sections, build tasks, or learner-facing content.
 - Course template generation must define required concepts and learning outcomes early, then pass those down as the curriculum handoff. It should not derive the course skeleton from generic prompt words or blanket structures such as "concepts for college class." Long documents, PDFs, source packets, and benchmarks may expose source-type-specific handoff metadata, but downstream workflows should consume the shared `course-coverage-checklist-v1` rather than rebuilding the skeleton from word frequency.
 - Course module outline generation should emit a `course-module-outline-quality-report-v1`. Source-packet module outlines should validate source-packet usability, module titles, module learning objectives, module concept keywords, module source IDs, duplicate module titles, target section counts, and the absence of learner-facing lesson content.
-- Broad module labels are acceptable only when they are source- or benchmark-backed and carry concrete assigned coverage item IDs, `coverageMustTeach`, and section-plan hints. Unsupported broad one-word labels should remain review warnings because they are a common path into generic course content.
+- The course template resolves scope, required concepts, depth, and observable outcomes before planning modules or sections. Preserve requested credits and study time; infer missing values and label their basis. Use supplied neighbor coverage to distinguish confirmed prerequisites, this course's responsibilities, and follow-on material.
+- Broad module labels are acceptable only when backed by concrete assigned coverage items and `coverageMustTeach`. The separate section planner produces section titles and objectives after module allocation and must account for every required concept.
 - Before fallback or under-sourced module planning, generate a course-level `course-coverage-checklist-v1` required-topic inventory. Module planning should assign every required coverage item to a module, and section planning should carry assigned coverage item IDs plus `coverageMustTeach` into hidden section handoff metadata before section fill.
 - Module section planning should be a separate active workflow from module outline generation and section fill. It should expand one module outline into section-plan records and add planned empty section shells to the course/module structure with section titles, planning-only descriptions, learning objectives, concept keywords, candidate source IDs in metadata, and empty `content` arrays before section fill starts.
+- Section objectives must preserve the measurable actions, conditions, and precision requirements from parent module and topic outcomes. Assigning every concept label does not by itself preserve a required skill.
 - Section fill should be the only active workflow that replaces planned empty section shells with learner-facing content blocks.
 - Section fill should preserve source IDs only for sources the generated section actually uses. It should not auto-attach the full planned, module, or course source list just because sources were available.
 - Course, module, and section content-fill runs should be thin orchestrators over section fill. They may loop through planned empty sections, save progress after each section, add module Apply/Summary artifacts after lesson sections are filled, and support scoped retries, but they should not bypass the section-fill workflow with a separate content writer.
@@ -56,8 +58,8 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 1. Scope the course.
    Define audience, level, prerequisites, desired outcome, duration, expected workload, source standards, assessment style, exclusions, and a short catalog description.
 
-2. Plan 10-20 modules.
-   Each module should represent a major arc in the course. Use fewer only for an explicitly short course.
+2. Plan modules around the required outcomes and workload.
+   Start with 10-20 modules for a full course. Each module should represent a major arc in the course, with the count adjusted to the intended depth and scope.
    Prefer structured source handoffs in this order when available: benchmark requirements, source-packet decisions, document maps/TOCs for long files, then prompt-derived fallback concepts. Do not let raw prompt tokens become the primary structure when a better concept or source-structure handoff exists.
 
 3. Choose the learner-facing pacing label.
@@ -72,7 +74,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 6. Source each idea.
    Find reputable sources for the idea level, not only the course level. Prefer primary docs, textbooks, academic sources, standards bodies, established university material, and reputable technical talks.
    When many sources are submitted, first run source corpus preflight. Use included sources as the course corpus and exclude irrelevant sources from requirements, lessons, quizzes, and citations unless a reviewer restores them.
-   If submitted sources do not satisfy the course's source coverage and source-strength policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps`, but still generate a coherent module and section outline plus empty planned section shells with hidden handoff metadata for later section fill. Use a course coverage checklist when benchmark or source-packet evidence is not strong enough to define the full skeleton. Do not generate learner-facing filler or repeat a source-gap placeholder as every section body. Do not gate outline generation by raw source count; one comprehensive textbook, extracted document, or source packet may be sufficient when it covers the required concepts with strong depth, relevance, authority, extractability.
+   If submitted sources do not satisfy the course's source coverage and source-strength policy, create or preserve a `needs_sources` draft with structured `metadata.sourceGaps`, a coherent outline, and empty planned section shells. If no sources were requested, draft the actual lessons from established knowledge, with concrete examples and practice and no invented citations. A complete prompt-only draft still needs source review. Do not generate learner-facing filler or gate outline generation by raw source count; one comprehensive textbook or source packet can be sufficient when it covers the required concepts well.
    Map accepted sources to required concepts before drafting. Course-level source records are the full inventory, but section and block `sourceIds` should only be added for sources actually used by that page or block.
    For uploaded files or long source documents, use bounded, stage-relevant excerpts for lesson, quiz, media, and summary prompts. Do not pass full extracted documents into every staged model call.
 
@@ -96,6 +98,7 @@ Backend LLM experiments should return `quality_report.evals` before persistence.
 
 12. Use quality evals before review.
    LLM-generated drafts should be inspected through `quality_report.evals`; rejected drafts should remain available for prompt/source/gate tuning rather than being silently discarded.
+   For college-level quality, inspect actual instruction and assess whether it prepares learners to apply each required outcome. Record semantic review and live-generation evidence using the [teaching quality rubric](../../../docs/course-generation-quality-acceptance.md).
 
 ## Progress Metadata
 
@@ -156,6 +159,8 @@ The renderer can ignore planning metadata. It exists so agents do not lose the s
 - Prefer coherent depth over broad but shallow coverage.
 
 ## Content Blocks
+
+Use `packages/contracts/course-content-formats.json` as the authoritative list of renderer-backed formats, teaching use cases, constraints, and examples. Generation loads it at prompt construction time and filters it by workflow. Quizzes and projects remain in separate assessment workflows; do not emit planned but unsupported formats.
 
 - `text`: instructional prose in `value`, optionally with `heading`.
 - `heading`: standalone section/block label such as `Concepts introduced`.

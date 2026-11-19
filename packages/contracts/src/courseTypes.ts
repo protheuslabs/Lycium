@@ -466,7 +466,10 @@ export type LyciumCourseGenerationRequest = {
   category?: string;
   department?: string;
   desired_module_count?: number;
-  expected_duration_minutes?: number;
+  expected_duration_minutes?: number | null;
+  credits?: number | null;
+  credit_system?: string | null;
+  curriculum_context?: Record<string, unknown> | null;
   max_stage_timeout_seconds?: number;
   source_urls?: string[];
   input_artifacts?: Record<string, unknown>[];

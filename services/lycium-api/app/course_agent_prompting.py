@@ -4,11 +4,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from app.course_planning_contracts import CourseCurriculum, CourseModulePlan, CourseSectionPlans
+from app.course_content_formats import available_content_formats
+from app.course_taxonomy import COURSE_TAXONOMY
+
 CONTRACT_PATH = Path(__file__).resolve().parents[3] / "COURSE_AGENT_CONTRACT.md"
 
 
-def load_behavioral_contract() -> str:
-    return CONTRACT_PATH.read_text(encoding="utf-8")
+def load_behavioral_contract(workflow: str | None = None) -> str:
+    formats = json.dumps(available_content_formats(workflow), ensure_ascii=False, separators=(",", ":"))
+    return CONTRACT_PATH.read_text(encoding="utf-8") + "\n\nAvailable content formats:\n" + formats
 
 
 def _llm_messages(
@@ -119,92 +124,125 @@ def _source_ids_for_input(source_urls: list[str] | None) -> list[str]:
     return [f"input-source-{index}" for index, _ in enumerate(source_urls or [], start=1)]
 
 
+def _course_curriculum_messages(
+    *,
+    request: dict,
+    evidence: dict | None,
+    source_topics: list[dict],
+    benchmark_topics: list[str],
+) -> list[dict[str, str]]:
+    return _planning_messages(
+        "Plan the scope and required coverage of one course. Resolve its role, learner, entry prerequisites, "
+        "and main capability. For an ambiguous title, plan one coherent course unless the request or a "
+        "supplied benchmark calls for a sequence. State which scope you chose and what belongs in a follow-on. "
+        "Use supplied curriculum context to distinguish what prerequisites already teach from what this course "
+        "must teach and what later courses own. Mark unconfirmed prerequisite coverage as an assumption.\n"
+        "Preserve explicitly supplied study time, credits, and credit system, including constraints stated in "
+        "the request text. Null or missing values are not constraints. Estimate the missing workload including "
+        "instruction, independent study, practice, and assessment. Label what was requested versus estimated, "
+        "and name the credit convention if proposing credits. Do not imply awarded credit. Report conflicts "
+        "instead of silently changing requirements.\n"
+        "Inventory the essential concepts, methods, and skills in prerequisite order. For each topic name "
+        "specific mustTeach concepts, the expected depth, and a concrete observable outcome. Include practical "
+        "and analytical methods where essential. Use supplied benchmarks and document structure as evidence; "
+        "when absent, use disciplinary knowledge without inventing benchmarks. Reference source IDs only "
+        "when the supplied evidence supports the topic.\n"
+        "Check each outcome against its mustTeach list and expected depth. Make every required skill "
+        "demonstrable through an observable learner action. Specify the conditions, precision, or evidence "
+        "of success when those affect what counts as mastery. Combine related actions when useful, but do "
+        "not promise a capability beyond the linked coverage or the course's scope. Check universal or exact "
+        "claims against counterexamples. Restrict the inputs, state where the skill applies, or require an "
+        "approximation when a general exact result is not realistic.\n"
+        "Check for missing foundations and time for practice. List major deferred topics with reasons, and "
+        "flag uncertainty. Give a resolved title and concise catalog description. Do not plan modules, "
+        "sections, lesson titles, or assessments. Return only JSON matching the supplied schema.",
+        {
+            **request,
+            "benchmark_topics": benchmark_topics,
+            "document_topics": source_topics,
+            "source_evidence": evidence,
+            "response_schema": CourseCurriculum.model_json_schema(),
+        },
+    )
+
+
+def _planning_messages(instructions: str, payload: dict) -> list[dict[str, str]]:
+    return [
+        {"role": "system", "content": instructions},
+        {"role": "user", "content": json.dumps(payload, ensure_ascii=False, separators=(",", ":"))},
+    ]
+
+
 def _staged_plan_messages(
     *,
     prompt: str,
     level: str | None,
     language: str,
     desired_module_count: int,
-    expected_duration_minutes: int,
+    expected_duration_minutes: int | None,
     source_policy: str,
     category: str | None,
     department: str | None,
-    source_urls: list[str] | None,
-    benchmark_context: dict | None = None,
-    course_template: dict | None = None,
+    course_template: dict,
 ) -> list[dict[str, str]]:
-    source_ids = _source_ids_for_input(source_urls)
-    return [
+    topics = course_template["courseCoverageChecklist"]["requiredItems"]
+    return _planning_messages(
+        "Sequence the approved coverage into modules within the module limit and the resolved workload in scope. "
+        "Preserve the resolved interpretation, prerequisites, exclusions, and depth. "
+        "Give each module a specific title, measurable learningObjectives and 3-8 concrete conceptKeywords. "
+        "Assign every supplied coverage ID exactly once to the module that teaches it. Group related topics "
+        "by prerequisites. Copy IDs exactly. Do not plan individual sections. "
+        "Use only available source IDs that support the module. Choose category and department IDs from "
+        "the supplied taxonomy and honor any explicitly requested classification. Use Module consistently "
+        "in numbered titles. Return only the JSON module plan. Lesson planning is a later stage.",
         {
-            "role": "system",
-            "content": (
-                f"{load_behavioral_contract()}\n\n"
-                "Return only JSON. This stage returns a compact course plan, not full lessons."
-            ),
-        },
-        {
-            "role": "user",
-            "content": json.dumps(
+            "prompt": prompt,
+            "level": level,
+            "language": language,
+            "desired_module_count": desired_module_count,
+            "expected_duration_minutes": expected_duration_minutes,
+            "source_policy": source_policy,
+            "category": category,
+            "department": department,
+            "taxonomy": {
+                key: sorted(departments) for key, departments in COURSE_TAXONOMY.items()
+                if not category or category == key
+            },
+            "title": course_template["title"],
+            "scope": course_template["scope"],
+            "available_source_ids": course_template["sourceIds"],
+            "required_topics": [
                 {
-                    "stage": "course_plan",
-                    "prompt": prompt,
-                    "level": level,
-                    "language": language,
-                    "desired_module_count": desired_module_count,
-                    "expected_duration_minutes": expected_duration_minutes,
-                    "source_policy": source_policy,
-                    "category": category,
-                    "department": department,
-                    "source_urls": source_urls or [],
-                    "available_source_ids": source_ids,
-                    "curriculum_benchmark_context": benchmark_context or {},
-                    "course_template_handoff": course_template or {},
-                    "course_template_instruction": (
-                        "Treat course_template_handoff as the first-stage course contract when present. "
-                        "Preserve its resolved title, shortDescription, scope, learning outcomes, coverage checklist item IDs, and source packet handoff. "
-                        "The module plan must assign every required coverage item to at least one module without writing learner-facing lesson content yet."
-                    ),
-                    "benchmark_instruction": (
-                        "Use curriculum_benchmark_context.requirementOrigins to build the course skeleton. "
-                        "Do not let source availability alone decide the curriculum sequence."
-                    ),
-                    "source_corpus_instruction": (
-                        "If curriculum_benchmark_context.sourceCorpusSynthesis is present, use includedSources as the trusted source corpus. "
-                        "Do not use excludedSources for course requirements, lessons, quizzes, or citations unless a reviewer later restores them. "
-                        "Use commonThemes to identify recurring source themes, but still prioritize the requested course prompt and benchmark-derived requirements."
-                    ),
-                    "inline_citation_instruction": (
-                        "Text block values may include inline citation markers like [1]. "
-                        "Each marker is a 1-based index into the course-wide source inventory; section source lists render only locally used sources sorted by that course-wide number. "
-                        "Only add markers next to claims supported by sources assigned to that section."
-                    ),
-                    "required_json_shape": {
-                        "title": "Course title",
-                        "shortDescription": "One catalog sentence.",
-                        "difficultyLevel": level or "undergrad",
-                        "category": category or "university-style college category id or label",
-                        "department": department or "department id nested under category",
-                        "tags": ["specific", "searchable", "tags"],
-                        "scope": {
-                            "audience": "target learner",
-                            "level": level or "undergrad",
-                            "duration": "duration",
-                            "outcome": "course outcome",
-                            "prerequisites": [],
-                            "exclusions": [],
-                        },
-                        "modules": [
-                            {
-                                "id": "module-1",
-                                "title": "Module 1: ...",
-                                "objective": "What learners can do.",
-                                "lessonTitles": ["Lesson 1", "Lesson 2"],
-                                "sourceIds": source_ids,
-                            }
-                        ],
-                    },
-                },
-                indent=2,
-            ),
+                    key: item[key] for key in ("id", "title", "description", "depth", "mustTeach", "sourceIds") if key in item
+                }
+                for item in topics
+            ],
+            "response_schema": CourseModulePlan.model_json_schema(),
         },
-    ]
+    )
+
+
+def _module_section_plan_messages(*, scope: dict, modules: list[dict]) -> list[dict[str, str]]:
+    return _planning_messages(
+        "Plan teaching sections for each supplied module ID. Split each module's required concepts into coherent sections in "
+        "prerequisite order. Give each section a specific title and a measurable objective at the assigned "
+        "depth. Copy the assigned coverage IDs and mustTeach terms exactly from the supplied coverage. "
+        "Together the sections must cover every term of every assigned topic. "
+        "Preserve every measurable action, condition, and precision requirement from the parent module "
+        "objectives and assigned topic outcomes across the section objectives. Including a concept label "
+        "does not preserve the skill. Before returning, compare the section objectives with each parent "
+        "outcome and correct omissions without increasing the promised depth. "
+        "Choose section boundaries for learnability, not one section per coverage item. Split a topic when "
+        "its prerequisite ideas, procedures, or applications need separate explanation and practice. "
+        "Preserve the parent skills across focused sections rather than combining them into one long objective. "
+        "Use no more than six sections per module. "
+        "Do not write lesson content, assessments, or summaries. Return only JSON matching the supplied schema.",
+        {
+            "scope": scope,
+            "modules": [
+                {key: module[key] for key in ("id", "title", "learningObjectives", "coverageItems") if key in module}
+                for module in modules
+            ],
+            "response_schema": CourseSectionPlans.model_json_schema(),
+        },
+    )

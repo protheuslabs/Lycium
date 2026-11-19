@@ -44,11 +44,12 @@ def _working_title_from_job_result(result: dict[str, Any]) -> str | None:
 
     trace = result.get("trace")
     if isinstance(trace, dict):
-        plan = trace.get("plan")
-        if isinstance(plan, dict):
-            title = _non_empty_text(plan.get("title"))
-            if title:
-                return title
+        for key in ("plan", "course_template"):
+            artifact = trace.get(key)
+            if isinstance(artifact, dict):
+                title = _non_empty_text(artifact.get("title"))
+                if title:
+                    return title
 
     return None
 

@@ -25,6 +25,7 @@ from app.course_generation_service import (
     validate_generation_taxonomy_input,
 )
 from app.course_generation_job_helpers import job_payload_from_course_request
+from app.course_generation_readiness import should_wait_for_supplied_sources
 from app.course_generation_route_inputs import generation_readiness_for_request, generation_source_urls
 from app.curriculum_artifacts import persist_curriculum_artifacts_for_snapshot
 from app.db import get_session, init_db
@@ -240,7 +241,7 @@ def register(app: FastAPI) -> None:
                 free_only=payload.free_only or payload.source_policy == "free-only",
                 trust_min=payload.trust_min,
                 desired_module_count=payload.desired_module_count,
-                expected_duration_minutes=payload.expected_duration_minutes,
+                expected_duration_minutes=payload.expected_duration_minutes or 180,
                 source_urls=generation_source_urls(payload),
                 source_packet_id=payload.source_packet_id,
                 source_packet=payload.source_packet,
@@ -270,7 +271,7 @@ def register(app: FastAPI) -> None:
                 raise ValueError("; ".join(taxonomy_errors))
             source_urls = generation_source_urls(payload)
             readiness = generation_readiness_for_request(payload, source_urls)
-            if not bool(readiness["ready"]):
+            if should_wait_for_supplied_sources(readiness, job_payload_from_course_request(payload, source_urls)):
                 snapshot = create_needs_sources_course_snapshot(
                     session,
                     prompt=payload.prompt,
@@ -280,6 +281,9 @@ def register(app: FastAPI) -> None:
                     source_policy=payload.source_policy,
                     desired_module_count=payload.desired_module_count,
                     expected_duration_minutes=payload.expected_duration_minutes,
+                    credits=payload.credits,
+                    credit_system=payload.credit_system,
+                    curriculum_context=payload.curriculum_context,
                     source_urls=source_urls,
                     source_packet=payload.source_packet,
                     source_gate=readiness.get("sourceGate"),
@@ -304,6 +308,9 @@ def register(app: FastAPI) -> None:
                 department=payload.department,
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
+                credits=payload.credits,
+                credit_system=payload.credit_system,
+                curriculum_context=payload.curriculum_context,
                 max_stage_timeout_seconds=payload.max_stage_timeout_seconds,
                 model=payload.model or agent_profile.get("model"),
                 source_urls=source_urls,
@@ -312,6 +319,7 @@ def register(app: FastAPI) -> None:
                 input_artifacts=payload.input_artifacts,
             )
             quality_report = assess_agent_generation_result(generated, gate="review")
+            effective_readiness = generated.trace.get("generation_readiness") or readiness
             snapshot = build_course_snapshot_from_agent_result(
                 session,
                 learner_id=payload.learner_id,
@@ -321,8 +329,11 @@ def register(app: FastAPI) -> None:
                 source_policy=payload.source_policy,
                 generated=generated,
                 quality_report=quality_report,
-                generation_readiness=readiness,
-                status="ready_for_review" if quality_report["passed"] else "needs_revision",
+                generation_readiness=effective_readiness,
+                status=(
+                    "needs_sources" if not effective_readiness["ready"]
+                    else "ready_for_review" if quality_report["passed"] else "needs_revision"
+                ),
             )
             session.commit()
             session.refresh(snapshot)
@@ -354,7 +365,7 @@ def register(app: FastAPI) -> None:
                 category=payload.category,
                 department=payload.department,
                 desired_module_count=payload.desired_module_count,
-                expected_duration_minutes=payload.expected_duration_minutes,
+                expected_duration_minutes=payload.expected_duration_minutes or 180,
                 max_stage_timeout_seconds=payload.max_stage_timeout_seconds,
                 model=payload.model or agent_profile.get("model"),
                 source_urls=generation_source_urls(payload),
@@ -395,6 +406,9 @@ def register(app: FastAPI) -> None:
                 department=payload.department,
                 desired_module_count=payload.desired_module_count,
                 expected_duration_minutes=payload.expected_duration_minutes,
+                credits=payload.credits,
+                credit_system=payload.credit_system,
+                curriculum_context=payload.curriculum_context,
                 model=payload.model or agent_profile.get("model"),
                 source_urls=generation_source_urls(payload),
                 source_packet_id=payload.source_packet_id,

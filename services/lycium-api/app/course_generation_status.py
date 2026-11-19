@@ -36,7 +36,7 @@ def workflow_key_for_generation_stage(stage: str | None) -> str:
         return "course_template"
     if normalized in {"course_module_outline_generation", "module_outline_generation"}:
         return "modules"
-    if normalized in {"module_section_plan_generation", "section_plan_generation"}:
+    if normalized in {"module_section_plan_generation", "section_plan_generation", "course_section_plan"}:
         return "sections"
     if normalized in {
         "section_fill_generation",

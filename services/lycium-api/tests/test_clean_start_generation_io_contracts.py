@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import base64
+import json
 from typing import Any
 
 from fastapi.testclient import TestClient
 
+from app.course_agent_lesson_prompting import _staged_lesson_messages
+from app.course_agent_prompting import _module_section_plan_messages
 from app.course_agent_response import extract_message_content
+from app.course_agent_staged_support import _normalize_explicit_source_refs
 from app.course_agent_types import CourseAgentError
 from app.course_agent_source_context import build_source_context_index, compact_source_context_for_stage
 from app.file_input_reader import read_generation_input_files
@@ -25,6 +29,60 @@ def _content_blocks(course: dict[str, Any]) -> list[dict[str, Any]]:
                 continue
             blocks.extend(block for block in section.get("content", []) if isinstance(block, dict))
     return blocks
+
+
+def test_section_planner_receives_parent_actions_and_conditions() -> None:
+    module = {
+        "id": "module-1",
+        "title": "Interpreting Estimates",
+        "learningObjectives": ["Use a numerical tool to estimate a result to a stated tolerance."],
+        "coverageItems": [{
+            "id": "coverage-1",
+            "title": "Numerical Estimation",
+            "description": "Estimate a result and report the error relative to a reference value.",
+            "depth": "apply",
+            "mustTeach": ["numerical estimate", "relative error"],
+            "sourceIds": [],
+        }],
+    }
+    scope = {"duration": "3 hours", "outcome": "Evaluate estimates."}
+    messages = _module_section_plan_messages(scope=scope, modules=[module])
+    payload = json.loads(messages[1]["content"])
+
+    assert payload["modules"] == [module]
+    assert payload["scope"] == scope
+    assert "measurable action, condition, and precision requirement" in messages[0]["content"]
+    assert "concept label does not preserve the skill" in messages[0]["content"]
+
+
+def test_lesson_prompt_teaches_without_excerpts_or_citation_examples() -> None:
+    messages = _staged_lesson_messages(
+        plan={"title": "Functions"}, module_outline={"title": "Functions"},
+        module_number=1, lesson_number=1, lesson_title="Function Notation", available_source_ids=[],
+    )
+    payload = json.loads(messages[1]["content"])
+    assert "Teach the established subject matter" in payload["source_context_rule"]
+    assert "Do not invent citations" in payload["source_context_rule"]
+    assert payload["required_shape"]["sourceIds"] == []
+    assert payload["required_shape"]["content"] == []
+    assert "non-empty instructional blocks" in payload["content_rule"]
+
+
+def test_prompt_only_lesson_drops_invented_source_ids() -> None:
+    section = {"sourceIds": ["invented"], "content": [{"type": "text", "sourceIds": ["invented"], "value": "Instruction"}]}
+    assert _normalize_explicit_source_refs(section, section, []) == {
+        "content": [{"type": "text", "value": "Instruction"}],
+    }
+
+
+def test_lesson_with_unreadable_source_does_not_switch_to_prompt_only_policy() -> None:
+    messages = _staged_lesson_messages(
+        plan={"title": "Functions"}, module_outline={"title": "Functions"},
+        module_number=1, lesson_number=1, lesson_title="Function Notation", available_source_ids=["input-source-1"],
+    )
+    payload = json.loads(messages[1]["content"])
+    assert "frame it as a source gap" in payload["source_context_rule"]
+    assert "[1]" not in json.dumps(payload["required_shape"])
 
 
 def test_agent_response_reports_unexpected_provider_shape_with_safe_trace() -> None:

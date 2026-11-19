@@ -10,6 +10,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./course-content-formats.json": "./course-content-formats.json",
     "./schemas/lycium-course.schema.json": "./schemas/lycium-course.schema.json",
     "./schemas/lycium-source-record.schema.json": "./schemas/lycium-source-record.schema.json",
     "./schemas/lycium-source-import-batch.schema.json": "./schemas/lycium-source-import-batch.schema.json",

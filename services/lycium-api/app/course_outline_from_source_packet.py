@@ -371,6 +371,7 @@ def build_course_module_outline_quality_report(
     *,
     source_packet: dict[str, Any] | None = None,
     desired_module_count: int = 4,
+    module_count_is_limit: bool = False,
     sections_per_module: int = 2,
     coverage_checklist: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
@@ -397,7 +398,8 @@ def build_course_module_outline_quality_report(
         if str(concept).strip()
     ] if isinstance(source_packet_quality.get("uncoveredConceptCandidates"), list) else []
 
-    minimum_modules = max(1, min(20, desired_module_count))
+    requested_modules = max(1, min(20, desired_module_count))
+    minimum_modules = 1 if module_count_is_limit else requested_modules
     minimum_sections = max(1, min(6, sections_per_module))
     reasons: list[str] = []
     warnings: list[str] = []
@@ -434,6 +436,8 @@ def build_course_module_outline_quality_report(
         reasons.append("outline_contract_mismatch")
     if not modules:
         reasons.append("module_count_below_policy")
+    elif module_count_is_limit and len(modules) > requested_modules:
+        reasons.append("module_count_above_limit")
     elif len(modules) < minimum_modules:
         warnings.append("module_count_below_requested_count")
 
@@ -568,6 +572,7 @@ def build_course_module_outline_quality_report(
             "moduleCount": len(modules),
             "sectionCount": section_count,
             "minimumModuleCount": minimum_modules,
+            **({"maximumModuleCount": requested_modules} if module_count_is_limit else {}),
             "minimumSectionsPerModule": minimum_sections,
             "titledModuleCount": titled_module_count,
             "objectiveModuleCount": objective_module_count,

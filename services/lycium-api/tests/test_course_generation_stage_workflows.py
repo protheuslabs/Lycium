@@ -897,6 +897,23 @@ def test_course_module_outline_workflow_is_testable_from_source_packet() -> None
     assert all(module["status"] == "passed" for module in quality["moduleProfiles"])
 
 
+def test_course_module_outline_workflow_checks_model_module_limits_without_requiring_the_limit() -> None:
+    modules = [
+        {"id": "m1", "title": "Triangle ratios", "learningObjectives": ["Apply right triangle ratios."], "conceptKeywords": ["sine"]},
+        {"id": "m2", "title": "Solving oblique triangles", "learningObjectives": ["Use the law of cosines."], "conceptKeywords": ["law of cosines"]},
+    ]
+    outline = {"modules": modules}
+    within_limit = run_course_module_outline_workflow(outline=outline, desired_module_count=6, module_count_is_limit=True)
+    above_limit = run_course_module_outline_workflow(outline=outline, desired_module_count=1, module_count_is_limit=True)
+    target = run_course_module_outline_workflow(outline=outline, desired_module_count=6)
+
+    assert within_limit["status"] == "passed"
+    assert within_limit["artifacts"]["outlineQualityReport"]["metrics"]["maximumModuleCount"] == 6
+    assert above_limit["status"] == "failed"
+    assert "module_count_above_limit" in above_limit["artifacts"]["outlineQualityReport"]["reasons"]
+    assert "module_count_below_requested_count" in target["artifacts"]["outlineQualityReport"]["warnings"]
+
+
 def test_course_module_outline_workflow_blocks_weak_source_packet() -> None:
     weak_packet = {
         "contract_version": "source-packet-v1",

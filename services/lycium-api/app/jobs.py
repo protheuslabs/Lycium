@@ -12,6 +12,7 @@ from app import db
 from app.coverage import recompute_coverage
 from app.course_agent_harness import CourseAgentError, generate_course_with_agent_staged
 from app.course_generation_job_helpers import source_gap_job_result
+from app.course_generation_readiness import should_wait_for_supplied_sources
 from app.course_generation_status import course_generation_workflow_status
 from app.course_quality import assess_course_quality
 from app.course_generation_service import build_course_snapshot_from_agent_result
@@ -91,7 +92,7 @@ def _run_generate_course(session: Session, payload: dict[str, Any]) -> dict[str,
         free_only=bool(payload.get("free_only", False)),
         trust_min=float(payload.get("trust_min", 0.0)),
         desired_module_count=int(payload.get("desired_module_count", 3)),
-        expected_duration_minutes=int(payload.get("expected_duration_minutes", 180)),
+        expected_duration_minutes=int(payload.get("expected_duration_minutes") or 180),
         source_urls=[str(url) for url in payload.get("source_urls") or []],
         source_packet_id=payload.get("source_packet_id"),
         source_packet=payload.get("source_packet") if isinstance(payload.get("source_packet"), dict) else None,
@@ -267,8 +268,7 @@ def _mark_model_error_from_generation_failure(
 
 def _complete_known_source_gap_job(job_id: int, payload: dict[str, Any]) -> bool:
     readiness = payload.get("generation_readiness") if isinstance(payload.get("generation_readiness"), dict) else None
-    input_artifacts = [artifact for artifact in payload.get("input_artifacts") or [] if isinstance(artifact, dict)]
-    if not readiness or bool(readiness.get("ready")) or input_artifacts:
+    if not readiness or not should_wait_for_supplied_sources(readiness, payload):
         return False
 
     with db.SessionLocal() as session:
@@ -283,7 +283,10 @@ def _complete_known_source_gap_job(job_id: int, payload: dict[str, Any]) -> bool
             language=str(payload.get("language") or "en"),
             source_policy=str(payload.get("source_policy") or "balanced"),
             desired_module_count=int(payload.get("desired_module_count") or 3),
-            expected_duration_minutes=int(payload.get("expected_duration_minutes") or 180),
+            expected_duration_minutes=payload.get("expected_duration_minutes"),
+            credits=payload.get("credits"),
+            credit_system=payload.get("credit_system"),
+            curriculum_context=payload.get("curriculum_context"),
             source_urls=[str(url) for url in payload.get("source_urls") or []],
             source_packet=payload.get("source_packet") if isinstance(payload.get("source_packet"), dict) else None,
             category=payload.get("category"),
@@ -377,7 +380,10 @@ def run_agent_course_generation_job(job_id: int) -> None:
             category=payload.get("category"),
             department=payload.get("department"),
             desired_module_count=int(payload.get("desired_module_count") or 3),
-            expected_duration_minutes=int(payload.get("expected_duration_minutes") or 180),
+            expected_duration_minutes=payload.get("expected_duration_minutes"),
+            credits=payload.get("credits"),
+            credit_system=payload.get("credit_system"),
+            curriculum_context=payload.get("curriculum_context"),
             max_stage_timeout_seconds=payload.get("max_stage_timeout_seconds"),
             model=payload.get("model") or agent_profile.get("model"),
             source_urls=[str(url) for url in payload.get("source_urls") or []],

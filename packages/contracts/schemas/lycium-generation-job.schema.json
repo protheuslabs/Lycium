@@ -20,7 +20,10 @@
         "level": { "type": "string" },
         "source_policy": { "type": "string" },
         "desired_module_count": { "type": "number" },
-        "expected_duration_minutes": { "type": "number" },
+        "expected_duration_minutes": { "type": ["integer", "null"], "minimum": 30 },
+        "credits": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "credit_system": { "type": ["string", "null"] },
+        "curriculum_context": { "type": ["object", "null"] },
         "source_urls": {
           "type": "array",
           "items": { "type": "string" }

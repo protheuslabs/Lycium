@@ -37,6 +37,7 @@ def _snapshot_generation_payload(
     source_packet: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     constraints = draft.constraints if draft and isinstance(draft.constraints, dict) else {}
+    planning_request = constraints.get("planning_request")
     structure = snapshot.structure if isinstance(snapshot.structure, dict) else {}
     generation_trace = snapshot.generation_trace if isinstance(snapshot.generation_trace, dict) else None
     effective_source_packet = source_packet if source_packet is not None else payload.source_packet
@@ -58,7 +59,9 @@ def _snapshot_generation_payload(
         "category": structure.get("category"),
         "department": structure.get("department"),
         "desired_module_count": int(constraints.get("desired_module_count") or 3),
-        "expected_duration_minutes": draft.expected_duration_minutes if draft else 180,
+        **(planning_request if isinstance(planning_request, dict) else {
+            "expected_duration_minutes": draft.expected_duration_minutes if draft else None,
+        }),
         "source_urls": source_urls,
         "source_packet_id": payload.source_packet_id,
         "source_packet": effective_source_packet,

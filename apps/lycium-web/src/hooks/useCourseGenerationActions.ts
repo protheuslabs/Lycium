@@ -297,7 +297,6 @@ export function useCourseGenerationActions({
         category: classification.category,
         department: classification.department,
         desired_module_count: 12,
-        expected_duration_minutes: 2700,
         source_urls: sourceLinks,
         input_artifacts: inputArtifacts,
       });

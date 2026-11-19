@@ -25,6 +25,7 @@ from app.course_outline_from_source_packet import (
     build_outline_from_source_packet,
 )
 from app.course_block_policy import supports_worked_example
+from app.course_planning_contracts import CourseCurriculum
 from app.course_generation_stage_registry import (
     APPLY_NESTED_REPORT_ARTIFACT_KEYS,
     CLUSTER_GENERATION_CONTRACT,
@@ -147,10 +148,12 @@ def _status_from_issues(issues: list[dict[str, Any]]) -> StageStatus:
     return "needs_review" if issues else "passed"
 
 
-def _duration_label(minutes: int) -> str:
-    if minutes <= 0:
+def _duration_label(minutes: int | None) -> str:
+    if not minutes:
         return "unspecified"
-    hours = round(minutes / 60)
+    hours, remainder = divmod(minutes, 60)
+    if remainder:
+        return f"{minutes} minutes"
     return f"{hours} hours" if hours != 1 else "1 hour"
 
 
@@ -317,8 +320,6 @@ def _build_course_template_quality_report(
         issues.append(_issue("warning", "Course template has fewer than three required coverage items.", "courseCoverageChecklist.requiredItems"))
     if any(not _strings(item.get("mustTeach")) for item in required_items):
         issues.append(_issue("error", "Every coverage item needs mustTeach terms.", "courseCoverageChecklist.requiredItems[].mustTeach"))
-    if any(not _items(item.get("sectionPlans")) for item in required_items):
-        issues.append(_issue("error", "Every coverage item needs downstream section-plan hints.", "courseCoverageChecklist.requiredItems[].sectionPlans"))
     if _has_course_materialization_payload(template):
         issues.append(_issue("error", "Course template workflow must not materialize modules, sections, build tasks, or content.", "courseTemplate"))
 
@@ -359,14 +360,17 @@ def run_course_template_workflow(
     target_audience: str | None = None,
     learning_goals: list[str] | None = None,
     desired_module_count: int = 8,
-    expected_duration_minutes: int = 180,
+    expected_duration_minutes: int | None = None,
     source_policy: str = "balanced",
     source_packet: dict[str, Any] | None = None,
     category: str | None = None,
     department: str | None = None,
+    curriculum: CourseCurriculum | None = None,
+    available_source_ids: list[str] | None = None,
 ) -> dict[str, Any]:
-    title = _title_from_prompt_or_source(prompt, source_packet)
+    title = curriculum.title if curriculum else _title_from_prompt_or_source(prompt, source_packet)
     goals = _strings(learning_goals or [])
+    source_ids = available_source_ids if available_source_ids is not None else _source_ids_from_packet(source_packet)
     checklist = (
         build_course_coverage_checklist_from_source_packet(
             prompt=prompt,
@@ -377,7 +381,18 @@ def run_course_template_workflow(
         if isinstance(source_packet, dict)
         else None
     )
-    if checklist is None:
+    if curriculum:
+        checklist = {
+            "contractVersion": COURSE_COVERAGE_CHECKLIST_CONTRACT,
+            "courseKind": "model_planned",
+            "title": title,
+            "level": level or "unspecified",
+            "source": "model_curriculum",
+            "requiredItems": curriculum.required_items(set(source_ids)),
+            **({"sourceStructure": checklist["sourceStructure"]} if checklist else {}),
+            "policy": {"mustAssignEveryRequiredItemToModule": True, "mustAssignEveryRequiredItemToSection": True},
+        }
+    elif checklist is None:
         checklist = build_course_coverage_checklist(
             prompt=prompt,
             title=title,
@@ -394,11 +409,10 @@ def run_course_template_workflow(
             )
             checklist["source"] = "source_packet_terms"
     required_items = _items(checklist.get("requiredItems"))
-    source_ids = _source_ids_from_packet(source_packet)
     template = {
         "contractVersion": COURSE_TEMPLATE_ARTIFACT_CONTRACT,
         "title": title,
-        "shortDescription": _course_template_short_description(title, required_items, level),
+        "shortDescription": curriculum.shortDescription if curriculum else _course_template_short_description(title, required_items, level),
         "category": category,
         "department": department,
         "sourceIds": source_ids,
@@ -445,6 +459,22 @@ def run_course_template_workflow(
         if isinstance(source_packet, dict)
         else None,
     }
+    if curriculum:
+        template["scope"].update({
+            **curriculum.model_dump(include={
+                "audience", "interpretation", "prerequisites", "exclusions", "outcome",
+                "workload", "assumptions", "openIssues",
+            }),
+            "duration": _duration_label(curriculum.workload.totalMinutes),
+        })
+        template["learningOutcomes"] = [
+            {
+                "id": _stable_id("outcome", item["id"]),
+                "outcome": item["description"],
+                "coverageItemIds": [item["id"]],
+            }
+            for item in required_items
+        ]
     if template["sourcePacketHandoff"] is None:
         template.pop("sourcePacketHandoff")
     if template["sourceStructureHandoff"] is None:
@@ -1030,6 +1060,7 @@ def run_course_module_outline_workflow(
     prompt: str = "",
     source_packet: dict[str, Any] | None = None,
     desired_module_count: int = 4,
+    module_count_is_limit: bool = False,
     sections_per_module: int = 2,
     outline: dict[str, Any] | None = None,
     course_template: dict[str, Any] | None = None,
@@ -1057,6 +1088,7 @@ def run_course_module_outline_workflow(
         outline,
         source_packet=source_packet,
         desired_module_count=desired_module_count,
+        module_count_is_limit=module_count_is_limit,
         sections_per_module=sections_per_module,
         coverage_checklist=coverage_checklist,
     )

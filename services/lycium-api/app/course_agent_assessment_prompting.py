@@ -52,7 +52,7 @@ def _staged_quiz_messages(
         {
             "role": "system",
             "content": (
-                f"{load_behavioral_contract()}\n\n"
+                f"{load_behavioral_contract('module_quiz_assessment')}\n\n"
                 "Return only one JSON object for one Apply quiz or longer-test section. Do not include instructional prose outside the quiz block. "
                 "When the course needs a project, lab, simulation, portfolio task, or submission instead, generate it through the project-section workflow rather than mixing project instructions into a quiz section."
             ),
@@ -128,7 +128,7 @@ def _staged_summary_messages(
         {
             "role": "system",
             "content": (
-                f"{load_behavioral_contract()}\n\n"
+                f"{load_behavioral_contract('module_summary_section')}\n\n"
                 "Return only one JSON object for one module summary section. The summary is a concept-card inventory, not a prose recap."
             ),
         },

@@ -10,6 +10,7 @@ from app.course_agent_staged import generate_course_with_agent_staged
 from app.course_agent_types import CourseAgentError
 from app.source_corpus import compile_generation_source_corpus
 from app.source_index_client import SourceIndexClient, normalize_remote_source_payload
+from tests.course_generation_fixture_builders import curriculum_model_fixture
 
 
 REMOTE_SOURCE = {
@@ -602,6 +603,18 @@ def test_llm_course_generation_blocks_low_concept_coverage_packet_before_model_c
 
 
 def test_staged_llm_course_generation_records_low_concept_coverage_packet_without_preflight_block(monkeypatch) -> None:
+    model_fixture = curriculum_model_fixture(
+        "Macroeconomics Principles",
+        [
+            ("GDP", "Calculate output from expenditure data."),
+            ("Inflation", "Calculate annual inflation from price indices."),
+            ("Real GDP", "Compare inflation-adjusted output across periods."),
+        ],
+        category="business-management",
+        department="economics",
+    )
+    monkeypatch.setattr("app.course_agent_staged._model_json", model_fixture)
+
     def fake_module_bundle(**kwargs):
         module_outline = kwargs["module_outline"]
         source_ids = kwargs["source_ids"]

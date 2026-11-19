@@ -238,6 +238,7 @@ Lycium courses are structured data. A course is composed of modules, sections, c
 Important conventions:
 
 - Course-generation behavior is defined in [skills/course-generation/SKILL.md](./skills/course-generation/SKILL.md).
+- Available block formats and teaching use cases live in the shared [content format catalog](./docs/course-content-formats.md).
 - Generated course snapshots should move through quality-report, review, and publish gates before being listed as catalog-ready.
 - Courses should choose either `Module` or `Week` pacing language, not both.
 - Learn pages contain instructional content.
@@ -299,6 +300,10 @@ Do not commit secrets or machine-local learner data.
 ## Roadmap
 
 The next phase is intentionally constrained by the [MVP vertical slice](./MVP_VERTICAL_SLICE.md): topic and sources in, validated source-backed course snapshot out.
+
+For the online learner launch, see the [hosted MVP requirements](./docs/hosted-mvp-requirements.md). The [teaching quality rubric](./docs/course-generation-quality-acceptance.md) defines the evidence needed for college-level courses and programs.
+
+For interface research, proposed page structure, shared UI behavior, and redesign phases, see the [UI overhaul plan](./docs/ui-overhaul-plan.md).
 
 - Connect catalog source links and files to source-record creation
 - Generate courses from source records, not prompt text alone

@@ -14,6 +14,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - `apps/lycium-web/src/App.tsx`
    - `apps/lycium-web/src/components/ContentView/ContentView.tsx`
 2. Load `references/lycium-course-rules.md` before authoring or reviewing course JSON.
+   For college-level generation or quality review, use [course and program teaching quality acceptance](../../docs/course-generation-quality-acceptance.md). Trace required outcomes from the curriculum plan to instruction, practice, and assessment.
 3. When the request is larger than one course, model the curriculum as a program:
    - use `Program` for the complete pathway or credential-like outcome
    - use `RequirementGroup` for learner-facing clusters, tracks, foundations, electives, capstones, bridge work, or remediation
@@ -35,10 +36,13 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - course-wrapper generation should emit a `course-wrapper-quality-report-v1`; wrapper rows should have source requests, active-generation plans, course-build tasks, prerequisite metadata, placeholder policy, and no modules, sections, or learner-facing content
    - course template generation should be the first active course-content workflow; it should emit a `course-template-v1` artifact and `course-template-quality-report-v1` with resolved title, short description, scope, learning outcomes, source packet/source ID handoff, and course coverage checklist before module planning, without creating modules, sections, build tasks, or learner-facing content
    - course template generation must define required concepts and learning outcomes early, then hand them down through the coverage checklist; avoid deriving the course skeleton from generic prompt words when source packets, benchmarks, document maps, TOCs, or stronger concept handoffs exist
+   - resolve one course's scope before assigning modules or sections; preserve requested credits and study time, estimate missing values with labeled assumptions, and distinguish confirmed prerequisite coverage from assumptions when using neighboring course context
+   - the template emits required concepts, expected depth, and observable outcomes, not lesson hints; module planning groups coverage, then section planning allocates the required concepts to concrete section outlines
    - course module outline generation should emit a `course-module-outline-quality-report-v1`; source-packet module outlines should validate source-packet usability, module titles, module objectives, module concept keywords, module source IDs, duplicate module titles, target section counts, and no learner-facing lesson content
-   - broad module labels are acceptable only when they carry concrete assigned coverage items, `coverageMustTeach`, and section-plan hints; unsupported broad one-word labels should remain review warnings
+   - broad module labels are acceptable only when they carry concrete assigned coverage items and `coverageMustTeach`; unsupported broad one-word labels should remain review warnings
    - fallback or under-sourced course planning should create a `course-coverage-checklist-v1` required-topic inventory before module planning; module planning should assign every required coverage item to a module, and section planning should carry assigned coverage item IDs plus `coverageMustTeach` into hidden section handoff metadata before section fill
    - module section planning should be a separate workflow from module outline generation and section fill; it expands one module outline into section-plan records and adds empty section shells to the course/module structure with titles, planning-only descriptions, objectives, concept keywords, candidate source IDs in metadata, and empty `content` arrays
+   - section objectives must preserve the measurable actions, conditions, and precision requirements from their parent outcomes, not just include the assigned concept labels
    - section fill should be the only active workflow that replaces planned empty section shells with learner-facing content blocks
    - section fill should preserve source IDs only for sources the generated section actually uses; do not auto-attach full planned, module, or course source lists just because they were available
    - course, module, and section content-fill runs should be thin orchestrators over section fill; they may loop planned sections, save progress, add module Apply/Summary artifacts after lessons are filled, and support scoped retries, but should not bypass section fill with a separate content writer
@@ -64,7 +68,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - generation input artifacts, including URLs, uploaded documents, PDFs, slide decks, notes, transcripts, media, source packets, or connector-provided source refs
    - any native Lycium primitive used for file reading, extraction, retrieval, tutoring, or grading must stay adapter-shaped and replaceable by Infring OS or other Protheus ecosystem primitives
 5. Plan the course hierarchy before drafting content:
-   - 10-20 modules for a full course unless the user requests a shorter course
+   - start with 10-20 modules for a full course and adjust to the required outcomes, workload, and user scope
    - choose exactly one learner-facing pacing label, `Module` or `Week`, record it in `metadata.pacingLabel`, and use it consistently in module titles, summary titles, and summary concept-card titles
    - 4-15 units per module/week by default
    - sub-units for individual ideas inside each unit
@@ -94,7 +98,7 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - write learner-facing instruction directly in the course, not prompts or directions for a future model to fill in later
    - sections should contain explanations, examples, activities, concept cards, or assessments that a learner can use immediately
 8. Keep instruction and assessment separate:
-   - Learn pages use `pageType: "learn"` and contain text, video, code, projects, labs, summaries, or other instructional blocks
+   - Learn pages use `pageType: "learn"` and contain instruction using the available catalog formats; graded projects and labs belong in Apply workflows
    - Apply pages use `pageType: "apply"` and contain assessment or practice interactions
    - assessment means mastery evidence, not only quizzes; it may be a quiz, longer test, project, lab, simulation, portfolio task, or rubric-graded submission
    - generate Apply sections through assessment planning first, then route to quiz/test or project generation unless the course requirements specify the assessment type
@@ -125,15 +129,16 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - concept names should read like bullet-list terms: `HTTP request`, `Training-serving skew`, `Gradient synchronization`
    - descriptions should be concise definitions of the concept, not prose summaries of the page
 11. Use editor-native content blocks for generated output:
+   - use `packages/contracts/course-content-formats.json` as the current renderer-backed format list, use cases, constraints, and example shapes; section fill receives only formats enabled for that workflow
    - generated sections must be easy for a human to tweak in the course editor
-   - use atomic `text`, `heading`, `conceptCard`, `equation`, `workedExample`, `image`, `visual`, `video`, `iframe`, `quiz`, `flashcardSet`, `project`, `rubric`, and `submission` blocks or objects instead of monolithic markdown or large nested block payloads
+   - use atomic catalog formats instead of monolithic markdown or large nested block payloads; rubric and submission data belong to project blocks, not unsupported standalone block types
    - use `equation` for standalone formulas, symbolic relationships, or calculation lines that need code-like alignment
    - use `workedExample` only for quantitative, formal, technical, or procedural problems where the learner should see repeatable work; do not use it for interpretive humanities or social-science analysis, historical causation, literary interpretation, ethics discussion, or source-analysis prompts
    - use one `conceptCard` block per concept; do not generate a single `conceptCards` stack except when preserving or repairing a legacy course
    - video blocks should not include a filler title by default; use a separate `heading` block if the video needs a visible label
    - quiz questions should include `multiple: true` only when the UI should render checkboxes; single-answer questions should use `answers: [index]` and omit `multiple` or set it false
    - image and visual blocks should include `url` or `src`, `alt`, optional `caption`, source IDs or generation provenance, and license/provenance metadata when applicable
-   - flashcard sets should use structured cards with prompt, answer, optional hint, explanation, concept tags, and source IDs
+   - do not generate dedicated code or flashcard blocks until renderer support and catalog entries exist
    - project blocks or project sections should include instructions, artifact type, required evidence, rubric reference, source IDs, one canonical submission type, optional submission methods, and grader workflow metadata when applicable
    - use project blocks for projects, labs, simulations, portfolio tasks, practical exams, or other non-quiz evidence that should be graded against a rubric
 12. Record all sources centrally and reference them from the course:
@@ -145,9 +150,10 @@ Use this skill to make Lycium courses that are teachable, source-backed, and ren
    - during source enrichment, query Source Index search (`source-index-search-v1`) for missing concepts, replacement sources, benchmark evidence, and media candidates before asking the user for more sources
    - when a new source is submitted, use source-fit analysis against abstract course/program/concept descriptors to create review candidates; do not auto-attach the source to course sections
    - record source corpus evidence in `metadata.sourceCorpusSynthesis` when applicable
-   - if source coverage or source strength is below policy, still create a coherent module and section outline plus empty planned section shells with hidden handoff metadata; preserve `needs_sources` with `metadata.sourceGaps` so incomplete content is clearly review-marked, and let section fill be the only workflow that writes learner-facing lesson content
+   - for prompt-only requests, fill lessons from established disciplinary knowledge and provide examples and practice without inventing citations; keep the completed draft marked `needs_sources` pending evidence review
+   - when explicitly supplied sources fall below policy, preserve the source-gap draft with coherent modules and empty planned section shells; let section fill be the only workflow that writes learner-facing lesson content
    - never repeat one source-gap placeholder as the body of every section, and never include workflow state such as `needs_sources` or `source gap` in learner-facing course, module, or section titles
-   - preserve `metadata.generationReadiness` on source-ready generated courses and `needs_sources` drafts; full courses must carry a positive `course-generation-readiness-v1` report, while sparse drafts must carry the non-ready report
+   - preserve `metadata.generationReadiness` on source-ready generated courses and `needs_sources` drafts; a complete prompt-only draft still carries the non-ready report and is not source-verified
    - use `metadata.generationReadiness.sourceStrength` (`source-strength-v1`) as the readiness primitive; source count is not the readiness decision, and one comprehensive textbook, extracted file, or source packet can be enough when it covers the required concepts with strong depth, relevance, authority, and extractability
    - map sources to required concepts before writing learner-facing sections; a source can support many concepts, but required concepts should have at least one accepted source mapping
    - when uploaded files or long source documents are used, pass bounded, stage-relevant excerpts into lesson, quiz, media, and summary prompts; do not dump full extracted documents into every model call

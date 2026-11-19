@@ -53,6 +53,12 @@ def _quality_artifacts(quality: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def should_wait_for_supplied_sources(readiness: dict[str, Any], request: dict[str, Any]) -> bool:
+    if readiness.get("ready") or request.get("input_artifacts"):
+        return False
+    return bool(request.get("source_urls") or request.get("source_packet")) or request.get("source_packet_id") is not None
+
+
 def build_generation_readiness_report(
     *,
     source_urls: list[str] | None,
@@ -97,7 +103,7 @@ def build_generation_readiness_report(
         issues.append(
             {
                 "code": "minimum_source_evidence",
-                "message": f"Add at least {minimum_sources} relevant source evidence items before generation.",
+                "message": f"Add at least {minimum_sources} relevant source evidence items for source verification.",
             }
         )
     if source_gate:

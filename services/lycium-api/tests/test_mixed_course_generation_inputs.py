@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -127,6 +128,58 @@ def test_course_generation_jobs_enqueue_zero_source_active_generation(client, mo
     assert job["request"]["generation_readiness"]["ready"] is False
     assert job["request"]["generation_readiness"]["status"] == "needs_sources"
     assert job.get("course_snapshot") is None
+
+
+@pytest.mark.parametrize("queued", [True, False], ids=["queue", "synchronous"])
+def test_prompt_only_generation_saves_instruction_as_unverified(client, monkeypatch, isolated_local_data, queued) -> None:
+    profile = {"provider_id": "local-model", "agent_api_key": "local", "model": "test-model"}
+    monkeypatch.setattr("app.routes.course_outline_routes.get_active_agent_profile", lambda: profile)
+    monkeypatch.setattr("app.routes.course_outline_routes.require_verified_active_agent_profile", lambda: profile)
+    monkeypatch.setattr("app.jobs.require_verified_active_agent_profile", lambda: profile)
+    instruction = "Real GDP values current output at base-year prices so that price changes do not inflate measured output."
+    calls = []
+
+    def generate(**kwargs):
+        calls.append(kwargs)
+        return SimpleNamespace(
+            course={
+                "title": "Principles of Macroeconomics",
+                "sourceRecords": [],
+                "modules": [{
+                    "id": "output",
+                    "title": "Measuring Output",
+                    "sections": [{
+                        "id": "real-gdp",
+                        "title": "Real GDP",
+                        "pageType": "learn",
+                        "sectionType": "lesson",
+                        "content": [{"type": "text", "value": instruction}],
+                    }],
+                }],
+            },
+            trace={"mode": "staged-llm-agent", "stages": []},
+        )
+
+    monkeypatch.setattr("app.jobs.generate_course_with_agent_staged", generate)
+    monkeypatch.setattr("app.routes.course_outline_routes.generate_course_with_agent_staged", generate)
+    endpoint = "/v1/agent/courses/jobs" if queued else "/v1/agent/courses/generate"
+    response = client.post(endpoint, json=_generation_payload([], []))
+    assert response.status_code == (202 if queued else 201), response.text
+    if queued:
+        response = client.get(f"{endpoint}/{response.json()['id']}")
+        assert response.status_code == 200, response.text
+        job = response.json()
+        assert job["status"] == "ready", job
+        snapshot = job["course_snapshot"]
+    else:
+        snapshot = response.json()
+    assert len(calls) == 1
+    assert calls[0]["source_urls"] == []
+    assert snapshot["status"] == "needs_sources"
+    course = snapshot["structure"]
+    assert course["metadata"]["generationReadiness"]["ready"] is False
+    assert course["sourceRecords"] == []
+    assert course["modules"][0]["sections"][0]["content"][0]["value"] == instruction
 
 
 def test_course_generation_jobs_enqueue_under_sourced_url_file_mix(client, monkeypatch, isolated_local_data) -> None:

@@ -76,7 +76,7 @@ def _base_agent_trace(
     model_capability: dict,
     mode: str,
     desired_module_count: int,
-    expected_duration_minutes: int,
+    expected_duration_minutes: int | None,
     source_urls: list[str] | None,
 ) -> dict:
     return {
@@ -254,6 +254,8 @@ def _source_ids_from_outline(outline: dict | None, fallback_source_ids: list[str
 
 
 def _module_lesson_outlines(module_outline: dict) -> list[dict[str, Any]]:
+    if module_outline.get("planningSource") == "model_curriculum" and isinstance(module_outline.get("sectionPlanHints"), list):
+        return module_outline["sectionPlanHints"]
     raw_sections = module_outline.get("sections")
     lesson_outlines: list[dict[str, Any]] = []
     if isinstance(raw_sections, list):

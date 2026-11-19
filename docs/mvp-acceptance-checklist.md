@@ -1,6 +1,6 @@
 # Lycium MVP Acceptance Checklist
 
-Lycium reaches MVP when a local user can reliably turn source-backed material into editable learning paths, use those paths as a learner, and keep their data private and portable.
+The local MVP lets a user turn source-backed material into editable learning paths, use those paths as a learner, and keep their data private and portable. The hosted launch adds the checks in section 11.
 
 ## 1. Local app baseline
 
@@ -73,6 +73,7 @@ Lycium reaches MVP when a local user can reliably turn source-backed material in
 - Gates provide actionable failure evidence.
 - Drafts are not promoted to catalog-ready content until required gates pass.
 - Quality results are recorded as reusable run artifacts.
+- Live generation from ordinary subject prompts is evaluated against independent curriculum and teaching expectations. See [teaching quality acceptance](course-generation-quality-acceptance.md).
 
 ## 10. Trust, privacy, and portability
 
@@ -81,3 +82,14 @@ Lycium reaches MVP when a local user can reliably turn source-backed material in
 - API keys and local endpoints are never committed.
 - Users can export local learning data and drafts.
 - Sensitive future cloud-sync behavior is documented before being enabled.
+
+## 11. Hosted learner launch
+
+Record staging evidence for the following checks in the [hosted MVP requirements](hosted-mvp-requirements.md).
+
+- [ ] A learner can discover a published course, study it, complete an assessment, and resume from another device.
+- [ ] Two learner accounts keep their courses, submissions, and progress isolated. Creator drafts and provider settings require appropriate access.
+- [ ] Database migrations, backups, restores, and release rollback work with persistent data.
+- [ ] Interrupted generation resumes from saved checkpoints. Duplicate requests, worker restarts, and provider failures leave a recoverable job record.
+- [ ] The learning flow works on desktop and mobile, including keyboard navigation, progress saves, feedback, and content issue reporting.
+- [ ] Each launch course passes teaching-quality review. Any program presented as complete has accepted required courses and assessed program outcomes.

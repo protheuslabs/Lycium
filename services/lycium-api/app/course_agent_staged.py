@@ -3,6 +3,8 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Callable
 
+from pydantic import ValidationError
+
 from app.config import SETTINGS
 from app.course_agent_assembly import (
     CourseGenerationCheckpoint,
@@ -14,7 +16,7 @@ from app.course_agent_assembly import (
     _partial_course_from_stages,
 )
 from app.course_agent_contract import normalize_course, validate_course_contract
-from app.course_agent_prompting import _staged_plan_messages
+from app.course_agent_prompting import _course_curriculum_messages, _module_section_plan_messages, _staged_plan_messages
 from app.course_agent_providers import assess_agent_model_capability, get_agent_provider
 from app.course_agent_staged_support import (
     DEFAULT_MODULE_PARALLELISM,
@@ -33,6 +35,7 @@ from app.course_agent_staged_outline import (
     _source_packet_for_outline,
 )
 from app.course_agent_types import CourseAgentError, CourseAgentResult
+from app.course_coverage_checklists import build_course_coverage_checklist_from_source_packet
 from app.course_generation_readiness import build_generation_readiness_report
 from app.course_generation_service import validate_generation_taxonomy_input
 from app.course_generation_stage_workflows import (
@@ -47,9 +50,10 @@ from app.course_generation_stage_workflows import (
     run_section_fill_workflow,
 )
 from app.course_quality_evals import run_course_quality_evals
+from app.course_planning_contracts import CourseCurriculum, CourseModulePlan, CourseSectionPlans
 from app.curriculum_benchmarks import attach_curriculum_context, compile_curriculum_benchmark_context
 from app.source_corpus import compile_generation_source_corpus
-from app.course_agent_source_context import build_source_context_index, source_context_index_summary
+from app.course_agent_source_context import build_source_context_index, compact_source_context_for_stage, source_context_index_summary
 from app.source_packet_quality_gate import source_packet_quality_gate
 
 CourseGenerationWorkflowStatus = Callable[[dict], None]
@@ -250,7 +254,10 @@ def generate_course_with_agent_staged(
     language: str,
     source_policy: str,
     desired_module_count: int,
-    expected_duration_minutes: int,
+    expected_duration_minutes: int | None = None,
+    credits: float | None = None,
+    credit_system: str | None = None,
+    curriculum_context: dict | None = None,
     model: str | None = None,
     source_urls: list[str] | None = None,
     source_packet_id: int | str | None = None,
@@ -337,8 +344,75 @@ def generate_course_with_agent_staged(
     if max_stage_timeout_seconds is not None:
         trace["max_stage_timeout_seconds"] = max_stage_timeout_seconds
 
+    def plan_with_model[T](stage: str, messages: list[dict[str, str]], validate: Callable[[dict], T]) -> T:
+        messages = list(messages)
+        for attempt in range(2):
+            try:
+                payload, response = _model_json(
+                    provider=provider,
+                    api_key=api_key,
+                    adapter=adapter,
+                    model=str(selected_model),
+                    stage=stage,
+                    timeout_seconds=trace["plan_timeout_seconds"],
+                    messages=messages,
+                )
+            except CourseAgentError as exc:
+                trace["stages"].append({"stage": stage, "status": "failed", "error": str(exc)})
+                raise CourseAgentError(str(exc), trace={**trace, **exc.trace}) from exc
+            try:
+                result = validate(payload)
+            except ValueError as exc:
+                error = (
+                    ". ".join(
+                        f"{'.'.join(map(str, item['loc']))}: {item['msg']}"
+                        for item in exc.errors(include_input=False, include_url=False)
+                    )
+                    if isinstance(exc, ValidationError) else str(exc)
+                )[:1200]
+                trace["stages"].append({"stage": stage, "status": "invalid_output", "error": error})
+                if attempt == 0:
+                    messages.append({
+                        "role": "user",
+                        "content": f"Return a corrected complete JSON response. The previous response failed validation: {error}",
+                    })
+                    continue
+                raise CourseAgentError(
+                    f"{stage} failed validation: {error}",
+                    trace={**trace, "failed_stage": stage},
+                ) from exc
+            trace.setdefault("planning_usage", {})[stage] = {
+                "input_characters": sum(len(message["content"]) for message in messages),
+                **{key: response[key] for key in ("usage", "prompt_eval_count", "eval_count") if key in response},
+            }
+            return result
+        raise AssertionError("Planning attempts exhausted")
+
     course_template = previous_trace.get("course_template") if isinstance(previous_trace.get("course_template"), dict) else None
+    resumed_plan = previous_trace.get("plan") if isinstance(previous_trace.get("plan"), dict) else None
+    saved_outline_plan = _course_build_outline_plan_from_resume_course(resume_course)
     outline_packet = _source_packet_for_outline(source_packet=source_packet, source_corpus=source_corpus)
+    source_records = _input_source_records(
+        effective_source_urls,
+        "Generated course",
+        source_documents=source_corpus.source_documents,
+        source_corpus_synthesis=source_corpus.synthesis,
+    )
+    source_ids = [str(record["id"]) for record in source_records]
+    source_context_index = build_source_context_index(
+        source_documents=source_corpus.source_documents,
+        source_records=source_records,
+    )
+    planning_request = {
+        "prompt": prompt,
+        "level": level,
+        "language": language,
+        "desired_module_count": desired_module_count,
+        "expected_duration_minutes": expected_duration_minutes,
+        "source_policy": source_policy,
+        "category": category,
+        "department": department,
+    }
     if course_template is None:
         _emit_workflow_status(
             on_workflow_status,
@@ -346,6 +420,41 @@ def generate_course_with_agent_staged(
             trace=trace,
             progress=0.04,
         )
+        curriculum = None
+        if not resumed_plan and not saved_outline_plan:
+            document_checklist = build_course_coverage_checklist_from_source_packet(
+                prompt=prompt, title=None, level=level, source_packet=outline_packet,
+            )
+            curriculum = plan_with_model(
+                "course_template_generation",
+                _course_curriculum_messages(
+                    request={
+                        **{key: value for key, value in planning_request.items() if key != "desired_module_count"},
+                        "credits": credits,
+                        "credit_system": credit_system,
+                        "curriculum_context": curriculum_context,
+                    },
+                    evidence=compact_source_context_for_stage(
+                        source_context_index=source_context_index,
+                        source_ids=source_ids,
+                        query_values=[prompt],
+                        total_char_budget=2400,
+                        per_source_char_budget=800,
+                        max_sources=3,
+                    ),
+                    source_topics=[
+                        {key: item[key] for key in ("title", "mustTeach", "sourceLocation") if key in item}
+                        for item in (document_checklist or {}).get("requiredItems", [])
+                    ],
+                    benchmark_topics=[
+                        str(item["title"]) for item in benchmark_context.get("requirementOrigins", [])
+                        if item.get("importance") == "required" and item.get("title")
+                    ],
+                ),
+                lambda payload: CourseCurriculum.model_validate(payload).preserve_workload(
+                    minutes=expected_duration_minutes, credits=credits, credit_system=credit_system,
+                ),
+            )
         course_template_report = run_course_template_workflow(
             prompt=prompt,
             level=level,
@@ -355,6 +464,8 @@ def generate_course_with_agent_staged(
             source_packet=outline_packet,
             category=category,
             department=department,
+            curriculum=curriculum,
+            available_source_ids=source_ids if curriculum else None,
         )
         course_template = course_template_report["artifacts"]["courseTemplate"]
         if not any(stage.get("stage") == "course_template_generation" for stage in trace["stage_workflows"] if isinstance(stage, dict)):
@@ -371,74 +482,54 @@ def generate_course_with_agent_staged(
             )
     trace["course_template"] = course_template
 
-    resumed_plan = previous_trace.get("plan") if isinstance(previous_trace.get("plan"), dict) else None
-    course_build_outline_plan = None
-    if not resumed_plan:
+    course_build_outline_plan = saved_outline_plan
+    coverage_checklist = course_template.get("courseCoverageChecklist")
+    model_curriculum = isinstance(coverage_checklist, dict) and coverage_checklist.get("source") == "model_curriculum"
+    if not resumed_plan and not saved_outline_plan and not model_curriculum:
         outline_planning_source = _outline_planning_source(source_packet, source_corpus)
-        course_build_outline_plan = _course_build_outline_plan_from_resume_course(
-            resume_course
-        ) or _course_build_outline_plan_from_source_packet(
+        course_build_outline_plan = _course_build_outline_plan_from_source_packet(
             prompt=prompt,
             source_packet=outline_packet,
             desired_module_count=desired_module_count,
-            coverage_checklist=course_template.get("courseCoverageChecklist") if isinstance(course_template, dict) else None,
+            coverage_checklist=coverage_checklist,
         )
         if course_build_outline_plan and course_build_outline_plan.get("planningSource") == "source_packet_outline":
             course_build_outline_plan["planningSource"] = outline_planning_source
-    try:
-        if resumed_plan:
-            plan = resumed_plan
-            plan_response = {"usage": {}, "resumed": True}
-            trace["stages"].append({"stage": "course_plan", "status": "resumed"})
-        elif course_build_outline_plan:
-            plan = course_build_outline_plan
-            planning_source = str(course_build_outline_plan.get("planningSource") or "course_build_outline")
-            plan_response = {"usage": {}, "resumed": True, "source": planning_source}
-            trace["stages"].append(
-                {
-                    "stage": "course_plan",
-                    "status": "derived_from_source_packet_outline"
-                    if planning_source == "source_packet_outline"
-                    else "derived_from_source_corpus_outline"
-                    if planning_source == "source_corpus_outline"
-                    else "resumed_from_course_build_outline",
-                }
-            )
-            trace["course_build_outline"] = {
-                "status": "used",
-                "source": planning_source,
-                "contractVersion": course_build_outline_plan.get("sourceOutlineContract"),
-                "moduleCount": len(course_build_outline_plan.get("modules", [])),
-            }
-        else:
-            plan, plan_response = _model_json(
-                provider=provider,
-                api_key=api_key,
-                adapter=adapter,
-                model=str(selected_model),
-                stage="course_plan",
-                timeout_seconds=_bounded_timeout_seconds(
-                    _plan_timeout_seconds(desired_module_count),
-                    max_stage_timeout_seconds,
-                ),
-                messages=_staged_plan_messages(
-                    prompt=prompt,
-                    level=level,
-                    language=language,
-                    desired_module_count=desired_module_count,
-                    expected_duration_minutes=expected_duration_minutes,
-                    source_policy=source_policy,
-                    category=category,
-                    department=department,
-                    source_urls=effective_source_urls,
-                    benchmark_context=benchmark_context,
-                    course_template=course_template,
-                ),
-            )
-    except CourseAgentError as exc:
-        trace["stages"].append({"stage": "course_plan", "status": "failed", "error": str(exc)})
-        raise CourseAgentError(str(exc), trace={**trace, **getattr(exc, "trace", {})}) from exc
-    if not resumed_plan and not course_build_outline_plan:
+    plan_usage = {}
+    if resumed_plan:
+        plan = resumed_plan
+        trace["stages"].append({"stage": "course_plan", "status": "resumed"})
+    elif course_build_outline_plan:
+        plan = course_build_outline_plan
+        planning_source = str(course_build_outline_plan.get("planningSource") or "course_build_outline")
+        trace["stages"].append({
+            "stage": "course_plan",
+            "status": {
+                "source_packet_outline": "derived_from_source_packet_outline",
+                "source_corpus_outline": "derived_from_source_corpus_outline",
+            }.get(planning_source, "resumed_from_course_build_outline"),
+        })
+        trace["course_build_outline"] = {
+            "status": "used",
+            "source": planning_source,
+            "contractVersion": course_build_outline_plan.get("sourceOutlineContract"),
+            "moduleCount": len(course_build_outline_plan.get("modules", [])),
+        }
+    else:
+        _emit_workflow_status(
+            on_workflow_status,
+            stage="course_module_outline_generation",
+            trace=trace,
+            progress=0.08,
+        )
+        plan = plan_with_model(
+            "course_plan",
+            _staged_plan_messages(**planning_request, course_template=course_template),
+            lambda payload: CourseModulePlan.model_validate(payload).materialize(
+                course_template, module_limit=desired_module_count,
+            ),
+        )
+        plan_usage = trace["planning_usage"]["course_plan"].get("usage", {})
         trace["stages"].append({"stage": "course_plan", "status": "passed"})
 
     template_title = str(course_template.get("title") or "").strip() if isinstance(course_template, dict) else ""
@@ -462,17 +553,8 @@ def generate_course_with_agent_staged(
     plan["inputArtifacts"] = source_corpus.input_artifacts
     pacing_label = _infer_pacing_label(plan)
     trace["plan"] = plan
-    source_records = _input_source_records(
-        effective_source_urls,
-        title,
-        source_documents=source_corpus.source_documents,
-        source_corpus_synthesis=source_corpus.synthesis,
-    )
-    source_ids = [str(record["id"]) for record in source_records]
-    source_context_index = build_source_context_index(
-        source_documents=source_corpus.source_documents,
-        source_records=source_records,
-    )
+    for record in source_records:
+        record["usedByCourseTitles"] = [title]
     trace["source_context"] = {
         **source_context_index_summary(source_context_index),
         "selectionPolicy": "stage-relevant-bounded-excerpts",
@@ -480,7 +562,7 @@ def generate_course_with_agent_staged(
     module_outlines = _coerce_plan_modules(
         plan,
         desired_module_count,
-        benchmark_context=None if course_build_outline_plan else benchmark_context,
+        benchmark_context=None if course_build_outline_plan or model_curriculum else benchmark_context,
     )
     module_outlines = _apply_course_template_coverage_to_modules(module_outlines, course_template)
     module_planning_source = (
@@ -497,17 +579,19 @@ def generate_course_with_agent_staged(
         if isinstance(benchmark_context.get("requirementOrigins"), list)
         else 0,
     }
-    _emit_workflow_status(
-        on_workflow_status,
-        stage="course_module_outline_generation",
-        trace=trace,
-        progress=0.08,
-    )
+    if resumed_plan or course_build_outline_plan:
+        _emit_workflow_status(
+            on_workflow_status,
+            stage="course_module_outline_generation",
+            trace=trace,
+            progress=0.08,
+        )
     trace["stage_workflows"].append(
         compact_stage_workflow_report(
             run_course_module_outline_workflow(
                 prompt=prompt,
                 desired_module_count=desired_module_count,
+                module_count_is_limit=module_planning_source == "model_plan",
                 course_template=course_template,
                 outline={
                     **plan,
@@ -546,6 +630,24 @@ def generate_course_with_agent_staged(
             trace=trace,
             progress=0.12,
         )
+        unplanned = [
+            module for _, module in pending_module_outlines
+            if module.get("coverageItems") and not module.get("sectionPlanHints")
+        ]
+        if unplanned:
+            section_plans = plan_with_model(
+                "course_section_plan",
+                _module_section_plan_messages(scope=course_template["scope"], modules=unplanned),
+                lambda payload: CourseSectionPlans.model_validate(payload).materialize(unplanned),
+            )
+            for module in unplanned:
+                outlines = section_plans[module["id"]]
+                module.update({
+                    "sectionPlanHints": outlines,
+                    "lessonTitles": [outline["title"] for outline in outlines],
+                    "targetSectionCount": len(outlines),
+                })
+            trace["stages"].append({"stage": "course_section_plan", "status": "passed"})
         _emit_workflow_status(
             on_workflow_status,
             stage="section_fill_generation",
@@ -756,6 +858,6 @@ def generate_course_with_agent_staged(
             "generation_readiness": generation_readiness,
             "quality_evals": quality_evals,
             "validation": {"status": "failed" if validation_errors else "passed", "errors": validation_errors},
-            "usage": {"plan": plan_response.get("usage", {}), "modules": module_usage},
+            "usage": {"plan": plan_usage, "modules": module_usage},
         },
     )

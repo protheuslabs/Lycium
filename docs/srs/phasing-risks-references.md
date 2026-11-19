@@ -48,7 +48,9 @@
 
 ## 12. Acceptance Criteria
 
-Lycium will satisfy this SRS for the first meaningful milestone when all of the following are true:
+The [hosted learning MVP](../hosted-mvp-requirements.md) has its own launch criteria for course delivery, saved progress, and durable generation. The [teaching quality requirements](../course-generation-quality-acceptance.md) apply to the courses and programs offered to learners.
+
+The broader prompt-to-classroom milestone requires the following:
 
 - A user can describe a course in natural language and receive a structured outline.
 - The generated course is assembled from knowledge-base objects with stored provenance.

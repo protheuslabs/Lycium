@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from app.course_agent_assembly import _module_lesson_outlines
@@ -13,6 +14,7 @@ from app.course_agent_staged import (
 )
 from app.file_input_reader import read_generation_input_files
 from app.source_corpus import SourceCorpusPreflight, compile_generation_source_corpus
+from tests.course_generation_fixture_builders import curriculum_model_fixture
 
 
 EDITOR_NATIVE_BLOCK_TYPES = {"text", "heading", "conceptCard", "video", "iframe", "quiz"}
@@ -204,7 +206,7 @@ def test_staged_agent_can_use_course_build_outline_as_plan() -> None:
     assert plan["modules"][0]["sections"][0]["concept_keywords"] == ["atom", "isotope", "periodic trend"]
 
 
-def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeypatch) -> None:
+def test_staged_agent_plans_curriculum_from_source_packet_evidence(monkeypatch) -> None:
     source_packet = {
         "contract_version": "source-packet-v1",
         "quality": {
@@ -232,8 +234,17 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
     assert plan is not None
     assert plan["planningSource"] == "source_packet_outline"
 
-    def fail_plan_call(*args: Any, **kwargs: Any) -> tuple[dict[str, Any], dict[str, Any]]:
-        raise AssertionError("source-packet-backed generation should not call the plan LLM stage")
+    model_fixture = curriculum_model_fixture(
+        "Quantitative Chemistry",
+        [
+            ("Atomic structure", "Determine the proton and neutron counts for a given isotope."),
+            ("Mole ratios", "Relate reactant and product amounts using a balanced equation."),
+            ("Stoichiometry", "Calculate a theoretical yield from a limiting reactant."),
+        ],
+        category="natural-sciences-mathematics",
+        department="chemistry",
+        source_ids=["input-source-1", "invented-source"],
+    )
 
     def fake_module_bundle(**kwargs: Any) -> dict[str, Any]:
         module_outline = kwargs["module_outline"]
@@ -312,7 +323,7 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
 
     monkeypatch.setattr("app.course_agent_staged.get_agent_provider", lambda _provider_id: {"id": "test", "defaultModel": "test"})
     monkeypatch.setattr("app.course_agent_staged.assess_agent_model_capability", lambda _provider, _model: {"status": "ok"})
-    monkeypatch.setattr("app.course_agent_staged._model_json", fail_plan_call)
+    monkeypatch.setattr("app.course_agent_staged._model_json", model_fixture)
     monkeypatch.setattr("app.course_agent_staged._generate_module_bundle", fake_module_bundle)
     checkpoints: list[dict[str, Any]] = []
 
@@ -331,15 +342,11 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
     )
 
     checkpoint_course = checkpoints[0]["partial_course"]
-    assert checkpoint_course["metadata"]["generationPlan"]["planningSource"] == "source_packet_outline"
+    assert checkpoint_course["metadata"]["scope"]["prerequisites"] == ["Interpret ratios and percentages"]
+    assert checkpoint_course["metadata"]["scope"]["workload"]["totalMinutes"] == 60
+    assert checkpoint_course["metadata"]["scope"]["workload"]["durationOrigin"] == "requested"
     assert checkpoint_course["metadata"]["sourceCorpusSynthesis"]["sourcePacket"]["quality"]["conceptCoverageRatio"] == 1
-    assert checkpoint_course["metadata"]["courseBuildOutline"]["contractVersion"] == "course-outline-from-source-packet-v1"
-    assert result.trace["course_build_outline"]["source"] == "source_packet_outline"
-    assert result.trace["stages"][0] == {
-        "stage": "course_plan",
-        "status": "derived_from_source_packet_outline",
-    }
-    assert result.trace["module_planning"]["source"] == "source_packet_outline"
+    assert result.trace["module_planning"]["source"] == "model_plan"
     stage_workflow_stages = [stage["stage"] for stage in result.trace["stage_workflows"]]
     assert stage_workflow_stages == [
         "course_template_generation",
@@ -351,41 +358,60 @@ def test_staged_agent_derives_initial_plan_from_source_packet_before_llm(monkeyp
         "module_summary_section_generation",
         "module_assembly",
     ]
-    assert all(stage["status"] == "passed" for stage in result.trace["stage_workflows"])
-    assert result.course["metadata"]["generationPlan"]["planningSource"] == "source_packet_outline"
+    assert all(stage["status"] == "passed" for stage in result.trace["stage_workflows"][:3])
+    assert result.course["metadata"]["generationPlan"]["planningSource"] == "model_plan"
     assert result.course["metadata"]["courseTemplate"]["handoff"]["nextWorkflow"] == "course-module-outline-workflow-v1"
     assert result.course["metadata"]["courseTemplate"]["sourcePacketHandoff"]["qualityStatus"] == "usable"
-    assert result.course["metadata"]["courseTemplate"]["courseCoverageChecklist"]["source"] == "source_packet_terms"
+    assert result.course["metadata"]["courseTemplate"]["courseCoverageChecklist"]["source"] == "model_curriculum"
+    assert all(
+        not ({"sections", "sectionPlans", "sectionPlanHints"} & item.keys())
+        for item in result.course["metadata"]["courseTemplate"]["courseCoverageChecklist"]["requiredItems"]
+    )
     assert result.course["metadata"]["sourceCorpusSynthesis"]["sourcePacket"]["quality"]["conceptCoverageRatio"] == 1
-    assert result.course["metadata"]["courseBuildOutline"]["contractVersion"] == "course-outline-from-source-packet-v1"
-    assert result.course["metadata"]["courseBuildOutline"]["provenance"]["coverageRequiredItemCount"] == 5
-    assert result.course["metadata"]["courseBuildOutline"]["modules"][0]["planningSource"] == "course_template_coverage"
-    assert result.course["metadata"]["courseBuildOutline"]["modules"][0]["assignedCoverageItemIds"]
+    module = result.course["metadata"]["generationPlan"]["moduleOutlines"][0]
+    assert module["sourceIds"] == ["input-source-1"]
+    assert [hint["title"] for hint in module["sectionPlanHints"]] == ["Atomic structure", "Mole ratios", "Stoichiometry"]
 
 
 def test_staged_agent_generates_with_zero_sources(monkeypatch) -> None:
-    def fake_plan_call(*args: Any, **kwargs: Any) -> tuple[dict[str, Any], dict[str, Any]]:
-        return (
-            {
-                "title": "Introductory Macroeconomics",
-                "shortDescription": "A draft course that teaches core macroeconomics without source claims.",
-                "difficultyLevel": "undergrad",
-                "modules": [
-                    {
-                        "title": "GDP and National Income",
-                        "objective": "Explain GDP, its components, and common measurement limits.",
-                        "sections": [
-                            {
-                                "title": "GDP foundations",
-                                "learning_objectives": ["Define GDP and distinguish nominal from real GDP."],
-                                "concept_keywords": ["GDP", "nominal GDP", "real GDP"],
-                            }
-                        ],
-                    }
-                ],
-            },
-            {"usage": {}},
-        )
+    valid_plan_call = curriculum_model_fixture(
+        "Introductory Macroeconomics",
+        [
+            ("GDP foundations", "Calculate gross domestic product from expenditure data."),
+            ("Price indices", "Calculate the change in a price index."),
+            ("Real output", "Deflate nominal GDP using a price index."),
+        ],
+        category="business-management",
+        department="economics",
+    )
+    outline_calls = 0
+    section_plan_calls = 0
+    curriculum_context = {"course_role": "First economics course"}
+
+    def fake_plan_call(**kwargs: Any) -> tuple[dict, dict]:
+        nonlocal outline_calls, section_plan_calls
+        payload, response = valid_plan_call(**kwargs)
+        request = json.loads(kwargs["messages"][1]["content"])
+        if kwargs["stage"] == "course_template_generation":
+            assert request["expected_duration_minutes"] is None
+            assert request["credits"] == 3
+            assert request["curriculum_context"] == curriculum_context
+            assert "desired_module_count" not in request
+        if kwargs["stage"] == "course_plan":
+            outline_calls += 1
+            assert request["scope"]["workload"]["totalMinutes"] == 8100
+            assert all("lesson_count" not in topic for topic in request["required_topics"])
+            if outline_calls == 1:
+                payload["modules"][0]["assignedCoverageItemIds"] = ["made-up-id"]
+            else:
+                assert "made-up-id" in kwargs["messages"][-1]["content"]
+        if kwargs["stage"] == "course_section_plan":
+            section_plan_calls += 1
+            if section_plan_calls == 1:
+                payload["modules"][0]["sections"].pop()
+            else:
+                assert "Missing required section coverage" in kwargs["messages"][-1]["content"]
+        return payload, response
 
     def fake_module_bundle(**kwargs: Any) -> dict[str, Any]:
         module_outline = kwargs["module_outline"]
@@ -472,21 +498,36 @@ def test_staged_agent_generates_with_zero_sources(monkeypatch) -> None:
         level="undergrad",
         language="English",
         source_policy="balanced",
-        desired_module_count=1,
-        expected_duration_minutes=60,
+        desired_module_count=4,
+        credits=3,
+        credit_system="U.S. semester credits",
+        curriculum_context=curriculum_context,
         source_urls=[],
         category="business-management",
         department="economics",
     )
 
-    assert result.trace["stages"][0] == {"stage": "course_plan", "status": "passed"}
+    assert outline_calls == 2
+    assert section_plan_calls == 2
+    assert result.trace["stages"][0]["status"] == "invalid_output"
+    assert result.trace["stages"][1] == {"stage": "course_plan", "status": "passed"}
+    assert result.trace["stages"][3] == {"stage": "course_section_plan", "status": "passed"}
+    module_report = next(
+        stage for stage in result.trace["stage_workflows"] if stage["stage"] == "course_module_outline_generation"
+    )
+    assert module_report["metrics"]["moduleCount"] == 1
+    assert module_report["status"] == "passed"
     assert result.trace["generation_readiness"]["status"] == "needs_sources"
     assert result.trace["generation_readiness"]["ready"] is False
     assert result.course["sourceRecords"] == []
     assert result.course["status"] == "needs_sources"
     assert result.course["metadata"]["status"] == "needs_sources"
-    assert result.course["metadata"]["courseTemplate"]["title"] == "Introductory Macroeconomics Course"
+    assert result.course["metadata"]["courseTemplate"]["title"] == "Introductory Macroeconomics"
     assert result.course["metadata"]["courseTemplate"]["scope"]["evidenceMode"] == "prompt_inferred"
+    workload = result.course["metadata"]["courseTemplate"]["scope"]["workload"]
+    assert workload["credits"] == 3
+    assert workload["creditOrigin"] == "requested"
+    assert workload["durationOrigin"] == "estimated"
     assert result.course["modules"][0]["sections"][0]["content"]
 
 
