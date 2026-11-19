@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockLocalUiApi } from "./fixtures/localUiApi";
 
 async function mockSettingsApis(page: Page) {
   await page.route("**/v1/local/ai/providers", async (route) => {
@@ -335,6 +336,7 @@ async function mockProviderIssueSettingsApis(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
+  await mockLocalUiApi(page);
   await page.addInitScript(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();

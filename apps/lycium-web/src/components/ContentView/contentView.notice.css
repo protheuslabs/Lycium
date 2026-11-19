@@ -1,34 +1,47 @@
 .course-source-notice {
-  width: min(100%, 54rem);
-  box-sizing: border-box;
-  margin: 0 auto 1.25rem;
-  padding: 0.75rem 1rem;
-  border-left: 3px solid #b7791f;
+  margin: 0 0 1.75rem;
   border-radius: 4px;
+  padding: 0.65rem 0.8rem;
+  color: var(--lycium-color-warning);
+  background: var(--lycium-color-warning-soft);
+  font-size: 0.8rem;
+}
+.course-source-notice summary {
   display: flex;
-  align-items: baseline;
-  gap: 0.65rem;
-  color: var(--lycium-color-text);
-  background: color-mix(in srgb, #f6c453 16%, var(--lycium-color-surface));
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  list-style: none;
 }
-
-.course-source-notice strong {
+.course-source-notice summary::-webkit-details-marker {
+  display: none;
+}
+.course-source-notice summary svg {
   flex: 0 0 auto;
-  color: #8a5a13;
 }
-
-.course-source-notice span {
-  color: var(--lycium-color-text-muted);
+.course-source-notice summary svg:last-child {
+  margin-left: auto;
 }
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-source-notice strong {
-  color: #f4c86a;
+.course-source-notice[open] summary svg:last-child {
+  transform: rotate(180deg);
 }
-
-@media (max-width: 560px) {
-  .course-source-notice {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
+.course-source-notice p {
+  margin: 0.75rem 0;
+  line-height: 1.6;
+}
+.course-source-notice .source-suggestion-action {
+  min-height: 36px;
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  background: transparent;
+  color: var(--lycium-color-warning);
+  border: 1px solid currentColor;
+}
+.source-suggestion-action svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
 }

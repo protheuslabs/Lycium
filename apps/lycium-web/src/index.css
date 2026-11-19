@@ -56,7 +56,10 @@ button {
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
-  transition: background-color 0.25s, color 0.25s, transform 0.25s;
+  transition:
+    background-color 0.25s,
+    color 0.25s,
+    transform 0.25s;
 }
 button:hover {
   border-color: transparent;
@@ -65,6 +68,55 @@ button:focus,
 button:focus-visible {
   outline: none;
   box-shadow: none;
+}
+
+:root :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--lycium-color-focus);
+  outline-offset: 3px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.75rem;
+  z-index: 10000;
+  padding: 0.65rem 1rem;
+  border-radius: 4px;
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-text);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @media (prefers-color-scheme: light) {

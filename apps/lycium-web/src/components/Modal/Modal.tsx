@@ -1,6 +1,8 @@
-import { useEffect, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useRef, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import { useClientMounted } from "../../hooks/useClientMounted";
+import { containDialogFocus } from "../../utils/dialogFocus";
 import "./Modal.css";
 
 type ModalSize = "sm" | "md" | "lg";
@@ -29,44 +31,53 @@ export default function Modal({
   onClose,
 }: ModalProps) {
   const mounted = useClientMounted();
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    if (!isOpen) return undefined;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
+    if (!mounted || !isOpen) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    dialog.showModal();
+    return () => {
+      if (dialog.open) dialog.close();
     };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [mounted, isOpen]);
 
   if (!mounted || !isOpen || typeof document === "undefined") {
     return null;
   }
 
-  const handleBackdropMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+  const handleBackdropMouseDown = (event: MouseEvent<HTMLDialogElement>) => {
     if (event.target === event.currentTarget) {
       onClose();
     }
   };
 
   return createPortal(
-    <div className="lycium-modal-backdrop" role="presentation" onMouseDown={handleBackdropMouseDown}>
+    <dialog
+      ref={dialogRef}
+      className="lycium-modal-backdrop"
+      aria-modal="true"
+      aria-labelledby={labelledById}
+      aria-describedby={describedById}
+      onMouseDown={handleBackdropMouseDown}
+      onKeyDown={containDialogFocus}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+    >
       <section
         className={`lycium-modal lycium-modal-${size} ${className}`.trim()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={labelledById}
-        aria-describedby={describedById}
         onMouseDown={(event) => event.stopPropagation()}
       >
-        <button className="lycium-modal-close" type="button" aria-label={`Close ${title}`} onClick={onClose}>
-          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
-            <path d="M6.3 5.3a1 1 0 0 1 1.4 0l4.3 4.3 4.3-4.3a1 1 0 1 1 1.4 1.4L13.4 11l4.3 4.3a1 1 0 0 1-1.4 1.4L12 12.4l-4.3 4.3a1 1 0 0 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4Z" />
-          </svg>
+        <button
+          className="lycium-modal-close"
+          type="button"
+          aria-label={`Close ${title}`}
+          onClick={onClose}
+        >
+          <X aria-hidden="true" />
         </button>
         <header className="lycium-modal-header">
           {eyebrow && <p>{eyebrow}</p>}
@@ -74,7 +85,7 @@ export default function Modal({
         </header>
         {children}
       </section>
-    </div>,
+    </dialog>,
     document.body,
   );
 }

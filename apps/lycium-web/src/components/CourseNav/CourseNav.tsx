@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Button from "../Button/Button";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import "./CourseNav.css";
 
 type CourseNavProps = {
@@ -32,7 +33,7 @@ export default function CourseNav({
   onComplete,
 }: CourseNavProps) {
   return (
-    <div className="course-nav-block">
+    <nav className="course-nav-block" aria-label="Section navigation">
       <div className="section-nav course-nav">
         <div className="nav-button-wrapper course-nav-left">
           <Button
@@ -43,28 +44,27 @@ export default function CourseNav({
             disabled={isFirstSection}
             aria-label="Previous section"
           >
-            <ArrowLeftIcon />
+            <ArrowLeft size={18} aria-hidden="true" />
           </Button>
         </div>
-        {centerControls && <div className="course-nav-center">{centerControls}</div>}
         <div className="nav-button-wrapper course-nav-right">
           <Button
             className={`nav-button complete-button ${isComplete ? "complete-button--checked" : ""} ${
               !isComplete && !completionRequirementsMet ? "complete-button--blocked" : ""
             }`}
-            variant="complete"
+            variant="standard"
             onClick={() => {
               if (canMarkComplete) {
                 onComplete();
               }
             }}
             aria-disabled={isComplete || !completionRequirementsMet}
+            disabled={isComplete || !canMarkComplete}
             aria-label={isComplete ? "Section complete" : "Mark section complete"}
             title={completeButtonTitle}
           >
-            <span className="complete-button-check" aria-hidden="true">
-              ✓
-            </span>
+            <Check size={18} aria-hidden="true" />
+            <span>{isComplete ? "Completed" : "Mark complete"}</span>
           </Button>
           <Button
             className="nav-button course-nav-arrow-button"
@@ -74,29 +74,14 @@ export default function CourseNav({
             disabled={isLastSection || nextDisabled}
             aria-label="Next section"
           >
-            <ArrowRightIcon />
+            <ArrowRight size={18} aria-hidden="true" />
           </Button>
-          <p className="course-nav-up-next">
-            {isLastSection ? "End of course" : `Up next: ${nextSectionTitle ?? "Next section"}`}
-          </p>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ArrowLeftIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M15 5l-7 7 7 7" />
-    </svg>
-  );
-}
-
-function ArrowRightIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M9 5l7 7-7 7" />
-    </svg>
+      <p className="course-nav-up-next">
+        {isLastSection ? "End of course" : `Up next: ${nextSectionTitle ?? "Next section"}`}
+      </p>
+      {centerControls && <div className="course-nav-center">{centerControls}</div>}
+    </nav>
   );
 }

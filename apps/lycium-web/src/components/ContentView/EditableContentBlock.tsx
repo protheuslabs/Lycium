@@ -591,6 +591,8 @@ function BlockCitationBadge({
     );
   }
 
+  if (!onMissingCitationClick) return null;
+
   return (
     <sup className="block-citation block-citation--missing">
       <button

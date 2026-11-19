@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import ProgressMeter from "../ProgressMeter/ProgressMeter";
+import ReaderHeader from "./ReaderHeader";
 import CourseFeedback from "../CourseFeedback/CourseFeedback";
 import SourceSuggestionButton from "../CourseFeedback/SourceSuggestionButton";
 import CourseNav from "../CourseNav/CourseNav";
@@ -9,12 +9,13 @@ import Modal from "../Modal/Modal";
 import CourseSourcesPage from "./CourseSourcesPage";
 import EditableSectionContent from "./EditableSectionContent";
 import SectionRefreshControl from "./SectionRefreshControl";
-import { EditPencilButton, promptForBlockType, promptForText } from "./CourseEditControls";
+import { promptForBlockType } from "./CourseEditControls";
 import type { ContentBlock, Section, SourceRecord } from "./contentViewTypes";
 import { buildCourseSourceIndex, getSectionSources, isExternalSourceUrl, sourceCitationNumber } from "./sourceCitationUtils";
-import { createBlockTemplate, stripModulePrefix } from "../CourseEditing/courseEditPrimitives";
+import { createBlockTemplate } from "../CourseEditing/courseEditPrimitives";
 import { useSectionQuizStatus } from "./useSectionQuizStatus";
 import { hasSubmittedProject, projectKeyFor } from "./projectSubmissionStatus";
+import { ChevronDown, Info } from "lucide-react";
 
 export type { SourceRecord } from "./contentViewTypes";
 
@@ -242,7 +243,7 @@ export default function ContentView({
     }
 
     return (
-      <main className="content-view">
+      <main className="content-view" id="main-content" tabIndex={-1}>
         <h1 className="course-title">{moduleTitle}</h1>
         <p className="section-content">No section selected.</p>
       </main>
@@ -265,53 +266,32 @@ export default function ContentView({
 
   
   return (
-    <main className={`content-view content-view--${pageType}`} data-module-index={moduleIndex}>
-      {hasIncompleteSources && (
-        <div className="course-source-notice" role="status">
-          <strong>Sources incomplete</strong>
-          <span>Some sections may be missing supporting evidence. You can still use the course.</span>
-        </div>
+    <main className={`content-view content-view--${pageType}`} data-module-index={moduleIndex} id="main-content" tabIndex={-1}>
+      <ReaderHeader
+        courseKey={courseKey}
+        courseTitle={courseTitle}
+        moduleTitle={moduleTitle}
+        moduleIndex={moduleIndex}
+        section={section}
+        pageType={pageType}
+        progressPercentage={progressPercentage}
+        viewedPercentage={viewedPercentage}
+        isEditMode={isEditMode}
+        onCourseTitleChange={onCourseTitleChange}
+        onModuleTitleChange={onModuleTitleChange}
+        onSectionTitleChange={onSectionTitleChange}
+      />
+      {hasIncompleteSources && pageType !== "apply" && (
+        <details className="course-source-notice">
+          <summary>
+            <Info size={16} aria-hidden="true" />
+            <span>Supporting sources need review</span>
+            <ChevronDown size={16} aria-hidden="true" />
+          </summary>
+          <p>Source coverage for this course is incomplete. Uncited claims have not been verified.</p>
+          <SourceSuggestionButton courseKey={courseKey} courseTitle={courseTitle} label="Suggest a source" />
+        </details>
       )}
-      <p className="course-name course-editable-line">
-        <span className="course-editable-line-content">{courseTitle}</span>
-        {isEditMode && (
-          <EditPencilButton
-            label="Edit course title"
-            onClick={() => promptForText("Edit course title", courseTitle, (title) => onCourseTitleChange?.(title))}
-          />
-        )}
-      </p>
-      <div className="module-progress-block">
-        <h1 className="course-title course-editable-line">
-          <span className="course-editable-line-content">{moduleTitle}</span>
-          {isEditMode && (
-              <EditPencilButton
-                label="Edit module title"
-                onClick={() => promptForText("Edit module title", stripModulePrefix(moduleTitle), (title) => onModuleTitleChange?.(moduleIndex, title))}
-              />
-          )}
-        </h1>
-        {!isEditMode && (
-          <ProgressMeter
-            cacheKey={`content:${courseTitle}:${moduleIndex}`}
-            progressPercentage={progressPercentage}
-            viewedPercentage={viewedPercentage}
-          />
-        )}
-      </div>
-      
-      {/* Section Title With Decimal */}
-      <div className="section-title-row">
-        <h2 className="section-title course-editable-line">
-          <span className="course-editable-line-content">{section.displayNumber} {section.title}</span>
-          {isEditMode && (
-            <EditPencilButton
-              label="Edit section title"
-              onClick={() => promptForText("Edit section title", section.title, (title) => onSectionTitleChange?.(section.id, title))}
-            />
-          )}
-        </h2>
-      </div>
       {Array.isArray(section.content) ? (
         <EditableSectionContent
           courseKey={courseKey}
@@ -360,7 +340,7 @@ export default function ContentView({
         onComplete={() => markComplete(section.id)}
       />
 
-      {sectionSources.length > 0 && (
+      {sectionSources.length > 0 && pageType !== "apply" && (
         <section className="source-reference-list" aria-label="Sources">
           <div className="source-reference-controls">
             <Button

@@ -1,0 +1,302 @@
+.app-root .catalog-shell {
+  background: var(--lycium-color-canvas);
+}
+.app-root .catalog-shell .home-page {
+  width: 100%;
+  max-width: 88rem;
+  padding: 2.5rem;
+  margin-inline: auto;
+  background: transparent;
+}
+.catalog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+.catalog-heading h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--lycium-color-text);
+}
+.catalog-discovery-search {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 0.65rem;
+  width: min(100%, 34rem);
+}
+.catalog-level-dropdown.dropdown {
+  --dropdown-height: 44px;
+  --dropdown-radius: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.catalog-discovery-search .dropdown-trigger {
+  box-shadow: none;
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-text);
+  border: 1px solid var(--lycium-color-border);
+  font-size: 0.85rem;
+}
+.catalog-query-field {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  border: 1px solid var(--lycium-color-border);
+  border-radius: 6px;
+  padding-inline: 0.85rem;
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-text-muted);
+}
+.catalog-query-field svg {
+  flex: 0 0 auto;
+}
+.catalog-query-field input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lycium-color-text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+.catalog-query-field input::placeholder {
+  color: var(--lycium-color-text-muted);
+}
+.app-root .catalog-shell .catalog-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.app-root .catalog-shell .catalog-create-button {
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 6px;
+  border-color: var(--lycium-color-border);
+  padding-inline: 1rem;
+  background: var(--lycium-brand-primary);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+.app-root .catalog-shell .catalog-create-button:hover {
+  background: var(--lycium-brand-primary-hover);
+}
+.app-root .catalog-shell .catalog-create-button--secondary {
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-text);
+}
+.app-root .catalog-shell .catalog-dropdown-row {
+  display: flex;
+  gap: 0.5rem;
+  width: auto;
+  margin-left: auto;
+}
+.app-root .catalog-shell .catalog-dropdown-row > .catalog-dropdown-field {
+  width: 11.5rem;
+}
+.app-root .catalog-shell .catalog-dropdown-row .dropdown {
+  --dropdown-height: 44px;
+  --dropdown-radius: 6px;
+  max-width: 100%;
+  width: 100%;
+}
+.app-root .catalog-shell .catalog-dropdown-row .dropdown-trigger {
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-text);
+  border: 1px solid var(--lycium-color-border);
+  box-shadow: none;
+  padding-inline: 0.75rem;
+  font-size: 0.8rem;
+}
+.app-root .catalog-shell .course-grid {
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+}
+.app-root .catalog-shell .course-card {
+  padding: 1.25rem;
+  border: 1px solid var(--lycium-color-border);
+  border-radius: 6px;
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-text);
+  box-shadow: none;
+  min-height: 18rem;
+}
+.app-root .catalog-shell .course-card:not(.course-card--generating) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.app-root .catalog-shell .course-card:hover {
+  background: var(--lycium-color-surface);
+  border-color: var(--lycium-color-text-muted);
+  box-shadow: none;
+  transform: none;
+}
+.app-root .catalog-shell .course-card h3 {
+  display: block;
+  margin: 0;
+  padding-right: 0.5rem;
+  min-height: 0;
+  font-size: 1.1rem;
+  font-weight: 650;
+  line-height: 1.5;
+  overflow: visible;
+  color: var(--lycium-color-text);
+}
+.app-root .catalog-shell .course-short-description {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  flex: 0 0 auto;
+  overflow: hidden;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--lycium-color-text-muted);
+}
+.course-card-category {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding-right: 1.5rem;
+  font-size: 0.72rem;
+  color: var(--lycium-color-text-muted);
+}
+.course-card-category svg {
+  flex: 0 0 auto;
+  color: var(--lycium-color-accent);
+}
+.course-card-category span {
+  overflow-wrap: anywhere;
+}
+.catalog-card-action {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+.catalog-card-action:hover {
+  background: transparent;
+}
+.catalog-card-action:focus-visible {
+  outline-offset: -3px;
+}
+.app-root .catalog-shell .course-card .course-info-button {
+  position: absolute;
+  z-index: 2;
+  top: 0.85rem;
+  right: 0.85rem;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lycium-color-text-muted);
+}
+.app-root .catalog-shell .course-card .course-info-button svg {
+  fill: none;
+}
+.course-card-requires-button,
+.course-publish-button {
+  position: relative;
+  z-index: 2;
+}
+.app-root .catalog-shell .course-progress,
+.app-root .catalog-shell .course-progress-empty {
+  margin-top: auto;
+}
+.app-root .catalog-shell .course-progress-percentage {
+  font-size: 0.72rem;
+  color: var(--lycium-color-text-muted);
+  text-align: left;
+}
+.app-root .catalog-shell .course-active-subheader span {
+  color: var(--lycium-color-text-muted);
+  font-size: 0.75rem;
+}
+.app-root .catalog-shell .course-progress-bar {
+  height: 4px;
+  background: var(--lycium-color-border);
+}
+.app-root .catalog-shell .course-progress-fill {
+  background: var(--lycium-color-accent);
+}
+.app-root .catalog-shell .course-progress-viewed-fill {
+  background: var(--lycium-viewed-progress);
+}
+.app-root .catalog-shell .course-card--selected {
+  border-color: var(--lycium-color-accent);
+  box-shadow: inset 0 0 0 1px var(--lycium-color-accent);
+}
+@media (max-width: 860px) {
+  .app-root .catalog-shell .home-page {
+    padding: 1.5rem;
+  }
+  .catalog-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .catalog-discovery-search {
+    width: 100%;
+  }
+}
+@media (max-width: 560px) {
+  .app-root .catalog-shell .home-page {
+    padding: 1.25rem 1rem;
+  }
+  .catalog-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 8.5rem;
+    align-items: center;
+  }
+  .catalog-discovery-search {
+    display: contents;
+  }
+  .catalog-level-dropdown {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .catalog-query-field {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .catalog-query-field {
+    padding-inline: 0.6rem;
+    gap: 0.35rem;
+  }
+  .catalog-query-field svg {
+    width: 16px;
+  }
+  .app-root .catalog-shell .catalog-dropdown-row {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    margin: 0;
+  }
+  .app-root .catalog-shell .catalog-dropdown-row > .catalog-dropdown-field {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+  .app-root .catalog-shell .course-card {
+    padding: 1.25rem;
+  }
+}

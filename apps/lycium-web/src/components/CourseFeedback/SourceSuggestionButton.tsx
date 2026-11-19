@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Plus } from "lucide-react";
 import Button from "../Button/Button";
 import Modal from "../Modal/Modal";
 import { localApiSyncEnabled, lyciumApi } from "../../runtime/appRuntime";
@@ -8,9 +9,14 @@ import "./CourseFeedback.css";
 type SourceSuggestionButtonProps = {
   courseKey: string;
   courseTitle: string;
+  label?: string;
 };
 
-export default function SourceSuggestionButton({ courseKey, courseTitle }: SourceSuggestionButtonProps) {
+export default function SourceSuggestionButton({
+  courseKey,
+  courseTitle,
+  label,
+}: SourceSuggestionButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourceDescription, setSourceDescription] = useState("");
@@ -59,15 +65,16 @@ export default function SourceSuggestionButton({ courseKey, courseTitle }: Sourc
   return (
     <>
       <Button
-        className="source-add-button"
-        variant="icon"
-        iconOnly
+        className={label ? "source-suggestion-action" : "source-add-button"}
+        variant={label ? "standard" : "icon"}
+        iconOnly={!label}
         onClick={() => setIsOpen(true)}
         disabled={!courseKey}
-        aria-label="Add source"
-        title="Add source"
+        aria-label={label ?? "Add source"}
+        title={label ?? "Add source"}
       >
-        <PlusIcon />
+        <Plus aria-hidden="true" />
+        {label}
       </Button>
       <Modal
         isOpen={isOpen}
@@ -108,13 +115,5 @@ export default function SourceSuggestionButton({ courseKey, courseTitle }: Sourc
         </form>
       </Modal>
     </>
-  );
-}
-
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
   );
 }

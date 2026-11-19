@@ -135,6 +135,7 @@ export function restoreQuizSession({
     attemptStarted = true;
     attemptOrder = storedAttemptOrder;
     elapsedSeconds = secondsSince(startedAtMs, nowMs);
+    selectedByQuestion = normalizeSelections(parsed?.selectedByQuestion, attemptOrder.length);
   }
 
   if (selectedByQuestion.length === 0) {

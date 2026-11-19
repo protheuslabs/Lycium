@@ -28,6 +28,7 @@ export default function CatalogEntityCard({
 }: CatalogEntityCardProps) {
   return (
     <CatalogActionCard
+      label={`Open ${title}`}
       className={`${className} ${selected ? "program-showcase-card--selected" : ""}`.trim()}
       onActivate={onActivate}
       pressed={selected || undefined}

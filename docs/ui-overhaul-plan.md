@@ -1,6 +1,6 @@
 # UI Research And Overhaul Plan
 
-Research date: 2026-11-18. Status: proposal, not an implemented redesign.
+Research date: 2026-11-18. Implementation checkpoint: 2026-11-19. Status: first reader/catalog increment implemented locally; the complete redesign remains in progress.
 
 ## Contents
 
@@ -369,7 +369,7 @@ Research and planning do not authorize a big-bang UI rewrite. Approve the first 
 
 - [ ] Consolidate semantic tokens, typography, controls, focus states, overlays, and theme behavior without rewriting data access.
 - [ ] Implement the application/course shells and mobile navigation.
-- [ ] Redesign the reader, outline, citations, section notice, and completion/navigation controls.
+- [x] Redesign the reader, outline, citations, section notice, and completion/navigation controls.
 - [ ] Redesign quiz/project presentation and results while preserving attempt/storage/completion behavior.
 - [ ] Validate a full learning flow on real local courses before reusing the design elsewhere.
 
@@ -449,4 +449,23 @@ Do not move or rewrite generation workflows just to change navigation. Do not mi
 | First prototype | Reader/quiz and catalog/overview using the same real-content fixtures, desktop and mobile |
 | Optional add-ins | None automatically approved by this research; choose after the core learning flow is usable |
 
-Next deliverable: low-fidelity layouts and a small visual prototype, not a rewrite of every page. Validate the core learner path before broad implementation.
+### First Implementation Checkpoint: 2026-11-19
+
+The existing course-generation changes and this research plan were checkpointed in `fac5f72` before UI implementation. The first working visual treatment now covers:
+
+- Semantic light/dark reading surfaces, shared keyboard focus, reduced motion, a skip link, and a restrained black top bar with Lucide icons.
+- Catalog-local search/view controls, a full-width mobile search row, readable long titles, and native card-action buttons independent of secondary actions. Existing creation, generation status, filtering, and pagination remain in place.
+- Lesson-first heading hierarchy, constrained reading width, a collapsible desktop outline, and a native modal mobile outline with focus containment, Escape/outside-click dismissal, and focus return.
+- Compact source-coverage notices and section-scoped source footers. Missing-citation editing controls are hidden from learners; Apply sections have no source footer. The notice still reflects existing course-level coverage, not a newly implemented per-section source grade.
+- Quiet quiz/project presentation and distinct completion/navigation controls. During regression testing, unfinished quiz answers were found not to persist; they now save and restore within the existing course-scoped attempt record.
+- Native shared dialogs, including usable delete confirmations above the outline drawer. Escape dismisses an open dropdown before its containing dialog.
+
+The reader header, catalog discovery header, and outline section rows have separate presentation components. Duplicate sidebar theme styles were removed rather than retaining two implementations.
+
+Verification includes web unit tests and isolated Chromium desktop/mobile checks for 320/390/768/1280 reflow, long titles/equations, themes, keyboard dismissal/focus return, citations, quiz persistence and cross-course isolation, project submission reload, and course editing. Settings provider/model dropdowns are also checked inside the native dialog. Screenshots are generated as Playwright artifacts, not committed course assets.
+
+Checkpoint results: 68 web unit tests, 26 focused reader/accessibility/editing browser checks, and 4 settings dropdown browser checks passed. TypeScript, focused ESLint, import/data-boundary guards, and the production build passed. These are scoped results, not a claim that the entire legacy end-to-end suite passes.
+
+Remaining validation gaps: this is not a screen-reader audit, hosted account-isolation test, real-provider generation-quality test, user study, or completed full-browser-suite pass. A broader legacy test run exposed tests that still depend on the live backend and outdated card/creation contracts. The run was stopped; its accidental generation job was cancelled and retained as a failed test audit record. The focused presentation/editing/settings tests now intercept all API requests. Isolate and update the remaining legacy suites before treating the full suite as a release gate. The repository line-budget guard also still fails on existing oversized files; no budgets were raised for this increment.
+
+Course overview, My Learning, public home, Studio, broader program-page redesign, and hosted guarantees are not implemented by this increment. Two alternative visual treatments were not produced. Next: review this treatment with real content, then implement the distinct course overview before moving to personal learning and creator navigation.

@@ -415,7 +415,7 @@ export default function CourseLearningLayout({
   };
 
   return (
-    <div className="main-layout">
+    <div className="main-layout learning-layout">
       <Sidebar
         sections={displayedSections}
         currentSectionIndex={effectiveSectionIndex}

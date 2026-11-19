@@ -58,6 +58,13 @@ export default function Dropdown({
     <div
       className={`dropdown ${isOpen ? "dropdown-open" : ""} ${className}`.trim()}
       onBlur={handleBlur}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && isOpen) {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsOpen(false);
+        }
+      }}
     >
       <button
         className="dropdown-trigger"
@@ -67,11 +74,6 @@ export default function Dropdown({
         aria-expanded={isOpen}
         disabled={disabled}
         onClick={() => setIsOpen((current) => !current)}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            setIsOpen(false);
-          }
-        }}
       >
         <span className="dropdown-value">{selectedOption?.label ?? placeholder}</span>
         <svg className="dropdown-chevron" viewBox="0 0 16 16" aria-hidden="true">

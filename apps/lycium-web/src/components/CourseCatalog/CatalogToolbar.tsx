@@ -10,6 +10,7 @@ import {
 } from "./catalogUtils";
 
 import Dropdown from "../Dropdown/Dropdown";
+import { Plus } from "lucide-react";
 
 type CatalogToolbarProps = {
   catalogViewLevel: CatalogViewLevel;
@@ -84,11 +85,7 @@ export default function CatalogToolbar({
     <div className={`catalog-toolbar${showPrimaryAction ? " catalog-toolbar--with-create" : ""}`}>
       {showPrimaryAction && (
         <button className="catalog-create-button" type="button" disabled={primaryActionDisabled} onClick={onPrimaryAction}>
-          <span className="catalog-create-button-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path d="M11 5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6V5Z" />
-            </svg>
-          </span>
+          <Plus size={17} aria-hidden="true" />
           <span>{primaryActionLabel}</span>
         </button>
       )}

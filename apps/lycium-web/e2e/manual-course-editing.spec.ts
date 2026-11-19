@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockLocalUiApi } from "./fixtures/localUiApi";
 
 const manualCourseTitle = "Manual E2E Course";
 const manualBlockBody = "Manual block body from E2E.";
@@ -8,6 +9,7 @@ const manualQuizAnswer = "Traceable source citations";
 const cancelledCourseTitle = "Cancelled E2E Course";
 
 test.beforeEach(async ({ page }) => {
+  await mockLocalUiApi(page);
   await page.addInitScript(() => {
     if (window.sessionStorage.getItem("lycium-e2e-storage-cleared") === "1") {
       return;
@@ -180,19 +182,25 @@ test("project text submissions survive a page reload", async ({ page }) => {
 
 test("manual course editing persists sidebar section and module changes", async ({ page }) => {
   await createBlankManualCourse(page);
+  if ((await page.locator(".sidebar-section-list:visible").count()) === 0) {
+    await page.getByRole("button", { name: "Course outline", exact: true }).click();
+  }
 
   await page.getByRole("button", { name: "Add section" }).click();
-  await expect(page.getByText("1.2 Section title")).toBeVisible();
+  await expect(page.getByRole("button", { name: "1.2 Section title", exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Delete 1.2 Section title" }).click();
   const deleteDialog = page.getByRole("dialog", { name: "Delete section" });
   await expect(deleteDialog).toBeVisible();
   await deleteDialog.getByRole("button", { name: "Delete", exact: true }).click();
-  await expect(page.getByText("1.2 Section title")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "1.2 Section title", exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Add module" }).click();
-  await expect(page.getByText("Module 2: Module title")).toBeVisible();
-  await expect(page.getByText("2.1 Section title")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Module 2: Module title", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "2.1 Section title", exact: true })).toBeVisible();
+  if (await page.getByRole("dialog", { name: "Course outline", exact: true }).isVisible()) {
+    await page.getByRole("button", { name: "Close course outline", exact: true }).click();
+  }
   await page.getByRole("button", { name: "Save course edits" }).click();
 
   const persistedStructure = await page.evaluate(() => {

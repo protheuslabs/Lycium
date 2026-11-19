@@ -39,7 +39,7 @@ type QuizBlockProps = {
       inProgress: boolean;
       timed: boolean;
       passed: boolean;
-    }
+    },
   ) => void;
 };
 
@@ -49,7 +49,7 @@ export default function QuizBlock(props: QuizBlockProps) {
     return <div className="quiz-block" />;
   }
 
-  const sessionKey = `${props.name}:${props.isEditMode === true}:${JSON.stringify(props.data)}`;
+  const sessionKey = `${props.storageKey ?? props.name}:${props.name}:${props.isEditMode === true}:${JSON.stringify(props.data)}`;
   return <ClientQuizBlock key={sessionKey} {...props} />;
 }
 
@@ -65,7 +65,7 @@ function ClientQuizBlock({
   const questionBank = useMemo(() => normalizePayload(data), [data]);
   const questionsPerAttempt = useMemo(
     () => extractQuestionsPerAttempt(data, questionBank.length),
-    [data, questionBank.length]
+    [data, questionBank.length],
   );
   const [initialSession] = useState(() => {
     try {
@@ -87,7 +87,7 @@ function ClientQuizBlock({
         ...question,
         timed: question.timed || normalizeBoolean(data.timed),
       })),
-    [attemptOrder, data.timed, questionBank]
+    [attemptOrder, data.timed, questionBank],
   );
   const isTimed = questionsWithTiming.some((question) => question.timed);
   const timerDuration = extractTimeLimit(data);
@@ -96,34 +96,22 @@ function ClientQuizBlock({
   const showAnswers = shouldShowAnswersFromPayload(data);
   const [selectedByQuestion, setSelectedByQuestion] = useState(initialSession.selectedByQuestion);
   const [submitted, setSubmitted] = useState(initialSession.submitted);
-  const [questionCorrectness, setQuestionCorrectness] = useState(initialSession.questionCorrectness);
+  const [questionCorrectness, setQuestionCorrectness] = useState(
+    initialSession.questionCorrectness,
+  );
   const [questionMarked, setQuestionMarked] = useState(initialSession.questionMarked);
   const [attemptCount, setAttemptCount] = useState(initialSession.attemptCount);
   const [attemptHistory, setAttemptHistory] = useState(initialSession.attemptHistory);
-  const [reviewAttemptNumber, setReviewAttemptNumber] = useState(initialSession.reviewAttemptNumber);
+  const [reviewAttemptNumber, setReviewAttemptNumber] = useState(
+    initialSession.reviewAttemptNumber,
+  );
   const [elapsedSeconds, setElapsedSeconds] = useState(initialSession.elapsedSeconds);
   const [startedAtMs, setStartedAtMs] = useState(initialSession.startedAtMs);
   const [attemptStarted, setAttemptStarted] = useState(initialSession.attemptStarted);
 
   useEffect(() => {
-    if (initialSession.attemptStarted && !initialSession.submitted && !isEditMode) {
-      browserStorage.writeQuizProgress(
-        storageKey,
-        name,
-        {
-          startedAt: new Date(initialSession.startedAtMs).toISOString(),
-          attemptCount: initialSession.attemptCount,
-          attemptHistory: initialSession.attemptHistory,
-          submitted: false,
-          attemptStarted: true,
-          attemptOrder: initialSession.attemptOrder,
-          attemptSignature: attemptSignature(initialSession.attemptOrder),
-        }
-      );
-    }
-
     onSubmissionChange?.(name, initialSession.submitted);
-  }, [initialSession, isEditMode, name, onSubmissionChange, storageKey]);
+  }, [initialSession, name, onSubmissionChange]);
 
   const handleSubmit = useCallback(() => {
     if (!attemptStarted) {
@@ -134,8 +122,12 @@ function ClientQuizBlock({
       return areSelectionsCorrect(question.correctAnswers, selected);
     });
     const finalElapsedSeconds = secondsSince(startedAtMs);
-    const normalizedElapsedSeconds = timerDuration === null ? finalElapsedSeconds : Math.min(finalElapsedSeconds, timerDuration);
-    const scorePercentage = questionsWithTiming.length > 0 ? (results.filter(Boolean).length / questionsWithTiming.length) * 100 : 0;
+    const normalizedElapsedSeconds =
+      timerDuration === null ? finalElapsedSeconds : Math.min(finalElapsedSeconds, timerDuration);
+    const scorePercentage =
+      questionsWithTiming.length > 0
+        ? (results.filter(Boolean).length / questionsWithTiming.length) * 100
+        : 0;
     const passed = passPercentage === null || scorePercentage >= passPercentage;
     const correctCount = results.filter(Boolean).length;
     const totalQuestions = questionsWithTiming.length;
@@ -160,23 +152,19 @@ function ClientQuizBlock({
     setElapsedSeconds(normalizedElapsedSeconds);
     setAttemptCount(nextAttemptCount);
     setAttemptHistory(nextAttemptHistory);
-    browserStorage.writeQuizProgress(
-      storageKey,
-      name,
-      {
-        startedAt: new Date(startedAtMs).toISOString(),
-        submittedAt: new Date().toISOString(),
-        submitted: true,
-        attemptStarted: true,
-        attemptCount: nextAttemptCount,
-        attemptHistory: nextAttemptHistory,
-        elapsedSeconds: normalizedElapsedSeconds,
-        selectedByQuestion,
-        questionCorrectness: results,
-        attemptOrder,
-        attemptSignature: attemptSignature(attemptOrder),
-      }
-    );
+    browserStorage.writeQuizProgress(storageKey, name, {
+      startedAt: new Date(startedAtMs).toISOString(),
+      submittedAt: new Date().toISOString(),
+      submitted: true,
+      attemptStarted: true,
+      attemptCount: nextAttemptCount,
+      attemptHistory: nextAttemptHistory,
+      elapsedSeconds: normalizedElapsedSeconds,
+      selectedByQuestion,
+      questionCorrectness: results,
+      attemptOrder,
+      attemptSignature: attemptSignature(attemptOrder),
+    });
     onSubmissionChange?.(name, true);
     onProgressChange?.(name, {
       submitted: true,
@@ -184,7 +172,22 @@ function ClientQuizBlock({
       timed: timerDuration !== null || isTimed,
       passed,
     });
-  }, [attemptCount, attemptHistory, attemptOrder, attemptStarted, isTimed, name, onProgressChange, onSubmissionChange, passPercentage, questionsWithTiming, selectedByQuestion, startedAtMs, storageKey, timerDuration]);
+  }, [
+    attemptCount,
+    attemptHistory,
+    attemptOrder,
+    attemptStarted,
+    isTimed,
+    name,
+    onProgressChange,
+    onSubmissionChange,
+    passPercentage,
+    questionsWithTiming,
+    selectedByQuestion,
+    startedAtMs,
+    storageKey,
+    timerDuration,
+  ]);
 
   useEffect(() => {
     if (isEditMode || submitted || !attemptStarted) {
@@ -204,17 +207,27 @@ function ClientQuizBlock({
     return () => clearInterval(interval);
   }, [attemptStarted, handleSubmit, isEditMode, startedAtMs, submitted, timerDuration]);
 
-  const allQuestionsAnswered = questionsWithTiming.every((_, idx) => (selectedByQuestion[idx] ?? []).length > 0);
+  const allQuestionsAnswered = questionsWithTiming.every(
+    (_, idx) => (selectedByQuestion[idx] ?? []).length > 0,
+  );
   const attemptLimitReached = maxAttempts !== null && attemptCount >= maxAttempts;
   const canTryAgain = submitted && !attemptLimitReached;
-  const canSubmit = !isEditMode && attemptStarted && !submitted && !attemptLimitReached && allQuestionsAnswered;
+  const canSubmit =
+    !isEditMode && attemptStarted && !submitted && !attemptLimitReached && allQuestionsAnswered;
   const currentAttempt = submitted || attemptLimitReached ? attemptCount : attemptCount + 1;
   const attemptsLabel = `${currentAttempt}/${maxAttempts ?? "∞"}`;
   const timeLabel = `${formatDuration(elapsedSeconds)}/${timerDuration === null ? "∞" : formatDuration(timerDuration)}`;
-  const hasQuizProgress = attemptStarted || selectedByQuestion.some((selection) => selection.length > 0) || attemptHistory.length > 0;
+  const hasQuizProgress =
+    attemptStarted ||
+    selectedByQuestion.some((selection) => selection.length > 0) ||
+    attemptHistory.length > 0;
   const isQuizInProgress = !submitted && hasQuizProgress;
-  const reviewAttempt = attemptHistory.find((attempt) => attempt.attemptNumber === reviewAttemptNumber);
-  const displayedQuestions = reviewAttempt?.attemptOrder ? buildAttemptQuestions(questionBank, reviewAttempt.attemptOrder) : questionsWithTiming;
+  const reviewAttempt = attemptHistory.find(
+    (attempt) => attempt.attemptNumber === reviewAttemptNumber,
+  );
+  const displayedQuestions = reviewAttempt?.attemptOrder
+    ? buildAttemptQuestions(questionBank, reviewAttempt.attemptOrder)
+    : questionsWithTiming;
   const displayedSelectedByQuestion = reviewAttempt?.selectedByQuestion ?? selectedByQuestion;
   const displayedQuestionCorrectness = reviewAttempt?.questionCorrectness ?? questionCorrectness;
   const isReviewingPastAttempt = Boolean(reviewAttempt);
@@ -225,7 +238,8 @@ function ClientQuizBlock({
   const historicalAttempts = submitted ? attemptHistory.slice(0, -1) : attemptHistory;
   const currentAttemptResult = submitted ? attemptHistory[attemptHistory.length - 1] : null;
   const currentAttemptPassed = Boolean(
-    currentAttemptResult && (passPercentage === null || currentAttemptResult.scorePercentage >= passPercentage),
+    currentAttemptResult &&
+      (passPercentage === null || currentAttemptResult.scorePercentage >= passPercentage),
   );
 
   const {
@@ -241,8 +255,10 @@ function ClientQuizBlock({
     updateQuizData,
   } = useQuizEditor({ data, questionBank, onDataChange });
   const activeDisplayedQuestions = isEditMode ? editorDisplayedQuestions : displayedQuestions;
-  const plannedQuestionCount = activeDisplayedQuestions.length || questionsPerAttempt || questionBank.length;
-  const shouldShowAttemptStart = !isEditMode && !submitted && !attemptStarted && !isReviewingPastAttempt;
+  const plannedQuestionCount =
+    activeDisplayedQuestions.length || questionsPerAttempt || questionBank.length;
+  const shouldShowAttemptStart =
+    !isEditMode && !submitted && !attemptStarted && !isReviewingPastAttempt;
   const shouldShowTopNextAttempt = submitted && canTryAgain && !isReviewingPastAttempt;
 
   useEffect(() => {
@@ -252,7 +268,15 @@ function ClientQuizBlock({
       timed: timerDuration !== null || isTimed,
       passed: currentAttemptPassed,
     });
-  }, [currentAttemptPassed, isQuizInProgress, isTimed, name, onProgressChange, submitted, timerDuration]);
+  }, [
+    currentAttemptPassed,
+    isQuizInProgress,
+    isTimed,
+    name,
+    onProgressChange,
+    submitted,
+    timerDuration,
+  ]);
 
   const toggleQuestionMarker = (questionIndex: number) => {
     setQuestionMarked((prev) => {
@@ -268,17 +292,25 @@ function ClientQuizBlock({
       return;
     }
 
-    setSelectedByQuestion((prev) => {
-      const nextState = prev.map((selection) => [...selection]);
-      const selected = nextState[questionIndex] ?? [];
-      if (multiple) {
-        nextState[questionIndex] = selected.includes(optionIndex)
-          ? selected.filter((item) => item !== optionIndex)
-          : [...selected, optionIndex];
-      } else {
-        nextState[questionIndex] = [optionIndex];
-      }
-      return nextState;
+    const nextState = selectedByQuestion.map((selection) => [...selection]);
+    const selected = nextState[questionIndex] ?? [];
+    if (multiple) {
+      nextState[questionIndex] = selected.includes(optionIndex)
+        ? selected.filter((item) => item !== optionIndex)
+        : [...selected, optionIndex];
+    } else {
+      nextState[questionIndex] = [optionIndex];
+    }
+    setSelectedByQuestion(nextState);
+    browserStorage.writeQuizProgress(storageKey, name, {
+      startedAt: new Date(startedAtMs).toISOString(),
+      attemptCount,
+      attemptHistory,
+      submitted: false,
+      attemptStarted: true,
+      attemptOrder,
+      attemptSignature: attemptSignature(attemptOrder),
+      selectedByQuestion: nextState,
     });
   };
 
@@ -286,13 +318,19 @@ function ClientQuizBlock({
     if (attemptLimitReached || questionBank.length === 0) {
       return;
     }
-    const previousAttempt = attemptHistory.length > 0 ? attemptHistory[attemptHistory.length - 1] : null;
-    const previousAttemptSignature = attemptOrder.length > 0
-      ? attemptSignature(attemptOrder)
-      : previousAttempt?.attemptOrder
-        ? attemptSignature(previousAttempt.attemptOrder)
-        : null;
-    const nextAttemptOrder = createAttemptOrder(questionBank, questionsPerAttempt, previousAttemptSignature);
+    const previousAttempt =
+      attemptHistory.length > 0 ? attemptHistory[attemptHistory.length - 1] : null;
+    const previousAttemptSignature =
+      attemptOrder.length > 0
+        ? attemptSignature(attemptOrder)
+        : previousAttempt?.attemptOrder
+          ? attemptSignature(previousAttempt.attemptOrder)
+          : null;
+    const nextAttemptOrder = createAttemptOrder(
+      questionBank,
+      questionsPerAttempt,
+      previousAttemptSignature,
+    );
     setAttemptStarted(true);
     setSubmitted(false);
     setQuestionCorrectness([]);
@@ -304,20 +342,16 @@ function ClientQuizBlock({
     setStartedAtMs(nextStartedAtMs);
     setElapsedSeconds(0);
     browserStorage.removeQuizMarkers(storageKey, name);
-    browserStorage.writeQuizProgress(
-      storageKey,
-      name,
-      {
-        startedAt: new Date(nextStartedAtMs).toISOString(),
-        attemptCount,
-        attemptHistory,
-        submitted: false,
-        attemptStarted: true,
-        attemptOrder: nextAttemptOrder,
-        attemptSignature: attemptSignature(nextAttemptOrder),
-        previousAttemptSignature: previousAttemptSignature ?? undefined,
-      }
-    );
+    browserStorage.writeQuizProgress(storageKey, name, {
+      startedAt: new Date(nextStartedAtMs).toISOString(),
+      attemptCount,
+      attemptHistory,
+      submitted: false,
+      attemptStarted: true,
+      attemptOrder: nextAttemptOrder,
+      attemptSignature: attemptSignature(nextAttemptOrder),
+      previousAttemptSignature: previousAttemptSignature ?? undefined,
+    });
     onSubmissionChange?.(name, false);
   };
 
@@ -379,7 +413,12 @@ function ClientQuizBlock({
       {shouldShowAttemptStart ? (
         <div className="quiz-start-panel">
           <p>Questions are hidden until the attempt begins.</p>
-          <button type="button" className="quiz-button" disabled={attemptLimitReached} onClick={handleBeginAttempt}>
+          <button
+            type="button"
+            className="quiz-button"
+            disabled={attemptLimitReached}
+            onClick={handleBeginAttempt}
+          >
             {attemptLimitReached ? "Attempts used" : `Begin attempt #${attemptCount + 1}`}
           </button>
         </div>
@@ -419,7 +458,9 @@ function ClientQuizBlock({
             {isReviewingPastAttempt
               ? "Back to current attempt"
               : submitted
-                ? (canTryAgain ? `Begin attempt #${attemptCount + 1}` : "Attempts used")
+                ? canTryAgain
+                  ? `Begin attempt #${attemptCount + 1}`
+                  : "Attempts used"
                 : "Submit"}
           </button>
         </div>

@@ -1,30 +1,32 @@
 :root {
   --lycium-brand-start: #0f5cff;
   --lycium-brand-end: #7a35ff;
-  --lycium-brand-primary: #1f3b87;
-  --lycium-brand-primary-hover: #2a4db0;
+  --lycium-brand-primary: #176b55;
+  --lycium-brand-primary-hover: #10533f;
   --lycium-danger: #ef4444;
   --lycium-success: #22c55e;
   --lycium-viewed-progress: #9fb7ff;
   --lycium-completed-progress: #2563eb;
 
-  --lycium-dark-canvas: #0b0b0c;
-  --lycium-dark-surface: #171717;
-  --lycium-dark-surface-raised: #1f1f22;
-  --lycium-dark-text: #f8fafc;
-  --lycium-dark-muted: #a3a3a3;
+  --lycium-dark-canvas: #1b1d1f;
+  --lycium-dark-surface: #222527;
+  --lycium-dark-surface-raised: #2b2e30;
+  --lycium-dark-text: #edf0f1;
+  --lycium-dark-muted: #b0b8bc;
 
   --lycium-light-canvas: #ffffff;
   --lycium-light-surface: #f7f8fb;
   --lycium-light-surface-raised: #ffffff;
   --lycium-light-text: #171717;
-  --lycium-light-muted: #566070;
+  --lycium-light-muted: #60686c;
 
   --lycium-color-canvas: var(--lycium-light-canvas);
   --lycium-color-surface: var(--lycium-light-surface);
   --lycium-color-surface-raised: var(--lycium-light-surface-raised);
   --lycium-color-text: var(--lycium-light-text);
   --lycium-color-text-muted: var(--lycium-light-muted);
+  --lycium-color-muted: var(--lycium-color-text-muted);
+  --lycium-color-page: var(--lycium-color-canvas);
   --lycium-color-border: #d8deea;
   --lycium-color-modal-border: #d9def5;
   --lycium-color-control-surface: rgba(255, 255, 255, 0.94);
@@ -32,9 +34,19 @@
   --lycium-color-control-active: rgba(74, 108, 247, 0.12);
 
   --lycium-radius-pill: 999px;
-  --lycium-radius-control: 1rem;
-  --lycium-radius-card: 1.25rem;
-  --lycium-radius-modal: 1.5rem;
+  --lycium-radius-control: 6px;
+  --lycium-radius-card: 8px;
+  --lycium-radius-modal: 8px;
+
+  --lycium-color-accent: #176b55;
+  --lycium-color-accent-soft: #e7f2ed;
+  --lycium-color-focus: #368bd6;
+  --lycium-color-reading: #30383c;
+  --lycium-color-outline: #f5f7f6;
+  --lycium-color-warning: #855b10;
+  --lycium-color-warning-soft: #faf3df;
+  --lycium-reader-width: 50rem;
+  --lycium-topbar-height: 3.5rem;
 
   --lycium-shadow-control: 0 12px 28px rgba(15, 23, 42, 0.07);
   --lycium-shadow-raised: 0 1.2rem 2.4rem rgba(22, 30, 52, 0.16);
@@ -54,6 +66,13 @@
   --lycium-color-control-active: rgba(255, 255, 255, 0.12);
   --lycium-shadow-control: 0 14px 32px rgba(0, 0, 0, 0.24);
   --lycium-shadow-raised: var(--lycium-shadow-dark-raised);
+  --lycium-color-accent: #80d2b6;
+  --lycium-color-accent-soft: #253d35;
+  --lycium-color-focus: #83bcf0;
+  --lycium-color-reading: #d5dcdf;
+  --lycium-color-outline: #17191b;
+  --lycium-color-warning: #e6c379;
+  --lycium-color-warning-soft: #322e22;
 }
 
 html[data-theme="light"] {

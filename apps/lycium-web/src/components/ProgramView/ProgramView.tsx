@@ -307,7 +307,7 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
   const activePercentage = Math.round(programProgress.viewedPercentage);
 
   return (
-    <main className="program-view-shell">
+    <main className="program-view-shell" id="main-content" tabIndex={-1}>
       <section className="program-hero-panel">
         <Button variant="nav" className="program-back-button" onClick={onOpenCatalog}>
           ← Catalog

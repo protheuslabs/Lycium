@@ -1,0 +1,100 @@
+.app-root .learning-layout .quiz-block,
+.app-root .learning-layout .project-block {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--lycium-color-text);
+  background: transparent;
+}
+.app-root .learning-layout .quiz-block {
+  margin: 0;
+}
+.app-root .learning-layout .quiz-meta-row {
+  gap: 0.5rem;
+  border-radius: 4px;
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-text-muted);
+  border-color: var(--lycium-color-border);
+  font-size: 0.78rem;
+}
+.app-root .learning-layout .quiz-start-panel {
+  padding-block: 2rem;
+}
+.app-root .learning-layout .quiz-start-panel p,
+.app-root .learning-layout .quiz-timer,
+.app-root .learning-layout .quiz-summary,
+.app-root .learning-layout .quiz-result {
+  color: var(--lycium-color-text-muted);
+}
+.app-root .learning-layout .quiz-question {
+  color: var(--lycium-color-text);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.app-root .learning-layout .quiz-question-block + .quiz-question-block {
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+  border-color: var(--lycium-color-border);
+}
+.app-root .learning-layout .quiz-option {
+  min-height: 44px;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--lycium-color-border);
+  border-radius: 4px;
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-reading);
+  line-height: 1.6;
+  cursor: pointer;
+}
+.app-root .learning-layout .quiz-option:has(input:checked) {
+  border-color: var(--lycium-color-accent);
+  background: var(--lycium-color-accent-soft);
+}
+.app-root .learning-layout .quiz-option-control {
+  margin-top: 0.2rem;
+}
+.app-root .learning-layout .quiz-option-control input {
+  accent-color: var(--lycium-brand-primary);
+}
+.app-root .learning-layout .quiz-button {
+  min-height: 44px;
+  border-radius: 6px;
+  border-color: transparent;
+  background: var(--lycium-brand-primary);
+  color: white;
+  padding: 0.65rem 1rem;
+}
+.app-root .learning-layout .quiz-button:hover:not(:disabled) {
+  background: var(--lycium-brand-primary-hover);
+  border-color: transparent;
+}
+.app-root .learning-layout .quiz-button:disabled {
+  color: var(--lycium-color-text-muted);
+  background: var(--lycium-color-surface);
+}
+.app-root .learning-layout .quiz-marker,
+.app-root .learning-layout .quiz-question-marker {
+  min-height: 32px;
+  min-width: 32px;
+  border-radius: 4px;
+  border-color: var(--lycium-color-border);
+  background: var(--lycium-color-surface);
+  color: var(--lycium-color-text);
+}
+.app-root .learning-layout .quiz-marker-marked,
+.app-root .learning-layout .quiz-question-marker.quiz-marker-marked {
+  color: var(--lycium-color-warning);
+  background: var(--lycium-color-warning-soft);
+}
+.app-root .learning-layout .project-block-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+.app-root .learning-layout .project-block-kicker {
+  letter-spacing: 0;
+}
+.app-root .learning-layout .project-rubric-table-wrap,
+.app-root .learning-layout .project-submission-box {
+  width: 100%;
+}

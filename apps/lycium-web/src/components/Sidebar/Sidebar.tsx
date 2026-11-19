@@ -1,18 +1,20 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import type { SectionStatus } from "../../courseTypes";
-import { SidebarAddRow, SidebarEditControls, SidebarFinishButton, SidebarModuleHeader, SidebarSourceTab, SidebarStatusBadge, type DisplayStatus } from "./SidebarPrimitives";
-import { DeleteBlockButton, promptForDeleteConfirmation } from "../ContentView/CourseEditControls";
+import {
+  SidebarAddRow,
+  SidebarEditControls,
+  SidebarFinishButton,
+  SidebarModuleHeader,
+  SidebarSourceTab,
+  type DisplayStatus,
+} from "./SidebarPrimitives";
+import SidebarSectionItem, { type SidebarSection } from "./SidebarSectionItem";
+import { containDialogFocus } from "../../utils/dialogFocus";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
+import { PanelLeft, X } from "lucide-react";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 
-type SidebarSection = {
-  id: string;
-  title: string;
-  moduleIndex: number;
-  moduleTitle: string;
-  displayNumber: string;
-};
-
-let persistedSidebarCollapsed = true;
+let persistedSidebarCollapsed = false;
 
 type SidebarProps = {
   sections: SidebarSection[];
@@ -33,126 +35,16 @@ type SidebarProps = {
   onSourcesSelect?: () => void;
   onAddSection?: (moduleIndex: number) => void;
   onDeleteSection?: (sectionId: string) => void;
-  onMoveSection?: (sectionId: string, targetModuleIndex: number, targetSectionIndex: number) => void;
+  onMoveSection?: (
+    sectionId: string,
+    targetModuleIndex: number,
+    targetSectionIndex: number,
+  ) => void;
   onAddModule?: () => void;
 };
-const SidebarSectionItem = memo(function SidebarSectionItem({
-  section,
-  index,
-  status,
-  isActive,
-  isCollapsed,
-  isEditMode,
-  isDragging,
-  draggingSectionId,
-  onSectionSelect,
-  onDeleteSection,
-  onDragStartSection,
-  onDragEndSection,
-  onMoveSection,
-}: {
-  section: SidebarSection;
-  index: number;
-  status: DisplayStatus;
-  isActive: boolean;
-  isCollapsed: boolean;
-  isEditMode: boolean;
-  isDragging: boolean;
-  draggingSectionId: string | null;
-  onSectionSelect: (index: number) => void;
-  onDeleteSection?: (sectionId: string) => void;
-  onDragStartSection?: (sectionId: string) => void;
-  onDragEndSection?: () => void;
-  onMoveSection?: (sectionId: string, targetModuleIndex: number, targetSectionIndex: number) => void;
-}) {
-  const isLocked = status === "locked";
-  const targetSectionIndex = Number(section.displayNumber.split(".")[1] ?? 1) - 1;
-  const handleClick = useCallback(() => {
-    if (!isLocked) {
-      onSectionSelect(index);
-    }
-  }, [index, isLocked, onSectionSelect]);
-
-  const handleDragStart = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      if (!isEditMode || !onMoveSection) {
-        return;
-      }
-
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", section.id);
-      onDragStartSection?.(section.id);
-    },
-    [isEditMode, onDragStartSection, onMoveSection, section.id],
-  );
-
-  const handleDragOver = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      if (!isEditMode || !onMoveSection) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      event.dataTransfer.dropEffect = "move";
-      const draggedId = event.dataTransfer.getData("text/plain") || draggingSectionId;
-      if (draggedId && draggedId !== section.id) {
-        const bounds = event.currentTarget.getBoundingClientRect();
-        const targetIndex = targetSectionIndex + (event.clientY > bounds.top + bounds.height / 2 ? 1 : 0);
-        onMoveSection(draggedId, section.moduleIndex, targetIndex);
-      }
-    },
-    [draggingSectionId, isEditMode, onMoveSection, section.id, section.moduleIndex, targetSectionIndex],
-  );
-
-  const handleDrop = useCallback(
-    (event: DragEvent<HTMLDivElement>) => {
-      if (!isEditMode || !onMoveSection) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      const sectionId = event.dataTransfer.getData("text/plain");
-      if (sectionId) {
-        onMoveSection(sectionId, section.moduleIndex, targetSectionIndex);
-      }
-      onDragEndSection?.();
-    },
-    [isEditMode, onDragEndSection, onMoveSection, section.moduleIndex, targetSectionIndex],
-  );
-
-  return (
-    <div
-      className={`sidebar-item ${isActive ? "active" : ""} ${isLocked ? "locked" : ""} ${
-        isDragging ? "sidebar-item--dragging" : ""
-      } ${isEditMode ? "sidebar-item--editable" : ""}`}
-      onClick={handleClick}
-      aria-disabled={isLocked}
-      draggable={isEditMode}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-      onDragEnd={() => onDragEndSection?.()}
-    >
-      <span className="sidebar-item-label">
-        {isCollapsed ? section.displayNumber : `${section.displayNumber} ${section.title}`}
-      </span>
-      {isEditMode ? (
-        <DeleteBlockButton
-          label={`Delete ${section.displayNumber} ${section.title}`}
-          onClick={() => promptForDeleteConfirmation(() => onDeleteSection?.(section.id), "Delete section", "Are you sure you want to delete this section?")}
-        />
-      ) : (
-        <SidebarStatusBadge status={status} />
-      )}
-    </div>
-  );
-});
-
 export default function Sidebar({
   sections,
-  currentSectionIndex, 
+  currentSectionIndex,
   onSectionSelect,
   courseTitle,
   progressPercentage,
@@ -172,16 +64,25 @@ export default function Sidebar({
   onMoveSection,
   onAddModule,
 }: SidebarProps) {
-  const activeModuleIndex = isSourcesActive ? -1 : sections[currentSectionIndex]?.moduleIndex ?? 0;
-  const activeModuleIndexRef = useRef(activeModuleIndex);
-  const [expandedModules, setExpandedModules] = useState<Set<number>>(() => new Set());
+  const activeModuleIndex = isSourcesActive
+    ? -1
+    : (sections[currentSectionIndex]?.moduleIndex ?? 0);
+  const [moduleExpansion, setModuleExpansion] = useState<Record<number, boolean>>({});
   const [isCollapsed, setIsCollapsed] = useState(() => persistedSidebarCollapsed);
-  const [isContentFading, setIsContentFading] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 860px)");
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [draggingSectionId, setDraggingSectionId] = useState<string | null>(null);
 
   useEffect(() => {
-    activeModuleIndexRef.current = activeModuleIndex;
-  }, [activeModuleIndex]);
+    if (!isMobile || !isDrawerOpen) return;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    dialog.showModal();
+    return () => {
+      if (dialog.open) dialog.close();
+    };
+  }, [isMobile, isDrawerOpen]);
 
   const moduleGroups = useMemo(() => {
     const groups: Array<{
@@ -213,34 +114,36 @@ export default function Sidebar({
     [sectionStatuses],
   );
 
-  const toggleModule = useCallback((moduleIndex: number) => {
-    if (moduleIndex === activeModuleIndexRef.current) {
-      return;
-    }
-
-    setExpandedModules((current) => {
-      const next = new Set(current);
-
-      if (next.has(moduleIndex)) {
-        next.delete(moduleIndex);
-      } else {
-        next.add(moduleIndex);
-      }
-
-      return next;
-    });
-  }, []);
+  const toggleModule = useCallback(
+    (moduleIndex: number) => {
+      setModuleExpansion((current) => ({
+        ...current,
+        [moduleIndex]: !(current[moduleIndex] ?? moduleIndex === activeModuleIndex),
+      }));
+    },
+    [activeModuleIndex],
+  );
 
   const toggleCollapsed = () => {
-    setIsContentFading(true);
-    window.setTimeout(() => {
-      setIsCollapsed((collapsed) => {
-        const nextCollapsed = !collapsed;
-        persistedSidebarCollapsed = nextCollapsed;
-        return nextCollapsed;
-      });
-      window.setTimeout(() => setIsContentFading(false), 220);
-    }, 120);
+    if (isMobile) {
+      setIsDrawerOpen((open) => !open);
+    } else {
+      persistedSidebarCollapsed = !isCollapsed;
+      setIsCollapsed(!isCollapsed);
+    }
+  };
+
+  const closeOutline = () => {
+    if (isMobile) setIsDrawerOpen(false);
+    else {
+      persistedSidebarCollapsed = true;
+      setIsCollapsed(true);
+    }
+  };
+
+  const selectSection = (index: number) => {
+    onSectionSelect(index);
+    if (isMobile) setIsDrawerOpen(false);
   };
 
   const handleSectionListDragOver = useCallback(
@@ -278,45 +181,35 @@ export default function Sidebar({
     },
     [draggingSectionId, isEditMode, onMoveSection],
   );
-  
-  return (
-    <aside className={`sidebar ${isCollapsed ? "sidebar--collapsed" : ""} ${isContentFading ? "sidebar--content-fading" : ""}`}>
-      <button
-        className="sidebar-pulltab"
-        type="button"
-        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        aria-expanded={!isCollapsed}
-        onClick={toggleCollapsed}
-      >
-        <span aria-hidden="true">{isCollapsed ? "›" : "‹"}</span>
-      </button>
 
-      {canEditCourse && (
-        <SidebarEditControls
-          isEditMode={isEditMode}
-          onStartEdit={onStartEdit}
-          onCancelEdit={onCancelEdit}
-          onSaveEdit={onSaveEdit}
-          onOpenCourseSettings={onOpenCourseSettings}
+  const outline = (
+    <>
+      <div className="sidebar-heading">
+        <h2>Course outline</h2>
+        <button
+          type="button"
+          className="sidebar-close"
+          aria-label="Close course outline"
+          title="Close course outline"
+          onClick={closeOutline}
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
+      </div>
+      <div className="progress-wrapper">
+        <p className="sidebar-title">{courseTitle}</p>
+        <ProgressMeter
+          cacheKey={`sidebar:${courseTitle}`}
+          progressPercentage={progressPercentage}
+          viewedPercentage={viewedPercentage}
         />
-      )}
+      </div>
 
-      {!isEditMode && (
-        <div className="progress-wrapper" aria-hidden={isCollapsed}>
-          <h3 className="sidebar-title">{courseTitle}</h3>
-          <ProgressMeter
-            cacheKey={`sidebar:${courseTitle}`}
-            progressPercentage={progressPercentage}
-            viewedPercentage={viewedPercentage}
-          />
-        </div>
-      )}
-      
-      <div className="sidebar-section-list">
+      <nav className="sidebar-section-list" aria-label="Course sections">
         {moduleGroups.map((moduleGroup) => {
           const isActiveModule = moduleGroup.moduleIndex === activeModuleIndex;
-          const isExpanded = isActiveModule || expandedModules.has(moduleGroup.moduleIndex);
-          
+          const isExpanded = moduleExpansion[moduleGroup.moduleIndex] ?? isActiveModule;
+
           return (
             <section className="sidebar-module" key={moduleGroup.moduleIndex}>
               <SidebarModuleHeader
@@ -324,17 +217,29 @@ export default function Sidebar({
                 moduleTitle={moduleGroup.moduleTitle}
                 isExpanded={isExpanded}
                 isActiveModule={isActiveModule}
-                isCollapsed={isCollapsed}
+                isCollapsed={false}
                 onToggleModule={toggleModule}
               />
 
               {isExpanded && (
                 <div
                   className="sidebar-module-sections"
-                  onDragOver={(event) => handleSectionListDragOver(event, moduleGroup.moduleIndex, moduleGroup.sections.length)}
-                  onDrop={(event) => handleSectionListDrop(event, moduleGroup.moduleIndex, moduleGroup.sections.length)}
+                  onDragOver={(event) =>
+                    handleSectionListDragOver(
+                      event,
+                      moduleGroup.moduleIndex,
+                      moduleGroup.sections.length,
+                    )
+                  }
+                  onDrop={(event) =>
+                    handleSectionListDrop(
+                      event,
+                      moduleGroup.moduleIndex,
+                      moduleGroup.sections.length,
+                    )
+                  }
                 >
-	                  {moduleGroup.sections.map(({ section, index: idx }) => {
+                  {moduleGroup.sections.map(({ section, index: idx }) => {
                     const sectionStatus = getSectionStatus(section.id);
 
                     return (
@@ -344,40 +249,109 @@ export default function Sidebar({
                         index={idx}
                         status={sectionStatus}
                         isActive={idx === currentSectionIndex}
-                        isCollapsed={isCollapsed}
+                        isCollapsed={false}
                         isEditMode={isEditMode}
                         isDragging={draggingSectionId === section.id}
                         draggingSectionId={draggingSectionId}
-                        onSectionSelect={onSectionSelect}
+                        onSectionSelect={selectSection}
                         onDeleteSection={onDeleteSection}
                         onDragStartSection={setDraggingSectionId}
                         onDragEndSection={() => setDraggingSectionId(null)}
                         onMoveSection={onMoveSection}
-	                      />
-	                    );
-	                  })}
-                    {isEditMode && (
-                      <SidebarAddRow
-                        label="Add section"
-                        isCollapsed={isCollapsed}
-                        onClick={() => onAddSection?.(moduleGroup.moduleIndex)}
                       />
-                    )}
-	                </div>
-	              )}
-	            </section>
+                    );
+                  })}
+                  {isEditMode && (
+                    <SidebarAddRow
+                      label="Add section"
+                      isCollapsed={false}
+                      onClick={() => onAddSection?.(moduleGroup.moduleIndex)}
+                    />
+                  )}
+                </div>
+              )}
+            </section>
           );
         })}
-          <SidebarSourceTab
-            isActive={isSourcesActive}
-            isCollapsed={isCollapsed}
-            sourceCount={sourceCount}
-            onSelect={onSourcesSelect}
-          />
-          {isEditMode && <SidebarAddRow label="Add module" isCollapsed={isCollapsed} onClick={onAddModule} />}
-	      </div>
+        <SidebarSourceTab
+          isActive={isSourcesActive}
+          isCollapsed={false}
+          sourceCount={sourceCount}
+          onSelect={() => {
+            onSourcesSelect?.();
+            if (isMobile) setIsDrawerOpen(false);
+          }}
+        />
+        {isEditMode && (
+          <SidebarAddRow label="Add module" isCollapsed={false} onClick={onAddModule} />
+        )}
+      </nav>
 
-      {isEditMode && <SidebarFinishButton isCollapsed={isCollapsed} onFinish={onSaveEdit} />}
-    </aside>
-  )
+      {isEditMode && <SidebarFinishButton isCollapsed={false} onFinish={onSaveEdit} />}
+    </>
+  );
+
+  return (
+    <>
+      <div className="course-outline-toolbar">
+        <button
+          type="button"
+          className="course-outline-trigger"
+          aria-expanded={isMobile ? isDrawerOpen : !isCollapsed}
+          aria-controls="course-outline-panel"
+          onClick={toggleCollapsed}
+        >
+          <PanelLeft size={18} aria-hidden="true" />
+          <span>Course outline</span>
+        </button>
+        <span className="course-position">
+          {isSourcesActive ? "Sources" : `Section ${currentSectionIndex + 1} of ${sections.length}`}
+        </span>
+        {canEditCourse && (
+          <SidebarEditControls
+            isEditMode={isEditMode}
+            onStartEdit={onStartEdit}
+            onCancelEdit={onCancelEdit}
+            onSaveEdit={onSaveEdit}
+            onOpenCourseSettings={onOpenCourseSettings}
+          />
+        )}
+      </div>
+      {isMobile ? (
+        <dialog
+          ref={dialogRef}
+          onKeyDown={containDialogFocus}
+          id="course-outline-panel"
+          className="sidebar-drawer"
+          aria-label="Course outline"
+          onCancel={(event) => {
+            event.preventDefault();
+            setIsDrawerOpen(false);
+          }}
+          onClose={() => setIsDrawerOpen(false)}
+          onClick={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            if (
+              event.target === event.currentTarget &&
+              (event.clientX < rect.left ||
+                event.clientX > rect.right ||
+                event.clientY < rect.top ||
+                event.clientY > rect.bottom)
+            )
+              setIsDrawerOpen(false);
+          }}
+        >
+          {outline}
+        </dialog>
+      ) : (
+        <aside
+          id="course-outline-panel"
+          className={`sidebar ${isCollapsed ? "sidebar--collapsed" : ""}`}
+          aria-label="Course outline"
+        >
+          {outline}
+        </aside>
+      )}
+    </>
+  );
 }

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { mockLocalUiApi } from "./fixtures/localUiApi";
 
 const INTERACTIVE_SELECTOR = [
   "a[href]",
@@ -16,6 +17,7 @@ const INTERACTIVE_SELECTOR = [
 ].join(",");
 
 test.beforeEach(async ({ page }) => {
+  await mockLocalUiApi(page);
   await page.addInitScript(() => {
     if (window.sessionStorage.getItem("lycium-e2e-storage-cleared") === "1") {
       return;

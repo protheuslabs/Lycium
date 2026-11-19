@@ -125,7 +125,7 @@ export default function EditableSectionContent({
             onBlockChange={onBlockChange}
             onBlockDelete={onBlockDelete}
             onCitationClick={onCitationClick}
-            onMissingCitationClick={() => onMissingCitationClick(blockIndex)}
+            onMissingCitationClick={isEditMode ? () => onMissingCitationClick(blockIndex) : undefined}
             onQuizSubmissionChange={onQuizSubmissionChange}
             onQuizProgressChange={onQuizProgressChange}
             onProjectSubmissionChange={onProjectSubmissionChange}

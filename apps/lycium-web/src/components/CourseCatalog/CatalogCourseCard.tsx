@@ -7,6 +7,7 @@ import CatalogProgressMeter from "./CatalogProgressMeter";
 import type { CatalogVisibleCourse } from "./catalogUtils";
 import { getCourseLifecycleSummary } from "../../utils/courseLifecycle";
 import { getLocalDraftMetadata } from "../../utils/localCourseDrafts";
+import { BookOpen, Info } from "lucide-react";
 
 type CatalogCourseCardProps = {
   visibleCourse: CatalogVisibleCourse;
@@ -29,8 +30,14 @@ export default function CatalogCourseCard({
   selectionMode = false,
   onToggleSelect,
 }: CatalogCourseCardProps) {
-  const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites, requirementContexts } =
-    visibleCourse;
+  const {
+    course,
+    courseProgress,
+    bookmarkedSection,
+    hasCourseActivity,
+    unmetPrerequisites,
+    requirementContexts,
+  } = visibleCourse;
   const [isPrerequisiteModalOpen, setIsPrerequisiteModalOpen] = useState(false);
   const hasMounted = useClientMounted();
   const localDraft = getLocalDraftMetadata(course);
@@ -55,12 +62,15 @@ export default function CatalogCourseCard({
 
   return (
     <CatalogActionCard
+      label={`${selectionMode ? "Select" : "Open"} ${course.title}`}
       className={`course-card course-card--lifecycle-${catalogTone} ${requiresPrerequisites && !selectionMode ? "course-card--locked" : ""} ${selectionMode ? "course-card--select-mode" : ""} ${selected ? "course-card--selected" : ""}`}
       disabled={!canActivateCard}
       onActivate={handleCourseOpen}
       pressed={selected || undefined}
     >
-      {requiresPrerequisites && !selectionMode && <span className="course-card-lock-watermark" aria-hidden="true" />}
+      {requiresPrerequisites && !selectionMode && (
+        <span className="course-card-lock-watermark" aria-hidden="true" />
+      )}
       <button
         className="course-info-button"
         type="button"
@@ -71,13 +81,23 @@ export default function CatalogCourseCard({
         }}
         onKeyDown={(event) => event.stopPropagation()}
       >
-        i
+        <Info size={18} aria-hidden="true" />
       </button>
+      <p className="course-card-category">
+        <BookOpen size={16} aria-hidden="true" />
+        <span>{course.data.department || course.data.category || "Course"}</span>
+      </p>
       <h3>
         {course.title}
-        {localDraft && <span className="course-draft-badge">{localDraft.parentCourseKey ? "Fork" : "Local draft"}</span>}
+        {localDraft && (
+          <span className="course-draft-badge">
+            {localDraft.parentCourseKey ? "Fork" : "Local draft"}
+          </span>
+        )}
         {!lifecycle.needsSourceInput && (
-          <span className={`course-lifecycle-badge course-lifecycle-badge-${lifecycle.tone}`}>{lifecycle.badgeLabel}</span>
+          <span className={`course-lifecycle-badge course-lifecycle-badge-${lifecycle.tone}`}>
+            {lifecycle.badgeLabel}
+          </span>
         )}
       </h3>
       {(bookmarkedSection || requirementLabel) && (
@@ -88,12 +108,18 @@ export default function CatalogCourseCard({
               <span>{bookmarkedSection.sectionTitle}</span>
             </>
           )}
-          {requirementLabel && <span className="course-requirement-context">Satisfies: {requirementLabel}</span>}
+          {requirementLabel && (
+            <span className="course-requirement-context">Satisfies: {requirementLabel}</span>
+          )}
         </p>
       )}
-      {course.data.shortDescription && <p className="course-short-description">{course.data.shortDescription}</p>}
+      {course.data.shortDescription && (
+        <p className="course-short-description">{course.data.shortDescription}</p>
+      )}
       {!canShowActivity ? (
-        <p className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}>
+        <p
+          className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}
+        >
           {requiresPrerequisites && !selectionMode ? (
             <button
               className="course-card-requires-button"
@@ -111,10 +137,7 @@ export default function CatalogCourseCard({
           )}
         </p>
       ) : (
-        <CatalogProgressMeter
-          progress={courseProgress}
-          variant="course"
-        />
+        <CatalogProgressMeter progress={courseProgress} variant="course" />
       )}
       {shouldShowLifecycleAction && (
         <button
@@ -141,7 +164,8 @@ export default function CatalogCourseCard({
           onClose={() => setIsPrerequisiteModalOpen(false)}
         >
           <p className="course-prerequisite-modal-intro">
-            Complete the following course{unmetPrerequisites.length === 1 ? "" : "s"} before opening this course.
+            Complete the following course{unmetPrerequisites.length === 1 ? "" : "s"} before opening
+            this course.
           </p>
           <div className="course-prerequisite-modal-list">
             {unmetPrerequisites.map((prerequisite) => (

@@ -104,6 +104,26 @@ describe("restoreQuizSession", () => {
     ]);
   });
 
+  it("restores draft answers without changing question/answer order or the start time", () => {
+    const session = restoreQuizSession({
+      isEditMode: false,
+      questionBank,
+      questionsPerAttempt: 2,
+      persistedProgress: {
+        startedAt: "2026-01-01T00:00:00.000Z",
+        attemptStarted: true,
+        attemptOrder,
+        selectedByQuestion: [[1]],
+      },
+      nowMs: Date.parse("2026-01-01T00:01:30.000Z"),
+    });
+    expect(session.selectedByQuestion).toEqual([[1], []]);
+    expect(session.attemptOrder).toEqual(attemptOrder);
+    expect(session.startedAtMs).toBe(Date.parse("2026-01-01T00:00:00.000Z"));
+    expect(session.elapsedSeconds).toBe(90);
+    expect(session.submitted).toBe(false);
+  });
+
   it("falls back to a waiting session for malformed legacy data", () => {
     const malformed = {
       startedAt: "not-a-date",

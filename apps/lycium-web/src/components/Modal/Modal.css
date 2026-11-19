@@ -3,6 +3,12 @@
   inset: 0;
   z-index: 50;
   box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  border: 0;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -11,6 +17,14 @@
   padding: 5rem 1rem 2rem;
   background: rgba(8, 10, 14, 0.54);
   backdrop-filter: blur(10px);
+}
+
+.lycium-modal-backdrop:not([open]) {
+  display: none;
+}
+
+.lycium-modal-backdrop::backdrop {
+  background: transparent;
 }
 
 .lycium-modal {
@@ -48,26 +62,22 @@
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: var(--lycium-radius-pill);
+  border-radius: var(--lycium-radius-control);
   padding: 0;
   color: var(--lycium-color-text);
   background: var(--lycium-color-surface);
   cursor: pointer;
-  transition: transform 160ms ease, background-color 160ms ease, color 160ms ease;
 }
 
 .lycium-modal-close:hover,
 .lycium-modal-close:focus-visible {
   color: var(--lycium-color-text);
-  background: #e1e6ef;
-  outline: none;
-  transform: scale(1.06);
+  background: var(--lycium-color-control-hover);
 }
 
 .lycium-modal-close svg {
   width: 1rem;
   height: 1rem;
-  fill: currentColor;
 }
 
 .lycium-modal-header {
@@ -85,7 +95,7 @@
   color: var(--lycium-brand-primary);
   font-size: 0.8rem;
   font-weight: 850;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 

@@ -12,7 +12,7 @@ type CourseSourcesPageProps = {
 
 export default function CourseSourcesPage({ courseKey, courseTitle, sources, courseSourceIndex }: CourseSourcesPageProps) {
   return (
-    <main className="content-view content-view--sources course-sources-page">
+    <main className="content-view content-view--sources course-sources-page" id="main-content" tabIndex={-1}>
       <p className="course-name">{courseTitle}</p>
       <h1 className="course-title">Sources</h1>
       <p className="course-sources-intro">
