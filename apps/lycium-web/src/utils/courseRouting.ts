@@ -14,6 +14,7 @@ const browserStorage = createBrowserStorageRepository();
 export const LYCIUM_SITE_ROOT = "https://protheuslabs.github.io/Lycium/";
 export const LYCIUM_DEPLOY_BASE_PATH = "/Lycium";
 export const LYCIUM_ROUTE_ROOT = "/";
+export const MY_LEARNING_PATH = buildLyciumPath("my-learning");
 export const COURSE_CATALOG_PATH = buildLyciumPath("catalog");
 export const COURSE_CATALOG_PROGRAMS_PATH = buildLyciumPath("catalog", "programs");
 export const COURSE_CATALOG_COURSES_PATH = buildLyciumPath("catalog", "courses");
@@ -67,7 +68,7 @@ export function getCourseSectionPath(course: CourseEntry, section: CourseSection
   return buildLyciumPath("courses", getCoursePathSlug(course), "units", getSectionPathSlug(section));
 }
 
-export function getCoursePath(course: CourseEntry): string {
+export function getCoursePath(course: Pick<CourseEntry, "key" | "title">): string {
   return buildLyciumPath("courses", getCoursePathSlug(course));
 }
 
@@ -176,7 +177,15 @@ export function getCourseProgress(course: CourseEntry): CourseProgressSummary {
 export function parseCourseRoute(pathname: string): RouteInfo {
   const pathWithoutQuery = normalizeRoutePath(pathname);
 
-  if (pathWithoutQuery === "/" || pathWithoutQuery === "/catalog" || pathWithoutQuery === "/courses") {
+  if (pathWithoutQuery === "/") {
+    return { kind: "landing", courseSlug: null, unitSlug: null };
+  }
+
+  if (pathWithoutQuery === MY_LEARNING_PATH) {
+    return { kind: "learning", courseSlug: null, unitSlug: null };
+  }
+
+  if (pathWithoutQuery === "/catalog" || pathWithoutQuery === "/courses") {
     return { kind: "home", courseSlug: null, unitSlug: null };
   }
 

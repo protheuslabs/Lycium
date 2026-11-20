@@ -37,9 +37,12 @@ export default function Modal({
     if (!mounted || !isOpen) return;
     const dialog = dialogRef.current;
     if (!dialog) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog.showModal();
     return () => {
       if (dialog.open) dialog.close();
+      // Portal removal can precede native close behavior, so restore the opener explicitly.
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, [mounted, isOpen]);
 

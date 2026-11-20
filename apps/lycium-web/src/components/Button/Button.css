@@ -1,6 +1,6 @@
 .lycium-button {
   border: 0;
-  border-radius: var(--lycium-radius-pill);
+  border-radius: var(--lycium-radius-control);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -11,23 +11,20 @@
   background: var(--lycium-brand-primary);
   cursor: pointer;
   font: inherit;
-  font-weight: 850;
+  font-weight: 600;
   text-decoration: none;
-  transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease, opacity 160ms ease, transform 160ms ease;
+  transition: background-color 160ms ease, color 160ms ease, opacity 160ms ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
 
 .lycium-button:hover:not(:disabled) {
   background: var(--lycium-brand-primary-hover);
-  transform: translateY(-1px);
 }
 
-.lycium-button:focus,
-.lycium-button:focus-visible,
-.lycium-button:active {
-  outline: none;
-  box-shadow: none;
+.lycium-button:focus-visible {
+  outline: 2px solid var(--lycium-color-focus);
+  outline-offset: 3px;
 }
 
 .lycium-button:disabled {
@@ -46,8 +43,10 @@
 }
 
 .lycium-button-complete {
-  border-radius: var(--lycium-radius-pill);
+  border-radius: var(--lycium-radius-control);
 }
+.lycium-button-icon { background: transparent; color: var(--lycium-color-text-muted); }
+.lycium-button-icon:hover:not(:disabled) { background: var(--lycium-color-surface); color: var(--lycium-color-text); }
 
 .lycium-button-selected.lycium-button-tone-positive {
   color: var(--lycium-success);

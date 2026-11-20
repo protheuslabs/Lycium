@@ -1,6 +1,6 @@
 # UI Research And Overhaul Plan
 
-Research date: 2026-11-18. Implementation checkpoint: 2026-11-19. Status: first reader/catalog increment implemented locally; the complete redesign remains in progress.
+Research date: 2026-11-18. Latest visual checkpoint: 2026-11-20. Status: image-led discovery, lesson-focused My Learning, a distinct course overview, and shared reader/program styling are implemented; hosted learning and creator-workspace work remain open. See the [hands-on visual audit](ui-visual-audit-2026-11-20.md) and [artwork direction](course-artwork-style.md).
 
 ## Contents
 
@@ -85,7 +85,7 @@ Paths below omit the deployment prefix, currently `/Lycium`. They describe propo
 
 | Destination | Proposed route or existing surface | Initial scope |
 | --- | --- | --- |
-| Public home | `/` | Compact entry with real catalog content; current home uses the catalog shell |
+| Public home | `/` | Distinct compact home with real course discovery and a saved-course resume action |
 | Catalog and subject results | Existing `/catalog`, `/catalog/courses`, `/catalog/programs`; query parameters for search/filter/sort/page | Reuse routes; do not add a parallel search application |
 | Personal dashboard | Proposed `/my-learning` | Resume, active/completed courses, pending work supported by data |
 | Course overview | Existing `/courses/[courseSlug]` | Give this route a distinct overview role rather than relying only on the current reader shell |
@@ -377,7 +377,7 @@ Research and planning do not authorize a big-bang UI rewrite. Approve the first 
 
 - [ ] Add the distinct course overview and preserve existing lesson deep links.
 - [ ] Redesign catalog/search/filter/results, preserving URL and back-navigation state.
-- [ ] Implement compact public home and My Learning; distinguish local saved data from account-backed data.
+- [x] Implement compact public home and My Learning; distinguish local saved data from account-backed data.
 - [ ] Adapt program/group views to the same navigation, availability, and progress vocabulary.
 
 ### Phase 3: Creator Experience And Hosted Completion
@@ -469,3 +469,65 @@ Checkpoint results: 68 web unit tests, 26 focused reader/accessibility/editing b
 Remaining validation gaps: this is not a screen-reader audit, hosted account-isolation test, real-provider generation-quality test, user study, or completed full-browser-suite pass. A broader legacy test run exposed tests that still depend on the live backend and outdated card/creation contracts. The run was stopped; its accidental generation job was cancelled and retained as a failed test audit record. The focused presentation/editing/settings tests now intercept all API requests. Isolate and update the remaining legacy suites before treating the full suite as a release gate. The repository line-budget guard also still fails on existing oversized files; no budgets were raised for this increment.
 
 Course overview, My Learning, public home, Studio, broader program-page redesign, and hosted guarantees are not implemented by this increment. Two alternative visual treatments were not produced. Next: review this treatment with real content, then implement the distinct course overview before moving to personal learning and creator navigation.
+
+### Learner Pages And Login Entry: 2026-11-19
+
+The first UI pass was committed as `c60d598` before this increment.
+
+- `/` is a distinct Lycium home page rather than a catalog redirect. It has a compact photographic header, course discovery using actual catalog entries, subject filtering, and a resume action when saved activity exists. Discovery surfaces different available subjects without hardcoded course choices. Image attribution is recorded beside the bundled asset.
+- `/my-learning` is the dashboard. It uses existing course-scoped bookmarks and completion records for active/completed lists, search, saved-section resume, section counts, and completion percentages. It does not invent grades, mastery, time studied, deadlines, enrollment, or account sync.
+- The top bar now exposes Home, My Learning, Catalog, Settings, and Log in. Mobile keeps the navigation accessible without squeezing every label into the row. The brand opens Home; course deep links and catalog routes retain their existing roles.
+- Log in opens a native dialog that explicitly states account sign-in is not available yet and offers a working local-learning path. There is no simulated login, credential collection, OAuth implementation, or authenticated session.
+- Browsing Home, My Learning, or Catalog no longer marks the selected course's first lesson viewed. Progress updates are restricted to the reader.
+
+The learner-library model has focused unit tests. Isolated desktop/mobile browser tests cover real navigation, image loading, subject filtering, dashboard counts, completed/search/empty states, resume and completion round-trips, reload persistence, cross-course isolation, 320-1440px reflow, dark mode, and login-dialog dismissal/focus return. Existing reader and manual-editing tests remain part of this increment's verification.
+
+Checkpoint results: 74 web unit tests and 38 focused desktop/mobile browser tests passed, along with TypeScript, focused ESLint, import/data-boundary guards, and the production build. This does not supersede the legacy-suite and hosted-validation gaps recorded above.
+
+Still open: distinct course overview, Studio, catalog URL-state persistence, durable enrollment/account sync, actual authentication, hosted access guarantees, and the broader accessibility/usability audit. The home and dashboard are working local-runtime pages, not evidence of public-launch readiness.
+
+### Visual Product Pass: 2026-11-20
+
+The previous checkpoint above is historical. This pass replaces its stock-library
+hero and text-only course cards with bundled category artwork and a contemporary
+visual system. My Learning now leads with a saved lesson and Continue action;
+aggregate course/section KPI counters and motivational filler were removed.
+
+Course titles and published catalog entries open a distinct overview: description,
+available workload/level facts, prerequisites, and expandable curriculum. Start or
+Resume enters the reader. Local editable drafts retain direct editor entry.
+Overview visits do not create progress; curriculum locks use existing ordering
+rules. Reader header progress no longer duplicates the outline. Shared buttons,
+navigation, footer, settings surfaces, and program presentation have quieter
+typography, consistent dimensions, and reduced decorative framing. Program
+diagnostics are collapsed behind Program details, ahead of a visible learning path.
+
+Loading/error states replace false empty-catalog flashes. Program deep links wait
+for program loading before deciding whether a route is unknown. Existing saved
+progress, section citations, assessments, editing, and generation/retry behavior
+remain part of the verification scope.
+
+Subject covers include computing (code plus a natural electronics workbench),
+finance/economics (a stock chart on a monitor), physical engineering, chemistry,
+humanities, and general learning. Selection uses department/tag/category metadata,
+not course titles or changes to generation prompts. Asset provenance is bundled
+with the images. The home still life has separate desktop and phone compositions.
+
+Several panoramic library concepts were generated as previews for
+a possible slow-panning home background: classical halls, a towering fantasy
+rotunda, and a closer photorealistic collector-library revision with modern
+artifacts and wooden rolling ladders. They are not part of the runtime bundle;
+no animation or seamless-loop capability has been implemented or claimed.
+
+Studio, URL-persisted catalog filters, authentication, enrollment/account sync,
+hosted access guarantees, and full screen-reader/user studies remain open. Program
+presentation was aligned visually; this is not a rewrite of its learning contracts.
+
+Verification: 79 web unit tests and all 46 isolated Chromium desktop/mobile
+browser checks passed. TypeScript, focused ESLint, import/data boundaries, and
+the production build passed. Tests cover the new overview, ordered curriculum,
+subject-image loading, program deep links, persistence, themes, assessments,
+editing, and 320-1440px reflow. Earlier locator/pagination and navigation-wait
+issues in the new tests were corrected before the final successful run. These
+results do not claim that the unisolated legacy full suite or a screen-reader
+audit passed. The development server was restarted after the production build.

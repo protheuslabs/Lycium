@@ -17,10 +17,11 @@ import "../components/SettingsModal/SettingsModal.css";
 import "../components/SettingsModal/SettingsModal.theme.css";
 import "../components/Legal/LegalPage.css";
 import "../components/ContentView/readerAssessments.css";
+import "../components/LearnerPages/learnerPages.css";
 
 export const metadata: Metadata = {
   title: "Lycium",
-  description: "A contract-first learning runtime for source-backed generated courses.",
+  description: "Explore courses, build understanding, and keep learning with Lycium.",
 };
 
 const themeBootstrapScript = `

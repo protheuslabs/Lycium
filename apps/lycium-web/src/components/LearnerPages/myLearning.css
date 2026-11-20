@@ -1,0 +1,22 @@
+.my-learning-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 2.5rem; }
+.my-learning-heading h1 { margin: 0; font-size: 2rem; line-height: 1.3; font-weight: 650; }
+.learner-storage-label { color: var(--lycium-color-text-muted); font-size: .75rem; margin: 2rem 0 0; }
+.dashboard-continue { margin-bottom: 3rem; }
+.dashboard-continue h2 { margin-bottom: 1.25rem; }
+.learning-course-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--lycium-color-border); padding-bottom: .75rem; }
+.learning-tabs { display: flex; gap: 1.5rem; }
+.learning-tabs button { min-height: 44px; padding: .5rem 0; border: 0; border-radius: 0; background: transparent; color: var(--lycium-color-text-muted); font: inherit; font-size: .875rem; white-space: nowrap; }
+.learning-tabs button[aria-pressed="true"] { color: var(--lycium-color-text); box-shadow: inset 0 -2px var(--lycium-color-accent); font-weight: 650; }
+.learning-search { display: flex; align-items: center; gap: .6rem; border: 1px solid var(--lycium-color-border); border-radius: 6px; padding: 0 .75rem; color: var(--lycium-color-text-muted); background: var(--lycium-color-surface-raised); }
+.learning-search input { width: 13rem; max-width: 100%; height: 42px; padding: 0; border: 0; color: var(--lycium-color-text); background: transparent; font: inherit; font-size: .8rem; }
+.learner-empty { display: flex; align-items: center; flex-direction: column; gap: .9rem; padding: 3rem 1rem; text-align: center; }
+.learner-empty > svg { color: var(--lycium-color-accent); }
+.learner-empty h3 { margin: 0; font-size: 1.2rem; font-weight: 600; line-height: 1.5; }
+.learner-empty p { margin: 0 0 .6rem; font-size: .9rem; color: var(--lycium-color-text-muted); line-height: 1.7; }
+.learner-empty a:not(.learner-primary-link) { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; color: var(--lycium-color-accent); font-size: .85rem; }
+@media (max-width: 700px) {
+  .my-learning-heading { align-items: flex-start; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.75rem; }
+  .my-learning-heading h1 { font-size: 1.75rem; }
+  .learning-course-toolbar { flex-direction: column; align-items: stretch; gap: 1rem; }
+  .learning-search input { width: 100%; min-width: 0; }
+}

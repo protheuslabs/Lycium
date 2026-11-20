@@ -35,7 +35,6 @@ export default function CourseLearningLayout({
   selectedCourse,
   currentSection,
   courseProgress,
-  moduleProgress,
   resolvedSectionStatuses,
   completedSectionIds,
   orderMandatory,
@@ -451,8 +450,6 @@ export default function CourseLearningLayout({
           nextSectionTitle={displayedSections[effectiveSectionIndex + 1]?.title ?? null}
           isFirstSection={effectiveSectionIndex === 0}
           isLastSection={effectiveSectionIndex === displayedSections.length - 1}
-          progressPercentage={moduleProgress.percentage}
-          viewedPercentage={moduleProgress.viewedPercentage}
           markComplete={onCompleteSection}
           isComplete={currentSection ? completedSectionIds.has(currentSection.id) : false}
           orderMandatory={effectiveOrderMandatory}

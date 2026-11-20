@@ -30,8 +30,6 @@ type ContentViewProps = {
   nextSectionTitle?: string | null;
   isFirstSection: boolean;
   isLastSection: boolean;
-  progressPercentage: number;
-  viewedPercentage: number;
   markComplete: (sectionId: string) => void;
   isComplete: boolean;
   orderMandatory: boolean;
@@ -70,8 +68,6 @@ export default function ContentView({
   nextSectionTitle,
   isFirstSection,
   isLastSection,
-  progressPercentage,
-  viewedPercentage,
   markComplete,
   isComplete,
   orderMandatory,
@@ -274,8 +270,6 @@ export default function ContentView({
         moduleIndex={moduleIndex}
         section={section}
         pageType={pageType}
-        progressPercentage={progressPercentage}
-        viewedPercentage={viewedPercentage}
         isEditMode={isEditMode}
         onCourseTitleChange={onCourseTitleChange}
         onModuleTitleChange={onModuleTitleChange}

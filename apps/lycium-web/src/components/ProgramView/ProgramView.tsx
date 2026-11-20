@@ -8,6 +8,7 @@ import type {
   LyciumRequirement,
 } from "@lycium/contracts";
 import type { CSSProperties } from "react";
+import { ArrowLeft } from "lucide-react";
 import Button from "../Button/Button";
 import type { CourseEntry } from "../../courseTypes";
 import type { ProgramArtifactDraft } from "../../hooks/useProgramArtifacts";
@@ -310,7 +311,7 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
     <main className="program-view-shell" id="main-content" tabIndex={-1}>
       <section className="program-hero-panel">
         <Button variant="nav" className="program-back-button" onClick={onOpenCatalog}>
-          ← Catalog
+          <ArrowLeft size={16} aria-hidden="true" />Catalog
         </Button>
         <div>
           <p className="program-kicker">Program</p>
@@ -326,7 +327,7 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
         </div>
         <div className="program-progress-card" aria-label="Program progress">
           <strong>{completePercentage}%</strong>
-          <span>mastery progress</span>
+          <span>Completion progress</span>
           <div className="program-progress-bar">
             <div className="program-progress-viewed" style={{ width: `${activePercentage}%` }} />
             <div className="program-progress-complete" style={{ width: `${completePercentage}%` }} />
@@ -335,6 +336,8 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
         </div>
       </section>
 
+      <details className="program-details-disclosure">
+      <summary>Program details</summary>
       <section className="program-quality-panel" aria-label="Program quality and gaps">
         <div>
           <span className="program-quality-number">{sourceCoveredCount}/{requiredRequirements.length}</span>
@@ -395,12 +398,13 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
         </article>
       </section>
 
+      </details>
+
       {capstoneRequirements.length > 0 && (
         <section className="program-capstone-panel" aria-label="Program capstone evidence">
           <div>
             <p className="program-kicker">Portfolio evidence</p>
             <h2>Capstone and proof of work</h2>
-            <p>Career-path programs should end in reviewable artifacts, not only course completion.</p>
           </div>
           <div className="program-capstone-list">
             {capstoneRequirements.map((requirement) => (
@@ -432,6 +436,7 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
       )}
 
       <section className="program-cluster-list" aria-label="Program requirement groups">
+        <h2 className="program-path-heading">Learning path</h2>
         {program.requirementGroups.map((group) => {
           const progress = rollupRequirementGroupProgress(group, courseMap, undefined, scopedArtifacts);
           const groupTimeEstimate = estimateRequirementGroupTime(group, courseMap);

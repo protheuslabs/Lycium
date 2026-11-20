@@ -3,6 +3,7 @@ import type { CourseEntry, CourseSection } from "../courseTypes";
 import {
   COURSE_CATALOG_PATH,
   LYCIUM_SITE_ROOT,
+  MY_LEARNING_PATH,
   SETTINGS_PATH,
   getCoursePath,
   getCoursePathSlug,
@@ -48,8 +49,10 @@ describe("course routing helpers", () => {
   });
 
   it("parses home, settings, course, and unit routes", () => {
-    expect(parseCourseRoute("/")).toEqual({ kind: "home", courseSlug: null, unitSlug: null });
-    expect(parseCourseRoute("/Lycium")).toEqual({ kind: "home", courseSlug: null, unitSlug: null });
+    expect(parseCourseRoute("/")).toEqual({ kind: "landing", courseSlug: null, unitSlug: null });
+    expect(parseCourseRoute("/Lycium")).toEqual({ kind: "landing", courseSlug: null, unitSlug: null });
+    expect(parseCourseRoute(MY_LEARNING_PATH)).toEqual({ kind: "learning", courseSlug: null, unitSlug: null });
+    expect(parseCourseRoute("/Lycium/my-learning")).toEqual({ kind: "learning", courseSlug: null, unitSlug: null });
     expect(parseCourseRoute("/Lycium/catalog")).toEqual({ kind: "home", courseSlug: null, unitSlug: null });
     expect(parseCourseRoute(COURSE_CATALOG_PATH)).toEqual({ kind: "home", courseSlug: null, unitSlug: null });
     expect(parseCourseRoute("/settings")).toEqual({ kind: "settings", courseSlug: null, unitSlug: null });

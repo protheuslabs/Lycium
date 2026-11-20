@@ -23,12 +23,16 @@ const nextConfig = {
     }
 
     return [
-      {
-        source: "/",
-        destination: prefixedPath("/catalog"),
-        permanent: false,
-        basePath: false,
-      },
+      ...(basePath
+        ? [
+            {
+              source: "/",
+              destination: prefixedPath("/"),
+              permanent: false,
+              basePath: false,
+            },
+          ]
+        : []),
       {
         source: "/catalog",
         destination: prefixedPath("/catalog"),

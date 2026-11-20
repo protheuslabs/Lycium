@@ -1,5 +1,5 @@
 import LyciumClientShell from "./LyciumClientShell";
 
 export default function HomePage() {
-  return <LyciumClientShell initialPath="/Lycium/catalog" />;
+  return <LyciumClientShell initialPath="/" />;
 }

@@ -20,7 +20,6 @@ export type CourseLearningLayoutProps = {
   selectedCourse: CourseEntry | undefined;
   currentSection: DisplaySection | null;
   courseProgress: ProgressSummary;
-  moduleProgress: ProgressSummary;
   resolvedSectionStatuses: Record<string, SectionStatus>;
   completedSectionIds: Set<string>;
   orderMandatory: boolean;

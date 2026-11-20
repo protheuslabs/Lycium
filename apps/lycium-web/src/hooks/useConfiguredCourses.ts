@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { LyciumProgram } from "@lycium/contracts";
 import { validateLyciumProgram } from "@lycium/contracts";
@@ -40,7 +40,13 @@ function remoteCourseRequiresSourceValidation(row: { status?: string }): boolean
 }
 
 export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: UseConfiguredCoursesOptions) {
+  const [loading, setLoading] = useState(true);
+  const [programsLoading, setProgramsLoading] = useState(true);
+  const [error, setError] = useState(false);
   useEffect(() => {
+    let cancelled = false;
+    const finish = () => { if (!cancelled) setLoading(false); };
+    const finishPrograms = () => { if (!cancelled) setProgramsLoading(false); };
     const mergePersistedLocalCourses = (courses: CourseEntry[]) => {
       const persisted = readPersistedLocalCourseEntries();
       if (persisted.length === 0) {
@@ -73,8 +79,11 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
             setCourses((current) => mergePersistedLocalCourses(current));
           }
         })
-        .catch((err: unknown) => console.warn("Configured course repository unavailable:", err));
-      return;
+        .catch((err: unknown) => {
+          console.warn("Configured course repository unavailable:", err);
+          if (!cancelled) setError(true);
+        }).finally(() => { finish(); finishPrograms(); });
+      return () => { cancelled = true; };
     }
 
     const tryLocalApiSync = shouldTryLocalApiSync();
@@ -88,6 +97,8 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
         setPrograms((current) => mergePersistedLocalPrograms(current));
       }
       setCourses((current) => mergePersistedLocalCourses(current));
+      finish();
+      finishPrograms();
       return;
     }
 
@@ -127,12 +138,16 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
       } catch (err) {
         if (localApiSyncEnabled) {
           console.warn("Remote courses unavailable:", err);
+          if (!cancelled) setError(true);
         }
+      } finally {
+        finish();
       }
     };
 
     const fetchRemotePrograms = async () => {
       if (!setPrograms) {
+        finishPrograms();
         return;
       }
 
@@ -166,6 +181,8 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
           console.warn("Remote programs unavailable:", err);
         }
         setPrograms((current) => mergePersistedLocalPrograms(current));
+      } finally {
+        finishPrograms();
       }
     };
 
@@ -201,5 +218,7 @@ export function useConfiguredCourses({ setCourses, setLearnerId, setPrograms }: 
         setLearnerId(stored);
       }
     }
+    return () => { cancelled = true; };
   }, [setCourses, setLearnerId, setPrograms]);
+  return { loading, programsLoading, error };
 }

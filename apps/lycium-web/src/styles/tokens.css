@@ -27,7 +27,7 @@
   --lycium-color-text-muted: var(--lycium-light-muted);
   --lycium-color-muted: var(--lycium-color-text-muted);
   --lycium-color-page: var(--lycium-color-canvas);
-  --lycium-color-border: #d8deea;
+  --lycium-color-border: #dde1e3;
   --lycium-color-modal-border: #d9def5;
   --lycium-color-control-surface: rgba(255, 255, 255, 0.94);
   --lycium-color-control-hover: rgba(74, 108, 247, 0.08);
@@ -42,11 +42,11 @@
   --lycium-color-accent-soft: #e7f2ed;
   --lycium-color-focus: #368bd6;
   --lycium-color-reading: #30383c;
-  --lycium-color-outline: #f5f7f6;
+  --lycium-color-outline: #f6f7f8;
   --lycium-color-warning: #855b10;
   --lycium-color-warning-soft: #faf3df;
-  --lycium-reader-width: 50rem;
-  --lycium-topbar-height: 3.5rem;
+  --lycium-reader-width: 49rem;
+  --lycium-topbar-height: 4rem;
 
   --lycium-shadow-control: 0 12px 28px rgba(15, 23, 42, 0.07);
   --lycium-shadow-raised: 0 1.2rem 2.4rem rgba(22, 30, 52, 0.16);
@@ -81,7 +81,7 @@ html[data-theme="light"] {
   --lycium-color-surface-raised: var(--lycium-light-surface-raised);
   --lycium-color-text: var(--lycium-light-text);
   --lycium-color-text-muted: var(--lycium-light-muted);
-  --lycium-color-border: #d8deea;
+  --lycium-color-border: #dde1e3;
   --lycium-color-modal-border: #d9def5;
   --lycium-color-control-surface: rgba(255, 255, 255, 0.94);
   --lycium-color-control-hover: rgba(74, 108, 247, 0.08);

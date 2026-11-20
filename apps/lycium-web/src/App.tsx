@@ -9,6 +9,9 @@ import CourseLearningLayout from "./components/CourseLearningLayout/CourseLearni
 import ProgramView from "./components/ProgramView/ProgramView";
 import AppSettingsModal from "./components/SettingsModal/AppSettingsModal";
 import TopBar from "./components/TopBar/TopBar";
+import LearnerPages from "./components/LearnerPages/LearnerPages";
+import CourseOverview from "./components/LearnerPages/CourseOverview";
+import CourseLoadState from "./components/LearnerPages/CourseLoadState";
 import { localCourses } from "./courseData/localCourses";
 import { localPrograms, programBenchmarks } from "./courseData/programs";
 import sourceRecordsData from "./courseData/sourceRecords";
@@ -24,7 +27,7 @@ import { useCourseSourceGapActions } from "./hooks/useCourseSourceGapActions";
 import { useProgramArtifacts } from "./hooks/useProgramArtifacts";
 import { API_BASE, scrollCoursePageToTop } from "./runtime/appRuntime";
 import { summarizeCourseProgress } from "./utils/courseProgress";
-import { COURSE_CATALOG_PATH, COURSE_CATALOG_COURSES_PATH, COURSE_CATALOG_PROGRAMS_PATH, LYCIUM_ROUTE_ROOT, SETTINGS_PATH, browserPathForRoute, getCatalogClusterPath, getCatalogProgramPath, getCoursePathSlug, getCourseSectionPath, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug, parseCourseRoute } from "./utils/courseRouting";
+import { COURSE_CATALOG_PATH, COURSE_CATALOG_COURSES_PATH, COURSE_CATALOG_PROGRAMS_PATH, SETTINGS_PATH, browserPathForRoute, getCatalogClusterPath, getCatalogProgramPath, getCoursePath, getCoursePathSlug, getCourseSectionPath, getProgramClusterPathSlug, getProgramPathSlug, getSectionPathSlug, parseCourseRoute } from "./utils/courseRouting";
 import { mergeCourseEntriesByKey, readPersistedLocalCourseEntries } from "./utils/localCourseDrafts";
 import { readSettingsBackdropPath, writeSettingsBackdropPath } from "./utils/settingsRouteState";
 import { useCourseRouteNavigation } from "./hooks/useCourseRouteNavigation";
@@ -163,20 +166,14 @@ function App({ initialPath }: AppProps = {}) {
     handleSectionTimedStatusChange,
     handleCompleteSection,
   } = useCourseProgressState({
-    selectedCourse,
+    selectedCourse: viewRoute.kind === "course" && viewRoute.unitSlug ? selectedCourse : null,
     sections,
     orderMandatory,
     learnerId,
-    currentSectionId: currentSection?.id ?? null,
+    currentSectionId: viewRoute.kind === "course" && viewRoute.unitSlug ? currentSection?.id ?? null : null,
   });
 
   const courseProgress = summarizeCourseProgress(sections, {
-    completedSectionIds: progress.completedSectionIds,
-    sectionStatuses: resolvedSectionStatuses,
-  });
-  const currentModuleIndex = currentSection?.moduleIndex ?? 0;
-  const moduleSections = sections.filter((section) => section.moduleIndex === currentModuleIndex);
-  const moduleProgress = summarizeCourseProgress(moduleSections, {
     completedSectionIds: progress.completedSectionIds,
     sectionStatuses: resolvedSectionStatuses,
   });
@@ -343,7 +340,7 @@ function App({ initialPath }: AppProps = {}) {
     openCourseByEntry,
   });
 
-  useConfiguredCourses({ setCourses, setLearnerId, setPrograms });
+  const courseLoad = useConfiguredCourses({ setCourses, setLearnerId, setPrograms });
 
   useEffect(() => {
     if (pathname) {
@@ -356,20 +353,12 @@ function App({ initialPath }: AppProps = {}) {
   }, [pathname]);
 
   useEffect(() => {
-    if (currentPath !== "/" && currentPath !== LYCIUM_ROUTE_ROOT) {
-      return;
-    }
-
-    router.replace(COURSE_CATALOG_PATH);
-    currentPathRef.current = COURSE_CATALOG_PATH;
-  }, [currentPath, router]);
-
-  useEffect(() => {
     if (route.kind !== "program") return;
+    if (courseLoad.programsLoading || !clientMounted) return;
     if (route.programSlug && programsByPathSlug.has(route.programSlug)) return;
     router.replace(COURSE_CATALOG_PATH);
     currentPathRef.current = COURSE_CATALOG_PATH;
-  }, [programsByPathSlug, route.kind, route.programSlug, router]);
+  }, [clientMounted, courseLoad.programsLoading, programsByPathSlug, route.kind, route.programSlug, router]);
 
   useEffect(() => {
     if (viewRoute.kind === "home") {
@@ -387,10 +376,7 @@ function App({ initialPath }: AppProps = {}) {
     const routeSections = routeCourse.data.modules.flatMap((module) => module.sections);
     const firstSection = routeSections[0];
     if (!firstSection) return;
-    if (!route.unitSlug) {
-      void openCourseByEntry(routeCourse, true);
-      return;
-    }
+    if (!route.unitSlug) return;
 
     const sectionIndex = routeSections.findIndex((section) => getSectionPathSlug(section) === route.unitSlug);
     if (sectionIndex >= 0) {
@@ -412,9 +398,13 @@ function App({ initialPath }: AppProps = {}) {
 
   return (
     <div className="app-root">
-      <TopBar onOpenSettings={routeToSettings} onOpenCatalog={routeToHome} />
+      <TopBar onOpenSettings={routeToSettings} onOpenCatalog={routeToHome} currentPage={viewRoute.kind} />
 
-      {viewRoute.kind === "home" ? (
+      {(routeCourses.length === 0 && (courseLoad.loading || courseLoad.error)) || (viewRoute.kind === "program" && courseLoad.programsLoading) ? (
+        <CourseLoadState error={courseLoad.error} />
+      ) : viewRoute.kind === "landing" || viewRoute.kind === "learning" ? (
+        <LearnerPages page={viewRoute.kind} courses={routeCourses} onOpenCourse={openCourseByEntry} />
+      ) : viewRoute.kind === "home" ? (
         <CourseCatalog
           courses={courses}
           programs={programs}
@@ -433,7 +423,7 @@ function App({ initialPath }: AppProps = {}) {
           onLevelChange={setLevel}
           onGenerateCourse={handleGenerateCourse}
           onRetryGenerateCourse={handleRetryGenerateCourse}
-          onOpenCourse={openCourseByEntry}
+          onOpenCourse={(course) => course.status === "draft" ? void openCourseByEntry(course) : router.push(getCoursePath(course))}
           onQueueCourseSourceGap={queueCourseSourceGap}
           onResumeCourseSourceGap={handleResumeCourseSourceGap}
           catalogSelectionMode={catalogSelectionMode}
@@ -459,6 +449,8 @@ function App({ initialPath }: AppProps = {}) {
           portfolioArtifacts={new Map()} submittedArtifacts={programArtifacts} sources={sourceRecordsData.sources}
           onOpenCourse={openCourseByEntry} onOpenCatalog={routeToHome} onSubmitArtifact={submitProgramArtifact}
         />
+      ) : viewRoute.kind === "course" && !viewRoute.unitSlug && selectedCourse ? (
+        <CourseOverview course={selectedCourse} onOpenCourse={openCourseByEntry} onOpenSection={pushSectionPath} />
       ) : (
         <CourseLearningLayout
           key={selectedCourse?.key ?? "no-course"}
@@ -467,7 +459,6 @@ function App({ initialPath }: AppProps = {}) {
           selectedCourse={selectedCourse}
           currentSection={currentSection}
           courseProgress={courseProgress}
-          moduleProgress={moduleProgress}
           resolvedSectionStatuses={resolvedSectionStatuses}
           completedSectionIds={completedSectionIds}
           orderMandatory={orderMandatory}

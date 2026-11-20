@@ -1,7 +1,8 @@
-import ProgressMeter from "../ProgressMeter/ProgressMeter";
 import { stripModulePrefix } from "../CourseEditing/courseEditPrimitives";
 import { EditPencilButton, promptForText } from "./CourseEditControls";
 import type { Section } from "./contentViewTypes";
+import Link from "next/link";
+import { getCoursePath } from "../../utils/courseRouting";
 
 type ReaderHeaderProps = {
   courseKey: string;
@@ -10,8 +11,6 @@ type ReaderHeaderProps = {
   moduleIndex: number;
   section: Section;
   pageType: string;
-  progressPercentage: number;
-  viewedPercentage: number;
   isEditMode: boolean;
   onCourseTitleChange?: (title: string) => void;
   onModuleTitleChange?: (moduleIndex: number, title: string) => void;
@@ -25,8 +24,6 @@ export default function ReaderHeader({
   moduleIndex,
   section,
   pageType,
-  progressPercentage,
-  viewedPercentage,
   isEditMode,
   onCourseTitleChange,
   onModuleTitleChange,
@@ -38,7 +35,7 @@ export default function ReaderHeader({
   return (
     <header className="reader-header">
       <p className="course-name course-editable-line">
-        <span className="course-editable-line-content">{courseTitle}</span>
+        {isEditMode ? <span className="course-editable-line-content">{courseTitle}</span> : <Link className="reader-course-link" href={getCoursePath({ key: courseKey, title: courseTitle })}>{courseTitle}</Link>}
         {isEditMode && (
           <EditPencilButton
             label="Edit course title"
@@ -83,15 +80,6 @@ export default function ReaderHeader({
           )}
         </h1>
       </div>
-      {!isEditMode && (
-        <div className="reader-progress" aria-label="Module progress">
-          <ProgressMeter
-            cacheKey={`content:${courseKey}:${moduleIndex}`}
-            progressPercentage={progressPercentage}
-            viewedPercentage={viewedPercentage}
-          />
-        </div>
-      )}
     </header>
   );
 }

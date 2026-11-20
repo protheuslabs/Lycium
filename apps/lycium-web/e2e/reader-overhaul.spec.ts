@@ -126,6 +126,7 @@ test.beforeEach(async ({ page }) => {
 
 async function openCourse(page: Page, name = title) {
   await page.getByRole("button", { name: `Open ${name}`, exact: true }).click();
+  await page.getByRole("button", { name: /^(Start|Resume|Review) course$/, exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: lessonTitle })).toBeVisible();
   await expect(page.locator(".equation-block code")).toContainText("observed_completion");
 }
@@ -155,6 +156,7 @@ test("catalog controls and the reader reflow at phone, tablet, and desktop width
   await expect(page).toHaveURL(/\/catalog$/);
   await page.getByRole("button", { name: `Open ${title}`, exact: true }).focus();
   await page.keyboard.press("Enter");
+  await page.getByRole("button", { name: "Start course", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: lessonTitle })).toBeVisible();
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -255,5 +257,7 @@ test("light and dark themes keep the catalog, reader, and assessment on semantic
     await page.screenshot({ path: info.outputPath(`assessment-${mode}.png`), fullPage: true });
     await selectSection(page, /1\.1 Distinguishing completion/);
     await page.getByRole("link", { name: "Course catalog", exact: true }).click();
+    await expect(page).toHaveURL(/\/catalog$/);
+    await expect(page.getByRole("heading", { name: "Catalog", level: 1 })).toBeVisible();
   }
 });

@@ -12,7 +12,7 @@ export function slugifyCourseTitle(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-export function getCoursePathSlug(course: CourseEntry): string {
+export function getCoursePathSlug(course: Pick<CourseEntry, "key" | "title">): string {
   const base = slugifyCourseTitle(course.title || "course");
   return `${base}-${course.key}`;
 }

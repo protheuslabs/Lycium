@@ -8,6 +8,8 @@ import type { CatalogVisibleCourse } from "./catalogUtils";
 import { getCourseLifecycleSummary } from "../../utils/courseLifecycle";
 import { getLocalDraftMetadata } from "../../utils/localCourseDrafts";
 import { BookOpen, Info } from "lucide-react";
+import { getCourseCategoryLabel, getCourseDepartmentLabel } from "@lycium/contracts";
+import CourseArtwork from "../LearnerPages/CourseArtwork";
 
 type CatalogCourseCardProps = {
   visibleCourse: CatalogVisibleCourse;
@@ -68,6 +70,7 @@ export default function CatalogCourseCard({
       onActivate={handleCourseOpen}
       pressed={selected || undefined}
     >
+      <CourseArtwork course={course} />
       {requiresPrerequisites && !selectionMode && (
         <span className="course-card-lock-watermark" aria-hidden="true" />
       )}
@@ -85,7 +88,7 @@ export default function CatalogCourseCard({
       </button>
       <p className="course-card-category">
         <BookOpen size={16} aria-hidden="true" />
-        <span>{course.data.department || course.data.category || "Course"}</span>
+        <span>{course.data.department ? getCourseDepartmentLabel(course.data.category, course.data.department) : course.data.category ? getCourseCategoryLabel(course.data.category).replace(/^College of /, "") : "Course"}</span>
       </p>
       <h3>
         {course.title}
@@ -132,9 +135,7 @@ export default function CatalogCourseCard({
             >
               {requiredCourseLabel}
             </button>
-          ) : (
-            "Course not started"
-          )}
+          ) : `${course.data.modules.length} modules`}
         </p>
       ) : (
         <CatalogProgressMeter progress={courseProgress} variant="course" />
