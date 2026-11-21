@@ -50,7 +50,7 @@ export default function CatalogCourseGrid({
     <div className="course-grid" ref={courseGridRef}>
       {shouldShowGenerationTile && (
         <article
-          className={`course-card course-card--generating${isGenerationFailed ? " course-card--generation-error" : ""}`}
+          className={`course-tile course-card course-card--generating${isGenerationFailed ? " course-card--generation-error" : ""}`}
           aria-live="polite"
           aria-busy={isGeneratingCourse}
           aria-disabled={isGeneratingCourse ? "true" : undefined}

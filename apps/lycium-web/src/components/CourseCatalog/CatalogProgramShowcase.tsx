@@ -79,9 +79,8 @@ export default function CatalogProgramShowcase({
                 meta={[
                   `${program.requirementGroups.length} clusters`,
                   formatTimeEstimate(estimate),
-                  timeEstimateSourceLabel(estimate),
-                  program.reviewStatus,
                 ]}
+                detailsMeta={[`Review: ${program.reviewStatus}`, `Estimate: ${timeEstimateSourceLabel(estimate)}`]}
                 onActivate={() => onProgramSelect(program)}
                 progress={
                   progress.hasProgress ? (
@@ -125,8 +124,8 @@ export default function CatalogProgramShowcase({
                 `${cluster.requirements.length} requirements`,
                 `${courseIds.length} courses`,
                 formatTimeEstimate(estimate),
-                timeEstimateSourceLabel(estimate),
               ]}
+              detailsMeta={[`Estimate: ${timeEstimateSourceLabel(estimate)}`]}
               onActivate={() =>
                 selectionMode?.kind === "program"
                   ? onToggleClusterSelection(sourceProgram.id, cluster.id)

@@ -1,0 +1,119 @@
+{
+  "provider": "Poly Haven",
+  "license": "CC0-1.0",
+  "downloaded": "2026-11-20",
+  "assets": [
+    {
+      "filename": "wood-color.jpg",
+      "asset": "wood_table_001",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_diff_1k.jpg",
+      "md5": "56652a7339b16a76afad20d3585f66ea",
+      "bytes": 215573
+    },
+    {
+      "filename": "wood-normal.jpg",
+      "asset": "wood_table_001",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_nor_gl_1k.jpg",
+      "md5": "6360e09967add8baecaa5ecc55fb5e03",
+      "bytes": 51927
+    },
+    {
+      "filename": "wood-roughness.jpg",
+      "asset": "wood_table_001",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/wood_table_001/wood_table_001_rough_1k.jpg",
+      "md5": "05b60bd20a1cc4355c5d73a99b245d44",
+      "bytes": 237261
+    },
+    {
+      "filename": "cloth-color.jpg",
+      "asset": "poly_wool_herringbone",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/poly_wool_herringbone/poly_wool_herringbone_diff_1k.jpg",
+      "md5": "5c0981092ba0129d5951720ea23d50c2",
+      "bytes": 942966
+    },
+    {
+      "filename": "cloth-normal.jpg",
+      "asset": "poly_wool_herringbone",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/poly_wool_herringbone/poly_wool_herringbone_nor_gl_1k.jpg",
+      "md5": "a6371d03b033a1c20e1c2758136ac757",
+      "bytes": 1045151
+    },
+    {
+      "filename": "cloth-roughness.jpg",
+      "asset": "poly_wool_herringbone",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/poly_wool_herringbone/poly_wool_herringbone_rough_1k.jpg",
+      "md5": "9f85f667517ee9c7f3cc85214058a7d8",
+      "bytes": 857426
+    },
+    {
+      "filename": "marble-color.jpg",
+      "asset": "marble_01",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/marble_01/marble_01_diff_1k.jpg",
+      "md5": "04325ced5018eb8a2e598a4ef69cb176",
+      "bytes": 305029
+    },
+    {
+      "filename": "marble-normal.jpg",
+      "asset": "marble_01",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/marble_01/marble_01_nor_gl_1k.jpg",
+      "md5": "fa073d722cde733c1bd6cc6e8897c8e3",
+      "bytes": 110230
+    },
+    {
+      "filename": "marble-roughness.jpg",
+      "asset": "marble_01",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/marble_01/marble_01_rough_1k.jpg",
+      "md5": "59cef1be1b7376c9d0dcc7a64adf7882",
+      "bytes": 91848
+    },
+    {
+      "filename": "floor-color.jpg",
+      "asset": "large_floor_tiles_02",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_floor_tiles_02/large_floor_tiles_02_diff_1k.jpg",
+      "md5": "929f604bfe0f38041afdcf4676a9f777",
+      "bytes": 557814
+    },
+    {
+      "filename": "floor-normal.jpg",
+      "asset": "large_floor_tiles_02",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_floor_tiles_02/large_floor_tiles_02_nor_gl_1k.jpg",
+      "md5": "3e7cb144a9928dcc8edc336614814d45",
+      "bytes": 228980
+    },
+    {
+      "filename": "floor-roughness.jpg",
+      "asset": "large_floor_tiles_02",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/large_floor_tiles_02/large_floor_tiles_02_rough_1k.jpg",
+      "md5": "543d5f2cb129ac96ccc76f2c427c622e",
+      "bytes": 435217
+    },
+    {
+      "filename": "public/library-materials/lebombo-1k.hdr",
+      "asset": "lebombo",
+      "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/lebombo_1k.hdr",
+      "md5": "eb75d6df7d824e83940e2c7f2ef65c70",
+      "bytes": 1476953
+    },
+    {
+      "filename": "leather-color.jpg",
+      "asset": "brown_leather",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_leather/brown_leather_albedo_1k.jpg",
+      "md5": "080b3bf1372766ff2c7ff121ed07b5e8",
+      "bytes": 503348
+    },
+    {
+      "filename": "leather-normal.jpg",
+      "asset": "brown_leather",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_leather/brown_leather_nor_gl_1k.jpg",
+      "md5": "b63ae0121a415c23d74eed0b07fc6065",
+      "bytes": 863280
+    },
+    {
+      "filename": "leather-roughness.jpg",
+      "asset": "brown_leather",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_leather/brown_leather_rough_1k.jpg",
+      "md5": "0f3a0148c8d2d25fbeca67e64e79bca0",
+      "bytes": 686142
+    }
+  ]
+}

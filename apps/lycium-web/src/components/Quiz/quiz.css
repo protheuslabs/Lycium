@@ -55,16 +55,16 @@
 }
 
 .quiz-option--correct-answer > span:last-child {
-  color: #171717;
+  color: inherit;
   font-weight: 400;
 }
 
 .quiz-option--wrong-selection > span:last-child {
-  color: #171717;
+  color: inherit;
   font-weight: 400;
   text-decoration: line-through;
   text-decoration-thickness: 0.12em;
-  text-decoration-color: #171717;
+  text-decoration-color: currentColor;
 }
 
 .quiz-actions {
@@ -278,11 +278,11 @@
 
   .quiz-option--correct-answer > span:last-child,
   .quiz-option--wrong-selection > span:last-child {
-    color: #e5e7eb;
+    color: inherit;
   }
 
   .quiz-option--wrong-selection > span:last-child {
-    text-decoration-color: #e5e7eb;
+    text-decoration-color: currentColor;
   }
 
   .quiz-button:disabled {

@@ -14,6 +14,7 @@ import {
   getCollegeFilterLabel,
 } from "./catalogUtils";
 import type { CatalogSelectionMode } from "../../utils/catalogSelection";
+import { useCatalogSearch } from "../../hooks/useCatalogSearch";
 
 type CatalogControlsOptions = {
   courses: CourseEntry[];
@@ -108,7 +109,7 @@ export function useCatalogControls({
   const setSelectedProgramId = (nextProgramId: string) => updateNavigation({ selectedProgramId: nextProgramId });
   const setSelectedClusterId = (nextClusterId: string) => updateNavigation({ selectedClusterId: nextClusterId });
   const setCatalogPage = (nextPage: number) => updateNavigation({ catalogPage: nextPage });
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useCatalogSearch();
   const [collegeFilter, setCollegeFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");

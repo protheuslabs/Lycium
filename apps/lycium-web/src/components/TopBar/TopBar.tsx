@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, type MouseEvent } from "react";
-import { House, Library, LogIn, NotebookTabs, Settings } from "lucide-react";
-import LoginDialog from "../Account/LoginDialog";
+import { House, Library, Menu, NotebookTabs, Search } from "lucide-react";
 import Link from "next/link";
-import {
-  COURSE_CATALOG_PATH,
-  LYCIUM_ROUTE_ROOT,
-  MY_LEARNING_PATH,
-  SETTINGS_PATH,
-} from "../../utils/courseRouting";
+import LoginDialog from "../Account/LoginDialog";
+import Modal from "../Modal/Modal";
+import SiteSearch from "./SiteSearch";
+import SiteOptions from "./SiteOptions";
+import { COURSE_CATALOG_PATH, LYCIUM_ROUTE_ROOT, MY_LEARNING_PATH } from "../../utils/courseRouting";
 import type { RouteInfo } from "../../courseTypes";
 
 type TopBarProps = {
@@ -20,70 +18,59 @@ type TopBarProps = {
 
 export default function TopBar({ onOpenCatalog, onOpenSettings, currentPage }: TopBarProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const openCatalog = onOpenCatalog
-    ? (event: MouseEvent<HTMLAnchorElement>) => {
-        event.preventDefault();
-        onOpenCatalog();
-      }
-    : undefined;
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const navigation = [
+    { label: "Home", ariaLabel: "Home", href: LYCIUM_ROUTE_ROOT, active: currentPage === "landing", icon: House },
+    { label: "Catalog", ariaLabel: "Course catalog", href: COURSE_CATALOG_PATH, active: currentPage === "home", icon: Library },
+    { label: "My Learning", ariaLabel: "My Learning", href: MY_LEARNING_PATH, active: currentPage === "learning", icon: NotebookTabs },
+  ];
+  const openCatalog = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (onOpenCatalog && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      event.preventDefault();
+      onOpenCatalog();
+    }
+  };
 
   return (
-    <header className="top-bar">
-      <a className="skip-link" href="#main-content">
-        Skip to content
-      </a>
-      <Link className="top-bar-title" href={LYCIUM_ROUTE_ROOT} aria-label="Lycium home">
-        <span className="top-bar-title-full" aria-hidden="true">
-          Lycium
-        </span>
-        <span className="top-bar-title-compact" aria-hidden="true">
-          L
-        </span>
-      </Link>
-      <nav className="top-bar-navigation" aria-label="Primary navigation">
-        <Link
-          href={LYCIUM_ROUTE_ROOT}
-          className="top-bar-icon-button home-link"
-          aria-label="Home"
-          aria-current={currentPage === "landing" ? "page" : undefined}
-        >
-          <House aria-hidden="true" />
-          <span>Home</span>
-        </Link>
-        <Link
-          href={MY_LEARNING_PATH}
-          className="top-bar-icon-button learning-link"
-          aria-label="My Learning"
-          aria-current={currentPage === "learning" ? "page" : undefined}
-        >
-          <NotebookTabs aria-hidden="true" />
-          <span>My Learning</span>
-        </Link>
-        <Link
-          href={COURSE_CATALOG_PATH}
-          className="catalog-link top-bar-icon-button"
-          aria-label="Course catalog"
-          aria-current={currentPage === "home" ? "page" : undefined}
-          onClick={openCatalog}
-        >
-          <Library aria-hidden="true" />
-          <span className="catalog-link-label">Catalog</span>
-        </Link>
-      </nav>
-      <Link
-        href={SETTINGS_PATH}
-        className="settings-link top-bar-icon-button"
-        aria-label="Settings"
-        title="Settings"
-        onClick={onOpenSettings}
-      >
-        <Settings aria-hidden="true" />
-      </Link>
-      <button type="button" className="top-bar-login" onClick={() => setIsLoginOpen(true)}>
-        <LogIn size={16} aria-hidden="true" />
-        <span>Log in</span>
-      </button>
+    <>
+      <header className="top-bar">
+        <a className="skip-link" href="#main-content">Skip to content</a>
+        <div className="top-bar-inner">
+          <button className="top-bar-tool top-bar-menu" type="button" aria-label="Open navigation" aria-expanded={isMenuOpen} aria-haspopup="dialog" onClick={() => setIsMenuOpen(true)} title="Navigation">
+            <Menu size={22} aria-hidden="true" />
+          </button>
+          <Link className="top-bar-title" href={LYCIUM_ROUTE_ROOT} aria-label="Lycium home">
+            <span className="top-bar-title-full" aria-hidden="true">LYCIUM</span>
+            <span className="top-bar-title-compact" aria-hidden="true">L</span>
+          </Link>
+          <nav className="top-bar-navigation" aria-label="Primary navigation">
+            {navigation.map((item) => (
+              <Link key={item.href} href={item.href} className="top-bar-nav-link" aria-label={item.ariaLabel} aria-current={item.active ? "page" : undefined} onClick={item.href === COURSE_CATALOG_PATH ? openCatalog : undefined}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="top-bar-search"><SiteSearch /></div>
+          <div className="top-bar-actions">
+            <button className="top-bar-tool top-bar-search-toggle" type="button" aria-label="Search courses" aria-haspopup="dialog" onClick={() => setIsSearchOpen(true)} title="Search courses"><Search size={21} aria-hidden="true" /></button>
+            <button type="button" className="top-bar-login" onClick={() => setIsLoginOpen(true)}>Log in</button>
+            <SiteOptions onOpenSettings={onOpenSettings} />
+          </div>
+        </div>
+      </header>
+      <Modal isOpen={isMenuOpen} title="Navigation" labelledById="site-navigation-title" className="site-navigation-dialog" size="sm" onClose={() => setIsMenuOpen(false)}>
+        <nav aria-label="Primary navigation" className="site-mobile-navigation">
+          {navigation.map((item) => (
+            <Link key={item.href} href={item.href} aria-label={item.ariaLabel} aria-current={item.active ? "page" : undefined} onClick={(event) => {
+              setIsMenuOpen(false);
+              if (item.href === COURSE_CATALOG_PATH) openCatalog(event);
+            }}><item.icon size={20} aria-hidden="true" />{item.label}</Link>
+          ))}
+        </nav>
+      </Modal>
+      <Modal isOpen={isSearchOpen} title="Find a course" labelledById="site-search-title" className="site-search-dialog" size="md" initialFocus='input[type="search"]' onClose={() => setIsSearchOpen(false)}><SiteSearch /></Modal>
       <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-    </header>
+    </>
   );
 }

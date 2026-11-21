@@ -4,6 +4,7 @@ import type { CourseEntry } from "../../courseTypes";
 import type { LearningCourse } from "../../utils/learningLibrary";
 import { getCoursePath } from "../../utils/courseRouting";
 import CourseArtwork from "./CourseArtwork";
+import CourseProgress from "../CourseCard/CourseProgress";
 
 export default function ContinueLearning({ item, onOpenCourse }: {
   item: LearningCourse;
@@ -19,10 +20,7 @@ export default function ContinueLearning({ item, onOpenCourse }: {
         <h3><Link href={getCoursePath(course)}>{course.title}</Link></h3>
         {lesson && <p className="continue-lesson"><Play size={15} aria-hidden="true" />{lesson.title}</p>}
         <div className="continue-learning-bottom">
-          <div className="continue-progress">
-            <span>{progress.completed} of {progress.total} sections complete</span>
-            <progress value={progress.completed} max={progress.total} aria-label={`${course.title} completion`} />
-          </div>
+          <CourseProgress title={course.title} completed={progress.completed} total={progress.total} className="continue-progress" showPercentage={false} />
           <button type="button" className="learner-primary-link" onClick={() => onOpenCourse(course)} aria-label={`Resume ${course.title}`}>
             Continue learning<ArrowRight size={18} aria-hidden="true" />
           </button>

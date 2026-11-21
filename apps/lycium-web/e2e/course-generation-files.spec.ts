@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { openSiteSettings } from "./fixtures/siteNavigation";
 
 async function chooseDropdownOption(page: Page, label: string, optionName: string | RegExp) {
   const trigger = page.getByLabel(label);
@@ -280,7 +281,7 @@ test("uploaded files entered in the create-course UI reach course generation as 
   });
 
   await page.goto("/Lycium/catalog");
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await page.getByRole("button", { name: "Create", exact: true }).click();
@@ -392,7 +393,7 @@ test("course creation submits mixed URL and file inputs to generation", async ({
   });
 
   await page.goto("/Lycium/catalog");
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await page.getByRole("button", { name: "Create", exact: true }).click();

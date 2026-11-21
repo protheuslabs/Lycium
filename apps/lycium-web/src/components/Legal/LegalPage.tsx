@@ -10,7 +10,7 @@ export default function LegalPage({ document }: LegalPageProps) {
   return (
     <div className="legal-shell">
       <TopBar />
-      <main className="legal-page">
+      <main className="legal-page" id="main-content" tabIndex={-1}>
         <article className="legal-document">
           <h1>{document.title}</h1>
           <p className="legal-summary">{document.summary}</p>

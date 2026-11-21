@@ -13,7 +13,6 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .course-info-button,
   .course-info-close,
   .course-info-chip,
   .course-info-facts article,
@@ -26,7 +25,6 @@
     background: #262626;
   }
 
-  .course-info-button,
   .course-info-close,
   .course-info-chip,
   .course-info-facts strong,
@@ -89,7 +87,7 @@
   }
 }
 
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button,
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-close,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts article,
@@ -102,7 +100,7 @@
   background: #262626;
 }
 
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button,
+
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-close,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-chip,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-facts strong,
@@ -163,7 +161,7 @@
   color: #fde68a;
 }
 
-html[data-theme="light"] .course-info-button,
+
 html[data-theme="light"] .course-info-close,
 html[data-theme="light"] .course-info-chip,
 html[data-theme="light"] .course-info-facts article,
@@ -176,7 +174,7 @@ html[data-theme="light"] .course-review-row {
   background: #eef2f7;
 }
 
-html[data-theme="light"] .course-info-button,
+
 html[data-theme="light"] .course-info-close,
 html[data-theme="light"] .course-info-chip,
 html[data-theme="light"] .course-info-facts strong,
@@ -219,12 +217,4 @@ html[data-theme="light"] .course-review-gate span,
 html[data-theme="light"] .course-review-gate p,
 html[data-theme="light"] .course-review-row span {
   color: #667085;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button:hover,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-info-button:focus-visible,
-html[data-theme="light"] .course-info-button:hover,
-html[data-theme="light"] .course-info-button:focus-visible {
-  color: #ffffff;
-  background: #4a6cf7;
 }

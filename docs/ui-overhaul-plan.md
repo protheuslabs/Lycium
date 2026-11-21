@@ -4,6 +4,10 @@ Research date: 2026-11-18. Latest visual checkpoint: 2026-11-20. Status: image-l
 
 ## Contents
 
+Focused site-by-site studies: [Coursera discovery and course fit](ui-studies/coursera.md).
+Second study: [Khan Academy curriculum and assessment clarity](ui-studies/khan-academy.md).
+Shared chrome: [site navigation and footer](ui-studies/site-navigation.md).
+
 1. [Direction and research limits](#1-direction)
 2. [Platform comparison](#2-platform-comparison)
 3. [Product structure and navigation](#3-product-structure-and-navigation)

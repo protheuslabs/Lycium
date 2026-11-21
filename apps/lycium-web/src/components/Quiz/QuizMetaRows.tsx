@@ -99,13 +99,19 @@ export default function QuizMetaRows({
           }`}
           key={`${name}-attempt-${attempt.attemptNumber}`}
           onClick={() => onReviewAttemptChange(attempt.attemptNumber)}
+          onKeyDown={(event) => {
+            if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault();
+              onReviewAttemptChange(attempt.attemptNumber);
+            }
+          }}
         >
-          <span>Attempt {attempt.attemptNumber}/{maxAttempts ?? "∞"}</span>
+          <span>Attempt {attempt.attemptNumber}{maxAttempts === null ? "" : `/${maxAttempts}`}</span>
           <span className={`quiz-score ${scoreClassFor(attempt.scorePercentage, passPercentage)}`}>
             Score: {formatScore(attempt)}
           </span>
           <span>
-            {formatDuration(attempt.elapsedSeconds)}/{timerDuration === null ? "∞" : formatDuration(timerDuration)}
+            {formatDuration(attempt.elapsedSeconds)}{timerDuration === null ? " elapsed" : `/${formatDuration(timerDuration)}`}
           </span>
         </div>
       ))}
@@ -115,6 +121,12 @@ export default function QuizMetaRows({
         tabIndex={0}
         className={`quiz-meta-row quiz-meta-row--current ${!isReviewingPastAttempt ? "quiz-meta-row--active" : ""}`}
         onClick={() => onReviewAttemptChange(null)}
+        onKeyDown={(event) => {
+          if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+            event.preventDefault();
+            onReviewAttemptChange(null);
+          }
+        }}
       >
         <span className="quiz-meta-edit-field">
           Attempt {attemptsLabel}
@@ -141,7 +153,7 @@ export default function QuizMetaRows({
           </span>
         ) : (
           <span className="quiz-score quiz-score--neutral quiz-meta-edit-field">
-            Passing score: ∞
+            No passing score set
             {isEditMode && (
               <EditPencilButton
                 label="Edit passing score"
@@ -152,7 +164,7 @@ export default function QuizMetaRows({
         )}
         <span className="quiz-meta-edit-field">
           {currentAttemptResult
-            ? `${formatDuration(currentAttemptResult.elapsedSeconds)}/${timerDuration === null ? "∞" : formatDuration(timerDuration)}`
+            ? `${formatDuration(currentAttemptResult.elapsedSeconds)}${timerDuration === null ? " elapsed" : `/${formatDuration(timerDuration)}`}`
             : timeLabel}
           {isEditMode && (
             <EditPencilButton

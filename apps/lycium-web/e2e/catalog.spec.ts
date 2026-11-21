@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { openSiteSettings } from "./fixtures/siteNavigation";
 async function chooseDropdownOption(page: Page, label: string, optionName: string | RegExp) {
   const trigger = page.getByLabel(label);
   const currentText = (await trigger.textContent()) ?? "";
@@ -241,7 +242,7 @@ test("manual course creation opens a blank editable draft", async ({ page }) => 
 test("under-sourced AI creation remains openable with an incomplete-sources notice", async ({ page }) => {
   await mockVerifiedAiConnection(page);
   await page.goto("/Lycium/catalog");
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await openCreateCourseDialog(page);
@@ -374,7 +375,7 @@ test("create-course modal reflects locked and unlocked AI states", async ({ page
 
   await mockVerifiedAiConnection(page);
   await page.reload();
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await expect(page.locator(".settings-key-preview").getByText("http://localhost:11434")).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
@@ -411,7 +412,7 @@ test("settings modal and course shell survive route changes", async ({ page }) =
   await mockEmptyAiConnection(page);
   await seedReadyForReviewCourse(page);
   await page.goto("/Lycium/catalog");
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("radio", { name: "Dark mode" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
@@ -422,7 +423,7 @@ test("settings modal and course shell survive route changes", async ({ page }) =
   const firstCourse = firstUsableCourseCard(page);
   await firstCourse.click();
   await expect(page.locator(".content-view")).toBeVisible();
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
   await expect(page).toHaveURL(/\/Lycium\/courses\//);

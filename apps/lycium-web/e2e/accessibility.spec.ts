@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockLocalUiApi } from "./fixtures/localUiApi";
+import { openSiteSettings } from "./fixtures/siteNavigation";
 
 const INTERACTIVE_SELECTOR = [
   "a[href]",
@@ -79,7 +80,7 @@ test("primary dialogs keep modal semantics under keyboard navigation", async ({ 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "Create Course" })).toHaveCount(0);
 
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);

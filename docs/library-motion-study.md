@@ -2,6 +2,38 @@
 
 Route: `/library-preview` (under the configured deployment base path).
 
+## Scanned-Material Pass
+
+The approved pre-material scene is frozen in
+`docs/design-snapshots/library-layout-v2/`. Camera framing, room size, pod geometry,
+and the furnishing layout remain unchanged in this pass.
+
+The active scene now uses bundled Poly Haven color/normal/roughness sets for
+wood, woven upholstery, marble, and stone tiles, plus an indoor HDR environment.
+See `src/assets/README.md` and the asset manifest for provenance and checksums.
+Box faces, curved bookcases, columns, rugs, and pod shells use material-scale
+UVs rather than stretching one image across every object.
+
+Illumination sources stay fixed in room coordinates, never parented to the
+camera. The HDR environment has a fixed orientation and subdued intensity;
+matte roughness ranges suppress the sweeping window-reflection band on wood
+and other surfaces. Small physically view-dependent reflections are not moving
+lights. Static shadows and the deterministic camera loop are preserved.
+
+Plants use elongated pointed, ribbed leaf meshes whose bases connect directly
+to a tapered green stalk. Side stems are removed. Leaves retain their uniform
+dark green and upward angle. Precise transformed-vertex bounds ground spinning
+chairs in both lean directions; the old rotated-box approximation lifted them.
+
+This is a material/lighting improvement to the interactive 3D study, not a claim
+that its simple artifact meshes are production-quality photorealistic models.
+
+Pod panels use a coarser wool weave than the seating. Rounded upholstered
+cushions have subtle piping seams. Three cloth/leather binding finishes are
+distributed across the shelves and carts, with separate paper-edge geometry and
+texture so page edges do not inherit each book's cover tint. These details do
+not change furniture placement or the approved pod shape.
+
 This is an isolated Three.js geometry/camera prototype, not the finished
 photorealistic homepage or a replacement for its existing hero. The collector
 library image is art direction and a loading/WebGL fallback, not a texture being
@@ -49,10 +81,56 @@ classical busts, amphorae, globes, clocks, telescopes, microscopes, cameras, rad
 early computers, laptops, and circuit boards. Books still occupy most shelves.
 Objects sit on the reserved display shelves rather than floating in the room.
 
-The main floor has 12 of each study-area type: shared six-seat reading tables,
-curved acoustic study pods with mustard cushions and writing desks, upholstered
-armchair pairs with footstools and reading lamps, and red sculptural-chair pairs
-with side tables. The user-supplied photos guide the furniture shapes, not the
+The main floor has 42 staggered curved study pods with mustard cushions and
+writing desks, 12 shared six-seat reading tables, six upholstered armchair areas
+with footstools and reading lamps, six sofa groups, 12 individual carrels, and 12
+red/blue/orange sculptural-chair pairs with side tables.
+The sculptural chairs tilt about 20 degrees sideways with a
+small backward lean, both in the same direction rather than toward each other;
+their transformed bounds keep them resting on the floor.
+Three staggered pod rows use five varied wall-relative headings, leaving the camera circuit clear.
+Inside each pod, the seat and desk turn together 90 degrees to the opening.
+The white semicircular desktop follows the inner wall opposite the seat. It is
+a wall-mounted pod fixture, with no pedestal, base, or floor-standing legs.
+The desk-side shell ends exactly at the desktop's curved edge. On the seat side,
+the shell extends until its inner edge aligns with the back of the seat in
+profile. This makes an approximately 307-degree enclosure with a 53-degree
+entry opening, without extending the desk-side wall past the desktop.
+Seats sit back against the curved wall at their rear corners; wall-mounted
+whiteboards and their clips are removed. The white desktop is unchanged.
+The spinning-chair underside tapers from its wide lower rim to a pointed tip.
+Twelve individual study carrels add screened desks, lamps, and padded chairs near
+the shelves. Six former armchair areas are now sofa groups with facing cushioned
+sofas and low reading tables; six armchair areas remain. This adds furniture
+variety without filling the open center or changing the room/camera dimensions.
+Eighteen potted plants separate study zones, with six nearer the middle. Six
+additional pods sit in visible foreground gaps, leaving at least two meters clear
+beside the camera circuit. Six standalone red/blue/orange spinning chairs sit in
+the middle distance, 11 meters beyond the camera path, and lean in the opposite
+direction to the paired chairs.
+Leaves rise outward at 45 degrees to
+horizontal at every position around the stem. Six book carts and six paired
+waste/recycling stations sit in foreground gaps between study zones, outside
+furniture and camera clearances. These were moved from the back wall because the
+pods hid them in the wide camera view. Carts have three book-filled shelves;
+bins have distinct blue/green tops and panels. Bags and notebooks also appear
+at sofa groups, where they read more clearly than distant desk accessories.
+Each cart shelf has 18-20 closely packed books leaning together; adjacent shelves
+lean in opposite directions. Carts turn 36 degrees from their wall-relative
+heading to show their depth. Books vary in size and muted textured
+cover color. Each cart uses its own deterministic arrangement. Plants have
+uniform dark-green leaves and larger, rounded ceramic pots.
+Only some tables have backpacks, mugs, notebooks, pencils, headphones, and laptop
+screens; communal tables have charging strips and blue woven rugs. Muted stone
+floor tiles and warmer, lower-intensity lighting replace the bright plain floor.
+Rugs and tile joints have stronger contrast for the wide view. Small desk props
+remain human-sized and are not expected to be legible at every camera position.
+Furniture and plants cast static directional shadows onto floors and rugs. The
+2048-pixel shadow map is rendered once because the scene objects do not move.
+Paused views reuse the rendered canvas rather than redrawing identical frames.
+Resize and recording startup explicitly request a fresh frame.
+These remain modeled prototype details, not photorealistic production assets.
+The user-supplied photos guide the furniture shapes, not the
 room architecture. Furnishings remain human-sized and leave the camera circuit
 clear; the library dimensions and camera framing are unchanged.
 
@@ -60,9 +138,15 @@ clear; the library dimensions and camera framing are unchanged.
 
 - `libraryOrbit.ts`: dimensions, periodic camera math, deterministic variation.
 - `libraryMaterials.ts`: material/texture creation and disposal.
+- `librarySurfaceMaps.ts`: bundled PBR map loading, roles, and matte roughness.
+- `libraryTextureScale.ts`: physical UV scale and roughness data remapping.
+- `libraryPlantGeometry.ts`: tapered, pointed leaf surface geometry.
+- `libraryBookGeometry.ts`: distinct cover and inset page-edge surfaces.
+- `libraryUpholstery.ts`: piping around rounded cushions.
 - `libraryArchitecture.ts`: curved bookcases, instanced books, galleries, dome.
 - `libraryArtifacts.ts`: ladders and historical/technical display objects.
 - `libraryFurniture.ts`: study pods, reading tables, and lounge furniture.
+- `libraryDetails.ts`: plants, book carts, bins, charging, and selective belongings.
 - `libraryLayout.ts`: deterministic placements and clearances.
 - `libraryGeometry.ts`: shared primitive construction and repeated-mesh batching.
 - `libraryRenderer.ts`: Three.js scene, lighting, resize, camera, GPU cleanup.

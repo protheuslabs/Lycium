@@ -15,31 +15,12 @@
   color: #f8fafc;
 }
 
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card {
-  border-color: #303033;
-  background: linear-gradient(145deg, #171717, #111112);
-  color: #e5e7eb;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card:hover {
-  border-color: #303033;
-  background: #1f1f20;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card--needs-sources:hover {
-  background: #241f14;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-page h2,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-card h3,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card h3 {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-page h2 {
   color: #f8fafc;
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-control-label,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-header p,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-kicker {
+:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-header p {
   color: #9ca3af;
 }
 
@@ -61,21 +42,6 @@
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-course-scope button:hover,
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-open-detail-button:hover {
   background: #454d5c;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-card {
-  border-color: #303033;
-  background: linear-gradient(145deg, #171717, #111112);
-  color: #e5e7eb;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-card:hover {
-  background: #1f1f20;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-card p:not(.program-showcase-kicker) {
-  color: #cbd5e1;
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-create-button {
@@ -147,56 +113,6 @@
   background: #454d5c;
 }
 
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-meta span {
-  color: #dbeafe;
-  background: #222734;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness span,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness em {
-  color: #dbeafe;
-  background: #222734;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness strong {
-  color: #dbeafe;
-  background: #2f3542;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness--ready strong {
-  color: #bbf7d0;
-  background: rgba(47, 122, 79, 0.28);
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness--needs_sources strong,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness--needs_evidence strong {
-  color: #fde68a;
-  background: rgba(133, 95, 0, 0.28);
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness--missing_courses strong,
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness--locked strong {
-  color: #fecaca;
-  background: rgba(143, 31, 31, 0.3);
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .path-readiness--needs_review strong {
-  color: #c7d2fe;
-  background: rgba(65, 93, 193, 0.28);
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-progress-bar {
-  background: #262626;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-progress-viewed {
-  background: rgba(128, 150, 255, 0.26);
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .program-showcase-progress p {
-  color: #cbd5e1;
-}
-
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-search-field input {
   border-color: #303033;
   color: #f8fafc;
@@ -211,34 +127,6 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .catalog-search-field input::placeholder {
   color: #7f8da3;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-short-description {
-  color: #cbd5e1;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-active-subheader {
-  color: #d1d5db;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-active-subheader span:first-child {
-  color: #f8fafc;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-active-subheader span:last-child {
-  color: #d1d5db;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-active-subheader .course-requirement-context {
-  color: #dbeafe;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-progress-bar {
-  background: #262626;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-progress-viewed-fill {
-  background: rgba(128, 150, 255, 0.26);
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-review-badge {
@@ -269,28 +157,6 @@
   color: #d1d5db;
 }
 
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-progress-needs-sources {
-  color: #fde68a;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-publish-button {
-  color: #f8fafc;
-  background: #2f3542;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-publish-button:hover:not(:disabled),
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-publish-button:focus-visible:not(:disabled) {
-  background: #454d5c;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card--generating:hover {
-  border-color: #303033;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card--empty:hover {
-  border-color: #303033;
-}
-
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generating-course-spinner {
   border-color: rgba(128, 150, 255, 0.22);
   border-top-color: #b9c8ff;
@@ -311,10 +177,6 @@
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-generating-status {
   color: #cbd5e1;
-}
-
-:is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .course-card--generation-error .course-generating-status {
-  color: #fecaca;
 }
 
 :is(html[data-theme="dark"], body[data-theme="dark"], body.dark, body.dark-mode) .generating-course-action {

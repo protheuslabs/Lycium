@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockLocalUiApi } from "./fixtures/localUiApi";
+import { openSiteSettings } from "./fixtures/siteNavigation";
 
 const title = "Reading, Practice, and Evidence: A Course With a Deliberately Long Catalog Title";
 const lessonTitle = "Distinguishing completion from understanding through practice and evidence";
@@ -227,6 +228,8 @@ test("quiz selections survive reload and remain isolated between courses", async
   await page.getByRole("radio", { name: correctAnswer, exact: true }).check();
   await page.reload();
   await expect(page.getByRole("radio", { name: correctAnswer, exact: true })).toBeChecked();
+  const navigation = page.getByRole("button", { name: "Open navigation", exact: true });
+  if (await navigation.isVisible()) await navigation.click();
   await page.getByRole("link", { name: "Course catalog", exact: true }).click();
   await openCourse(page, "Second course");
   await selectSection(page, /1\.3 Knowledge check/);
@@ -238,7 +241,7 @@ test("light and dark themes keep the catalog, reader, and assessment on semantic
   page,
 }, info) => {
   for (const mode of ["dark", "light"] as const) {
-    await page.getByRole("link", { name: "Settings", exact: true }).click();
+    await openSiteSettings(page);
     await page.getByRole("button", { name: "AI provider", exact: true }).click();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog", { name: "Settings", exact: true })).toBeVisible();
@@ -256,6 +259,8 @@ test("light and dark themes keep the catalog, reader, and assessment on semantic
     await expect(page.getByRole("button", { name: "Begin attempt #1", exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath(`assessment-${mode}.png`), fullPage: true });
     await selectSection(page, /1\.1 Distinguishing completion/);
+    const navigation = page.getByRole("button", { name: "Open navigation", exact: true });
+    if (await navigation.isVisible()) await navigation.click();
     await page.getByRole("link", { name: "Course catalog", exact: true }).click();
     await expect(page).toHaveURL(/\/catalog$/);
     await expect(page.getByRole("heading", { name: "Catalog", level: 1 })).toBeVisible();

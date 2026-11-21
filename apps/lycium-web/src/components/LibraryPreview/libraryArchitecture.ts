@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { LIBRARY, seededRandom } from "./libraryOrbit";
 import type { LibraryMaterials } from "./libraryMaterials";
+import { scaleBoxTextureUVs, scaleTextureUVs } from "./libraryTextureScale";
+import { createBookFaceGeometry } from "./libraryBookGeometry";
 
 export function horizontalRing(inner: number, outer: number, thickness: number) {
   const shape = new THREE.Shape();
@@ -16,12 +18,14 @@ export function horizontalRing(inner: number, outer: number, thickness: number) 
 export function addLibraryArchitecture(scene: THREE.Scene, materials: LibraryMaterials) {
   const { wallRadius: radius, shelfHeight, bays, levels, rowsPerLevel, levelHeight } = LIBRARY;
   const wall = new THREE.Mesh(new THREE.CylinderGeometry(radius + 0.35, radius + 0.35, shelfHeight, 128, 1, true), materials.darkWood);
+  scaleTextureUVs(wall.geometry, Math.PI * 2 * radius / 1.5, shelfHeight / 1.5);
   wall.material = materials.darkWood.clone();
   wall.material.side = THREE.BackSide;
   wall.position.y = shelfHeight / 2;
   scene.add(wall);
 
   const shelfGeometry = horizontalRing(radius - 0.95, radius + 0.3, 0.12);
+  scaleTextureUVs(shelfGeometry, 1 / 1.5, 1 / 1.5);
   for (let level = 0; level < levels; level += 1) {
     for (let row = 0; row <= rowsPerLevel; row += 1) {
       const shelf = new THREE.Mesh(shelfGeometry, materials.wood);
@@ -31,7 +35,9 @@ export function addLibraryArchitecture(scene: THREE.Scene, materials: LibraryMat
   }
 
   const upright = new THREE.BoxGeometry(0.18, shelfHeight, 1.1);
+  scaleBoxTextureUVs(upright, [0.18, shelfHeight, 1.1], 1.5);
   const pillar = new THREE.CylinderGeometry(0.24, 0.3, shelfHeight, 12);
+  scaleTextureUVs(pillar, Math.PI * 0.6 / 1.5, shelfHeight / 1.5);
   for (let bay = 0; bay < bays; bay += 1) {
     const angle = bay / bays * Math.PI * 2;
     const divider = new THREE.Mesh(upright, materials.wood);
@@ -51,6 +57,7 @@ export function addLibraryArchitecture(scene: THREE.Scene, materials: LibraryMat
   }
 
   const balconyGeometry = horizontalRing(radius - 1.25, radius - 0.65, 0.12);
+  scaleTextureUVs(balconyGeometry, 1 / 1.5, 1 / 1.5);
   const railGeometry = new THREE.TorusGeometry(radius - 1.25, 0.025, 6, 160);
   railGeometry.rotateX(Math.PI / 2);
   const posts: THREE.Matrix4[] = [];
@@ -77,8 +84,9 @@ export function addLibraryArchitecture(scene: THREE.Scene, materials: LibraryMat
   scene.add(balusters);
 
   addBooks(scene, materials);
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(radius + 1, 128), materials.marble);
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(radius + 1, 128), materials.floor);
   floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
   scene.add(floor);
   for (const ringRadius of [radius * 0.65, radius * 0.78, radius * 0.9]) {
     const inlay = new THREE.Mesh(horizontalRing(ringRadius, ringRadius + 0.035, 0.01), materials.teal);
@@ -128,13 +136,23 @@ function addBooks(scene: THREE.Scene, materials: LibraryMaterials) {
       }
     }
   }
-  const books = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), materials.book, entries.length);
-  entries.forEach((entry, index) => {
-    books.setMatrixAt(index, entry.matrix);
-    books.setColorAt(index, entry.color);
+  const coverGeometry = createBookFaceGeometry([1, 1, 1], [0, 1, 5]);
+  const bindings = [materials.book, materials.bookCloth, materials.bookLinen];
+  bindings.forEach((material, binding) => {
+    const boundEntries = entries.filter((_, index) => index % bindings.length === binding);
+    const covers = new THREE.InstancedMesh(coverGeometry, material, boundEntries.length);
+    boundEntries.forEach((entry, index) => {
+      covers.setMatrixAt(index, entry.matrix);
+      covers.setColorAt(index, entry.color);
+    });
+    covers.instanceMatrix.needsUpdate = true;
+    if (covers.instanceColor) covers.instanceColor.needsUpdate = true;
+    covers.computeBoundingSphere();
+    scene.add(covers);
   });
-  books.instanceMatrix.needsUpdate = true;
-  if (books.instanceColor) books.instanceColor.needsUpdate = true;
-  books.computeBoundingSphere();
-  scene.add(books);
+  const pages = new THREE.InstancedMesh(createBookFaceGeometry([0.88, 0.94, 0.94], [2, 3, 4]), materials.pages, entries.length);
+  entries.forEach((entry, index) => pages.setMatrixAt(index, entry.matrix));
+  pages.instanceMatrix.needsUpdate = true;
+  pages.computeBoundingSphere();
+  scene.add(pages);
 }

@@ -49,3 +49,35 @@ Generated editorial covers are category illustrations, not photographs of a real
 Use isolated API fixtures for browser tests. Test 320/390/768/1280/1440 widths, light/dark, asset loading, long titles, overview without progress mutation, ordered curriculum, saved-section resume, assessment persistence, and editing. Inspect screenshots before declaring visual completion. Preserve existing generation jobs and provider settings; visual tests must never call real generation providers.
 
 Still outside this visual increment: real authentication, enrollment/account sync, Studio separation, full program-page redesign, a screen-reader audit, and user studies. This is not a public-launch readiness claim.
+
+## Shared Learner Presentation
+
+The consolidation pass uses `components/CourseCard/CourseCard.tsx` and
+`courseCard.css` as the single presentation owner for Home, My Learning, and
+Catalog course tiles. `CourseProgress.tsx` owns section-completion display,
+including Continue learning. Page adapters retain navigation, prerequisite,
+selection, lifecycle, and progress behavior; the shared tile does not fetch or
+mutate course data. Legacy card classes remain as integration/test hooks, not
+separate visual systems.
+
+Shared dimensions, typography, surfaces, and accent colors live in
+`styles/tokens.css`. Superseded course/program card selectors were removed from
+the catalog's baseline and theme layers rather than overridden again. Program
+catalog diagnostics remain available in a native, keyboard-accessible
+Authoring details disclosure. This is not a separate Studio workspace yet.
+
+The navigation wordmark is now uppercase LYCIUM, with the existing mobile L.
+The library scene remains paused and is not part of this main-site increment.
+Keep the existing subject artwork and learner-first page roles. Next product
+work should validate one complete flagship learning journey before adding more
+dashboard widgets or undertaking another visual redesign.
+
+Verification for this increment: 98 web unit tests, 50 focused desktop/mobile
+browser checks (learner pages, reader, manual editing, mocked URL/file generation,
+and prerequisite actions), TypeScript, focused component ESLint, import/data
+boundary guards, and the production build passed. New assertions compare actual
+computed card presentation between the three pages and check independent info
+and authoring-disclosure actions. Screenshots cover light/dark and responsive
+layouts; the local browser was also inspected with existing learner data. No
+live generation provider was invoked. These checks do not establish curriculum
+quality, full accessibility conformance, or public-launch readiness.

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { openSiteSettings } from "./fixtures/siteNavigation";
 
 async function mockVerifiedAiConnection(page: Page) {
   await page.route("**/v1/local/ai/providers", async (route) => {
@@ -446,7 +447,7 @@ test("section refresh is blocked when the active model is unverified", async ({ 
   await mockUnverifiedAiConnection(page);
   await seedRefreshableCourse(page);
   await page.goto("/Lycium/catalog");
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await expect(page.getByText("Ollama Local is saved but not verified yet.")).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
@@ -469,7 +470,7 @@ test("section refresh modal opens when an API-backed course and verified model a
   await mockVerifiedAiConnection(page);
   await seedRefreshableCourse(page);
   await page.goto("/Lycium/catalog");
-  await page.getByLabel("Settings").click();
+  await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await expect(page.locator(".settings-key-preview").getByText("http://localhost:11434")).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();

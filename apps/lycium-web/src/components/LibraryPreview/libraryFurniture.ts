@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { addRepeatedObjects, box, cylinder } from "./libraryGeometry";
 import { libraryStudyAreas, type StudyAreaKind } from "./libraryLayout";
 import type { LibraryMaterials } from "./libraryMaterials";
+import { scaleTextureUVs } from "./libraryTextureScale";
 
 function openBook(group: THREE.Group, materials: LibraryMaterials, x: number, y: number, z: number) {
   for (const side of [-1, 1]) {
@@ -31,6 +32,7 @@ function deskChair(materials: LibraryMaterials) {
 
 function readingTable(materials: LibraryMaterials) {
   const group = new THREE.Group();
+  box(group, materials.rugBlue, [3.7, 0.02, 2.9], [0, 0.02, 0], 0.01);
   box(group, materials.wood, [3.6, 0.1, 1.4], [0, 0.76, 0], 0.045);
   for (const x of [-1.5, 1.5]) for (const z of [-0.5, 0.5]) {
     box(group, materials.wood, [0.09, 0.71, 0.09], [x, 0.355, z]);
@@ -53,32 +55,46 @@ function readingTable(materials: LibraryMaterials) {
 
 function studyPod(materials: LibraryMaterials) {
   const group = new THREE.Group();
-  const start = Math.PI * 0.75;
-  const end = Math.PI * 2.25;
+  const innerRadius = 1.21;
+  const seatOffset = 0.16;
+  const backCenter = 0.73;
+  const backDepth = 0.16;
+  // Wrap the full desktop arc; leave the entry on the seat's front-right side.
+  const start = Math.PI / 2;
+  const end = Math.PI * 2 + Math.acos((seatOffset + backCenter + backDepth / 2) / innerRadius);
   const shell = new THREE.Shape();
   shell.absarc(0, 0, 1.3, start, end, false);
-  shell.lineTo(Math.cos(end) * 1.21, Math.sin(end) * 1.21);
-  shell.absarc(0, 0, 1.21, end, start, true);
+  shell.lineTo(Math.cos(end) * innerRadius, Math.sin(end) * innerRadius);
+  shell.absarc(0, 0, innerRadius, end, start, true);
   shell.closePath();
   const geometry = new THREE.ExtrudeGeometry(shell, { depth: 1.45, bevelEnabled: true, bevelSegments: 2, steps: 1, bevelSize: 0.018, bevelThickness: 0.018, curveSegments: 24 });
   geometry.rotateX(-Math.PI / 2);
+  scaleTextureUVs(geometry, 1 / 0.6, 1 / 0.6);
   const screen = new THREE.Mesh(geometry, materials.felt);
   screen.position.y = 0.06;
   group.add(screen);
   cylinder(group, materials.rug, 1.35, 0.025, [0, 0.015, 0], 48);
-  box(group, materials.ochre, [1.55, 0.18, 0.67], [0, 0.49, 0.4], 0.08);
-  box(group, materials.ochre, [1.55, 0.66, 0.16], [0, 0.85, 0.73], 0.07);
+  const workspace = new THREE.Group();
+  workspace.rotation.y = Math.PI / 2;
+  group.add(workspace);
+  const seating = new THREE.Group();
+  seating.position.z = seatOffset;
+  workspace.add(seating);
+  box(seating, materials.ochre, [1.55, 0.18, 0.67], [0, 0.49, 0.4], 0.08);
+  box(seating, materials.ochre, [1.55, 0.66, backDepth], [0, 0.85, backCenter], 0.07);
   for (const x of [-0.66, 0.66]) {
-    box(group, materials.black, [0.045, 0.38, 0.045], [x, 0.23, 0.5]);
+    box(seating, materials.black, [0.045, 0.38, 0.045], [x, 0.23, 0.5]);
   }
-  box(group, materials.wood, [1.35, 0.065, 0.72], [0, 0.77, -0.47], 0.03);
-  cylinder(group, materials.black, 0.045, 0.72, [0, 0.38, -0.48]);
-  cylinder(group, materials.black, 0.35, 0.03, [0, 0.04, -0.48]);
-  openBook(group, materials, 0, 0.82, -0.45);
-  const board = box(group, materials.whiteboard, [0.04, 0.46, 0.62], [1.03, 1.03, 0.05], 0.015);
-  board.rotation.y = -0.22;
-  box(group, materials.teal, [0.04, 0.06, 0.09], [0.995, 1.21, 0.12]);
-  box(group, materials.black, [0.13, 0.025, 0.08], [0.47, 0.82, -0.52], 0.01);
+  const desktopProfile = new THREE.Shape();
+  desktopProfile.absarc(0, 0, innerRadius, 0, Math.PI, false);
+  desktopProfile.closePath();
+  const desktopGeometry = new THREE.ExtrudeGeometry(desktopProfile, { depth: 0.075, bevelEnabled: false, curveSegments: 32 });
+  desktopGeometry.rotateX(-Math.PI / 2);
+  const desktop = new THREE.Mesh(desktopGeometry, materials.whiteboard);
+  desktop.position.y = 0.73;
+  workspace.add(desktop);
+  openBook(workspace, materials, 0, 0.82, -0.45);
+  box(workspace, materials.black, [0.13, 0.025, 0.08], [0.47, 0.82, -0.52], 0.01);
   return group;
 }
 
@@ -119,13 +135,69 @@ function readingLounge(materials: LibraryMaterials) {
   return group;
 }
 
-function sculpturalSeating(materials: LibraryMaterials) {
+function studyCarrel(materials: LibraryMaterials) {
   const group = new THREE.Group();
-  const profile = [[0.1, 0.03], [0.4, 0.04], [0.72, 0.17], [0.45, 0.33], [0.28, 0.5], [0.45, 0.72], [0.72, 1], [0.73, 1.04], [0.65, 1.02], [0.49, 0.83], [0.26, 0.67], [0, 0.65]].map(([x, y]) => new THREE.Vector2(x, y));
-  const geometry = new THREE.LatheGeometry(profile, 48);
+  box(group, materials.wood, [1.35, 0.065, 0.78], [0, 0.76, 0.15], 0.025);
+  box(group, materials.felt, [1.4, 0.65, 0.065], [0, 1.08, 0.56], 0.02);
+  for (const x of [-0.69, 0.69]) {
+    box(group, materials.felt, [0.065, 0.65, 0.85], [x, 1.08, 0.15], 0.02);
+    for (const z of [-0.14, 0.47]) box(group, materials.black, [0.045, 0.73, 0.045], [x * 0.88, 0.365, z]);
+  }
+  const chair = deskChair(materials);
+  chair.position.z = -0.62;
+  chair.rotation.y = Math.PI;
+  group.add(chair);
+  deskLamp(group, materials, 0.45, 0.81, 0.3);
+  openBook(group, materials, -0.12, 0.82, 0.05);
+  box(group, materials.black, [0.18, 0.07, 0.02], [-0.42, 0.86, 0.51], 0.01);
+  return group;
+}
+
+function sofaGroup(materials: LibraryMaterials) {
+  const group = new THREE.Group();
+  cylinder(group, materials.rug, 2.5, 0.025, [0, 0.015, 0], 64);
   for (const side of [-1, 1]) {
-    const chair = new THREE.Mesh(geometry, materials.red);
-    chair.position.set(side * 1.1, 0, 0);
+    const sofa = new THREE.Group();
+    box(sofa, materials.upholstery, [2.55, 0.28, 0.9], [0, 0.35, 0], 0.09);
+    box(sofa, materials.upholstery, [2.55, 0.7, 0.23], [0, 0.77, 0.36], 0.09);
+    for (const x of [-0.76, 0, 0.76]) box(sofa, materials.upholstery, [0.73, 0.16, 0.72], [x, 0.55, -0.04], 0.07);
+    for (const x of [-1.23, 1.23]) {
+      box(sofa, materials.upholstery, [0.18, 0.46, 0.9], [x, 0.62, 0], 0.07);
+      for (const z of [-0.28, 0.28]) cylinder(sofa, materials.wood, 0.035, 0.22, [x * 0.9, 0.12, z]);
+      const pillow = box(sofa, materials.ochre, [0.4, 0.38, 0.17], [x * 0.7, 0.77, 0.15], 0.065);
+      pillow.rotation.z = Math.sign(x) * 0.17;
+    }
+    sofa.position.z = side * 1.25;
+    sofa.rotation.y = side < 0 ? Math.PI : 0;
+    group.add(sofa);
+  }
+  box(group, materials.wood, [1.5, 0.07, 0.65], [0, 0.44, 0], 0.03);
+  for (const x of [-0.58, 0.58]) for (const z of [-0.2, 0.2]) cylinder(group, materials.brass, 0.025, 0.4, [x, 0.21, z]);
+  openBook(group, materials, -0.3, 0.5, 0);
+  box(group, materials.paper, [0.3, 0.045, 0.23], [0.37, 0.51, 0.05]);
+  return group;
+}
+
+export function spinningChair(materials: Pick<LibraryMaterials, "red" | "blue" | "orange">, colorOffset = 0, leanDirection = 1) {
+  const group = new THREE.Group();
+  const profile = [[0, 0], [0.08, 0.04], [0.3, 0.16], [0.72, 0.38], [0.74, 0.41], [0.48, 0.49], [0.29, 0.65], [0.47, 0.88], [0.72, 1.15], [0.73, 1.19], [0.65, 1.17], [0.49, 0.99], [0.26, 0.83], [0, 0.81]].map(([x, y]) => new THREE.Vector2(x, y));
+  const geometry = new THREE.LatheGeometry(profile, 48);
+  const colors = [materials.red, materials.blue, materials.orange];
+  const chair = new THREE.Mesh(geometry, colors[colorOffset % colors.length]);
+  chair.rotation.z = 0.35 * leanDirection;
+  chair.rotation.x = -0.12 * leanDirection;
+  chair.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(chair, true);
+  chair.position.y = -bounds.min.y;
+  group.add(chair);
+  return group;
+}
+
+function sculpturalSeating(materials: LibraryMaterials, colorOffset = 0) {
+  const group = new THREE.Group();
+  for (const side of [-1, 1]) {
+    const chair = spinningChair(materials, colorOffset + (side === 1 ? 1 : 0));
+    chair.position.x = side * 1.1;
     group.add(chair);
   }
   cylinder(group, materials.wood, 0.38, 0.055, [0, 0.52, -0.4]);
@@ -142,8 +214,17 @@ export function addLibraryFurniture(scene: THREE.Scene, materials: LibraryMateri
     pod: studyPod,
     lounge: readingLounge,
     sculptural: sculpturalSeating,
+    carrel: studyCarrel,
+    sofa: sofaGroup,
+    topChair: (m) => spinningChair(m, 0, -1),
   };
   for (const kind of Object.keys(makers) as StudyAreaKind[]) {
-    addRepeatedObjects(scene, makers[kind](materials), areas.filter((area) => area.kind === kind));
+    const placements = areas.filter((area) => area.kind === kind);
+    if (kind === "sculptural" || kind === "topChair") {
+      for (let color = 0; color < 3; color += 1) {
+        const prototype = kind === "topChair" ? spinningChair(materials, color, -1) : sculpturalSeating(materials, color);
+        addRepeatedObjects(scene, prototype, placements.filter((_, index) => index % 3 === color), true);
+      }
+    } else addRepeatedObjects(scene, makers[kind](materials), placements, true);
   }
 }

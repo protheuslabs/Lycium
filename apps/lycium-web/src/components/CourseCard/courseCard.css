@@ -1,0 +1,48 @@
+.course-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--lycium-color-border);
+  border-radius: var(--lycium-radius-card);
+  background: var(--lycium-color-surface-raised);
+  color: var(--lycium-color-text);
+  transition: border-color 160ms ease;
+}
+.course-tile:hover, .course-tile:focus-within { border-color: var(--lycium-color-text-muted); }
+.course-tile.course-card--selected { border-color: var(--lycium-color-accent); box-shadow: inset 0 0 0 1px var(--lycium-color-accent); }
+.course-tile > .course-artwork { flex: 0 0 auto; width: 100%; aspect-ratio: 2 / 1; }
+.course-tile-body { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: var(--lycium-card-padding); }
+.course-tile-subject { display: flex; align-items: center; gap: .5rem; margin: 0 0 .75rem; font-size: .75rem; font-weight: 600; line-height: 1.5; color: var(--lycium-color-text-muted); }
+.course-tile-subject svg { flex: 0 0 auto; color: var(--lycium-color-accent); }
+.course-tile-subject span { overflow-wrap: anywhere; }
+.course-tile-title { margin: 0 0 .75rem; font-size: var(--lycium-card-title-size); font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.course-tile-title a { color: inherit; text-decoration: none; }
+.course-tile-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.course-tile-description { margin: 0 0 1rem; color: var(--lycium-color-text-muted); font-size: var(--lycium-card-body-size); line-height: 1.65; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.course-tile-context { margin: 0 0 1rem; color: var(--lycium-color-text-muted); font-size: .8rem; line-height: 1.55; overflow-wrap: anywhere; }
+.course-tile-context p { margin: 0; }
+.course-tile-fit { display: flex; flex-wrap: wrap; gap: .5rem 1rem; margin: 0 0 .75rem; font-size: .75rem; line-height: 1.5; color: var(--lycium-color-text-muted); }
+.course-tile-size { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: auto 0 1rem; padding-top: .25rem; color: var(--lycium-color-text-muted); font-size: .75rem; line-height: 1.5; }
+.course-tile-size svg { flex: 0 0 auto; }
+.course-tile-footer { display: flex; align-items: center; min-height: var(--lycium-control-height); border-top: 1px solid var(--lycium-color-border); }
+.course-tile-command { display: flex; align-items: center; justify-content: space-between; gap: .75rem; width: 100%; min-height: var(--lycium-control-height); padding: .5rem 0; border: 0; border-radius: 0; color: var(--lycium-color-accent); background: transparent; font: inherit; font-size: .875rem; font-weight: 650; line-height: 1.4; text-align: left; }
+button.course-tile-command:hover { background: transparent; text-decoration: underline; }
+.course-tile-command span { display: inline-flex; align-items: center; gap: .5rem; }
+.course-tile-command svg { flex: 0 0 auto; }
+.course-tile-hit-target, .catalog-card-action { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; }
+.course-tile-hit-target:hover, .catalog-card-action:hover { background: transparent; }
+.course-tile-hit-target:focus-visible, .catalog-card-action:focus-visible { outline-offset: -3px; }
+.course-tile-tools { position: absolute; top: .65rem; right: .65rem; z-index: 2; display: flex; align-items: center; gap: .4rem; }
+.course-tile-tools button { display: inline-flex; justify-content: center; align-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); color: var(--lycium-color-text); background: var(--lycium-color-surface-raised); }
+.course-tile-tools button:hover { background: var(--lycium-color-surface); }
+.course-tile-footer button { position: relative; z-index: 2; }
+.course-tile[data-disabled="true"] .course-tile-command { color: var(--lycium-color-text-muted); }
+.learner-progress { margin: 0 0 1rem; color: var(--lycium-color-text-muted); font-size: .75rem; line-height: 1.5; }
+.learner-progress-label { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; margin-bottom: .6rem; }
+.learner-progress-label strong { color: var(--lycium-color-text); font-weight: 600; }
+.learner-progress progress { display: block; width: 100%; height: 5px; border: 0; border-radius: 0; appearance: none; background: var(--lycium-color-border); accent-color: var(--lycium-color-accent); }
+.learner-progress progress::-webkit-progress-bar { background: var(--lycium-color-border); }
+.learner-progress progress::-webkit-progress-value { background: var(--lycium-color-accent); }
+.learner-progress progress::-moz-progress-bar { background: var(--lycium-color-accent); }

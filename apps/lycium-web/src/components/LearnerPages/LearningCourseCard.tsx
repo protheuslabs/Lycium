@@ -1,9 +1,10 @@
-import { ArrowRight, BookOpen, Check, Layers } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import type { CourseEntry } from "../../courseTypes";
 import type { LearningCourse } from "../../utils/learningLibrary";
 import { getCoursePath } from "../../utils/courseRouting";
-import CourseArtwork from "./CourseArtwork";
+import CourseCard from "../CourseCard/CourseCard";
+import CourseProgress from "../CourseCard/CourseProgress";
 
 type LearningCourseCardProps = {
   item: LearningCourse;
@@ -16,53 +17,18 @@ export default function LearningCourseCard({
   showProgress = false,
   onOpenCourse,
 }: LearningCourseCardProps) {
-  const { course, department, progress, bookmark, completed } = item;
+  const { course, progress, bookmark, completed } = item;
   const action = completed ? "Review" : item.started ? "Resume" : "Start";
   return (
-    <article className="learning-course-card" data-category={course.data.category}>
-      <CourseArtwork course={course} />
-      <div className="learning-course-body">
-      <div className="learning-course-meta">
-        <BookOpen size={17} aria-hidden="true" />
-        <span>{department}</span>
-      </div>
-      <h3>
-        <Link
-          href={getCoursePath(course)}
-          title={course.title}
-        >
-          {course.title}
-        </Link>
-      </h3>
-      {showProgress && bookmark ? (
-        <p className="learning-resume-section">{bookmark.title}</p>
-      ) : (
-        <p className="learning-course-description">{course.data.shortDescription}</p>
-      )}
-      <p className="learning-course-size">
-        <Layers size={14} aria-hidden="true" />
-        {course.data.modules.length} {course.data.modules.length === 1 ? "module" : "modules"}
-        <span aria-hidden="true">/</span>
-        {progress.total} {progress.total === 1 ? "section" : "sections"}
-      </p>
-      {showProgress && (
-        <div className="learning-course-progress">
-          <div>
-            <span>
-              {progress.completed} of {progress.total} sections complete
-            </span>
-            <strong>{Math.round(progress.percentage)}%</strong>
-          </div>
-          <progress
-            value={progress.completed}
-            max={progress.total}
-            aria-label={`${course.title} completion`}
-          />
-        </div>
-      )}
-      <button
+    <CourseCard
+      course={course}
+      className="learning-course-card"
+      title={<Link href={getCoursePath(course)} title={course.title}>{course.title}</Link>}
+      context={showProgress && bookmark ? bookmark.title : undefined}
+      progress={showProgress && <CourseProgress title={course.title} completed={progress.completed} total={progress.total} />}
+      footer={<button
         type="button"
-        className="learning-card-action"
+        className="course-tile-command"
         onClick={() => onOpenCourse(course)}
         aria-label={`${action} ${course.title}`}
       >
@@ -71,8 +37,7 @@ export default function LearningCourseCard({
           {action}
         </span>
         <ArrowRight size={18} aria-hidden="true" />
-      </button>
-      </div>
-    </article>
+      </button>}
+    />
   );
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
 import CatalogActionCard from "./CatalogActionCard";
 
 type CatalogEntityCardProps = {
@@ -7,6 +8,7 @@ type CatalogEntityCardProps = {
   description?: ReactNode;
   kicker: string;
   meta: string[];
+  detailsMeta?: string[];
   progress?: ReactNode;
   readiness?: ReactNode;
   selected?: boolean;
@@ -20,6 +22,7 @@ export default function CatalogEntityCard({
   description,
   kicker,
   meta,
+  detailsMeta,
   progress,
   readiness,
   selected = false,
@@ -43,9 +46,17 @@ export default function CatalogEntityCard({
           <span key={item}>{item}</span>
         ))}
       </div>
-      {continuity}
-      {readiness}
       {progress}
+      {(continuity || readiness || Boolean(detailsMeta?.length)) && (
+        <details className="catalog-authoring-details">
+          <summary><ChevronDown size={16} aria-hidden="true" />Authoring details</summary>
+          <div className="catalog-authoring-content">
+            {detailsMeta?.map((item) => <p key={item}>{item}</p>)}
+            {continuity}
+            {readiness}
+          </div>
+        </details>
+      )}
     </CatalogActionCard>
   );
 }

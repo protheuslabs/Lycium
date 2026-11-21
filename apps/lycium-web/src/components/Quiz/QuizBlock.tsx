@@ -3,6 +3,7 @@ import { createBrowserStorageRepository } from "@lycium/data-access";
 import { useClientMounted } from "../../hooks/useClientMounted";
 import QuizMetaRows from "./QuizMetaRows";
 import QuizQuestionList from "./QuizQuestionList";
+import QuizAttemptFeedback from "./QuizAttemptFeedback";
 import { useQuizEditor } from "./quizEditor";
 import {
   areSelectionsCorrect,
@@ -215,8 +216,8 @@ function ClientQuizBlock({
   const canSubmit =
     !isEditMode && attemptStarted && !submitted && !attemptLimitReached && allQuestionsAnswered;
   const currentAttempt = submitted || attemptLimitReached ? attemptCount : attemptCount + 1;
-  const attemptsLabel = `${currentAttempt}/${maxAttempts ?? "∞"}`;
-  const timeLabel = `${formatDuration(elapsedSeconds)}/${timerDuration === null ? "∞" : formatDuration(timerDuration)}`;
+  const attemptsLabel = maxAttempts === null ? `${currentAttempt} · Unlimited attempts` : `${currentAttempt}/${maxAttempts}`;
+  const timeLabel = timerDuration === null ? `Elapsed ${formatDuration(elapsedSeconds)}` : `${formatDuration(elapsedSeconds)}/${formatDuration(timerDuration)}`;
   const hasQuizProgress =
     attemptStarted ||
     selectedByQuestion.some((selection) => selection.length > 0) ||
@@ -257,6 +258,8 @@ function ClientQuizBlock({
   const activeDisplayedQuestions = isEditMode ? editorDisplayedQuestions : displayedQuestions;
   const plannedQuestionCount =
     activeDisplayedQuestions.length || questionsPerAttempt || questionBank.length;
+  const answeredCount = displayedSelectedByQuestion.filter((selection) => selection.length > 0).length;
+  const displayedResult = reviewAttempt ?? currentAttemptResult;
   const shouldShowAttemptStart =
     !isEditMode && !submitted && !attemptStarted && !isReviewingPastAttempt;
   const shouldShowTopNextAttempt = submitted && canTryAgain && !isReviewingPastAttempt;
@@ -402,6 +405,14 @@ function ClientQuizBlock({
         onReviewAttemptChange={setReviewAttemptNumber}
       />
 
+      {!isEditMode && displayedResult && <QuizAttemptFeedback attempt={displayedResult} passPercentage={passPercentage} />}
+      {!isEditMode && attemptStarted && !submitted && !isReviewingPastAttempt && (
+        <div className="quiz-answer-progress" role="status">
+          <span>{answeredCount} of {plannedQuestionCount} answered</span>
+          <progress value={answeredCount} max={Math.max(1, plannedQuestionCount)} aria-label="Questions answered" />
+        </div>
+      )}
+
       {shouldShowTopNextAttempt && (
         <div className="quiz-actions quiz-actions--next-attempt">
           <button type="button" className="quiz-button" onClick={handleBeginAttempt}>
@@ -412,7 +423,7 @@ function ClientQuizBlock({
 
       {shouldShowAttemptStart ? (
         <div className="quiz-start-panel">
-          <p>Questions are hidden until the attempt begins.</p>
+          <p>{plannedQuestionCount} {plannedQuestionCount === 1 ? "question" : "questions"} · {timerDuration === null ? "No time limit" : `${formatDuration(timerDuration)} time limit`}</p>
           <button
             type="button"
             className="quiz-button"

@@ -175,6 +175,7 @@ export function useLibraryScene(isPlaying: boolean, duration: number) {
         setRecording(false);
       };
       recorder.start(1000);
+      engineRef.current?.render(0, true);
     } catch (reason) {
       console.warn("Library video export unavailable:", reason);
       stream?.getTracks().forEach((track) => track.stop());

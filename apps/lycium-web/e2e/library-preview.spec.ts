@@ -38,6 +38,9 @@ test("3D pixels render across viewports and the 360-degree pose exactly matches 
   test.setTimeout(90_000);
   await openPreview(page);
   const canvas = page.locator("canvas");
+  const materialResources = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
+  expect(new Set(materialResources.filter((name) => /\/(wood|cloth|marble|floor|leather)-(color|normal|roughness)\./.test(name))).size).toBe(15);
+  expect(materialResources.some((name) => name.endsWith("/library-materials/lebombo-1k.hdr"))).toBe(true);
   await page.getByRole("button", { name: "Return to start", exact: true }).click();
   const start = await canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
   const position = page.getByRole("slider", { name: "Camera position", exact: true });

@@ -1,15 +1,12 @@
 import { useState } from "react";
+import { ArrowRight, Check, Info } from "lucide-react";
 import type { CourseEntry } from "../../courseTypes";
 import { useClientMounted } from "../../hooks/useClientMounted";
-import Modal from "../Modal/Modal";
-import CatalogActionCard from "./CatalogActionCard";
-import CatalogProgressMeter from "./CatalogProgressMeter";
-import type { CatalogVisibleCourse } from "./catalogUtils";
 import { getCourseLifecycleSummary } from "../../utils/courseLifecycle";
-import { getLocalDraftMetadata } from "../../utils/localCourseDrafts";
-import { BookOpen, Info } from "lucide-react";
-import { getCourseCategoryLabel, getCourseDepartmentLabel } from "@lycium/contracts";
-import CourseArtwork from "../LearnerPages/CourseArtwork";
+import Modal from "../Modal/Modal";
+import CourseCard from "../CourseCard/CourseCard";
+import CourseProgress from "../CourseCard/CourseProgress";
+import type { CatalogVisibleCourse } from "./catalogUtils";
 
 type CatalogCourseCardProps = {
   visibleCourse: CatalogVisibleCourse;
@@ -22,169 +19,55 @@ type CatalogCourseCardProps = {
   onToggleSelect?: (courseKey: string) => void;
 };
 
-export default function CatalogCourseCard({
-  visibleCourse,
-  onOpenCourse,
-  onOpenInfo,
-  onSearchPrerequisite,
-  isPublishing,
-  selected = false,
-  selectionMode = false,
-  onToggleSelect,
-}: CatalogCourseCardProps) {
-  const {
-    course,
-    courseProgress,
-    bookmarkedSection,
-    hasCourseActivity,
-    unmetPrerequisites,
-    requirementContexts,
-  } = visibleCourse;
+export default function CatalogCourseCard({ visibleCourse, onOpenCourse, onOpenInfo, onSearchPrerequisite, isPublishing, selected = false, selectionMode = false, onToggleSelect }: CatalogCourseCardProps) {
+  const { course, courseProgress, bookmarkedSection, hasCourseActivity, unmetPrerequisites, requirementContexts } = visibleCourse;
   const [isPrerequisiteModalOpen, setIsPrerequisiteModalOpen] = useState(false);
   const hasMounted = useClientMounted();
-  const localDraft = getLocalDraftMetadata(course);
   const lifecycle = getCourseLifecycleSummary(course);
-  const catalogTone = lifecycle.needsSourceInput ? "draft" : lifecycle.tone;
   const requiresPrerequisites = !hasCourseActivity && unmetPrerequisites.length > 0;
   const requiredCourseLabel = `Requires ${unmetPrerequisites.length} course${unmetPrerequisites.length === 1 ? "" : "s"}`;
   const canActivateCard = selectionMode || (!requiresPrerequisites && lifecycle.canOpen);
-  const shouldShowLifecycleAction = lifecycle.status === "failed";
   const requirementLabel = requirementContexts.map((context) => context.title).join("; ");
   const canShowActivity = hasMounted && hasCourseActivity;
 
   const handleCourseOpen = () => {
-    if (selectionMode) {
-      onToggleSelect?.(course.key);
-      return;
-    }
-    if (!requiresPrerequisites && lifecycle.canOpen) {
-      onOpenCourse(course);
-    }
+    if (selectionMode) onToggleSelect?.(course.key);
+    else if (!requiresPrerequisites && lifecycle.canOpen) onOpenCourse(course);
   };
 
-  return (
-    <CatalogActionCard
-      label={`${selectionMode ? "Select" : "Open"} ${course.title}`}
-      className={`course-card course-card--lifecycle-${catalogTone} ${requiresPrerequisites && !selectionMode ? "course-card--locked" : ""} ${selectionMode ? "course-card--select-mode" : ""} ${selected ? "course-card--selected" : ""}`}
-      disabled={!canActivateCard}
-      onActivate={handleCourseOpen}
-      pressed={selected || undefined}
-    >
-      <CourseArtwork course={course} />
-      {requiresPrerequisites && !selectionMode && (
-        <span className="course-card-lock-watermark" aria-hidden="true" />
-      )}
-      <button
-        className="course-info-button"
-        type="button"
-        aria-label={`More info about ${course.title}`}
-        onClick={(event) => {
-          event.stopPropagation();
-          onOpenInfo(course);
-        }}
-        onKeyDown={(event) => event.stopPropagation()}
-      >
-        <Info size={18} aria-hidden="true" />
-      </button>
-      <p className="course-card-category">
-        <BookOpen size={16} aria-hidden="true" />
-        <span>{course.data.department ? getCourseDepartmentLabel(course.data.category, course.data.department) : course.data.category ? getCourseCategoryLabel(course.data.category).replace(/^College of /, "") : "Course"}</span>
-      </p>
-      <h3>
-        {course.title}
-        {localDraft && (
-          <span className="course-draft-badge">
-            {localDraft.parentCourseKey ? "Fork" : "Local draft"}
-          </span>
-        )}
-        {!lifecycle.needsSourceInput && (
-          <span className={`course-lifecycle-badge course-lifecycle-badge-${lifecycle.tone}`}>
-            {lifecycle.badgeLabel}
-          </span>
-        )}
-      </h3>
-      {(bookmarkedSection || requirementLabel) && (
-        <p className="course-active-subheader">
-          {bookmarkedSection && (
-            <>
-              <span>{bookmarkedSection.moduleTitle}</span>
-              <span>{bookmarkedSection.sectionTitle}</span>
-            </>
-          )}
-          {requirementLabel && (
-            <span className="course-requirement-context">Satisfies: {requirementLabel}</span>
-          )}
-        </p>
-      )}
-      {course.data.shortDescription && (
-        <p className="course-short-description">{course.data.shortDescription}</p>
-      )}
-      {!canShowActivity ? (
-        <p
-          className={`course-progress-percentage course-progress-empty ${requiresPrerequisites ? "course-progress-required" : ""}`}
-        >
-          {requiresPrerequisites && !selectionMode ? (
-            <button
-              className="course-card-requires-button"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                setIsPrerequisiteModalOpen(true);
-              }}
-              onKeyDown={(event) => event.stopPropagation()}
-            >
-              {requiredCourseLabel}
-            </button>
-          ) : `${course.data.modules.length} modules`}
-        </p>
-      ) : (
-        <CatalogProgressMeter progress={courseProgress} variant="course" />
-      )}
-      {shouldShowLifecycleAction && (
-        <button
-          className="course-publish-button"
-          type="button"
-          disabled={isPublishing}
-          onClick={(event) => {
-            event.stopPropagation();
-            onOpenInfo(course);
-          }}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          {isPublishing ? "Publishing..." : lifecycle.actionLabel}
-        </button>
-      )}
-      {requiresPrerequisites && !selectionMode && (
-        <Modal
-          isOpen={isPrerequisiteModalOpen}
-          title={course.title}
-          eyebrow="Prerequisites"
-          labelledById={`course-prerequisites-${course.key}`}
-          size="sm"
-          className="course-prerequisite-modal"
-          onClose={() => setIsPrerequisiteModalOpen(false)}
-        >
-          <p className="course-prerequisite-modal-intro">
-            Complete the following course{unmetPrerequisites.length === 1 ? "" : "s"} before opening
-            this course.
-          </p>
-          <div className="course-prerequisite-modal-list">
-            {unmetPrerequisites.map((prerequisite) => (
-              <button
-                key={prerequisite.id}
-                className="course-prerequisite-modal-link"
-                type="button"
-                onClick={() => {
-                  setIsPrerequisiteModalOpen(false);
-                  onSearchPrerequisite(prerequisite.title);
-                }}
-              >
-                {prerequisite.title}
-              </button>
-            ))}
-          </div>
-        </Modal>
-      )}
-    </CatalogActionCard>
+  const footer = requiresPrerequisites && !selectionMode ? (
+    <button className="course-tile-command course-card-requires-button" type="button" onClick={() => setIsPrerequisiteModalOpen(true)}>{requiredCourseLabel}<ArrowRight size={18} aria-hidden="true" /></button>
+  ) : lifecycle.status === "failed" && !selectionMode ? (
+    <button className="course-tile-command" type="button" disabled={isPublishing} onClick={() => onOpenInfo(course)}>{isPublishing ? "Publishing..." : lifecycle.actionLabel}<ArrowRight size={18} aria-hidden="true" /></button>
+  ) : (
+    <span className="course-tile-command"><span>{selectionMode ? selected ? "Selected" : "Select course" : "View course"}</span>{selected && selectionMode ? <Check size={18} aria-hidden="true" /> : <ArrowRight size={18} aria-hidden="true" />}</span>
   );
+
+  return <>
+    <CourseCard
+      course={course}
+      title={course.title}
+      className={`course-card ${requiresPrerequisites && !selectionMode ? "course-card--locked" : ""} ${selected ? "course-card--selected" : ""}`}
+      action={{ label: `${selectionMode ? "Select" : "Open"} ${course.title}`, onActivate: handleCourseOpen, disabled: !canActivateCard, selected: selected || undefined }}
+      tools={<button className="course-info-button" type="button" title="Course details" aria-label={`More info about ${course.title}`} onClick={() => onOpenInfo(course)}><Info size={18} aria-hidden="true" /></button>}
+      context={(bookmarkedSection || requirementLabel) && <>
+        {bookmarkedSection && <p>{bookmarkedSection.sectionTitle}</p>}
+        {requirementLabel && <p>Satisfies: {requirementLabel}</p>}
+      </>}
+      progress={canShowActivity && <CourseProgress title={course.title} completed={courseProgress.completed} total={courseProgress.total} />}
+      footer={footer}
+    />
+    {requiresPrerequisites && !selectionMode && <Modal
+      isOpen={isPrerequisiteModalOpen}
+      title={course.title}
+      eyebrow="Prerequisites"
+      labelledById={`course-prerequisites-${course.key}`}
+      size="sm"
+      className="course-prerequisite-modal"
+      onClose={() => setIsPrerequisiteModalOpen(false)}
+    >
+      <p className="course-prerequisite-modal-intro">Complete the following course{unmetPrerequisites.length === 1 ? "" : "s"} before opening this course.</p>
+      <div className="course-prerequisite-modal-list">{unmetPrerequisites.map((prerequisite) => <button className="course-prerequisite-modal-link" type="button" key={prerequisite.id} onClick={() => { setIsPrerequisiteModalOpen(false); onSearchPrerequisite(prerequisite.title); }}>{prerequisite.title}</button>)}</div>
+    </Modal>}
+  </>;
 }

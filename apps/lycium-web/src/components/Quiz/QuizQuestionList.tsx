@@ -1,4 +1,5 @@
 import type { NormalizedQuestion } from "./quizTypes";
+import { Bookmark, CircleCheck, CircleAlert } from "lucide-react";
 import { DeleteBlockButton, EditPencilButton, promptForText } from "../ContentView/CourseEditControls";
 
 type QuizQuestionListProps = {
@@ -59,13 +60,14 @@ export default function QuizQuestionList({
                 <button
                   type="button"
                   className={`quiz-question-marker ${questionMarked[questionIndex] ? "quiz-marker-marked" : ""}`}
+                  aria-pressed={questionMarked[questionIndex] ?? false}
                   aria-label={
                     questionMarked[questionIndex]
                       ? "Unmark this question for review"
                       : "Mark this question for review"
                   }
                   onClick={() => onToggleQuestionMarker(questionIndex)}
-                />
+                ><Bookmark size={17} aria-hidden="true" /></button>
               )}
 
               <h4 className="quiz-question">
@@ -85,6 +87,8 @@ export default function QuizQuestionList({
                 </span>
               )}
             </div>
+
+            {!isEditMode && <p className="quiz-selection-kind">{question.isMultiple ? "Select all that apply" : "Select one answer"}</p>}
 
             {isEditMode && (
               <div className="quiz-question-type-row" aria-label="Question answer type">
@@ -171,6 +175,12 @@ export default function QuizQuestionList({
                 </button>
               )}
             </div>
+            {!isEditMode && shouldRevealAnswers && typeof result === "boolean" && (
+              <p className="quiz-response-feedback" data-correct={result}>
+                {result ? <CircleCheck size={18} aria-hidden="true" /> : <CircleAlert size={18} aria-hidden="true" />}
+                {result ? "Correct" : "Incorrect"}
+              </p>
+            )}
           </div>
         );
       })}

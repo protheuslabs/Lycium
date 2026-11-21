@@ -15,6 +15,7 @@ type ModalProps = {
   describedById?: string;
   size?: ModalSize;
   className?: string;
+  initialFocus?: string;
   children: ReactNode;
   onClose: () => void;
 };
@@ -27,6 +28,7 @@ export default function Modal({
   describedById,
   size = "md",
   className = "",
+  initialFocus,
   children,
   onClose,
 }: ModalProps) {
@@ -39,12 +41,13 @@ export default function Modal({
     if (!dialog) return;
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog.showModal();
+    if (initialFocus) dialog.querySelector<HTMLElement>(initialFocus)?.focus();
     return () => {
       if (dialog.open) dialog.close();
       // Portal removal can precede native close behavior, so restore the opener explicitly.
       if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
-  }, [mounted, isOpen]);
+  }, [mounted, isOpen, initialFocus]);
 
   if (!mounted || !isOpen || typeof document === "undefined") {
     return null;
@@ -52,6 +55,8 @@ export default function Modal({
 
   const handleBackdropMouseDown = (event: MouseEvent<HTMLDialogElement>) => {
     if (event.target === event.currentTarget) {
+      // Keep the backdrop pointer event from stealing the restored trigger focus.
+      event.preventDefault();
       onClose();
     }
   };
