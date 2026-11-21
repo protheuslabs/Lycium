@@ -124,6 +124,28 @@ describe("restoreQuizSession", () => {
     expect(session.submitted).toBe(false);
   });
 
+  it("restores the selected question layout, position, and unsure markers", () => {
+    const session = restoreQuizSession({
+      isEditMode: false,
+      questionBank,
+      questionsPerAttempt: 2,
+      persistedProgress: {
+        startedAt: "2026-01-01T00:00:00.000Z",
+        attemptStarted: true,
+        attemptOrder,
+        selectedByQuestion: [[], [0]],
+        unsureByQuestion: [true, false],
+        questionView: "single",
+        currentQuestionIndex: 1,
+      },
+      nowMs: Date.parse("2026-01-01T00:01:30.000Z"),
+    });
+    expect(session.questionView).toBe("single");
+    expect(session.currentQuestionIndex).toBe(1);
+    expect(session.unsureByQuestion).toEqual([true, false]);
+    expect(session.selectedByQuestion).toEqual([[], [0]]);
+  });
+
   it("falls back to a waiting session for malformed legacy data", () => {
     const malformed = {
       startedAt: "not-a-date",

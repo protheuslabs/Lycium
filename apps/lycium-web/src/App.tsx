@@ -406,7 +406,7 @@ function App({ initialPath }: AppProps = {}) {
       ) : (routeCourses.length === 0 && (courseLoad.loading || courseLoad.error)) || (viewRoute.kind === "program" && courseLoad.programsLoading) ? (
         <CourseLoadState error={courseLoad.error} />
       ) : viewRoute.kind === "landing" || viewRoute.kind === "learning" ? (
-        <LearnerPages page={viewRoute.kind} courses={routeCourses} onOpenCourse={openCourseByEntry} />
+        <LearnerPages page={viewRoute.kind} courses={routeCourses} onOpenCourse={openCourseByEntry} onOpenSection={pushSectionPath} />
       ) : viewRoute.kind === "home" || viewRoute.kind === "studio" ? (
         <CourseCatalog
           studioMode={viewRoute.kind === "studio"}

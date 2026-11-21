@@ -546,6 +546,7 @@ export type LyciumQuizAttemptHistoryItem = {
   attemptOrder?: LyciumQuizAttemptOrderItem[];
   selectedByQuestion?: number[][];
   questionCorrectness?: boolean[];
+  unsureByQuestion?: boolean[];
 };
 
 export type LyciumQuizProgressRecord = {
@@ -561,4 +562,7 @@ export type LyciumQuizProgressRecord = {
   attemptOrder?: LyciumQuizAttemptOrderItem[];
   attemptSignature?: string;
   previousAttemptSignature?: string;
+  unsureByQuestion?: boolean[];
+  questionView?: "single" | "all";
+  currentQuestionIndex?: number;
 };

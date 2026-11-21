@@ -175,6 +175,23 @@ test("homepage omits the course section instead of exposing an empty library", a
   await expect(page.locator(".learning-model")).toBeVisible();
 });
 
+test("My Learning links directly to the next unlocked assessment", async ({ page }) => {
+  await page.goto("/Lycium/my-learning");
+  await page.evaluate(() => {
+    const drafts = JSON.parse(localStorage.getItem("lycium-local-course-drafts") ?? "[]");
+    const active = drafts.find((course: { key: string }) => course.key === "active");
+    active.data.modules[0].sections[2].title = "Knowledge check";
+    active.data.modules[0].sections[2].content = [{ type: "quiz", questions: [] }];
+    localStorage.setItem("lycium-local-course-drafts", JSON.stringify(drafts));
+  });
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Practice & assessment", level: 2 })).toBeVisible();
+  await expect(page.locator(".practice-list")).toContainText(activeTitle);
+  await page.getByRole("button", { name: "Open Quiz: Knowledge check", exact: true }).click();
+  await expect(page).toHaveURL(/\/units\/knowledge-check-shared-three$/);
+  await expect(page.getByRole("heading", { name: "Knowledge check", level: 1 })).toBeVisible();
+});
+
 test("dashboard leads with a saved lesson and filters course-scoped progress without KPIs", async ({ page }, info) => {
   await page.goto("/Lycium/my-learning");
   await expect(page.locator(".learning-stats")).toHaveCount(0);

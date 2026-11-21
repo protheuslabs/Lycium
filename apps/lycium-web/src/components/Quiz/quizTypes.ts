@@ -66,4 +66,5 @@ export type AttemptHistoryItem = {
   attemptOrder?: AttemptOrderItem[];
   selectedByQuestion?: number[][];
   questionCorrectness?: boolean[];
+  unsureByQuestion?: boolean[];
 };

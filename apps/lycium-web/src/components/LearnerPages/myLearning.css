@@ -2,6 +2,17 @@
 .my-learning-heading h1 { margin: 0; font-size: var(--lycium-page-title-size); line-height: 1.3; font-weight: 650; }
 .learner-storage-label { color: var(--lycium-color-text-muted); font-size: .75rem; margin: 2rem 0 0; }
 .dashboard-continue { margin-bottom: 3rem; }
+.practice-list { margin-bottom: 3rem; }
+.practice-list h2 { margin: 0 0 1rem; font-size: 1.5rem; }
+.practice-list > div { border-top: 1px solid var(--lycium-color-border); }
+.practice-list button { display: flex; align-items: center; gap: 1rem; width: 100%; min-height: 64px; padding: .85rem 0; border: 0; border-bottom: 1px solid var(--lycium-color-border); border-radius: 0; background: transparent; color: var(--lycium-color-text); text-align: left; }
+.practice-list button:hover { background: var(--lycium-color-control-hover); }
+.practice-list button > svg { flex: 0 0 auto; color: var(--lycium-color-accent); }
+.practice-list-copy { display: grid; gap: .25rem; flex: 1; min-width: 0; }
+.practice-list-copy > span { color: var(--lycium-color-text-muted); font-size: .75rem; overflow-wrap: anywhere; }
+.practice-list-copy strong { font-size: .9rem; overflow-wrap: anywhere; }
+.practice-list-type { color: var(--lycium-color-text-muted); font-size: .75rem; }
+@media (max-width: 560px) { .practice-list-type { display: none; } }
 .dashboard-continue h2 { margin-bottom: 1.25rem; }
 .learning-course-controls { margin-bottom: 2rem; }
 .learning-tabs { display: flex; gap: 1.5rem; border-bottom: 1px solid var(--lycium-color-border); }

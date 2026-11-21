@@ -20,6 +20,9 @@ export type QuizSessionState = {
   elapsedSeconds: number;
   startedAtMs: number;
   attemptStarted: boolean;
+  unsureByQuestion: boolean[];
+  questionView: "single" | "all";
+  currentQuestionIndex: number;
 };
 
 type RestoreQuizSessionOptions = {
@@ -78,6 +81,9 @@ export function restoreQuizSession({
       elapsedSeconds: 0,
       startedAtMs: nowMs,
       attemptStarted: true,
+      unsureByQuestion: attemptOrder.map(() => false),
+      questionView: "single",
+      currentQuestionIndex: 0,
     };
   }
 
@@ -102,6 +108,7 @@ export function restoreQuizSession({
   let questionCorrectness: boolean[] = [];
   let submitted = false;
   let attemptStarted = false;
+  const questionView = parsed?.questionView === "all" ? "all" : "single";
   let elapsedSeconds = 0;
 
   if (hasSubmittedAttempt) {
@@ -142,6 +149,10 @@ export function restoreQuizSession({
     selectedByQuestion = attemptOrder.map(() => []);
   }
 
+  const unsureByQuestion = Array.from({ length: attemptOrder.length }, (_, index) => parsed?.unsureByQuestion?.[index] === true);
+  const requestedQuestionIndex = Number(parsed?.currentQuestionIndex);
+  const currentQuestionIndex = Number.isInteger(requestedQuestionIndex) ? Math.max(0, Math.min(attemptOrder.length - 1, requestedQuestionIndex)) : 0;
+
   return {
     attemptOrder,
     selectedByQuestion,
@@ -154,5 +165,8 @@ export function restoreQuizSession({
     elapsedSeconds,
     startedAtMs,
     attemptStarted,
+    unsureByQuestion,
+    questionView,
+    currentQuestionIndex: Math.max(0, currentQuestionIndex),
   };
 }

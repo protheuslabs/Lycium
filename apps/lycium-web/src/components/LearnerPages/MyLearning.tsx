@@ -1,16 +1,17 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, BookOpen } from "lucide-react";
-import type { CourseEntry } from "../../courseTypes";
+import type { CourseEntry, CourseSection } from "../../courseTypes";
 import { selectLearningCourses, type LearningLibrary, type LearningSort, type LearningView } from "../../utils/learningLibrary";
 import { COURSE_CATALOG_PATH } from "../../utils/courseRouting";
 import LearningCourseCard from "./LearningCourseCard";
 import ContinueLearning from "./ContinueLearning";
 import MyLearningControls from "./MyLearningControls";
+import PracticeList from "./PracticeList";
 
-type MyLearningProps = { library: LearningLibrary; onOpenCourse: (course: CourseEntry) => void };
+type MyLearningProps = { library: LearningLibrary; onOpenCourse: (course: CourseEntry) => void; onOpenSection: (course: CourseEntry, section: CourseSection) => void };
 
-export default function MyLearning({ library, onOpenCourse }: MyLearningProps) {
+export default function MyLearning({ library, onOpenCourse, onOpenSection }: MyLearningProps) {
   const [view, setView] = useState<LearningView>("active");
   const [query, setQuery] = useState("");
   const [subject, setSubject] = useState("all");
@@ -31,6 +32,7 @@ export default function MyLearning({ library, onOpenCourse }: MyLearningProps) {
           <ContinueLearning item={library.active[0]} onOpenCourse={onOpenCourse} />
         </section>
       )}
+      <PracticeList items={library.active} onOpenSection={onOpenSection} />
       <section className="my-learning-courses" aria-labelledby="my-courses-heading">
         <header className="learner-section-heading"><h2 id="my-courses-heading">Your courses</h2></header>
         <MyLearningControls view={view} query={query} subject={subject} sort={sort} subjects={subjects} counts={{ active: library.active.length, completed: library.completed.length, all: library.active.length + library.completed.length }} onViewChange={setView} onQueryChange={setQuery} onSubjectChange={setSubject} onSortChange={setSort} />

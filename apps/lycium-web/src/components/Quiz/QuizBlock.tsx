@@ -109,6 +109,9 @@ function ClientQuizBlock({
   const [elapsedSeconds, setElapsedSeconds] = useState(initialSession.elapsedSeconds);
   const [startedAtMs, setStartedAtMs] = useState(initialSession.startedAtMs);
   const [attemptStarted, setAttemptStarted] = useState(initialSession.attemptStarted);
+  const [unsureByQuestion, setUnsureByQuestion] = useState(initialSession.unsureByQuestion);
+  const [questionView, setQuestionView] = useState(initialSession.questionView);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(initialSession.currentQuestionIndex);
 
   useEffect(() => {
     onSubmissionChange?.(name, initialSession.submitted);
@@ -144,6 +147,7 @@ function ClientQuizBlock({
         submittedAt: new Date().toISOString(),
         attemptOrder,
         selectedByQuestion,
+        unsureByQuestion,
         questionCorrectness: results,
       },
     ];
@@ -153,6 +157,8 @@ function ClientQuizBlock({
     setElapsedSeconds(normalizedElapsedSeconds);
     setAttemptCount(nextAttemptCount);
     setAttemptHistory(nextAttemptHistory);
+    setQuestionView("all");
+    setCurrentQuestionIndex(0);
     browserStorage.writeQuizProgress(storageKey, name, {
       startedAt: new Date(startedAtMs).toISOString(),
       submittedAt: new Date().toISOString(),
@@ -162,6 +168,9 @@ function ClientQuizBlock({
       attemptHistory: nextAttemptHistory,
       elapsedSeconds: normalizedElapsedSeconds,
       selectedByQuestion,
+      unsureByQuestion,
+      questionView: "all",
+      currentQuestionIndex: 0,
       questionCorrectness: results,
       attemptOrder,
       attemptSignature: attemptSignature(attemptOrder),
@@ -185,6 +194,7 @@ function ClientQuizBlock({
     passPercentage,
     questionsWithTiming,
     selectedByQuestion,
+    unsureByQuestion,
     startedAtMs,
     storageKey,
     timerDuration,
@@ -209,7 +219,7 @@ function ClientQuizBlock({
   }, [attemptStarted, handleSubmit, isEditMode, startedAtMs, submitted, timerDuration]);
 
   const allQuestionsAnswered = questionsWithTiming.every(
-    (_, idx) => (selectedByQuestion[idx] ?? []).length > 0,
+    (_, idx) => (selectedByQuestion[idx] ?? []).length > 0 || unsureByQuestion[idx] === true,
   );
   const attemptLimitReached = maxAttempts !== null && attemptCount >= maxAttempts;
   const canTryAgain = submitted && !attemptLimitReached;
@@ -221,6 +231,7 @@ function ClientQuizBlock({
   const hasQuizProgress =
     attemptStarted ||
     selectedByQuestion.some((selection) => selection.length > 0) ||
+    unsureByQuestion.some(Boolean) ||
     attemptHistory.length > 0;
   const isQuizInProgress = !submitted && hasQuizProgress;
   const reviewAttempt = attemptHistory.find(
@@ -231,6 +242,7 @@ function ClientQuizBlock({
     : questionsWithTiming;
   const displayedSelectedByQuestion = reviewAttempt?.selectedByQuestion ?? selectedByQuestion;
   const displayedQuestionCorrectness = reviewAttempt?.questionCorrectness ?? questionCorrectness;
+  const displayedUnsureByQuestion = reviewAttempt?.unsureByQuestion ?? unsureByQuestion;
   const isReviewingPastAttempt = Boolean(reviewAttempt);
   const displayedAttemptNumber = reviewAttempt?.attemptNumber ?? attemptCount;
   const shouldRevealAnswers =
@@ -259,6 +271,7 @@ function ClientQuizBlock({
   const plannedQuestionCount =
     activeDisplayedQuestions.length || questionsPerAttempt || questionBank.length;
   const answeredCount = displayedSelectedByQuestion.filter((selection) => selection.length > 0).length;
+  const unsureCount = unsureByQuestion.filter(Boolean).length;
   const displayedResult = reviewAttempt ?? currentAttemptResult;
   const shouldShowAttemptStart =
     !isEditMode && !submitted && !attemptStarted && !isReviewingPastAttempt;
@@ -296,6 +309,8 @@ function ClientQuizBlock({
     }
 
     const nextState = selectedByQuestion.map((selection) => [...selection]);
+    const nextUnsure = [...unsureByQuestion];
+    nextUnsure[questionIndex] = false;
     const selected = nextState[questionIndex] ?? [];
     if (multiple) {
       nextState[questionIndex] = selected.includes(optionIndex)
@@ -305,6 +320,7 @@ function ClientQuizBlock({
       nextState[questionIndex] = [optionIndex];
     }
     setSelectedByQuestion(nextState);
+    setUnsureByQuestion(nextUnsure);
     browserStorage.writeQuizProgress(storageKey, name, {
       startedAt: new Date(startedAtMs).toISOString(),
       attemptCount,
@@ -314,6 +330,34 @@ function ClientQuizBlock({
       attemptOrder,
       attemptSignature: attemptSignature(attemptOrder),
       selectedByQuestion: nextState,
+      unsureByQuestion: nextUnsure,
+      questionView,
+      currentQuestionIndex,
+    });
+  };
+
+  const handleUnsure = (questionIndex: number) => {
+    if (!attemptStarted || submitted || isReviewingPastAttempt) return;
+    const nextUnsure = [...unsureByQuestion];
+    nextUnsure[questionIndex] = !nextUnsure[questionIndex];
+    const nextSelections = selectedByQuestion.map((selection) => [...selection]);
+    if (nextUnsure[questionIndex]) nextSelections[questionIndex] = [];
+    setUnsureByQuestion(nextUnsure);
+    setSelectedByQuestion(nextSelections);
+    browserStorage.writeQuizProgress(storageKey, name, {
+      startedAt: new Date(startedAtMs).toISOString(), attemptCount, attemptHistory,
+      submitted: false, attemptStarted: true, attemptOrder,
+      attemptSignature: attemptSignature(attemptOrder), selectedByQuestion: nextSelections,
+      unsureByQuestion: nextUnsure, questionView, currentQuestionIndex,
+    });
+  };
+
+  const persistAttemptView = (nextView: "single" | "all", nextIndex: number) => {
+    browserStorage.writeQuizProgress(storageKey, name, {
+      startedAt: new Date(startedAtMs).toISOString(), attemptCount, attemptHistory,
+      submitted: false, attemptStarted: true, attemptOrder,
+      attemptSignature: attemptSignature(attemptOrder), selectedByQuestion,
+      unsureByQuestion, questionView: nextView, currentQuestionIndex: nextIndex,
     });
   };
 
@@ -340,6 +384,8 @@ function ClientQuizBlock({
     setReviewAttemptNumber(null);
     setAttemptOrder(nextAttemptOrder);
     setSelectedByQuestion(nextAttemptOrder.map(() => []));
+    setUnsureByQuestion(nextAttemptOrder.map(() => false));
+    setCurrentQuestionIndex(0);
     setQuestionMarked(Array(nextAttemptOrder.length).fill(false));
     const nextStartedAtMs = Date.now();
     setStartedAtMs(nextStartedAtMs);
@@ -354,6 +400,9 @@ function ClientQuizBlock({
       attemptOrder: nextAttemptOrder,
       attemptSignature: attemptSignature(nextAttemptOrder),
       previousAttemptSignature: previousAttemptSignature ?? undefined,
+      unsureByQuestion: nextAttemptOrder.map(() => false),
+      questionView,
+      currentQuestionIndex: 0,
     });
     onSubmissionChange?.(name, false);
   };
@@ -408,8 +457,18 @@ function ClientQuizBlock({
       {!isEditMode && displayedResult && <QuizAttemptFeedback attempt={displayedResult} passPercentage={passPercentage} />}
       {!isEditMode && attemptStarted && !submitted && !isReviewingPastAttempt && (
         <div className="quiz-answer-progress" role="status">
-          <span>{answeredCount} of {plannedQuestionCount} answered</span>
+          <span>{answeredCount} of {plannedQuestionCount} answered{unsureCount ? ` · ${unsureCount} unsure` : ""}</span>
           <progress value={answeredCount} max={Math.max(1, plannedQuestionCount)} aria-label="Questions answered" />
+        </div>
+      )}
+
+      {!isEditMode && attemptStarted && !submitted && !isReviewingPastAttempt && activeDisplayedQuestions.length > 1 && (
+        <div className="quiz-view-controls">
+          <div role="group" aria-label="Question layout">
+            <button type="button" aria-pressed={questionView === "single"} onClick={() => { setQuestionView("single"); persistAttemptView("single", currentQuestionIndex); }}>One at a time</button>
+            <button type="button" aria-pressed={questionView === "all"} onClick={() => { setQuestionView("all"); persistAttemptView("all", currentQuestionIndex); }}>All questions</button>
+          </div>
+          {questionView === "single" && <span>Question {currentQuestionIndex + 1} of {activeDisplayedQuestions.length}</span>}
         </div>
       )}
 
@@ -445,6 +504,10 @@ function ClientQuizBlock({
           isEditMode={isEditMode}
           isReviewingPastAttempt={isReviewingPastAttempt}
           shouldRevealAnswers={shouldRevealAnswers}
+          questionView={questionView}
+          currentQuestionIndex={currentQuestionIndex}
+          unsureByQuestion={displayedUnsureByQuestion}
+          onUnsure={handleUnsure}
           onToggleQuestionMarker={toggleQuestionMarker}
           onOptionSelect={handleOptionSelect}
           onQuestionEdit={(questionIndex, prompt) => editQuestion(questionIndex, prompt)}
@@ -456,6 +519,13 @@ function ClientQuizBlock({
           onQuestionMultipleChange={toggleQuestionMultiple}
           onCorrectAnswerChange={setCorrectAnswer}
         />
+      )}
+
+      {!isEditMode && attemptStarted && !submitted && !isReviewingPastAttempt && questionView === "single" && activeDisplayedQuestions.length > 1 && (
+        <div className="quiz-question-navigation" aria-label="Question navigation">
+          <button type="button" disabled={currentQuestionIndex === 0} onClick={() => { const index = currentQuestionIndex - 1; setCurrentQuestionIndex(index); persistAttemptView("single", index); }}>Previous question</button>
+          <button type="button" disabled={currentQuestionIndex === activeDisplayedQuestions.length - 1} onClick={() => { const index = currentQuestionIndex + 1; setCurrentQuestionIndex(index); persistAttemptView("single", index); }}>Next question</button>
+        </div>
       )}
 
       {!shouldShowAttemptStart && !shouldShowTopNextAttempt && (

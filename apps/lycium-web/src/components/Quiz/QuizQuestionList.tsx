@@ -13,6 +13,10 @@ type QuizQuestionListProps = {
   isEditMode: boolean;
   isReviewingPastAttempt: boolean;
   shouldRevealAnswers: boolean;
+  questionView: "single" | "all";
+  currentQuestionIndex: number;
+  unsureByQuestion: boolean[];
+  onUnsure: (questionIndex: number) => void;
   onToggleQuestionMarker: (questionIndex: number) => void;
   onOptionSelect: (questionIndex: number, optionIndex: number, multiple: boolean) => void;
   onQuestionEdit: (questionIndex: number, prompt: string) => void;
@@ -36,6 +40,10 @@ export default function QuizQuestionList({
   isEditMode,
   isReviewingPastAttempt,
   shouldRevealAnswers,
+  questionView,
+  currentQuestionIndex,
+  unsureByQuestion,
+  onUnsure,
   onToggleQuestionMarker,
   onOptionSelect,
   onQuestionEdit,
@@ -49,8 +57,11 @@ export default function QuizQuestionList({
 }: QuizQuestionListProps) {
   return (
     <>
-      {questions.map((question, questionIndex) => {
+      {(questionView === "single" && !isEditMode ? [currentQuestionIndex] : questions.map((_, index) => index)).map((questionIndex) => {
+        const question = questions[questionIndex];
+        if (!question) return null;
         const selectedForQuestion = selectedByQuestion[questionIndex] ?? [];
+        const isUnsure = unsureByQuestion[questionIndex] === true;
         const result = questionCorrectness[questionIndex];
 
         return (
@@ -175,6 +186,13 @@ export default function QuizQuestionList({
                 </button>
               )}
             </div>
+            {!isEditMode && !submitted && !isReviewingPastAttempt && (
+              <div className="quiz-question-response-actions">
+                <button type="button" className="quiz-unsure-button" aria-pressed={isUnsure} onClick={() => onUnsure(questionIndex)}>I don&apos;t know</button>
+                {isUnsure && <span role="status">Marked as unsure</span>}
+              </div>
+            )}
+            {!isEditMode && isUnsure && (submitted || isReviewingPastAttempt) && <p className="quiz-unsure-review">Marked as unsure</p>}
             {!isEditMode && shouldRevealAnswers && typeof result === "boolean" && (
               <p className="quiz-response-feedback" data-correct={result}>
                 {result ? <CircleCheck size={18} aria-hidden="true" /> : <CircleAlert size={18} aria-hidden="true" />}

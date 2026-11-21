@@ -196,6 +196,10 @@ export function parseAttemptHistory(value: unknown, questionBank: NormalizedQues
         parsedItem.questionCorrectness = raw.questionCorrectness.map((value) => value === true);
       }
 
+      if (Array.isArray(raw.unsureByQuestion)) {
+        parsedItem.unsureByQuestion = raw.unsureByQuestion.map((value) => value === true);
+      }
+
       return parsedItem;
     })
     .filter((item): item is AttemptHistoryItem => item !== null);

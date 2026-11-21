@@ -35,11 +35,13 @@ async function openAssessment(page: Page) {
   await page.getByRole("button", { name: `Open ${title}`, exact: true }).click();
   await page.getByRole("button", { name: "1.3 Check your understanding", exact: true }).click();
   await page.getByRole("button", { name: "Begin attempt #1", exact: true }).click();
+  await page.getByRole("button", { name: "All questions", exact: true }).click();
 }
 
 async function answer(page: Page, correct: boolean) {
   await page.getByRole("radio", { name: correct ? "The claim supported by a relevant observation" : "The claim based only on an unrelated opinion", exact: true }).check();
   await page.getByRole("checkbox", { name: "Check whether the evidence is relevant", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Consider plausible alternative explanations", exact: true }).check();
   await page.getByRole("checkbox", { name: "Consider plausible alternative explanations", exact: true }).check();
 }
 
@@ -93,6 +95,41 @@ test("answered progress and past-attempt review preserve grading and answer priv
   await expect(page.locator(".quiz-response-feedback")).toHaveCount(0);
   await page.getByRole("button", { name: "Back to current attempt", exact: true }).click();
   await expect(page.getByRole("status", { name: "Attempt 2 result", exact: true })).toContainText("100%");
+});
+
+test("one-question navigation and unsure responses persist without changing scoring", async ({ page }, info) => {
+  await page.goto("/Lycium/catalog");
+  await page.getByRole("button", { name: `Open ${title}`, exact: true }).click();
+  await page.getByRole("button", { name: "1.3 Check your understanding", exact: true }).click();
+  await page.getByRole("button", { name: "Begin attempt #1", exact: true }).click();
+  await page.screenshot({ path: info.outputPath("quiz-one-question.png") });
+  const answerCurrent = async () => {
+    const prompt = await page.locator(".quiz-question").innerText();
+    if (prompt.includes("Which claim")) {
+      await page.getByRole("radio", { name: "The claim supported by a relevant observation", exact: true }).check();
+    } else {
+      await page.getByRole("checkbox", { name: "Check whether the evidence is relevant", exact: true }).check();
+      await page.getByRole("checkbox", { name: "Consider plausible alternative explanations", exact: true }).check();
+    }
+  };
+  await answerCurrent();
+  await page.getByRole("button", { name: "I don't know", exact: true }).click();
+  expect(await page.locator(".quiz-option input").evaluateAll((inputs) => inputs.every((input) => !(input as HTMLInputElement).checked))).toBe(true);
+  await expect(page.getByRole("button", { name: "I don't know", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("Marked as unsure", { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "I don't know", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "All questions", exact: true }).click();
+  await expect(page.locator(".quiz-question")).toHaveCount(2);
+  await page.getByRole("button", { name: "One at a time", exact: true }).click();
+  await expect(page.locator(".quiz-question")).toHaveCount(1);
+  await page.getByRole("button", { name: "Next question", exact: true }).click();
+  await answerCurrent();
+  await expect(page.getByRole("button", { name: "Submit", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Submit", exact: true }).click();
+  await expect(page.getByRole("status", { name: "Attempt 1 result", exact: true })).toContainText("50%");
+  await expect(page.getByText("Marked as unsure", { exact: true })).toBeVisible();
+  await expect(page.locator(".quiz-question")).toHaveCount(2);
 });
 
 test("per-question feedback appears only after allowed submission and reflows", async ({ page }, info) => {

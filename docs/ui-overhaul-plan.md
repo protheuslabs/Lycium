@@ -17,6 +17,7 @@ Fourth study: [Canvas course workspace and navigation](ui-studies/canvas.md).
 Fifth study: [edX course fit, progress, and resume](ui-studies/edx.md).
 Sixth study: [MIT OpenCourseWare materials and academic content](ui-studies/mit-ocw.md).
 Seventh study: [OpenLearn catalog comparison and layout choice](ui-studies/openlearn.md).
+Eighth study: [Brilliant active practice without gamification](ui-studies/brilliant.md).
 Shared chrome: [site navigation and footer](ui-studies/site-navigation.md).
 
 1. [Direction and research limits](#1-direction)

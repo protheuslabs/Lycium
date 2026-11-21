@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CourseEntry } from "../courseTypes";
-import { buildLearningLibrary, selectDiscoveryCourses, selectLearningCourses } from "./learningLibrary";
+import { buildLearningLibrary, selectDiscoveryCourses, selectLearningCourses, selectPendingPractice } from "./learningLibrary";
 
 const course: CourseEntry = {
   key: "first",
@@ -127,5 +127,22 @@ describe("learning library", () => {
     });
     expect(selectLearningCourses(library, "all", "", "all", "progress").map((item) => item.course.key)).toEqual(["second", "first"]);
     expect(selectLearningCourses(library, "all", "", "all", "title").map((item) => item.course.key)).toEqual(["first", "second"]);
+  });
+
+  it("surfaces only unlocked, incomplete practice from active courses", () => {
+    const assessed = { ...course, data: { ...course.data, modules: [{ ...course.data.modules[0], sections: [...course.data.modules[0].sections, { id: "quiz", title: "Knowledge check", content: [{ type: "quiz" }] }] }] } };
+    const active = buildLearningLibrary([assessed], {
+      first: { bookmark: { course_key: "first", section_id: "one" }, progress: null },
+    });
+    expect(selectPendingPractice(active.active)[0]?.section.id).toBe("quiz");
+    const completed = buildLearningLibrary([assessed], {
+      first: { bookmark: { course_key: "first", section_id: "two" }, progress: { completedSectionIds: ["quiz"], sectionStatuses: {} } },
+    });
+    expect(selectPendingPractice(completed.active)).toEqual([]);
+    const ordered = { ...assessed, data: { ...assessed.data, orderMandatory: true } };
+    const locked = buildLearningLibrary([ordered], {
+      first: { bookmark: { course_key: "first", section_id: "one" }, progress: null },
+    });
+    expect(selectPendingPractice(locked.active)).toEqual([]);
   });
 });

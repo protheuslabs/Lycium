@@ -3,6 +3,7 @@ import { getCourseCategoryLabel, getCourseDepartmentLabel } from "@lycium/contra
 import { normalizeProgressRecord, summarizeCourseProgress, resolveSectionStatuses } from "./courseProgress";
 import { findBookmarkedSection, getFlatCourseSections } from "./courseRouting";
 import { getCourseLifecycleSummary } from "./courseLifecycle";
+import { sectionLearningType } from "./coursePresentation";
 
 export type LearningRecord = {
   progress: CourseProgressRecord | null;
@@ -46,6 +47,17 @@ export function buildLearningLibrary(
 
 export type LearningCourse = ReturnType<typeof buildLearningLibrary>["items"][number];
 export type LearningLibrary = ReturnType<typeof buildLearningLibrary>;
+
+export function selectPendingPractice(items: LearningCourse[]) {
+  return items.flatMap((item) => {
+    const section = getFlatCourseSections(item.course).find((candidate) => {
+      const type = sectionLearningType(candidate);
+      const status = item.sectionStatuses[candidate.id];
+      return type !== "Lesson" && type !== "Summary" && status !== "completed" && status !== "locked";
+    });
+    return section ? [{ ...item, section, type: sectionLearningType(section) }] : [];
+  });
+}
 
 export type LearningView = "active" | "completed" | "all";
 export type LearningSort = "title" | "progress";
