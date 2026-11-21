@@ -91,6 +91,12 @@
 .course-outline-trigger:hover {
   background: var(--lycium-color-control-hover);
 }
+.course-reader-home { display: flex; align-items: center; gap: .45rem; min-width: 0; max-width: 18rem; min-height: 40px; padding: 0 .35rem; color: var(--lycium-color-text); font-size: .82rem; font-weight: 650; text-decoration: none; }
+.course-reader-home span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.course-reader-home:hover { color: var(--lycium-color-accent); }
+.course-reader-home svg { flex: 0 0 auto; }
+.course-focus-trigger { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; padding: 0; border: 0; color: var(--lycium-color-text-muted); background: transparent; }
+.course-focus-trigger:hover, .course-focus-trigger[aria-pressed="true"] { color: var(--lycium-color-accent); background: var(--lycium-color-control-hover); }
 .course-position {
   margin-left: auto;
   color: var(--lycium-color-text-muted);

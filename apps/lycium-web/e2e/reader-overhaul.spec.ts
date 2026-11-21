@@ -226,6 +226,27 @@ test("mobile outline traps focus, closes on Escape/outside click, and navigates 
   await expect(page.locator(".sidebar")).toBeVisible();
 });
 
+test("lesson reader replaces global navigation and supports a reversible focus mode", async ({ page }) => {
+  await page.getByRole("button", { name: `Open ${title}`, exact: true }).click();
+  await expect(page.locator(".top-bar")).toBeVisible();
+  await page.getByRole("button", { name: "Start course", exact: true }).click();
+  await expect(page.locator(".top-bar")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Back to course overview", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Course outline", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Enter focus mode", exact: true }).click();
+  await expect(page.locator(".learning-layout")).toHaveClass(/learning-layout--focus/);
+  await expect(page.getByRole("button", { name: "Exit focus mode", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Course outline", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: lessonTitle, level: 1 })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Section navigation", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Enter focus mode", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Course outline", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Back to course overview", exact: true }).click();
+  await expect(page.locator(".top-bar")).toBeVisible();
+  await expect(page.getByRole("heading", { name: title, level: 1 })).toBeVisible();
+});
+
 test("reader citations remain section-scoped and editing markers stay out of reading mode", async ({
   page,
 }) => {
@@ -250,9 +271,7 @@ test("quiz selections survive reload and remain isolated between courses", async
   await page.getByRole("radio", { name: correctAnswer, exact: true }).check();
   await page.reload();
   await expect(page.getByRole("radio", { name: correctAnswer, exact: true })).toBeChecked();
-  const navigation = page.getByRole("button", { name: "Open navigation", exact: true });
-  if (await navigation.isVisible()) await navigation.click();
-  await page.getByRole("link", { name: "Course catalog", exact: true }).click();
+  await page.goto("/Lycium/catalog");
   await openCourse(page, "Second course");
   await selectSection(page, /1\.3 Knowledge check/);
   await page.getByRole("button", { name: "Begin attempt #1", exact: true }).click();
@@ -281,9 +300,7 @@ test("light and dark themes keep the catalog, reader, and assessment on semantic
     await expect(page.getByRole("button", { name: "Begin attempt #1", exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath(`assessment-${mode}.png`), fullPage: true });
     await selectSection(page, /1\.1 Distinguishing completion/);
-    const navigation = page.getByRole("button", { name: "Open navigation", exact: true });
-    if (await navigation.isVisible()) await navigation.click();
-    await page.getByRole("link", { name: "Course catalog", exact: true }).click();
+    await page.goto("/Lycium/catalog");
     await expect(page).toHaveURL(/\/catalog$/);
     await expect(page.getByRole("heading", { name: "Catalog", level: 1 })).toBeVisible();
   }

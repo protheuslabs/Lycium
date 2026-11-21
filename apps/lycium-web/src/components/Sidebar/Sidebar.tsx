@@ -11,8 +11,10 @@ import {
 import SidebarSectionItem, { type SidebarSection } from "./SidebarSectionItem";
 import { containDialogFocus } from "../../utils/dialogFocus";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
-import { PanelLeft, X } from "lucide-react";
+import { ArrowLeft, Maximize2, Minimize2, PanelLeft, X } from "lucide-react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import Link from "next/link";
+import { getCoursePath } from "../../utils/courseRouting";
 
 let persistedSidebarCollapsed = false;
 
@@ -21,6 +23,9 @@ type SidebarProps = {
   currentSectionIndex: number;
   onSectionSelect: (index: number) => void;
   courseTitle: string;
+  courseKey: string;
+  isFocusMode: boolean;
+  onToggleFocusMode: () => void;
   progressPercentage: number;
   viewedPercentage: number;
   sectionStatuses: Record<string, SectionStatus>;
@@ -47,6 +52,9 @@ export default function Sidebar({
   currentSectionIndex,
   onSectionSelect,
   courseTitle,
+  courseKey,
+  isFocusMode,
+  onToggleFocusMode,
   progressPercentage,
   viewedPercentage,
   sectionStatuses,
@@ -296,6 +304,7 @@ export default function Sidebar({
   return (
     <>
       <div className="course-outline-toolbar">
+        <Link className="course-reader-home" href={getCoursePath({ key: courseKey, title: courseTitle })} aria-label="Back to course overview" title="Back to course overview"><ArrowLeft size={18} aria-hidden="true" /><span>{courseTitle}</span></Link>
         <button
           type="button"
           className="course-outline-trigger"
@@ -306,6 +315,7 @@ export default function Sidebar({
           <PanelLeft size={18} aria-hidden="true" />
           <span>Course outline</span>
         </button>
+        {!isEditMode && <button type="button" className="course-focus-trigger" aria-label={isFocusMode ? "Exit focus mode" : "Enter focus mode"} title={isFocusMode ? "Exit focus mode" : "Enter focus mode"} aria-pressed={isFocusMode} onClick={onToggleFocusMode}>{isFocusMode ? <Minimize2 size={18} aria-hidden="true" /> : <Maximize2 size={18} aria-hidden="true" />}</button>}
         <span className="course-position">
           {isSourcesActive ? "Sources" : `Section ${currentSectionIndex + 1} of ${sections.length}`}
         </span>

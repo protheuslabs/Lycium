@@ -399,7 +399,7 @@ function App({ initialPath }: AppProps = {}) {
 
   return (
     <div className="app-root">
-      <TopBar onOpenSettings={routeToSettings} onOpenCatalog={routeToHome} currentPage={viewRoute.kind} />
+      {!(viewRoute.kind === "course" && viewRoute.unitSlug) && <TopBar onOpenSettings={routeToSettings} onOpenCatalog={routeToHome} currentPage={viewRoute.kind} />}
 
       {viewRoute.kind === "tools" ? (
         <ToolsPage />

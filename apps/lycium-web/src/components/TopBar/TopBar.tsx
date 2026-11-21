@@ -3,7 +3,6 @@
 import { useState, type MouseEvent } from "react";
 import { Library, Menu, NotebookTabs, Search, Wrench } from "lucide-react";
 import Link from "next/link";
-import LoginDialog from "../Account/LoginDialog";
 import Modal from "../Modal/Modal";
 import SiteSearch from "./SiteSearch";
 import SiteOptions from "./SiteOptions";
@@ -17,7 +16,6 @@ type TopBarProps = {
 };
 
 export default function TopBar({ onOpenCatalog, onOpenSettings, currentPage }: TopBarProps) {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigation = [
@@ -54,7 +52,6 @@ export default function TopBar({ onOpenCatalog, onOpenSettings, currentPage }: T
           <div className="top-bar-search"><SiteSearch /></div>
           <div className="top-bar-actions">
             <button className="top-bar-tool top-bar-search-toggle" type="button" aria-label="Search courses" aria-haspopup="dialog" onClick={() => setIsSearchOpen(true)} title="Search courses"><Search size={21} aria-hidden="true" /></button>
-            <button type="button" className="top-bar-login" onClick={() => setIsLoginOpen(true)}>Log in</button>
             <SiteOptions onOpenSettings={onOpenSettings} />
           </div>
         </div>
@@ -70,7 +67,6 @@ export default function TopBar({ onOpenCatalog, onOpenSettings, currentPage }: T
         </nav>
       </Modal>
       <Modal isOpen={isSearchOpen} title="Find a course" labelledById="site-search-title" className="site-search-dialog" size="md" initialFocus='input[type="search"]' onClose={() => setIsSearchOpen(false)}><SiteSearch /></Modal>
-      <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </>
   );
 }

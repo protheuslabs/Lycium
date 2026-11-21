@@ -1,11 +1,11 @@
 import { useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, BookOpen } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen, ClipboardCheck, MousePointer2 } from "lucide-react";
 import learningWorld from "../../assets/learning-world.webp";
 import mobileLearningWorld from "../../assets/learning-world-mobile.webp";
 import type { CourseEntry } from "../../courseTypes";
 import { getCourseCategoryLabel } from "@lycium/contracts";
-import { COURSE_CATALOG_PATH, MY_LEARNING_PATH } from "../../utils/courseRouting";
+import { COURSE_CATALOG_PATH } from "../../utils/courseRouting";
 import { selectDiscoveryCourses, type LearningLibrary } from "../../utils/learningLibrary";
 import LearningCourseCard from "./LearningCourseCard";
 import ContinueLearning from "./ContinueLearning";
@@ -33,8 +33,8 @@ export default function LearnerHome({ library, onOpenCourse }: LearnerHomeProps)
               Explore courses
               <ArrowRight size={18} aria-hidden="true" />
             </Link>
-            <Link href={MY_LEARNING_PATH} className="learner-hero-secondary">
-              My Learning
+            <Link href="#how-it-works" className="learner-hero-secondary">
+              How it works
               <ArrowUpRight size={18} aria-hidden="true" />
             </Link>
           </div>
@@ -49,7 +49,15 @@ export default function LearnerHome({ library, onOpenCourse }: LearnerHomeProps)
             <ContinueLearning item={library.active[0]} onOpenCourse={onOpenCourse} />
           </section>
         )}
-        <section className="home-course-section" aria-labelledby="home-courses-title">
+        <section id="how-it-works" className="learning-model" aria-labelledby="learning-model-title">
+          <div className="learning-model-heading"><h2 id="learning-model-title">Learn more than the answers.</h2></div>
+          <div className="learning-model-steps">
+            <article><BookOpen size={21} aria-hidden="true" /><h3>Learn</h3><p>Build understanding through structured lessons and readings.</p></article>
+            <article><MousePointer2 size={21} aria-hidden="true" /><h3>Practice</h3><p>Apply ideas through practice activities and projects.</p></article>
+            <article><ClipboardCheck size={21} aria-hidden="true" /><h3>Assess</h3><p>Check your understanding with quizzes and assessments.</p></article>
+          </div>
+        </section>
+        {featured.length > 0 && <section className="home-course-section" aria-labelledby="home-courses-title">
           <header className="learner-section-heading">
             <div>
               <h2 id="home-courses-title">Find your next course</h2>
@@ -73,24 +81,14 @@ export default function LearnerHome({ library, onOpenCourse }: LearnerHomeProps)
               </Link>
             </div>
           </header>
-          {featured.length > 0 ? (
-            <div className="learning-course-grid home-course-grid">
+          {
+            <div className={`learning-course-grid home-course-grid ${featured.length === 1 ? "home-course-grid--single" : ""}`}>
               {featured.map((item) => (
                 <LearningCourseCard key={item.course.key} item={item} onOpenCourse={onOpenCourse} />
               ))}
             </div>
-          ) : (
-            <div className="learner-empty">
-              <BookOpen size={28} aria-hidden="true" />
-              <h3>The library is taking shape</h3>
-              <p>No courses are available yet.</p>
-              <Link href={COURSE_CATALOG_PATH}>
-                Go to catalog
-                <ArrowRight size={17} aria-hidden="true" />
-              </Link>
-            </div>
-          )}
-        </section>
+          }
+        </section>}
       </div>
     </main>
   );

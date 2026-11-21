@@ -49,6 +49,13 @@ Unboxed navigation links and tabs retain their text treatment. Catalog search
 uses the same pill field, 44px height, border, and raised surface as global
 search.
 
+The public homepage leads with the existing learning artwork, a concrete value
+proposition, Explore courses, and How it works. A compact Learn / Practice /
+Assess section explains the real learning model. Empty public course inventory
+is omitted rather than presented as a landing-page failure. A single filtered
+course receives a larger split presentation. Unavailable account sign-in is not
+shown as an action, and development-only tools are not promoted on the hero.
+
 The heavy uppercase wordmark uses `--lycium-font-brand`; body and reading text
 use the shared `--lycium-font-body` stack beginning with SF Pro Text and the
 same native Roboto/Segoe UI fallbacks used by Udemy. We do not redistribute

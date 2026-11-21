@@ -27,6 +27,18 @@
 .home-course-controls { display: flex; align-items: center; gap: 1.25rem; }
 .home-course-controls select { max-width: 15rem; min-width: 0; min-height: var(--lycium-control-height); border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); padding: .6rem; background: var(--lycium-color-surface-raised); color: var(--lycium-color-text); font: inherit; font-size: var(--lycium-control-font-size); }
 .home-continue { padding-bottom: 2.5rem; margin-bottom: 2.5rem; border-bottom: 1px solid var(--lycium-color-border); }
+.learning-model { padding: 2.5rem 0; border-bottom: 1px solid var(--lycium-color-border); margin-bottom: 2.5rem; scroll-margin-top: 1.5rem; }
+.learning-model-heading h2 { margin: 0 0 1.75rem; font-size: 1.5rem; line-height: 1.4; }
+.learning-model-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+.learning-model-steps article { min-width: 0; }
+.learning-model-steps svg { color: var(--lycium-color-accent); }
+.learning-model-steps h3 { margin: .75rem 0 .4rem; font-size: 1rem; }
+.learning-model-steps p { margin: 0; color: var(--lycium-color-text-muted); font-size: .9rem; line-height: 1.7; }
+.home-course-grid--single { grid-template-columns: minmax(0, 1fr); }
+.home-course-grid--single .course-tile { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.home-course-grid--single .course-tile > .course-artwork { height: 100%; min-height: 20rem; aspect-ratio: auto; }
+.home-course-grid--single .course-tile-body { padding: 2rem; }
+.home-course-grid--single .course-tile-title { font-size: 1.5rem; }
 .home-continue h2 { margin-bottom: 1.25rem; }
 .course-subject-label { font-size: .75rem; font-weight: 600; color: var(--lycium-color-text-muted); }
 .continue-learning { display: grid; grid-template-columns: minmax(180px, .7fr) minmax(0, 1.6fr); border: 1px solid var(--lycium-color-border); border-radius: 8px; overflow: hidden; background: var(--lycium-color-surface-raised); }
@@ -51,6 +63,12 @@
   .learner-section-heading { align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
   .learner-section-heading h2, .home-continue h2, .dashboard-continue h2 { font-size: 1.25rem; }
   .home-course-controls { width: 100%; justify-content: space-between; gap: .75rem; }
+  .learning-model { padding-block: 1.75rem; margin-bottom: 1.75rem; }
+  .learning-model-steps { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  .home-course-grid--single .course-tile { display: flex; }
+  .home-course-grid--single .course-tile > .course-artwork { height: auto; min-height: 0; aspect-ratio: 2 / 1; }
+  .home-course-grid--single .course-tile-body { padding: 1.25rem; }
+  .home-course-grid--single .course-tile-title { font-size: 1.2rem; }
   .home-course-controls select { max-width: 12rem; width: 60%; }
   .home-course-controls a { font-size: .75rem; }
   .continue-learning { grid-template-columns: minmax(0, 1fr); }

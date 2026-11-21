@@ -43,6 +43,17 @@
   grid-row: 2;
 }
 
+.learning-layout.learning-layout--focus {
+  grid-template-columns: minmax(0, 1fr);
+}
+.learning-layout--focus .sidebar { display: none; }
+.learning-layout--focus .course-outline-toolbar { grid-column: 1; }
+.learning-layout--focus .course-outline-trigger,
+.learning-layout--focus .course-position,
+.learning-layout--focus .sidebar-edit-controls,
+.learning-layout--focus .course-reader-home span { display: none; }
+.learning-layout--focus > .course-content-host { grid-column: 1; }
+
 @media (max-width: 860px) {
   .learning-layout,
   .learning-layout:has(.sidebar--collapsed) {
@@ -51,4 +62,5 @@
   .learning-layout > .course-content-host {
     grid-column: 1;
   }
+  .course-reader-home span { display: none; }
 }

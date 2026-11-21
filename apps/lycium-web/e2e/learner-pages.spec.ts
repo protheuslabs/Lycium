@@ -96,23 +96,14 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("login entry explains availability and offers a real local-learning path", async ({
+test("unavailable account actions stay out of the local-learning experience", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 750 });
   await page.goto("/Lycium/");
-  const trigger = page.getByRole("button", { name: "Log in", exact: true });
-  await expect(trigger).toBeVisible();
-  await trigger.click();
-  const dialog = page.getByRole("dialog", { name: "Log in", exact: true });
-  await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText("Account sign-in is not available yet.");
-  await expect(dialog.getByRole("textbox")).toHaveCount(0);
-  await page.keyboard.press("Escape");
-  await expect(dialog).toHaveCount(0);
-  await expect(trigger).toBeFocused();
-  await trigger.click();
-  await dialog.getByRole("link", { name: "Continue without an account" }).click();
+  await expect(page.getByRole("button", { name: "Log in", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Open navigation", exact: true }).click();
+  await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "My Learning", exact: true }).click();
   await expect(page).toHaveURL(/\/my-learning$/);
   await expect(page.getByRole("heading", { name: "My Learning", level: 1 })).toBeVisible();
 });
@@ -126,6 +117,10 @@ test("home is a distinct destination with a loaded image, course discovery, and 
   await page.goto("/Lycium/");
   await expect(page.getByRole("heading", { name: "Knowledge without barriers.", level: 1, exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore courses", exact: true })).toHaveCSS("border-radius", "8px");
+  await expect(page.getByRole("heading", { name: "Learn more than the answers.", level: 2 })).toBeVisible();
+  await expect(page.locator(".learning-model-steps h3")).toHaveText(["Learn", "Practice", "Assess"]);
+  await page.getByRole("link", { name: "How it works", exact: true }).click();
+  await expect(page).toHaveURL(/#how-it-works$/);
   const hoverCard = page.locator(".home-course-grid .learning-course-card").first();
   const restingBackground = await hoverCard.evaluate((card) => getComputedStyle(card).backgroundColor);
   await hoverCard.hover();
@@ -140,6 +135,7 @@ test("home is a distinct destination with a loaded image, course discovery, and 
   await page.getByLabel("Filter home courses by subject").selectOption("business-management");
   await expect(page.locator(".home-course-grid .learning-course-card")).toHaveCount(1);
   await expect(page.locator(".home-course-grid")).toContainText(completedTitle);
+  await expect(page.locator(".home-course-grid")).toHaveClass(/home-course-grid--single/);
   await page.getByLabel("Filter home courses by subject").selectOption("all");
   for (const width of [320, 390, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -164,6 +160,19 @@ test("home is a distinct destination with a loaded image, course discovery, and 
     .click();
   await expect(page).toHaveURL(/\/my-learning$/);
   await expect(page.getByRole("heading", { name: "My Learning", level: 1 })).toBeVisible();
+});
+
+test("homepage omits the course section instead of exposing an empty library", async ({ page }) => {
+  await page.goto("/Lycium/");
+  await page.evaluate(() => {
+    const drafts = JSON.parse(localStorage.getItem("lycium-local-course-drafts") ?? "[]");
+    for (const course of drafts) course.status = "draft";
+    localStorage.setItem("lycium-local-course-drafts", JSON.stringify(drafts));
+  });
+  await page.reload();
+  await expect(page.locator(".home-course-section")).toHaveCount(0);
+  await expect(page.getByText("The library is taking shape", { exact: false })).toHaveCount(0);
+  await expect(page.locator(".learning-model")).toBeVisible();
 });
 
 test("dashboard leads with a saved lesson and filters course-scoped progress without KPIs", async ({ page }, info) => {
@@ -570,31 +579,21 @@ test("site search opens shareable catalog results and supports a second search",
   await expect(page.locator(".course-tile")).toContainText(freshTitle);
 });
 
-test("login is a quiet text action and settings uses the utility disclosure", async ({ page }, info) => {
+test("settings uses the utility disclosure", async ({ page }, info) => {
   await page.goto("/Lycium/");
-  const login = page.getByRole("button", { name: "Log in", exact: true });
-  await expect(login.locator("svg")).toHaveCount(0);
-  await expect(login).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(login).toHaveCSS("border-top-width", "1px");
-  await expect(login).toHaveCSS("border-radius", "8px");
-  await expect(login).toHaveCSS("font-family", /SF Pro Text/);
-  await expect(login).toHaveCSS("font-weight", "700");
-  await login.hover();
-  await expect(login).toHaveCSS("border-top-width", "1px");
-  await expect(login).toHaveCSS("border-top-color", "rgb(23, 23, 23)");
-  await expect(login).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(page.getByRole("button", { name: "Log in", exact: true })).toHaveCount(0);
   const trigger = page.getByRole("button", { name: "More options", exact: true });
   const options = page.getByRole("navigation", { name: "Site options", exact: true });
   await expect(options).not.toBeVisible();
   await trigger.focus();
   await page.keyboard.press("ArrowDown");
-  await expect(options.getByRole("link", { name: "Settings", exact: true })).toBeFocused();
+  await expect(options.getByRole("link", { name: "Studio", exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(options).not.toBeVisible();
   await expect(trigger).toBeFocused();
   await trigger.click();
   await page.screenshot({ path: info.outputPath("login-and-settings.png") });
-  await page.locator(".learner-home-hero h1").click();
+  await page.mouse.click(2, 700);
   await expect(options).not.toBeVisible();
   await openSiteSettings(page);
   await expect(options).not.toBeVisible();

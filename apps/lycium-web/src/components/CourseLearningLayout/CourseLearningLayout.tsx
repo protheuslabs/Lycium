@@ -58,6 +58,7 @@ export default function CourseLearningLayout({
   const [isEditMode, setIsEditMode] = useState(shouldStartInEditMode);
   const [isCourseSettingsOpen, setIsCourseSettingsOpen] = useState(false);
   const [isCourseSourcesPageActive, setIsCourseSourcesPageActive] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const [draftCourseTitle, setDraftCourseTitle] = useState("");
   const [draftCourseSettings, setDraftCourseSettings] = useState<CourseSettingsDraft>(() => ({
     orderMandatory: selectedCourse?.data.orderMandatory ?? false,
@@ -77,6 +78,15 @@ export default function CourseLearningLayout({
   );
   const displayedCourseTitle = draftCourseTitle || selectedCourse?.data?.title || "Course";
   const activeEditMode = isEditMode && canEditCourse;
+
+  useEffect(() => {
+    if (!isFocusMode) return;
+    const exitOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsFocusMode(false);
+    };
+    window.addEventListener("keydown", exitOnEscape);
+    return () => window.removeEventListener("keydown", exitOnEscape);
+  }, [isFocusMode]);
   const effectiveOrderMandatory = activeEditMode ? draftCourseSettings.orderMandatory : orderMandatory;
   const sourceModules = draftModules ?? selectedCourse?.data.modules ?? EMPTY_MODULES;
   const courseSourceRecords = useMemo(() => normalizeCourseSourceRecords(selectedCourse), [selectedCourse]);
@@ -414,8 +424,11 @@ export default function CourseLearningLayout({
   };
 
   return (
-    <div className="main-layout learning-layout">
+    <div className={`main-layout learning-layout ${isFocusMode ? "learning-layout--focus" : ""}`}>
       <Sidebar
+        courseKey={selectedCourse?.key ?? ""}
+        isFocusMode={isFocusMode}
+        onToggleFocusMode={() => setIsFocusMode((current) => !current)}
         sections={displayedSections}
         currentSectionIndex={effectiveSectionIndex}
         onSectionSelect={handleSectionSelect}
