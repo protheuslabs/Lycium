@@ -12,6 +12,7 @@ import TopBar from "./components/TopBar/TopBar";
 import LearnerPages from "./components/LearnerPages/LearnerPages";
 import CourseOverview from "./components/LearnerPages/CourseOverview";
 import CourseLoadState from "./components/LearnerPages/CourseLoadState";
+import ToolsPage from "./components/Tools/ToolsPage";
 import { localCourses } from "./courseData/localCourses";
 import { localPrograms, programBenchmarks } from "./courseData/programs";
 import sourceRecordsData from "./courseData/sourceRecords";
@@ -400,12 +401,15 @@ function App({ initialPath }: AppProps = {}) {
     <div className="app-root">
       <TopBar onOpenSettings={routeToSettings} onOpenCatalog={routeToHome} currentPage={viewRoute.kind} />
 
-      {(routeCourses.length === 0 && (courseLoad.loading || courseLoad.error)) || (viewRoute.kind === "program" && courseLoad.programsLoading) ? (
+      {viewRoute.kind === "tools" ? (
+        <ToolsPage />
+      ) : (routeCourses.length === 0 && (courseLoad.loading || courseLoad.error)) || (viewRoute.kind === "program" && courseLoad.programsLoading) ? (
         <CourseLoadState error={courseLoad.error} />
       ) : viewRoute.kind === "landing" || viewRoute.kind === "learning" ? (
         <LearnerPages page={viewRoute.kind} courses={routeCourses} onOpenCourse={openCourseByEntry} />
-      ) : viewRoute.kind === "home" ? (
+      ) : viewRoute.kind === "home" || viewRoute.kind === "studio" ? (
         <CourseCatalog
+          studioMode={viewRoute.kind === "studio"}
           courses={courses}
           programs={programs}
           catalogView={viewRoute.kind === "home" ? viewRoute.catalogView ?? null : null}

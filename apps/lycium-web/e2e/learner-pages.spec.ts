@@ -90,6 +90,7 @@ test.beforeEach(async ({ page }) => {
         makeCourse("active", activeTitle),
         makeCourse("completed", completedTitle, "business-management"),
         makeCourse("fresh", freshTitle),
+        { ...makeCourse("unfinished", "Unfinished Generation"), status: "draft" },
       ],
     },
   );
@@ -186,7 +187,8 @@ test("dashboard leads with a saved lesson and filters course-scoped progress wit
   await expect(page.locator(".learning-course-card")).toContainText("100%");
   await page.getByRole("tab", { name: "In progress", exact: true }).click();
   await page.getByRole("tab", { name: "All courses", exact: true }).click();
-  await expect(page.locator(".learning-course-card")).toHaveCount(3);
+  await expect(page.locator(".learning-course-card")).toHaveCount(2);
+  await expect(page.locator("#learning-course-panel")).not.toContainText(freshTitle);
   await page.getByLabel("Filter your courses by subject").selectOption({ index: 1 });
   const selectedSubject = await page.getByLabel("Filter your courses by subject").inputValue();
   await expect(page.locator(".learning-course-card")).toContainText(selectedSubject);
@@ -195,7 +197,7 @@ test("dashboard leads with a saved lesson and filters course-scoped progress wit
   await expect(page.locator(".learning-course-card").first()).toContainText("100%");
   await page.getByRole("searchbox", { name: "Search your courses" }).fill("no results");
   await page.getByRole("button", { name: "Clear filters", exact: true }).click();
-  await expect(page.locator(".learning-course-card")).toHaveCount(3);
+  await expect(page.locator(".learning-course-card")).toHaveCount(2);
   await page.getByRole("tab", { name: "All courses", exact: true }).focus();
   await page.keyboard.press("ArrowLeft");
   await expect(page.getByRole("tab", { name: "Completed", exact: true })).toHaveAttribute("aria-selected", "true");
@@ -226,6 +228,35 @@ test("a directly opened course overview falls back to Catalog", async ({ page })
   await page.goto("/Lycium/courses/a-new-subject-to-explore-fresh");
   await page.getByRole("link", { name: "Back", exact: true }).click();
   await expect(page).toHaveURL(/\/catalog$/);
+});
+
+test("Studio retains drafts and creation while public discovery shows published courses", async ({ page }) => {
+  await page.goto("/Lycium/");
+  await expect(page.locator(".home-course-grid")).not.toContainText("Unfinished Generation");
+  await page.goto("/Lycium/catalog");
+  await expect(page.getByRole("heading", { name: "Catalog", level: 1 })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Unfinished Generation", exact: true })).toHaveCount(0);
+  await expect(page.locator(".catalog-create-button")).toHaveCount(0);
+  await page.getByRole("link", { name: "Open Studio", exact: true }).click();
+  await expect(page).toHaveURL(/\/studio$/);
+  await expect(page.getByRole("heading", { name: "Studio", level: 1 })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open Unfinished Generation", exact: true })).toBeVisible();
+  await expect(page.locator(".catalog-create-button")).toHaveCSS("border-radius", "8px");
+  await page.locator(".catalog-create-button").click();
+  const createDialog = page.getByRole("dialog", { name: "Create Course", exact: true });
+  await expect(createDialog.getByRole("button", { name: "Add another link", exact: true })).toHaveCSS("border-radius", "8px");
+  const dialogRadii = await createDialog.locator("button").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius));
+  expect(dialogRadii.every((radius) => radius === "8px")).toBe(true);
+});
+
+test("Tools has a real destination without a fake tool launch", async ({ page }) => {
+  await page.goto("/Lycium/");
+  await followPrimaryNavigation(page, "Tools");
+  await expect(page).toHaveURL(/\/tools$/);
+  await expect(page.getByRole("heading", { name: "Tools", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Graphing Studio", level: 3 })).toBeVisible();
+  await expect(page.getByText("In development", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Graphing Studio", exact: true })).toHaveCount(0);
 });
 
 test("resume opens the saved section and returns updated progress to the dashboard", async ({
@@ -496,14 +527,6 @@ test("site search opens shareable catalog results and supports a second search",
   await expect(page.locator(".catalog-query-field")).toHaveCSS("border-radius", "999px");
   await expect(page.locator(".catalog-query-field")).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(page.locator(".catalog-query-field input")).toHaveCSS("height", "44px");
-  await expect(page.locator(".catalog-create-button")).toHaveCSS("border-radius", "8px");
-  expect((await page.locator("button:visible").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius))).every((radius) => radius === "8px")).toBe(true);
-  await page.locator(".catalog-create-button").click();
-  const createDialog = page.getByRole("dialog", { name: "Create Course", exact: true });
-  await expect(createDialog.getByRole("button", { name: "Add another link", exact: true })).toHaveCSS("border-radius", "8px");
-  const dialogRadii = await createDialog.locator("button").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius));
-  expect(dialogRadii.every((radius) => radius === "8px")).toBe(true);
-  await page.getByRole("button", { name: "Close Create Course", exact: true }).click();
   await expect(page.locator(".course-tile")).toHaveCount(1);
   await expect(page.locator(".course-tile")).toContainText(completedTitle);
   await page.reload();

@@ -33,7 +33,7 @@ export default function MyLearning({ library, onOpenCourse }: MyLearningProps) {
       )}
       <section className="my-learning-courses" aria-labelledby="my-courses-heading">
         <header className="learner-section-heading"><h2 id="my-courses-heading">Your courses</h2></header>
-        <MyLearningControls view={view} query={query} subject={subject} sort={sort} subjects={subjects} counts={{ active: library.active.length, completed: library.completed.length, all: library.items.length }} onViewChange={setView} onQueryChange={setQuery} onSubjectChange={setSubject} onSortChange={setSort} />
+        <MyLearningControls view={view} query={query} subject={subject} sort={sort} subjects={subjects} counts={{ active: library.active.length, completed: library.completed.length, all: library.active.length + library.completed.length }} onViewChange={setView} onQueryChange={setQuery} onSubjectChange={setSubject} onSortChange={setSort} />
         <section id="learning-course-panel" role="tabpanel" aria-labelledby={`learning-tab-${view}`}>
           {items.length > 0 ? <div className="learning-course-grid my-learning-list">{items.map((item) => <LearningCourseCard key={item.course.key} item={item} showProgress returnTo="learning" onOpenCourse={onOpenCourse} />)}</div> : <div className="learner-empty">
             <BookOpen size={32} aria-hidden="true" />

@@ -81,6 +81,11 @@ The following are product directions, not prerequisites for the first release:
 - A digital library and any future Lycium Press collection.
 - Contextual tutoring tied to course material and comprehension checks.
 
+The Tools destination exists as a directory shell. Its Graphing Studio entry is
+marked `In development` and intentionally has no launch link until a usable tool
+exists. Catalog creation and review live at `/studio`; public discovery contains
+published courses only.
+
 These surfaces should adopt the same tokens and primitives. Do not add empty
 navigation entries, decorative mock tools, or claims of capability to establish
 the visual identity.

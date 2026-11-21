@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function createBlankManualCourse(page: Page) {
-  await page.goto("/Lycium/catalog");
+  await page.goto("/Lycium/studio");
 
   await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page.getByRole("dialog", { name: "Create Course" })).toBeVisible();
@@ -79,7 +79,7 @@ test("manual course editing saves title and added block content as a local draft
   );
   expect(persistedDraft).toBe(true);
 
-  await page.goto("/Lycium/catalog");
+  await page.goto("/Lycium/studio");
   await page.getByRole("searchbox", { name: "Search courses" }).fill(manualCourseTitle);
   await page.locator(".course-card").filter({ hasText: manualCourseTitle }).first().click();
   await expect(page.locator(".course-name")).toHaveText(manualCourseTitle);

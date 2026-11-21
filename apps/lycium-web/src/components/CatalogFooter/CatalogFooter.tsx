@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { legalDocuments } from "../../legal/legalDocuments";
-import { COURSE_CATALOG_PATH, COURSE_CATALOG_PROGRAMS_PATH, LYCIUM_ROUTE_ROOT, MY_LEARNING_PATH } from "../../utils/courseRouting";
+import { COURSE_CATALOG_PATH, COURSE_CATALOG_PROGRAMS_PATH, LYCIUM_ROUTE_ROOT, MY_LEARNING_PATH, TOOLS_PATH } from "../../utils/courseRouting";
 
 type CatalogFooterProps = { note?: string };
 
@@ -20,6 +20,7 @@ export default function CatalogFooter({ note = "Protheus Labs" }: CatalogFooterP
               <li><Link href={COURSE_CATALOG_PATH}>Browse courses</Link></li>
               <li><Link href={COURSE_CATALOG_PROGRAMS_PATH}>Explore programs</Link></li>
               <li><Link href={MY_LEARNING_PATH}>My Learning</Link></li>
+              <li><Link href={TOOLS_PATH}>Tools</Link></li>
             </ul>
           </nav>
           <nav aria-labelledby="footer-project-title">

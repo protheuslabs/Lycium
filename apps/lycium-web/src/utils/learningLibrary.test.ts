@@ -110,16 +110,20 @@ describe("learning library", () => {
 
   it("filters all learning by real subject and searchable description", () => {
     const second = { ...course, key: "second", title: "Macroeconomics", data: { ...course.data, title: "Macroeconomics", shortDescription: "Supply and demand", category: "business-management", department: "economics" } };
-    const library = buildLearningLibrary([course, second], {});
+    const library = buildLearningLibrary([course, second], {
+      second: { progress: null, bookmark: { course_key: "second", section_id: "one" } },
+    });
     expect(selectLearningCourses(library, "all", "demand", "all", "title").map((item) => item.course.key)).toEqual(["second"]);
     expect(selectLearningCourses(library, "all", "", "Economics", "title").map((item) => item.course.key)).toEqual(["second"]);
-    expect(selectLearningCourses(library, "active", "", "all", "title")).toEqual([]);
+    expect(selectLearningCourses(library, "active", "", "all", "title").map((item) => item.course.key)).toEqual(["second"]);
+    expect(selectLearningCourses(library, "all", "", "all", "title").map((item) => item.course.key)).not.toContain("first");
   });
 
   it("sorts progress without inventing activity dates", () => {
     const second = { ...course, key: "second", title: "Second course" };
     const library = buildLearningLibrary([course, second], {
-      second: { bookmark: null, progress: { completedSectionIds: ["one"], sectionStatuses: {} } },
+      first: { bookmark: null, progress: { completedSectionIds: ["one"], sectionStatuses: {} } },
+      second: { bookmark: null, progress: { completedSectionIds: ["one", "two"], sectionStatuses: {} } },
     });
     expect(selectLearningCourses(library, "all", "", "all", "progress").map((item) => item.course.key)).toEqual(["second", "first"]);
     expect(selectLearningCourses(library, "all", "", "all", "title").map((item) => item.course.key)).toEqual(["first", "second"]);

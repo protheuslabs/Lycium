@@ -1,4 +1,6 @@
 import { Search } from "lucide-react";
+import Link from "next/link";
+import { STUDIO_PATH } from "../../utils/courseRouting";
 import Dropdown from "../Dropdown/Dropdown";
 import { CATALOG_VIEW_LEVEL_OPTIONS, type CatalogViewLevel } from "./catalogUtils";
 
@@ -6,6 +8,7 @@ type CatalogDiscoveryHeaderProps = {
   viewLevel: CatalogViewLevel;
   searchQuery: string;
   disabled: boolean;
+  studioMode?: boolean;
   onViewLevelChange: (value: string) => void;
   onSearchChange: (value: string) => void;
 };
@@ -14,12 +17,13 @@ export default function CatalogDiscoveryHeader({
   viewLevel,
   searchQuery,
   disabled,
+  studioMode = false,
   onViewLevelChange,
   onSearchChange,
 }: CatalogDiscoveryHeaderProps) {
   return (
     <header className="catalog-heading">
-      <h1>Catalog</h1>
+      <div className="catalog-heading-title"><h1>{studioMode ? "Studio" : "Catalog"}</h1>{!studioMode && <Link href={STUDIO_PATH} className="learner-text-link">Open Studio</Link>}</div>
       <div className="catalog-discovery-search" role="search">
         <Dropdown
           className="catalog-level-dropdown"

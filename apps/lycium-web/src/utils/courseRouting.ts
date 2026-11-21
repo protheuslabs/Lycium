@@ -15,6 +15,8 @@ export const LYCIUM_SITE_ROOT = "https://protheuslabs.github.io/Lycium/";
 export const LYCIUM_DEPLOY_BASE_PATH = "/Lycium";
 export const LYCIUM_ROUTE_ROOT = "/";
 export const MY_LEARNING_PATH = buildLyciumPath("my-learning");
+export const TOOLS_PATH = buildLyciumPath("tools");
+export const STUDIO_PATH = buildLyciumPath("studio");
 export const COURSE_CATALOG_PATH = buildLyciumPath("catalog");
 export const COURSE_CATALOG_PROGRAMS_PATH = buildLyciumPath("catalog", "programs");
 export const COURSE_CATALOG_COURSES_PATH = buildLyciumPath("catalog", "courses");
@@ -183,6 +185,14 @@ export function parseCourseRoute(pathname: string): RouteInfo {
 
   if (pathWithoutQuery === MY_LEARNING_PATH) {
     return { kind: "learning", courseSlug: null, unitSlug: null };
+  }
+
+  if (pathWithoutQuery === TOOLS_PATH) {
+    return { kind: "tools", courseSlug: null, unitSlug: null };
+  }
+
+  if (pathWithoutQuery === STUDIO_PATH) {
+    return { kind: "studio", courseSlug: null, unitSlug: null };
   }
 
   if (pathWithoutQuery === "/catalog" || pathWithoutQuery === "/courses") {

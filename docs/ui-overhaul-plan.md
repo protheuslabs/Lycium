@@ -4,6 +4,8 @@ Research date: 2026-11-18. Latest visual checkpoint: 2026-11-20. Status: image-l
 
 The institutional black/emerald palette and typography/application boundaries are recorded in the [visual identity contract](visual-identity.md). Future Tools, Presentation Studio, textbook, library, and tutoring surfaces are explicitly deferred until their real capabilities exist.
 
+Catalog discovery now includes only published courses. The `/studio` route retains drafts, generation status, review, and creation workflows. My Learning's All view contains active and completed learning, not unstarted catalog inventory. `/tools` is a real destination with an honestly marked in-development Graphing Studio entry, not a fake launch action.
+
 ## Contents
 
 Focused site-by-site studies: [Coursera discovery and course fit](ui-studies/coursera.md).

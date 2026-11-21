@@ -280,10 +280,12 @@ test("uploaded files entered in the create-course UI reach course generation as 
     });
   });
 
-  await page.goto("/Lycium/catalog");
+  await page.goto("/Lycium/studio");
   await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/studio$/);
   await page.getByRole("button", { name: "Create", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Create Course" });
   await expect(dialog).toBeVisible();
@@ -392,10 +394,12 @@ test("course creation submits mixed URL and file inputs to generation", async ({
     });
   });
 
-  await page.goto("/Lycium/catalog");
+  await page.goto("/Lycium/studio");
   await openSiteSettings(page);
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
   await page.getByRole("button", { name: /close settings/i }).click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
+  await expect(page).toHaveURL(/\/studio$/);
   await page.getByRole("button", { name: "Create", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Create Course" });
   await expect(dialog).toBeVisible();

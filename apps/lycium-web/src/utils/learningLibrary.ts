@@ -52,7 +52,7 @@ export type LearningSort = "title" | "progress";
 
 export function selectLearningCourses(library: LearningLibrary, view: LearningView, query: string, subject: string, sort: LearningSort) {
   const normalizedQuery = query.trim().toLocaleLowerCase();
-  const source = view === "active" ? library.active : view === "completed" ? library.completed : library.items;
+  const source = view === "active" ? library.active : view === "completed" ? library.completed : [...library.active, ...library.completed];
   return source.filter((item) => {
     const searchableText = `${item.course.title} ${item.course.data.shortDescription ?? ""} ${item.department}`.toLocaleLowerCase();
     return (!normalizedQuery || searchableText.includes(normalizedQuery)) && (subject === "all" || item.department === subject);

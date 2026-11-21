@@ -28,6 +28,7 @@ import { useCreateCourseModal } from "./useCreateCourseModal";
 import type { CatalogSelectionMode } from "../../utils/catalogSelection";
 
 type CourseCatalogProps = {
+  studioMode?: boolean;
   courses: CourseEntry[];
   programs: LyciumProgram[];
   catalogView: "programs" | "courses" | null;
@@ -101,6 +102,7 @@ type CourseCatalogProps = {
 };
 
 export default function CourseCatalog({
+  studioMode = false,
   courses,
   programs,
   catalogView,
@@ -147,6 +149,7 @@ export default function CourseCatalog({
   const shouldShowGenerationTile = generateStatus === "loading" || generateStatus === "error";
   const generatingCourseTitle = getGeneratingCourseTitle(generateTitle);
   const catalogControls = useCatalogControls({
+    studioMode,
     courses,
     programs,
     catalogView,
@@ -256,6 +259,7 @@ export default function CourseCatalog({
       <main className="home-page" id="main-content" tabIndex={-1}>
         <section className="catalog-page">
           <CatalogDiscoveryHeader
+            studioMode={studioMode}
             viewLevel={catalogControls.catalogViewLevel}
             searchQuery={catalogControls.searchQuery}
             disabled={isSelectionMode}
@@ -277,7 +281,7 @@ export default function CourseCatalog({
             activityFilter={catalogControls.activityFilter}
             onSortModeChange={catalogControls.handleSortModeChange}
             onPathSortModeChange={catalogControls.handlePathSortModeChange}
-            showPrimaryAction
+            showPrimaryAction={studioMode}
             primaryActionLabel={primaryActionLabel}
             primaryActionDisabled={primaryActionDisabled}
             onPrimaryAction={() => {
@@ -295,7 +299,7 @@ export default function CourseCatalog({
               }
               programEditor.openCreateClusterEditor(catalogControls.selectedProgram);
             }}
-            showContextAction={showContextAction}
+            showContextAction={studioMode && showContextAction}
             contextActionLabel={contextActionLabel}
             onContextAction={() => {
               if (catalogControls.catalogViewLevel === "courses" && catalogControls.selectedProgram && catalogControls.selectedCluster) {

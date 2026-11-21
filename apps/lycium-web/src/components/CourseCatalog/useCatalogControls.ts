@@ -15,8 +15,10 @@ import {
 } from "./catalogUtils";
 import type { CatalogSelectionMode } from "../../utils/catalogSelection";
 import { useCatalogSearch } from "../../hooks/useCatalogSearch";
+import { getCourseLifecycleSummary } from "../../utils/courseLifecycle";
 
 type CatalogControlsOptions = {
+  studioMode: boolean;
   courses: CourseEntry[];
   programs: LyciumProgram[];
   catalogView: "programs" | "courses" | null;
@@ -91,6 +93,7 @@ export function buildCatalogCourseMap(courses: CourseEntry[]): Map<string, Cours
 }
 
 export function useCatalogControls({
+  studioMode,
   courses,
   programs,
   catalogView,
@@ -99,6 +102,10 @@ export function useCatalogControls({
   onCatalogDrilldown,
   selectionMode,
 }: CatalogControlsOptions) {
+  const catalogCourses = useMemo(
+    () => studioMode ? courses : courses.filter((course) => getCourseLifecycleSummary(course).status === "published"),
+    [courses, studioMode],
+  );
   const routeNavigation = navigationFromRoute(catalogView, catalogProgramId, catalogClusterId, programs[0]?.id ?? "");
   const [navigationState, dispatchNavigation] = useReducer(catalogNavigationReducer, routeNavigation);
   const navigation = navigationState.routeKey === routeNavigation.routeKey ? navigationState : routeNavigation;
@@ -140,7 +147,7 @@ export function useCatalogControls({
     () => groupCourseRequirementContexts(selectedCluster),
     [selectedCluster],
   );
-  const catalogCourseMap = useMemo(() => buildCatalogCourseMap(courses), [courses]);
+  const catalogCourseMap = useMemo(() => buildCatalogCourseMap(catalogCourses), [catalogCourses]);
   const catalogProgressCache = useMemo(() => buildCatalogProgressCache(catalogCourseMap), [catalogCourseMap]);
   const programOptions = useMemo(
     () => programs.map((program) => ({ value: program.id, label: program.title })),
@@ -150,7 +157,7 @@ export function useCatalogControls({
   const collegeFilterOptions = useMemo(() => {
     const categories = new Map<string, string>();
 
-    for (const course of courses) {
+    for (const course of catalogCourses) {
       if (course.data.category) {
         categories.set(course.data.category, getCourseCategoryLabel(course.data.category));
       }
@@ -162,7 +169,7 @@ export function useCatalogControls({
         a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
       ),
     ];
-  }, [courses]);
+  }, [catalogCourses]);
 
   const departmentFilterOptions = useMemo(() => {
     if (collegeFilter === "all") {
@@ -180,11 +187,11 @@ export function useCatalogControls({
 
   const difficultyFilterOptions = useMemo(() => {
     const difficulties = Array.from(
-      new Set(courses.map((course) => course.data.difficultyLevel).filter((level): level is string => Boolean(level))),
+      new Set(catalogCourses.map((course) => course.data.difficultyLevel).filter((level): level is string => Boolean(level))),
     ).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
     return [{ value: "all", label: "Any difficulty" }, ...difficulties.map((difficulty) => ({ value: difficulty, label: difficulty }))];
-  }, [courses]);
+  }, [catalogCourses]);
 
   const activeFilterCount = [
     !showLockedCourses,
@@ -200,7 +207,7 @@ export function useCatalogControls({
         activityFilter,
         catalogCourseMap,
         collegeFilter,
-        courses,
+        courses: catalogCourses,
         departmentFilter,
         difficultyFilter,
         isClusterScoped: selectionMode?.kind !== "cluster" && Boolean(selectedCluster),
@@ -214,7 +221,7 @@ export function useCatalogControls({
       activityFilter,
       catalogCourseMap,
       collegeFilter,
-      courses,
+      catalogCourses,
       departmentFilter,
       difficultyFilter,
       searchQuery,
@@ -230,7 +237,7 @@ export function useCatalogControls({
     () =>
       getVisibleCatalogPrograms({
         programs,
-        courses,
+        courses: catalogCourses,
         courseMap: catalogCourseMap,
         progressCache: catalogProgressCache,
         activityFilter,
@@ -241,7 +248,7 @@ export function useCatalogControls({
         showLockedCourses,
         sortMode: pathSortMode,
       }),
-    [activityFilter, catalogCourseMap, catalogProgressCache, collegeFilter, courses, departmentFilter, difficultyFilter, pathSortMode, programs, searchQuery, showLockedCourses],
+    [activityFilter, catalogCourseMap, catalogProgressCache, collegeFilter, catalogCourses, departmentFilter, difficultyFilter, pathSortMode, programs, searchQuery, showLockedCourses],
   );
   const visibleClusters = useMemo(
     () =>

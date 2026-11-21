@@ -1,0 +1,10 @@
+.tools-heading { padding-bottom: 2rem; border-bottom: 1px solid var(--lycium-color-border); }
+.tools-heading h1 { margin: 0; font-size: var(--lycium-page-title-size); line-height: 1.3; }
+.tools-heading p { max-width: 38rem; margin: .75rem 0 0; color: var(--lycium-color-text-muted); line-height: 1.7; }
+.tools-directory { padding-top: 1.5rem; }
+.tool-entry { display: flex; align-items: flex-start; gap: 1rem; max-width: 48rem; padding: 1.25rem 0; }
+.tool-entry-icon { display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); color: var(--lycium-color-accent); background: var(--lycium-color-accent-soft); }
+.tool-entry-title { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; }
+.tool-entry-title h3 { margin: 0; font-size: 1.1rem; }
+.tool-entry-title span { color: var(--lycium-color-text-muted); font-size: .75rem; }
+.tool-entry p { margin: .5rem 0 0; color: var(--lycium-color-text-muted); font-size: .9rem; line-height: 1.65; }

@@ -20,6 +20,7 @@ import "../components/ContentView/readerAssessments.css";
 import "../components/LearnerPages/learnerPages.css";
 import "../components/CourseCard/courseCard.css";
 import "../styles/mainPageControls.css";
+import "../components/Tools/tools.css";
 
 export const metadata: Metadata = {
   title: "Lycium",

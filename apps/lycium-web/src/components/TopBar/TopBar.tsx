@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, type MouseEvent } from "react";
-import { Library, Menu, NotebookTabs, Search } from "lucide-react";
+import { Library, Menu, NotebookTabs, Search, Wrench } from "lucide-react";
 import Link from "next/link";
 import LoginDialog from "../Account/LoginDialog";
 import Modal from "../Modal/Modal";
 import SiteSearch from "./SiteSearch";
 import SiteOptions from "./SiteOptions";
-import { COURSE_CATALOG_PATH, LYCIUM_ROUTE_ROOT, MY_LEARNING_PATH } from "../../utils/courseRouting";
+import { COURSE_CATALOG_PATH, LYCIUM_ROUTE_ROOT, MY_LEARNING_PATH, TOOLS_PATH } from "../../utils/courseRouting";
 import type { RouteInfo } from "../../courseTypes";
 
 type TopBarProps = {
@@ -22,6 +22,7 @@ export default function TopBar({ onOpenCatalog, onOpenSettings, currentPage }: T
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigation = [
     { label: "Catalog", ariaLabel: "Course catalog", href: COURSE_CATALOG_PATH, active: currentPage === "home", icon: Library },
+    { label: "Tools", ariaLabel: "Tools", href: TOOLS_PATH, active: currentPage === "tools", icon: Wrench },
     { label: "My Learning", ariaLabel: "My Learning", href: MY_LEARNING_PATH, active: currentPage === "learning", icon: NotebookTabs },
   ];
   const openCatalog = (event: MouseEvent<HTMLAnchorElement>) => {
