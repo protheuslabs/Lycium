@@ -143,6 +143,7 @@ export default function CourseCatalog({
   onOpenSettings,
 }: CourseCatalogProps) {
   const [infoCourse, setInfoCourse] = useState<CourseEntry | null>(null);
+  const [courseLayout, setCourseLayout] = useState<"grid" | "list">("grid");
   const [sourceGapCourse, setSourceGapCourse] = useState<CourseEntry | null>(null);
   const [coursesPerPage, setCoursesPerPage] = useState(CATALOG_DESKTOP_ROWS_PER_PAGE * 4);
   const courseGridRef = useRef<HTMLDivElement | null>(null);
@@ -267,6 +268,9 @@ export default function CourseCatalog({
             onSearchChange={catalogControls.handleSearchQueryChange}
           />
           <CatalogToolbar
+            resultCount={catalogControls.visibleCourses.length}
+            courseLayout={courseLayout}
+            onCourseLayoutChange={setCourseLayout}
             catalogViewLevel={catalogControls.catalogViewLevel}
             sortMode={catalogControls.sortMode}
             pathSortMode={catalogControls.pathSortMode}
@@ -355,6 +359,7 @@ export default function CourseCatalog({
                 />
               )}
               <CatalogCourseGrid
+                layout={courseLayout}
                 courseGridRef={courseGridRef}
                 generateStatus={generateStatus}
                 generatingCourseTitle={generatingCourseTitle}

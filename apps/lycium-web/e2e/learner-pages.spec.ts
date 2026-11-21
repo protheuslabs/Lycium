@@ -265,6 +265,23 @@ test("Tools has a real destination without a fake tool launch", async ({ page })
   await expect(page.getByRole("link", { name: "Graphing Studio", exact: true })).toHaveCount(0);
 });
 
+test("catalog supports accessible grid and list layouts with a real result count", async ({ page }) => {
+  await page.goto("/Lycium/catalog");
+  await expect(page.locator(".catalog-result-count")).toHaveText("3 courses");
+  const grid = page.getByRole("button", { name: "Grid view", exact: true });
+  const list = page.getByRole("button", { name: "List view", exact: true });
+  await expect(grid).toHaveAttribute("aria-pressed", "true");
+  await list.click();
+  await expect(list).toHaveAttribute("aria-pressed", "true");
+  await expect(grid).toHaveAttribute("aria-pressed", "false");
+  await expect(page.locator(".course-grid")).toHaveClass(/course-grid--list/);
+  await expect(page.locator(".course-card")).toHaveCount(3);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.locator(".catalog-shell").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await grid.click();
+  await expect(page.locator(".course-grid")).toHaveClass(/course-grid--grid/);
+});
+
 test("resume opens the saved section and returns updated progress to the dashboard", async ({
   page,
 }) => {

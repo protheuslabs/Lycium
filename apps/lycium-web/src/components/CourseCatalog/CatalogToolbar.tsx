@@ -10,9 +10,12 @@ import {
 } from "./catalogUtils";
 
 import Dropdown from "../Dropdown/Dropdown";
-import { Plus } from "lucide-react";
+import { LayoutGrid, List, Plus } from "lucide-react";
 
 type CatalogToolbarProps = {
+  resultCount: number;
+  courseLayout: "grid" | "list";
+  onCourseLayoutChange: (layout: "grid" | "list") => void;
   catalogViewLevel: CatalogViewLevel;
   sortMode: CatalogSortMode;
   pathSortMode: CatalogPathSortMode;
@@ -45,6 +48,9 @@ type CatalogToolbarProps = {
 };
 
 export default function CatalogToolbar({
+  resultCount,
+  courseLayout,
+  onCourseLayoutChange,
   catalogViewLevel,
   sortMode,
   pathSortMode,
@@ -99,6 +105,11 @@ export default function CatalogToolbar({
           <span>Cancel</span>
         </button>
       )}
+      {isCourseView && <p className="catalog-result-count" aria-live="polite">{resultCount} {resultCount === 1 ? "course" : "courses"}</p>}
+      {isCourseView && <div className="catalog-layout-controls" role="group" aria-label="Course layout">
+        <button type="button" aria-label="Grid view" title="Grid view" aria-pressed={courseLayout === "grid"} onClick={() => onCourseLayoutChange("grid")}><LayoutGrid size={17} aria-hidden="true" /></button>
+        <button type="button" aria-label="List view" title="List view" aria-pressed={courseLayout === "list"} onClick={() => onCourseLayoutChange("list")}><List size={18} aria-hidden="true" /></button>
+      </div>}
       <div className="catalog-dropdown-row">
         <CatalogFilterPanel
           activeFilterCount={activeFilterCount}

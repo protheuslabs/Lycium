@@ -6,6 +6,7 @@ import type { CatalogVisibleCourse } from "./catalogUtils";
 import type { CatalogSelectionMode } from "../../utils/catalogSelection";
 
 type CatalogCourseGridProps = {
+  layout: "grid" | "list";
   courseGridRef: RefObject<HTMLDivElement | null>;
   generateStatus: "idle" | "loading" | "error" | "success";
   generatingCourseTitle: string;
@@ -24,6 +25,7 @@ type CatalogCourseGridProps = {
 };
 
 export default function CatalogCourseGrid({
+  layout,
   courseGridRef,
   generateStatus,
   generatingCourseTitle,
@@ -47,7 +49,7 @@ export default function CatalogCourseGrid({
   const shouldShowGenerationTile = isGeneratingCourse || isGenerationFailed;
 
   return (
-    <div className="course-grid" ref={courseGridRef}>
+    <div className={`course-grid course-grid--${layout}`} ref={courseGridRef}>
       {shouldShowGenerationTile && (
         <article
           className={`course-tile course-card course-card--generating${isGenerationFailed ? " course-card--generation-error" : ""}`}
