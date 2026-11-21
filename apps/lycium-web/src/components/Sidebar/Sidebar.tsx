@@ -217,6 +217,8 @@ export default function Sidebar({
                 moduleTitle={moduleGroup.moduleTitle}
                 isExpanded={isExpanded}
                 isActiveModule={isActiveModule}
+                completedCount={moduleGroup.sections.filter(({ section }) => getSectionStatus(section.id) === "completed").length}
+                totalCount={moduleGroup.sections.length}
                 isCollapsed={false}
                 onToggleModule={toggleModule}
               />

@@ -138,12 +138,16 @@ export const SidebarModuleHeader = memo(function SidebarModuleHeader({
   moduleTitle,
   isExpanded,
   isActiveModule,
+  completedCount,
+  totalCount,
   onToggleModule,
 }: {
   moduleIndex: number;
   moduleTitle: string;
   isExpanded: boolean;
   isActiveModule: boolean;
+  completedCount: number;
+  totalCount: number;
   isCollapsed: boolean;
   onToggleModule: (moduleIndex: number) => void;
 }) {
@@ -156,6 +160,7 @@ export const SidebarModuleHeader = memo(function SidebarModuleHeader({
     >
       <span className="module-header-label">
         {formatModuleHeaderLabel(moduleIndex, moduleTitle)}
+        <span className="module-header-progress">{completedCount}/{totalCount} complete</span>
       </span>
       <ChevronDown size={16} className="module-header-caret" aria-hidden="true" />
     </button>

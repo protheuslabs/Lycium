@@ -9,6 +9,7 @@ The institutional black/emerald palette and typography/application boundaries ar
 Focused site-by-site studies: [Coursera discovery and course fit](ui-studies/coursera.md).
 Second study: [Khan Academy curriculum and assessment clarity](ui-studies/khan-academy.md).
 Third study: [Udemy personal course library and discovery](ui-studies/udemy.md).
+Fourth study: [Canvas course workspace and navigation](ui-studies/canvas.md).
 Shared chrome: [site navigation and footer](ui-studies/site-navigation.md).
 
 1. [Direction and research limits](#1-direction)

@@ -2,6 +2,7 @@ import { stripModulePrefix } from "../CourseEditing/courseEditPrimitives";
 import { EditPencilButton, promptForText } from "./CourseEditControls";
 import type { Section } from "./contentViewTypes";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { getCoursePath } from "../../utils/courseRouting";
 
 type ReaderHeaderProps = {
@@ -34,34 +35,23 @@ export default function ReaderHeader({
 
   return (
     <header className="reader-header">
-      <p className="course-name course-editable-line">
-        {isEditMode ? <span className="course-editable-line-content">{courseTitle}</span> : <Link className="reader-course-link" href={getCoursePath({ key: courseKey, title: courseTitle })}>{courseTitle}</Link>}
-        {isEditMode && (
-          <EditPencilButton
-            label="Edit course title"
-            onClick={() =>
-              promptForText("Edit course title", courseTitle, (title) =>
-                onCourseTitleChange?.(title),
-              )
-            }
-          />
-        )}
-      </p>
-      <div className="module-progress-block">
-        <p className="course-title course-editable-line">
-          <span className="course-editable-line-content">{moduleTitle}</span>
-          {isEditMode && (
-            <EditPencilButton
-              label="Edit module title"
-              onClick={() =>
-                promptForText("Edit module title", stripModulePrefix(moduleTitle), (title) =>
-                  onModuleTitleChange?.(moduleIndex, title),
-                )
-              }
-            />
-          )}
-        </p>
-      </div>
+      <nav className="reader-breadcrumb" aria-label="Course breadcrumb">
+        <ol>
+          <li>
+            <p className="course-name course-editable-line">
+              {isEditMode ? <span className="course-editable-line-content">{courseTitle}</span> : <Link className="reader-course-link" href={getCoursePath({ key: courseKey, title: courseTitle })}>{courseTitle}</Link>}
+              {isEditMode && <EditPencilButton label="Edit course title" onClick={() => promptForText("Edit course title", courseTitle, (title) => onCourseTitleChange?.(title))} />}
+            </p>
+          </li>
+          <li aria-hidden="true"><ChevronRight size={13} /></li>
+          <li>
+            <p className="course-title course-editable-line">
+              <span className="course-editable-line-content">{moduleTitle}</span>
+              {isEditMode && <EditPencilButton label="Edit module title" onClick={() => promptForText("Edit module title", stripModulePrefix(moduleTitle), (title) => onModuleTitleChange?.(moduleIndex, title))} />}
+            </p>
+          </li>
+        </ol>
+      </nav>
       <p className="reader-section-label">
         {sectionLabel} {section.displayNumber}
       </p>

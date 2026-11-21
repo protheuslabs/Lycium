@@ -129,6 +129,11 @@ async function openCourse(page: Page, name = title) {
   await page.getByRole("button", { name: `Open ${name}`, exact: true }).click();
   await page.getByRole("button", { name: /^(Start|Resume|Review) course$/, exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: lessonTitle })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Course breadcrumb", exact: true })).toContainText(name);
+  await expect(page.getByRole("navigation", { name: "Course breadcrumb", exact: true })).toContainText("Module 1: Reading and evidence");
+  await expect(page.getByRole("link", { name: name, exact: true })).toHaveAttribute("href", /\/courses\/.+/);
+  await expect(page.locator(".module-header-progress").first()).toHaveText("0/3 complete");
+  await expect(page.locator(".sidebar-item.active .sidebar-section-button")).toHaveCSS("border-left-width", "0px");
   await expect(page.locator(".equation-block code")).toContainText("observed_completion");
 }
 

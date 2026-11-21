@@ -23,6 +23,8 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.module-header-progress { display: block; margin-top: .2rem; color: var(--lycium-color-text-muted); font-size: .7rem; font-weight: 400; }
+.module-header--active { background: var(--lycium-color-control-hover); }
 .module-header-caret {
   flex: 0 0 auto;
   color: var(--lycium-color-text-muted);
@@ -51,7 +53,6 @@
   min-height: 44px;
   padding: 0.7rem 0.6rem;
   border: 0;
-  border-left: 2px solid transparent;
   border-radius: 0 4px 4px 0;
   background: transparent;
   color: var(--lycium-color-text-muted);
@@ -76,7 +77,6 @@
 }
 .sidebar-item.active .sidebar-section-button {
   color: var(--lycium-color-accent);
-  border-left-color: var(--lycium-color-accent);
   background: var(--lycium-color-accent-soft);
   font-weight: 600;
 }

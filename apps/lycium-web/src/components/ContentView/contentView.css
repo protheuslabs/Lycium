@@ -16,6 +16,10 @@
   padding-bottom: 1.5rem;
   border-bottom: 1px solid var(--lycium-color-border);
 }
+.reader-breadcrumb ol { display: flex; align-items: flex-start; flex-wrap: wrap; gap: .35rem; list-style: none; margin: 0; padding: 0; }
+.reader-breadcrumb li { min-width: 0; }
+.reader-breadcrumb li[aria-hidden="true"] { display: flex; align-items: center; min-height: 1.5rem; color: var(--lycium-color-text-muted); }
+.reader-breadcrumb .course-name, .reader-breadcrumb .course-title { margin: 0; }
 .course-name {
   margin: 0 0 0.35rem;
   color: var(--lycium-color-text-muted);
@@ -33,7 +37,7 @@
   line-height: 1.6;
 }
 .reader-section-label {
-  margin: 2rem 0 0.5rem;
+  margin: 1.5rem 0 0.5rem;
   color: var(--lycium-color-accent);
   font-size: 0.8rem;
   font-weight: 600;

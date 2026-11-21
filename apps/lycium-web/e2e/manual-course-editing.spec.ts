@@ -196,7 +196,7 @@ test("manual course editing persists sidebar section and module changes", async 
   await expect(page.getByRole("button", { name: "1.2 Section title", exact: true })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Add module" }).click();
-  await expect(page.getByRole("button", { name: "Module 2: Module title", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Module 2: Module title/ })).toBeVisible();
   await expect(page.getByRole("button", { name: "2.1 Section title", exact: true })).toBeVisible();
   if (await page.getByRole("dialog", { name: "Course outline", exact: true }).isVisible()) {
     await page.getByRole("button", { name: "Close course outline", exact: true }).click();
