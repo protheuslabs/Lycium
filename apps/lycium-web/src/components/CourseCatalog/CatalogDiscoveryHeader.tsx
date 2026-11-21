@@ -29,7 +29,7 @@ export default function CatalogDiscoveryHeader({
           ariaLabel="Select catalog view level"
           disabled={disabled}
         />
-        <label className="catalog-query-field">
+        <label className="catalog-query-field site-search">
           <Search size={18} aria-hidden="true" />
           <input
             type="search"

@@ -123,7 +123,13 @@ test("home is a distinct destination with a loaded image, course discovery, and 
     (response) => /\/learning-world\.[^/]+\.webp/.test(response.url()) && response.ok(),
   );
   await page.goto("/Lycium/");
-  await expect(page.getByRole("heading", { name: "Lycium", level: 1, exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Knowledge without barriers.", level: 1, exact: true })).toBeVisible();
+  const hoverCard = page.locator(".home-course-grid .learning-course-card").first();
+  const restingBackground = await hoverCard.evaluate((card) => getComputedStyle(card).backgroundColor);
+  await hoverCard.hover();
+  await expect(hoverCard).not.toHaveCSS("background-color", restingBackground);
+  await page.locator(".learner-home-hero h1").hover();
+  expect((await page.locator("button:visible").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius))).every((radius) => radius === "8px")).toBe(true);
   await imageLoaded;
   await expect(
     page.getByRole("button", { name: `Resume ${activeTitle}`, exact: true }).first(),
@@ -162,6 +168,10 @@ test("dashboard leads with a saved lesson and filters course-scoped progress wit
   await page.goto("/Lycium/my-learning");
   await expect(page.locator(".learning-stats")).toHaveCount(0);
   await expect(page.locator(".continue-learning")).toContainText("Applying the ideas");
+  await expect(page.locator(".learning-tabs")).toHaveCSS("font-family", /SF Pro Text/);
+  await expect(page.getByRole("tab", { name: "In progress", exact: true })).toHaveCSS("box-shadow", "none");
+  await expect(page.getByRole("tab", { name: "In progress", exact: true })).toHaveCSS("font-weight", "700");
+  expect((await page.locator("button:visible").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius))).every((radius) => radius === "8px")).toBe(true);
   await expect(page.locator(".learning-course-card")).toHaveCount(1);
   await expect(page.locator(".learning-course-card")).toContainText("1 of 3 sections complete");
   await expect(page.locator(".learning-course-card")).toContainText("Applying the ideas");
@@ -169,12 +179,27 @@ test("dashboard leads with a saved lesson and filters course-scoped progress wit
   await page.getByRole("searchbox", { name: "Search your courses" }).fill("not a course");
   await expect(page.getByRole("heading", { name: "No matching courses" })).toBeVisible();
   await page.getByRole("searchbox", { name: "Search your courses" }).fill("");
-  await page.getByRole("button", { name: "Completed", exact: true }).click();
+  await page.getByRole("tab", { name: "Completed", exact: true }).click();
   await expect(
     page.getByRole("button", { name: `Review ${completedTitle}`, exact: true }),
   ).toBeVisible();
   await expect(page.locator(".learning-course-card")).toContainText("100%");
-  await page.getByRole("button", { name: "In progress", exact: true }).click();
+  await page.getByRole("tab", { name: "In progress", exact: true }).click();
+  await page.getByRole("tab", { name: "All courses", exact: true }).click();
+  await expect(page.locator(".learning-course-card")).toHaveCount(3);
+  await page.getByLabel("Filter your courses by subject").selectOption({ index: 1 });
+  const selectedSubject = await page.getByLabel("Filter your courses by subject").inputValue();
+  await expect(page.locator(".learning-course-card")).toContainText(selectedSubject);
+  await page.getByLabel("Filter your courses by subject").selectOption("all");
+  await page.getByLabel("Sort your courses").selectOption("progress");
+  await expect(page.locator(".learning-course-card").first()).toContainText("100%");
+  await page.getByRole("searchbox", { name: "Search your courses" }).fill("no results");
+  await page.getByRole("button", { name: "Clear filters", exact: true }).click();
+  await expect(page.locator(".learning-course-card")).toHaveCount(3);
+  await page.getByRole("tab", { name: "All courses", exact: true }).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.getByRole("tab", { name: "Completed", exact: true })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "In progress", exact: true }).click();
   for (const width of [320, 390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
@@ -186,6 +211,21 @@ test("dashboard leads with a saved lesson and filters course-scoped progress wit
   await page.screenshot({ path: info.outputPath("dashboard-desktop.png") });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: info.outputPath("dashboard-mobile.png") });
+});
+
+test("learning tiles open the overview and Back returns to My Learning", async ({ page }) => {
+  await page.goto("/Lycium/my-learning");
+  await page.getByRole("button", { name: `View ${activeTitle} course overview`, exact: true }).click();
+  await expect(page).toHaveURL(/\/courses\/.*-active\?from=learning$/);
+  await expect(page.getByRole("heading", { name: activeTitle, level: 1 })).toBeVisible();
+  await page.getByRole("link", { name: "Back", exact: true }).click();
+  await expect(page).toHaveURL(/\/my-learning$/);
+});
+
+test("a directly opened course overview falls back to Catalog", async ({ page }) => {
+  await page.goto("/Lycium/courses/a-new-subject-to-explore-fresh");
+  await page.getByRole("link", { name: "Back", exact: true }).click();
+  await expect(page).toHaveURL(/\/catalog$/);
 });
 
 test("resume opens the saved section and returns updated progress to the dashboard", async ({
@@ -232,10 +272,12 @@ test("dashboard has honest empty and dark-mode states", async ({ page }, info) =
   await page.getByRole("button", { name: "Close Settings", exact: true }).click();
   await expect(page).toHaveURL(/\/my-learning$/);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".top-bar")).toHaveCSS("background-color", "rgb(27, 29, 31)");
+  await expect(page.locator(".top-bar-search .site-search")).toHaveCSS("background-color", "rgb(43, 46, 48)");
   await expect(page.getByText("Progress saved on this device", { exact: true })).toBeVisible();
   await page.screenshot({ path: info.outputPath("dashboard-empty-dark.png") });
   await page.locator(".top-bar").getByRole("link", { name: "Lycium home", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Lycium", level: 1, exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Knowledge without barriers.", level: 1, exact: true })).toBeVisible();
 });
 
 test("course overview reveals curriculum without starting the course, then starts the selected lesson", async ({ page }, info) => {
@@ -243,12 +285,20 @@ test("course overview reveals curriculum without starting the course, then start
   await page.getByRole("link", { name: freshTitle, exact: true }).click();
   await expect(page.getByRole("heading", { name: freshTitle, level: 1 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Course curriculum" })).toBeVisible();
+  await expect(page.locator(".overview-masthead")).toHaveCSS("background-color", "rgb(28, 29, 31)");
+  await expect(page.locator(".overview-heading h1")).toHaveCSS("color", "rgb(244, 246, 247)");
+  await expect(page.locator(".overview-heading h1")).toHaveCSS("font-size", "32px");
+  await expect(page.locator(".overview-heading h1")).toHaveCSS("font-weight", "700");
+  await expect(page.locator(".overview-course-identity .course-subject-label")).toHaveCSS("color", "rgb(185, 194, 198)");
+  await expect(page.getByRole("button", { name: "Start course", exact: true })).toHaveCSS("border-radius", "8px");
+  expect((await page.locator("button:visible").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius))).every((radius) => radius === "8px")).toBe(true);
   expect(await page.evaluate(() => localStorage.getItem("lycium-progress-fresh"))).toBeNull();
   expect(await page.evaluate(() => localStorage.getItem("lycium-bookmark-fresh"))).toBeNull();
   await page.locator(".course-artwork img").evaluate((image: HTMLImageElement) => image.decode());
   for (const width of [320, 390, 768, 1280, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.locator(".learner-page-shell").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await expect(page.locator(".overview-heading")).toHaveCSS("padding-left", width <= 700 ? "16px" : "24px");
   }
   await page.screenshot({ path: info.outputPath("course-overview-desktop.png") });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -434,10 +484,26 @@ test("site search opens shareable catalog results and supports a second search",
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/Lycium/my-learning");
   const header = page.locator(".top-bar");
+  await expect(page.locator(".top-bar-inner")).toHaveCSS("padding-left", "16px");
+  await expect(page.locator(".my-learning")).toHaveCSS("padding-left", "24px");
+  await expect(header).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(header.locator(".site-search")).toHaveCSS("border-radius", "999px");
+  await expect(page.locator(".top-bar-search")).toHaveCSS("max-width", "none");
   await header.getByRole("searchbox", { name: "Search all courses", exact: true }).fill(completedTitle);
   await header.getByRole("button", { name: "Submit course search", exact: true }).click();
   await expect(page).toHaveURL(/\/catalog\?q=/);
   await expect(page.getByRole("searchbox", { name: "Search courses", exact: true })).toHaveValue(completedTitle);
+  await expect(page.locator(".catalog-query-field")).toHaveCSS("border-radius", "999px");
+  await expect(page.locator(".catalog-query-field")).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(page.locator(".catalog-query-field input")).toHaveCSS("height", "44px");
+  await expect(page.locator(".catalog-create-button")).toHaveCSS("border-radius", "8px");
+  expect((await page.locator("button:visible").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius))).every((radius) => radius === "8px")).toBe(true);
+  await page.locator(".catalog-create-button").click();
+  const createDialog = page.getByRole("dialog", { name: "Create Course", exact: true });
+  await expect(createDialog.getByRole("button", { name: "Add another link", exact: true })).toHaveCSS("border-radius", "8px");
+  const dialogRadii = await createDialog.locator("button").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius));
+  expect(dialogRadii.every((radius) => radius === "8px")).toBe(true);
+  await page.getByRole("button", { name: "Close Create Course", exact: true }).click();
   await expect(page.locator(".course-tile")).toHaveCount(1);
   await expect(page.locator(".course-tile")).toContainText(completedTitle);
   await page.reload();
@@ -454,7 +520,14 @@ test("login is a quiet text action and settings uses the utility disclosure", as
   const login = page.getByRole("button", { name: "Log in", exact: true });
   await expect(login.locator("svg")).toHaveCount(0);
   await expect(login).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(login).toHaveCSS("border-top-width", "0px");
+  await expect(login).toHaveCSS("border-top-width", "1px");
+  await expect(login).toHaveCSS("border-radius", "8px");
+  await expect(login).toHaveCSS("font-family", /SF Pro Text/);
+  await expect(login).toHaveCSS("font-weight", "700");
+  await login.hover();
+  await expect(login).toHaveCSS("border-top-width", "1px");
+  await expect(login).toHaveCSS("border-top-color", "rgb(23, 23, 23)");
+  await expect(login).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   const trigger = page.getByRole("button", { name: "More options", exact: true });
   const options = page.getByRole("navigation", { name: "Site options", exact: true });
   await expect(options).not.toBeVisible();
@@ -466,7 +539,7 @@ test("login is a quiet text action and settings uses the utility disclosure", as
   await expect(trigger).toBeFocused();
   await trigger.click();
   await page.screenshot({ path: info.outputPath("login-and-settings.png") });
-  await page.locator(".learner-hero-description").click();
+  await page.locator(".learner-home-hero h1").click();
   await expect(options).not.toBeVisible();
   await openSiteSettings(page);
   await expect(options).not.toBeVisible();
@@ -481,7 +554,8 @@ test("mobile navigation and search dialogs dismiss and restore focus", async ({ 
   const trigger = page.getByRole("button", { name: "Open navigation", exact: true });
   await trigger.click();
   const menu = page.getByRole("dialog", { name: "Navigation", exact: true });
-  await expect(menu.getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(menu.getByRole("link", { name: "Home", exact: true })).toHaveCount(0);
+  await expect(page.locator(".top-bar-title")).toHaveAttribute("aria-current", "page");
   await page.keyboard.press("Escape");
   await expect(menu).not.toBeVisible();
   await expect(trigger).toBeFocused();
@@ -519,6 +593,12 @@ test("site chrome reflows and the footer exposes real destinations", async ({ pa
       await page.setViewportSize({ width, height: 900 });
       expect(await page.locator(".top-bar").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
       expect(await footer.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+      await expect(page.locator(".top-bar-inner")).toHaveCSS("padding-left", "16px");
+      await expect(page.locator(".catalog-footer-inner")).toHaveCSS("padding-left", "16px");
+      await expect(page.locator(".top-bar-inner")).toHaveCSS("max-width", "none");
+      await expect(page.locator(".catalog-footer-inner")).toHaveCSS("max-width", "none");
+      await expect(page.locator(".learner-hero-content")).toHaveCSS("max-width", "1344px");
+      if (width > 700) await expect(page.locator(".learner-hero-content")).toHaveCSS("padding-left", "24px");
       const pieces = page.locator(".top-bar-title, .top-bar-navigation, .top-bar-search, .top-bar-actions");
       const boxes = await pieces.evaluateAll((elements) => elements.filter((element) => getComputedStyle(element).display !== "none").map((element) => {
         const box = element.getBoundingClientRect(); return { left: box.left, right: box.right };

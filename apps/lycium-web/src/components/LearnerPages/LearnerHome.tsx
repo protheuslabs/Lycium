@@ -26,8 +26,8 @@ export default function LearnerHome({ library, onOpenCourse }: LearnerHomeProps)
         aria-labelledby="home-title"
       >
         <div className="learner-hero-content">
-          <h1 id="home-title">Lycium</h1>
-          <p className="learner-hero-description">A world of knowledge.<br />A place to make it yours.</p>
+          <h1 id="home-title">Knowledge without barriers.</h1>
+          <p className="learner-hero-intro">Follow structured courses, test your understanding, and build knowledge that lasts.</p>
           <div className="learner-hero-actions">
             <Link href={COURSE_CATALOG_PATH} className="learner-primary-link">
               Explore courses

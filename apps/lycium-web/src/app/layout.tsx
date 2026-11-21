@@ -19,6 +19,7 @@ import "../components/Legal/LegalPage.css";
 import "../components/ContentView/readerAssessments.css";
 import "../components/LearnerPages/learnerPages.css";
 import "../components/CourseCard/courseCard.css";
+import "../styles/mainPageControls.css";
 
 export const metadata: Metadata = {
   title: "Lycium",

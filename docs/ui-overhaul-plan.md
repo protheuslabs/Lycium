@@ -2,10 +2,13 @@
 
 Research date: 2026-11-18. Latest visual checkpoint: 2026-11-20. Status: image-led discovery, lesson-focused My Learning, a distinct course overview, and shared reader/program styling are implemented; hosted learning and creator-workspace work remain open. See the [hands-on visual audit](ui-visual-audit-2026-11-20.md) and [artwork direction](course-artwork-style.md).
 
+The institutional black/emerald palette and typography/application boundaries are recorded in the [visual identity contract](visual-identity.md). Future Tools, Presentation Studio, textbook, library, and tutoring surfaces are explicitly deferred until their real capabilities exist.
+
 ## Contents
 
 Focused site-by-site studies: [Coursera discovery and course fit](ui-studies/coursera.md).
 Second study: [Khan Academy curriculum and assessment clarity](ui-studies/khan-academy.md).
+Third study: [Udemy personal course library and discovery](ui-studies/udemy.md).
 Shared chrome: [site navigation and footer](ui-studies/site-navigation.md).
 
 1. [Direction and research limits](#1-direction)

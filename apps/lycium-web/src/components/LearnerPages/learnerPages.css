@@ -13,11 +13,12 @@
 .learner-page-inner { width: 100%; max-width: var(--lycium-content-max); padding: 3rem var(--lycium-page-gutter); margin-inline: auto; }
 .learner-home-hero { position: relative; min-height: 27rem; height: min(31rem, 62dvh); display: flex; align-items: center; background-image: var(--home-artwork); background-size: cover; background-position: center; color: #161b20; }
 .learner-hero-content { width: 100%; max-width: var(--lycium-content-max); padding: 2.5rem var(--lycium-page-gutter); margin-inline: auto; }
-.learner-home-hero h1 { margin: 0; font-size: 4rem; font-weight: 720; line-height: 1.1; color: #161b20; }
-.learner-hero-description { margin: 1rem 0 1.75rem; font-size: 1.6rem; line-height: 1.4; font-weight: 500; color: #30383c; }
+.learner-home-hero h1 { max-width: 40rem; margin: 0; font-size: 3.5rem; font-weight: 720; line-height: 1.1; color: #161b20; overflow-wrap: anywhere; }
+.learner-hero-description { margin: 1rem 0 0; font-size: 1.6rem; line-height: 1.4; font-weight: 600; color: #30383c; }
+.learner-hero-intro { max-width: 32rem; margin: .65rem 0 1.75rem; font-size: 1rem; line-height: 1.65; color: #30383c; }
 .learner-hero-actions { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; }
 .learner-primary-link, .learner-hero-secondary, .learner-text-link, .home-course-controls a { display: inline-flex; align-items: center; justify-content: center; gap: .65rem; min-height: 44px; font-size: .875rem; font-weight: 600; text-decoration: none; }
-.learner-primary-link { padding: .75rem 1rem; border: 1px solid transparent; border-radius: 6px; color: white; background: var(--lycium-brand-primary); font-family: inherit; cursor: pointer; }
+.learner-primary-link { padding: .75rem 1rem; border: 1px solid transparent; border-radius: var(--lycium-radius-control); color: white; background: var(--lycium-brand-primary); font-family: inherit; cursor: pointer; }
 .learner-primary-link:hover { color: white; background: var(--lycium-brand-primary-hover); }
 .learner-hero-secondary, .learner-hero-secondary:hover { color: #20292d; }
 .learner-text-link, .home-course-controls a { color: var(--lycium-color-accent); }
@@ -38,13 +39,14 @@
 .continue-lesson svg { flex-shrink: 0; }
 .continue-learning-bottom { display: flex; align-items: center; gap: 2rem; }
 .continue-progress.learner-progress { flex: 1; min-width: 0; margin: 0; }
-@media (max-width: 1100px) { .learner-page-inner, .learner-hero-content { padding-inline: 2rem; } }
+@media (max-width: 1100px) { .learner-page-inner, .learner-hero-content { padding-inline: var(--lycium-page-gutter); } }
 @media (max-width: 700px) {
   .learner-page-inner { padding: 1.75rem 1rem; }
   .learner-home-hero { height: 36rem; min-height: 0; max-height: 70dvh; align-items: flex-start; background-image: var(--home-mobile-artwork); background-position: center bottom; }
   .learner-hero-content { padding: 1.75rem 1rem; margin: 0; }
-  .learner-home-hero h1 { font-size: 2.75rem; }
-  .learner-hero-description { font-size: 1.15rem; margin: .75rem 0 1.25rem; }
+  .learner-home-hero h1 { font-size: 2.5rem; }
+  .learner-hero-description { font-size: 1.25rem; margin: .75rem 0 0; }
+  .learner-hero-intro { margin: .5rem 0 1.25rem; font-size: .95rem; }
   .learner-hero-actions { gap: 1rem; }
   .learner-section-heading { align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
   .learner-section-heading h2, .home-continue h2, .dashboard-continue h2 { font-size: 1.25rem; }

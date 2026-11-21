@@ -1,15 +1,16 @@
 .course-overview { flex: 1; outline: none; }
-.overview-masthead { background: var(--lycium-color-surface); }
+.overview-masthead { background: #1c1d1f; color: #f4f6f7; }
 .overview-heading { padding-block: 1.5rem 0; }
-.overview-back { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; color: var(--lycium-color-text-muted); font-size: .875rem; text-decoration: none; margin-bottom: 1.5rem; }
+.overview-back { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; color: #b9c2c6; font-size: .875rem; text-decoration: none; margin-bottom: 1.5rem; }
 .overview-course-identity { display: flex; align-items: center; gap: .85rem; }
+.overview-course-identity .course-subject-label { color: #b9c2c6; }
 .overview-course-identity > .course-artwork { width: 64px; height: 48px; flex: 0 0 auto; border-radius: 4px; }
-.overview-heading h1 { max-width: 58rem; margin: 1rem 0; font-size: 2.5rem; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
-.overview-description { max-width: 48rem; color: var(--lycium-color-text-muted); font-size: 1rem; line-height: 1.75; margin: 0 0 1.5rem; }
+.overview-heading h1 { max-width: 58rem; margin: 1rem 0; font-size: 2rem; line-height: 1.2; font-weight: 700; overflow-wrap: anywhere; }
+.overview-description { max-width: 48rem; color: #d0d6d9; font-size: 1rem; line-height: 1.75; margin: 0 0 1.5rem; }
 .overview-heading > button { margin-bottom: 2.5rem; }
-.overview-facts { display: flex; flex-wrap: wrap; margin: 0; border-top: 1px solid var(--lycium-color-border); }
+.overview-facts { display: flex; flex-wrap: wrap; margin: 0; border-top: 1px solid #3a3d40; }
 .overview-facts > div { flex: 1 1 11rem; padding: 1.25rem 1.5rem 1.25rem 0; }
-.overview-facts dt { display: flex; align-items: center; gap: .5rem; color: var(--lycium-color-text-muted); font-size: .75rem; line-height: 1.5; }
+.overview-facts dt { display: flex; align-items: center; gap: .5rem; color: #b9c2c6; font-size: .75rem; line-height: 1.5; }
 .overview-facts dd { margin: .5rem 0 0; font-size: .875rem; font-weight: 600; line-height: 1.6; overflow-wrap: anywhere; }
 .overview-jump-nav { position: sticky; top: 0; z-index: 3; background: var(--lycium-color-canvas); border-bottom: 1px solid var(--lycium-color-border); }
 .overview-jump-nav > div { display: flex; gap: 2rem; max-width: var(--lycium-content-max); margin-inline: auto; padding-inline: var(--lycium-page-gutter); overflow-x: auto; }

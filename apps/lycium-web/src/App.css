@@ -7,12 +7,7 @@
   overflow: hidden;
   color: var(--lycium-color-text);
   background: var(--lycium-color-canvas);
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--lycium-font-body);
   letter-spacing: 0;
 }
 

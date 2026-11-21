@@ -47,6 +47,20 @@ export function buildLearningLibrary(
 export type LearningCourse = ReturnType<typeof buildLearningLibrary>["items"][number];
 export type LearningLibrary = ReturnType<typeof buildLearningLibrary>;
 
+export type LearningView = "active" | "completed" | "all";
+export type LearningSort = "title" | "progress";
+
+export function selectLearningCourses(library: LearningLibrary, view: LearningView, query: string, subject: string, sort: LearningSort) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const source = view === "active" ? library.active : view === "completed" ? library.completed : library.items;
+  return source.filter((item) => {
+    const searchableText = `${item.course.title} ${item.course.data.shortDescription ?? ""} ${item.department}`.toLocaleLowerCase();
+    return (!normalizedQuery || searchableText.includes(normalizedQuery)) && (subject === "all" || item.department === subject);
+  }).sort((a, b) => sort === "progress"
+    ? b.progress.percentage - a.progress.percentage || a.course.title.localeCompare(b.course.title)
+    : a.course.title.localeCompare(b.course.title));
+}
+
 export function selectDiscoveryCourses(items: LearningCourse[], category: string, limit = 4) {
   const candidates = items
     .filter(({ course }) => category === "all" || course.data.category === category)

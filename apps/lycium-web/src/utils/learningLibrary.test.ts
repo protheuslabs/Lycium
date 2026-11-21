@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CourseEntry } from "../courseTypes";
-import { buildLearningLibrary, selectDiscoveryCourses } from "./learningLibrary";
+import { buildLearningLibrary, selectDiscoveryCourses, selectLearningCourses } from "./learningLibrary";
 
 const course: CourseEntry = {
   key: "first",
@@ -106,5 +106,22 @@ describe("learning library", () => {
     const archived = { ...course, key: "archived", status: "archived" as const };
     const failed = { ...course, key: "failed", status: "failed" as const };
     expect(buildLearningLibrary([empty, archived, failed], {}).items).toEqual([]);
+  });
+
+  it("filters all learning by real subject and searchable description", () => {
+    const second = { ...course, key: "second", title: "Macroeconomics", data: { ...course.data, title: "Macroeconomics", shortDescription: "Supply and demand", category: "business-management", department: "economics" } };
+    const library = buildLearningLibrary([course, second], {});
+    expect(selectLearningCourses(library, "all", "demand", "all", "title").map((item) => item.course.key)).toEqual(["second"]);
+    expect(selectLearningCourses(library, "all", "", "Economics", "title").map((item) => item.course.key)).toEqual(["second"]);
+    expect(selectLearningCourses(library, "active", "", "all", "title")).toEqual([]);
+  });
+
+  it("sorts progress without inventing activity dates", () => {
+    const second = { ...course, key: "second", title: "Second course" };
+    const library = buildLearningLibrary([course, second], {
+      second: { bookmark: null, progress: { completedSectionIds: ["one"], sectionStatuses: {} } },
+    });
+    expect(selectLearningCourses(library, "all", "", "all", "progress").map((item) => item.course.key)).toEqual(["second", "first"]);
+    expect(selectLearningCourses(library, "all", "", "all", "title").map((item) => item.course.key)).toEqual(["first", "second"]);
   });
 });

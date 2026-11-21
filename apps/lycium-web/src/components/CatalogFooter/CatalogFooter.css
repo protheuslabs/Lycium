@@ -1,7 +1,7 @@
 .catalog-footer { width: 100%; flex: 0 0 auto; border-top: 1px solid #303436; background: #0a0c0d; color: #f0f3f4; }
-.catalog-footer-inner { width: 100%; max-width: var(--lycium-content-max); margin-inline: auto; padding: 3rem var(--lycium-page-gutter) 1.25rem; }
+.catalog-footer-inner { width: 100%; max-width: none; margin-inline: 0; padding: 3rem var(--lycium-footer-gutter) 1.25rem; }
 .catalog-footer-main { display: grid; grid-template-columns: 1.5fr repeat(3, minmax(0, 1fr)); gap: 2rem; padding-bottom: 2.5rem; }
-.catalog-footer-brand { display: inline-flex; align-items: center; min-height: 44px; color: #fff; font-family: "Arial Black", Arial, sans-serif; font-size: 1.5rem; font-weight: 850; line-height: 1; text-decoration: none; }
+.catalog-footer-brand { display: inline-flex; align-items: center; min-height: 44px; color: #fff; font-family: var(--lycium-font-brand); font-size: 1.5rem; font-weight: 850; line-height: 1; text-decoration: none; }
 .catalog-footer-brand:hover { color: #fff; text-decoration: none; }
 .catalog-footer-identity p { margin: .75rem 0 0; font-size: .875rem; line-height: 1.6; color: #aeb8bd; }
 .catalog-footer h2 { margin: .75rem 0 1rem; font-size: .875rem; line-height: 1.5; font-weight: 650; color: #fff; }

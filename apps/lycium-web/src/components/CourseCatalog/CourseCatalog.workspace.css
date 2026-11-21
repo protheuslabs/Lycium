@@ -47,9 +47,9 @@
   gap: 0.65rem;
   min-width: 0;
   border: 1px solid var(--lycium-color-border);
-  border-radius: 6px;
+  border-radius: var(--lycium-radius-search);
   padding-inline: 0.85rem;
-  background: var(--lycium-color-surface);
+  background: var(--lycium-color-surface-raised);
   color: var(--lycium-color-text-muted);
 }
 .catalog-query-field svg {
@@ -79,7 +79,7 @@
 .app-root .catalog-shell .catalog-create-button {
   min-width: 0;
   min-height: 44px;
-  border-radius: 6px;
+  border-radius: var(--lycium-radius-search);
   border-color: var(--lycium-color-border);
   padding-inline: 1rem;
   background: var(--lycium-brand-primary);

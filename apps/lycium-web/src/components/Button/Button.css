@@ -1,6 +1,6 @@
 .lycium-button {
   border: 0;
-  border-radius: var(--lycium-radius-control);
+  border-radius: var(--lycium-radius-button);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -43,7 +43,7 @@
 }
 
 .lycium-button-complete {
-  border-radius: var(--lycium-radius-control);
+  border-radius: var(--lycium-radius-button);
 }
 .lycium-button-icon { background: transparent; color: var(--lycium-color-text-muted); }
 .lycium-button-icon:hover:not(:disabled) { background: var(--lycium-color-surface); color: var(--lycium-color-text); }

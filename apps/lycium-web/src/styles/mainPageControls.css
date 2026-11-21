@@ -1,0 +1,11 @@
+/* Udemy's login/action controls use an 8px radius. */
+:root .app-root button,
+:root .lycium-modal-backdrop button,
+:root .app-root :is(.top-bar, .catalog-shell, .learner-home, .my-learning, .course-overview) button,
+.lycium-modal .create-course-form button {
+  border-radius: var(--lycium-radius-button);
+}
+
+.learning-select {
+  border-radius: var(--lycium-radius-control);
+}

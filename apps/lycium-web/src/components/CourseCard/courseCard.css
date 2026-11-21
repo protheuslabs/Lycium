@@ -8,16 +8,16 @@
   border-radius: var(--lycium-radius-card);
   background: var(--lycium-color-surface-raised);
   color: var(--lycium-color-text);
-  transition: border-color 160ms ease;
+  transition: border-color 160ms ease, background-color 160ms ease;
 }
-.course-tile:hover, .course-tile:focus-within { border-color: var(--lycium-color-text-muted); }
+.course-tile:hover, .course-tile:focus-within { border-color: var(--lycium-color-text-muted); background: color-mix(in srgb, var(--lycium-color-text) 4%, var(--lycium-color-surface-raised)); }
 .course-tile.course-card--selected { border-color: var(--lycium-color-accent); box-shadow: inset 0 0 0 1px var(--lycium-color-accent); }
 .course-tile > .course-artwork { flex: 0 0 auto; width: 100%; aspect-ratio: 2 / 1; }
 .course-tile-body { display: flex; flex: 1; flex-direction: column; min-width: 0; padding: var(--lycium-card-padding); }
 .course-tile-subject { display: flex; align-items: center; gap: .5rem; margin: 0 0 .75rem; font-size: .75rem; font-weight: 600; line-height: 1.5; color: var(--lycium-color-text-muted); }
 .course-tile-subject svg { flex: 0 0 auto; color: var(--lycium-color-accent); }
 .course-tile-subject span { overflow-wrap: anywhere; }
-.course-tile-title { margin: 0 0 .75rem; font-size: var(--lycium-card-title-size); font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.course-tile-title { margin: 0 0 .75rem; font-size: var(--lycium-card-title-size); font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
 .course-tile-title a { color: inherit; text-decoration: none; }
 .course-tile-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .course-tile-description { margin: 0 0 1rem; color: var(--lycium-color-text-muted); font-size: var(--lycium-card-body-size); line-height: 1.65; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }

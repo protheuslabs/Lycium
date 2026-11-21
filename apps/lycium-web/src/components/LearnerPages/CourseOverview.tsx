@@ -1,8 +1,9 @@
 import { ArrowLeft, ArrowRight, Check, ClipboardCheck, Clock, Layers } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { CourseEntry, CourseSection } from "../../courseTypes";
 import { useLearningLibrary } from "../../hooks/useLearningLibrary";
-import { COURSE_CATALOG_PATH } from "../../utils/courseRouting";
+import { COURSE_CATALOG_PATH, LYCIUM_ROUTE_ROOT, MY_LEARNING_PATH } from "../../utils/courseRouting";
 import { courseAssessmentCounts, courseDurationLabel, courseLearningOutcomes, courseLevelLabel } from "../../utils/coursePresentation";
 import { getCourseTagLabels } from "@lycium/contracts";
 import CourseArtwork from "./CourseArtwork";
@@ -15,6 +16,8 @@ export default function CourseOverview({ course, onOpenCourse, onOpenSection }: 
   onOpenCourse: (course: CourseEntry) => void;
   onOpenSection: (course: CourseEntry, section: CourseSection) => void;
 }) {
+  const searchParams = useSearchParams();
+  const returnPath = searchParams.get("from") === "learning" ? MY_LEARNING_PATH : searchParams.get("from") === "home" ? LYCIUM_ROUTE_ROOT : COURSE_CATALOG_PATH;
   const library = useLearningLibrary([course]);
   const item = library.items[0];
   const sections = course.data.modules.flatMap((module) => module.sections);
@@ -35,7 +38,7 @@ export default function CourseOverview({ course, onOpenCourse, onOpenSection }: 
       <main id="main-content" tabIndex={-1} className="course-overview">
         <header id="overview" className="overview-masthead">
           <div className="overview-heading learner-page-inner">
-            <Link href={COURSE_CATALOG_PATH} className="overview-back"><ArrowLeft size={16} aria-hidden="true" />Catalog</Link>
+            <Link href={returnPath ?? COURSE_CATALOG_PATH} className="overview-back"><ArrowLeft size={16} aria-hidden="true" />Back</Link>
             <div className="overview-course-identity">
               <CourseArtwork course={course} />
               <span className="course-subject-label">{item?.department ?? "Course"}</span>

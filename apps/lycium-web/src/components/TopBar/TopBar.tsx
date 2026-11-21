@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type MouseEvent } from "react";
-import { House, Library, Menu, NotebookTabs, Search } from "lucide-react";
+import { Library, Menu, NotebookTabs, Search } from "lucide-react";
 import Link from "next/link";
 import LoginDialog from "../Account/LoginDialog";
 import Modal from "../Modal/Modal";
@@ -21,7 +21,6 @@ export default function TopBar({ onOpenCatalog, onOpenSettings, currentPage }: T
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const navigation = [
-    { label: "Home", ariaLabel: "Home", href: LYCIUM_ROUTE_ROOT, active: currentPage === "landing", icon: House },
     { label: "Catalog", ariaLabel: "Course catalog", href: COURSE_CATALOG_PATH, active: currentPage === "home", icon: Library },
     { label: "My Learning", ariaLabel: "My Learning", href: MY_LEARNING_PATH, active: currentPage === "learning", icon: NotebookTabs },
   ];
@@ -40,7 +39,7 @@ export default function TopBar({ onOpenCatalog, onOpenSettings, currentPage }: T
           <button className="top-bar-tool top-bar-menu" type="button" aria-label="Open navigation" aria-expanded={isMenuOpen} aria-haspopup="dialog" onClick={() => setIsMenuOpen(true)} title="Navigation">
             <Menu size={22} aria-hidden="true" />
           </button>
-          <Link className="top-bar-title" href={LYCIUM_ROUTE_ROOT} aria-label="Lycium home">
+          <Link className="top-bar-title" href={LYCIUM_ROUTE_ROOT} aria-label="Lycium home" aria-current={currentPage === "landing" ? "page" : undefined}>
             <span className="top-bar-title-full" aria-hidden="true">LYCIUM</span>
             <span className="top-bar-title-compact" aria-hidden="true">L</span>
           </Link>

@@ -62,7 +62,7 @@
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: var(--lycium-radius-control);
+  border-radius: var(--lycium-radius-button);
   padding: 0;
   color: var(--lycium-color-text);
   background: var(--lycium-color-surface);
