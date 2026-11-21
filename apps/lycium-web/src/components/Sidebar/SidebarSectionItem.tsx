@@ -1,10 +1,12 @@
 import { memo, useCallback, type DragEvent } from "react";
 import { SidebarStatusBadge, type DisplayStatus } from "./SidebarPrimitives";
 import { DeleteBlockButton, promptForDeleteConfirmation } from "../ContentView/CourseEditControls";
+import { sectionLearningType } from "../../utils/coursePresentation";
+import { estimateSectionTime, formatCompactTimeEstimate } from "../../utils/curriculumTime";
+import type { CourseSection } from "../../courseTypes";
 
-export type SidebarSection = {
-  id: string;
-  title: string;
+export type SidebarSection = Pick<CourseSection, "id" | "title" | "pageType" | "sectionType" | "estimatedMinutes" | "estimatedHours"> & {
+  content: Array<{ type: string }>;
   moduleIndex: number;
   moduleTitle: string;
   displayNumber: string;
@@ -44,6 +46,8 @@ export default memo(function SidebarSectionItem({
   ) => void;
 }) {
   const isLocked = status === "locked";
+  const learningType = sectionLearningType(section);
+  const timeLabel = formatCompactTimeEstimate(estimateSectionTime(section));
   const targetSectionIndex = Number(section.displayNumber.split(".")[1] ?? 1) - 1;
   const handleClick = useCallback(() => {
     if (!isLocked) {
@@ -127,7 +131,7 @@ export default memo(function SidebarSectionItem({
         aria-current={isActive ? "page" : undefined}
       >
         <span className="sidebar-item-number">{section.displayNumber}</span>
-        <span className="sidebar-item-label">{isCollapsed ? "" : section.title}</span>
+        <span className="sidebar-item-label">{isCollapsed ? "" : <><span>{section.title}</span><span className="sidebar-item-meta">{learningType}{timeLabel ? ` · ${timeLabel}` : ""}</span></>}</span>
         {!isEditMode && <SidebarStatusBadge status={status} />}
       </button>
       {isEditMode ? (

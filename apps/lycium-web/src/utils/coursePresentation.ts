@@ -19,7 +19,7 @@ export function courseDurationLabel(course: CourseEntry): string | null {
   return `~${hours} ${hours === 1 ? "hour" : "hours"}`;
 }
 
-export function sectionLearningType(section: CourseSection): "Quiz" | "Project" | "Lesson" | "Assessment" | "Summary" {
+export function sectionLearningType(section: Pick<CourseSection, "pageType" | "sectionType"> & { content: Array<{ type: string }> }): "Quiz" | "Project" | "Lesson" | "Assessment" | "Summary" {
   if (section.content.some((block) => block.type === "quiz")) return "Quiz";
   if (section.content.some((block) => block.type === "project")) return "Project";
   if (section.sectionType === "assessment" || section.pageType === "apply") return "Assessment";

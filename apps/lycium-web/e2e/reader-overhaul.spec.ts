@@ -38,6 +38,7 @@ const course = {
           {
             id: "lesson-1",
             title: lessonTitle,
+            estimatedMinutes: 12,
             pageType: "learn",
             sectionType: "lesson",
             sourceIds: ["used"],
@@ -77,6 +78,7 @@ const course = {
           {
             id: "quiz-1",
             title: "Knowledge check",
+            estimatedMinutes: 8,
             pageType: "apply",
             sectionType: "assessment",
             sourceIds: ["used"],
@@ -201,6 +203,7 @@ test("mobile outline traps focus, closes on Escape/outside click, and navigates 
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await openCourse(page);
+  await expect(page.locator(".sidebar-item").filter({ hasText: lessonTitle })).toContainText("Lesson · ~12 min");
   const trigger = page.getByRole("button", { name: "Course outline", exact: true });
   const dialog = page.getByRole("dialog", { name: "Course outline", exact: true });
   await trigger.click();
@@ -260,6 +263,7 @@ test("reader citations remain section-scoped and editing markers stay out of rea
     "An unrelated course source",
   );
   await selectSection(page, /1\.3 Knowledge check/);
+  await expect(page.locator(".sidebar-item.active")).toContainText("Quiz · ~8 min");
   await expect(page.locator(".source-reference-list")).toHaveCount(0);
   await expect(page.locator(".course-source-notice")).toHaveCount(0);
 });

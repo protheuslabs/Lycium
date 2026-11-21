@@ -21,10 +21,7 @@ type EstimableCourseData = CourseEntry["data"] & {
   };
 };
 
-type EstimableSection = CourseSection & {
-  estimatedMinutes?: number;
-  estimatedHours?: number;
-};
+type EstimableSection = Pick<CourseSection, "estimatedMinutes" | "estimatedHours">;
 
 function finitePositiveNumber(value: unknown): number | null {
   if (typeof value !== "number" && typeof value !== "string") return null;
@@ -180,6 +177,13 @@ export function formatTimeEstimate(estimate: TimeEstimate): string {
   const hours = estimate.minutes / 60;
   const roundedHours = hours >= 10 ? Math.round(hours) : Math.round(hours * 10) / 10;
   return `~${roundedHours} hours`;
+}
+
+export function formatCompactTimeEstimate(estimate: TimeEstimate): string | null {
+  if (estimate.minutes === null) return null;
+  if (estimate.minutes < 60) return `~${Math.round(estimate.minutes)} min`;
+  const hours = Math.round(estimate.minutes / 60 * 10) / 10;
+  return `~${hours} ${hours === 1 ? "hour" : "hours"}`;
 }
 
 export function timeEstimateSourceLabel(estimate: TimeEstimate): string {

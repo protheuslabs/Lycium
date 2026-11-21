@@ -71,6 +71,8 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.sidebar-item-label > span:first-child { display: block; }
+.sidebar-item-meta { display: block; margin-top: .2rem; color: var(--lycium-color-text-muted); font-size: .68rem; font-weight: 400; line-height: 1.4; }
 .sidebar-section-button:hover:not(:disabled) {
   background: var(--lycium-color-control-hover);
   color: var(--lycium-color-text);
