@@ -12,9 +12,11 @@ function scrollToSection(nav: HTMLElement | null, id: string) {
     pane.scrollTo({ top: Math.max(0, top), behavior: "auto" });
 }
 
-export default function OverviewNavigation({ hasOutcomes, hasRequirements }: {
+export default function OverviewNavigation({ hasOutcomes, hasRequirements, hasProgress, hasMaterials }: {
   hasOutcomes: boolean;
   hasRequirements: boolean;
+  hasProgress: boolean;
+  hasMaterials: boolean;
 }) {
   const navigation = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -25,7 +27,9 @@ export default function OverviewNavigation({ hasOutcomes, hasRequirements }: {
   }, []);
   const links = [
     { id: "overview", label: "Overview" },
+    ...(hasProgress ? [{ id: "progress", label: "Progress" }] : []),
     ...(hasOutcomes ? [{ id: "learning-outcomes", label: "What you'll learn" }] : []),
+    ...(hasMaterials ? [{ id: "materials", label: "Materials" }] : []),
     { id: "curriculum", label: "Curriculum" },
     ...(hasRequirements ? [{ id: "requirements", label: "Requirements" }] : []),
   ];

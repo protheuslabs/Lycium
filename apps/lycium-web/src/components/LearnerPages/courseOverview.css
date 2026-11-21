@@ -19,11 +19,25 @@
 .overview-content { padding-block: 2.5rem 4rem; }
 .overview-content > section { max-width: 64rem; margin-bottom: 2.5rem; scroll-margin-top: 5rem; }
 .overview-content h2 { font-size: 1.5rem; font-weight: 650; margin: 0 0 1.5rem; line-height: 1.4; }
+.overview-progress { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 20rem) auto; align-items: center; gap: 1.5rem; padding-block: 1.5rem; border-block: 1px solid var(--lycium-color-border); }
+.overview-progress .overview-progress-copy h2 { margin: 0; font-size: 1.15rem; }
+.overview-progress-copy p { margin: .4rem 0 0; color: var(--lycium-color-text-muted); font-size: .85rem; line-height: 1.6; overflow-wrap: anywhere; }
+.overview-progress .learner-progress { margin: 0; }
+.overview-progress .learner-primary-link { white-space: nowrap; }
 .overview-outcomes ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem 2rem; list-style: none; margin: 0; padding: 0; }
 .overview-outcomes li { display: flex; gap: .75rem; font-size: .95rem; line-height: 1.7; }
 .overview-outcomes li span { min-width: 0; overflow-wrap: anywhere; }
 .overview-outcomes svg { flex: 0 0 auto; margin-top: .25rem; color: var(--lycium-color-accent); }
 .overview-topics ul { display: flex; flex-wrap: wrap; gap: .65rem 1.5rem; list-style: none; padding: 0; margin: 0; font-size: .875rem; color: var(--lycium-color-text-muted); }
+.overview-materials .overview-section-heading > span { color: var(--lycium-color-text-muted); font-size: .8rem; }
+.overview-materials ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--lycium-color-border); }
+.overview-materials li { display: flex; align-items: flex-start; gap: .75rem; padding: 1rem 0; border-bottom: 1px solid var(--lycium-color-border); }
+.overview-materials li > svg { flex: 0 0 auto; margin-top: .2rem; color: var(--lycium-color-accent); }
+.overview-materials li > div { min-width: 0; }
+.overview-materials a { display: inline-flex; align-items: center; gap: .35rem; color: var(--lycium-color-text); font-size: .9rem; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.overview-materials a:hover { color: var(--lycium-color-accent); }
+.overview-materials strong { font-size: .9rem; line-height: 1.5; overflow-wrap: anywhere; }
+.overview-materials p { margin: .25rem 0 0; color: var(--lycium-color-text-muted); font-size: .75rem; line-height: 1.5; overflow-wrap: anywhere; }
 .overview-prerequisites li { font-size: .95rem; line-height: 1.8; color: var(--lycium-color-text-muted); }
 .overview-section-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.25rem; }
 .overview-section-heading h2 { margin: 0; }
@@ -60,6 +74,8 @@
   .overview-facts > div { flex-basis: 45%; padding-right: .75rem; }
   .overview-jump-nav > div { gap: 1.5rem; }
   .overview-outcomes ul { grid-template-columns: minmax(0, 1fr); }
+  .overview-progress { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .overview-progress .learner-primary-link { justify-content: space-between; white-space: normal; }
   .overview-module li button { gap: .65rem; padding-inline: .25rem; }
   .overview-module li small { display: none; }
   .overview-module summary { display: grid; grid-template-columns: 36px minmax(0, 1fr) 18px; gap: .65rem .75rem; }

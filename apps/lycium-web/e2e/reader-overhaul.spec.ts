@@ -144,6 +144,23 @@ async function selectSection(page: Page, name: RegExp) {
   await page.getByRole("button", { name }).click();
 }
 
+test("course overview exposes attached materials and resource types before starting", async ({ page }) => {
+  await page.getByRole("button", { name: `Open ${title}`, exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Course materials", level: 2 })).toBeVisible();
+  await expect(page.locator(".overview-materials")).toContainText("The source used in this lesson");
+  await expect(page.locator(".overview-materials")).toContainText("An unrelated course source");
+  await expect(page.locator(".overview-facts")).toContainText("2 lessons");
+  await expect(page.getByRole("link", { name: "Materials", exact: true })).toHaveAttribute("href", "#materials");
+  await expect(page.locator(".overview-materials a").first()).toHaveAttribute("target", "_blank");
+  await page.getByRole("button", { name: "Start course", exact: true }).click();
+  if ((await page.locator(".sidebar-section-list:visible").count()) === 0) {
+    await page.getByRole("button", { name: "Course outline", exact: true }).click();
+  }
+  await page.locator(".sidebar-source-tab").click();
+  await expect(page.getByRole("heading", { name: "Sources", level: 1 })).toBeVisible();
+  await expect(page.locator(".course-sources-page").getByRole("link", { name: title, exact: true })).toHaveAttribute("href", /\/courses\/.+/);
+});
+
 test("catalog controls and the reader reflow at phone, tablet, and desktop widths", async ({
   page,
 }, info) => {

@@ -12,6 +12,8 @@ Focused site-by-site studies: [Coursera discovery and course fit](ui-studies/cou
 Second study: [Khan Academy curriculum and assessment clarity](ui-studies/khan-academy.md).
 Third study: [Udemy personal course library and discovery](ui-studies/udemy.md).
 Fourth study: [Canvas course workspace and navigation](ui-studies/canvas.md).
+Fifth study: [edX course fit, progress, and resume](ui-studies/edx.md).
+Sixth study: [MIT OpenCourseWare materials and academic content](ui-studies/mit-ocw.md).
 Shared chrome: [site navigation and footer](ui-studies/site-navigation.md).
 
 1. [Direction and research limits](#1-direction)

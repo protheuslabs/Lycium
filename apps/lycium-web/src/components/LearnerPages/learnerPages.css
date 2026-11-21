@@ -18,7 +18,7 @@
 .learner-hero-intro { max-width: 32rem; margin: .65rem 0 1.75rem; font-size: 1rem; line-height: 1.65; color: #30383c; }
 .learner-hero-actions { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; }
 .learner-primary-link, .learner-hero-secondary, .learner-text-link, .home-course-controls a { display: inline-flex; align-items: center; justify-content: center; gap: .65rem; min-height: 44px; font-size: .875rem; font-weight: 600; text-decoration: none; }
-.learner-primary-link { padding: .75rem 1rem; border: 1px solid transparent; border-radius: var(--lycium-radius-control); color: white; background: var(--lycium-brand-primary); font-family: inherit; cursor: pointer; }
+.learner-primary-link { padding: .75rem 1rem; border: 1px solid transparent; border-radius: var(--lycium-radius-button); color: white; background: var(--lycium-brand-primary); font-family: inherit; cursor: pointer; }
 .learner-primary-link:hover { color: white; background: var(--lycium-brand-primary-hover); }
 .learner-hero-secondary, .learner-hero-secondary:hover { color: #20292d; }
 .learner-text-link, .home-course-controls a { color: var(--lycium-color-accent); }

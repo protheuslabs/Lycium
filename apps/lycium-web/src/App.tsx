@@ -454,7 +454,7 @@ function App({ initialPath }: AppProps = {}) {
           onOpenCourse={openCourseByEntry} onOpenCatalog={routeToHome} onSubmitArtifact={submitProgramArtifact}
         />
       ) : viewRoute.kind === "course" && !viewRoute.unitSlug && selectedCourse ? (
-        <CourseOverview course={selectedCourse} onOpenCourse={openCourseByEntry} onOpenSection={pushSectionPath} />
+        <CourseOverview course={selectedCourse} sources={sourceRecordsData.sources} onOpenCourse={openCourseByEntry} onOpenSection={pushSectionPath} />
       ) : (
         <CourseLearningLayout
           key={selectedCourse?.key ?? "no-course"}

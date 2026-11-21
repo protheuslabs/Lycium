@@ -125,6 +125,7 @@ test("home is a distinct destination with a loaded image, course discovery, and 
   );
   await page.goto("/Lycium/");
   await expect(page.getByRole("heading", { name: "Knowledge without barriers.", level: 1, exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explore courses", exact: true })).toHaveCSS("border-radius", "8px");
   const hoverCard = page.locator(".home-course-grid .learning-course-card").first();
   const restingBackground = await hoverCard.evaluate((card) => getComputedStyle(card).backgroundColor);
   await hoverCard.hover();
@@ -220,6 +221,11 @@ test("learning tiles open the overview and Back returns to My Learning", async (
   await page.getByRole("button", { name: `View ${activeTitle} course overview`, exact: true }).click();
   await expect(page).toHaveURL(/\/courses\/.*-active\?from=learning$/);
   await expect(page.getByRole("heading", { name: activeTitle, level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your progress", level: 2 })).toBeVisible();
+  await expect(page.locator(".overview-progress")).toContainText("Applying the ideas");
+  await expect(page.locator(".overview-progress")).toContainText("1 of 3 sections complete");
+  await page.getByRole("link", { name: "Progress", exact: true }).click();
+  await expect(page).toHaveURL(/#progress$/);
   await page.getByRole("link", { name: "Back", exact: true }).click();
   await expect(page).toHaveURL(/\/my-learning$/);
 });
@@ -313,9 +319,18 @@ test("dashboard has honest empty and dark-mode states", async ({ page }, info) =
 
 test("course overview reveals curriculum without starting the course, then starts the selected lesson", async ({ page }, info) => {
   await page.goto("/Lycium/");
-  await page.getByRole("link", { name: freshTitle, exact: true }).click();
+  await page.evaluate(() => {
+    const drafts = JSON.parse(localStorage.getItem("lycium-local-course-drafts") ?? "[]");
+    const fresh = drafts.find((course: { key: string }) => course.key === "fresh");
+    fresh.data.prerequisites = [];
+    localStorage.setItem("lycium-local-course-drafts", JSON.stringify(drafts));
+  });
+  await page.reload();
+  await page.getByRole("button", { name: `View ${freshTitle} course overview`, exact: true }).click();
   await expect(page.getByRole("heading", { name: freshTitle, level: 1 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Course curriculum" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your progress", level: 2 })).toHaveCount(0);
+  await expect(page.getByText("No prerequisites listed.", { exact: true })).toBeVisible();
   await expect(page.locator(".overview-masthead")).toHaveCSS("background-color", "rgb(28, 29, 31)");
   await expect(page.locator(".overview-heading h1")).toHaveCSS("color", "rgb(244, 246, 247)");
   await expect(page.locator(".overview-heading h1")).toHaveCSS("font-size", "32px");
@@ -350,7 +365,7 @@ test("ordered curriculum keeps later sections locked until prior work is complet
   await expect(page.getByRole("button", { name: "1.2 Applying the ideas Locked" })).toBeDisabled();
   await page.getByRole("button", { name: "Start course", exact: true }).click();
   await page.getByRole("button", { name: "Mark section complete", exact: true }).click();
-  await page.getByRole("link", { name: freshTitle, exact: true }).click();
+  await page.getByRole("button", { name: `View ${freshTitle} course overview`, exact: true }).click();
   await expect(page.getByRole("button", { name: "1.2 Applying the ideas", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "1.3 Bringing it together Locked" })).toBeDisabled();
 });

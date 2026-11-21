@@ -2,6 +2,8 @@ import SourceSuggestionButton from "../CourseFeedback/SourceSuggestionButton";
 import type { SourceRecord } from "./contentViewTypes";
 import type { CourseSourceIndex } from "./sourceCitationUtils";
 import { isExternalSourceUrl, sourceCitationNumber, sourceRecordMeta } from "./sourceCitationUtils";
+import Link from "next/link";
+import { getCoursePath } from "../../utils/courseRouting";
 
 type CourseSourcesPageProps = {
   courseKey: string;
@@ -13,7 +15,7 @@ type CourseSourcesPageProps = {
 export default function CourseSourcesPage({ courseKey, courseTitle, sources, courseSourceIndex }: CourseSourcesPageProps) {
   return (
     <main className="content-view content-view--sources course-sources-page" id="main-content" tabIndex={-1}>
-      <p className="course-name">{courseTitle}</p>
+      <p className="course-name"><Link className="reader-course-link" href={getCoursePath({ key: courseKey, title: courseTitle })}>{courseTitle}</Link></p>
       <h1 className="course-title">Sources</h1>
       <p className="course-sources-intro">
         These are the course-wide source records. Individual sections show the subset they use, while preserving these same citation numbers.

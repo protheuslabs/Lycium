@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ArrowLeft, ArrowRight, Check, ClipboardCheck, Clock, Layers } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -10,9 +11,15 @@ import CourseArtwork from "./CourseArtwork";
 import CourseCurriculum from "./CourseCurriculum";
 import OverviewNavigation from "./OverviewNavigation";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
+import CourseProgress from "../CourseCard/CourseProgress";
+import CourseMaterials from "./CourseMaterials";
+import type { SourceRecord } from "../ContentView/contentViewTypes";
+import { mergeSourceRecords, normalizeCourseSourceRecords } from "../CourseEditing/courseEditPrimitives";
+import { collectReferencedCourseSourceIds } from "../CourseLearningLayout/sourceReferences";
 
-export default function CourseOverview({ course, onOpenCourse, onOpenSection }: {
+export default function CourseOverview({ course, sources, onOpenCourse, onOpenSection }: {
   course: CourseEntry;
+  sources: SourceRecord[];
   onOpenCourse: (course: CourseEntry) => void;
   onOpenSection: (course: CourseEntry, section: CourseSection) => void;
 }) {
@@ -31,7 +38,18 @@ export default function CourseOverview({ course, onOpenCourse, onOpenSection }: 
     counts.projects > 0 ? `${counts.projects} ${counts.projects === 1 ? "project" : "projects"}` : "",
     counts.assessments > 0 ? `${counts.assessments} other ${counts.assessments === 1 ? "assessment" : "assessments"}` : "",
   ].filter(Boolean).join(" · ");
-  const hasRequirements = Boolean(course.data.prerequisites?.length);
+  const hasRequirements = Array.isArray(course.data.prerequisites);
+  const hasProgress = Boolean(item?.started);
+  const materialSources = useMemo(() => {
+    const referencedIds = collectReferencedCourseSourceIds(course.data, course.data.modules);
+    return mergeSourceRecords(sources.filter((source) => referencedIds.has(source.id)), normalizeCourseSourceRecords(course));
+  }, [course, sources]);
+  const lessonCount = sections.filter((section) => section.pageType !== "apply" && section.sectionType !== "summary").length;
+  const reviewCount = sections.filter((section) => section.sectionType === "summary").length;
+  const instruction = [
+    lessonCount ? `${lessonCount} ${lessonCount === 1 ? "lesson" : "lessons"}` : "",
+    reviewCount ? `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"}` : "",
+  ].filter(Boolean).join(" · ");
 
   return (
     <div className="learner-page-shell">
@@ -53,11 +71,22 @@ export default function CourseOverview({ course, onOpenCourse, onOpenSection }: 
               {level && <div><dt>Level</dt><dd>{level}</dd></div>}
               {duration && <div><dt><Clock size={16} aria-hidden="true" />Estimated effort</dt><dd>{duration}</dd></div>}
               {assessments && <div><dt><ClipboardCheck size={16} aria-hidden="true" />Assessments</dt><dd>{assessments}</dd></div>}
+              {instruction && <div><dt>Instruction</dt><dd>{instruction}</dd></div>}
             </dl>
           </div>
         </header>
-        <OverviewNavigation hasOutcomes={outcomes.length > 0} hasRequirements={hasRequirements} />
+        <OverviewNavigation hasOutcomes={outcomes.length > 0} hasRequirements={hasRequirements} hasProgress={hasProgress} hasMaterials={materialSources.length > 0} />
         <div className="overview-content learner-page-inner">
+          {item?.started && (
+            <section id="progress" className="overview-progress" aria-labelledby="course-progress-title">
+              <div className="overview-progress-copy">
+                <h2 id="course-progress-title">Your progress</h2>
+                {item.bookmark && <p>Saved lesson: <strong>{item.bookmark.title}</strong></p>}
+              </div>
+              <CourseProgress title={course.title} completed={item.progress.completed} total={item.progress.total} />
+              <button type="button" className="learner-primary-link" onClick={() => onOpenCourse(course)}>{item.completed ? "Review course" : "Resume saved lesson"}<ArrowRight size={18} aria-hidden="true" /></button>
+            </section>
+          )}
           {outcomes.length > 0 && (
             <section id="learning-outcomes" className="overview-outcomes" aria-labelledby="outcomes-title">
               <h2 id="outcomes-title">What you&apos;ll learn</h2>
@@ -70,10 +99,11 @@ export default function CourseOverview({ course, onOpenCourse, onOpenSection }: 
               <ul>{topics.map((topic) => <li key={topic}>{topic}</li>)}</ul>
             </section>
           )}
+          <CourseMaterials sources={materialSources} />
           {hasRequirements && (
             <section id="requirements" className="overview-prerequisites" aria-labelledby="prerequisites-title">
               <h2 id="prerequisites-title">Before you begin</h2>
-              <ul>{course.data.prerequisites?.map((requirement, index) => <li key={index}>{requirement.title}</li>)}</ul>
+              {course.data.prerequisites?.length ? <ul>{course.data.prerequisites.map((requirement, index) => <li key={index}>{requirement.title}</li>)}</ul> : <p>No prerequisites listed.</p>}
             </section>
           )}
           <CourseCurriculum key={course.key} course={course} sectionStatuses={item?.sectionStatuses} onOpenSection={onOpenSection} />
