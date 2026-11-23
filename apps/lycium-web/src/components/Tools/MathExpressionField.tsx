@@ -17,7 +17,7 @@ type Props = {
 // Preserve the original expression on mount and import. Conversion only happens
 // after an explicit user edit in the formatted field.
 export default function MathExpressionField({ value, label, invalid, describedBy, onChange, onDraftError }: Props) {
-  const [formatted, setFormatted] = useState(false);
+  const [formatted, setFormatted] = useState(true);
   const [error, setError] = useState("");
   const hostRef = useRef<HTMLSpanElement>(null);
   const fieldRef = useRef<MathfieldElement | null>(null);
@@ -62,7 +62,7 @@ export default function MathExpressionField({ value, label, invalid, describedBy
       field.addEventListener("input", handleInput);
       fieldRef.current = field;
       hostRef.current.replaceChildren(field);
-    }).catch(() => { if (!disposed) setError("Could not load the math editor. Switch to plain text."); });
+    }).catch(() => { if (!disposed) { setFormatted(false); setError("Could not open the math editor. Continue in plain text."); } });
     return () => {
       disposed = true;
       if (field && handleInput) field.removeEventListener("input", handleInput);

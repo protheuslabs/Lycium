@@ -4,14 +4,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { Chart, FunctionPlotDatum, FunctionPlotOptions } from "function-plot";
 import { formatCoordinate, gridStepFromTicks, snapCoordinate, type CoordinatePrecision } from "./graphCoordinates";
 import type { GraphPoint } from "./graphDocument";
+import { prepareGraphExpression, type GraphExpression } from "./graphExpressions";
 import "./graphCanvas.css";
-
-export interface GraphExpression {
-  id: string;
-  expr: string;
-  color: string;
-  visible: boolean;
-}
 
 export interface GraphCanvasHandle {
   reset: () => void;
@@ -261,19 +255,8 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           for (const expression of configRef.current.expressions) {
             const fn = expression.expr.trim().replace(/^y\s*=\s*/i, "");
             if (!fn) continue;
-            const datum: FunctionPlotDatum = {
-              fn,
-              color: expression.color,
-              scope: { ...configRef.current.parameters },
-              graphType: "interval",
-              sampler: "interval",
-            };
             try {
-              if (fn.includes("=")) throw new Error("Only functions of x are supported. Use y= followed by an expression; equations such as x=2 are not yet supported.");
-              // Validate using the library's evaluators, not a separate parser.
-              // Undefined numeric results are valid (e.g. 1/x or sqrt(x)).
-              library.EvalInterval(datum, "fn", { x: { lo: 0.5, hi: 0.5 } });
-              library.EvalBuiltIn(datum, "fn", { x: 0.5 });
+              const datum = prepareGraphExpression(expression, configRef.current.parameters, library);
               if (expression.visible) data.push(datum);
             } catch (cause) {
               errors[expression.id] = cause instanceof Error ? cause.message : "Check the expression syntax.";

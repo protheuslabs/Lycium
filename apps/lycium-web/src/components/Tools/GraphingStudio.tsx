@@ -3,7 +3,8 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Trash2, ZoomIn, ZoomOut } from "lucide-react";
-import GraphCanvas, { type GraphCanvasHandle, type GraphExpression } from "./GraphCanvas";
+import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
+import type { GraphExpression } from "./graphExpressions";
 import ParameterSliders from "./ParameterSliders";
 import MathExpressionField from "./MathExpressionField";
 import { PARAMETER_NAMES, type GraphParameter } from "./graphParameters";
@@ -99,6 +100,10 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
 
   const addParameter = (name: string) => {
     setParameters((previous) => previous.some((parameter) => parameter.name === name) ? previous : [...previous, { name, value: 1, min: -5, max: 5, step: 0.1 }]);
+  };
+
+  const addParameters = (names: string[]) => {
+    setParameters((previous) => [...previous, ...names.filter((name) => !previous.some((parameter) => parameter.name === name)).map((name) => ({ name, value: 1, min: -5, max: 5, step: 0.1 }))]);
   };
 
   const addAnalysisPoint = (x: number, y: number) => {
@@ -200,8 +205,9 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
                 {errors[expression.id] && <p className="graphing-error" id={`${id}-error-${expression.id}`} role="status">{errors[expression.id]}</p>}
                 {(() => {
                   const missing = errors[expression.id]?.match(/^symbol "([a-z])" is undefined$/)?.[1];
+                  const names = [...new Set(expression.expr.match(/\b[a-z]\b/g) ?? [])].filter((name) => PARAMETER_NAMES.includes(name) && !parameters.some((parameter) => parameter.name === name));
                   return missing && PARAMETER_NAMES.includes(missing) && !parameters.some(({ name }) => name === missing)
-                    ? <button type="button" className="graphing-suggest-slider" onClick={() => addParameter(missing)}>Add slider {missing}</button>
+                    ? <><button type="button" className="graphing-suggest-slider" onClick={() => addParameter(missing)}>Add slider {missing}</button>{names.length > 1 && <button type="button" className="graphing-suggest-slider" onClick={() => addParameters(names)}>Add sliders {names.join(", ")}</button>}</>
                     : null;
                 })()}
               </div>

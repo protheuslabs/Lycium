@@ -1,4 +1,4 @@
-import type { GraphExpression } from "./GraphCanvas";
+import type { GraphExpression } from "./graphExpressions";
 import type { CoordinatePrecision } from "./graphCoordinates";
 import { PARAMETER_NAMES, parameterRangeError, type GraphParameter } from "./graphParameters";
 

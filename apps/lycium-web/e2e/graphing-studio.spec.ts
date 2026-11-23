@@ -2,9 +2,28 @@ import { expect, test, type Page } from "@playwright/test";
 
 const graphPath = "/Lycium/tools/graph";
 
+test("formatted input is the default and can create multiple parameter sliders", async ({ page }) => {
+  await page.goto(graphPath);
+  const math = page.locator("math-field[aria-label='Function 1']");
+  await expect(math).toBeVisible();
+  await math.focus();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.insertText("a*x^2+b*x+c");
+  await page.getByRole("button", { name: "Add sliders a, b, c", exact: true }).click();
+  for (const name of ["a", "b", "c"]) await expect(page.getByRole("slider", { name: `Parameter ${name}`, exact: true })).toBeVisible();
+  await expectCurves(page, 2);
+});
+
 async function openDisclosure(page: Page, selector: string) {
   const details = page.locator(selector);
   if (!(await details.evaluate((element) => (element as HTMLDetailsElement).open))) await details.locator(":scope > summary").click();
+}
+
+async function gotoGraph(page: Page) {
+  await page.goto(graphPath);
+  for (const name of ["Function 1", "Function 2"]) {
+    await page.getByRole("button", { name: `Use plain text for ${name}`, exact: true }).click();
+  }
 }
 
 async function expectCurves(page: Page, count: number) {
@@ -26,7 +45,7 @@ async function observeHeight(page: Page) {
 }
 
 test("graph height stays bounded over repeated renders and resizes", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   for (const size of [{ width: 1280, height: 900 }, { width: 390, height: 844 }, { width: 1000, height: 700 }]) {
     await page.setViewportSize(size);
@@ -48,7 +67,7 @@ test("graph height stays bounded over repeated renders and resizes", async ({ pa
 });
 
 test("default axes retain equal scales when the graph is resized", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   for (const size of [{ width: 1280, height: 900 }, { width: 900, height: 700 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(size);
@@ -78,7 +97,7 @@ test("default axes retain equal scales when the graph is resized", async ({ page
 });
 
 test("standalone workspace is focused and the functions panel can collapse", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   await expect(page.getByRole("heading", { name: "Graphing Studio", exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Primary navigation", exact: true })).toHaveCount(0);
@@ -98,7 +117,7 @@ test("standalone workspace is focused and the functions panel can collapse", asy
 });
 
 test("editing preserves zoom and invalid functions do not break valid curves", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   const ticks = page.locator(".graph-viewport .x.axis .tick text");
   const originalTicks = await ticks.allTextContents();
@@ -122,8 +141,11 @@ test("functions can be added, hidden, restored, and removed", async ({ page }) =
   await page.goto("/Lycium/tools");
   await page.getByRole("link", { name: /Graphing Studio/ }).click();
   await expect(page).toHaveURL(new RegExp(`${graphPath}$`));
+  await page.getByRole("button", { name: "Use plain text for Function 1", exact: true }).click();
+  await page.getByRole("button", { name: "Use plain text for Function 2", exact: true }).click();
   await expectCurves(page, 2);
   await page.getByRole("button", { name: "Add function", exact: true }).click();
+  await page.getByRole("button", { name: "Use plain text for Function 3", exact: true }).click();
   await page.getByRole("textbox", { name: "Function 3", exact: true }).fill("y=2*x+1");
   await expectCurves(page, 3);
   await page.getByRole("button", { name: "Hide function 3", exact: true }).click();
@@ -136,7 +158,7 @@ test("functions can be added, hidden, restored, and removed", async ({ page }) =
 });
 
 test("parameter sliders change rendered curves while retaining the viewport", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   await page.getByRole("button", { name: "Add slider a", exact: true }).click();
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("y=a*x^2");
@@ -162,7 +184,7 @@ test("parameter sliders change rendered curves while retaining the viewport", as
 });
 
 test("invalid slider settings do not corrupt the last valid range", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("button", { name: "Add slider a", exact: true }).click();
   await page.getByText("Range and step", { exact: true }).click();
   await page.getByRole("spinbutton", { name: "Step for a", exact: true }).fill("0");
@@ -189,7 +211,7 @@ async function hoverGraph(page: Page, fraction: number) {
 }
 
 test("coordinate precision changes display only, while snapping evaluates y at the snapped x", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
   await expectCurves(page, 1);
@@ -223,7 +245,7 @@ test("coordinate precision changes display only, while snapping evaluates y at t
 });
 
 test("a snapped undefined point clears its trace and tracing recovers at a valid point", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("1/x");
   await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
   await expectCurves(page, 1);
@@ -239,7 +261,7 @@ test("a snapped undefined point clears its trace and tracing recovers at a valid
 });
 
 test("graph documents round-trip and presentation locks editing while exposing selected sliders", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   await page.getByRole("button", { name: "Add slider a", exact: true }).click();
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("a*x^2");
@@ -265,11 +287,12 @@ test("graph documents round-trip and presentation locks editing while exposing s
   await page.getByRole("slider", { name: "Parameter a" }).fill("-1");
   await expect(page.getByRole("slider", { name: "Parameter a" })).toHaveValue("-1");
   await page.getByRole("button", { name: "Edit graph", exact: true }).click();
+  await page.getByRole("button", { name: "Use plain text for Function 1", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "Function 1", exact: true })).toHaveValue("a*x^2");
 });
 
 test("suggests sliders for undefined parameters without hiding other errors", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   const first = page.getByRole("textbox", { name: "Function 1", exact: true });
   await first.fill("a*x^2+b");
   await page.getByRole("button", { name: "Add slider a", exact: true }).first().click();
@@ -282,7 +305,7 @@ test("suggests sliders for undefined parameters without hiding other errors", as
 });
 
 test("rejects unsupported vertical equations instead of plotting a misleading function", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   const first = page.getByRole("textbox", { name: "Function 1", exact: true });
   await first.fill("x=2");
   await expect(first).toHaveAttribute("aria-invalid", "true");
@@ -291,7 +314,7 @@ test("rejects unsupported vertical equations instead of plotting a misleading fu
 });
 
 test("trace skips a shifted asymptote and recovers", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("1/(x-2)");
   await openDisclosure(page, ".graph-settings");
   await page.getByRole("checkbox", { name: "Snap x to grid", exact: true }).check();
@@ -307,7 +330,7 @@ test("trace skips a shifted asymptote and recovers", async ({ page }) => {
 });
 
 test("square root traces only its defined domain", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("sqrt(x)");
   await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
   await openDisclosure(page, ".graph-settings");
@@ -323,7 +346,7 @@ test("square root traces only its defined domain", async ({ page }) => {
 });
 
 test("formatted math editing preserves loaded expressions until edited and plots the result", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   const field = page.getByRole("textbox", { name: "Function 1", exact: true });
   await field.fill("y=2*x+1");
@@ -344,7 +367,7 @@ test("formatted math editing preserves loaded expressions until edited and plots
 });
 
 test("multiple slider animations move independently, pause, and preserve their graph", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("button", { name: "Add slider a", exact: true }).click();
   await page.getByRole("button", { name: "Add slider b", exact: true }).click();
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("a*x+b");
@@ -365,7 +388,7 @@ test("multiple slider animations move independently, pause, and preserve their g
 });
 
 test("trace skips a removable discontinuity and recovers", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("(x^2-4)/(x-2)");
   await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
   await openDisclosure(page, ".graph-settings");
@@ -381,7 +404,7 @@ test("trace skips a removable discontinuity and recovers", async ({ page }) => {
 });
 
 test("explicit points are plotted, edited, and saved in graph documents", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   await openDisclosure(page, ".graph-points");
   await page.getByRole("button", { name: "Add point", exact: true }).click();
@@ -404,7 +427,7 @@ test("explicit points are plotted, edited, and saved in graph documents", async 
 });
 
 test("click pins a traced coordinate, pan does not, and the label can be cleared", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
   await openDisclosure(page, ".graph-settings");
   await page.getByRole("checkbox", { name: "Snap x to grid", exact: true }).check();
@@ -422,7 +445,7 @@ test("click pins a traced coordinate, pan does not, and the label can be cleared
 });
 
 test("finds approximate crossings and does not mistake an asymptote for one", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("x");
   await page.getByRole("textbox", { name: "Function 2", exact: true }).fill("-x");
   await expectCurves(page, 2);
@@ -440,7 +463,7 @@ test("finds approximate crossings and does not mistake an asymptote for one", as
 });
 
 test("points can be dragged and moved with the keyboard without panning", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await openDisclosure(page, ".graph-points");
   await page.getByRole("button", { name: "Add point", exact: true }).click();
   const handle = page.getByRole("button", { name: "Move point 1", exact: true });
@@ -462,7 +485,7 @@ test("points can be dragged and moved with the keyboard without panning", async 
 });
 
 test("finds visible axis intercepts and can add one as a point", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("x-1");
   await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
   await expectCurves(page, 1);
@@ -475,7 +498,7 @@ test("finds visible axis intercepts and can add one as a point", async ({ page }
 });
 
 test("exports the graph as SVG and PNG images", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   const svgDownload = page.waitForEvent("download");
   await openDisclosure(page, ".graph-file-menu");
@@ -501,7 +524,7 @@ test("exports the graph as SVG and PNG images", async ({ page }) => {
 });
 
 test("axis bounds apply and invalid ranges leave the graph unchanged", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   await openDisclosure(page, ".graph-settings");
   await page.getByText("Axis bounds", { exact: true }).click();
@@ -522,7 +545,7 @@ test("axis bounds apply and invalid ranges leave the graph unchanged", async ({ 
 });
 
 test("teacher can prepare an animated quadratic, analyze it, and export it", async ({ page }) => {
-  await page.goto(graphPath);
+  await gotoGraph(page);
   await expectCurves(page, 2);
   const expression = page.getByRole("textbox", { name: "Function 1", exact: true });
   await expression.fill("y=a*x^2+b*x+c");
