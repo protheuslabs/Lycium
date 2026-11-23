@@ -10,6 +10,7 @@ export default function GraphPage() {
       <header className="graphing-workspace-header">
         <Link href="/tools" className="graphing-back-link"><ArrowLeft size={16} aria-hidden="true" />Back to Tools</Link>
         <h1>Graphing Studio</h1>
+        <div id="graphing-workspace-actions" />
       </header>
       <main id="main-content" tabIndex={-1} className="graphing-workspace-main">
         <ToolFrame fill>

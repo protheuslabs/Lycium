@@ -105,3 +105,32 @@
 .graph-crossings { list-style: none; margin: .5rem 0; padding: 0; font-size: .8rem; }
 .graph-crossings li { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin-block: .5rem; overflow-wrap: anywhere; }
 .graphing-studio .graph-crossings button { min-height: 2rem; padding: .25rem .4rem; font-size: .75rem; white-space: nowrap; }
+.graph-axis-settings { position: relative; flex: 0 0 auto; font-size: .8rem; }
+.graph-axis-settings summary { cursor: pointer; padding: .25rem 0; }
+.graph-axis-settings form { position: absolute; z-index: 5; right: 0; top: calc(100% + .35rem); width: min(24rem, calc(100vw - 4rem)); display: flex; flex-wrap: wrap; align-items: end; gap: .5rem; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
+.graph-axis-fields { display: flex; flex-wrap: wrap; gap: .5rem; }
+.graph-axis-fields label { display: grid; gap: .2rem; }
+.graph-axis-fields input { width: 5.5rem; max-width: 100%; padding: .35rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); color: var(--lycium-color-text); background: var(--lycium-color-control-surface); font: inherit; }
+.graphing-studio .graph-axis-settings button { min-height: 2rem; padding: .35rem .6rem; }
+.graphing-layout { --graph-panel-width: 350px; }
+@media (min-width: 900px) { .graphing-layout { grid-template-columns: clamp(280px, var(--graph-panel-width), min(480px, 48vw)) minmax(0, 1fr); } }
+.graph-panel-width { display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem; color: var(--lycium-color-text-muted); font-size: .75rem; }
+.graph-panel-width input { flex: 1; min-width: 0; accent-color: var(--lycium-color-accent); }
+.graphing-workspace-header #graphing-workspace-actions { margin-left: auto; }
+.graph-workspace-actions { display: flex; align-items: center; gap: .6rem; }
+.graph-file-menu, .graph-settings { position: relative; }
+.graph-file-menu summary, .graph-settings > summary { cursor: pointer; padding: .55rem .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-button); font-size: .875rem; list-style: none; }
+.graph-file-menu summary::-webkit-details-marker, .graph-settings > summary::-webkit-details-marker { display: none; }
+.graph-file-popover { position: absolute; z-index: 20; right: 0; top: calc(100% + .4rem); display: grid; min-width: 10rem; padding: .35rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
+.graph-file-popover button { text-align: left; padding: .6rem .75rem; color: var(--lycium-color-text); background: transparent; border: 0; }
+.graph-file-popover button:hover { background: var(--lycium-color-control-hover); }
+.graph-present-button { padding: .55rem 1rem; color: white; background: var(--lycium-brand-primary); border: 0; font-size: .875rem; }
+.graph-present-button:hover { background: var(--lycium-brand-primary-hover); }
+.graph-settings { flex: 0 0 auto; }
+.graph-settings > summary { position: relative; z-index: 2; }
+.graph-settings .graphing-trace-controls { position: absolute; z-index: 10; right: 0; top: calc(100% + .25rem); display: grid; justify-content: stretch; min-width: 13rem; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
+
+.graph-points, .graph-analysis { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid var(--lycium-color-border); }
+.graph-points > summary, .graph-analysis > summary { cursor: pointer; font-size: .9rem; font-weight: 600; padding: .5rem 0; }
+@media (max-width: 899px) { .graph-panel-width { display: none; } }
+@media (max-width: 599px) { .graphing-workspace-header h1 { white-space: nowrap; } .graph-file-menu summary, .graph-present-button { font-size: .75rem; padding: .45rem; } .graph-workspace-actions { gap: .25rem; }  .graph-settings > summary { font-size: .75rem; padding: .5rem .35rem; } }

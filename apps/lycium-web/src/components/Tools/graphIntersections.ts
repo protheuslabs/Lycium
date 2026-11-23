@@ -2,6 +2,25 @@
 export type IntervalValue = { lo: number; hi: number };
 export type Curve = { id: string; evaluate: (x: number) => number; interval: (lo: number, hi: number) => IntervalValue };
 export type Intersection = { first: string; second: string; x: number; y: number };
+export type Intercept = { curve: string; axis: "x" | "y"; x: number; y: number };
+
+/** Find sign-changing x-intercepts and the y-intercept in a visible viewport. */
+export function findIntercepts(curves: readonly Curve[], xDomain: readonly [number, number], yDomain: readonly [number, number]): Intercept[] {
+  const zero: Curve = { id: "__axis__", evaluate: () => 0, interval: () => ({ lo: 0, hi: 0 }) };
+  const result: Intercept[] = [];
+  for (const curve of curves) {
+    if (yDomain[0] <= 0 && yDomain[1] >= 0) {
+      for (const crossing of findCrossings([curve, zero], xDomain)) result.push({ curve: curve.id, axis: "x", x: crossing.x, y: 0 });
+    }
+    if (xDomain[0] <= 0 && xDomain[1] >= 0) {
+      try {
+        const y = curve.evaluate(0);
+        if (Number.isFinite(y) && y >= yDomain[0] && y <= yDomain[1]) result.push({ curve: curve.id, axis: "y", x: 0, y });
+      } catch { /* undefined at x=0 */ }
+    }
+  }
+  return result.slice(0, 100);
+}
 
 export function findCrossings(curves: readonly Curve[], domain: readonly [number, number], samples = 256): Intersection[] {
   const [min, max] = domain;

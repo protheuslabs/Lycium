@@ -17,6 +17,8 @@ export interface GraphCanvasHandle {
   reset: () => void;
   zoom: (factor: number) => void;
   getViewport: () => { x: [number, number]; y: [number, number] } | null;
+  setViewport: (viewport: { x: [number, number]; y: [number, number] }) => void;
+  exportImage: (format: "svg" | "png") => Promise<void>;
 }
 
 type GraphCanvasProps = {
@@ -28,6 +30,7 @@ type GraphCanvasProps = {
   precision?: CoordinatePrecision;
   snapToGrid?: boolean;
   onErrors: (errors: Record<string, string>) => void;
+  onPointMove?: (id: string, x: number, y: number) => void;
 };
 
 const NO_POINTS: readonly GraphPoint[] = [];
@@ -35,21 +38,71 @@ const NO_PARAMETERS: Readonly<Record<string, number>> = {};
 
 // No page layout or course dependencies: the same plot can live in either host.
 const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function GraphCanvas(
-  { expressions, points = NO_POINTS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, onErrors },
+  { expressions, points = NO_POINTS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, onErrors, onPointMove },
   ref,
 ) {
   const initialViewportRef = useRef(initialViewport);
   const containerRef = useRef<HTMLDivElement>(null);
   const configRef = useRef({ expressions, points, parameters, grid, precision, snapToGrid });
-  const controllerRef = useRef<GraphCanvasHandle & { redraw: () => void } | null>(null);
+  const controllerRef = useRef<(Omit<GraphCanvasHandle, "exportImage"> & { redraw: () => void }) | null>(null);
   const [status, setStatus] = useState("Loading graph…");
   const [pin, setPin] = useState<{ x: number; y: number; left: number; top: number; text: string } | null>(null);
   const pinRef = useRef<{ x: number; y: number } | null>(null);
+  const pointMoveRef = useRef(onPointMove);
+  pointMoveRef.current = onPointMove;
+  const pointCoordsRef = useRef<((clientX: number, clientY: number) => { x: number; y: number } | null) | null>(null);
+  const [pointPositions, setPointPositions] = useState<Array<{ id: string; left: number; top: number; color: string }>>([]);
 
   useImperativeHandle(ref, () => ({
     reset: () => controllerRef.current?.reset(),
     zoom: (factor) => controllerRef.current?.zoom(factor),
     getViewport: () => controllerRef.current?.getViewport() ?? null,
+    setViewport: (viewport) => controllerRef.current?.setViewport(viewport),
+    exportImage: async (format) => {
+      const source = containerRef.current?.querySelector("svg.function-plot");
+      if (!(source instanceof SVGSVGElement)) throw new Error("The graph is not ready to export.");
+      const width = Number(source.getAttribute("width")), height = Number(source.getAttribute("height"));
+      if (!(width > 0 && height > 0)) throw new Error("The graph has no visible size to export.");
+      const clone = source.cloneNode(true) as SVGSVGElement;
+      clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      clone.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      const originals = [source, ...source.querySelectorAll("*")];
+      const copies = [clone, ...clone.querySelectorAll("*")];
+      originals.forEach((element, index) => {
+        const copy = copies[index];
+        const style = getComputedStyle(element);
+        for (const property of ["fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "opacity", "font-family", "font-size", "font-weight", "text-anchor", "display", "visibility"]) {
+          const value = style.getPropertyValue(property);
+          if (value) (copy as SVGElement).style.setProperty(property, value);
+        }
+        if (element.classList.contains("scatter")) copy.setAttribute("r", "5");
+      });
+      clone.querySelectorAll(".zoom-and-drag, .tip, .top-right-legend").forEach((node) => node.remove());
+      const background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      background.setAttribute("width", String(width)); background.setAttribute("height", String(height)); background.setAttribute("fill", "#ffffff");
+      clone.insertBefore(background, clone.firstChild);
+      const svg = new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml;charset=utf-8" });
+      let blob = svg;
+      if (format === "png") {
+        const svgUrl = URL.createObjectURL(svg);
+        try {
+          const image = new Image();
+          await new Promise<void>((resolve, reject) => { image.onload = () => resolve(); image.onerror = () => reject(new Error("Could not render the graph image.")); image.src = svgUrl; });
+          const canvas = document.createElement("canvas");
+          const scale = Math.min(2, 8192 / Math.max(width, height));
+          canvas.width = Math.floor(width * scale); canvas.height = Math.floor(height * scale);
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Image export is not supported by this browser.");
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          const result = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+          if (!result) throw new Error("Could not create the PNG image.");
+          blob = result;
+        } finally { URL.revokeObjectURL(svgUrl); }
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a"); link.href = url; link.download = `lycium-graph.${format}`; link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    },
   }), []);
 
   useEffect(() => {
@@ -92,6 +145,25 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
         let trace: { x: number; y: number } | null = null;
         let pointerStart: { x: number; y: number } | null = null;
 
+        const updatePointPositions = () => {
+          const meta = chart?.meta;
+          if (!meta?.xScale || !meta.yScale) return;
+          const xScale = meta.xScale, yScale = meta.yScale;
+          setPointPositions(configRef.current.points.filter((point) => point.visible).map((point) => ({
+            id: point.id, color: point.color,
+            left: xScale(point.x) + (meta.margin?.left ?? 0),
+            top: yScale(point.y) + (meta.margin?.top ?? 0),
+          })));
+        };
+        pointCoordsRef.current = (clientX, clientY) => {
+          const meta = chart?.meta;
+          if (!meta?.xScale || !meta.yScale) return null;
+          const bounds = container.getBoundingClientRect();
+          const x = meta.xScale.invert(clientX - bounds.left - (meta.margin?.left ?? 0));
+          const y = meta.yScale.invert(clientY - bounds.top - (meta.margin?.top ?? 0));
+          return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+        };
+
         const updatePin = () => {
           const current = pinRef.current;
           const meta = chart?.meta;
@@ -122,6 +194,50 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           const xStep = gridStepFromTicks(chart?.meta.xScale?.ticks() ?? []);
           const yStep = gridStepFromTicks(chart?.meta.yScale?.ticks() ?? []);
           return `${formatCoordinate(x, xStep, configRef.current.precision)}, ${formatCoordinate(y, yStep, configRef.current.precision)}`;
+        };
+
+        // function-plot chooses tick intervals independently for each axis. Draw
+        // one shared interval so equal axis scales also produce square cells.
+        const gridStep = () => {
+          const x = chart?.meta.xScale?.ticks() ?? [];
+          const y = chart?.meta.yScale?.ticks() ?? [];
+          return Math.min(gridStepFromTicks(x), gridStepFromTicks(y));
+        };
+        const updateGrid = () => {
+          const svg = target.querySelector("svg.function-plot");
+          svg?.querySelector(".graph-custom-grid")?.remove();
+          const meta = chart?.meta;
+          if (!svg || !meta?.xScale || !meta.yScale || !configRef.current.grid) return;
+          const step = gridStep();
+          if (!Number.isFinite(step) || step <= 0) return;
+          const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          group.classList.add("graph-custom-grid");
+          group.dataset.step = String(step);
+          const xRange = meta.xScale.range(), yRange = meta.yScale.range();
+          const left = Math.min(...xRange) + (meta.margin?.left ?? 0);
+          const right = Math.max(...xRange) + (meta.margin?.left ?? 0);
+          const top = Math.min(...yRange) + (meta.margin?.top ?? 0);
+          const bottom = Math.max(...yRange) + (meta.margin?.top ?? 0);
+          const addLines = (axis: "x" | "y") => {
+            const scale = axis === "x" ? meta.xScale : meta.yScale;
+            if (!scale) return;
+            const domain = scale.domain();
+            const first = Math.ceil(Math.min(...domain) / step);
+            const last = Math.floor(Math.max(...domain) / step);
+            if (!Number.isFinite(first) || !Number.isFinite(last) || last - first > 200) return;
+            for (let index = first; index <= last; index++) {
+              const position = scale(index * step) + (axis === "x" ? meta.margin?.left ?? 0 : meta.margin?.top ?? 0);
+              const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+              line.dataset.axis = axis;
+              line.setAttribute("x1", String(axis === "x" ? position : left));
+              line.setAttribute("x2", String(axis === "x" ? position : right));
+              line.setAttribute("y1", String(axis === "x" ? top : position));
+              line.setAttribute("y2", String(axis === "x" ? bottom : position));
+              group.appendChild(line);
+            }
+          };
+          addLines("x"); addLines("y");
+          svg.insertBefore(group, svg.firstChild);
         };
 
         const makeOptions = (xDomain?: number[], yDomain?: number[]): FunctionPlotOptions => ({
@@ -168,7 +284,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             if (point.visible) data.push({ fn: `point-${point.id}`, fnType: "points", graphType: "scatter", points: [[point.x, point.y]], color: point.color, skipTip: true });
           }
           options.data = data;
-          options.grid = configRef.current.grid;
+          options.grid = false;
           options.width = width;
           options.height = height;
           lastWidth = width;
@@ -186,9 +302,8 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
                 const legend = target.querySelector(".top-right-legend");
                 if (legend) legend.textContent = "";
                 if (!configRef.current.snapToGrid) return;
-                const ticks = chart?.meta.xScale?.ticks() ?? [];
                 const domain = chart?.meta.xScale?.domain() ?? [];
-                coordinates.x = snapCoordinate(coordinates.x, gridStepFromTicks(ticks), domain);
+                coordinates.x = snapCoordinate(coordinates.x, gridStep(), domain);
               });
               chart.on("tip:update", ({ x, y }: { x: number; y: number }) => {
                 if (!Number.isFinite(x) || !Number.isFinite(y)) return;
@@ -201,13 +316,30 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
               chart.on("mousemove", () => {
                 if (!hasTracePoint) chart?.tip.hide();
               });
-              chart.on("after:draw", updatePin);
+              chart.on("after:draw", () => { updateGrid(); updatePin(); updatePointPositions(); });
             }
+            updateGrid();
             updatePin();
+            updatePointPositions();
             setStatus("");
           } catch (cause) {
             setStatus(cause instanceof Error ? `Unable to draw graph: ${cause.message}` : "Unable to draw graph.");
           }
+        };
+
+        const normalizeScale = () => {
+          const xScale = chart?.meta.xScale, yScale = chart?.meta.yScale;
+          if (!xScale || !yScale) return;
+          const x = xScale.domain(), y = yScale.domain();
+          const xRange = xScale.range(), yRange = yScale.range();
+          const xPixels = Math.abs((xRange[1] - xRange[0]) / (x[1] - x[0]));
+          const yPixels = Math.abs((yRange[1] - yRange[0]) / (y[1] - y[0]));
+          if (!Number.isFinite(xPixels) || !Number.isFinite(yPixels) || !xPixels || !yPixels) return;
+          const center = (y[0] + y[1]) / 2;
+          const half = Math.abs(y[1] - y[0]) * yPixels / xPixels / 2;
+          release();
+          options = makeOptions(x, [center - half, center + half]);
+          draw();
         };
 
         controllerRef.current = {
@@ -220,6 +352,13 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           reset: () => {
             release();
             options = makeOptions();
+            draw();
+            normalizeScale();
+          },
+          setViewport: (viewport) => {
+            if (![...viewport.x, ...viewport.y].every(Number.isFinite) || viewport.x[0] >= viewport.x[1] || viewport.y[0] >= viewport.y[1] || !Number.isFinite(viewport.x[1] - viewport.x[0]) || !Number.isFinite(viewport.y[1] - viewport.y[0])) return;
+            release();
+            options = makeOptions(viewport.x, viewport.y);
             draw();
           },
           zoom: (factor) => {
@@ -240,12 +379,36 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           },
         };
         draw();
+        if (!initialViewportRef.current) normalizeScale();
         observer = new ResizeObserver(() => {
           const width = Math.floor(container.clientWidth);
           const height = Math.floor(container.clientHeight);
           if (width === lastWidth && height === lastHeight) return;
           cancelAnimationFrame(frame);
-          frame = requestAnimationFrame(draw);
+          frame = requestAnimationFrame(() => {
+            const xScale = chart?.meta.xScale;
+            const yScale = chart?.meta.yScale;
+            const x = options.xAxis?.domain;
+            const y = options.yAxis?.domain;
+            const pixelsPerUnit = (scale: typeof xScale, domain: number[] | undefined) => {
+              if (!scale || !domain) return 0;
+              const range = scale.range();
+              return Math.abs((range[1] - range[0]) / (domain[1] - domain[0]));
+            };
+            const oldX = pixelsPerUnit(xScale, x);
+            const oldY = pixelsPerUnit(yScale, y);
+            const wasEqualScale = oldX > 0 && oldY > 0 && Math.abs(oldX / oldY - 1) < 0.001;
+            draw();
+            if (!wasEqualScale || !x || !y || !chart?.meta.xScale || !chart.meta.yScale) return;
+            const nextX = pixelsPerUnit(chart.meta.xScale, x);
+            const nextY = pixelsPerUnit(chart.meta.yScale, y);
+            if (!nextX || !nextY) return;
+            const center = (y[0] + y[1]) / 2;
+            const half = (y[1] - y[0]) * nextY / nextX / 2;
+            release();
+            options = makeOptions(x, [center - half, center + half]);
+            draw();
+          });
         });
         observer.observe(container);
       } catch (cause) {
@@ -259,6 +422,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
       observer?.disconnect();
       cancelAnimationFrame(frame);
       controllerRef.current = null;
+      pointCoordsRef.current = null;
       disposeChart();
       container.replaceChildren();
     };
@@ -267,6 +431,22 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
   return (
     <div className="graph-surface">
       <div ref={containerRef} className="graph-viewport" role="img" aria-label="Cartesian graph of the visible functions" />
+      {onPointMove && pointPositions.map((point, index) => <button key={point.id} type="button" className="graph-draggable-point" style={{ left: point.left, top: point.top, color: point.color }} aria-label={`Move point ${index + 1}`} title="Drag or use arrow keys to move point" onKeyDown={(event) => {
+        const offset: Record<string, [number, number]> = { ArrowLeft: [-10, 0], ArrowRight: [10, 0], ArrowUp: [0, -10], ArrowDown: [0, 10] };
+        if (!offset[event.key] || !containerRef.current) return;
+        event.preventDefault();
+        const bounds = containerRef.current.getBoundingClientRect();
+        const coords = pointCoordsRef.current?.(bounds.left + point.left + offset[event.key][0], bounds.top + point.top + offset[event.key][1]);
+        if (coords) pointMoveRef.current?.(point.id, Number(coords.x.toPrecision(8)), Number(coords.y.toPrecision(8)));
+      }} onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => {
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+        const coords = pointCoordsRef.current?.(event.clientX, event.clientY);
+        if (coords && containerRef.current) {
+          const bounds = containerRef.current.getBoundingClientRect();
+          setPointPositions((previous) => previous.map((item) => item.id === point.id ? { ...item, left: event.clientX - bounds.left, top: event.clientY - bounds.top } : item));
+          pointMoveRef.current?.(point.id, Number(coords.x.toPrecision(8)), Number(coords.y.toPrecision(8)));
+        }
+      }} />)}
       {pin && <>
         <div className="graph-pin" style={{ left: pin.left, top: pin.top }} aria-hidden="true"><span>{pin.text}</span></div>
         <button type="button" className="graph-clear-pin" onClick={() => { pinRef.current = null; setPin(null); }} aria-label={`Clear pinned point ${pin.text}`}>Clear pinned point ({pin.text})</button>
