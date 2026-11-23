@@ -25,3 +25,13 @@ export function snapParameterValue(value: number, min: number, max: number, step
   const valueWithoutRoundingNoise = Math.abs(rounded - snapped) <= step * 1e-6 ? rounded : snapped;
   return Math.max(min, Math.min(max, valueWithoutRoundingNoise));
 }
+
+/** Advance in step-sized increments, reflecting at each end without overshoot. */
+export function advanceAnimatedParameter(parameter: GraphParameter, position: number, delta: number): { position: number; value: number } {
+  const steps = Math.floor((parameter.max - parameter.min) / parameter.step + 1e-10);
+  if (!Number.isFinite(steps) || steps < 1 || steps > Number.MAX_SAFE_INTEGER || !Number.isFinite(delta)) return { position, value: parameter.value };
+  const period = 2 * steps;
+  const next = ((position + delta) % period + period) % period;
+  const reflected = next <= steps ? next : period - next;
+  return { position: next, value: snapParameterValue(parameter.min + Math.round(reflected) * parameter.step, parameter.min, parameter.max, parameter.step) };
+}

@@ -23,3 +23,14 @@ describe("parameter slider ranges", () => {
     expect(snapParameterValue(1e15 + 0.5, 1e15, 1e15 + 1, 0.5)).toBe(1e15 + 0.5);
   });
 });
+
+describe("slider animation", () => {
+  const parameter = { name: "a", min: 0, max: 2, step: 0.5, value: 1 };
+  it("advances in steps and reflects at the endpoints", async () => {
+    const { advanceAnimatedParameter } = await import("./graphParameters");
+    expect(advanceAnimatedParameter(parameter, 2, 1).value).toBe(1.5);
+    expect(advanceAnimatedParameter(parameter, 3, 2).value).toBe(1.5);
+    expect(advanceAnimatedParameter(parameter, 1, -2).value).toBe(0.5);
+    expect(advanceAnimatedParameter(parameter, 0, 0).value).toBe(0);
+  });
+});

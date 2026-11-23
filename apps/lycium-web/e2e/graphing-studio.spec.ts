@@ -192,3 +192,195 @@ test("a snapped undefined point clears its trace and tracing recovers at a valid
   await hoverGraph(page, 0.6);
   await expect(legend).toHaveText("2, 0.5");
 });
+
+test("graph documents round-trip and presentation locks editing while exposing selected sliders", async ({ page }) => {
+  await page.goto(graphPath);
+  await expectCurves(page, 2);
+  await page.getByRole("button", { name: "Add slider a", exact: true }).click();
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("a*x^2");
+  await page.getByRole("checkbox", { name: "a", exact: true }).check();
+  await page.getByRole("slider", { name: "Parameter a" }).fill("2");
+  await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  const ticks = page.locator(".graph-viewport .x.axis .tick text");
+  const exportedTicks = await ticks.allTextContents();
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export JSON", exact: true }).click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  if (!path) throw new Error("Graph download is unavailable");
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("x");
+  await page.getByLabel("Choose graph JSON", { exact: true }).setInputFiles(path);
+  await expect(page.getByRole("textbox", { name: "Function 1", exact: true })).toHaveValue("a*x^2");
+  await expect(page.getByRole("slider", { name: "Parameter a" })).toHaveValue("2");
+  await expect.poll(() => ticks.allTextContents()).toEqual(exportedTicks);
+  await page.getByRole("button", { name: "Present", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Function 1", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("slider", { name: "Parameter a" })).toBeVisible();
+  await page.getByRole("slider", { name: "Parameter a" }).fill("-1");
+  await expect(page.getByRole("slider", { name: "Parameter a" })).toHaveValue("-1");
+  await page.getByRole("button", { name: "Edit graph", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Function 1", exact: true })).toHaveValue("a*x^2");
+});
+
+test("suggests sliders for undefined parameters without hiding other errors", async ({ page }) => {
+  await page.goto(graphPath);
+  const first = page.getByRole("textbox", { name: "Function 1", exact: true });
+  await first.fill("a*x^2+b");
+  await page.getByRole("button", { name: "Add slider a", exact: true }).first().click();
+  await page.getByRole("button", { name: "Add slider b", exact: true }).first().click();
+  await expect(first).toHaveAttribute("aria-invalid", "false");
+  await expectCurves(page, 2);
+  await first.fill("foo(x)");
+  await expect(first).toHaveAttribute("aria-invalid", "true");
+  await expectCurves(page, 1);
+});
+
+test("rejects unsupported vertical equations instead of plotting a misleading function", async ({ page }) => {
+  await page.goto(graphPath);
+  const first = page.getByRole("textbox", { name: "Function 1", exact: true });
+  await first.fill("x=2");
+  await expect(first).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByText(/equations such as x=2 are not yet supported/)).toBeVisible();
+  await expectCurves(page, 1);
+});
+
+test("trace skips a shifted asymptote and recovers", async ({ page }) => {
+  await page.goto(graphPath);
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("1/(x-2)");
+  await page.getByRole("checkbox", { name: "Snap x to grid", exact: true }).check();
+  await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
+  await expectCurves(page, 1);
+  const legend = page.locator(".graph-viewport .top-right-legend");
+  await hoverGraph(page, 0.7);
+  await expect(legend).toHaveText("4, 0.5");
+  await hoverGraph(page, 0.6);
+  await expect(legend).toHaveText("");
+  await hoverGraph(page, 0.4);
+  await expect(legend).toHaveText("-2, -0.25");
+});
+
+test("square root traces only its defined domain", async ({ page }) => {
+  await page.goto(graphPath);
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("sqrt(x)");
+  await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Snap x to grid", exact: true }).check();
+  await expectCurves(page, 1);
+  const legend = page.locator(".graph-viewport .top-right-legend");
+  await hoverGraph(page, 0.7);
+  await expect(legend).toHaveText("4, 2");
+  await hoverGraph(page, 0.4);
+  await expect(legend).toHaveText("");
+  await hoverGraph(page, 0.5);
+  await expect(legend).toHaveText("0, 0");
+});
+
+test("formatted math editing preserves loaded expressions until edited and plots the result", async ({ page }) => {
+  await page.goto(graphPath);
+  await expectCurves(page, 2);
+  const field = page.getByRole("textbox", { name: "Function 1", exact: true });
+  await field.fill("y=2*x+1");
+  await expect(field).toHaveAttribute("aria-invalid", "false");
+  await page.getByRole("button", { name: "Use formatted math for Function 1", exact: true }).click();
+  const math = page.locator("math-field[aria-label='Function 1']");
+  await expect(math).toBeVisible();
+  await page.getByRole("button", { name: "Use plain text for Function 1", exact: true }).click();
+  await expect(field).toHaveValue("y=2*x+1");
+  await page.getByRole("button", { name: "Use formatted math for Function 1", exact: true }).click();
+  await expect(math).toBeVisible();
+  await math.focus();
+  await page.keyboard.press("ControlOrMeta+A");
+  await page.keyboard.insertText("x^2");
+  await expectCurves(page, 2);
+  await page.getByRole("button", { name: "Use plain text for Function 1", exact: true }).click();
+  await expect(field).toHaveValue(/x\^2/);
+});
+
+test("multiple slider animations move independently, pause, and preserve their graph", async ({ page }) => {
+  await page.goto(graphPath);
+  await page.getByRole("button", { name: "Add slider a", exact: true }).click();
+  await page.getByRole("button", { name: "Add slider b", exact: true }).click();
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("a*x+b");
+  await expectCurves(page, 2);
+  const a = page.getByRole("slider", { name: "Parameter a", exact: true });
+  const b = page.getByRole("slider", { name: "Parameter b", exact: true });
+  await page.getByRole("button", { name: "Play slider a", exact: true }).click();
+  await page.getByRole("button", { name: "Play slider b", exact: true }).click();
+  await expect.poll(() => a.inputValue()).not.toBe("1");
+  await expect.poll(() => b.inputValue()).not.toBe("1");
+  await page.getByRole("button", { name: "Pause slider a", exact: true }).click();
+  const paused = await a.inputValue();
+  const bBefore = await b.inputValue();
+  await expect.poll(() => b.inputValue()).not.toBe(bBefore);
+  await expect(a).toHaveValue(paused);
+  await page.getByRole("button", { name: "Pause slider b", exact: true }).click();
+  await expectCurves(page, 2);
+});
+
+test("trace skips a removable discontinuity and recovers", async ({ page }) => {
+  await page.goto(graphPath);
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("(x^2-4)/(x-2)");
+  await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Snap x to grid", exact: true }).check();
+  await expectCurves(page, 1);
+  const legend = page.locator(".graph-viewport .top-right-legend");
+  await hoverGraph(page, 0.7);
+  await expect(legend).toHaveText("4, 6");
+  await hoverGraph(page, 0.6);
+  await expect(legend).toHaveText("");
+  await hoverGraph(page, 0.4);
+  await expect(legend).toHaveText("-2, 0");
+});
+
+test("explicit points are plotted, edited, and saved in graph documents", async ({ page }) => {
+  await page.goto(graphPath);
+  await expectCurves(page, 2);
+  await page.getByRole("button", { name: "Add point", exact: true }).click();
+  const x = page.getByRole("spinbutton", { name: "Point 1 x", exact: true });
+  const y = page.getByRole("spinbutton", { name: "Point 1 y", exact: true });
+  await x.fill("2"); await x.blur();
+  await y.fill("3"); await y.blur();
+  await expect(page.locator(".graph-viewport .graph")).toHaveCount(3);
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export JSON", exact: true }).click();
+  const path = await (await downloadPromise).path();
+  if (!path) throw new Error("Graph download unavailable");
+  await page.getByRole("button", { name: "Remove point 1", exact: true }).click();
+  await expect(page.locator(".graph-viewport .graph")).toHaveCount(2);
+  await page.getByLabel("Choose graph JSON", { exact: true }).setInputFiles(path);
+  await expect(page.getByRole("spinbutton", { name: "Point 1 x", exact: true })).toHaveValue("2");
+  await expect(page.getByRole("spinbutton", { name: "Point 1 y", exact: true })).toHaveValue("3");
+  await expect(page.locator(".graph-viewport .graph")).toHaveCount(3);
+});
+
+test("click pins a traced coordinate, pan does not, and the label can be cleared", async ({ page }) => {
+  await page.goto(graphPath);
+  await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Snap x to grid", exact: true }).check();
+  await expectCurves(page, 1);
+  const area = await page.locator(".graph-viewport .zoom-and-drag").boundingBox();
+  if (!area) throw new Error("Graph interaction surface unavailable");
+  await page.mouse.move(area.x + area.width * .6, area.y + area.height / 2);
+  await expect(page.locator(".top-right-legend")).toHaveText("2, 4");
+  await page.mouse.down(); await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Clear pinned point 2, 4", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Clear pinned point 2, 4", exact: true }).click();
+  await page.mouse.move(area.x + area.width * .6, area.y + area.height / 2);
+  await page.mouse.down(); await page.mouse.move(area.x + area.width * .65, area.y + area.height / 2, { steps: 5 }); await page.mouse.up();
+  await expect(page.getByRole("button", { name: /Clear pinned point/ })).toHaveCount(0);
+});
+
+test("finds approximate crossings and does not mistake an asymptote for one", async ({ page }) => {
+  await page.goto(graphPath);
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("x");
+  await page.getByRole("textbox", { name: "Function 2", exact: true }).fill("-x");
+  await expectCurves(page, 2);
+  await page.getByRole("button", { name: "Find intersections", exact: true }).click();
+  await expect(page.getByText("Functions 1 & 2: (0, 0)", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add intersection 1 as point", exact: true }).click();
+  await expect(page.getByRole("spinbutton", { name: "Point 1 x", exact: true })).toHaveValue("0");
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("1/x");
+  await page.getByRole("textbox", { name: "Function 2", exact: true }).fill("0");
+  await expect(page.locator(".graph-viewport .graph")).toHaveCount(3);
+  await page.getByRole("button", { name: "Find intersections", exact: true }).click();
+  await expect(page.getByText("No crossings found in this view.", { exact: true })).toBeVisible();
+});

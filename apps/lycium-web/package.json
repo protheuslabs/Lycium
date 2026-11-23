@@ -18,6 +18,7 @@
     "@lycium/data-access": "workspace:*",
     "function-plot": "^1.26.0",
     "lucide-react": "^1.76.0",
+    "mathlive": "^0.111.4",
     "next": "^16.2.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
