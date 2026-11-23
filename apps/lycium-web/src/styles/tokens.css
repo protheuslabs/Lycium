@@ -22,6 +22,9 @@
   --lycium-header-gutter: 1rem;
   --lycium-footer-gutter: 1rem;
   --lycium-page-title-size: 2.25rem;
+  --lycium-tool-padding-inline: clamp(1rem, 2.5vw, 2.5rem);
+  --lycium-tool-padding-block: clamp(.75rem, 1.5vw, 1.25rem);
+  --lycium-tool-margin-block: 0;
 
   --lycium-dark-canvas: #1b1d1f;
   --lycium-dark-surface: #222527;

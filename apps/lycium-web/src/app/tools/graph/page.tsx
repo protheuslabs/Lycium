@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import GraphingStudio from "../../../components/Tools/GraphingStudio";
+import ToolFrame from "../../../components/Tools/ToolFrame";
 
 export default function GraphPage() {
   return (
@@ -11,7 +12,9 @@ export default function GraphPage() {
         <h1>Graphing Studio</h1>
       </header>
       <main id="main-content" tabIndex={-1} className="graphing-workspace-main">
-        <GraphingStudio workspace />
+        <ToolFrame fill>
+          <GraphingStudio workspace />
+        </ToolFrame>
       </main>
     </div>
   );

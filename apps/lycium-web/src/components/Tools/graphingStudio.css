@@ -25,20 +25,38 @@
 .graphing-view-controls { display: flex; align-items: center; gap: .25rem; }
 .graphing-grid-toggle { display: flex; align-items: center; gap: .4rem; font-size: .875rem; padding: .5rem; cursor: pointer; }
 .graphing-grid-toggle input { accent-color: var(--lycium-color-accent); }
+.graphing-trace-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .35rem .75rem; border-bottom: 1px solid var(--lycium-color-border); font-size: .8rem; }
+.graphing-trace-controls label { display: flex; align-items: center; gap: .4rem; min-height: 2rem; }
+.graphing-trace-controls select { padding: .25rem .4rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); background: var(--lycium-color-control-surface); color: var(--lycium-color-text); font: inherit; }
+.graphing-trace-controls input { accent-color: var(--lycium-color-accent); }
 .graphing-graph-hint { margin: 0; padding: .6rem 1rem; border-top: 1px solid var(--lycium-color-border); }
+.graphing-parameters { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--lycium-color-border); }
+.graphing-parameters h3 { margin: 0; font-size: .95rem; }
+.graphing-parameter { margin-block: .75rem; padding: .65rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); }
+.graphing-parameter-header { display: flex; align-items: center; justify-content: space-between; font-size: .95rem; }
+.graphing-parameter output { font-variant-numeric: tabular-nums; }
+.graphing-parameter input[type="range"] { display: block; width: 100%; min-height: 2.75rem; margin: 0; accent-color: var(--lycium-color-accent); cursor: pointer; }
+.graphing-parameter-limits { display: flex; justify-content: space-between; font-size: .75rem; color: var(--lycium-color-text-muted); }
+.graphing-parameter-settings { margin-top: .5rem; font-size: .8rem; }
+.graphing-parameter-settings summary { cursor: pointer; padding-block: .35rem; }
+.graphing-parameter-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .4rem; margin-block: .5rem; }
+.graphing-parameter-fields label { display: grid; gap: .2rem; }
+.graphing-parameter-fields input { width: 100%; min-width: 0; padding: .4rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); font: inherit; color: var(--lycium-color-text); background: var(--lycium-color-control-surface); }
+.graphing-studio button:disabled { cursor: not-allowed; opacity: .5; }
 
 .graphing-back-link { display: inline-flex; align-items: center; gap: .4rem; font-size: .875rem; }
 .graphing-layout.graphing-layout--collapsed { grid-template-columns: minmax(0, 1fr); }
 .graphing-expressions[hidden] { display: none; }
 .graphing-workspace { display: flex; flex-direction: column; width: 100%; height: 100dvh; min-height: 0; overflow: hidden; background: var(--lycium-color-canvas); }
-.graphing-workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; flex: 0 0 auto; min-height: 3.5rem; padding: .5rem 1rem; border-bottom: 1px solid var(--lycium-color-border); }
+.graphing-workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; flex: 0 0 auto; min-height: 3.5rem; padding: .5rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)); border-bottom: 1px solid var(--lycium-color-border); }
 .graphing-workspace-header h1 { margin: 0; padding-left: 1rem; border-left: 1px solid var(--lycium-color-border); font-size: 1rem; line-height: 1.5; }
-.graphing-workspace-main { flex: 1; min-height: 0; min-width: 0; padding: .75rem; overflow: hidden; }
+.graphing-workspace-main { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
 .graphing-studio--workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .graphing-studio--workspace .graphing-layout { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: .75rem; }
 .graphing-studio--workspace .graphing-graph { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .graphing-studio--workspace .graph-surface { flex: 1 1 0; height: auto; }
 .graphing-studio--workspace .graphing-toolbar,
+.graphing-studio--workspace .graphing-trace-controls,
 .graphing-studio--workspace .graphing-graph-hint { flex: 0 0 auto; }
 .graphing-studio--workspace .graphing-expressions { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 .graphing-studio--workspace .graphing-expressions[hidden] { display: none; }
@@ -52,9 +70,8 @@
   .graphing-expressions { padding: .75rem; }
   .graphing-toolbar { gap: 0; padding: .4rem; }
   .graphing-expression-list { max-height: 240px; }
-  .graphing-workspace-header { gap: .75rem; padding-inline: .75rem; }
+  .graphing-workspace-header { gap: .75rem; }
   .graphing-workspace-header h1 { padding-left: .75rem; font-size: .9rem; }
-  .graphing-workspace-main { padding: .5rem; }
   .graphing-panel-toggle span { display: none; }
 }
 

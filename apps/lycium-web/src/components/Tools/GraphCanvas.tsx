@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { Chart, FunctionPlotDatum, FunctionPlotOptions } from "function-plot";
+import { formatCoordinate, gridStepFromTicks, snapCoordinate, type CoordinatePrecision } from "./graphCoordinates";
 import "./graphCanvas.css";
 
 export interface GraphExpression {
@@ -18,17 +19,22 @@ export interface GraphCanvasHandle {
 
 type GraphCanvasProps = {
   expressions: readonly GraphExpression[];
+  parameters?: Readonly<Record<string, number>>;
   grid: boolean;
+  precision?: CoordinatePrecision;
+  snapToGrid?: boolean;
   onErrors: (errors: Record<string, string>) => void;
 };
 
+const NO_PARAMETERS: Readonly<Record<string, number>> = {};
+
 // No page layout or course dependencies: the same plot can live in either host.
 const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function GraphCanvas(
-  { expressions, grid, onErrors },
+  { expressions, parameters = NO_PARAMETERS, grid, precision = "auto", snapToGrid = false, onErrors },
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const configRef = useRef({ expressions, grid });
+  const configRef = useRef({ expressions, parameters, grid, precision, snapToGrid });
   const controllerRef = useRef<GraphCanvasHandle & { redraw: () => void } | null>(null);
   const [status, setStatus] = useState("Loading graph…");
 
@@ -38,11 +44,22 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
   }), []);
 
   useEffect(() => {
-    configRef.current = { expressions, grid };
+    configRef.current = { ...configRef.current, expressions, grid };
     // Avoid rebuilding for every keystroke while an expression is being entered.
     const timer = window.setTimeout(() => controllerRef.current?.redraw(), 150);
     return () => window.clearTimeout(timer);
   }, [expressions, grid]);
+
+  useEffect(() => {
+    configRef.current = { ...configRef.current, parameters };
+    // Slider updates are frame-coalesced, rather than debounced like text edits.
+    const frame = requestAnimationFrame(() => controllerRef.current?.redraw());
+    return () => cancelAnimationFrame(frame);
+  }, [parameters]);
+
+  useEffect(() => {
+    configRef.current = { ...configRef.current, precision, snapToGrid };
+  }, [precision, snapToGrid]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -73,12 +90,18 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
         };
         disposeChart = release;
 
+        const coordinateText = (x: number, y: number) => {
+          const xStep = gridStepFromTicks(chart?.meta.xScale?.ticks() ?? []);
+          const yStep = gridStepFromTicks(chart?.meta.yScale?.ticks() ?? []);
+          return `${formatCoordinate(x, xStep, configRef.current.precision)}, ${formatCoordinate(y, yStep, configRef.current.precision)}`;
+        };
+
         const makeOptions = (xDomain?: number[], yDomain?: number[]): FunctionPlotOptions => ({
           target,
           xAxis: { domain: xDomain ?? [-10, 10], label: "x" },
           // An omitted y domain gives equal units per pixel on the initial view.
           yAxis: { domain: yDomain, label: "y" },
-          tip: { xLine: true, yLine: true },
+          tip: { xLine: true, yLine: true, renderer: (x, y) => `(${coordinateText(x, y)})` },
           data: [],
         });
         options = makeOptions();
@@ -97,6 +120,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             const datum: FunctionPlotDatum = {
               fn,
               color: expression.color,
+              scope: { ...configRef.current.parameters },
               graphType: "interval",
               sampler: "interval",
             };
@@ -118,7 +142,32 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           lastWidth = width;
           lastHeight = height;
           try {
+            const previousChart = chart;
             chart = library.default(options);
+            if (chart !== previousChart) {
+              let hasTracePoint = false;
+              // The library evaluates y from the adjusted x, keeping the marker on
+              // the curve. Never independently round or snap the y coordinate.
+              chart.on("before:mousemove", (coordinates: { x: number; y: number }) => {
+                hasTracePoint = false;
+                const legend = target.querySelector(".top-right-legend");
+                if (legend) legend.textContent = "";
+                if (!configRef.current.snapToGrid) return;
+                const ticks = chart?.meta.xScale?.ticks() ?? [];
+                const domain = chart?.meta.xScale?.domain() ?? [];
+                coordinates.x = snapCoordinate(coordinates.x, gridStepFromTicks(ticks), domain);
+              });
+              chart.on("tip:update", ({ x, y }: { x: number; y: number }) => {
+                if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+                hasTracePoint = true;
+                chart?.tip.show();
+                const legend = target.querySelector(".top-right-legend");
+                if (legend) legend.textContent = coordinateText(x, y);
+              });
+              chart.on("mousemove", () => {
+                if (!hasTracePoint) chart?.tip.hide();
+              });
+            }
             setStatus("");
           } catch (cause) {
             setStatus(cause instanceof Error ? `Unable to draw graph: ${cause.message}` : "Unable to draw graph.");

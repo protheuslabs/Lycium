@@ -1,0 +1,16 @@
+.lycium-tool-frame {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin-block: var(--lycium-tool-margin-block, 0);
+  margin-inline: auto;
+  padding-block: var(--lycium-tool-padding-block, clamp(.75rem, 1.5vw, 1.25rem));
+  padding-inline: var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem));
+}
+
+.lycium-tool-frame--fill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}

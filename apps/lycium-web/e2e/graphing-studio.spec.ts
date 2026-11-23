@@ -33,6 +33,12 @@ test("graph height stays bounded over repeated renders and resizes", async ({ pa
     expect(measured.max).toBeLessThan(size.height);
     expect(measured.max - measured.min).toBeLessThan(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(size.width);
+    const gutters = await page.locator(".graphing-layout").evaluate((layout) => {
+      const bounds = layout.getBoundingClientRect();
+      return { left: bounds.left, right: window.innerWidth - bounds.right };
+    });
+    expect(gutters.left).toBeGreaterThanOrEqual(16);
+    expect(gutters.right).toBeGreaterThanOrEqual(16);
   }
 });
 
@@ -51,6 +57,8 @@ test("standalone workspace is focused and the functions panel can collapse", asy
   await expect(page.getByRole("textbox", { name: "Function 1", exact: true })).toHaveValue("x^2");
   await page.getByRole("link", { name: "Back to Tools", exact: true }).click();
   await expect(page).toHaveURL(/\/tools$/);
+  const mobileNavigation = page.getByRole("button", { name: "Open navigation", exact: true });
+  if (await mobileNavigation.isVisible()) await mobileNavigation.click();
   await expect(page.getByRole("navigation", { name: "Primary navigation", exact: true })).toBeVisible();
 });
 
@@ -90,4 +98,97 @@ test("functions can be added, hidden, restored, and removed", async ({ page }) =
   await page.getByRole("button", { name: "Remove function 3", exact: true }).click();
   await expectCurves(page, 2);
   await expect(page.getByRole("textbox", { name: "Function 3", exact: true })).toHaveCount(0);
+});
+
+test("parameter sliders change rendered curves while retaining the viewport", async ({ page }) => {
+  await page.goto(graphPath);
+  await expectCurves(page, 2);
+  await page.getByRole("button", { name: "Add slider a", exact: true }).click();
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("y=a*x^2");
+  await expect(page.getByRole("textbox", { name: "Function 1", exact: true })).toHaveAttribute("aria-invalid", "false");
+  await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  const ticks = await page.locator(".graph-viewport .x.axis .tick text").allTextContents();
+  const curve = page.locator(".graph-viewport .graph path").first();
+  const before = await curve.getAttribute("d");
+  const slider = page.getByRole("slider", { name: "Parameter a", exact: true });
+  await slider.press("ArrowRight");
+  await expect(slider).toHaveValue("1.1");
+  await expect.poll(() => curve.getAttribute("d")).not.toBe(before);
+  expect(await page.locator(".graph-viewport .x.axis .tick text").allTextContents()).toEqual(ticks);
+  await page.getByRole("button", { name: "Hide functions panel", exact: true }).click();
+  await page.getByRole("button", { name: "Show functions panel", exact: true }).click();
+  await expect(slider).toHaveValue("1.1");
+  await page.getByRole("button", { name: "Reset view", exact: true }).click();
+  await expect(slider).toHaveValue("1.1");
+  await expectCurves(page, 2);
+  await page.getByRole("button", { name: "Remove slider a", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "Function 1", exact: true })).toHaveAttribute("aria-invalid", "true");
+  await expectCurves(page, 1);
+});
+
+test("invalid slider settings do not corrupt the last valid range", async ({ page }) => {
+  await page.goto(graphPath);
+  await page.getByRole("button", { name: "Add slider a", exact: true }).click();
+  await page.getByText("Range and step", { exact: true }).click();
+  await page.getByRole("spinbutton", { name: "Step for a", exact: true }).fill("0");
+  await page.getByRole("button", { name: "Apply range for a", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Step must be positive" })).toBeVisible();
+  const slider = page.getByRole("slider", { name: "Parameter a", exact: true });
+  await expect(slider).toHaveAttribute("step", "0.1");
+  await page.getByRole("spinbutton", { name: "Minimum for a", exact: true }).fill("-2");
+  await page.getByRole("spinbutton", { name: "Maximum for a", exact: true }).fill("-1");
+  await page.getByRole("spinbutton", { name: "Step for a", exact: true }).fill("0.25");
+  await page.getByRole("button", { name: "Apply range for a", exact: true }).click();
+  await expect(slider).toHaveValue("-1");
+  await expect(slider).toHaveAttribute("min", "-2");
+  await expect(slider).toHaveAttribute("max", "-1");
+  await expect(slider).toHaveAttribute("step", "0.25");
+});
+
+async function hoverGraph(page: Page, fraction: number) {
+  const area = await page.locator(".graph-viewport .zoom-and-drag").boundingBox();
+  if (!area) throw new Error("The graph interaction surface is missing.");
+  await page.mouse.move(area.x + area.width * fraction, area.y + area.height / 2);
+}
+
+test("coordinate precision changes display only, while snapping evaluates y at the snapped x", async ({ page }) => {
+  await page.goto(graphPath);
+  await expectCurves(page, 2);
+  await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
+  await expectCurves(page, 1);
+  await expect(page.getByRole("combobox", { name: "Coordinate precision", exact: true })).toHaveValue("auto");
+  await expect(page.getByRole("checkbox", { name: "Snap x to grid", exact: true })).not.toBeChecked();
+  const curve = page.locator(".graph-viewport .graph path").first();
+  const originalPath = await curve.getAttribute("d");
+  const legend = page.locator(".graph-viewport .top-right-legend");
+  await hoverGraph(page, 0.5635);
+  await expect(legend).toHaveText(/^-?\d+(?:\.\d{1,2})?, -?\d+(?:\.\d{1,2})?$/);
+  const [x, y] = ((await legend.textContent()) ?? "").split(", ").map(Number);
+  // A narrow phone viewport may quantize the requested pointer position by a pixel.
+  expect(Math.abs(x - 1.27)).toBeLessThan(0.05);
+  expect(Math.abs(y - x * x)).toBeLessThan(0.04);
+  await page.getByRole("combobox", { name: "Coordinate precision", exact: true }).selectOption("0");
+  await hoverGraph(page, 0.5635);
+  await expect(legend).toHaveText("1, 2");
+  expect(await curve.getAttribute("d")).toBe(originalPath);
+  await page.getByRole("combobox", { name: "Coordinate precision", exact: true }).selectOption("6");
+  await page.getByRole("checkbox", { name: "Snap x to grid", exact: true }).check();
+  await hoverGraph(page, 0.5635);
+  await expect(legend).toHaveText("2, 4");
+  expect(await curve.getAttribute("d")).toBe(originalPath);
+});
+
+test("a snapped undefined point clears its trace and tracing recovers at a valid point", async ({ page }) => {
+  await page.goto(graphPath);
+  await page.getByRole("textbox", { name: "Function 1", exact: true }).fill("1/x");
+  await page.getByRole("button", { name: "Hide function 2", exact: true }).click();
+  await expectCurves(page, 1);
+  await page.getByRole("checkbox", { name: "Snap x to grid", exact: true }).check();
+  const legend = page.locator(".graph-viewport .top-right-legend");
+  await hoverGraph(page, 0.6);
+  await expect(legend).toHaveText("2, 0.5");
+  await hoverGraph(page, 0.5);
+  await expect(legend).toHaveText("");
+  await hoverGraph(page, 0.6);
+  await expect(legend).toHaveText("2, 0.5");
 });

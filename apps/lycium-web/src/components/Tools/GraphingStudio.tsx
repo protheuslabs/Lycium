@@ -1,8 +1,11 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import { Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle, type GraphExpression } from "./GraphCanvas";
+import ParameterSliders from "./ParameterSliders";
+import type { GraphParameter } from "./graphParameters";
+import type { CoordinatePrecision } from "./graphCoordinates";
 import "./graphingStudio.css";
 
 const COLORS = ["#176b55", "#2563eb", "#c2410c", "#9333ea", "#be185d", "#0e7490"];
@@ -15,6 +18,10 @@ export default function GraphingStudio({ workspace = false }: { workspace?: bool
   const [expressions, setExpressions] = useState(DEFAULT_EXPRESSIONS);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [grid, setGrid] = useState(true);
+  const [precision, setPrecision] = useState<CoordinatePrecision>("auto");
+  const [snapToGrid, setSnapToGrid] = useState(false);
+  const [parameters, setParameters] = useState<GraphParameter[]>([]);
+  const parameterValues = useMemo(() => Object.fromEntries(parameters.map(({ name, value }) => [name, value])), [parameters]);
   const [expressionsVisible, setExpressionsVisible] = useState(true);
   const graphRef = useRef<GraphCanvasHandle>(null);
   const nextId = useRef(3);
@@ -61,12 +68,13 @@ export default function GraphingStudio({ workspace = false }: { workspace?: bool
                 {errors[expression.id] && <p className="graphing-error" id={`${id}-error-${expression.id}`} role="status">{errors[expression.id]}</p>}
               </div>
             ))}
+            <button type="button" className="graphing-add-button" onClick={() => {
+              const expressionId = nextId.current++;
+              setExpressions((previous) => [...previous, { id: String(expressionId), expr: "", color: COLORS[(expressionId - 1) % COLORS.length], visible: true }]);
+            }}><Plus size={18} aria-hidden="true" />Add function</button>
+            {expressions.length === 0 && <p className="graphing-hint">Add a function to start plotting.</p>}
+            <ParameterSliders parameters={parameters} onChange={setParameters} />
           </div>
-          <button type="button" className="graphing-add-button" onClick={() => {
-            const expressionId = nextId.current++;
-            setExpressions((previous) => [...previous, { id: String(expressionId), expr: "", color: COLORS[(expressionId - 1) % COLORS.length], visible: true }]);
-          }}><Plus size={18} aria-hidden="true" />Add function</button>
-          {expressions.length === 0 && <p className="graphing-hint">Add a function to start plotting.</p>}
         </aside>
         <section className="graphing-graph" aria-label="Interactive graph">
           <div className="graphing-toolbar" role="toolbar" aria-label="Graph controls">
@@ -80,7 +88,20 @@ export default function GraphingStudio({ workspace = false }: { workspace?: bool
               <button type="button" className="graphing-reset-button" onClick={() => graphRef.current?.reset()}><RotateCcw size={16} aria-hidden="true" />Reset view</button>
             </div>
           </div>
-          <GraphCanvas ref={graphRef} expressions={expressions} grid={grid} onErrors={setErrors} />
+          <div className="graphing-trace-controls" role="group" aria-label="Coordinate readout settings">
+            <label>Decimals
+              <select aria-label="Coordinate precision" value={precision} onChange={(event) => {
+                const value = event.target.value;
+                if (value === "auto") setPrecision("auto");
+                else if (value === "0" || value === "1" || value === "2" || value === "3" || value === "4" || value === "6") setPrecision(Number(value) as CoordinatePrecision);
+              }}>
+                <option value="auto">Auto</option>
+                {[0, 1, 2, 3, 4, 6].map((digits) => <option key={digits} value={digits}>{digits}</option>)}
+              </select>
+            </label>
+            <label title="Snap x to visible grid increments; y is calculated from the function."><input type="checkbox" checked={snapToGrid} onChange={(event) => setSnapToGrid(event.target.checked)} />Snap x to grid</label>
+          </div>
+          <GraphCanvas ref={graphRef} expressions={expressions} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} />
           <p className="graphing-graph-hint">Hover over a curve to read coordinates. Reset view returns to the origin.</p>
         </section>
       </div>
