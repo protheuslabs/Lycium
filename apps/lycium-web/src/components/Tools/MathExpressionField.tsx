@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MathfieldElement } from "mathlive";
-import { convertAsciiMathToLatex, convertLatexToAsciiMath } from "mathlive/ssr";
+import { convertAsciiMathToLatex } from "mathlive/ssr";
 import "mathlive/fonts.css";
 
 type Props = {
@@ -47,10 +47,10 @@ export default function MathExpressionField({ value, label, invalid, describedBy
           onDraftErrorRef.current(true);
           return;
         }
-        const next = field.getValue("ascii-math");
+        const next = field.getValue("ascii-math").replace(/[∗×⋅]/g, "*");
         // The field may contain syntax that cannot be represented as ASCIIMath.
         if (field.value && !next.trim()) {
-          setError("This expression cannot be converted. Use plain text to edit it.");
+          setError("This expression cannot be plotted. Try a different expression.");
           onDraftErrorRef.current(true);
           return;
         }
@@ -81,20 +81,8 @@ export default function MathExpressionField({ value, label, invalid, describedBy
     lastValue.current = value;
   }, [value, invalid, describedBy, error]);
 
-  const enableFormatted = () => {
-    try {
-      const latex = convertAsciiMathToLatex(value);
-      const roundtrip = convertLatexToAsciiMath(latex);
-      if (value.trim() && !roundtrip.trim()) throw new Error();
-      setError(""); setFormatted(true);
-    } catch {
-      setError("This expression cannot be opened in the formatted editor. Continue editing in plain text.");
-    }
-  };
-
   return <span className="graphing-math-editor">
     {formatted ? <span ref={hostRef} className="graphing-math-host" /> : <input type="text" aria-label={label} aria-invalid={invalid} aria-describedby={describedBy} value={value} maxLength={500} placeholder="e.g. y=2*x+1" autoComplete="off" autoCapitalize="off" spellCheck={false} onChange={(event) => onChange(event.target.value)} />}
-    <button type="button" className="graphing-editor-mode" onClick={() => { if (formatted) { setFormatted(false); setError(""); onDraftErrorRef.current(false); } else enableFormatted(); }} aria-label={`${formatted ? "Use plain text" : "Use formatted math"} for ${label}`} title={formatted ? "Use plain text" : "Use formatted math"}>{formatted ? "Text" : "Math"}</button>
     {error && <span className="graphing-error" role="alert">{error}</span>}
   </span>;
 }

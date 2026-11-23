@@ -27,4 +27,10 @@ describe("graph document", () => {
     expect(() => parseGraphDocument({ ...example, points: [{ ...point, x: Infinity }] })).toThrow();
     expect(parseGraphDocument(example).points).toBeUndefined();
   });
+  it("round-trips datasets while rejecting invalid cells", () => {
+    const dataset = { id: "d1", name: "Measurements", xLabel: "Time (s)", yLabel: "Mass (g)", color: "#c2410c", visible: true, regression: true, rows: [{ x: "1", y: "2" }, { x: "", y: "" }] };
+    expect(parseGraphDocument({ ...example, datasets: [dataset] }).datasets).toEqual([dataset]);
+    expect(() => parseGraphDocument({ ...example, datasets: [{ ...dataset, rows: [{ x: "1", y: "NaN" }] }] })).toThrow();
+    expect(parseGraphDocument(example).datasets).toBeUndefined();
+  });
 });

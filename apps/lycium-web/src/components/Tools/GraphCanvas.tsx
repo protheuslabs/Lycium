@@ -5,6 +5,7 @@ import type { Chart, FunctionPlotDatum, FunctionPlotOptions } from "function-plo
 import { formatCoordinate, gridStepFromTicks, snapCoordinate, type CoordinatePrecision } from "./graphCoordinates";
 import type { GraphPoint } from "./graphDocument";
 import { prepareGraphExpression, type GraphExpression } from "./graphExpressions";
+import { linearRegression, numericPoints, type GraphDataset } from "./graphDataset";
 import "./graphCanvas.css";
 
 export interface GraphCanvasHandle {
@@ -18,6 +19,7 @@ export interface GraphCanvasHandle {
 type GraphCanvasProps = {
   expressions: readonly GraphExpression[];
   points?: readonly GraphPoint[];
+  datasets?: readonly GraphDataset[];
   parameters?: Readonly<Record<string, number>>;
   grid: boolean;
   initialViewport?: { x: [number, number]; y: [number, number] } | null;
@@ -28,16 +30,18 @@ type GraphCanvasProps = {
 };
 
 const NO_POINTS: readonly GraphPoint[] = [];
+const NO_DATASETS: readonly GraphDataset[] = [];
 const NO_PARAMETERS: Readonly<Record<string, number>> = {};
 
 // No page layout or course dependencies: the same plot can live in either host.
 const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function GraphCanvas(
-  { expressions, points = NO_POINTS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, onErrors, onPointMove },
+  { expressions, points = NO_POINTS, datasets = NO_DATASETS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, onErrors, onPointMove },
   ref,
 ) {
   const initialViewportRef = useRef(initialViewport);
   const containerRef = useRef<HTMLDivElement>(null);
-  const configRef = useRef({ expressions, points, parameters, grid, precision, snapToGrid });
+  const configRef = useRef({ expressions, points, datasets, parameters, grid, precision, snapToGrid });
+  const lastErrorsRef = useRef<Record<string, string>>({});
   const controllerRef = useRef<(Omit<GraphCanvasHandle, "exportImage"> & { redraw: () => void }) | null>(null);
   const [status, setStatus] = useState("Loading graph…");
   const [pin, setPin] = useState<{ x: number; y: number; left: number; top: number; text: string } | null>(null);
@@ -100,11 +104,11 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
   }), []);
 
   useEffect(() => {
-    configRef.current = { ...configRef.current, expressions, points, grid };
+    configRef.current = { ...configRef.current, expressions, points, datasets, grid };
     // Avoid rebuilding for every keystroke while an expression is being entered.
     const timer = window.setTimeout(() => controllerRef.current?.redraw(), 150);
     return () => window.clearTimeout(timer);
-  }, [expressions, points, grid]);
+  }, [expressions, points, datasets, grid]);
 
   useEffect(() => {
     configRef.current = { ...configRef.current, parameters };
@@ -136,6 +140,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
         let options: FunctionPlotOptions;
         let lastWidth = 0;
         let lastHeight = 0;
+        let maintainEqualScale = !initialViewportRef.current;
         let trace: { x: number; y: number } | null = null;
         let pointerStart: { x: number; y: number } | null = null;
 
@@ -262,9 +267,20 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
               errors[expression.id] = cause instanceof Error ? cause.message : "Check the expression syntax.";
             }
           }
-          onErrors(errors);
+          const previousErrors = lastErrorsRef.current;
+          if (Object.keys(errors).length !== Object.keys(previousErrors).length || Object.entries(errors).some(([key, message]) => previousErrors[key] !== message)) {
+            lastErrorsRef.current = errors;
+            onErrors(errors);
+          }
           for (const point of configRef.current.points) {
             if (point.visible) data.push({ fn: `point-${point.id}`, fnType: "points", graphType: "scatter", points: [[point.x, point.y]], color: point.color, skipTip: true });
+          }
+          for (const dataset of configRef.current.datasets) {
+            if (!dataset.visible) continue;
+            const points = numericPoints(dataset.rows);
+            if (points.length) data.push({ fnType: "points", graphType: "scatter", points, color: dataset.color, skipTip: true });
+            const fit = dataset.regression ? linearRegression(points) : null;
+            if (fit) data.push({ fn: `(${fit.slope})*x+(${fit.intercept})`, graphType: "polyline", sampler: "builtIn", color: dataset.color, skipTip: true });
           }
           options.data = data;
           options.grid = false;
@@ -325,6 +341,15 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           draw();
         };
 
+        const hasEqualScale = () => {
+          const x = chart?.meta.xScale, y = chart?.meta.yScale;
+          if (!x || !y) return false;
+          const xd = x.domain(), yd = y.domain(), xr = x.range(), yr = y.range();
+          const xPixels = Math.abs((xr[1] - xr[0]) / (xd[1] - xd[0]));
+          const yPixels = Math.abs((yr[1] - yr[0]) / (yd[1] - yd[0]));
+          return xPixels > 0 && yPixels > 0 && Math.abs(xPixels / yPixels - 1) < 0.001;
+        };
+
         controllerRef.current = {
           redraw: draw,
           getViewport: () => {
@@ -333,6 +358,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             return x && y && x.length === 2 && y.length === 2 ? { x: [x[0], x[1]], y: [y[0], y[1]] } : null;
           },
           reset: () => {
+            maintainEqualScale = true;
             release();
             options = makeOptions();
             draw();
@@ -343,6 +369,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             release();
             options = makeOptions(viewport.x, viewport.y);
             draw();
+            maintainEqualScale = hasEqualScale();
           },
           zoom: (factor) => {
             const x = options.xAxis?.domain;
@@ -363,35 +390,13 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
         };
         draw();
         if (!initialViewportRef.current) normalizeScale();
+        else maintainEqualScale = hasEqualScale();
         observer = new ResizeObserver(() => {
           const width = Math.floor(container.clientWidth);
           const height = Math.floor(container.clientHeight);
           if (width === lastWidth && height === lastHeight) return;
           cancelAnimationFrame(frame);
-          frame = requestAnimationFrame(() => {
-            const xScale = chart?.meta.xScale;
-            const yScale = chart?.meta.yScale;
-            const x = options.xAxis?.domain;
-            const y = options.yAxis?.domain;
-            const pixelsPerUnit = (scale: typeof xScale, domain: number[] | undefined) => {
-              if (!scale || !domain) return 0;
-              const range = scale.range();
-              return Math.abs((range[1] - range[0]) / (domain[1] - domain[0]));
-            };
-            const oldX = pixelsPerUnit(xScale, x);
-            const oldY = pixelsPerUnit(yScale, y);
-            const wasEqualScale = oldX > 0 && oldY > 0 && Math.abs(oldX / oldY - 1) < 0.001;
-            draw();
-            if (!wasEqualScale || !x || !y || !chart?.meta.xScale || !chart.meta.yScale) return;
-            const nextX = pixelsPerUnit(chart.meta.xScale, x);
-            const nextY = pixelsPerUnit(chart.meta.yScale, y);
-            if (!nextX || !nextY) return;
-            const center = (y[0] + y[1]) / 2;
-            const half = (y[1] - y[0]) * nextY / nextX / 2;
-            release();
-            options = makeOptions(x, [center - half, center + half]);
-            draw();
-          });
+          frame = requestAnimationFrame(() => { draw(); if (maintainEqualScale) normalizeScale(); });
         });
         observer.observe(container);
       } catch (cause) {

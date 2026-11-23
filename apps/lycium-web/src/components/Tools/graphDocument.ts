@@ -1,6 +1,7 @@
 import type { GraphExpression } from "./graphExpressions";
 import type { CoordinatePrecision } from "./graphCoordinates";
 import { PARAMETER_NAMES, parameterRangeError, type GraphParameter } from "./graphParameters";
+import type { GraphDataset } from "./graphDataset";
 
 export interface GraphPoint { id: string; x: number; y: number; color: string; visible: boolean }
 
@@ -8,6 +9,7 @@ export interface GraphDocument {
   version: 1;
   expressions: GraphExpression[];
   points?: GraphPoint[];
+  datasets?: GraphDataset[];
   parameters: GraphParameter[];
   viewport: { x: [number, number]; y: [number, number] } | null;
   settings: { grid: boolean; precision: CoordinatePrecision; snapToGrid: boolean };
@@ -38,6 +40,18 @@ export function parseGraphDocument(value: unknown): GraphDocument {
     pointIds.add(entry.id);
     return { id: entry.id, x: entry.x, y: entry.y, color: entry.color, visible: entry.visible };
   });
+  const rawDatasets = value.datasets ?? [];
+  if (!Array.isArray(rawDatasets) || rawDatasets.length > 20) throw new Error("Datasets must be a list of at most 20 tables.");
+  const datasetIds = new Set<string>();
+  const datasets = rawDatasets.map((entry: unknown): GraphDataset => {
+    if (!record(entry) || typeof entry.id !== "string" || !entry.id || entry.id.length > 100 || datasetIds.has(entry.id) || typeof entry.name !== "string" || entry.name.length > 100 || typeof entry.xLabel !== "string" || entry.xLabel.length > 100 || typeof entry.yLabel !== "string" || entry.yLabel.length > 100 || typeof entry.color !== "string" || !/^#[0-9a-f]{6}$/i.test(entry.color) || typeof entry.visible !== "boolean" || typeof entry.regression !== "boolean" || !Array.isArray(entry.rows) || entry.rows.length > 1000) throw new Error("A dataset has invalid or duplicate fields.");
+    datasetIds.add(entry.id);
+    const rows = entry.rows.map((row: unknown) => {
+      if (!record(row) || typeof row.x !== "string" || typeof row.y !== "string" || row.x.length > 100 || row.y.length > 100 || (row.x.trim() && !Number.isFinite(Number(row.x))) || (row.y.trim() && !Number.isFinite(Number(row.y)))) throw new Error("Dataset cells must be finite numbers or blank.");
+      return { x: row.x, y: row.y };
+    });
+    return { id: entry.id, name: entry.name, xLabel: entry.xLabel, yLabel: entry.yLabel, color: entry.color, visible: entry.visible, regression: entry.regression, rows };
+  });
   if (!Array.isArray(value.parameters) || value.parameters.length > PARAMETER_NAMES.length) throw new Error("Invalid parameters list.");
   const names = new Set<string>();
   const parameters = value.parameters.map((entry: unknown): GraphParameter => {
@@ -49,5 +63,5 @@ export function parseGraphDocument(value: unknown): GraphDocument {
   if (view !== null && (!record(view) || !domain(view.x) || !domain(view.y))) throw new Error("Viewport bounds must be finite and increasing.");
   if (!record(value.settings) || typeof value.settings.grid !== "boolean" || typeof value.settings.snapToGrid !== "boolean" || !["auto", 0, 1, 2, 3, 4, 6].includes(value.settings.precision as string | number)) throw new Error("Invalid graph settings.");
   if (!record(value.presentation) || !Array.isArray(value.presentation.interactiveParameters) || !value.presentation.interactiveParameters.every((name: unknown) => typeof name === "string" && names.has(name)) || new Set(value.presentation.interactiveParameters).size !== value.presentation.interactiveParameters.length) throw new Error("Presentation controls must reference existing parameters.");
-  return { version: 1, expressions, ...(value.points === undefined ? {} : { points }), parameters, viewport: view === null ? null : { x: [...(view as { x: [number, number] }).x], y: [...(view as { y: [number, number] }).y] }, settings: { grid: value.settings.grid, snapToGrid: value.settings.snapToGrid, precision: value.settings.precision as CoordinatePrecision }, presentation: { interactiveParameters: [...value.presentation.interactiveParameters] } };
+  return { version: 1, expressions, ...(value.points === undefined ? {} : { points }), ...(value.datasets === undefined ? {} : { datasets }), parameters, viewport: view === null ? null : { x: [...(view as { x: [number, number] }).x], y: [...(view as { y: [number, number] }).y] }, settings: { grid: value.settings.grid, snapToGrid: value.settings.snapToGrid, precision: value.settings.precision as CoordinatePrecision }, presentation: { interactiveParameters: [...value.presentation.interactiveParameters] } };
 }

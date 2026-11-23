@@ -6,6 +6,8 @@ import { Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Trash2, Zo
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import type { GraphExpression } from "./graphExpressions";
 import ParameterSliders from "./ParameterSliders";
+import DatasetPanel from "./DatasetPanel";
+import { numericPoints, type GraphDataset } from "./graphDataset";
 import MathExpressionField from "./MathExpressionField";
 import { PARAMETER_NAMES, type GraphParameter } from "./graphParameters";
 import type { CoordinatePrecision } from "./graphCoordinates";
@@ -22,6 +24,7 @@ const DEFAULT_EXPRESSIONS: GraphExpression[] = [
 export default function GraphingStudio({ workspace = false, initialDocument, initialMode = "editor", allowEditing = true }: { workspace?: boolean; initialDocument?: GraphDocument; initialMode?: "editor" | "presentation"; allowEditing?: boolean }) {
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null);
   const [panelWidth, setPanelWidth] = useState(350);
+  const resizeStart = useRef<{ x: number; width: number } | null>(null);
   const [loadedDocument] = useState(() => initialDocument ? parseGraphDocument(initialDocument) : null);
   const [expressions, setExpressions] = useState(loadedDocument?.expressions ?? DEFAULT_EXPRESSIONS);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -36,6 +39,7 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
   const [precision, setPrecision] = useState<CoordinatePrecision>(loadedDocument?.settings.precision ?? "auto");
   const [snapToGrid, setSnapToGrid] = useState(loadedDocument?.settings.snapToGrid ?? false);
   const [points, setPoints] = useState<GraphPoint[]>(loadedDocument?.points ?? []);
+  const [datasets, setDatasets] = useState<GraphDataset[]>(loadedDocument?.datasets ?? []);
   const [parameters, setParameters] = useState<GraphParameter[]>(loadedDocument?.parameters ?? []);
   const parameterValues = useMemo(() => Object.fromEntries(parameters.map(({ name, value }) => [name, value])), [parameters]);
   const [mode, setMode] = useState<"editor" | "presentation">(allowEditing ? initialMode : "presentation");
@@ -111,8 +115,20 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
     if (pointsRef.current) pointsRef.current.open = true;
   };
 
+  const fitDataset = (dataset: GraphDataset) => {
+    const points = numericPoints(dataset.rows), viewport = graphRef.current?.getViewport();
+    if (!points.length || !viewport) return;
+    const xs = points.map(([x]) => x), ys = points.map(([, y]) => y);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs), yMin = Math.min(...ys), yMax = Math.max(...ys);
+    const ratio = (viewport.x[1] - viewport.x[0]) / (viewport.y[1] - viewport.y[0]);
+    let xSpan = Math.max((xMax - xMin) * 1.25, 1), ySpan = Math.max((yMax - yMin) * 1.25, 1);
+    if (xSpan / ySpan < ratio) xSpan = ySpan * ratio; else ySpan = xSpan / ratio;
+    const xCenter = xMin / 2 + xMax / 2, yCenter = yMin / 2 + yMax / 2;
+    graphRef.current?.setViewport({ x: [xCenter - xSpan / 2, xCenter + xSpan / 2], y: [yCenter - ySpan / 2, yCenter + ySpan / 2] });
+  };
+
   const buildDocument = (): GraphDocument => parseGraphDocument({
-    version: 1, expressions, points, parameters, viewport: graphRef.current?.getViewport() ?? initialViewport,
+    version: 1, expressions, points, datasets, parameters, viewport: graphRef.current?.getViewport() ?? initialViewport,
     settings: { grid, precision, snapToGrid },
     presentation: { interactiveParameters: interactiveParameters.filter((name) => parameters.some((parameter) => parameter.name === name)) },
   });
@@ -124,6 +140,7 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
       setExpressions(document.expressions);
       setParameters(document.parameters);
       setPoints(document.points ?? []);
+      setDatasets(document.datasets ?? []);
       setGrid(document.settings.grid);
       setPrecision(document.settings.precision);
       setSnapToGrid(document.settings.snapToGrid);
@@ -179,13 +196,14 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
         <aside id={`${id}-expressions`} hidden={!expressionsVisible} className="graphing-expressions" aria-labelledby={`${id}-functions`}>
           {documentError && <p className="graphing-error" role="alert">{documentError}</p>}
           {documentNotice && <p className="graphing-hint" role="status">{documentNotice}</p>}
-          <label className="graph-panel-width">Panel width<input type="range" aria-label="Functions panel width" min="280" max="480" step="10" value={panelWidth} onChange={(event) => setPanelWidth(Number(event.target.value))} /></label>
+
           <h2 id={`${id}-functions`}>{mode === "editor" ? "Functions" : "Presentation controls"}</h2>
           {mode === "editor" && <p className="graphing-hint">Use x^2, sin(x), 2*x+1, or y=1/x. Angles are in radians.</p>}
           <div className="graphing-expression-list">
             {mode === "editor" && expressions.map((expression, index) => (
               <div className="graphing-expression" key={expression.id} data-hidden={!expression.visible}>
                 <div className="graphing-expression-row">
+                  <span className="graphing-expression-number" aria-hidden="true">{index + 1}</span>
                   <span className="graphing-color" style={{ backgroundColor: expression.color }} aria-hidden="true" />
                   <MathExpressionField
                     label={`Function ${index + 1}`}
@@ -219,6 +237,7 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
             {mode === "editor" && expressions.length === 0 && <p className="graphing-hint">Add a function to start plotting.</p>}
             {mode === "editor" ? <>
             <ParameterSliders key={documentRevision} parameters={parameters} onChange={setParameters} />
+              <DatasetPanel datasets={datasets} onChange={setDatasets} onFit={fitDataset} />
               <details ref={pointsRef} className="graph-points" aria-label="Points"><summary>Points</summary>
               {points.map((point, index) => <div className="graph-point-row" key={point.id}>
                 <span className="graphing-color" style={{ backgroundColor: point.color }} aria-hidden="true" />
@@ -243,6 +262,11 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
             </>}
           </div>
         </aside>
+          <div className="graph-panel-resizer" role="separator" tabIndex={0} aria-label="Resize functions panel" aria-orientation="vertical" aria-controls={`${id}-expressions`} aria-valuemin={280} aria-valuemax={480} aria-valuenow={panelWidth}
+            onPointerDown={(event) => { resizeStart.current = { x: event.clientX, width: event.currentTarget.previousElementSibling?.getBoundingClientRect().width ?? panelWidth }; event.currentTarget.setPointerCapture(event.pointerId); }}
+            onPointerMove={(event) => { if (resizeStart.current) setPanelWidth(Math.max(280, Math.min(480, Math.round(resizeStart.current.width + event.clientX - resizeStart.current.x)))); }}
+            onPointerUp={() => { resizeStart.current = null; }} onPointerCancel={() => { resizeStart.current = null; }}
+            onKeyDown={(event) => { const delta = event.key === "ArrowRight" ? 10 : event.key === "ArrowLeft" ? -10 : 0; if (delta) { event.preventDefault(); setPanelWidth((width) => Math.max(280, Math.min(480, width + delta))); } }} />
         <section className="graphing-graph" aria-label="Interactive graph">
           <div className="graphing-toolbar" role="toolbar" aria-label="Graph controls">
             <button type="button" className="graphing-panel-toggle" aria-label={expressionsVisible ? "Hide functions panel" : "Show functions panel"} aria-expanded={expressionsVisible} aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible((visible) => !visible)}>
@@ -288,7 +312,7 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
           </details>
           </div></details>
           </div>
-          <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} points={points} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={mode === "editor" ? (id, x, y) => setPoints((previous) => previous.map((point) => point.id === id ? { ...point, x, y } : point)) : undefined} />
+          <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} points={points} datasets={datasets} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={mode === "editor" ? (id, x, y) => setPoints((previous) => previous.map((point) => point.id === id ? { ...point, x, y } : point)) : undefined} />
           <p className="graphing-graph-hint">Hover over a curve to read coordinates; click to pin. Reset view returns to the origin.</p>
         </section>
       </div>
