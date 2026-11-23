@@ -3,15 +3,16 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { Chart, FunctionPlotDatum, FunctionPlotOptions } from "function-plot";
 import { formatCoordinate, gridStepFromTicks, snapCoordinate, type CoordinatePrecision } from "./graphCoordinates";
-import type { GraphPoint } from "./graphDocument";
+import type { GraphLabels, GraphPoint } from "./graphDocument";
 import { prepareGraphExpression, type GraphExpression } from "./graphExpressions";
-import { linearRegression, numericPoints, type GraphDataset } from "./graphDataset";
+import { exponentialRegression, linearRegression, numericPoints, type GraphDataset } from "./graphDataset";
 import "./graphCanvas.css";
 
 export interface GraphCanvasHandle {
   reset: () => void;
   zoom: (factor: number) => void;
   getViewport: () => { x: [number, number]; y: [number, number] } | null;
+  getAspectRatio: () => number | null;
   setViewport: (viewport: { x: [number, number]; y: [number, number] }) => void;
   exportImage: (format: "svg" | "png") => Promise<void>;
 }
@@ -20,6 +21,7 @@ type GraphCanvasProps = {
   expressions: readonly GraphExpression[];
   points?: readonly GraphPoint[];
   datasets?: readonly GraphDataset[];
+  labels?: GraphLabels;
   parameters?: Readonly<Record<string, number>>;
   grid: boolean;
   initialViewport?: { x: [number, number]; y: [number, number] } | null;
@@ -31,16 +33,17 @@ type GraphCanvasProps = {
 
 const NO_POINTS: readonly GraphPoint[] = [];
 const NO_DATASETS: readonly GraphDataset[] = [];
+const NO_LABELS: GraphLabels = { title: "", xTitle: "", xUnit: "", yTitle: "", yUnit: "", annotations: [] };
 const NO_PARAMETERS: Readonly<Record<string, number>> = {};
 
 // No page layout or course dependencies: the same plot can live in either host.
 const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function GraphCanvas(
-  { expressions, points = NO_POINTS, datasets = NO_DATASETS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, onErrors, onPointMove },
+  { expressions, points = NO_POINTS, datasets = NO_DATASETS, labels = NO_LABELS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, onErrors, onPointMove },
   ref,
 ) {
   const initialViewportRef = useRef(initialViewport);
   const containerRef = useRef<HTMLDivElement>(null);
-  const configRef = useRef({ expressions, points, datasets, parameters, grid, precision, snapToGrid });
+  const configRef = useRef({ expressions, points, datasets, labels, parameters, grid, precision, snapToGrid });
   const lastErrorsRef = useRef<Record<string, string>>({});
   const controllerRef = useRef<(Omit<GraphCanvasHandle, "exportImage"> & { redraw: () => void }) | null>(null);
   const [status, setStatus] = useState("Loading graph…");
@@ -55,6 +58,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
     reset: () => controllerRef.current?.reset(),
     zoom: (factor) => controllerRef.current?.zoom(factor),
     getViewport: () => controllerRef.current?.getViewport() ?? null,
+    getAspectRatio: () => controllerRef.current?.getAspectRatio() ?? null,
     setViewport: (viewport) => controllerRef.current?.setViewport(viewport),
     exportImage: async (format) => {
       const source = containerRef.current?.querySelector("svg.function-plot");
@@ -104,11 +108,11 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
   }), []);
 
   useEffect(() => {
-    configRef.current = { ...configRef.current, expressions, points, datasets, grid };
+    configRef.current = { ...configRef.current, expressions, points, datasets, labels, grid };
     // Avoid rebuilding for every keystroke while an expression is being entered.
     const timer = window.setTimeout(() => controllerRef.current?.redraw(), 150);
     return () => window.clearTimeout(timer);
-  }, [expressions, points, datasets, grid]);
+  }, [expressions, points, datasets, labels, grid]);
 
   useEffect(() => {
     configRef.current = { ...configRef.current, parameters };
@@ -239,6 +243,30 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           svg.insertBefore(group, svg.firstChild);
         };
 
+        const updateLabels = () => {
+          const svg = target.querySelector("svg.function-plot"), meta = chart?.meta;
+          svg?.querySelector(".graph-scientific-labels")?.remove();
+          if (!svg || !meta?.xScale || !meta.yScale) return;
+          const labels = configRef.current.labels, width = Number(svg.getAttribute("width")), height = Number(svg.getAttribute("height"));
+          const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          group.classList.add("graph-scientific-labels");
+          const add = (text: string, x: number, y: number, rotate = false) => {
+            if (!text) return;
+            const node = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            node.textContent = text; node.setAttribute("x", String(x)); node.setAttribute("y", String(y));
+            node.setAttribute("text-anchor", "middle"); node.setAttribute("fill", "#171717"); node.setAttribute("font-size", "14");
+            if (rotate) node.setAttribute("transform", `rotate(-90 ${x} ${y})`);
+            group.appendChild(node);
+          };
+          const axisLabel = (title: string, unit: string) => title && unit ? `${title} (${unit})` : title || unit;
+          add(labels.title, width / 2, 18);
+          add(axisLabel(labels.xTitle, labels.xUnit), width / 2, height - 5);
+          add(axisLabel(labels.yTitle, labels.yUnit), 15, height / 2, true);
+          const [x0, x1] = meta.xScale.domain(), [y0, y1] = meta.yScale.domain();
+          for (const item of labels.annotations) if (item.x >= Math.min(x0, x1) && item.x <= Math.max(x0, x1) && item.y >= Math.min(y0, y1) && item.y <= Math.max(y0, y1)) add(item.text, meta.xScale(item.x) + (meta.margin?.left ?? 0), meta.yScale(item.y) + (meta.margin?.top ?? 0) - 8);
+          svg.appendChild(group);
+        };
+
         const makeOptions = (xDomain?: number[], yDomain?: number[]): FunctionPlotOptions => ({
           target,
           xAxis: { domain: xDomain ?? [-10, 10], label: "x" },
@@ -279,8 +307,11 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             if (!dataset.visible) continue;
             const points = numericPoints(dataset.rows);
             if (points.length) data.push({ fnType: "points", graphType: "scatter", points, color: dataset.color, skipTip: true });
-            const fit = dataset.regression ? linearRegression(points) : null;
+            if (dataset.connected && points.length > 1) data.push({ fnType: "points", graphType: "polyline", points, color: dataset.color, skipTip: true });
+            const fit = dataset.regression && dataset.fitType !== "exponential" ? linearRegression(points) : null;
+            const exp = dataset.regression && dataset.fitType === "exponential" ? exponentialRegression(points) : null;
             if (fit) data.push({ fn: `(${fit.slope})*x+(${fit.intercept})`, graphType: "polyline", sampler: "builtIn", color: dataset.color, skipTip: true });
+            if (exp) data.push({ fn: `(${exp.a})*exp((${exp.b})*x)`, graphType: "polyline", sampler: "builtIn", color: dataset.color, skipTip: true });
           }
           options.data = data;
           options.grid = false;
@@ -315,9 +346,10 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
               chart.on("mousemove", () => {
                 if (!hasTracePoint) chart?.tip.hide();
               });
-              chart.on("after:draw", () => { updateGrid(); updatePin(); updatePointPositions(); });
+              chart.on("after:draw", () => { updateGrid(); updateLabels(); updatePin(); updatePointPositions(); });
             }
             updateGrid();
+            updateLabels();
             updatePin();
             updatePointPositions();
             setStatus("");
@@ -356,6 +388,10 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             const x = options.xAxis?.domain;
             const y = options.yAxis?.domain;
             return x && y && x.length === 2 && y.length === 2 ? { x: [x[0], x[1]], y: [y[0], y[1]] } : null;
+          },
+          getAspectRatio: () => {
+            const x = chart?.meta.xScale?.range(), y = chart?.meta.yScale?.range();
+            return x && y && x.length === 2 && y.length === 2 && y[0] !== y[1] ? Math.abs((x[1] - x[0]) / (y[1] - y[0])) : null;
           },
           reset: () => {
             maintainEqualScale = true;

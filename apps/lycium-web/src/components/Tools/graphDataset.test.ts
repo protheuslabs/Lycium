@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { linearRegression, numericPoints, parseDatasetCsv } from "./graphDataset";
+import { exponentialRegression, linearRegression, numericPoints, parseDatasetCsv } from "./graphDataset";
 
 describe("datasets", () => {
   it("fits a line and calculates R² from measurements", () => {
@@ -10,6 +10,12 @@ describe("datasets", () => {
   });
   it("only plots complete finite rows", () => {
     expect(numericPoints([{ x: "", y: "1" }, { x: "2", y: "3" }, { x: "x", y: "4" }])).toEqual([[2, 3]]);
+  });
+  it("fits exponential data in log space and reports goodness of fit in y space", () => {
+    const fit = exponentialRegression([[0, 2], [1, 2 * Math.exp(-0.5)], [2, 2 * Math.exp(-1)]]);
+    expect(fit?.a).toBeCloseTo(2); expect(fit?.b).toBeCloseTo(-0.5); expect(fit?.rSquared).toBeCloseTo(1);
+    expect(exponentialRegression([[0, 2], [1, 0]])).toBeNull();
+    expect(exponentialRegression([[1, 1], [1, 2]])).toBeNull();
   });
   it("imports two-column CSV with quoted headers", () => {
     expect(parseDatasetCsv('"Time, s",Concentration\r\n0,1\r\n10,0.78\r\n')).toEqual({ xLabel: "Time, s", yLabel: "Concentration", rows: [{ x: "0", y: "1" }, { x: "10", y: "0.78" }] });

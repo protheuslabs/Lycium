@@ -30,7 +30,14 @@ describe("graph document", () => {
   it("round-trips datasets while rejecting invalid cells", () => {
     const dataset = { id: "d1", name: "Measurements", xLabel: "Time (s)", yLabel: "Mass (g)", color: "#c2410c", visible: true, regression: true, rows: [{ x: "1", y: "2" }, { x: "", y: "" }] };
     expect(parseGraphDocument({ ...example, datasets: [dataset] }).datasets).toEqual([dataset]);
+    expect(parseGraphDocument({ ...example, datasets: [{ ...dataset, connected: true, fitType: "exponential" }] }).datasets?.[0]).toMatchObject({ connected: true, fitType: "exponential" });
+    expect(() => parseGraphDocument({ ...example, datasets: [{ ...dataset, fitType: "other" }] })).toThrow();
     expect(() => parseGraphDocument({ ...example, datasets: [{ ...dataset, rows: [{ x: "1", y: "NaN" }] }] })).toThrow();
     expect(parseGraphDocument(example).datasets).toBeUndefined();
+  });
+  it("preserves scientific labels and annotations", () => {
+    const labels = { title: "Kinetics", xTitle: "Time", xUnit: "s", yTitle: "Concentration", yUnit: "M", annotations: [{ id: "a", x: 2, y: 1, text: "Initial point" }] };
+    expect(parseGraphDocument({ ...example, labels }).labels).toEqual(labels);
+    expect(() => parseGraphDocument({ ...example, labels: { ...labels, annotations: [{ ...labels.annotations[0], x: Infinity }] } })).toThrow();
   });
 });

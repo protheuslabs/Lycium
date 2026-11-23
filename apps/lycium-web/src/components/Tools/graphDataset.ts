@@ -8,7 +8,23 @@ export interface GraphDataset {
   color: string;
   visible: boolean;
   regression: boolean;
+  fitType?: "linear" | "exponential";
+  connected?: boolean;
   rows: DatasetRow[];
+}
+
+/** Fit y = a exp(bx) by least squares in log(y); R² is measured in y space. */
+export function exponentialRegression(points: readonly [number, number][]) {
+  if (points.length < 2 || points.some(([, y]) => y <= 0)) return null;
+  const fit = linearRegression(points.map(([x, y]) => [x, Math.log(y)]));
+  if (!fit) return null;
+  const a = Math.exp(fit.intercept), b = fit.slope;
+  if (!Number.isFinite(a) || a <= 0 || !Number.isFinite(b)) return null;
+  const mean = points.reduce((sum, [, y]) => sum + y / points.length, 0);
+  let residual = 0, total = 0;
+  for (const [x, y] of points) { const predicted = a * Math.exp(b * x); if (!Number.isFinite(predicted)) return null; residual += (y - predicted) ** 2; total += (y - mean) ** 2; }
+  const rSquared = total === 0 ? (residual < 1e-20 ? 1 : 0) : 1 - residual / total;
+  return Number.isFinite(rSquared) ? { a, b, rSquared } : null;
 }
 
 export function numericPoints(rows: readonly DatasetRow[]): Array<[number, number]> {

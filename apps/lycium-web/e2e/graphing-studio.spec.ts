@@ -4,13 +4,57 @@ import type { MathfieldElement } from "mathlive";
 
 const graphPath = "/Lycium/tools/graph";
 
+test("scientific graphs label axes, fit independent scales, and export annotations", async ({ page }) => {
+  await page.goto(graphPath);
+  await openDisclosure(page, ".graph-datasets");
+  await page.getByLabel("Choose dataset CSV").setInputFiles({ name: "kinetics.csv", mimeType: "text/csv", buffer: Buffer.from("Time (s),Concentration (M)\n0,1\n10,0.5\n20,0.25\n") });
+  await expect(page.locator(".graph-scientific-labels")).toContainText("Time (s)");
+  await expect(page.locator(".graph-scientific-labels")).toContainText("Concentration (M)");
+  await page.getByRole("checkbox", { name: "Connect points" }).check();
+  await page.getByRole("combobox", { name: "Dataset 1 regression model" }).selectOption("exponential");
+  await expect(page.getByText(/log-space fit/)).toContainText("R² = 1");
+  await expect(page.locator(".graph-viewport .graph")).toHaveCount(5);
+  await expect(page.locator(".graph-viewport .graph").nth(3).locator("path")).toHaveAttribute("d", /L/);
+  await page.getByRole("button", { name: "Fit data in view" }).click();
+  await openDisclosure(page, ".graph-settings");
+  await openDisclosure(page, ".graph-axis-settings");
+  const xMin = Number(await page.getByLabel("X minimum").inputValue()), xMax = Number(await page.getByLabel("X maximum").inputValue());
+  const yMin = Number(await page.getByLabel("Y minimum").inputValue()), yMax = Number(await page.getByLabel("Y maximum").inputValue());
+  expect(xMax - xMin).toBeGreaterThan(20); expect(yMax - yMin).toBeLessThan(2);
+  await page.getByRole("button", { name: "Fit equal scale" }).click();
+  await expect.poll(() => page.locator(".graph-custom-grid").evaluate((grid) => {
+    const spacing = (axis: string, attribute: string) => { const lines = grid.querySelectorAll(`line[data-axis="${axis}"]`); return lines.length < 2 ? 0 : Math.abs(Number(lines[1].getAttribute(attribute)) - Number(lines[0].getAttribute(attribute))); };
+    const x = spacing("x", "x1"), y = spacing("y", "y1"); return x && y ? Math.abs(x / y - 1) : Infinity;
+  })).toBeLessThan(0.02);
+  await page.getByRole("button", { name: "Fit data in view" }).click();
+  await openDisclosure(page, ".graph-label-settings");
+  await page.getByLabel("Graph title", { exact: true }).fill("Reaction kinetics");
+  await page.getByRole("button", { name: "Add annotation" }).click();
+  await page.getByLabel("Annotation 1 text").fill("Initial concentration");
+  await page.getByLabel("Annotation 1 y").fill("1");
+  await page.getByLabel("Annotation 1 y").blur();
+  await expect(page.locator(".graph-scientific-labels")).toContainText("Initial concentration");
+  await openDisclosure(page, ".graph-file-menu");
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export SVG" }).click();
+  const file = await (await download).path(); if (!file) throw new Error("SVG unavailable");
+  const { readFile } = await import("node:fs/promises");
+  const svg = await readFile(file, "utf8"); expect(svg).toContain("Reaction kinetics"); expect(svg).toContain("Initial concentration");
+  const graphDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export JSON" }).click();
+  const graphFile = await (await graphDownload).path(); if (!graphFile) throw new Error("Graph JSON unavailable");
+  const document = JSON.parse(await readFile(graphFile, "utf8"));
+  expect(document.labels.title).toBe("Reaction kinetics"); expect(document.labels.annotations[0].text).toBe("Initial concentration");
+  expect(document.datasets[0]).toMatchObject({ fitType: "exponential", connected: true });
+});
+
 test("imports measurements, fits a line, and preserves the table in graph files", async ({ page }) => {
   await page.goto(graphPath);
   await openDisclosure(page, ".graph-datasets");
   await page.getByLabel("Choose dataset CSV").setInputFiles({ name: "measurements.csv", mimeType: "text/csv", buffer: Buffer.from("Time (s),Concentration (M)\n0,1\n1,3\n2,5\n") });
   await expect(page.getByRole("region", { name: "Dataset 1" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "X column label" })).toHaveValue("Time (s)");
-  await page.getByRole("checkbox", { name: "Linear fit" }).check();
+  await page.getByRole("checkbox", { name: "Show fit" }).check();
   await expect(page.getByText("y = 2x + 1 · R² = 1")).toBeVisible();
   await expect(page.locator(".graph-viewport .graph")).toHaveCount(4);
   const ticks = page.locator(".graph-viewport .x.axis .tick text");

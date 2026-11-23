@@ -135,10 +135,14 @@
 .graph-settings > summary { position: relative; z-index: 2; }
 .graph-settings .graphing-trace-controls { position: absolute; z-index: 10; right: 0; top: calc(100% + .25rem); display: grid; justify-content: stretch; min-width: 13rem; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
 
-.graph-points, .graph-analysis, .graph-datasets { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid var(--lycium-color-border); }
-.graph-points > summary, .graph-analysis > summary, .graph-datasets > summary { cursor: pointer; font-size: .9rem; font-weight: 600; padding: .5rem 0; }
+.graph-points, .graph-analysis, .graph-datasets, .graph-label-settings { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid var(--lycium-color-border); }
+.graph-points > summary, .graph-analysis > summary, .graph-datasets > summary, .graph-label-settings > summary { cursor: pointer; font-size: .9rem; font-weight: 600; padding: .5rem 0; }
+.graph-label-fields, .graph-annotation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-block: .75rem; }
+.graph-label-fields label, .graph-annotation label { display: grid; gap: .25rem; min-width: 0; font-size: .8rem; }
+.graph-label-fields input, .graph-annotation input { width: 100%; min-width: 0; padding: .4rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); background: var(--lycium-color-control-surface); color: var(--lycium-color-text); font: inherit; }
+.graph-scientific-labels { pointer-events: none; }
 .graph-dataset { margin-top: .75rem; padding: .65rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); }
-.graph-dataset-title, .graph-dataset-actions, .graph-dataset-options { display: flex; align-items: center; gap: .5rem; }
+.graph-dataset-title, .graph-dataset-actions, .graph-dataset-options { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .graph-dataset-title input { flex: 1; min-width: 0; font-weight: 600; }
 .graph-dataset input:not([type=checkbox]) { width: 100%; min-width: 0; padding: .4rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); background: var(--lycium-color-control-surface); color: var(--lycium-color-text); font: inherit; }
 .graph-dataset-options { flex-wrap: wrap; margin: .5rem 0; font-size: .8rem; }
