@@ -1,0 +1,6 @@
+/* The host owns the size. SVG content must never determine its measured height. */
+.graph-surface { position: relative; height: var(--lycium-graph-height, clamp(360px, 60svh, 700px)); min-height: 0; min-width: 0; overflow: hidden; contain: size layout; background: #fff; color: #171717; color-scheme: light; }
+.graph-viewport, .graph-plot-target { position: absolute; inset: 0; min-width: 0; min-height: 0; overflow: hidden; }
+.graph-viewport svg { display: block; }
+.graph-viewport .function-plot text { font-family: var(--lycium-font-body); }
+.graph-status { position: absolute; inset: 0; display: grid; place-content: center; padding: 1rem; margin: 0; background: #fff; color: #60686c; font-size: .9rem; }

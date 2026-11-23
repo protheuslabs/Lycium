@@ -1,0 +1,67 @@
+.graphing-studio { width: 100%; min-width: 0; color: var(--lycium-color-text); }
+.graphing-heading { margin-bottom: 1.5rem; }
+.graphing-heading h1 { margin: 0; font-size: var(--lycium-page-title-size); line-height: 1.3; }
+.graphing-heading p { margin: .75rem 0 0; color: var(--lycium-color-text-muted); line-height: 1.7; }
+.graphing-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--lycium-content-gap); align-items: start; }
+.graphing-expressions, .graphing-graph { min-width: 0; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); }
+.graphing-expressions { padding: 1rem; }
+.graphing-expressions h2 { margin: 0; font-size: 1rem; }
+.graphing-hint, .graphing-graph-hint { color: var(--lycium-color-text-muted); font-size: .8rem; line-height: 1.6; }
+.graphing-expression-list { max-height: 45vh; overflow-y: auto; margin: 1rem -.25rem; padding: .25rem; }
+.graphing-expression { padding: .4rem; margin-bottom: .6rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); }
+.graphing-expression-row { display: flex; align-items: center; gap: .25rem; min-width: 0; }
+.graphing-color { width: .65rem; height: .65rem; border-radius: 50%; flex: 0 0 auto; margin: 0 .25rem; }
+.graphing-expression[data-hidden="true"] .graphing-color { opacity: .35; }
+.graphing-expression[data-hidden="true"] input { color: var(--lycium-color-text-muted); }
+.graphing-expression input { width: 100%; min-width: 0; padding: .5rem .25rem; border: 0; border-radius: var(--lycium-radius-control); font: inherit; font-size: .9rem; background: transparent; color: inherit; }
+.graphing-expression input[aria-invalid="true"] { box-shadow: inset 0 -2px var(--lycium-danger); }
+.graphing-error { margin: .5rem .25rem .25rem; color: var(--lycium-color-warning); font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
+.graphing-studio button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: var(--lycium-control-height); border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-button); padding: .5rem .75rem; font-size: var(--lycium-control-font-size); color: var(--lycium-color-text); background: var(--lycium-color-control-surface); }
+.graphing-studio button:hover { background: var(--lycium-color-control-hover); }
+.graphing-studio .graphing-icon-button { width: 2.75rem; padding: .5rem; flex: 0 0 auto; border-color: transparent; background: transparent; }
+.graphing-studio .graphing-add-button { width: 100%; color: var(--lycium-color-accent); }
+.graphing-studio .graphing-reset-button { color: var(--lycium-color-accent); background: var(--lycium-color-accent-soft); }
+.graphing-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .6rem; border-bottom: 1px solid var(--lycium-color-border); }
+.graphing-view-controls { display: flex; align-items: center; gap: .25rem; }
+.graphing-grid-toggle { display: flex; align-items: center; gap: .4rem; font-size: .875rem; padding: .5rem; cursor: pointer; }
+.graphing-grid-toggle input { accent-color: var(--lycium-color-accent); }
+.graphing-graph-hint { margin: 0; padding: .6rem 1rem; border-top: 1px solid var(--lycium-color-border); }
+
+.graphing-back-link { display: inline-flex; align-items: center; gap: .4rem; font-size: .875rem; }
+.graphing-layout.graphing-layout--collapsed { grid-template-columns: minmax(0, 1fr); }
+.graphing-expressions[hidden] { display: none; }
+.graphing-workspace { display: flex; flex-direction: column; width: 100%; height: 100dvh; min-height: 0; overflow: hidden; background: var(--lycium-color-canvas); }
+.graphing-workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; flex: 0 0 auto; min-height: 3.5rem; padding: .5rem 1rem; border-bottom: 1px solid var(--lycium-color-border); }
+.graphing-workspace-header h1 { margin: 0; padding-left: 1rem; border-left: 1px solid var(--lycium-color-border); font-size: 1rem; line-height: 1.5; }
+.graphing-workspace-main { flex: 1; min-height: 0; min-width: 0; padding: .75rem; overflow: hidden; }
+.graphing-studio--workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.graphing-studio--workspace .graphing-layout { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: .75rem; }
+.graphing-studio--workspace .graphing-graph { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.graphing-studio--workspace .graph-surface { flex: 1 1 0; height: auto; }
+.graphing-studio--workspace .graphing-toolbar,
+.graphing-studio--workspace .graphing-graph-hint { flex: 0 0 auto; }
+.graphing-studio--workspace .graphing-expressions { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.graphing-studio--workspace .graphing-expressions[hidden] { display: none; }
+.graphing-studio--workspace .graphing-expression-list { flex: 1; min-height: 0; max-height: none; }
+.graphing-studio--workspace .graphing-add-button { flex-shrink: 0; }
+
+@media (min-width: 900px) {
+  .graphing-layout { grid-template-columns: 320px minmax(0, 1fr); }
+}
+@media (max-width: 599px) {
+  .graphing-expressions { padding: .75rem; }
+  .graphing-toolbar { gap: 0; padding: .4rem; }
+  .graphing-expression-list { max-height: 240px; }
+  .graphing-workspace-header { gap: .75rem; padding-inline: .75rem; }
+  .graphing-workspace-header h1 { padding-left: .75rem; font-size: .9rem; }
+  .graphing-workspace-main { padding: .5rem; }
+  .graphing-panel-toggle span { display: none; }
+}
+
+@media (max-width: 899px) {
+  .graphing-graph { order: -1; --lycium-graph-height: clamp(320px, 48svh, 500px); }
+  .graphing-workspace-main { overflow-y: auto; }
+  .graphing-studio--workspace .graphing-layout { min-height: 500px; grid-template-rows: minmax(300px, 1fr) minmax(180px, .6fr); }
+  .graphing-studio--workspace .graphing-layout--collapsed { min-height: 300px; grid-template-rows: minmax(0, 1fr); }
+  .graphing-studio--workspace .graphing-hint { margin-block: .5rem; }
+}
