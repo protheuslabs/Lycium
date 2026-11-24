@@ -23,17 +23,65 @@ test("completes, restarts, and reviews only this round's missed cards", async ({
   await expect(page.locator(".fc-results")).toContainText("100%");
   await page.getByRole("button", { name: "Start again", exact: true }).click();
   await expect(page.getByRole("button", { name: "Reveal answer", exact: true })).toBeVisible();
-  await expect(page.locator(".fc-round-progress")).toContainText("0 graded");
+  await expect(page.locator(".fc-round-progress")).toContainText(/^0 \/ \d+ graded/);
   await page.reload();
-  await expect(page.locator(".fc-round-progress")).toContainText("0 graded");
+  await expect(page.locator(".fc-round-progress")).toContainText(/^0 \/ \d+ graded/);
   await expect(page.getByLabel("Study cards")).toContainText("Needs review (0)");
+});
+
+test("study mode offers one clear reveal action and keeps management in the editor", async ({ page }, testInfo) => {
+  await sample(page);
+  await expect(page.getByLabel("Deck title", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Deck color", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Needs review", exact: false })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Know it", exact: false })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Reveal answer", exact: true })).toBeInViewport({ ratio: 1 });
+  const before = await page.locator(".fc-grade-actions").boundingBox();
+  if (testInfo.project.name === "mobile-chrome") {
+    const card = await page.locator(".fc-card-stage").boundingBox();
+    expect(card?.y).toBeLessThan(300);
+    await expect(page.locator(".fc-shortcut-help")).not.toBeVisible();
+    await expect(page.getByLabel("Choose deck", { exact: true })).toBeVisible();
+    await expect(page.locator(".fc-card-hint .fc-touch-hint").first()).toBeVisible();
+  }
+  await reveal(page);
+  await expect(page.getByRole("button", { name: "Reveal answer", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Know it", exact: false })).toBeVisible();
+  expect((await page.locator(".fc-grade-actions").boundingBox())?.height).toBe(before?.height);
+  await page.screenshot({ animations: "disabled", path: testInfo.outputPath("flashcards-answer.png"), fullPage: true });
+});
+
+test("inline editing preserves a pending new card and restores row focus", async ({ page }, testInfo) => {
+  await sample(page);
+  await page.getByRole("button", { name: "Edit cards" }).click();
+  const add = page.getByRole("form", { name: "Add a card", exact: true });
+  await add.getByRole("textbox", { name: "Front Question or term" }).fill("Pending question");
+  await page.getByRole("button", { name: "Edit card 1", exact: true }).click();
+  let inline = page.getByRole("form", { name: "Edit card 1", exact: true });
+  await expect(inline.getByRole("textbox", { name: "Front Question or term" })).toBeFocused();
+  await inline.getByRole("textbox", { name: "Back Answer or explanation" }).fill("Updated answer");
+  await inline.getByRole("textbox", { name: "Back Answer or explanation" }).press("ControlOrMeta+Enter");
+  await expect(page.getByRole("button", { name: "Edit card 1", exact: true })).toBeFocused();
+  await expect(add.getByRole("textbox", { name: "Front Question or term" })).toHaveValue("Pending question");
+  await page.getByRole("button", { name: "Edit card 1", exact: true }).click();
+  inline = page.getByRole("form", { name: "Edit card 1", exact: true });
+  await inline.getByRole("textbox", { name: "Front Question or term" }).fill("Discard this edit");
+  await page.screenshot({ animations: "disabled", path: testInfo.outputPath("flashcards-inline-editor.png"), fullPage: true });
+  await inline.getByRole("textbox", { name: "Front Question or term" }).press("Escape");
+  await expect(page.getByRole("button", { name: "Edit card 1", exact: true })).toBeFocused();
+  await expect(page.locator(".fc-card-row").first()).not.toContainText("Discard this edit");
+  await add.getByRole("textbox", { name: "Back Answer or explanation" }).fill("Pending answer");
+  await add.getByRole("textbox", { name: "Back Answer or explanation" }).press("ControlOrMeta+Enter");
+  await expect(add.getByRole("textbox", { name: "Front Question or term" })).toBeEmpty();
+  await expect(add.getByRole("textbox", { name: "Front Question or term" })).toBeFocused();
+  await expect(page.getByRole("heading", { name: "4 cards in this deck" })).toBeVisible();
 });
 
 test("flips both ways, scopes keyboard shortcuts, and prevents hidden-answer grading", async ({ page }) => {
   await sample(page);
-  const trigger = page.getByRole("button", { name: "Reveal answer", exact: true });
+  const trigger = page.locator("[data-study-card]");
   await trigger.focus(); await page.keyboard.press("2");
-  await expect(page.locator(".fc-round-progress")).toContainText("0 graded");
+  await expect(page.locator(".fc-round-progress")).toContainText(/^0 \/ \d+ graded/);
   const before = await trigger.boundingBox();
   await page.keyboard.press("Space");
   await expect(page.locator(".fc-card-inner")).toHaveClass(/is-flipped/);
@@ -42,9 +90,9 @@ test("flips both ways, scopes keyboard shortcuts, and prevents hidden-answer gra
   await expect(page.locator(".fc-card-inner")).not.toHaveClass(/is-flipped/);
   expect((await trigger.boundingBox())?.height).toBe(before?.height);
   await page.keyboard.press("Enter"); await page.keyboard.press("2");
-  await expect(page.locator(".fc-round-progress")).toContainText("1 graded");
-  await page.getByLabel("Deck title", { exact: true }).focus(); await page.keyboard.press("2");
-  await expect(page.locator(".fc-round-progress")).toContainText("1 graded");
+  await expect(page.locator(".fc-round-progress")).toContainText(/^1 \/ \d+ graded/);
+  await page.getByRole("button", { name: "Restart session", exact: true }).focus(); await page.keyboard.press("2");
+  await expect(page.locator(".fc-round-progress")).toContainText(/^1 \/ \d+ graded/);
   await page.getByRole("button", { name: "Edit cards" }).click();
   await page.getByRole("textbox", { name: "Front Question or term" }).fill("Typed prompt");
   await page.keyboard.press("Space");
@@ -54,20 +102,23 @@ test("flips both ways, scopes keyboard shortcuts, and prevents hidden-answer gra
 test("supports stars, reverse sides, deck colors, focus mode and reduced motion", async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await sample(page);
+  await page.getByRole("button", { name: "Edit cards" }).click();
+  await page.getByLabel("Deck color", { exact: true }).click();
+  await page.getByRole("button", { name: "Violet deck color" }).click();
+  await page.getByLabel("Deck color", { exact: true }).click();
+  await expect(page.locator(".flashcards-app")).toHaveAttribute("style", /#8060b5/);
+  await page.getByRole("button", { name: "Flashcards", exact: true }).click();
   await page.getByRole("button", { name: "Star card", exact: true }).click();
   await page.getByLabel("Study cards").selectOption("starred");
   await expect(page.locator(".fc-round-progress")).toContainText("/ 1");
   await page.getByRole("button", { name: "Unstar card", exact: true }).click();
   await expect(page.locator(".fc-round-progress")).toContainText("/ 1");
+  await expect(page.getByLabel("Study cards").locator("option:checked")).toHaveText("Starred round (1)");
   await page.getByLabel("Study settings", { exact: true }).click();
-  await page.getByLabel("Back side first").check();
+  await page.getByLabel("Start with back side").check();
   await page.getByLabel("Tint cards with deck color").check();
   await expect(page.locator(".fc-card-front")).toContainText("The number of protons");
   await page.getByLabel("Study settings", { exact: true }).click();
-  await page.getByLabel("Deck color", { exact: true }).click();
-  await page.getByRole("button", { name: "Violet deck color" }).click();
-  await page.getByLabel("Deck color", { exact: true }).click();
-  await expect(page.locator(".flashcards-app")).toHaveAttribute("style", /#8060b5/);
   const duration = await page.locator(".fc-card-inner").evaluate((node) => getComputedStyle(node).transitionDuration);
   expect(duration).toBe("0s");
   await page.getByRole("button", { name: "Focus mode", exact: true }).click();
@@ -75,7 +126,7 @@ test("supports stars, reverse sides, deck colors, focus mode and reduced motion"
   await page.getByRole("button", { name: "Exit focus mode" }).click();
   if (testInfo.project.name === "chromium") await expect(page.getByRole("button", { name: "Next card", exact: true })).toBeInViewport({ ratio: 1 });
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await page.screenshot({ path: testInfo.outputPath("flashcards-color.png"), fullPage: true });
+  await page.screenshot({ animations: "disabled", path: testInfo.outputPath("flashcards-color.png"), fullPage: true });
 });
 
 test("bulk imports 100 cards, searches, edits, cancels, reorders, duplicates, and persists", async ({ page }) => {
@@ -91,12 +142,12 @@ test("bulk imports 100 cards, searches, edits, cancels, reorders, duplicates, an
   await page.getByLabel("Search cards").fill("Term 98");
   await expect(page.locator(".fc-card-row")).toHaveCount(1);
   await page.getByRole("button", { name: "Edit card 99", exact: true }).click();
-  await page.getByRole("textbox", { name: "Back Answer or explanation" }).fill("Updated explanation");
+  await page.getByRole("form", { name: "Edit card 99", exact: true }).getByRole("textbox", { name: "Back Answer or explanation" }).fill("Updated explanation");
   await page.getByRole("button", { name: "Save changes" }).click();
-  await expect(page.getByRole("textbox", { name: "Front Question or term" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Edit card 99", exact: true })).toBeFocused();
   await expect(page.locator(".fc-card-row")).toContainText("Updated explanation");
   await page.getByRole("button", { name: "Edit card 99", exact: true }).click();
-  await page.getByRole("textbox", { name: "Front Question or term" }).fill("Unsaved");
+  await page.getByRole("form", { name: "Edit card 99", exact: true }).getByRole("textbox", { name: "Front Question or term" }).fill("Unsaved");
   await page.getByRole("button", { name: "Cancel edit" }).click();
   await expect(page.locator(".fc-card-row")).toContainText("Term 98");
   await page.getByLabel("More actions for card 99", { exact: true }).click();
@@ -105,8 +156,9 @@ test("bulk imports 100 cards, searches, edits, cancels, reorders, duplicates, an
   await page.getByRole("button", { name: "Duplicate", exact: true }).click();
   await expect(page.getByRole("heading", { name: "101 cards in this deck" })).toBeVisible();
   await page.reload();
-  await expect(page.getByLabel("Deck title", { exact: true })).toHaveValue("Lab revision");
+  await expect(page.locator(".fc-deck-summary h2")).toHaveText("Lab revision");
   await page.getByRole("button", { name: "Edit cards" }).click();
+  await expect(page.getByLabel("Deck title", { exact: true })).toHaveValue("Lab revision");
   await expect(page.getByRole("heading", { name: "101 cards in this deck" })).toBeVisible();
 });
 
@@ -138,7 +190,7 @@ test("autoplay reveals both sides, pauses, and completes without invented grades
   await page.getByLabel("Seconds per side").selectOption("2");
   await page.getByLabel("Study settings", { exact: true }).click();
   await page.getByRole("button", { name: "Start autoplay", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Show prompt", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Flip card to prompt", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Pause autoplay", exact: true }).click();
   await expect(page.getByRole("button", { name: "Start autoplay", exact: true })).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("button", { name: "Next card", exact: true }).click();
@@ -197,10 +249,10 @@ test("switching decks resets transient editing and supports dark theme", async (
   await page.getByRole("button", { name: "Flashcards", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Your first card starts here" })).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  if (testInfo.project.name === "mobile-chrome") await page.locator(".fc-mobile-library").click();
+  if (testInfo.project.name === "mobile-chrome") await page.getByLabel("Choose deck", { exact: true }).click();
   await page.getByRole("button", { name: "Chemistry fundamentals 3 cards", exact: true }).click();
   await expect(page.getByRole("button", { name: "Reveal answer", exact: true })).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath("flashcards-dark.png"), fullPage: true });
+  await page.screenshot({ animations: "disabled", path: testInfo.outputPath("flashcards-dark.png"), fullPage: true });
 });
 
 test("deleting cards and decks removes their review records", async ({ page }) => {
@@ -215,6 +267,8 @@ test("deleting cards and decks removes their review records", async ({ page }) =
   expect(Object.keys(saved.history[saved.decks[0].id])).toHaveLength(0);
   await page.getByRole("button", { name: "Flashcards", exact: true }).click();
   await expect(page.locator(".fc-card-front")).toContainText("pH");
+  await page.getByRole("button", { name: "Edit cards" }).click();
+  await page.getByLabel("Deck actions", { exact: true }).click();
   await page.getByRole("button", { name: "Delete deck", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Learn it. Recall it. Keep it." })).toBeVisible();
 });
@@ -230,7 +284,7 @@ test("touch swipes navigate without flipping or grading", async ({ page }, testI
   await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
   await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x - 100, y }] });
   await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await expect(page.locator(".fc-round-progress")).toContainText("Card 2");
-  await expect(page.locator(".fc-round-progress")).toContainText("0 graded");
+  await expect(page.locator(".fc-player-navigation")).toContainText("2 / 3");
+  await expect(page.locator(".fc-round-progress")).toContainText(/^0 \/ \d+ graded/);
   await expect(page.getByRole("button", { name: "Reveal answer", exact: true })).toBeVisible();
 });

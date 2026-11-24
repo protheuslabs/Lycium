@@ -2,9 +2,14 @@
 
 The standalone workspace lives at `/tools/flashcards`, using the same header dimensions, theme tokens, and `ToolFrame` spacing as Graphing Studio.
 
+Study mode displays read-only deck metadata. The mobile deck title is a compact picker; it does not repeat the desktop sidebar and description. Renaming, color selection, and deletion live in Edit cards. The study action area presents Reveal answer first, then the two grading choices at the same height. The prompt is darker than the answer and both have a bottom accent border.
+
+Existing cards are edited in their own rows. Saving or cancelling returns focus to that row and preserves any pending new-card draft. Cmd/Ctrl+Enter saves and Escape cancels an inline edit. Keyboard help is collapsible on desktop and hidden on touch layouts, which show tap instructions instead.
+
 ## Study behavior
 
 - A round captures its card identifiers at the start. Grading, starring, or changing historical review status does not refilter the active round.
+- The active selection shows its captured round count; other choices show current deck counts. Options includes a way to start a new round from the current selection when membership has changed.
 - Shuffle uses Fisher–Yates. Restart and shuffle operate on the current round, including when a missed-card round has since become fully known.
 - Grades belong to the round. Completion reports distinct cards viewed, cards graded, known, needing review, and the percentage of graded cards known. Historical grades do not inflate a new round.
 - Casual browsing and autoplay do not invent grades. A skipped card remains available for grading; grading the last ungraded card ends the round.
