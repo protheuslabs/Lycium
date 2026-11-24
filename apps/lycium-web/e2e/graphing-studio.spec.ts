@@ -201,7 +201,7 @@ test("default axes retain equal scales when the graph is resized", async ({ page
 test("standalone workspace is focused and the functions panel can collapse", async ({ page }) => {
   await gotoGraph(page);
   await expectCurves(page, 2);
-  await expect(page.getByRole("heading", { name: "Olivine", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Orvane", exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Primary navigation", exact: true })).toHaveCount(0);
   await expect(page.getByRole("contentinfo", { name: "Site footer", exact: true })).toHaveCount(0);
   const functions = page.getByRole("complementary", { name: "Functions", exact: true });
@@ -241,7 +241,7 @@ test("editing preserves zoom and invalid functions do not break valid curves", a
 
 test("functions can be added, hidden, restored, and removed", async ({ page }) => {
   await page.goto("/Lycium/tools");
-  await page.getByRole("link", { name: /Olivine/ }).click();
+  await page.getByRole("link", { name: /Orvane/ }).click();
   await expect(page).toHaveURL(new RegExp(`${graphPath}$`));
   await expectCurves(page, 2);
   await page.getByRole("button", { name: "Add function", exact: true }).click();

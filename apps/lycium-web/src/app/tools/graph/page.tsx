@@ -5,7 +5,7 @@ import GraphingStudio from "../../../components/Tools/GraphingStudio";
 import ToolFrame from "../../../components/Tools/ToolFrame";
 
 export const metadata: Metadata = {
-  title: "Online Graphing Calculator | Olivine | Lycium",
+  title: "Online Graphing Calculator | Orvane | Lycium",
   description: "Plot functions, compare datasets, and explore mathematical relationships with Lycium's free online graphing calculator.",
   keywords: [
     "online graphing calculator",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     canonical: "https://protheuslabs.github.io/Lycium/tools/graph",
   },
   openGraph: {
-    title: "Online Graphing Calculator | Olivine",
+    title: "Online Graphing Calculator | Orvane",
     description: "Plot functions, compare datasets, and explore mathematical relationships in Lycium's interactive graphing workspace.",
     type: "website",
   },
@@ -31,12 +31,12 @@ export default function GraphPage() {
       <a className="skip-link" href="#main-content">Skip to graphing workspace</a>
       <header className="graphing-workspace-header">
         <Link href="/tools" className="graphing-back-link"><ArrowLeft size={16} aria-hidden="true" />Lycium Tools</Link>
-        <h1>Olivine</h1>
+        <h1>Orvane</h1>
         <p className="graphing-workspace-description">An interactive online graphing calculator for functions, datasets, and regression.</p>
         <div id="graphing-workspace-actions" />
       </header>
       <main id="main-content" tabIndex={-1} className="graphing-workspace-main">
-        <p className="sr-only">Olivine is an interactive online graphing calculator for plotting functions, comparing curves, exploring parameters, and visualizing scientific data.</p>
+        <p className="sr-only">Orvane is an interactive online graphing calculator for plotting functions, comparing curves, exploring parameters, and visualizing scientific data.</p>
         <ToolFrame fill className="graphing-tool-frame">
           <GraphingStudio workspace />
         </ToolFrame>
@@ -47,7 +47,7 @@ export default function GraphPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            name: "Lycium Olivine",
+            name: "Lycium Orvane",
             applicationCategory: "EducationalApplication",
             operatingSystem: "Web",
             description: "Interactive online graphing calculator for plotting functions, comparing datasets, and exploring regression.",

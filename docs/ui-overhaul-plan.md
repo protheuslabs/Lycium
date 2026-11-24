@@ -6,7 +6,7 @@ The institutional black/emerald palette and typography/application boundaries ar
 
 The dedicated lesson toolbar and reversible Focus Mode are defined in [reader focus](reader-focus.md).
 
-Catalog discovery now includes only published courses. The `/studio` route retains drafts, generation status, review, and creation workflows. My Learning's All view contains active and completed learning, not unstarted catalog inventory. `/tools` is a real destination with an honestly marked in-development Olivine entry, not a fake launch action.
+Catalog discovery now includes only published courses. The `/studio` route retains drafts, generation status, review, and creation workflows. My Learning's All view contains active and completed learning, not unstarted catalog inventory. `/tools` is a real destination with an honestly marked in-development Orvane entry, not a fake launch action.
 
 ## Contents
 
