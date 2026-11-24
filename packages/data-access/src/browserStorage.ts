@@ -5,6 +5,7 @@ import type {
   LyciumEvidenceArtifactSubmission,
   LyciumProgressRecord,
   LyciumQuizProgressRecord,
+  LyciumVideoProgressRecord,
   LyciumThemeMode,
   ProgressRepository,
 } from "./types";
@@ -54,6 +55,14 @@ export function getQuizProgressStorageKey(courseKey: string, quizKey: string): s
 
 export function getQuizMarkerStorageKey(courseKey: string, quizKey: string): string {
   return `lycium-quiz-marker-${courseKey || "course"}-${quizKey || "quiz"}`;
+}
+
+export function getLessonNoteStorageKey(courseKey: string, sectionKey: string): string {
+  return `lycium-lesson-note-${courseKey || "course"}-${sectionKey || "section"}`;
+}
+
+export function getVideoProgressStorageKey(courseKey: string, sectionKey: string, videoKey: string): string {
+  return `lycium-video-progress-${courseKey || "course"}-${sectionKey || "section"}-${videoKey || "video"}`;
 }
 
 export function getLocalCourseDraftsStorageKey(): string {
@@ -164,6 +173,22 @@ export function createBrowserStorageRepository() {
 
     removeQuizMarkers(courseKey: string, quizKey: string): void {
       getLocalStorage()?.removeItem(getQuizMarkerStorageKey(courseKey, quizKey));
+    },
+
+    readLessonNote(courseKey: string, sectionKey: string): string {
+      return getLocalStorage()?.getItem(getLessonNoteStorageKey(courseKey, sectionKey)) ?? "";
+    },
+
+    writeLessonNote(courseKey: string, sectionKey: string, note: string): void {
+      getLocalStorage()?.setItem(getLessonNoteStorageKey(courseKey, sectionKey), note);
+    },
+
+    readVideoProgress(courseKey: string, sectionKey: string, videoKey: string): LyciumVideoProgressRecord | null {
+      return readJson<LyciumVideoProgressRecord>(getVideoProgressStorageKey(courseKey, sectionKey, videoKey));
+    },
+
+    writeVideoProgress(courseKey: string, sectionKey: string, videoKey: string, progress: LyciumVideoProgressRecord): void {
+      writeJson(getVideoProgressStorageKey(courseKey, sectionKey, videoKey), progress);
     },
   };
 }

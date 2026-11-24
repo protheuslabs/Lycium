@@ -16,13 +16,14 @@ function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => { listeners.delete(listener); };
 }
-function commit(store: FlashcardStore) {
+function commit(update: FlashcardStore | ((store: FlashcardStore) => FlashcardStore)) {
   const previous = getSnapshot();
+  const store = typeof update === "function" ? update(previous.store) : update;
   let { raw, error, writable } = previous;
   if (writable) {
     try { raw = writeFlashcards(window.localStorage, store, raw); error = null; }
     catch (failure) {
-      error = failure instanceof Error && failure.message.includes("another tab") ? failure.message : "Your changes are in memory, but could not be saved. Export your decks before leaving this page.";
+      error = failure instanceof Error && failure.message.includes("another tab") ? failure.message : "Your changes are in memory, but could not be saved. Use File → Back up library before leaving this page.";
       writable = false;
     }
   }

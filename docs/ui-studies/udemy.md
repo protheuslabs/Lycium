@@ -6,6 +6,12 @@ Date: 2026-11-21. Third focused study after Coursera and Khan Academy.
 
 Directly inspected the signed-out [development catalog](https://www.udemy.com/courses/development/) at desktop width, including category navigation, sorting, grouped filters, course-result metadata, and an open course-preview popover. The preview exposed learning outcomes without changing the underlying result layout. Consulted the official [course-player documentation section](https://support.udemy.com/hc/en-us/sections/206457187-Course-player) for the documented player/tool boundary. No account, checkout, enrollment, or authenticated course player was used.
 
+### Authenticated Player Follow-Up
+
+After the user signed in and explicitly authorized a free enrollment, enrolled in the free public `Code Your First Game` course without a purchase or subscription. Inspected the resulting full player, including its course header, large video area, next-lecture action, per-lecture completion controls, lecture times, section progress, and tabs for Course content, Overview, Notes, Announcements, Reviews, and Learning tools. The video exposes playback, note, transcript, caption, settings, and fullscreen controls. Overview retains course description, level, effort, outcomes, prerequisites, and instructor context. Playback, notes, scheduler, completion, and paid actions were not changed.
+
+This confirms the value of a dedicated lesson workspace, direct next-section navigation, and course-local resources. Lycium already implements those foundations. Notes, social areas, scheduling, and richer video tooling remain future capabilities rather than static UI additions.
+
 ## Observations And Adaptations
 
 | Area | Observation | Lycium adaptation |

@@ -77,6 +77,9 @@ export type ContentBlock = {
     start?: number | string;
     end?: number | string;
   };
+  transcript?: string;
+  transcriptUrl?: string;
+  captionTracks?: Array<{ src: string; label: string; language: string; default?: boolean }>;
   startSeconds?: number | string;
   endSeconds?: number | string;
   start_seconds?: number | string;

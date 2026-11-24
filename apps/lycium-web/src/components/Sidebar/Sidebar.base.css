@@ -115,10 +115,11 @@
   color: var(--lycium-color-warning);
 }
 .sidebar-source-tab {
-  margin-top: 1rem;
-  border-top: 1px solid var(--lycium-color-border);
   border-radius: 0;
 }
+.sidebar-utility-links { margin-top: 1rem; border-top: 1px solid var(--lycium-color-border); }
+.sidebar-progress-tab { color: var(--lycium-color-text); text-decoration: none; }
+.sidebar-progress-tab:hover { color: var(--lycium-color-accent); text-decoration: none; }
 .sidebar-source-tab.module-header--active {
   color: var(--lycium-color-accent);
 }

@@ -27,6 +27,7 @@ type GraphCanvasProps = {
   initialViewport?: { x: [number, number]; y: [number, number] } | null;
   precision?: CoordinatePrecision;
   snapToGrid?: boolean;
+  accessibleLabel?: string;
   onErrors: (errors: Record<string, string>) => void;
   onPointMove?: (id: string, x: number, y: number) => void;
 };
@@ -38,7 +39,7 @@ const NO_PARAMETERS: Readonly<Record<string, number>> = {};
 
 // No page layout or course dependencies: the same plot can live in either host.
 const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function GraphCanvas(
-  { expressions, points = NO_POINTS, datasets = NO_DATASETS, labels = NO_LABELS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, onErrors, onPointMove },
+  { expressions, points = NO_POINTS, datasets = NO_DATASETS, labels = NO_LABELS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, accessibleLabel = "Cartesian graph of the visible functions", onErrors, onPointMove },
   ref,
 ) {
   const initialViewportRef = useRef(initialViewport);
@@ -454,7 +455,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
 
   return (
     <div className="graph-surface">
-      <div ref={containerRef} className="graph-viewport" role="img" aria-label="Cartesian graph of the visible functions" />
+      <div ref={containerRef} className="graph-viewport" role="img" aria-label={accessibleLabel} />
       {onPointMove && pointPositions.map((point, index) => <button key={point.id} type="button" className="graph-draggable-point" style={{ left: point.left, top: point.top, color: point.color }} aria-label={`Move point ${index + 1}`} title="Drag or use arrow keys to move point" onKeyDown={(event) => {
         const offset: Record<string, [number, number]> = { ArrowLeft: [-10, 0], ArrowRight: [10, 0], ArrowUp: [0, -10], ArrowDown: [0, 10] };
         if (!offset[event.key] || !containerRef.current) return;

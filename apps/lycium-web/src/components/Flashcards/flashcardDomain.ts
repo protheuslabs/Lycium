@@ -1,3 +1,5 @@
+import { parseReviewSchedule, type ReviewSchedule } from "./spacedReviewData";
+
 export type Flashcard = {
   id: string;
   front: string;
@@ -31,6 +33,7 @@ export type FlashcardStore = {
   version: 1;
   decks: FlashcardDeck[];
   history: FlashcardHistory;
+  schedules?: ReviewSchedule;
 };
 
 export const FLASHCARD_STORAGE_KEY = "lycium-flashcards-v1";
@@ -107,7 +110,7 @@ export function parseFlashcardStore(value: unknown): FlashcardStore {
       return [[card.id, { status: item.status, reviewCount: item.reviewCount, ...(item.starred !== undefined ? { starred: item.starred } : {}), ...(item.lastReviewedAt !== undefined ? { lastReviewedAt: item.lastReviewedAt } : {}) }]];
     }))];
   }));
-  return { version: 1, decks, history };
+  return { version: 1, decks, history, ...(value.schedules === undefined ? {} : { schedules: parseReviewSchedule(value.schedules, decks) }) };
 }
 
 export function isFlashcardStore(value: unknown): value is FlashcardStore {
@@ -136,11 +139,11 @@ export function shuffleCards<T>(items: readonly T[], random: () => number = Math
 
 export function replaceDeck(store: FlashcardStore, deck: FlashcardDeck): FlashcardStore {
   const ids = new Set(deck.cards.map((card) => card.id));
-  return { ...store, decks: store.decks.map((item) => item.id === deck.id ? deck : item), history: { ...store.history, [deck.id]: Object.fromEntries(Object.entries(store.history[deck.id] ?? {}).filter(([id]) => ids.has(id))) } };
+  return { ...store, decks: store.decks.map((item) => item.id === deck.id ? deck : item), history: { ...store.history, [deck.id]: Object.fromEntries(Object.entries(store.history[deck.id] ?? {}).filter(([id]) => ids.has(id))) }, ...(store.schedules ? { schedules: { ...store.schedules, [deck.id]: Object.fromEntries(Object.entries(store.schedules[deck.id] ?? {}).filter(([id]) => ids.has(id))) } } : {}) };
 }
 
 export function removeDeck(store: FlashcardStore, id: string): FlashcardStore {
-  return { ...store, decks: store.decks.filter((deck) => deck.id !== id), history: Object.fromEntries(Object.entries(store.history).filter(([key]) => key !== id)) };
+  return { ...store, decks: store.decks.filter((deck) => deck.id !== id), history: Object.fromEntries(Object.entries(store.history).filter(([key]) => key !== id)), ...(store.schedules ? { schedules: Object.fromEntries(Object.entries(store.schedules).filter(([key]) => key !== id)) } : {}) };
 }
 
 export function toggleStar(store: FlashcardStore, deckId: string, cardId: string): FlashcardStore {

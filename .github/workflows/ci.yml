@@ -8,6 +8,20 @@ permissions:
   contents: read
 
 jobs:
+  code-size:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check code file size limits
+        run: node scripts/check-loc.mjs
+
   web-and-contracts:
     runs-on: ubuntu-latest
     steps:
@@ -25,9 +39,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Check code file size limits
-        run: pnpm check:loc
 
       - name: Check import boundaries
         run: pnpm check:boundaries

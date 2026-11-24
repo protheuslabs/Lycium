@@ -461,7 +461,17 @@ export default function EditableContentBlock({
       const videoUrl = block.url ?? videoSource?.embedUrl ?? videoSource?.url;
       const clip = getVideoClip(block);
       const video = videoUrl ? (
-        <VideoBlock url={videoUrl} title={videoSource?.title ?? block.title ?? "Video content"} clip={clip} />
+        <VideoBlock
+          url={videoUrl}
+          title={videoSource?.title ?? block.title ?? "Video content"}
+          clip={clip}
+          courseKey={courseKey}
+          sectionId={sectionId}
+          videoKey={`video-${blockIndex}`}
+          transcript={block.transcript}
+          transcriptUrl={block.transcriptUrl}
+          captionTracks={block.captionTracks}
+        />
       ) : (
         <p className="source-missing">Video source unavailable.</p>
       );

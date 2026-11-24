@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+export const dynamic = "force-static";
+
 const siteRoot = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://protheuslabs.github.io/Lycium").replace(/\/$/, "");
 const basePath = (process.env.NEXT_PUBLIC_LYCIUM_BASE_PATH ?? "/Lycium").replace(/\/$/, "");
 

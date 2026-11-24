@@ -11,7 +11,7 @@ import {
 import SidebarSectionItem, { type SidebarSection } from "./SidebarSectionItem";
 import { containDialogFocus } from "../../utils/dialogFocus";
 import ProgressMeter from "../ProgressMeter/ProgressMeter";
-import { ArrowLeft, Maximize2, Minimize2, PanelLeft, X } from "lucide-react";
+import { ArrowLeft, ChartNoAxesColumn, Maximize2, Minimize2, PanelLeft, X } from "lucide-react";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import Link from "next/link";
 import { getCoursePath } from "../../utils/courseRouting";
@@ -283,15 +283,20 @@ export default function Sidebar({
             </section>
           );
         })}
-        <SidebarSourceTab
-          isActive={isSourcesActive}
-          isCollapsed={false}
-          sourceCount={sourceCount}
-          onSelect={() => {
-            onSourcesSelect?.();
-            if (isMobile) setIsDrawerOpen(false);
-          }}
-        />
+        <div className="sidebar-utility-links">
+          <Link href={`${getCoursePath({ key: courseKey, title: courseTitle })}#progress`} className="module-header sidebar-progress-tab" onClick={() => { if (isMobile) setIsDrawerOpen(false); }}>
+            <ChartNoAxesColumn size={16} aria-hidden="true" /><span>Progress</span>
+          </Link>
+          <SidebarSourceTab
+            isActive={isSourcesActive}
+            isCollapsed={false}
+            sourceCount={sourceCount}
+            onSelect={() => {
+              onSourcesSelect?.();
+              if (isMobile) setIsDrawerOpen(false);
+            }}
+          />
+        </div>
         {isEditMode && (
           <SidebarAddRow label="Add module" isCollapsed={false} onClick={onAddModule} />
         )}

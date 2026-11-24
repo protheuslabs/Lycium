@@ -19,6 +19,7 @@ Sixth study: [MIT OpenCourseWare materials and academic content](ui-studies/mit-
 Seventh study: [OpenLearn catalog comparison and layout choice](ui-studies/openlearn.md).
 Eighth study: [Brilliant active practice without gamification](ui-studies/brilliant.md).
 Ninth study: [Codecademy learning environment and syllabus context](ui-studies/codecademy.md).
+Tenth study: [FutureLearn next steps, preview, and progress](ui-studies/futurelearn.md). This completes the original ten-site series.
 Shared chrome: [site navigation and footer](ui-studies/site-navigation.md).
 
 1. [Direction and research limits](#1-direction)

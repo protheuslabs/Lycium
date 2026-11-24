@@ -18,6 +18,7 @@ import type {
   LyciumProgram,
   LyciumProgressRecord,
   LyciumQuizProgressRecord,
+  LyciumVideoProgressRecord,
   LyciumThemeMode,
 } from "@lycium/contracts";
 
@@ -358,5 +359,6 @@ export type {
   LyciumLocalSettings,
   LyciumProgressRecord,
   LyciumQuizProgressRecord,
+  LyciumVideoProgressRecord,
   LyciumThemeMode,
 };

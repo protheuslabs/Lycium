@@ -1,0 +1,5 @@
+.lesson-notes { margin: 1.25rem 0; border-block: 1px solid var(--lycium-color-border); }
+.lesson-notes summary { display: flex; align-items: center; gap: .55rem; min-height: 44px; cursor: pointer; color: var(--lycium-color-text); font-size: .85rem; font-weight: 600; }
+.lesson-notes summary svg { color: var(--lycium-color-accent); }
+.lesson-notes textarea { box-sizing: border-box; width: 100%; resize: vertical; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); background: var(--lycium-color-surface-raised); color: var(--lycium-color-text); font: inherit; font-size: .9rem; line-height: 1.6; }
+.lesson-notes > p { margin: .4rem 0 .75rem; color: var(--lycium-color-text-muted); font-size: .75rem; }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { emptyStore, starterDeck } from "./flashcardDomain";
 import { readFlashcards, writeFlashcards } from "./flashcardStorage";
+import { applyScheduledReview } from "./spacedReview";
 
 function storage(initial: string | null = null) {
   let raw = initial;
@@ -29,5 +30,16 @@ describe("flashcard persistence", () => {
     const broken = { getItem: () => { throw new Error("Unavailable"); }, setItem: () => {} };
     expect(readFlashcards(broken).error).toMatch(/unavailable/);
     expect(() => writeFlashcards({ getItem: () => null, setItem: () => { throw new Error("Quota"); } }, emptyStore(), null)).toThrow("Quota");
+  });
+  it("round-trips scheduled reviews and preserves corrupt scheduling data for recovery", async () => {
+    const reviewed = await applyScheduledReview({ ...emptyStore(), decks: [starterDeck] }, starterDeck.id, starterDeck.cards[0].id, 3, new Date("2026-11-23T12:00:00Z"));
+    const port = storage(), raw = writeFlashcards(port, reviewed, null);
+    expect(readFlashcards(port).store.schedules).toEqual(reviewed.schedules);
+    const invalid = raw.replace('"FSRS-7"', '"unsupported-model"');
+    port.setItem("", invalid);
+    const recovered = readFlashcards(port);
+    expect(recovered.writable).toBe(false);
+    expect(recovered.raw).toBe(invalid);
+    expect(port.getItem()).toBe(invalid);
   });
 });

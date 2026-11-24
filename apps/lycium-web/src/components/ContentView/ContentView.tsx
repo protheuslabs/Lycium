@@ -16,6 +16,7 @@ import { createBlockTemplate } from "../CourseEditing/courseEditPrimitives";
 import { useSectionQuizStatus } from "./useSectionQuizStatus";
 import { hasSubmittedProject, projectKeyFor } from "./projectSubmissionStatus";
 import { ChevronDown, Info } from "lucide-react";
+import LessonNotes from "../LearnerNotes/LessonNotes";
 
 export type { SourceRecord } from "./contentViewTypes";
 
@@ -306,6 +307,8 @@ export default function ContentView({
       ) : (
         <div className="section-content"><p>{section.content}</p></div>
       )}
+
+      <LessonNotes courseKey={courseKey} sectionId={section.id} />
 
       <CourseNav
         centerControls={(

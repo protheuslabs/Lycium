@@ -117,6 +117,13 @@ export type LyciumVideoClip = {
   end?: number | string;
 };
 
+export type LyciumVideoCaptionTrack = {
+  src: string;
+  label: string;
+  language: string;
+  default?: boolean;
+};
+
 export type LyciumCourseBlock = {
   type: string;
   title?: string;
@@ -130,6 +137,9 @@ export type LyciumCourseBlock = {
   license?: string;
   generatedBy?: string;
   clip?: LyciumVideoClip;
+  transcript?: string;
+  transcriptUrl?: string;
+  captionTracks?: LyciumVideoCaptionTrack[];
   startSeconds?: number | string;
   endSeconds?: number | string;
   start_seconds?: number | string;
@@ -565,4 +575,10 @@ export type LyciumQuizProgressRecord = {
   unsureByQuestion?: boolean[];
   questionView?: "single" | "all";
   currentQuestionIndex?: number;
+};
+
+export type LyciumVideoProgressRecord = {
+  positionSeconds: number;
+  durationSeconds?: number | null;
+  updatedAt: string;
 };
