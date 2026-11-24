@@ -8,23 +8,53 @@
 .graphing-expressions h2 { margin: 0; font-size: 1rem; }
 .graphing-hint { color: var(--lycium-color-text-muted); font-size: .8rem; line-height: 1.6; }
 .graphing-expression-list { max-height: 45vh; overflow-y: auto; overflow-x: hidden; margin: 1rem -.25rem; padding: .25rem; }
-.graphing-expression { padding: .55rem .4rem; margin-bottom: .6rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); transition: border-color .15s, box-shadow .15s; }
+.graphing-expression { position: relative; padding: .55rem .4rem .55rem 2.05rem; margin-bottom: .6rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); transition: border-color .15s, box-shadow .15s; }
 .graphing-expression:focus-within { border-color: var(--lycium-color-accent); box-shadow: 0 0 0 2px var(--lycium-color-accent-soft); }
 .graphing-expression-row { display: flex; align-items: center; gap: .25rem; min-width: 0; }
+.graphing-expression-row > div { flex: 1 1 auto; min-width: 0; }
+.graphing-expression-row > .graphing-icon-button { width: 2rem; min-width: 2rem; padding-inline: .25rem; }
 .graphing-expression-color { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 1.65rem; align-self: stretch; min-height: 2.5rem; margin: -.55rem .15rem -.55rem -.4rem; color: #fff; font-size: .75rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.graphing-expression-color { cursor: grab; touch-action: none; user-select: none; }
+.graphing-expression-color:active { cursor: grabbing; }
+.graphing-expression-row > .graphing-expression-color { position: absolute; top: 0; bottom: 0; left: 0; width: 1.65rem; height: auto; min-height: 0; margin: 0; }
 .graphing-color { width: .65rem; height: .65rem; border-radius: 50%; flex: 0 0 auto; margin: 0 .25rem; }
 .graphing-expression[data-hidden="true"] .graphing-color { opacity: .35; }
 .graphing-expression[data-hidden="true"] .graphing-expression-color { opacity: .35; }
 .graphing-expression[data-hidden="true"] input { color: var(--lycium-color-text-muted); }
+.graphing-expression, .graphing-parameters, .graph-datasets, .graph-points, .graph-analysis { animation: graph-sidebar-enter .2s ease both; }
 .graphing-expression input { width: 100%; min-width: 0; padding: .5rem .25rem; border: 0; border-radius: var(--lycium-radius-control); font: inherit; font-size: .9rem; background: transparent; color: inherit; }
 .graphing-expression input[aria-invalid="true"] { box-shadow: inset 0 -2px var(--lycium-danger); }
+.graph-function-adjustments { display: grid; gap: .35rem; margin: .45rem 0 0 1.65rem; padding: .55rem .4rem .1rem; border-top: 1px solid var(--lycium-color-border); font-size: .75rem; }
+.graph-function-adjustments { overflow: hidden; transform-origin: top; animation: graph-adjustments-open .2s ease both; }
+.graph-function-adjustments label { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) 2rem; align-items: center; gap: .45rem; color: var(--lycium-color-text-muted); }
+.graph-function-adjustments input[type="range"] { width: 100%; min-width: 0; accent-color: var(--lycium-color-accent); }
+.graph-function-adjustments output { color: var(--lycium-color-text); font-variant-numeric: tabular-nums; text-align: right; }
 .graphing-error { margin: .5rem .25rem .25rem; color: var(--lycium-color-warning); font-size: .8rem; line-height: 1.5; overflow-wrap: anywhere; }
 .graphing-studio .graphing-suggest-slider { margin: .25rem; color: var(--lycium-color-accent); }
 .graphing-studio button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: var(--lycium-control-height); border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-button); padding: .5rem .75rem; font-size: var(--lycium-control-font-size); color: var(--lycium-color-text); background: var(--lycium-color-control-surface); }
 .graphing-studio button:hover { background: var(--lycium-color-control-hover); }
 .graphing-studio .graphing-icon-button { width: 2.75rem; padding: .5rem; flex: 0 0 auto; border-color: transparent; background: transparent; }
+.graphing-studio :is(.graphing-expression-row, .graph-dataset-title, .graph-point-row, .graphing-parameter-header) > .graphing-icon-button { width: 2rem; min-width: 2rem; padding: .25rem; align-self: flex-start; }
+.graphing-studio :is(.graphing-expression, .graph-dataset, .graph-point-row, .graphing-parameter) { interpolate-size: allow-keywords; transition: height .2s ease, min-height .2s ease, padding .2s ease, border-color .15s ease, box-shadow .15s ease; }
+.graph-selectable-row:focus-within > :not(.graph-dataset-title) { animation: graph-sidebar-enter .2s ease both; }
+.graphing-studio .graph-dataset-title { flex-wrap: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  .graphing-studio :is(.graphing-expression, .graph-dataset, .graph-point-row, .graphing-parameter, .graph-function-adjustments), .graph-selectable-row:focus-within > :not(.graph-dataset-title) { animation: none; transition: none; }
+}
 .graphing-sidebar-toggle { align-self: flex-end; width: 2.5rem; padding: .5rem; margin: -.25rem -.25rem .5rem 0; border-color: transparent; background: transparent; }
 .graphing-studio .graphing-add-button { width: 100%; color: var(--lycium-color-accent); }
+.graph-add-menu { position: relative; width: 100%; }
+.graph-add-menu > summary { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 2.4rem; box-sizing: border-box; margin: 0; padding: .25rem; cursor: pointer; list-style: none; color: var(--lycium-color-text); }
+.graphing-studio .graph-add-menu > summary { color: var(--lycium-color-text); }
+.graphing-studio--workspace .graphing-expression-list > .graph-add-menu { margin: 0; }
+.graph-sidebar-item-content > :is(.graphing-parameters, .graph-datasets, .graph-points) { padding-top: 0; margin: 0; }
+.graph-add-menu > summary::-webkit-details-marker { display: none; }
+.graph-add-menu > summary:hover { background: var(--lycium-color-control-hover); }
+.graph-add-menu-options { position: absolute; z-index: 8; top: calc(100% + .35rem); left: 0; right: 0; display: grid; gap: .2rem; padding: .35rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
+.graph-add-menu-options button { justify-content: flex-start; width: 100%; border: 0; background: transparent; }
+.graph-add-menu-options button:hover { background: var(--lycium-color-control-hover); }
+@keyframes graph-sidebar-enter { from { opacity: 0; transform: translateY(-.35rem); } to { opacity: 1; transform: translateY(0); } }
+@keyframes graph-adjustments-open { from { max-height: 0; opacity: 0; transform: scaleY(.8); } to { max-height: 12rem; opacity: 1; transform: scaleY(1); } }
 .graphing-studio .graphing-reset-button { color: var(--lycium-color-accent); background: var(--lycium-color-accent-soft); }
 .graphing-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .6rem; border-bottom: 1px solid var(--lycium-color-border); }
 .graphing-view-controls { display: flex; align-items: center; gap: .25rem; }
@@ -71,13 +101,46 @@
 .graphing-studio--workspace .graphing-trace-controls { min-height: 0; overflow-y: auto; }
 .graphing-studio--workspace .graphing-expressions { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0; box-shadow: 8px 0 18px -16px rgb(15 23 42 / 45%); z-index: 2; }
 .graphing-studio--workspace .graphing-expressions[hidden] { display: none; }
-.graphing-studio--workspace .graphing-expression-list { flex: 1; min-height: 0; max-height: none; }
+.graphing-studio--workspace .graphing-expression-list { flex: 1; min-height: 0; max-height: none; margin: 0; padding: 0; }
 .graphing-studio--workspace .graphing-expression { margin-bottom: 0; }
 .graphing-studio--workspace .graphing-expression-list > :not(.graphing-expression) { margin-inline: 1rem; }
+.graphing-studio--workspace .graph-add-menu { width: 100%; margin: 0; padding: 0; }
+.graphing-studio--workspace .graph-add-menu { order: 9999; }
+.graphing-studio--workspace .graphing-expression-list > .graph-add-menu { margin-inline: 0; }
 .graphing-studio--workspace .graphing-expression-list > .graph-points,
 .graphing-studio--workspace .graphing-expression-list > .graph-analysis,
 .graphing-studio--workspace .graphing-expression-list > .graph-datasets,
 .graphing-studio--workspace .graphing-expression-list > .graph-label-settings { margin-top: 1.5rem; }
+.graph-sidebar-item { display: flex; width: 100%; min-width: 0; margin-top: 1rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); overflow: hidden; background: var(--lycium-color-surface-raised); }
+.graph-sidebar-strip { display: flex; flex: 0 0 1.65rem; align-items: flex-start; justify-content: center; padding-top: .75rem; color: #fff; font-size: .75rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.graph-sidebar-item-content { flex: 1 1 auto; min-width: 0; padding: .1rem .65rem .65rem; }
+.graph-sidebar-analysis { flex-shrink: 0; padding: .75rem 1rem; border-top: 1px solid var(--lycium-color-border); }
+.graph-sidebar-analysis > .graph-analysis { margin: 0; padding: 0; border: 0; }
+.graphing-studio--workspace .graphing-expression-list { flex: 0 0 auto; overflow: visible; }
+.graphing-studio--workspace .graphing-expression-list { display: flex; flex-direction: column; }
+.graph-datasets > .graphing-hint, .graph-datasets > .graph-dataset-actions { display: none; }
+.graph-selectable-row > :not(.graph-dataset-title) { display: block; max-height: 0; margin-block: 0; padding-block: 0; overflow: hidden; opacity: 0; transition: max-height .2s ease, opacity .15s ease, margin .2s ease, padding .2s ease; }
+.graph-selectable-row:focus-within > :not(.graph-dataset-title), .graph-selectable-row--selected > :not(.graph-dataset-title) { max-height: 40rem; margin-block: revert; padding-block: revert; opacity: 1; }
+.graph-selectable-row { cursor: pointer; }
+.graph-sidebar-item-content > :is(.graphing-parameters, .graph-datasets, .graph-points, .graph-analysis) { margin-top: 0; border-top: 0; }
+.graphing-studio--workspace .graphing-expression-list { counter-reset: graph-row; margin-inline: 0; padding-inline: 0; }
+.graphing-studio--workspace .graphing-expression-list > .graph-sidebar-item { margin: 0; border: 0; border-radius: 0; }
+.graph-sidebar-item > .graph-sidebar-strip { display: none; }
+.graph-sidebar-item > .graph-sidebar-item-content { padding: 0; }
+.graphing-expression, .graph-dataset, .graph-point-row, .graphing-parameter { counter-increment: graph-row; }
+.graphing-expression-row > .graphing-expression-color,
+.graph-dataset-title > .graphing-expression-color,
+.graph-point-row > .graphing-expression-color { font-size: .75rem; }
+.graph-sidebar-item-content .graph-dataset,
+.graph-sidebar-item-content .graph-point-row,
+.graph-sidebar-item-content .graphing-parameter { position: relative; margin: 0; padding: .65rem .4rem .65rem 2.05rem; border-radius: 0; border-inline: 0; }
+.graph-sidebar-item-content .graph-dataset { padding-top: .55rem; padding-bottom: .55rem; }
+.graph-sidebar-item-content .graph-dataset:not(:focus-within):not(.graph-selectable-row--selected) { box-sizing: border-box; height: 2.75rem; min-height: 2.75rem; padding-top: 0; padding-bottom: 0; overflow: hidden; }
+.graph-sidebar-item-content .graph-dataset:focus-within,
+.graph-sidebar-item-content .graph-dataset.graph-selectable-row--selected { height: auto; min-height: 0; }
+.graph-dataset-title > .graphing-expression-color,
+.graph-point-row > .graphing-expression-color { position: absolute; inset: 0 auto 0 0; width: 1.65rem; margin: 0; align-items: center; }
+.graphing-parameter::before { content: counter(graph-row); position: absolute; inset: 0 auto 0 0; display: flex; align-items: center; justify-content: center; width: 1.65rem; color: white; background: var(--lycium-color-accent); font-size: .75rem; font-weight: 700; }
 .graphing-studio--workspace .graphing-add-button { flex-shrink: 0; }
 
 @media (min-width: 900px) {
@@ -107,8 +170,11 @@
 .graph-presentation-settings input { accent-color: var(--lycium-color-accent); }
 .graphing-math-editor { display: flex; flex: 1; align-items: center; flex-wrap: wrap; min-width: 0; }
 .graphing-math-editor > input, .graphing-math-host { flex: 1 1 4rem; min-width: 0; }
-.graphing-math-host math-field { display: block; width: 100%; min-width: 0; min-height: 2.75rem; border: 0; border-radius: var(--lycium-radius-control); padding: .35rem; font-size: 1rem; color: var(--lycium-color-text); background: var(--lycium-color-control-surface); }
+.graphing-math-host math-field { display: block; width: 100%; min-width: 0; min-height: 2.75rem; overflow-x: auto; scrollbar-width: none; white-space: nowrap; border: 0; border-radius: var(--lycium-radius-control); padding: .35rem; font-size: 1rem; color: var(--lycium-color-text); background: var(--lycium-color-control-surface); }
+.graphing-math-host math-field::-webkit-scrollbar { display: none; }
 .graphing-math-host math-field::part(menu-toggle) { display: none; }
+.graphing-math-host math-field::part(virtual-keyboard-toggle) { opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.graphing-expression:focus-within .graphing-math-host math-field::part(virtual-keyboard-toggle) { opacity: 1; pointer-events: auto; }
 .graphing-math-editor .graphing-error { flex-basis: 100%; }
 .graphing-animation-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .25rem 0; }
 .graphing-studio .graphing-animation-button { min-height: 2.25rem; padding: .35rem .5rem; font-size: .75rem; }

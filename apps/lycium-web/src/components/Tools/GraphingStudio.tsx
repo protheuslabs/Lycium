@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Cog, Download, Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import type { GraphExpression } from "./graphExpressions";
 import ParameterSliders from "./ParameterSliders";
@@ -21,6 +21,13 @@ const DEFAULT_EXPRESSIONS: GraphExpression[] = [
   { expr: "x^2", id: "1", color: COLORS[0], visible: true },
   { expr: "sin(x)", id: "2", color: COLORS[1], visible: true },
 ];
+type FunctionAdjustment = { base: string; magnitude: number; horizontal: number; vertical: number };
+const adjustmentExpression = ({ base, magnitude, horizontal, vertical }: FunctionAdjustment) => {
+  const source = base.trim().replace(/^y\s*=\s*/i, "");
+  if (/^x\^2$/i.test(source)) return `${magnitude}*(x-(${horizontal}))^2+(${vertical})`;
+  if (/^sin\(x\)$/i.test(source)) return `${magnitude}*sin(x-(${horizontal}))+(${vertical})`;
+  return `${magnitude}*(${source})+(${vertical})`;
+};
 
 export default function GraphingStudio({ workspace = false, initialDocument }: { workspace?: boolean; initialDocument?: GraphDocument }) {
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null);
@@ -28,6 +35,12 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
   const [loadedDocument] = useState(() => initialDocument ? parseGraphDocument(initialDocument) : null);
   const [expressions, setExpressions] = useState(loadedDocument?.expressions ?? DEFAULT_EXPRESSIONS);
+  const [rowOrder, setRowOrder] = useState<string[]>(() => [
+    ...(loadedDocument?.expressions ?? DEFAULT_EXPRESSIONS).map(({ id }) => `function:${id}`),
+    ...(loadedDocument?.parameters ?? []).map(({ name }) => `parameter:${name}`),
+    ...(loadedDocument?.datasets ?? []).map(({ id }) => `dataset:${id}`),
+    ...(loadedDocument?.points ?? []).map(({ id }) => `point:${id}`),
+  ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [crossings, setCrossings] = useState<Intersection[] | null>(null);
   const [intercepts, setIntercepts] = useState<Intercept[] | null>(null);
@@ -35,6 +48,8 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const [axisBounds, setAxisBounds] = useState({ xMin: "", xMax: "", yMin: "", yMax: "" });
   const [axisError, setAxisError] = useState("");
   const [invalidDrafts, setInvalidDrafts] = useState<Record<string, boolean>>({});
+  const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
+  const [adjustments, setAdjustments] = useState<Record<string, FunctionAdjustment>>({});
   const plottedExpressions = useMemo(() => expressions.map((expression) => invalidDrafts[expression.id] ? { ...expression, visible: false } : expression), [expressions, invalidDrafts]);
   const [grid, setGrid] = useState(loadedDocument?.settings.grid ?? true);
   const [precision, setPrecision] = useState<CoordinatePrecision>(loadedDocument?.settings.precision ?? "auto");
@@ -43,16 +58,25 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const [datasets, setDatasets] = useState<GraphDataset[]>(loadedDocument?.datasets ?? []);
   const [labels, setLabels] = useState<GraphLabels>(loadedDocument?.labels ?? { title: "", xTitle: "", xUnit: "", yTitle: "", yUnit: "", annotations: [] });
   const [parameters, setParameters] = useState<GraphParameter[]>(loadedDocument?.parameters ?? []);
+  const draggedRow = useRef<string | null>(null);
+  useEffect(() => {
+    const keys = [...expressions.map(({ id }) => `function:${id}`), ...parameters.map(({ name }) => `parameter:${name}`), ...datasets.map(({ id }) => `dataset:${id}`), ...points.map(({ id }) => `point:${id}`)];
+    setRowOrder((previous) => {
+      const next = [...previous.filter((key) => keys.includes(key)), ...keys.filter((key) => !previous.includes(key))];
+      return next.length === previous.length && next.every((key, index) => key === previous[index]) ? previous : next;
+    });
+  }, [expressions, parameters, datasets, points]);
   const parameterValues = useMemo(() => Object.fromEntries(parameters.map(({ name, value }) => [name, value])), [parameters]);
   const [interactiveParameters, setInteractiveParameters] = useState<string[]>(loadedDocument?.presentation.interactiveParameters ?? []);
   const [documentError, setDocumentError] = useState<string | null>(null);
   const [initialViewport, setInitialViewport] = useState<GraphDocument["viewport"]>(loadedDocument?.viewport ?? null);
   const [documentRevision, setDocumentRevision] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
-  const pointsRef = useRef<HTMLDetailsElement>(null);
+  const pointsRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDetailsElement>(null);
   const importMenuRef = useRef<HTMLDetailsElement>(null);
   const exportMenuRef = useRef<HTMLDetailsElement>(null);
+  const addMenuRef = useRef<HTMLDetailsElement>(null);
   const [expressionsVisible, setExpressionsVisible] = useState(true);
   const graphRef = useRef<GraphCanvasHandle>(null);
   const nextId = useRef(Math.max(3, ...(loadedDocument?.expressions ?? []).map(({ id }) => /^\d+$/.test(id) ? Number(id) + 1 : 3).filter(Number.isSafeInteger)));
@@ -62,12 +86,12 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
 
   useEffect(() => {
     const dismissOutside = (event: PointerEvent) => {
-      for (const menu of [settingsRef.current, importMenuRef.current, exportMenuRef.current]) {
+      for (const menu of [settingsRef.current, importMenuRef.current, exportMenuRef.current, addMenuRef.current]) {
         if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
       }
     };
     const dismissEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") for (const menu of [settingsRef.current, importMenuRef.current, exportMenuRef.current]) if (menu) menu.open = false;
+      if (event.key === "Escape") for (const menu of [settingsRef.current, importMenuRef.current, exportMenuRef.current, addMenuRef.current]) if (menu) menu.open = false;
     };
     document.addEventListener("pointerdown", dismissOutside);
     document.addEventListener("keydown", dismissEscape);
@@ -103,6 +127,18 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
     setExpressions((previous) => previous.map((expression) => expression.id === expressionId ? { ...expression, ...update } : expression));
   };
 
+  const selectExpression = (expression: GraphExpression) => {
+    setSelectedRowKey(`function:${expression.id}`);
+    setAdjustments((previous) => previous[expression.id] ? previous : { ...previous, [expression.id]: { base: expression.expr, magnitude: 1, horizontal: 0, vertical: 0 } });
+  };
+
+  const updateAdjustment = (expression: GraphExpression, update: Partial<FunctionAdjustment>) => {
+    const current = adjustments[expression.id] ?? { base: expression.expr, magnitude: 1, horizontal: 0, vertical: 0 };
+    const next = { ...current, ...update };
+    setAdjustments((previous) => ({ ...previous, [expression.id]: next }));
+    updateExpression(expression.id, { expr: adjustmentExpression(next) });
+  };
+
   const addParameter = (name: string) => {
     setParameters((previous) => previous.some((parameter) => parameter.name === name) ? previous : [...previous, { name, value: 1, min: -5, max: 5, step: 0.1 }]);
   };
@@ -111,9 +147,36 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
     setParameters((previous) => [...previous, ...names.filter((name) => !previous.some((parameter) => parameter.name === name)).map((name) => ({ name, value: 1, min: -5, max: 5, step: 0.1 }))]);
   };
 
+  const addFunction = () => {
+    const expressionId = nextId.current++;
+    setExpressions((previous) => [...previous, { id: String(expressionId), expr: "", color: COLORS[(expressionId - 1) % COLORS.length], visible: true }]);
+    setRowOrder((previous) => [...previous, `function:${expressionId}`]);
+    setSelectedRowKey(`function:${expressionId}`);
+    addMenuRef.current?.removeAttribute("open");
+  };
+
+  const addTable = () => {
+    if (datasets.length >= 20) return;
+    const colors = COLORS;
+    const id = crypto.randomUUID();
+    setDatasets((previous) => [...previous, { id, name: `Dataset ${previous.length + 1}`, xLabel: "x", yLabel: "y", rows: [{ x: "", y: "" }, { x: "", y: "" }, { x: "", y: "" }], color: colors[(expressions.length + parameters.length + previous.length) % colors.length], visible: true, regression: false }]);
+    setRowOrder((previous) => [...previous, `dataset:${id}`]);
+    setSelectedRowKey(`dataset:${id}`);
+    addMenuRef.current?.removeAttribute("open");
+  };
+
+  const addPoint = () => {
+    const id = crypto.randomUUID();
+    setPoints((previous) => [...previous, { id, x: 0, y: 0, color: COLORS[(expressions.length + parameters.length + datasets.length + previous.length) % COLORS.length], visible: true }]);
+    setRowOrder((previous) => [...previous, `point:${id}`]);
+    setSelectedRowKey(`point:${id}`);
+    addMenuRef.current?.removeAttribute("open");
+    pointsRef.current?.focus();
+  };
+
   const addAnalysisPoint = (x: number, y: number) => {
     setPoints((previous) => [...previous, { id: crypto.randomUUID(), x, y, color: COLORS[2], visible: true }]);
-    if (pointsRef.current) pointsRef.current.open = true;
+    pointsRef.current?.focus();
   };
 
   const fitDataset = (dataset: GraphDataset, equalScale: boolean) => {
@@ -194,26 +257,58 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
           {documentError && <p className="graphing-error" role="alert">{documentError}</p>}
 
           <h2 id={`${id}-functions`} className="sr-only">Functions</h2>
-          <div className="graphing-expression-list">
+          <div className="graphing-expression-list"
+            onPointerDown={(event) => {
+              if (!(event.target instanceof Element) || !event.target.closest(".graphing-expression-color, .graphing-parameter")) return;
+              const row = event.target.closest<HTMLElement>(".graphing-expression-list > *");
+              if (!row || !row.style.order) return;
+              draggedRow.current = rowOrder[Number(row.style.order)] ?? null;
+              event.currentTarget.setPointerCapture(event.pointerId);
+              event.preventDefault();
+            }}
+            onPointerUp={(event) => {
+              const from = draggedRow.current;
+              draggedRow.current = null;
+              if (!from) return;
+              const row = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>(".graphing-expression-list > *");
+              const to = row?.style.order ? rowOrder[Number(row.style.order)] : undefined;
+              if (!to || to === from) return;
+              setRowOrder((previous) => { const next = previous.filter((key) => key !== from); next.splice(next.indexOf(to), 0, from); return next; });
+            }}
+            onPointerCancel={() => { draggedRow.current = null; }}
+            onFocusCapture={(event) => {
+              if (event.target instanceof Element && !event.target.closest(".graphing-expression, .graph-add-menu")) setSelectedRowKey(null);
+            }}
+            onClickCapture={(event) => {
+              if (event.target instanceof Element && !event.target.closest(".graphing-expression, .graph-add-menu")) setSelectedRowKey(null);
+            }}>
             {expressions.map((expression, index) => (
-              <div className="graphing-expression" key={expression.id} data-hidden={!expression.visible}>
+              <div className="graphing-expression" key={expression.id} data-hidden={!expression.visible} style={{ order: rowOrder.indexOf(`function:${expression.id}`) }}>
                 <div className="graphing-expression-row">
-                  <span className="graphing-expression-color" style={{ backgroundColor: expression.color }} aria-hidden="true">{index + 1}</span>
+                  <span className="graphing-expression-color" style={{ backgroundColor: expression.color }} aria-hidden="true">{rowOrder.indexOf(`function:${expression.id}`) + 1}</span>
+                  <div onFocus={() => selectExpression(expression)} onClick={() => selectExpression(expression)}>
                   <MathExpressionField
                     label={`Function ${index + 1}`}
                     invalid={Boolean(errors[expression.id])}
                     describedBy={errors[expression.id] ? `${id}-error-${expression.id}` : undefined}
                     value={expression.expr}
-                    onChange={(value) => updateExpression(expression.id, { expr: value })}
+                    onChange={(value) => { setAdjustments((previous) => { const next = { ...previous }; delete next[expression.id]; return next; }); updateExpression(expression.id, { expr: value }); }}
                     onDraftError={(invalid) => setInvalidDrafts((previous) => ({ ...previous, [expression.id]: invalid }))}
                   />
-                  <button type="button" className="graphing-icon-button" aria-label={`${expression.visible ? "Hide" : "Show"} function ${index + 1}`} aria-pressed={expression.visible} title={expression.visible ? "Hide function" : "Show function"} onClick={() => updateExpression(expression.id, { visible: !expression.visible })}>
-                    {expression.visible ? <Eye size={18} aria-hidden="true" /> : <EyeOff size={18} aria-hidden="true" />}
-                  </button>
+                  </div>
                   <button type="button" className="graphing-icon-button" aria-label={`Remove function ${index + 1}`} title="Remove function" onClick={() => { setExpressions((previous) => previous.filter(({ id: expressionId }) => expressionId !== expression.id)); setInvalidDrafts((previous) => { const next = { ...previous }; delete next[expression.id]; return next; }); }}>
                     <X size={18} aria-hidden="true" />
                   </button>
                 </div>
+                {selectedRowKey === `function:${expression.id}` && (() => {
+                  const adjustment = adjustments[expression.id] ?? { base: expression.expr, magnitude: 1, horizontal: 0, vertical: 0 };
+                  const supportsHorizontal = /^\s*(?:y\s*=\s*)?(?:x\^2|sin\(x\))\s*$/i.test(adjustment.base);
+                  return <div className="graph-function-adjustments" aria-label={`Adjust function ${index + 1}`}>
+                    <label>Magnitude <input type="range" min="-3" max="3" step="0.1" value={adjustment.magnitude} onChange={(event) => updateAdjustment(expression, { magnitude: Number(event.target.value) })} /><output>{adjustment.magnitude}</output></label>
+                    {supportsHorizontal && <label>Horizontal <input type="range" min="-5" max="5" step="0.1" value={adjustment.horizontal} onChange={(event) => updateAdjustment(expression, { horizontal: Number(event.target.value) })} /><output>{adjustment.horizontal}</output></label>}
+                    <label>Vertical <input type="range" min="-5" max="5" step="0.1" value={adjustment.vertical} onChange={(event) => updateAdjustment(expression, { vertical: Number(event.target.value) })} /><output>{adjustment.vertical}</output></label>
+                  </div>;
+                })()}
                 {errors[expression.id] && <p className="graphing-error" id={`${id}-error-${expression.id}`} role="status">{errors[expression.id]}</p>}
                 {(() => {
                   const missing = errors[expression.id]?.match(/^symbol "([a-z])" is undefined$/)?.[1];
@@ -224,42 +319,42 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                 })()}
               </div>
             ))}
-            <button type="button" className="graphing-add-button" onClick={() => {
-              const expressionId = nextId.current++;
-              setExpressions((previous) => [...previous, { id: String(expressionId), expr: "", color: COLORS[(expressionId - 1) % COLORS.length], visible: true }]);
-            }}><Plus size={18} aria-hidden="true" />Add function</button>
             {expressions.length === 0 && <p className="graphing-hint">Add a function to start plotting.</p>}
             <>
-            <ParameterSliders key={documentRevision} parameters={parameters} onChange={setParameters} />
-              <DatasetPanel datasets={datasets} onChange={(next) => {
+            {parameters.length > 0 && <div className="graph-sidebar-item" style={{ order: rowOrder.indexOf(`parameter:${parameters[0]?.name}`) }}><span className="graph-sidebar-strip" style={{ backgroundColor: COLORS[2] }}>{rowOrder.indexOf(`parameter:${parameters[0]?.name}`) + 1}</span><div className="graph-sidebar-item-content"><ParameterSliders key={documentRevision} parameters={parameters} onChange={setParameters} /></div></div>}
+              {datasets.map((dataset) => <div key={dataset.id} className="graph-sidebar-item" style={{ order: rowOrder.indexOf(`dataset:${dataset.id}`) }}><div className="graph-sidebar-item-content"><DatasetPanel rowNumber={rowOrder.indexOf(`dataset:${dataset.id}`) + 1} datasets={[dataset]} onChange={(next) => {
                 const added = next.find((item) => !datasets.some((existing) => existing.id === item.id));
                 const changed = next.map((item) => ({ item, old: datasets.find((existing) => existing.id === item.id) })).find(({ item, old }) => old && (old.xLabel !== item.xLabel || old.yLabel !== item.yLabel));
                 if (added || changed) setLabels((previous) => ({ ...previous,
                   xTitle: added && !previous.xTitle ? added.xLabel : changed && !previous.xUnit && previous.xTitle === changed.old?.xLabel ? changed.item.xLabel : previous.xTitle,
                   yTitle: added && !previous.yTitle ? added.yLabel : changed && !previous.yUnit && previous.yTitle === changed.old?.yLabel ? changed.item.yLabel : previous.yTitle,
                 }));
-                setDatasets(next);
-              }} onFit={fitDataset} onUseLabels={(dataset) => setLabels((previous) => ({ ...previous, xTitle: dataset.xLabel, yTitle: dataset.yLabel, xUnit: "", yUnit: "" }))} />
-              <GraphLabelsPanel labels={labels} onChange={setLabels} />
-              <details ref={pointsRef} className="graph-points" aria-label="Points"><summary>Points</summary>
-              {points.map((point, index) => <div className="graph-point-row" key={point.id}>
-                <span className="graphing-color" style={{ backgroundColor: point.color }} aria-hidden="true" />
+                setDatasets((previous) => previous.flatMap((item) => item.id === dataset.id ? next : [item]));
+              }} onFit={fitDataset} onUseLabels={(dataset) => setLabels((previous) => ({ ...previous, xTitle: dataset.xLabel, yTitle: dataset.yLabel, xUnit: "", yUnit: "" }))} onAddTable={addTable} selectedId={selectedRowKey?.startsWith("dataset:") ? selectedRowKey.slice(8) : null} onSelect={(datasetId) => setSelectedRowKey(`dataset:${datasetId}`)} /></div></div>)}
+              {points.length > 0 && <div className="graph-sidebar-item" style={{ order: rowOrder.indexOf(`point:${points[0]?.id}`) }}><span className="graph-sidebar-strip" style={{ backgroundColor: COLORS[4] }}>{rowOrder.indexOf(`point:${points[0]?.id}`) + 1}</span><div className="graph-sidebar-item-content"><div ref={pointsRef} className="graph-points" aria-label="Points">
+              {points.map((point, index) => <div className={`graph-point-row${selectedRowKey === `point:${point.id}` ? " graph-point-row--selected" : ""}`} key={point.id} onClick={() => setSelectedRowKey(`point:${point.id}`)}>
+                <span className="graphing-expression-color" style={{ backgroundColor: point.color }} aria-hidden="true">{rowOrder.indexOf(`point:${point.id}`) + 1}</span>
                 <label>x <input type="number" step="any" aria-label={`Point ${index + 1} x`} defaultValue={point.x} key={`${documentRevision}-${point.id}-x-${point.x}`} onBlur={(event) => { const value = event.currentTarget.valueAsNumber; if (Number.isFinite(value)) setPoints((previous) => previous.map((item) => item.id === point.id ? { ...item, x: value } : item)); else event.currentTarget.value = String(point.x); }} /></label>
                 <label>y <input type="number" step="any" aria-label={`Point ${index + 1} y`} defaultValue={point.y} key={`${documentRevision}-${point.id}-y-${point.y}`} onBlur={(event) => { const value = event.currentTarget.valueAsNumber; if (Number.isFinite(value)) setPoints((previous) => previous.map((item) => item.id === point.id ? { ...item, y: value } : item)); else event.currentTarget.value = String(point.y); }} /></label>
                 <button type="button" className="graphing-icon-button" aria-label={`Remove point ${index + 1}`} onClick={() => setPoints((previous) => previous.filter((item) => item.id !== point.id))}><X size={18} aria-hidden="true" /></button>
               </div>)}
               <button type="button" className="graphing-add-button" onClick={() => setPoints((previous) => [...previous, { id: crypto.randomUUID(), x: 0, y: 0, color: COLORS[(previous.length + 2) % COLORS.length], visible: true }])}><Plus size={18} aria-hidden="true" />Add point</button>
-            </details>
-<details className="graph-analysis" aria-label="Analysis"><summary>Analysis</summary>
+            </div></div></div>}
+            </>
+            <details ref={addMenuRef} className="graph-add-menu"><summary className="graphing-add-button" aria-label="Add graph element" title="Add graph element"><Plus size={22} strokeWidth={3} aria-hidden="true" /></summary><div className="graph-add-menu-options">
+              <button type="button" onClick={addFunction}>Function</button>
+              <button type="button" onClick={addTable}>Data table</button>
+              <button type="button" onClick={addPoint}>Point</button>
+            </div></details>
+          </div>
+{expressions.length > 0 && <section className="graph-sidebar-analysis"><details className="graph-analysis" aria-label="Analysis"><summary>Analysis</summary>
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("crossings")}>Find intersections</button>
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("intercepts")}>Find intercepts</button>
               <p className="graphing-hint">Approximate crossings in the current view. Tangencies and some intersections may be missed. Search again after moving the view.</p>
               {crossingError && <p className="graphing-error" role="alert">{crossingError}</p>}
               {crossings && <div role="status">{crossings.length === 0 ? <p className="graphing-hint">No crossings found in this view.</p> : <ul className="graph-crossings">{crossings.map((crossing, index) => <li key={`${crossing.first}-${crossing.second}-${index}`}><span>Functions {expressions.findIndex((item) => item.id === crossing.first) + 1} &amp; {expressions.findIndex((item) => item.id === crossing.second) + 1}: ({Number(crossing.x.toPrecision(6))}, {Number(crossing.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(crossing.x, crossing.y)} aria-label={`Add intersection ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
               {intercepts && <div role="status">{intercepts.length === 0 ? <p className="graphing-hint">No intercepts found in this view.</p> : <ul className="graph-crossings">{intercepts.map((intercept, index) => <li key={`${intercept.curve}-${intercept.axis}-${index}`}><span>Function {expressions.findIndex((item) => item.id === intercept.curve) + 1}, {intercept.axis}-axis: ({Number(intercept.x.toPrecision(6))}, {Number(intercept.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(intercept.x, intercept.y)} aria-label={`Add intercept ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
-            </details>
-            </>
-          </div>
+            </details></section>}
         </aside>
           <div className="graph-panel-resizer" role="separator" tabIndex={0} aria-label="Resize functions panel" aria-orientation="vertical" aria-controls={`${id}-expressions`} aria-valuemin={280} aria-valuemax={480} aria-valuenow={panelWidth}
             onPointerDown={(event) => { resizeStart.current = { x: event.clientX, width: event.currentTarget.previousElementSibling?.getBoundingClientRect().width ?? panelWidth }; event.currentTarget.setPointerCapture(event.pointerId); }}
@@ -306,9 +401,10 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               <button type="submit">Apply bounds</button>
             </form>
           </details>
+          <GraphLabelsPanel labels={labels} onChange={setLabels} />
           </div></details>
           </div>
-          <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} points={points} datasets={datasets} labels={labels} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={(pointId, x, y) => setPoints((previous) => previous.map((point) => point.id === pointId ? { ...point, x, y } : point))} />
+          <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} selectedExpressionId={selectedRowKey?.startsWith("function:") ? selectedRowKey.slice(9) : null} points={points} datasets={datasets} labels={labels} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={(pointId, x, y) => setPoints((previous) => previous.map((point) => point.id === pointId ? { ...point, x, y } : point))} />
         </section>
       </div>
     </div>

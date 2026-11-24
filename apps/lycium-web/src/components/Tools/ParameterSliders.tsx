@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Pause, Play, Plus, Trash2 } from "lucide-react";
+import { Pause, Play, Plus, X } from "lucide-react";
 import { advanceAnimatedParameter, PARAMETER_NAMES, parameterRangeError, snapParameterValue, type GraphParameter } from "./graphParameters";
 
 type ParameterSlidersProps = {
@@ -29,7 +29,7 @@ function ParameterSlider({ parameter, onChange, onRemove, playback, setPlayback,
     <section className="graphing-parameter" aria-label={`Parameter ${name} controls`}>
       <div className="graphing-parameter-header">
         <label htmlFor={id}>{name} = <output htmlFor={id}>{value}</output></label>
-        {!presentation && <button type="button" className="graphing-icon-button" aria-label={`Remove slider ${name}`} title={`Remove slider ${name}`} onClick={onRemove}><Trash2 size={16} aria-hidden="true" /></button>}
+        {!presentation && <button type="button" className="graphing-icon-button" aria-label={`Remove slider ${name}`} title={`Remove slider ${name}`} onClick={onRemove}><X size={18} aria-hidden="true" /></button>}
       </div>
       <input id={id} aria-label={`Parameter ${name}`} aria-valuetext={`${name} = ${value}`} type="range" min={min} max={max} step={step} value={value} onChange={(event) => { setPlayback(null); onChange({ ...parameter, value: Number(event.target.value) }); }} />
       <div className="graphing-animation-controls">

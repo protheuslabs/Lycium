@@ -19,6 +19,7 @@ export interface GraphCanvasHandle {
 
 type GraphCanvasProps = {
   expressions: readonly GraphExpression[];
+  selectedExpressionId?: string | null;
   points?: readonly GraphPoint[];
   datasets?: readonly GraphDataset[];
   labels?: GraphLabels;
@@ -39,12 +40,12 @@ const NO_PARAMETERS: Readonly<Record<string, number>> = {};
 
 // No page layout or course dependencies: the same plot can live in either host.
 const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function GraphCanvas(
-  { expressions, points = NO_POINTS, datasets = NO_DATASETS, labels = NO_LABELS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, accessibleLabel = "Cartesian graph of the visible functions", onErrors, onPointMove },
+  { expressions, selectedExpressionId = null, points = NO_POINTS, datasets = NO_DATASETS, labels = NO_LABELS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, accessibleLabel = "Cartesian graph of the visible functions", onErrors, onPointMove },
   ref,
 ) {
   const initialViewportRef = useRef(initialViewport);
   const containerRef = useRef<HTMLDivElement>(null);
-  const configRef = useRef({ expressions, points, datasets, labels, parameters, grid, precision, snapToGrid });
+  const configRef = useRef({ expressions, selectedExpressionId, points, datasets, labels, parameters, grid, precision, snapToGrid });
   const lastErrorsRef = useRef<Record<string, string>>({});
   const controllerRef = useRef<(Omit<GraphCanvasHandle, "exportImage"> & { redraw: () => void }) | null>(null);
   const [status, setStatus] = useState("Loading graph…");
@@ -111,11 +112,12 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
   }), []);
 
   useEffect(() => {
-    configRef.current = { ...configRef.current, expressions, points, datasets, labels, grid };
-    // Avoid rebuilding for every keystroke while an expression is being entered.
-    const timer = window.setTimeout(() => controllerRef.current?.redraw(), 150);
-    return () => window.clearTimeout(timer);
-  }, [expressions, points, datasets, labels, grid]);
+    configRef.current = { ...configRef.current, expressions, selectedExpressionId, points, datasets, labels, grid };
+    // Redraw on the next paint so slider-driven expression changes stay live
+    // without queuing multiple expensive plot rebuilds per frame.
+    const frame = requestAnimationFrame(() => controllerRef.current?.redraw());
+    return () => cancelAnimationFrame(frame);
+  }, [expressions, selectedExpressionId, points, datasets, labels, grid]);
 
   useEffect(() => {
     configRef.current = { ...configRef.current, parameters };
@@ -292,6 +294,18 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           svg.appendChild(group);
         };
 
+        const updateFunctionEmphasis = () => {
+          const svg = target.querySelector("svg.function-plot");
+          if (!svg) return;
+          const expressionIds = configRef.current.expressions.filter((expression) => expression.visible).map((expression) => expression.id);
+          const groups = [...svg.querySelectorAll<SVGGElement>(".graph")];
+          groups.slice(0, expressionIds.length).forEach((group, index) => {
+            const selected = expressionIds[index] === configRef.current.selectedExpressionId;
+            group.style.opacity = configRef.current.selectedExpressionId && !selected ? "0.62" : "1";
+            group.querySelectorAll<SVGPathElement>("path.line").forEach((path) => { path.style.strokeWidth = selected ? "2.8px" : "2px"; });
+          });
+        };
+
         const makeOptions = (xDomain?: number[], yDomain?: number[]): FunctionPlotOptions => ({
           target,
           xAxis: { domain: xDomain ?? [-10, 10], label: "" },
@@ -347,6 +361,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           lastWidth = width;
           lastHeight = height;
           try {
+            target.classList.add("graph-plot-target--updating");
             const previousChart = chart;
             chart = library.default(options);
             const svg = target.querySelector("svg.function-plot");
@@ -379,12 +394,14 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
               chart.on("mousemove", () => {
                 if (!hasTracePoint) chart?.tip.hide();
               });
-              chart.on("after:draw", () => { updateGrid(); updateLabels(); updatePin(); updatePointPositions(); });
+              chart.on("after:draw", () => { updateGrid(); updateLabels(); updateFunctionEmphasis(); updatePin(); updatePointPositions(); });
             }
             updateGrid();
             updateLabels();
+            updateFunctionEmphasis();
             updatePin();
             updatePointPositions();
+            requestAnimationFrame(() => target.classList.remove("graph-plot-target--updating"));
             setStatus("");
           } catch (cause) {
             setStatus(cause instanceof Error ? `Unable to draw graph: ${cause.message}` : "Unable to draw graph.");
