@@ -64,11 +64,12 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
     exportImage: async (format) => {
       const source = containerRef.current?.querySelector("svg.function-plot");
       if (!(source instanceof SVGSVGElement)) throw new Error("The graph is not ready to export.");
-      const width = Number(source.getAttribute("width")), height = Number(source.getAttribute("height"));
+      const { x, y, width, height } = source.viewBox.baseVal;
       if (!(width > 0 && height > 0)) throw new Error("The graph has no visible size to export.");
       const clone = source.cloneNode(true) as SVGSVGElement;
       clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-      clone.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      clone.setAttribute("width", String(width));
+      clone.setAttribute("height", String(height));
       const originals = [source, ...source.querySelectorAll("*")];
       const copies = [clone, ...clone.querySelectorAll("*")];
       originals.forEach((element, index) => {
@@ -82,6 +83,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
       });
       clone.querySelectorAll(".zoom-and-drag, .tip, .top-right-legend").forEach((node) => node.remove());
       const background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      background.setAttribute("x", String(x)); background.setAttribute("y", String(y));
       background.setAttribute("width", String(width)); background.setAttribute("height", String(height)); background.setAttribute("fill", "#ffffff");
       clone.insertBefore(background, clone.firstChild);
       const svg = new Blob([new XMLSerializer().serializeToString(clone)], { type: "image/svg+xml;charset=utf-8" });
@@ -155,16 +157,16 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           const xScale = meta.xScale, yScale = meta.yScale;
           setPointPositions(configRef.current.points.filter((point) => point.visible).map((point) => ({
             id: point.id, color: point.color,
-            left: xScale(point.x) + (meta.margin?.left ?? 0),
-            top: yScale(point.y) + (meta.margin?.top ?? 0),
+            left: xScale(point.x),
+            top: yScale(point.y),
           })));
         };
         pointCoordsRef.current = (clientX, clientY) => {
           const meta = chart?.meta;
           if (!meta?.xScale || !meta.yScale) return null;
           const bounds = container.getBoundingClientRect();
-          const x = meta.xScale.invert(clientX - bounds.left - (meta.margin?.left ?? 0));
-          const y = meta.yScale.invert(clientY - bounds.top - (meta.margin?.top ?? 0));
+          const x = meta.xScale.invert(clientX - bounds.left);
+          const y = meta.yScale.invert(clientY - bounds.top);
           return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
         };
 
@@ -172,7 +174,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           const current = pinRef.current;
           const meta = chart?.meta;
           if (!current || !meta?.xScale || !meta.yScale) return;
-          setPin({ ...current, left: meta.xScale(current.x) + (meta.margin?.left ?? 0), top: meta.yScale(current.y) + (meta.margin?.top ?? 0), text: coordinateText(current.x, current.y) });
+          setPin({ ...current, left: meta.xScale(current.x), top: meta.yScale(current.y), text: coordinateText(current.x, current.y) });
         };
         const startPointer = (event: PointerEvent) => { pointerStart = event.target instanceof Element && event.target.classList.contains("zoom-and-drag") ? { x: event.clientX, y: event.clientY } : null; };
         const endPointer = (event: PointerEvent) => {
@@ -226,13 +228,15 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             const scale = axis === "x" ? meta.xScale : meta.yScale;
             if (!scale) return;
             const domain = scale.domain();
-            const first = Math.ceil(Math.min(...domain) / step);
-            const last = Math.floor(Math.max(...domain) / step);
-            if (!Number.isFinite(first) || !Number.isFinite(last) || last - first > 200) return;
+            const minorStep = step / 5;
+            const first = Math.ceil(Math.min(...domain) / minorStep);
+            const last = Math.floor(Math.max(...domain) / minorStep);
+            if (!Number.isFinite(first) || !Number.isFinite(last) || last - first > 1000) return;
             for (let index = first; index <= last; index++) {
-              const position = scale(index * step) + (axis === "x" ? meta.margin?.left ?? 0 : meta.margin?.top ?? 0);
+              const position = scale(index * minorStep) + (axis === "x" ? meta.margin?.left ?? 0 : meta.margin?.top ?? 0);
               const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
               line.dataset.axis = axis;
+              line.classList.add(Math.abs(index % 5) === 0 ? "graph-grid-major" : "graph-grid-minor");
               line.setAttribute("x1", String(axis === "x" ? position : left));
               line.setAttribute("x2", String(axis === "x" ? position : right));
               line.setAttribute("y1", String(axis === "x" ? top : position));
@@ -260,19 +264,35 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             group.appendChild(node);
           };
           const axisLabel = (title: string, unit: string) => title && unit ? `${title} (${unit})` : title || unit;
-          add(labels.title, width / 2, 18);
-          add(axisLabel(labels.xTitle, labels.xUnit), width / 2, height - 5);
-          add(axisLabel(labels.yTitle, labels.yUnit), 15, height / 2, true);
+          add(labels.title, width / 2, (meta.margin?.top ?? 0) + 18);
           const [x0, x1] = meta.xScale.domain(), [y0, y1] = meta.yScale.domain();
+          const left = meta.margin?.left ?? 0, top = meta.margin?.top ?? 0;
+          const xAxisPosition = Math.min(height - (meta.margin?.bottom ?? 0) - 8, Math.max(top + 14, meta.yScale(0) + top + 18));
+          const yAxisPosition = Math.min(width - (meta.margin?.right ?? 0) - 8, Math.max(left + 26, meta.xScale(0) + left - 18));
+          add(axisLabel(labels.xTitle, labels.xUnit), width / 2, xAxisPosition);
+          add(axisLabel(labels.yTitle, labels.yUnit), yAxisPosition, height / 2, true);
+          const numbers = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          numbers.classList.add("graph-axis-numbers");
+          const xStep = gridStepFromTicks(meta.xScale.ticks()), yStep = gridStepFromTicks(meta.yScale.ticks());
+          const addNumber = (value: number, step: number, x: number, y: number, anchor: "start" | "middle" | "end") => {
+            const node = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            node.textContent = formatCoordinate(value, step);
+            node.setAttribute("x", String(x)); node.setAttribute("y", String(y)); node.setAttribute("text-anchor", anchor);
+            node.setAttribute("fill", "#171717"); node.setAttribute("font-size", "12");
+            numbers.appendChild(node);
+          };
+          for (const value of meta.xScale.ticks()) addNumber(value, xStep, meta.xScale(value) + left, xAxisPosition, "middle");
+          for (const value of meta.yScale.ticks()) addNumber(value, yStep, yAxisPosition, meta.yScale(value) + top + 4, "end");
+          group.appendChild(numbers);
           for (const item of labels.annotations) if (item.x >= Math.min(x0, x1) && item.x <= Math.max(x0, x1) && item.y >= Math.min(y0, y1) && item.y <= Math.max(y0, y1)) add(item.text, meta.xScale(item.x) + (meta.margin?.left ?? 0), meta.yScale(item.y) + (meta.margin?.top ?? 0) - 8);
           svg.appendChild(group);
         };
 
         const makeOptions = (xDomain?: number[], yDomain?: number[]): FunctionPlotOptions => ({
           target,
-          xAxis: { domain: xDomain ?? [-10, 10], label: "x" },
+          xAxis: { domain: xDomain ?? [-10, 10], label: "" },
           // An omitted y domain gives equal units per pixel on the initial view.
-          yAxis: { domain: yDomain, label: "y" },
+          yAxis: { domain: yDomain, label: "" },
           tip: { xLine: true, yLine: true, renderer: (x, y) => `(${coordinateText(x, y)})` },
           data: [],
         });
@@ -316,13 +336,18 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           }
           options.data = data;
           options.grid = false;
-          options.width = width;
-          options.height = height;
+              // function-plot reserves fixed Cartesian gutters. Give it room for
+              // those gutters, then show only the plot at its original pixel scale.
+          options.width = width + 60;
+          options.height = height + 40;
           lastWidth = width;
           lastHeight = height;
           try {
             const previousChart = chart;
             chart = library.default(options);
+            const svg = target.querySelector("svg.function-plot");
+            const margin = chart.meta.margin;
+            if (svg && margin) svg.setAttribute("viewBox", `${margin.left} ${margin.top} ${chart.meta.width} ${chart.meta.height}`);
             if (chart !== previousChart) {
               let hasTracePoint = false;
               // The library evaluates y from the adjusted x, keeping the marker on
@@ -332,9 +357,11 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
                 trace = null;
                 const legend = target.querySelector(".top-right-legend");
                 if (legend) legend.textContent = "";
-                if (!configRef.current.snapToGrid) return;
                 const domain = chart?.meta.xScale?.domain() ?? [];
-                coordinates.x = snapCoordinate(coordinates.x, gridStep(), domain);
+                // The visible grid divides each major unit into five cells. Snap
+                // hover positions to that smallest cell so the readout and trace
+                // marker land on a useful, predictable coordinate.
+                coordinates.x = snapCoordinate(coordinates.x, gridStep() / 5, domain);
               });
               chart.on("tip:update", ({ x, y }: { x: number; y: number }) => {
                 if (!Number.isFinite(x) || !Number.isFinite(y)) return;
