@@ -1,5 +1,23 @@
 import type { Curve } from "./graphIntersections";
 
+/** Approximate a signed integral, rejecting intervals the evaluator cannot bound. */
+export function integrateCurve(curve: Curve, start: number, end: number): number {
+  if (!Number.isFinite(start) || !Number.isFinite(end) || !Number.isFinite(end - start)) throw new Error("Enter finite integration bounds.");
+  if (start === end) return 0;
+  const segments = 512;
+  const step = (end - start) / segments;
+  let total = 0;
+  for (let i = 0; i < segments; i++) {
+    const a = start + i * step, b = i === segments - 1 ? end : start + (i + 1) * step, middle = (a + b) / 2;
+    const interval = curve.interval(Math.min(a, b), Math.max(a, b));
+    const fa = curve.evaluate(a), fm = curve.evaluate(middle), fb = curve.evaluate(b);
+    if (![interval.lo, interval.hi, fa, fm, fb].every(Number.isFinite) || interval.lo > interval.hi) throw new Error("The function is undefined or unbounded within these bounds.");
+    total += (b - a) * (fa + 4 * fm + fb) / 6;
+  }
+  if (!Number.isFinite(total)) throw new Error("The integral could not be estimated.");
+  return total;
+}
+
 /** Sample a bounded number of evenly spaced values, leaving undefined values empty. */
 export function tableOfValues(curve: Curve, start: number, step: number, count: number): { x: number; y: number | null }[] {
   if (!Number.isFinite(start) || !Number.isFinite(step) || step === 0 || !Number.isInteger(count) || count < 1 || count > 100) {

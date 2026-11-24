@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as plot from "function-plot";
-import { tableOfValues, tangentAt } from "./graphCalculus";
+import { integrateCurve, tableOfValues, tangentAt } from "./graphCalculus";
 import { graphExpressionCurve } from "./graphExpressions";
 
 const curve = (expr: string) => graphExpressionCurve({ id: "1", expr, color: "#000", visible: true }, {}, plot);
@@ -26,5 +26,16 @@ describe("tables of values", () => {
   it("rejects invalid or excessively large requests", () => {
     expect(() => tableOfValues(curve("x"), 0, 0, 5)).toThrow();
     expect(() => tableOfValues(curve("x"), 0, 1, 101)).toThrow();
+  });
+});
+
+describe("numerical integration", () => {
+  it("computes signed areas with reversed bounds", () => {
+    expect(integrateCurve(curve("x^2"), 0, 3)).toBeCloseTo(9, 6);
+    expect(integrateCurve(curve("x"), 2, 0)).toBeCloseTo(-2, 6);
+  });
+  it("rejects poles and intervals outside a restriction", () => {
+    expect(() => integrateCurve(curve("1/x"), -1, 1)).toThrow();
+    expect(() => integrateCurve(curve("x {0<=x<=2}"), -1, 1)).toThrow();
   });
 });

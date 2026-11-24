@@ -6,7 +6,7 @@ import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as 
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import { graphExpressionCurve, type GraphExpression } from "./graphExpressions";
 import { parseGraphDomain } from "./graphDomain";
-import { tableOfValues, tangentAt } from "./graphCalculus";
+import { integrateCurve, tableOfValues, tangentAt } from "./graphCalculus";
 import ParameterSliders from "./ParameterSliders";
 import DatasetPanel from "./DatasetPanel";
 import GraphLabelsPanel from "./GraphLabelsPanel";
@@ -72,6 +72,10 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const [tableCount, setTableCount] = useState("5");
   const [values, setValues] = useState<{ x: number; y: number | null }[] | null>(null);
   const [tableError, setTableError] = useState("");
+  const [integralStart, setIntegralStart] = useState("0");
+  const [integralEnd, setIntegralEnd] = useState("1");
+  const [integral, setIntegral] = useState<number | null>(null);
+  const [integralError, setIntegralError] = useState("");
   const [axisBounds, setAxisBounds] = useState({ xMin: "", xMax: "", yMin: "", yMax: "" });
   const [axisError, setAxisError] = useState("");
   const [invalidDrafts, setInvalidDrafts] = useState<Record<string, boolean>>({});
@@ -142,6 +146,18 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   useEffect(() => { setCrossings(null); setIntercepts(null); setCrossingError(""); }, [expressions, parameters]);
   useEffect(() => { setTangent(null); setTangentError(""); }, [expressions, parameters, selectedRowKey]);
   useEffect(() => { setValues(null); setTableError(""); }, [expressions, parameters, selectedRowKey]);
+  useEffect(() => { setIntegral(null); setIntegralError(""); }, [expressions, parameters, selectedRowKey]);
+
+  const calculateIntegral = async () => {
+    const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
+    if (!expression || !expression.visible || errors[expression.id] || invalidDrafts[expression.id]) { setIntegral(null); setIntegralError("Select a valid function first."); return; }
+    try {
+      const library = await import("function-plot");
+      const number = (value: string) => value.trim() ? Number(value) : NaN;
+      setIntegral(integrateCurve(graphExpressionCurve(expression, parameterValues, library), number(integralStart), number(integralEnd)));
+      setIntegralError("");
+    } catch (error) { setIntegral(null); setIntegralError(error instanceof Error ? error.message : "Unable to calculate the integral."); }
+  };
 
   const generateValues = async () => {
     const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
@@ -445,6 +461,13 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
           {!expressionsVisible && <button type="button" className="graphing-panel-toggle graphing-panel-reopen" aria-label="Show functions panel" title="Show functions panel" aria-expanded="false" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(true)}><PanelLeftOpen size={18} aria-hidden="true" /></button>}
             <div className="graphing-graph-controls">
 <details ref={analysisRef} className="graph-analysis-menu"><summary aria-label="Graph analysis" title="Graph analysis"><Search size={19} aria-hidden="true" /></summary><div className="graph-analysis-popover">
+              <details><summary>Signed integral</summary>
+                <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { setIntegralStart(event.target.value); setIntegral(null); }} /></label>
+                <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { setIntegralEnd(event.target.value); setIntegral(null); }} /></label>
+                <button type="button" onClick={() => void calculateIntegral()}>Calculate for selected function</button>
+                {integralError && <p className="graphing-error" role="alert">{integralError}</p>}
+                {integral !== null && <p role="status">Approximate signed integral: {Number(integral.toPrecision(8))}</p>}
+              </details>
               <details><summary>Table of values</summary>
                 <label>Start x <input type="number" step="any" value={tableStart} onChange={(event) => setTableStart(event.target.value)} /></label>
                 <label>Step <input type="number" step="any" value={tableStep} onChange={(event) => setTableStep(event.target.value)} /></label>
