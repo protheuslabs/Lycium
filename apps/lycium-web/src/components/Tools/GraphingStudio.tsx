@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Cog, Eye, EyeOff, Info, PanelLeftClose, PanelLeftOpen, Plus, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Cog, Download, Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import type { GraphExpression } from "./graphExpressions";
 import ParameterSliders from "./ParameterSliders";
@@ -38,7 +38,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const plottedExpressions = useMemo(() => expressions.map((expression) => invalidDrafts[expression.id] ? { ...expression, visible: false } : expression), [expressions, invalidDrafts]);
   const [grid, setGrid] = useState(loadedDocument?.settings.grid ?? true);
   const [precision, setPrecision] = useState<CoordinatePrecision>(loadedDocument?.settings.precision ?? "auto");
-  const [snapToGrid, setSnapToGrid] = useState(loadedDocument?.settings.snapToGrid ?? false);
+  const [snapToGrid, setSnapToGrid] = useState(loadedDocument?.settings.snapToGrid ?? true);
   const [points, setPoints] = useState<GraphPoint[]>(loadedDocument?.points ?? []);
   const [datasets, setDatasets] = useState<GraphDataset[]>(loadedDocument?.datasets ?? []);
   const [labels, setLabels] = useState<GraphLabels>(loadedDocument?.labels ?? { title: "", xTitle: "", xUnit: "", yTitle: "", yUnit: "", annotations: [] });
@@ -46,13 +46,13 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const parameterValues = useMemo(() => Object.fromEntries(parameters.map(({ name, value }) => [name, value])), [parameters]);
   const [interactiveParameters, setInteractiveParameters] = useState<string[]>(loadedDocument?.presentation.interactiveParameters ?? []);
   const [documentError, setDocumentError] = useState<string | null>(null);
-  const [documentNotice, setDocumentNotice] = useState("");
   const [initialViewport, setInitialViewport] = useState<GraphDocument["viewport"]>(loadedDocument?.viewport ?? null);
   const [documentRevision, setDocumentRevision] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
   const pointsRef = useRef<HTMLDetailsElement>(null);
   const settingsRef = useRef<HTMLDetailsElement>(null);
-  const fileMenuRef = useRef<HTMLDetailsElement>(null);
+  const importMenuRef = useRef<HTMLDetailsElement>(null);
+  const exportMenuRef = useRef<HTMLDetailsElement>(null);
   const [expressionsVisible, setExpressionsVisible] = useState(true);
   const graphRef = useRef<GraphCanvasHandle>(null);
   const nextId = useRef(Math.max(3, ...(loadedDocument?.expressions ?? []).map(({ id }) => /^\d+$/.test(id) ? Number(id) + 1 : 3).filter(Number.isSafeInteger)));
@@ -62,12 +62,12 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
 
   useEffect(() => {
     const dismissOutside = (event: PointerEvent) => {
-      for (const menu of [settingsRef.current, fileMenuRef.current]) {
+      for (const menu of [settingsRef.current, importMenuRef.current, exportMenuRef.current]) {
         if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
       }
     };
     const dismissEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") for (const menu of [settingsRef.current, fileMenuRef.current]) if (menu) menu.open = false;
+      if (event.key === "Escape") for (const menu of [settingsRef.current, importMenuRef.current, exportMenuRef.current]) if (menu) menu.open = false;
     };
     document.addEventListener("pointerdown", dismissOutside);
     document.addEventListener("keydown", dismissEscape);
@@ -154,18 +154,17 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
       setErrors({});
       setInvalidDrafts({});
       setDocumentError(null);
-      setDocumentNotice("Graph loaded.");
     } catch (error) {
-      setDocumentNotice("");
       setDocumentError(error instanceof SyntaxError ? "This file is not valid JSON." : error instanceof Error ? error.message : "Could not load graph.");
     }
   };
 
   const workspaceActions = <div className="graph-workspace-actions">
-    <details ref={fileMenuRef} className="graph-file-menu"><summary>File / Export</summary><div className="graph-file-popover">
+    <details ref={importMenuRef} className="graph-workspace-menu"><summary className="graph-workspace-icon-button" aria-label="Import graph" title="Import graph"><Download size={17} aria-hidden="true" /></summary><div className="graph-workspace-menu-popover">
             <button type="button" onClick={() => fileRef.current?.click()}>Import JSON</button>
+          </div></details>
             <input ref={fileRef} type="file" accept=".json,application/json" className="sr-only" tabIndex={-1} aria-label="Choose graph JSON" onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void importDocument(file); }} />
-            <button type="button" onClick={() => {
+    <details ref={exportMenuRef} className="graph-workspace-menu"><summary className="graph-workspace-icon-button" aria-label="Export graph" title="Export graph"><Upload size={17} aria-hidden="true" /></summary><div className="graph-workspace-menu-popover"><button type="button" onClick={() => {
               try {
                 if (Object.values(invalidDrafts).some(Boolean)) throw new Error("Finish or discard incomplete math input before exporting.");
                 const blob = new Blob([JSON.stringify(buildDocument(), null, 2)], { type: "application/json" });
@@ -173,15 +172,13 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                 const link = document.createElement("a");
                 link.href = url; link.download = "lycium-graph.json"; link.click();
                 window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-                setDocumentError(null); setDocumentNotice("Graph exported.");
+                setDocumentError(null);
               } catch (error) { setDocumentError(error instanceof Error ? error.message : "Could not export graph."); }
             }}>Export JSON</button>
-          <>
             {(["svg", "png"] as const).map((format) => <button key={format} type="button" onClick={() => {
-              void graphRef.current?.exportImage(format).then(() => { setDocumentError(""); setDocumentNotice(`Graph exported as ${format.toUpperCase()}.`); }).catch((error: unknown) => { setDocumentNotice(""); setDocumentError(error instanceof Error ? error.message : "Could not export image."); });
+              void graphRef.current?.exportImage(format).then(() => setDocumentError(null)).catch((error: unknown) => { setDocumentError(error instanceof Error ? error.message : "Could not export image."); });
             }}>Export {format.toUpperCase()}</button>)}
-          </>
-    </div></details>
+          </div></details>
   </div>;
 
   return (
@@ -192,18 +189,16 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
       </header>}
       {workspace && headerTarget ? createPortal(workspaceActions, headerTarget) : workspaceActions}
       <div className={`graphing-layout${expressionsVisible ? "" : " graphing-layout--collapsed"}`} style={{ "--graph-panel-width": `${panelWidth}px` } as CSSProperties}>
-        <aside id={`${id}-expressions`} hidden={!expressionsVisible} className="graphing-expressions" aria-labelledby={`${id}-functions`}>
+        <aside id={`${id}-expressions`} className={`graphing-expressions${expressionsVisible ? "" : " graphing-expressions--collapsed"}`} aria-hidden={!expressionsVisible} aria-labelledby={`${id}-functions`}>
           <button type="button" className="graphing-panel-toggle graphing-sidebar-toggle" aria-label="Hide functions panel" title="Hide functions panel" aria-expanded="true" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(false)}><PanelLeftClose size={18} aria-hidden="true" /></button>
           {documentError && <p className="graphing-error" role="alert">{documentError}</p>}
-          {documentNotice && <p className="graphing-hint" role="status">{documentNotice}</p>}
 
           <h2 id={`${id}-functions`} className="sr-only">Functions</h2>
           <div className="graphing-expression-list">
             {expressions.map((expression, index) => (
               <div className="graphing-expression" key={expression.id} data-hidden={!expression.visible}>
                 <div className="graphing-expression-row">
-                  <span className="graphing-expression-number" aria-hidden="true">{index + 1}</span>
-                  <span className="graphing-color" style={{ backgroundColor: expression.color }} aria-hidden="true" />
+                  <span className="graphing-expression-color" style={{ backgroundColor: expression.color }} aria-hidden="true">{index + 1}</span>
                   <MathExpressionField
                     label={`Function ${index + 1}`}
                     invalid={Boolean(errors[expression.id])}
@@ -314,13 +309,6 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
           </div></details>
           </div>
           <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} points={points} datasets={datasets} labels={labels} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={(pointId, x, y) => setPoints((previous) => previous.map((point) => point.id === pointId ? { ...point, x, y } : point))} />
-          <details className="graphing-help">
-            <summary aria-label="Graph help" title="Graph help"><Info size={17} aria-hidden="true" /></summary>
-            <div className="graphing-help-popover" role="dialog" aria-label="Graph instructions">
-              <strong>Graph controls</strong>
-              <p>Hover over a curve to read coordinates; click to pin. Drag to pan, use the scroll wheel to zoom, and choose Reset view to return to the origin.</p>
-            </div>
-          </details>
         </section>
       </div>
     </div>

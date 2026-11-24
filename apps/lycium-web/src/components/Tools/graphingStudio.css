@@ -7,13 +7,14 @@
 .graphing-expressions { position: relative; padding: 1rem; }
 .graphing-expressions h2 { margin: 0; font-size: 1rem; }
 .graphing-hint { color: var(--lycium-color-text-muted); font-size: .8rem; line-height: 1.6; }
-.graphing-expression-list { max-height: 45vh; overflow-y: auto; margin: 1rem -.25rem; padding: .25rem; }
+.graphing-expression-list { max-height: 45vh; overflow-y: auto; overflow-x: hidden; margin: 1rem -.25rem; padding: .25rem; }
 .graphing-expression { padding: .55rem .4rem; margin-bottom: .6rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); transition: border-color .15s, box-shadow .15s; }
 .graphing-expression:focus-within { border-color: var(--lycium-color-accent); box-shadow: 0 0 0 2px var(--lycium-color-accent-soft); }
 .graphing-expression-row { display: flex; align-items: center; gap: .25rem; min-width: 0; }
-.graphing-expression-number { flex: 0 0 auto; width: 1rem; color: var(--lycium-color-text-muted); font-size: .75rem; text-align: center; font-variant-numeric: tabular-nums; }
+.graphing-expression-color { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 1.65rem; align-self: stretch; min-height: 2.5rem; margin: -.55rem .15rem -.55rem -.4rem; color: #fff; font-size: .75rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
 .graphing-color { width: .65rem; height: .65rem; border-radius: 50%; flex: 0 0 auto; margin: 0 .25rem; }
 .graphing-expression[data-hidden="true"] .graphing-color { opacity: .35; }
+.graphing-expression[data-hidden="true"] .graphing-expression-color { opacity: .35; }
 .graphing-expression[data-hidden="true"] input { color: var(--lycium-color-text-muted); }
 .graphing-expression input { width: 100%; min-width: 0; padding: .5rem .25rem; border: 0; border-radius: var(--lycium-radius-control); font: inherit; font-size: .9rem; background: transparent; color: inherit; }
 .graphing-expression input[aria-invalid="true"] { box-shadow: inset 0 -2px var(--lycium-danger); }
@@ -22,6 +23,7 @@
 .graphing-studio button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: var(--lycium-control-height); border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-button); padding: .5rem .75rem; font-size: var(--lycium-control-font-size); color: var(--lycium-color-text); background: var(--lycium-color-control-surface); }
 .graphing-studio button:hover { background: var(--lycium-color-control-hover); }
 .graphing-studio .graphing-icon-button { width: 2.75rem; padding: .5rem; flex: 0 0 auto; border-color: transparent; background: transparent; }
+.graphing-sidebar-toggle { align-self: flex-end; width: 2.5rem; padding: .5rem; margin: -.25rem -.25rem .5rem 0; border-color: transparent; background: transparent; }
 .graphing-studio .graphing-add-button { width: 100%; color: var(--lycium-color-accent); }
 .graphing-studio .graphing-reset-button { color: var(--lycium-color-accent); background: var(--lycium-color-accent-soft); }
 .graphing-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; padding: .6rem; border-bottom: 1px solid var(--lycium-color-border); }
@@ -32,13 +34,6 @@
 .graphing-trace-controls label { display: flex; align-items: center; gap: .4rem; min-height: 2rem; }
 .graphing-trace-controls select { padding: .25rem .4rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); background: var(--lycium-color-control-surface); color: var(--lycium-color-text); font: inherit; }
 .graphing-trace-controls input { accent-color: var(--lycium-color-accent); }
-.graphing-help { position: absolute; z-index: 5; right: .75rem; bottom: .75rem; }
-.graphing-help > summary { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; padding: .45rem; border: 1px solid var(--lycium-color-border); border-radius: 50%; color: var(--lycium-color-text-muted); background: color-mix(in srgb, var(--lycium-color-surface-raised) 90%, transparent); cursor: pointer; list-style: none; }
-.graphing-help > summary::-webkit-details-marker { display: none; }
-.graphing-help > summary:hover, .graphing-help[open] > summary { color: var(--lycium-color-accent); background: var(--lycium-color-accent-soft); }
-.graphing-help-popover { position: absolute; right: 0; bottom: calc(100% + .5rem); width: min(19rem, calc(100vw - 2rem)); padding: .8rem .9rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); color: var(--lycium-color-text); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); font-size: .8rem; line-height: 1.55; }
-.graphing-help-popover strong { display: block; margin-bottom: .25rem; font-size: .85rem; }
-.graphing-help-popover p { margin: 0; color: var(--lycium-color-text-muted); }
 .graphing-parameters { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--lycium-color-border); }
 .graphing-parameters h3 { margin: 0; font-size: .95rem; }
 .graphing-parameter { margin-block: .75rem; padding: .65rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); }
@@ -54,22 +49,35 @@
 .graphing-studio button:disabled { cursor: not-allowed; opacity: .5; }
 
 .graphing-back-link { display: inline-flex; align-items: center; gap: .4rem; font-size: .875rem; }
-.graphing-layout.graphing-layout--collapsed { grid-template-columns: minmax(0, 1fr); }
-.graphing-expressions[hidden] { display: none; }
+.graphing-layout { transition: grid-template-columns .22s ease; }
+.graphing-layout.graphing-layout--collapsed { grid-template-columns: 0 minmax(0, 1fr); }
+.graphing-expressions { transition: opacity .18s ease, box-shadow .18s ease; }
+.graphing-studio--workspace .graphing-expressions--collapsed { min-width: 0; padding: 0; overflow: hidden; opacity: 0; box-shadow: none; pointer-events: none; }
 .graphing-workspace { display: flex; flex-direction: column; width: 100%; height: 100dvh; min-height: 0; overflow: hidden; background: var(--lycium-color-canvas); }
-.graphing-workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; flex: 0 0 auto; min-height: 3.5rem; padding: .5rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)); border-bottom: 1px solid var(--lycium-color-border); }
-.graphing-workspace-header h1 { margin: 0; padding-left: 1rem; border-left: 1px solid var(--lycium-color-border); font-size: 1rem; line-height: 1.5; }
-.graphing-workspace-description { margin: 0; color: var(--lycium-color-text-muted); font-size: .75rem; line-height: 1.4; }
+.graphing-workspace-header { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; flex: 0 0 auto; min-height: 3.5rem; padding: .5rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)); border-bottom: 1px solid #2f3438; color: #f7faf9; background: #171a1d; }
+.graphing-workspace-header h1 { position: absolute; left: 50%; margin: 0; font-size: 1.15rem; line-height: 1.5; transform: translateX(-50%); }
+.graphing-workspace-description { display: none; }
+.graphing-workspace-header .graphing-back-link { color: #d7dfdc; }
+.graphing-workspace-header .graphing-back-link:hover { color: #fff; }
 .graphing-workspace-main { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
+.graphing-workspace-main > .graphing-tool-frame { margin: 0; padding: 0; }
 .graphing-studio--workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.graphing-studio--workspace .graphing-layout { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: .75rem; }
+.graphing-studio--workspace .graphing-layout { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: 0; }
+.graphing-studio--workspace :is(.graphing-expressions, .graphing-graph) { border: 0; border-radius: 0; }
 .graphing-studio--workspace .graphing-graph { position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.graphing-panel-reopen { position: absolute; z-index: 6; top: .75rem; left: .75rem; width: 2.5rem; height: 2.5rem; padding: .55rem; border-color: var(--lycium-color-border); background: color-mix(in srgb, var(--lycium-color-surface-raised) 94%, transparent); box-shadow: var(--lycium-shadow-control); }
 .graphing-studio--workspace .graph-surface { flex: 1 1 0; height: auto; }
 .graphing-studio--workspace .graphing-toolbar { display: flex; flex-direction: row; align-items: center; min-height: 0; }
 .graphing-studio--workspace .graphing-trace-controls { min-height: 0; overflow-y: auto; }
-.graphing-studio--workspace .graphing-expressions { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
+.graphing-studio--workspace .graphing-expressions { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0; box-shadow: 8px 0 18px -16px rgb(15 23 42 / 45%); z-index: 2; }
 .graphing-studio--workspace .graphing-expressions[hidden] { display: none; }
 .graphing-studio--workspace .graphing-expression-list { flex: 1; min-height: 0; max-height: none; }
+.graphing-studio--workspace .graphing-expression { margin-bottom: 0; }
+.graphing-studio--workspace .graphing-expression-list > :not(.graphing-expression) { margin-inline: 1rem; }
+.graphing-studio--workspace .graphing-expression-list > .graph-points,
+.graphing-studio--workspace .graphing-expression-list > .graph-analysis,
+.graphing-studio--workspace .graphing-expression-list > .graph-datasets,
+.graphing-studio--workspace .graphing-expression-list > .graph-label-settings { margin-top: 1.5rem; }
 .graphing-studio--workspace .graphing-add-button { flex-shrink: 0; }
 
 @media (min-width: 900px) {
@@ -80,7 +88,7 @@
   .graphing-toolbar { gap: 0; padding: .4rem; }
   .graphing-expression-list { max-height: 240px; }
   .graphing-workspace-header { gap: .75rem; }
-  .graphing-workspace-header h1 { padding-left: .75rem; font-size: .9rem; }
+  .graphing-workspace-header h1 { font-size: 1.05rem; }
   .graphing-workspace-description { display: none; }
   .graphing-panel-toggle span { display: none; }
 }
@@ -90,6 +98,7 @@
   .graphing-workspace-main { overflow-y: auto; }
   .graphing-studio--workspace .graphing-layout { min-height: 500px; grid-template-rows: minmax(300px, 1fr) minmax(180px, .6fr); }
   .graphing-studio--workspace .graphing-layout--collapsed { min-height: 300px; grid-template-rows: minmax(0, 1fr); }
+  .graphing-studio--workspace .graphing-layout--collapsed .graphing-expressions { display: none; }
   .graphing-studio--workspace .graphing-hint { margin-block: .5rem; }
 }
 .graph-document-controls { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
@@ -130,20 +139,29 @@
 .graph-panel-resizer:focus-visible { outline: 2px solid var(--lycium-color-accent); outline-offset: -2px; }
 .graphing-workspace-header #graphing-workspace-actions { margin-left: auto; }
 .graph-workspace-actions { display: flex; align-items: center; gap: .6rem; }
-.graph-file-menu, .graph-settings { position: relative; }
-.graph-file-menu summary, .graph-settings > summary { cursor: pointer; padding: .55rem .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-button); font-size: .875rem; list-style: none; }
-.graph-file-menu summary::-webkit-details-marker, .graph-settings > summary::-webkit-details-marker { display: none; }
-.graph-file-popover { position: absolute; z-index: 20; right: 0; top: calc(100% + .4rem); display: grid; min-width: 10rem; padding: .35rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
-.graph-file-popover button { text-align: left; padding: .6rem .75rem; color: var(--lycium-color-text); background: transparent; border: 0; }
-.graph-file-popover button:hover { background: var(--lycium-color-control-hover); }
+.graph-settings { position: relative; }
+.graph-settings > summary { cursor: pointer; padding: .55rem .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-button); font-size: .875rem; list-style: none; }
+.graph-settings > summary::-webkit-details-marker { display: none; }
+.graph-workspace-icon-button { width: 2.5rem; height: 2.5rem; min-height: 2.5rem !important; padding: .55rem !important; border: 0 !important; color: #d7dfdc !important; background: transparent !important; }
+.graph-workspace-icon-button:hover { color: #fff !important; background: #2a3034 !important; }
+.graph-workspace-menu { position: relative; }
+.graph-workspace-menu > summary { list-style: none; cursor: pointer; }
+.graph-workspace-menu > summary::-webkit-details-marker { display: none; }
+.graph-workspace-menu-popover { position: absolute; z-index: 20; right: 0; top: calc(100% + .35rem); display: grid; min-width: 9rem; padding: .35rem; border: 1px solid #4a5257; border-radius: var(--lycium-radius-card); background: #202529; box-shadow: var(--lycium-shadow-raised); }
+.graph-workspace-menu-popover button { justify-content: flex-start; min-height: 2.25rem; padding: .5rem .65rem; border: 0; border-radius: var(--lycium-radius-control); color: #f7faf9; background: transparent; }
+.graph-workspace-menu-popover button:hover { background: #2a3034; }
 .graph-present-button { padding: .55rem 1rem; color: white; background: var(--lycium-brand-primary); border: 0; font-size: .875rem; }
 .graph-present-button:hover { background: var(--lycium-brand-primary-hover); }
 .graph-settings { flex: 0 0 auto; }
 .graph-settings > summary { position: relative; z-index: 2; }
 .graph-settings .graphing-trace-controls { position: absolute; z-index: 10; right: 0; top: calc(100% + .25rem); display: grid; justify-content: stretch; min-width: 13rem; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
-.graphing-studio--workspace .graphing-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .5rem; }
-.graphing-studio--workspace .graphing-view-controls { justify-self: center; }
-.graphing-studio--workspace .graph-settings { justify-self: end; }
+.graphing-studio--workspace .graphing-toolbar { display: flex; align-items: center; min-height: 0; }
+.graphing-studio--workspace .graphing-graph-controls { position: absolute; z-index: 7; top: .75rem; right: .75rem; display: flex; flex-direction: column; gap: 0; padding: .2rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); background: color-mix(in srgb, var(--lycium-color-surface-raised) 94%, transparent); box-shadow: var(--lycium-shadow-control); }
+.graphing-studio--workspace .graphing-view-controls { display: flex; flex-direction: column; gap: 0; }
+.graphing-studio--workspace .graph-settings { position: static; order: -1; }
+.graphing-studio--workspace .graph-settings > summary { width: 2.5rem; height: 2.5rem; padding: .55rem; border: 0; }
+.graphing-studio--workspace .graphing-view-controls .graphing-icon-button { width: 2.5rem; height: 2.5rem; min-height: 2.5rem; padding: .55rem; border: 0; background: transparent; }
+.graphing-studio--workspace .graphing-view-controls button:hover { background: var(--lycium-color-control-hover); }
 
 .graphing-discovery-content { box-sizing: border-box; width: min(100%, 1100px); margin: 0 auto; padding: 2rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)) 3rem; color: var(--lycium-color-text); background: var(--lycium-color-canvas); }
 .graphing-discovery-content h2 { margin: 0; font-family: var(--lycium-font-display); font-size: 1.7rem; }
@@ -170,4 +188,8 @@
 .graph-dataset th:last-child { width: 2.4rem; }
 .graphing-studio .graph-dataset-remove-row { width: 2rem; min-height: 2rem; padding: 0; }
 @media (max-width: 899px) { .graph-panel-resizer { display: none; } }
-@media (max-width: 599px) { .graphing-workspace-header h1 { white-space: nowrap; } .graph-file-menu summary, .graph-present-button { font-size: .75rem; padding: .45rem; } .graph-workspace-actions { gap: .25rem; } .graph-settings > summary { font-size: .75rem; padding: .5rem .35rem; } .graphing-studio--workspace .graphing-toolbar { grid-template-columns: auto 1fr auto; } .graphing-studio--workspace .graphing-view-controls { justify-self: start; } }
+
+@media (min-width: 900px) {
+  .graphing-studio--workspace .graph-panel-resizer { transform: translateX(-.375rem); }
+}
+@media (max-width: 599px) { .graphing-workspace-header h1 { white-space: nowrap; } .graph-workspace-actions { gap: .25rem; } .graph-settings > summary { font-size: .75rem; padding: .5rem .35rem; } }

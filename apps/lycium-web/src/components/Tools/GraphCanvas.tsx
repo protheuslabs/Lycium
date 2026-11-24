@@ -281,8 +281,12 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             node.setAttribute("fill", "#171717"); node.setAttribute("font-size", "12");
             numbers.appendChild(node);
           };
-          for (const value of meta.xScale.ticks()) addNumber(value, xStep, meta.xScale(value) + left, xAxisPosition, "middle");
-          for (const value of meta.yScale.ticks()) addNumber(value, yStep, yAxisPosition, meta.yScale(value) + top + 4, "end");
+          const originX = meta.xScale(0) + left, originY = meta.yScale(0) + top;
+          for (const value of meta.xScale.ticks()) {
+            if (value === 0) addNumber(value, xStep, originX - 5, originY + 16, "end");
+            else addNumber(value, xStep, meta.xScale(value) + left, xAxisPosition, "middle");
+          }
+          for (const value of meta.yScale.ticks()) if (value !== 0) addNumber(value, yStep, yAxisPosition, meta.yScale(value) + top + 4, "end");
           group.appendChild(numbers);
           for (const item of labels.annotations) if (item.x >= Math.min(x0, x1) && item.x <= Math.max(x0, x1) && item.y >= Math.min(y0, y1) && item.y <= Math.max(y0, y1)) add(item.text, meta.xScale(item.x) + (meta.margin?.left ?? 0), meta.yScale(item.y) + (meta.margin?.top ?? 0) - 8);
           svg.appendChild(group);
@@ -357,6 +361,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
                 trace = null;
                 const legend = target.querySelector(".top-right-legend");
                 if (legend) legend.textContent = "";
+                if (!configRef.current.snapToGrid) return;
                 const domain = chart?.meta.xScale?.domain() ?? [];
                 // The visible grid divides each major unit into five cells. Snap
                 // hover positions to that smallest cell so the readout and trace
