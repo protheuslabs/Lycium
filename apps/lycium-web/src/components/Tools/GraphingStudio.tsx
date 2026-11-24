@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, ZoomIn, ZoomOut } from "lucide-react";
+import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as ZoomIn, Minus as ZoomOut, Search } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import type { GraphExpression } from "./graphExpressions";
 import ParameterSliders from "./ParameterSliders";
@@ -59,6 +59,15 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const [labels, setLabels] = useState<GraphLabels>(loadedDocument?.labels ?? { title: "", xTitle: "", xUnit: "", yTitle: "", yUnit: "", annotations: [] });
   const [parameters, setParameters] = useState<GraphParameter[]>(loadedDocument?.parameters ?? []);
   const draggedRow = useRef<string | null>(null);
+  const dragVisual = useRef<{ row: HTMLElement; startY: number; startTop: number } | null>(null);
+  const clearDragVisual = () => {
+    const visual = dragVisual.current;
+    if (visual) {
+      visual.row.style.removeProperty("transform");
+      visual.row.classList.remove("graph-row--dragging");
+    }
+    dragVisual.current = null;
+  };
   useEffect(() => {
     const keys = [...expressions.map(({ id }) => `function:${id}`), ...parameters.map(({ name }) => `parameter:${name}`), ...datasets.map(({ id }) => `dataset:${id}`), ...points.map(({ id }) => `point:${id}`)];
     setRowOrder((previous) => {
@@ -74,6 +83,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const fileRef = useRef<HTMLInputElement>(null);
   const pointsRef = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDetailsElement>(null);
+  const analysisRef = useRef<HTMLDetailsElement>(null);
   const importMenuRef = useRef<HTMLDetailsElement>(null);
   const exportMenuRef = useRef<HTMLDetailsElement>(null);
   const addMenuRef = useRef<HTMLDetailsElement>(null);
@@ -263,19 +273,40 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               const row = event.target.closest<HTMLElement>(".graphing-expression-list > *");
               if (!row || !row.style.order) return;
               draggedRow.current = rowOrder[Number(row.style.order)] ?? null;
+              dragVisual.current = { row, startY: event.clientY, startTop: row.offsetTop };
+              row.classList.add("graph-row--dragging");
               event.currentTarget.setPointerCapture(event.pointerId);
               event.preventDefault();
             }}
-            onPointerUp={(event) => {
+            onPointerMove={(event) => {
+              const visual = dragVisual.current;
               const from = draggedRow.current;
-              draggedRow.current = null;
-              if (!from) return;
-              const row = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>(".graphing-expression-list > *");
-              const to = row?.style.order ? rowOrder[Number(row.style.order)] : undefined;
+              if (!visual || !from) return;
+              const position = () => {
+                if (dragVisual.current === visual) visual.row.style.transform = `translateY(${event.clientY - visual.startY + visual.startTop - visual.row.offsetTop}px)`;
+              };
+              position();
+              const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>(".graphing-expression-list > *");
+              if (!target || target === visual.row || !target.style.order || target.classList.contains("graph-add-menu")) return;
+              const to = rowOrder[Number(target.style.order)];
               if (!to || to === from) return;
-              setRowOrder((previous) => { const next = previous.filter((key) => key !== from); next.splice(next.indexOf(to), 0, from); return next; });
+              const bounds = target.getBoundingClientRect();
+              const movingDown = rowOrder.indexOf(from) < rowOrder.indexOf(to);
+              if (movingDown ? event.clientY < bounds.top + bounds.height / 2 : event.clientY > bounds.top + bounds.height / 2) return;
+              setRowOrder((previous) => {
+                const destination = previous.indexOf(to);
+                const next = previous.filter((key) => key !== from);
+                next.splice(destination, 0, from);
+                return next;
+              });
+              requestAnimationFrame(position);
             }}
-            onPointerCancel={() => { draggedRow.current = null; }}
+            onPointerUp={() => {
+              draggedRow.current = null;
+              clearDragVisual();
+            }}
+            onPointerCancel={() => { draggedRow.current = null; clearDragVisual(); }}
+            onLostPointerCapture={() => { draggedRow.current = null; clearDragVisual(); }}
             onFocusCapture={(event) => {
               if (event.target instanceof Element && !event.target.closest(".graphing-expression, .graph-add-menu")) setSelectedRowKey(null);
             }}
@@ -347,14 +378,6 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               <button type="button" onClick={addPoint}>Point</button>
             </div></details>
           </div>
-{expressions.length > 0 && <section className="graph-sidebar-analysis"><details className="graph-analysis" aria-label="Analysis"><summary>Analysis</summary>
-              <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("crossings")}>Find intersections</button>
-              <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("intercepts")}>Find intercepts</button>
-              <p className="graphing-hint">Approximate crossings in the current view. Tangencies and some intersections may be missed. Search again after moving the view.</p>
-              {crossingError && <p className="graphing-error" role="alert">{crossingError}</p>}
-              {crossings && <div role="status">{crossings.length === 0 ? <p className="graphing-hint">No crossings found in this view.</p> : <ul className="graph-crossings">{crossings.map((crossing, index) => <li key={`${crossing.first}-${crossing.second}-${index}`}><span>Functions {expressions.findIndex((item) => item.id === crossing.first) + 1} &amp; {expressions.findIndex((item) => item.id === crossing.second) + 1}: ({Number(crossing.x.toPrecision(6))}, {Number(crossing.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(crossing.x, crossing.y)} aria-label={`Add intersection ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
-              {intercepts && <div role="status">{intercepts.length === 0 ? <p className="graphing-hint">No intercepts found in this view.</p> : <ul className="graph-crossings">{intercepts.map((intercept, index) => <li key={`${intercept.curve}-${intercept.axis}-${index}`}><span>Function {expressions.findIndex((item) => item.id === intercept.curve) + 1}, {intercept.axis}-axis: ({Number(intercept.x.toPrecision(6))}, {Number(intercept.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(intercept.x, intercept.y)} aria-label={`Add intercept ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
-            </details></section>}
         </aside>
           <div className="graph-panel-resizer" role="separator" tabIndex={0} aria-label="Resize functions panel" aria-orientation="vertical" aria-controls={`${id}-expressions`} aria-valuemin={280} aria-valuemax={480} aria-valuenow={panelWidth}
             onPointerDown={(event) => { resizeStart.current = { x: event.clientX, width: event.currentTarget.previousElementSibling?.getBoundingClientRect().width ?? panelWidth }; event.currentTarget.setPointerCapture(event.pointerId); }}
@@ -364,6 +387,14 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
         <section className="graphing-graph" aria-label="Interactive graph">
           {!expressionsVisible && <button type="button" className="graphing-panel-toggle graphing-panel-reopen" aria-label="Show functions panel" title="Show functions panel" aria-expanded="false" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(true)}><PanelLeftOpen size={18} aria-hidden="true" /></button>}
             <div className="graphing-graph-controls">
+<details ref={analysisRef} className="graph-analysis-menu"><summary aria-label="Graph analysis" title="Graph analysis"><Search size={19} aria-hidden="true" /></summary><div className="graph-analysis-popover">
+              <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("crossings")}>Find intersections</button>
+              <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("intercepts")}>Find intercepts</button>
+              <p className="graphing-hint">Approximate crossings in the current view. Tangencies and some intersections may be missed. Search again after moving the view.</p>
+              {crossingError && <p className="graphing-error" role="alert">{crossingError}</p>}
+              {crossings && <div role="status">{crossings.length === 0 ? <p className="graphing-hint">No crossings found in this view.</p> : <ul className="graph-crossings">{crossings.map((crossing, index) => <li key={`${crossing.first}-${crossing.second}-${index}`}><span>Functions {expressions.findIndex((item) => item.id === crossing.first) + 1} &amp; {expressions.findIndex((item) => item.id === crossing.second) + 1}: ({Number(crossing.x.toPrecision(6))}, {Number(crossing.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(crossing.x, crossing.y)} aria-label={`Add intersection ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
+              {intercepts && <div role="status">{intercepts.length === 0 ? <p className="graphing-hint">No intercepts found in this view.</p> : <ul className="graph-crossings">{intercepts.map((intercept, index) => <li key={`${intercept.curve}-${intercept.axis}-${index}`}><span>Function {expressions.findIndex((item) => item.id === intercept.curve) + 1}, {intercept.axis}-axis: ({Number(intercept.x.toPrecision(6))}, {Number(intercept.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(intercept.x, intercept.y)} aria-label={`Add intercept ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
+            </div></details>
             <div className="graphing-view-controls">
               <button type="button" className="graphing-icon-button" aria-label="Zoom in" title="Zoom in" onClick={() => graphRef.current?.zoom(0.8)}><ZoomIn size={19} aria-hidden="true" /></button>
               <button type="button" className="graphing-icon-button" aria-label="Zoom out" title="Zoom out" onClick={() => graphRef.current?.zoom(1.25)}><ZoomOut size={19} aria-hidden="true" /></button>

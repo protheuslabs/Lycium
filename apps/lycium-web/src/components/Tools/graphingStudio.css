@@ -16,6 +16,7 @@
 .graphing-expression-color { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 1.65rem; align-self: stretch; min-height: 2.5rem; margin: -.55rem .15rem -.55rem -.4rem; color: #fff; font-size: .75rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
 .graphing-expression-color { cursor: grab; touch-action: none; user-select: none; }
 .graphing-expression-color:active { cursor: grabbing; }
+.graphing-expression-list > .graph-row--dragging { position: relative; z-index: 30; pointer-events: none; box-shadow: 0 8px 24px rgb(0 0 0 / 20%); opacity: .95; transition: none; animation: none; }
 .graphing-expression-row > .graphing-expression-color { position: absolute; top: 0; bottom: 0; left: 0; width: 1.65rem; height: auto; min-height: 0; margin: 0; }
 .graphing-color { width: .65rem; height: .65rem; border-radius: 50%; flex: 0 0 auto; margin: 0 .25rem; }
 .graphing-expression[data-hidden="true"] .graphing-color { opacity: .35; }
@@ -206,6 +207,10 @@
 .graphing-workspace-header #graphing-workspace-actions { margin-left: auto; }
 .graph-workspace-actions { display: flex; align-items: center; gap: .6rem; }
 .graph-settings { position: relative; }
+.graph-analysis-menu > summary { display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; cursor: pointer; list-style: none; border-radius: var(--lycium-radius-control); }
+.graph-analysis-menu > summary::-webkit-details-marker { display: none; }
+.graph-analysis-menu > summary:hover { background: var(--lycium-color-control-hover); }
+.graph-analysis-popover { position: absolute; z-index: 10; right: calc(100% + .5rem); top: 0; width: min(21rem, calc(100vw - 5rem)); max-height: 70dvh; overflow-y: auto; box-sizing: border-box; padding: .75rem; background: var(--lycium-color-surface-raised); border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); box-shadow: var(--lycium-shadow-raised); }
 .graph-settings > summary { cursor: pointer; padding: .55rem .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-button); font-size: .875rem; list-style: none; }
 .graph-settings > summary::-webkit-details-marker { display: none; }
 .graph-workspace-icon-button { width: 2.5rem; height: 2.5rem; min-height: 2.5rem !important; padding: .55rem !important; border: 0 !important; color: #d7dfdc !important; background: transparent !important; }
@@ -220,7 +225,7 @@
 .graph-present-button:hover { background: var(--lycium-brand-primary-hover); }
 .graph-settings { flex: 0 0 auto; }
 .graph-settings > summary { position: relative; z-index: 2; }
-.graph-settings .graphing-trace-controls { position: absolute; z-index: 10; right: 0; top: calc(100% + .25rem); display: grid; justify-content: stretch; min-width: 13rem; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
+.graph-settings .graphing-trace-controls { position: absolute; z-index: 10; right: calc(100% + .5rem); top: 0; display: grid; justify-content: stretch; min-width: 13rem; max-width: calc(100vw - 5rem); max-height: 70dvh; box-sizing: border-box; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
 .graphing-studio--workspace .graphing-toolbar { display: flex; align-items: center; min-height: 0; }
 .graphing-studio--workspace .graphing-graph-controls { position: absolute; z-index: 7; top: .75rem; right: .75rem; display: flex; flex-direction: column; gap: 0; padding: .2rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); background: color-mix(in srgb, var(--lycium-color-surface-raised) 94%, transparent); box-shadow: var(--lycium-shadow-control); }
 .graphing-studio--workspace .graphing-view-controls { display: flex; flex-direction: column; gap: 0; }
