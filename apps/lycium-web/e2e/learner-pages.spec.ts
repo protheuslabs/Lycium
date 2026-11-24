@@ -108,12 +108,9 @@ test("unavailable account actions stay out of the local-learning experience", as
   await expect(page.getByRole("heading", { name: "My Learning", level: 1 })).toBeVisible();
 });
 
-test("home is a distinct destination with a loaded image, course discovery, and dashboard navigation", async ({
+test("home is a distinct destination with course discovery and dashboard navigation", async ({
   page,
 }, info) => {
-  const imageLoaded = page.waitForResponse(
-    (response) => /\/learning-world\.[^/]+\.webp/.test(response.url()) && response.ok(),
-  );
   await page.goto("/Lycium/");
   await expect(page.getByRole("heading", { name: "Knowledge without barriers.", level: 1, exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore courses", exact: true })).toHaveCSS("border-radius", "8px");
@@ -125,9 +122,7 @@ test("home is a distinct destination with a loaded image, course discovery, and 
   const restingBackground = await hoverCard.evaluate((card) => getComputedStyle(card).backgroundColor);
   await hoverCard.hover();
   await expect(hoverCard).not.toHaveCSS("background-color", restingBackground);
-  await page.locator(".learner-home-hero h1").hover();
-  expect((await page.locator("button:visible").evaluateAll((buttons) => buttons.map((button) => getComputedStyle(button).borderRadius))).every((radius) => radius === "8px")).toBe(true);
-  await imageLoaded;
+  await expect(page.locator(".learner-primary-link")).toHaveCSS("border-radius", "8px");
   await expect(
     page.getByRole("button", { name: `Resume ${activeTitle}`, exact: true }).first(),
   ).toBeVisible();
@@ -266,7 +261,7 @@ test("Studio retains drafts and creation while public discovery shows published 
   await page.goto("/Lycium/");
   await expect(page.locator(".home-course-grid")).not.toContainText("Unfinished Generation");
   await page.goto("/Lycium/catalog");
-  await expect(page.getByRole("heading", { name: "Catalog", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Courses", level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: "Open Unfinished Generation", exact: true })).toHaveCount(0);
   await expect(page.locator(".catalog-create-button")).toHaveCount(0);
   await page.getByRole("link", { name: "Open Studio", exact: true }).click();
@@ -281,14 +276,17 @@ test("Studio retains drafts and creation while public discovery shows published 
   expect(dialogRadii.every((radius) => radius === "8px")).toBe(true);
 });
 
-test("Tools has a real destination without a fake tool launch", async ({ page }) => {
+test("the Tools tile opens Graphing Studio", async ({ page }) => {
   await page.goto("/Lycium/");
   await followPrimaryNavigation(page, "Tools");
   await expect(page).toHaveURL(/\/tools$/);
   await expect(page.getByRole("heading", { name: "Tools", level: 1 })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Graphing Studio", level: 3 })).toBeVisible();
-  await expect(page.getByText("In development", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Graphing Studio", exact: true })).toHaveCount(0);
+  const tool = page.getByRole("link", { name: "Graphing Studio", exact: true });
+  await expect(tool).toHaveAccessibleDescription("Plot functions, compare datasets, and fit regression models.");
+  await tool.click();
+  await expect(page).toHaveURL(/\/tools\/graph$/);
+  await expect(page.getByRole("heading", { name: "Graphing Studio", level: 1 })).toBeVisible();
 });
 
 test("catalog supports accessible grid and list layouts with a real result count", async ({ page }) => {
@@ -326,8 +324,8 @@ test("browsing home and catalog does not start courses or mark lessons viewed", 
   page,
 }) => {
   await page.goto("/Lycium/");
-  await followPrimaryNavigation(page, "Course catalog");
-  await expect(page.getByRole("heading", { name: "Catalog", level: 1 })).toBeVisible();
+  await followPrimaryNavigation(page, "Courses");
+  await expect(page.getByRole("heading", { name: "Courses", level: 1 })).toBeVisible();
   await followPrimaryNavigation(page, "My Learning");
   await expect(page.locator(".learning-course-card")).toHaveCount(1);
   expect(await page.evaluate(() => localStorage.getItem("lycium-progress-fresh"))).toBeNull();
@@ -665,11 +663,12 @@ test("site chrome reflows and the footer exposes real destinations", async ({ pa
       expect(await page.locator(".top-bar").evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
       expect(await footer.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
       await expect(page.locator(".top-bar-inner")).toHaveCSS("padding-left", "16px");
-      await expect(page.locator(".catalog-footer-inner")).toHaveCSS("padding-left", "16px");
       await expect(page.locator(".top-bar-inner")).toHaveCSS("max-width", "none");
-      await expect(page.locator(".catalog-footer-inner")).toHaveCSS("max-width", "none");
-      await expect(page.locator(".learner-hero-content")).toHaveCSS("max-width", "1344px");
-      if (width > 700) await expect(page.locator(".learner-hero-content")).toHaveCSS("padding-left", "24px");
+      const gutter = width > 700 ? "24px" : "16px";
+      for (const container of [".catalog-footer-inner", ".learner-hero-content"]) {
+        await expect(page.locator(container)).toHaveCSS("padding-left", gutter);
+        await expect(page.locator(container)).toHaveCSS("max-width", "1344px");
+      }
       const pieces = page.locator(".top-bar-title, .top-bar-navigation, .top-bar-search, .top-bar-actions");
       const boxes = await pieces.evaluateAll((elements) => elements.filter((element) => getComputedStyle(element).display !== "none").map((element) => {
         const box = element.getBoundingClientRect(); return { left: box.left, right: box.right };

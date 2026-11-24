@@ -250,6 +250,17 @@ test("lesson reader replaces global navigation and supports a reversible focus m
   await expect(page.getByRole("heading", { name: title, level: 1 })).toBeVisible();
 });
 
+test("course outline opens the real progress overview on desktop and mobile", async ({ page }) => {
+  await openCourse(page);
+  if ((await page.locator(".sidebar-section-list:visible").count()) === 0) {
+    await page.getByRole("button", { name: "Course outline", exact: true }).click();
+  }
+  await page.getByRole("link", { name: "Progress", exact: true }).click();
+  await expect(page).toHaveURL(/\/courses\/.*#progress$/);
+  await expect(page.getByRole("heading", { name: "Your progress", level: 2 })).toBeVisible();
+  await expect(page.locator(".top-bar")).toBeVisible();
+});
+
 test("reader citations remain section-scoped and editing markers stay out of reading mode", async ({
   page,
 }) => {
@@ -306,6 +317,6 @@ test("light and dark themes keep the catalog, reader, and assessment on semantic
     await selectSection(page, /1\.1 Distinguishing completion/);
     await page.goto("/Lycium/catalog");
     await expect(page).toHaveURL(/\/catalog$/);
-    await expect(page.getByRole("heading", { name: "Catalog", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Courses", level: 1 })).toBeVisible();
   }
 });

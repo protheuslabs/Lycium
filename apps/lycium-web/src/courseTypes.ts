@@ -47,7 +47,7 @@ export type SectionStatus = LyciumSectionStatus;
 export type CourseProgressRecord = LyciumProgressRecord;
 
 export type RouteInfo = {
-  kind: "landing" | "learning" | "home" | "course" | "settings" | "program" | "studio" | "tools";
+  kind: "landing" | "learning" | "home" | "course" | "settings" | "program" | "studio" | "tools" | "practice" | "assessments";
   courseSlug: string | null;
   unitSlug: string | null;
   catalogView?: "programs" | "courses" | null;

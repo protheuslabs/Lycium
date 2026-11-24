@@ -49,18 +49,10 @@ export default function LearnerHome({ library, onOpenCourse }: LearnerHomeProps)
             <ContinueLearning item={library.active[0]} onOpenCourse={onOpenCourse} />
           </section>
         )}
-        <section id="how-it-works" className="learning-model" aria-labelledby="learning-model-title">
-          <div className="learning-model-heading"><h2 id="learning-model-title">Learn more than the answers.</h2></div>
-          <div className="learning-model-steps">
-            <article><BookOpen size={21} aria-hidden="true" /><h3>Learn</h3><p>Build understanding through structured lessons and readings.</p></article>
-            <article><MousePointer2 size={21} aria-hidden="true" /><h3>Practice</h3><p>Apply ideas through practice activities and projects.</p></article>
-            <article><ClipboardCheck size={21} aria-hidden="true" /><h3>Assess</h3><p>Check your understanding with quizzes and assessments.</p></article>
-          </div>
-        </section>
         {featured.length > 0 && <section className="home-course-section" aria-labelledby="home-courses-title">
           <header className="learner-section-heading">
             <div>
-              <h2 id="home-courses-title">Find your next course</h2>
+              <h2 id="home-courses-title" className="learner-display-heading">Find your next course</h2>
             </div>
             <div className="home-course-controls">
               <select
@@ -76,7 +68,7 @@ export default function LearnerHome({ library, onOpenCourse }: LearnerHomeProps)
                 ))}
               </select>
               <Link href={COURSE_CATALOG_PATH}>
-                View catalog
+                View all courses
                 <ArrowUpRight size={17} aria-hidden="true" />
               </Link>
             </div>
@@ -89,6 +81,14 @@ export default function LearnerHome({ library, onOpenCourse }: LearnerHomeProps)
             </div>
           }
         </section>}
+        <section id="how-it-works" className="learning-model" aria-labelledby="learning-model-title">
+          <h2 id="learning-model-title" className="learner-display-heading">Learn more than the answers.</h2>
+          <div className="learning-model-steps">
+            <article><BookOpen size={20} aria-hidden="true" /><h3>Learn</h3><p>Build understanding through structured lessons and readings.</p></article>
+            <article><MousePointer2 size={20} aria-hidden="true" /><h3>Practice</h3><p>Apply ideas through practice activities and projects.</p></article>
+            <article><ClipboardCheck size={20} aria-hidden="true" /><h3>Assess</h3><p>Check your understanding with quizzes and assessments.</p></article>
+          </div>
+        </section>
       </div>
     </main>
   );

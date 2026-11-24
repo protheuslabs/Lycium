@@ -16,6 +16,8 @@ export const LYCIUM_DEPLOY_BASE_PATH = "/Lycium";
 export const LYCIUM_ROUTE_ROOT = "/";
 export const MY_LEARNING_PATH = buildLyciumPath("my-learning");
 export const TOOLS_PATH = buildLyciumPath("tools");
+export const PRACTICE_PATH = buildLyciumPath("practice");
+export const ASSESSMENTS_PATH = buildLyciumPath("assessments");
 export const STUDIO_PATH = buildLyciumPath("studio");
 export const COURSE_CATALOG_PATH = buildLyciumPath("catalog");
 export const COURSE_CATALOG_PROGRAMS_PATH = buildLyciumPath("catalog", "programs");
@@ -189,6 +191,14 @@ export function parseCourseRoute(pathname: string): RouteInfo {
 
   if (pathWithoutQuery === TOOLS_PATH) {
     return { kind: "tools", courseSlug: null, unitSlug: null };
+  }
+
+  if (pathWithoutQuery === PRACTICE_PATH) {
+    return { kind: "practice", courseSlug: null, unitSlug: null };
+  }
+
+  if (pathWithoutQuery === ASSESSMENTS_PATH) {
+    return { kind: "assessments", courseSlug: null, unitSlug: null };
   }
 
   if (pathWithoutQuery === STUDIO_PATH) {

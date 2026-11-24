@@ -1,4 +1,4 @@
-.top-bar { flex: 0 0 var(--lycium-topbar-height); min-height: var(--lycium-topbar-height); background: var(--lycium-color-canvas); color: var(--lycium-color-text); border-bottom: 1px solid var(--lycium-color-border); box-shadow: 0 2px 8px rgba(20, 28, 25, .06); }
+.top-bar { position: relative; z-index: 10; flex: 0 0 var(--lycium-topbar-height); min-height: var(--lycium-topbar-height); background: var(--lycium-color-canvas); color: var(--lycium-color-text); border-bottom: 1px solid var(--lycium-color-border); box-shadow: 0 3px 10px rgba(20, 28, 25, .1); }
 .top-bar-inner { display: flex; align-items: center; gap: 1.75rem; width: 100%; height: 100%; max-width: none; margin-inline: 0; padding-inline: var(--lycium-header-gutter); }
 .top-bar-title { flex: 0 0 auto; color: var(--lycium-color-text); font-family: var(--lycium-font-brand); font-size: 1.5rem; font-weight: 850; line-height: 1; text-decoration: none; }
 .top-bar-title:hover { color: var(--lycium-color-text); text-decoration: none; }

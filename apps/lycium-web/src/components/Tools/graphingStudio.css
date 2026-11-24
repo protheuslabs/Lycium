@@ -53,6 +53,7 @@
 .graphing-workspace { display: flex; flex-direction: column; width: 100%; height: 100dvh; min-height: 0; overflow: hidden; background: var(--lycium-color-canvas); }
 .graphing-workspace-header { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; flex: 0 0 auto; min-height: 3.5rem; padding: .5rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)); border-bottom: 1px solid var(--lycium-color-border); }
 .graphing-workspace-header h1 { margin: 0; padding-left: 1rem; border-left: 1px solid var(--lycium-color-border); font-size: 1rem; line-height: 1.5; }
+.graphing-workspace-description { margin: 0; color: var(--lycium-color-text-muted); font-size: .75rem; line-height: 1.4; }
 .graphing-workspace-main { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
 .graphing-studio--workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .graphing-studio--workspace .graphing-layout { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: .75rem; }
@@ -75,6 +76,7 @@
   .graphing-expression-list { max-height: 240px; }
   .graphing-workspace-header { gap: .75rem; }
   .graphing-workspace-header h1 { padding-left: .75rem; font-size: .9rem; }
+  .graphing-workspace-description { display: none; }
   .graphing-panel-toggle span { display: none; }
 }
 

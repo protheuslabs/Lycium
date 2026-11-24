@@ -23,7 +23,10 @@ export default function CatalogDiscoveryHeader({
 }: CatalogDiscoveryHeaderProps) {
   return (
     <header className="catalog-heading">
-      <div className="catalog-heading-title"><h1>{studioMode ? "Studio" : "Catalog"}</h1>{!studioMode && <Link href={STUDIO_PATH} className="learner-text-link">Open Studio</Link>}</div>
+      <div className="catalog-heading-title">
+        <h1 className={studioMode ? undefined : "learner-display-heading"}>{studioMode ? "Studio" : "Courses"}</h1>
+        {!studioMode && <Link href={STUDIO_PATH} className="learner-text-link">Open Studio</Link>}
+      </div>
       <div className="catalog-discovery-search" role="search">
         <Dropdown
           className="catalog-level-dropdown"

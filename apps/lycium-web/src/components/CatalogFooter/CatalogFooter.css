@@ -1,24 +1,42 @@
 .catalog-footer { width: 100%; flex: 0 0 auto; border-top: 1px solid #303436; background: #0a0c0d; color: #f0f3f4; }
-.catalog-footer-inner { width: 100%; max-width: none; margin-inline: 0; padding: 3rem var(--lycium-footer-gutter) 1.25rem; }
-.catalog-footer-main { display: grid; grid-template-columns: 1.5fr repeat(3, minmax(0, 1fr)); gap: 2rem; padding-bottom: 2.5rem; }
-.catalog-footer-brand { display: inline-flex; align-items: center; min-height: 44px; color: #fff; font-family: var(--lycium-font-brand); font-size: 1.5rem; font-weight: 850; line-height: 1; text-decoration: none; }
+.catalog-footer-inner {
+  width: 100%;
+  max-width: var(--lycium-content-max);
+  margin-inline: auto;
+  padding: clamp(1.75rem, 4vw, 3rem) var(--lycium-page-gutter) .75rem;
+}
+
+.catalog-footer-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 2.5rem);
+  padding-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.catalog-footer-brand { display: inline-flex; align-items: center; min-height: 2rem; color: #fff; font-family: var(--lycium-font-brand); font-size: 1.5rem; font-weight: 850; line-height: 1; text-decoration: none; }
 .catalog-footer-brand:hover { color: #fff; text-decoration: none; }
-.catalog-footer-identity p { margin: .75rem 0 0; font-size: .875rem; line-height: 1.6; color: #aeb8bd; }
-.catalog-footer h2 { margin: .75rem 0 1rem; font-size: .875rem; line-height: 1.5; font-weight: 650; color: #fff; }
+.catalog-footer-identity p { margin: .25rem 0 0; font-size: .875rem; line-height: 1.6; color: #aeb8bd; }
+.catalog-footer h2 { display: flex; align-items: center; min-height: 2rem; margin: 0 0 .25rem; font-size: .875rem; line-height: 1.5; font-weight: 650; color: #fff; }
 .catalog-footer ul { list-style: none; padding: 0; margin: 0; }
-.catalog-footer li a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; padding-block: .5rem; color: #b9c2c6; font-size: .875rem; line-height: 1.5; text-decoration: none; overflow-wrap: anywhere; }
+.catalog-footer li a { display: inline-flex; align-items: center; gap: .4rem; min-height: 2rem; padding-block: .25rem; color: #b9c2c6; font-size: .875rem; line-height: 1.5; text-decoration: none; overflow-wrap: anywhere; }
 .catalog-footer li a:hover, .catalog-footer-bottom a:hover { color: #fff; text-decoration: underline; text-underline-offset: 4px; }
 .catalog-footer li svg { flex: 0 0 auto; }
-.catalog-footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; padding-top: 1rem; border-top: 1px solid #303436; }
+.catalog-footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem 1rem; padding-top: .5rem; border-top: 1px solid #303436; }
 .catalog-footer-bottom p { margin: 0; color: #aeb8bd; font-size: .75rem; line-height: 1.6; }
-.catalog-footer-bottom a { display: inline-flex; align-items: center; min-height: 44px; color: #b9c2c6; font-size: .75rem; text-decoration: none; }
+.catalog-footer-bottom a { display: inline-flex; align-items: center; min-height: 2rem; color: #b9c2c6; font-size: .75rem; text-decoration: none; }
+
 @media (max-width: 700px) {
-  .catalog-footer-main { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
-  .catalog-footer-identity { grid-column: 1 / -1; padding-bottom: 1rem; }
+  .catalog-footer-main { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .catalog-footer-identity { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem .85rem; grid-column: 1 / -1; padding-bottom: .65rem; border-bottom: 1px solid #303436; }
+  .catalog-footer-identity p { margin: 0; }
 }
-@media (max-width: 480px) {
-  .catalog-footer-inner { padding-top: 2rem; }
-  .catalog-footer-main { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
-  .catalog-footer nav:last-child { grid-column: 1 / -1; }
-  .catalog-footer nav:last-child ul { display: flex; flex-wrap: wrap; column-gap: 1.5rem; }
+
+@media (max-width: 365px) {
+  .catalog-footer-main { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catalog-footer-main nav:last-child { grid-column: 1 / -1; }
+  .catalog-footer-main nav:last-child ul { display: flex; flex-wrap: wrap; column-gap: 1rem; }
+}
+
+@media (pointer: coarse) {
+  .catalog-footer :is(.catalog-footer-brand, li a, .catalog-footer-bottom a) { min-height: 2.75rem; }
 }

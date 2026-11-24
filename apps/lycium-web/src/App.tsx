@@ -10,6 +10,7 @@ import ProgramView from "./components/ProgramView/ProgramView";
 import AppSettingsModal from "./components/SettingsModal/AppSettingsModal";
 import TopBar from "./components/TopBar/TopBar";
 import LearnerPages from "./components/LearnerPages/LearnerPages";
+import ActivityLandingPage from "./components/LearnerPages/ActivityLandingPage";
 import CourseOverview from "./components/LearnerPages/CourseOverview";
 import CourseLoadState from "./components/LearnerPages/CourseLoadState";
 import ToolsPage from "./components/Tools/ToolsPage";
@@ -403,6 +404,8 @@ function App({ initialPath }: AppProps = {}) {
 
       {viewRoute.kind === "tools" ? (
         <ToolsPage />
+      ) : viewRoute.kind === "practice" || viewRoute.kind === "assessments" ? (
+        <ActivityLandingPage kind={viewRoute.kind} />
       ) : (routeCourses.length === 0 && (courseLoad.loading || courseLoad.error)) || (viewRoute.kind === "program" && courseLoad.programsLoading) ? (
         <CourseLoadState error={courseLoad.error} />
       ) : viewRoute.kind === "landing" || viewRoute.kind === "learning" ? (

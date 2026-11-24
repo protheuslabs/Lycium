@@ -311,7 +311,7 @@ export default function ProgramView({ program, courses, benchmarks, portfolioArt
     <main className="program-view-shell" id="main-content" tabIndex={-1}>
       <section className="program-hero-panel">
         <Button variant="nav" className="program-back-button" onClick={onOpenCatalog}>
-          <ArrowLeft size={16} aria-hidden="true" />Catalog
+          <ArrowLeft size={16} aria-hidden="true" />Courses
         </Button>
         <div>
           <p className="program-kicker">Program</p>

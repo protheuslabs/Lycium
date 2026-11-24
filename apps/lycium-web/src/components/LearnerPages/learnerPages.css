@@ -11,25 +11,71 @@
 @keyframes course-load-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .course-load-state [role="status"] svg { animation: none; } }
 .learner-page-inner { width: 100%; max-width: var(--lycium-content-max); padding: 3rem var(--lycium-page-gutter); margin-inline: auto; }
-.learner-home-hero { position: relative; min-height: 27rem; height: min(31rem, 62dvh); display: flex; align-items: center; background-image: var(--home-artwork); background-size: cover; background-position: center; color: #161b20; }
+.learner-display-heading {
+  font-family: var(--lycium-font-body);
+  font-weight: 650;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.learner-directory-page {
+  flex: 1 0 auto;
+  padding-bottom: clamp(3rem, 7vw, 6rem);
+}
+
+.learner-directory-heading {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--lycium-color-border);
+}
+
+.learner-directory-heading h1 {
+  margin: 0;
+  font-size: var(--lycium-page-title-size);
+  line-height: 1.2;
+}
+
+.learner-directory-heading p,
+.learner-directory-empty p {
+  max-width: 38rem;
+  margin: .75rem 0 0;
+  color: var(--lycium-color-text-muted);
+  line-height: 1.65;
+}
+
+.learner-directory-empty {
+  padding-top: 1.5rem;
+}
+
+.learner-directory-empty h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 650;
+}
+
+.learner-directory-empty .learner-text-link {
+  margin-top: .5rem;
+}
+
+.learner-home-hero { position: relative; min-height: 27rem; height: min(31rem, 62dvh); display: flex; align-items: center; background-image: var(--home-artwork); background-size: cover; background-position: center; color: #161b20; font-family: "SF Pro Text", -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Helvetica, Arial, sans-serif; }
 .learner-hero-content { width: 100%; max-width: var(--lycium-content-max); padding: 2.5rem var(--lycium-page-gutter); margin-inline: auto; }
 .learner-home-hero h1 { max-width: 40rem; margin: 0; font-size: 3.5rem; font-weight: 720; line-height: 1.1; color: #161b20; overflow-wrap: anywhere; }
-.learner-hero-description { margin: 1rem 0 0; font-size: 1.6rem; line-height: 1.4; font-weight: 600; color: #30383c; }
 .learner-hero-intro { max-width: 32rem; margin: .65rem 0 1.75rem; font-size: 1rem; line-height: 1.65; color: #30383c; }
 .learner-hero-actions { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; }
+
 .learner-primary-link, .learner-hero-secondary, .learner-text-link, .home-course-controls a { display: inline-flex; align-items: center; justify-content: center; gap: .65rem; min-height: 44px; font-size: .875rem; font-weight: 600; text-decoration: none; }
 .learner-primary-link { padding: .75rem 1rem; border: 1px solid transparent; border-radius: var(--lycium-radius-button); color: white; background: var(--lycium-brand-primary); font-family: inherit; cursor: pointer; }
 .learner-primary-link:hover { color: white; background: var(--lycium-brand-primary-hover); }
-.learner-hero-secondary, .learner-hero-secondary:hover { color: #20292d; }
+.learner-hero-secondary, .learner-hero-secondary:hover { color: var(--lycium-color-accent); }
 .learner-text-link, .home-course-controls a { color: var(--lycium-color-accent); }
 .learner-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.5rem; }
 .learner-section-heading h2, .home-continue h2, .dashboard-continue h2 { margin: 0; font-size: 1.5rem; line-height: 1.35; font-weight: 650; }
 .home-course-controls { display: flex; align-items: center; gap: 1.25rem; }
 .home-course-controls select { max-width: 15rem; min-width: 0; min-height: var(--lycium-control-height); border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); padding: .6rem; background: var(--lycium-color-surface-raised); color: var(--lycium-color-text); font: inherit; font-size: var(--lycium-control-font-size); }
 .home-continue { padding-bottom: 2.5rem; margin-bottom: 2.5rem; border-bottom: 1px solid var(--lycium-color-border); }
-.learning-model { padding: 2.5rem 0; border-bottom: 1px solid var(--lycium-color-border); margin-bottom: 2.5rem; scroll-margin-top: 1.5rem; }
-.learning-model-heading h2 { margin: 0 0 1.75rem; font-size: 1.5rem; line-height: 1.4; }
-.learning-model-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; }
+.learning-model { scroll-margin-top: 1.5rem; }
+.home-course-section + .learning-model { border-top: 1px solid var(--lycium-color-border); margin-top: 3rem; padding-top: 2.5rem; }
+.learner-home .learner-display-heading:is(h2) { margin: 0; font-size: 1.5rem; line-height: 1.4; }
+.learning-model-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2rem; margin-top: 1.75rem; }
 .learning-model-steps article { min-width: 0; }
 .learning-model-steps svg { color: var(--lycium-color-accent); }
 .learning-model-steps h3 { margin: .75rem 0 .4rem; font-size: 1rem; }
@@ -51,20 +97,19 @@
 .continue-lesson svg { flex-shrink: 0; }
 .continue-learning-bottom { display: flex; align-items: center; gap: 2rem; }
 .continue-progress.learner-progress { flex: 1; min-width: 0; margin: 0; }
-@media (max-width: 1100px) { .learner-page-inner, .learner-hero-content { padding-inline: var(--lycium-page-gutter); } }
 @media (max-width: 700px) {
   .learner-page-inner { padding: 1.75rem 1rem; }
   .learner-home-hero { height: 36rem; min-height: 0; max-height: 70dvh; align-items: flex-start; background-image: var(--home-mobile-artwork); background-position: center bottom; }
   .learner-hero-content { padding: 1.75rem 1rem; margin: 0; }
   .learner-home-hero h1 { font-size: 2.5rem; }
-  .learner-hero-description { font-size: 1.25rem; margin: .75rem 0 0; }
   .learner-hero-intro { margin: .5rem 0 1.25rem; font-size: .95rem; }
   .learner-hero-actions { gap: 1rem; }
   .learner-section-heading { align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
   .learner-section-heading h2, .home-continue h2, .dashboard-continue h2 { font-size: 1.25rem; }
   .home-course-controls { width: 100%; justify-content: space-between; gap: .75rem; }
+  .home-course-section + .learning-model { margin-top: 2rem; padding-top: 1.75rem; }
   .learning-model { padding-block: 1.75rem; margin-bottom: 1.75rem; }
-  .learning-model-steps { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  .learning-model-steps { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; margin-top: 1.75rem; }
   .home-course-grid--single .course-tile { display: flex; }
   .home-course-grid--single .course-tile > .course-artwork { height: auto; min-height: 0; aspect-ratio: 2 / 1; }
   .home-course-grid--single .course-tile-body { padding: 1.25rem; }
