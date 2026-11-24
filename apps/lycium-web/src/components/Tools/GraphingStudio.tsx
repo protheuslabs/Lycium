@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as ZoomIn, Minus as ZoomOut, Search } from "lucide-react";
+import { Calculator, Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as ZoomIn, Minus as ZoomOut } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import { graphExpressionCurve, type GraphExpression } from "./graphExpressions";
 import { parseGraphDomain } from "./graphDomain";
@@ -365,13 +365,12 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   return (
     <div className={`graphing-studio${workspace ? " graphing-studio--workspace" : ""}`}>
       {!workspace && <header className="graphing-heading">
-        <h1>Graphing Studio</h1>
+        <h1>Olivine</h1>
         <p>Explore functions and compare their shapes. Drag to pan, scroll or pinch to zoom.</p>
       </header>}
       {workspace && headerTarget ? createPortal(workspaceActions, headerTarget) : workspaceActions}
       <div className={`graphing-layout${expressionsVisible ? "" : " graphing-layout--collapsed"}`} style={{ "--graph-panel-width": `${panelWidth}px` } as CSSProperties}>
         <aside id={`${id}-expressions`} className={`graphing-expressions${expressionsVisible ? "" : " graphing-expressions--collapsed"}`} aria-hidden={!expressionsVisible} aria-labelledby={`${id}-functions`}>
-          <button type="button" className="graphing-panel-toggle graphing-sidebar-toggle" aria-label="Hide functions panel" title="Hide functions panel" aria-expanded="true" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(false)}><PanelLeftClose size={18} aria-hidden="true" /></button>
           {documentError && <p className="graphing-error" role="alert">{documentError}</p>}
 
           <h2 id={`${id}-functions`} className="sr-only">Functions</h2>
@@ -496,9 +495,10 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
             onPointerUp={() => { resizeStart.current = null; }} onPointerCancel={() => { resizeStart.current = null; }}
             onKeyDown={(event) => { const delta = event.key === "ArrowRight" ? 10 : event.key === "ArrowLeft" ? -10 : 0; if (delta) { event.preventDefault(); setPanelWidth((width) => Math.max(280, Math.min(480, width + delta))); } }} />
         <section className="graphing-graph" aria-label="Interactive graph">
-          {!expressionsVisible && <button type="button" className="graphing-panel-toggle graphing-panel-reopen" aria-label="Show functions panel" title="Show functions panel" aria-expanded="false" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(true)}><PanelLeftOpen size={18} aria-hidden="true" /></button>}
+          <button type="button" className="graphing-panel-toggle graphing-panel-reopen" aria-label={expressionsVisible ? "Hide functions panel" : "Show functions panel"} title={expressionsVisible ? "Hide functions panel" : "Show functions panel"} aria-expanded={expressionsVisible} aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible((visible) => !visible)}>{expressionsVisible ? <PanelLeftClose size={18} aria-hidden="true" /> : <PanelLeftOpen size={18} aria-hidden="true" />}</button>
             <div className="graphing-graph-controls">
-<details ref={analysisRef} className="graph-analysis-menu"><summary aria-label="Graph analysis" title="Graph analysis"><Search size={19} aria-hidden="true" /></summary><div className="graph-analysis-popover">
+<details ref={analysisRef} className="graph-analysis-menu"><summary aria-label="Graph analysis" title="Graph analysis"><Calculator size={19} aria-hidden="true" /></summary><div className="graph-analysis-popover">
+              <h2>Analysis</h2>
               <details><summary>Area between curves</summary>
                 <p>Select the first function in the sidebar.</p>
                 <label>Second function <select value={areaSecond} onChange={(event) => setAreaSecond(event.target.value)}><option value="">Choose a function</option>{expressions.map((expression, index) => <option key={expression.id} value={expression.id}>Function {index + 1}</option>)}</select></label>
@@ -506,14 +506,14 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                 <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { setIntegralEnd(event.target.value); setArea(null); }} /></label>
                 <button type="button" onClick={() => void calculateArea()}>Calculate area</button>
                 {areaError && <p className="graphing-error" role="alert">{areaError}</p>}
-                {area !== null && !areaError && <p role="status">Approximate area: {Number(area.toPrecision(8))}</p>}
+                {area !== null && !areaError && <p role="status">Approximate area: {Number(area.toPrecision(4))}</p>}
               </details>
               <details><summary>Signed integral</summary>
                 <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { setIntegralStart(event.target.value); setIntegral(null); }} /></label>
                 <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { setIntegralEnd(event.target.value); setIntegral(null); }} /></label>
                 <button type="button" onClick={() => void calculateIntegral()}>Calculate for selected function</button>
                 {integralError && <p className="graphing-error" role="alert">{integralError}</p>}
-                {integral !== null && <p role="status">Approximate signed integral: {Number(integral.toPrecision(8))}</p>}
+                {integral !== null && <p role="status">Approximate signed integral: {Number(integral.toPrecision(4))}</p>}
               </details>
               <details><summary>Table of values</summary>
                 <label>Start x <input type="number" step="any" value={tableStart} onChange={(event) => setTableStart(event.target.value)} /></label>
@@ -523,16 +523,20 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                 {tableError && <p className="graphing-error" role="alert">{tableError}</p>}
                 {values && <table><thead><tr><th scope="col">x</th><th scope="col">y</th></tr></thead><tbody>{values.map(({ x, y }, index) => <tr key={index}><td>{Number(x.toPrecision(8))}</td><td>{y === null ? "Undefined" : Number(y.toPrecision(8))}</td></tr>)}</tbody></table>}
               </details>
+              <details><summary>Tangent and slope</summary>
               <label>Tangent at x <input type="number" step="any" value={tangentX} onChange={(event) => setTangentX(event.target.value)} /></label>
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void inspectTangent()}>Show tangent for selected function</button>
               {tangentError && <p className="graphing-error" role="alert">{tangentError}</p>}
               {tangent && <p role="status">Point ({Number(tangent.x.toPrecision(6))}, {Number(tangent.y.toPrecision(6))}) · slope {Number(tangent.slope.toPrecision(6))} <button type="button" onClick={() => setTangent(null)}>Clear</button></p>}
+              </details>
+              <details><summary>Intersections and intercepts</summary>
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("crossings")}>Find intersections</button>
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("intercepts")}>Find intercepts</button>
               <p className="graphing-hint">Approximate crossings in the current view. Tangencies and some intersections may be missed. Search again after moving the view.</p>
               {crossingError && <p className="graphing-error" role="alert">{crossingError}</p>}
               {crossings && <div role="status">{crossings.length === 0 ? <p className="graphing-hint">No crossings found in this view.</p> : <ul className="graph-crossings">{crossings.map((crossing, index) => <li key={`${crossing.first}-${crossing.second}-${index}`}><span>Functions {expressions.findIndex((item) => item.id === crossing.first) + 1} &amp; {expressions.findIndex((item) => item.id === crossing.second) + 1}: ({Number(crossing.x.toPrecision(6))}, {Number(crossing.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(crossing.x, crossing.y)} aria-label={`Add intersection ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
               {intercepts && <div role="status">{intercepts.length === 0 ? <p className="graphing-hint">No intercepts found in this view.</p> : <ul className="graph-crossings">{intercepts.map((intercept, index) => <li key={`${intercept.curve}-${intercept.axis}-${index}`}><span>Function {expressions.findIndex((item) => item.id === intercept.curve) + 1}, {intercept.axis}-axis: ({Number(intercept.x.toPrecision(6))}, {Number(intercept.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(intercept.x, intercept.y)} aria-label={`Add intercept ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
+              </details>
             </div></details>
             <div className="graphing-view-controls">
               <button type="button" className="graphing-icon-button" aria-label="Zoom in" title="Zoom in" onClick={() => graphRef.current?.zoom(0.8)}><ZoomIn size={19} aria-hidden="true" /></button>

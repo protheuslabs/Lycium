@@ -157,6 +157,10 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
         let maintainEqualScale = !initialViewportRef.current;
         let trace: { x: number; y: number } | null = null;
         let pointerStart: { x: number; y: number } | null = null;
+        const drawnExpressions = new Set<string>();
+        let entranceFrame = 0;
+        let lastDrawnSources = new Map<string, string>();
+        let lastDrawnIds: string[] = [];
 
         const updatePointPositions = () => {
           const meta = chart?.meta;
@@ -364,7 +368,29 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
 
         const updateFunctionEmphasis = () => {
           const svg = target.querySelector("svg.function-plot");
-          if (!svg) return;
+          const meta = chart?.meta;
+          if (!svg || !meta) return;
+          // The interval sampler clamps off-screen samples to y=-1/height,
+          // leaving a colored hairline along the plot boundary. Clip only the
+          // curve paths slightly inside the viewport, not the axes or grid.
+          const content = svg.querySelector(".content");
+          const baseClip = content?.getAttribute("clip-path")?.match(/#([^)]*)/)?.[1];
+          if (baseClip) {
+            const clipId = `${baseClip}-curves`;
+            let clip = svg.querySelector<SVGClipPathElement>(`[id="${clipId}"]`);
+            if (!clip) {
+              clip = document.createElementNS("http://www.w3.org/2000/svg", "clipPath");
+              clip.id = clipId;
+              clip.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "rect"));
+              svg.querySelector("defs")?.appendChild(clip);
+            }
+            const rect = clip.querySelector("rect");
+            if (rect) {
+              rect.setAttribute("x", "0"); rect.setAttribute("y", "2");
+              rect.setAttribute("width", String(meta.width ?? 0)); rect.setAttribute("height", String(Math.max(0, (meta.height ?? 0) - 4)));
+            }
+            svg.querySelectorAll<SVGPathElement>(".graph path.line").forEach((path) => path.setAttribute("clip-path", `url(#${clipId})`));
+          }
           const expressionIds = configRef.current.expressions.filter((expression) => expression.visible).flatMap((expression) => {
             try { return prepareGraphPieces(expression, configRef.current.parameters, library).map(() => expression.id); }
             catch { return []; }
@@ -375,6 +401,24 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             group.style.opacity = configRef.current.selectedExpressionId && !selected ? "0.62" : "1";
             group.querySelectorAll<SVGPathElement>("path.line").forEach((path) => { path.style.strokeWidth = selected ? "2.8px" : "2px"; });
           });
+        };
+
+        const animateNewExpressions = () => {
+          const svg = target.querySelector("svg.function-plot");
+          if (!svg) return;
+          const ids = configRef.current.expressions.filter((expression) => expression.visible && expression.id !== "__tangent__").flatMap((expression) => {
+            try { return prepareGraphPieces(expression, configRef.current.parameters, library).map(() => expression.id); }
+            catch { return []; }
+          });
+          const groups = [...svg.querySelectorAll<SVGGElement>(".graph")];
+          const newlyDrawn = new Set(ids.filter((id) => !drawnExpressions.has(id)));
+          ids.forEach((id, index) => {
+            const group = groups[index];
+            if (!group || !newlyDrawn.has(id)) return;
+            group.classList.add("graph-curve-entrance");
+            group.addEventListener("animationend", () => group.classList.remove("graph-curve-entrance"), { once: true });
+          });
+          newlyDrawn.forEach((id) => drawnExpressions.add(id));
         };
 
         const makeOptions = (xDomain?: number[], yDomain?: number[]): FunctionPlotOptions => ({
@@ -394,6 +438,10 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           // A hidden embed can be zero-sized. Wait for its host to reveal it.
           if (width < 100 || height < 100) return;
           const data: FunctionPlotDatum[] = [];
+          const previousSvg = target.querySelector("svg.function-plot");
+          const previousGroups = previousSvg ? [...previousSvg.querySelectorAll<SVGGElement>(".graph")] : [];
+          const changedSources = new Set(configRef.current.expressions.filter((expression) => lastDrawnSources.has(expression.id) && lastDrawnSources.get(expression.id) !== expression.expr).map((expression) => expression.id));
+          const fadingGroups = !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? previousGroups.flatMap((group, index) => changedSources.has(lastDrawnIds[index]) ? [group.cloneNode(true) as SVGGElement] : []) : [];
           const errors: Record<string, string> = {};
           for (const expression of configRef.current.expressions) {
             const fn = expression.expr.trim().replace(/^y\s*=\s*/i, "");
@@ -445,8 +493,6 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
               chart.on("before:mousemove", (coordinates: { x: number; y: number }) => {
                 hasTracePoint = false;
                 trace = null;
-                const legend = target.querySelector(".top-right-legend");
-                if (legend) legend.textContent = "";
                 if (!configRef.current.snapToGrid) return;
                 const domain = chart?.meta.xScale?.domain() ?? [];
                 // The visible grid divides each major unit into five cells. Snap
@@ -459,8 +505,6 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
                 hasTracePoint = true;
                 trace = { x, y };
                 chart?.tip.show();
-                const legend = target.querySelector(".top-right-legend");
-                if (legend) legend.textContent = coordinateText(x, y);
               });
               chart.on("mousemove", () => {
                 if (!hasTracePoint) chart?.tip.hide();
@@ -470,6 +514,27 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             updateGrid();
             updateLabels();
             updateFunctionEmphasis();
+            cancelAnimationFrame(entranceFrame);
+            entranceFrame = requestAnimationFrame(animateNewExpressions);
+            const currentSvg = target.querySelector("svg.function-plot");
+            const currentGroups = currentSvg ? [...currentSvg.querySelectorAll<SVGGElement>(".graph")] : [];
+            const currentIds = configRef.current.expressions.filter((expression) => expression.visible && !errors[expression.id]).flatMap((expression) => {
+              try { return prepareGraphPieces(expression, configRef.current.parameters, library).map(() => expression.id); }
+              catch { return []; }
+            });
+            currentGroups.forEach((group, index) => {
+              if (fadingGroups.length && changedSources.has(currentIds[index])) group.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 180, easing: "ease-out" });
+            });
+            for (const clone of fadingGroups) {
+              const parent = currentGroups[0]?.parentNode;
+              if (!parent) break;
+              clone.classList.remove("graph", "graph-curve-entrance");
+              clone.setAttribute("pointer-events", "none");
+              parent.appendChild(clone);
+              clone.animate([{ opacity: 0.7 }, { opacity: 0 }], { duration: 180, easing: "ease-out" }).onfinish = () => clone.remove();
+            }
+            lastDrawnSources = new Map(configRef.current.expressions.filter((expression) => expression.visible && !errors[expression.id]).map((expression) => [expression.id, expression.expr]));
+            lastDrawnIds = currentIds;
             updatePin();
             updatePointPositions();
             requestAnimationFrame(() => target.classList.remove("graph-plot-target--updating"));

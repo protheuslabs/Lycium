@@ -276,17 +276,17 @@ test("Studio retains drafts and creation while public discovery shows published 
   expect(dialogRadii.every((radius) => radius === "8px")).toBe(true);
 });
 
-test("the Tools tile opens Graphing Studio", async ({ page }) => {
+test("the Tools tile opens Olivine", async ({ page }) => {
   await page.goto("/Lycium/");
   await followPrimaryNavigation(page, "Tools");
   await expect(page).toHaveURL(/\/tools$/);
   await expect(page.getByRole("heading", { name: "Tools", level: 1 })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Graphing Studio", level: 3 })).toBeVisible();
-  const tool = page.getByRole("link", { name: "Graphing Studio", exact: true });
+  await expect(page.getByRole("heading", { name: "Olivine", level: 3 })).toBeVisible();
+  const tool = page.getByRole("link", { name: "Olivine", exact: true });
   await expect(tool).toHaveAccessibleDescription("Plot functions, compare datasets, and fit regression models.");
   await tool.click();
   await expect(page).toHaveURL(/\/tools\/graph$/);
-  await expect(page.getByRole("heading", { name: "Graphing Studio", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Olivine", level: 1 })).toBeVisible();
 });
 
 test("catalog supports accessible grid and list layouts with a real result count", async ({ page }) => {

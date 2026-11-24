@@ -1,6 +1,6 @@
 # Flashcards
 
-The standalone workspace lives at `/tools/flashcards`, using the same header dimensions, theme tokens, and `ToolFrame` spacing as Graphing Studio.
+The standalone workspace lives at `/tools/flashcards`, using the same header dimensions, theme tokens, and `ToolFrame` spacing as Olivine.
 
 Study mode displays read-only deck metadata. The mobile deck title is a compact picker; it does not repeat the desktop sidebar and description. Renaming, color selection, and deletion live in Edit cards. The study action area presents Reveal answer first, then the two grading choices at the same height. The prompt is darker than the answer and both have a bottom accent border.
 

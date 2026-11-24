@@ -82,13 +82,13 @@ reserved for overlays and genuinely elevated surfaces.
 The following are product directions, not prerequisites for the first release:
 
 - A searchable Tools directory and native tool workspaces, beginning with a
-  graphing studio when that tool has a real implementation.
+  Olivine when that tool has a real implementation.
 - Presentation Studio with supported interactive media and imports.
 - A textbook reader with actual chapter, figure, equation, and annotation data.
 - A digital library and any future Lycium Press collection.
 - Contextual tutoring tied to course material and comprehension checks.
 
-The Tools destination exists as a directory shell. Its Graphing Studio entry is
+The Tools destination exists as a directory shell. Its Olivine entry is
 marked `In development` and intentionally has no launch link until a usable tool
 exists. Catalog creation and review live at `/studio`; public discovery contains
 published courses only.

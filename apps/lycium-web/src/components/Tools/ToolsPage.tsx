@@ -31,7 +31,7 @@ export default function ToolsPage() {
                 </svg>
               </div>
               <div className="tool-entry-content">
-                <h3 id="graphing-studio-title">Graphing Studio</h3>
+                <h3 id="graphing-studio-title">Olivine</h3>
                 <p id="graphing-studio-summary">Plot functions, compare datasets, and fit regression models.</p>
                 <span className="tool-entry-action" aria-hidden="true">
                   Open workspace <ArrowRight size={16} />

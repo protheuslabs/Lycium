@@ -234,6 +234,38 @@
 .graphing-studio--workspace .graphing-view-controls .graphing-icon-button { width: 2.5rem; height: 2.5rem; min-height: 2.5rem; padding: .55rem; border: 0; background: transparent; }
 .graphing-studio--workspace .graphing-view-controls button:hover { background: var(--lycium-color-control-hover); }
 
+/* Keep every collapsed expression row aligned, while allowing expanded content to grow. */
+.graphing-studio--workspace .graphing-expression { box-sizing: border-box; padding-block: 0; }
+.graphing-studio--workspace .graphing-expression-row,
+.graphing-studio--workspace .graph-dataset-title,
+.graphing-studio--workspace .graph-point-row,
+.graphing-studio--workspace .graphing-parameter-header { box-sizing: border-box; min-height: 3.5rem; align-items: center; }
+.graphing-studio--workspace .graph-sidebar-item-content .graph-dataset:not(:focus-within):not(.graph-selectable-row--selected) { height: calc(3.5rem + 2px); min-height: calc(3.5rem + 2px); }
+.graphing-studio--workspace .graph-sidebar-item-content .graph-point-row { padding-block: 0; }
+.graphing-studio--workspace :is(.graphing-expression-row, .graph-dataset-title, .graph-point-row, .graphing-parameter-header) > .graphing-icon-button { align-self: center; }
+
+.graphing-studio--workspace .graphing-graph-controls { border-radius: 1.5rem; border-color: rgb(255 255 255 / 65%); background: linear-gradient(145deg, rgb(255 255 255 / 32%), rgb(255 255 255 / 8%)); backdrop-filter: blur(6px) saturate(1.3); -webkit-backdrop-filter: blur(6px) saturate(1.3); box-shadow: 0 6px 24px rgb(15 23 42 / 12%), inset 0 1px 0 rgb(255 255 255 / 65%); }
+.graphing-studio--workspace .graphing-graph-controls :is(.graph-settings > summary, .graph-analysis-menu > summary) { background: transparent; }
+.graphing-studio--workspace .graphing-graph-controls :is(.graph-settings > summary, .graph-analysis-menu > summary):hover { background: var(--lycium-color-control-hover); }
+.graphing-studio--workspace .graphing-graph-controls :is(summary, .graphing-icon-button) { border-radius: .8rem; }
+.graphing-studio--workspace .graphing-panel-toggle { width: 2.25rem; min-height: 2.25rem; height: 2.25rem; padding: .45rem; border: 1px solid transparent; border-radius: .75rem; color: var(--lycium-color-text-muted); background: transparent; box-shadow: none; transition: color .15s ease, background .15s ease, border-color .15s ease; }
+.graphing-studio--workspace .graphing-panel-toggle:hover { color: var(--lycium-color-text); background: var(--lycium-color-control-hover); }
+.graphing-studio--workspace .graphing-panel-toggle:focus-visible { outline: 2px solid var(--lycium-color-accent); outline-offset: 2px; }
+.graphing-studio--workspace .graphing-sidebar-toggle { margin: .45rem .55rem; }
+.graphing-studio--workspace .graphing-panel-reopen { background: linear-gradient(145deg, rgb(255 255 255 / 32%), rgb(255 255 255 / 8%)); border-color: rgb(255 255 255 / 65%); backdrop-filter: blur(6px) saturate(1.3); -webkit-backdrop-filter: blur(6px) saturate(1.3); box-shadow: 0 6px 24px rgb(15 23 42 / 12%), inset 0 1px 0 rgb(255 255 255 / 65%); }
+
+.graph-analysis-popover { width: min(22rem, calc(100vw - 5rem)); padding: .9rem; border-radius: 1rem; }
+.graph-analysis-popover h2 { margin: 0 0 .6rem; font-size: .95rem; font-weight: 700; }
+.graph-analysis-popover > details { border-top: 1px solid var(--lycium-color-border); }
+.graph-analysis-popover > details > summary { padding: .7rem .15rem; cursor: pointer; font-size: .86rem; font-weight: 600; }
+.graph-analysis-popover > details[open] { padding-bottom: .75rem; }
+.graph-analysis-popover label { display: grid; gap: .3rem; margin: .55rem 0; color: var(--lycium-color-text-muted); font-size: .78rem; font-weight: 600; }
+.graph-analysis-popover :is(input, select) { box-sizing: border-box; width: 100%; min-width: 0; min-height: 2.3rem; padding: .45rem .6rem; border: 1px solid var(--lycium-color-border); border-radius: .55rem; color: var(--lycium-color-text); background: var(--lycium-color-control-surface); font: inherit; font-size: .85rem; }
+.graphing-studio .graph-analysis-popover details > button { width: 100%; margin-top: .45rem; }
+.graph-analysis-popover :is(p, [role="status"]) { margin: .6rem 0; font-size: .8rem; line-height: 1.5; }
+.graph-analysis-popover table { width: 100%; margin-top: .65rem; border-collapse: collapse; font-size: .8rem; text-align: left; font-variant-numeric: tabular-nums; }
+.graph-analysis-popover :is(th, td) { padding: .4rem; border-bottom: 1px solid var(--lycium-color-border); }
+
 .graphing-discovery-content { box-sizing: border-box; width: min(100%, 1100px); margin: 0 auto; padding: 2rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)) 3rem; color: var(--lycium-color-text); background: var(--lycium-color-canvas); }
 .graphing-discovery-content h2 { margin: 0; font-family: var(--lycium-font-display); font-size: 1.7rem; }
 .graphing-discovery-content > p { max-width: 760px; margin: .65rem 0 1.3rem; color: var(--lycium-color-text-muted); line-height: 1.7; }
