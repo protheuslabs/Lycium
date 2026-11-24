@@ -37,7 +37,7 @@ export default function GraphPage() {
       </header>
       <main id="main-content" tabIndex={-1} className="graphing-workspace-main">
         <p className="sr-only">Graphing Studio is an interactive online graphing calculator for plotting functions, comparing curves, exploring parameters, and visualizing scientific data.</p>
-        <ToolFrame fill>
+        <ToolFrame fill className="graphing-tool-frame">
           <GraphingStudio workspace />
         </ToolFrame>
       </main>

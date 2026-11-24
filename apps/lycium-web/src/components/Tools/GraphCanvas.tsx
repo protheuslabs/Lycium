@@ -4,7 +4,8 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import type { Chart, FunctionPlotDatum, FunctionPlotOptions } from "function-plot";
 import { formatCoordinate, gridStepFromTicks, snapCoordinate, type CoordinatePrecision } from "./graphCoordinates";
 import type { GraphLabels, GraphPoint } from "./graphDocument";
-import { prepareGraphExpression, type GraphExpression } from "./graphExpressions";
+import { graphExpressionCurve, prepareGraphPieces, type GraphExpression } from "./graphExpressions";
+import { findCrossings, findIntercepts, type Curve } from "./graphIntersections";
 import { exponentialRegression, linearRegression, numericPoints, type GraphDataset } from "./graphDataset";
 import "./graphCanvas.css";
 
@@ -169,7 +170,25 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           const bounds = container.getBoundingClientRect();
           const x = meta.xScale.invert(clientX - bounds.left);
           const y = meta.yScale.invert(clientY - bounds.top);
-          return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+          if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+          const step = Math.min(gridStepFromTicks(meta.xScale.ticks()), gridStepFromTicks(meta.yScale.ticks())) / 5;
+          const snapped = { x: snapCoordinate(x, step, meta.xScale.domain()), y: snapCoordinate(y, step, meta.yScale.domain()) };
+          try {
+            const curves: Curve[] = configRef.current.expressions.filter((expression) => expression.visible && expression.expr.trim()).flatMap((expression) => {
+              try { return [graphExpressionCurve(expression, configRef.current.parameters, library)]; }
+              catch { return []; }
+            });
+            const candidates = [
+              ...findIntercepts(curves, meta.xScale.domain() as [number, number], meta.yScale.domain() as [number, number]),
+              ...findCrossings(curves.slice(0, 8), meta.xScale.domain() as [number, number]),
+            ];
+            let nearest = 20;
+            for (const candidate of candidates) {
+              const distance = Math.hypot(meta.xScale(candidate.x) - meta.xScale(x), meta.yScale(candidate.y) - meta.yScale(y));
+              if (distance < nearest) { nearest = distance; snapped.x = candidate.x; snapped.y = candidate.y; }
+            }
+          } catch { /* Invalid expressions still allow grid snapping. */ }
+          return snapped;
         };
 
         const updatePin = () => {
@@ -291,13 +310,38 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           for (const value of meta.yScale.ticks()) if (value !== 0) addNumber(value, yStep, yAxisPosition, meta.yScale(value) + top + 4, "end");
           group.appendChild(numbers);
           for (const item of labels.annotations) if (item.x >= Math.min(x0, x1) && item.x <= Math.max(x0, x1) && item.y >= Math.min(y0, y1) && item.y <= Math.max(y0, y1)) add(item.text, meta.xScale(item.x) + (meta.margin?.left ?? 0), meta.yScale(item.y) + (meta.margin?.top ?? 0) - 8);
+          for (const expression of configRef.current.expressions) {
+            if (!expression.visible) continue;
+            try {
+              for (const { datum, domain } of prepareGraphPieces(expression, configRef.current.parameters, library)) {
+              if (!domain) continue;
+              for (const [x, included] of [[domain.min, domain.includeMin], [domain.max, domain.includeMax]] as const) {
+                const y = library.EvalBuiltIn(datum, "fn", { x });
+                if (!Number.isFinite(y) || x < Math.min(x0, x1) || x > Math.max(x0, x1) || y < Math.min(y0, y1) || y > Math.max(y0, y1)) continue;
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("class", "graph-domain-endpoint");
+                circle.setAttribute("cx", String(meta.xScale(x) + left));
+                circle.setAttribute("cy", String(meta.yScale(y) + top));
+                circle.setAttribute("r", "4");
+                circle.setAttribute("fill", included ? expression.color : "white");
+                circle.setAttribute("stroke", expression.color);
+                circle.setAttribute("stroke-width", "2");
+                circle.setAttribute("pointer-events", "none");
+                group.appendChild(circle);
+              }
+              }
+            } catch { /* Invalid expressions and undefined endpoints have no marker. */ }
+          }
           svg.appendChild(group);
         };
 
         const updateFunctionEmphasis = () => {
           const svg = target.querySelector("svg.function-plot");
           if (!svg) return;
-          const expressionIds = configRef.current.expressions.filter((expression) => expression.visible).map((expression) => expression.id);
+          const expressionIds = configRef.current.expressions.filter((expression) => expression.visible).flatMap((expression) => {
+            try { return prepareGraphPieces(expression, configRef.current.parameters, library).map(() => expression.id); }
+            catch { return []; }
+          });
           const groups = [...svg.querySelectorAll<SVGGElement>(".graph")];
           groups.slice(0, expressionIds.length).forEach((group, index) => {
             const selected = expressionIds[index] === configRef.current.selectedExpressionId;
@@ -328,8 +372,8 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             const fn = expression.expr.trim().replace(/^y\s*=\s*/i, "");
             if (!fn) continue;
             try {
-              const datum = prepareGraphExpression(expression, configRef.current.parameters, library);
-              if (expression.visible) data.push(datum);
+              const pieces = prepareGraphPieces(expression, configRef.current.parameters, library);
+              if (expression.visible) data.push(...pieces.map(({ datum }) => datum));
             } catch (cause) {
               errors[expression.id] = cause instanceof Error ? cause.message : "Check the expression syntax.";
             }
@@ -516,8 +560,6 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
         if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
         const coords = pointCoordsRef.current?.(event.clientX, event.clientY);
         if (coords && containerRef.current) {
-          const bounds = containerRef.current.getBoundingClientRect();
-          setPointPositions((previous) => previous.map((item) => item.id === point.id ? { ...item, left: event.clientX - bounds.left, top: event.clientY - bounds.top } : item));
           pointMoveRef.current?.(point.id, Number(coords.x.toPrecision(8)), Number(coords.y.toPrecision(8)));
         }
       }} />)}

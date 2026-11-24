@@ -4,7 +4,8 @@ import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 
 import { createPortal } from "react-dom";
 import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as ZoomIn, Minus as ZoomOut, Search } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
-import type { GraphExpression } from "./graphExpressions";
+import { graphExpressionCurve, type GraphExpression } from "./graphExpressions";
+import { parseGraphDomain } from "./graphDomain";
 import ParameterSliders from "./ParameterSliders";
 import DatasetPanel from "./DatasetPanel";
 import GraphLabelsPanel from "./GraphLabelsPanel";
@@ -21,12 +22,29 @@ const DEFAULT_EXPRESSIONS: GraphExpression[] = [
   { expr: "x^2", id: "1", color: COLORS[0], visible: true },
   { expr: "sin(x)", id: "2", color: COLORS[1], visible: true },
 ];
-type FunctionAdjustment = { base: string; magnitude: number; horizontal: number; vertical: number };
-const adjustmentExpression = ({ base, magnitude, horizontal, vertical }: FunctionAdjustment) => {
-  const source = base.trim().replace(/^y\s*=\s*/i, "");
-  if (/^x\^2$/i.test(source)) return `${magnitude}*(x-(${horizontal}))^2+(${vertical})`;
-  if (/^sin\(x\)$/i.test(source)) return `${magnitude}*sin(x-(${horizontal}))+(${vertical})`;
-  return `${magnitude}*(${source})+(${vertical})`;
+type FunctionAdjustment = { base: string; magnitude: number; horizontal: number; vertical: number; frequency: number };
+type AdjustmentCapabilities = { horizontal: boolean; frequency: boolean };
+const getAdjustmentCapabilities = (expression: string): AdjustmentCapabilities => {
+  const source = expression.trim().replace(/^y\s*=\s*/i, "").replace(/\s+/g, "");
+  const usesX = /\bx\b/i.test(source);
+  return {
+    // Transform controls are useful for every explicit x-function. Only
+    // exclude them when the expression has no x input to transform.
+    horizontal: usesX,
+    frequency: usesX,
+  };
+};
+const defaultAdjustment = (base: string): FunctionAdjustment => ({ base, magnitude: 1, horizontal: 0, vertical: 0, frequency: 1 });
+const adjustmentExpression = ({ base, magnitude, horizontal, vertical, frequency }: FunctionAdjustment) => {
+  let source = base.trim();
+  let restriction = "";
+  try {
+    const parsed = parseGraphDomain(source);
+    if (parsed.domain) { restriction = source.slice(source.indexOf("{")); source = parsed.expression; }
+  } catch { return base; }
+  source = source.replace(/^y\s*=\s*/i, "");
+  const transformedSource = source.replace(/\bx\b/gi, `(${frequency}*(x-(${horizontal})))`);
+  return `${magnitude}*(${transformedSource})+(${vertical})${restriction}`;
 };
 
 export default function GraphingStudio({ workspace = false, initialDocument }: { workspace?: boolean; initialDocument?: GraphDocument }) {
@@ -119,8 +137,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
     try {
       const library = await import("function-plot");
       const curves: Curve[] = active.map((expression) => {
-        const datum = { fn: expression.expr.trim().replace(/^y\s*=\s*/i, ""), scope: { ...parameterValues } };
-        return { id: expression.id, evaluate: (x) => library.EvalBuiltIn(datum, "fn", { x }), interval: (lo, hi) => library.EvalInterval(datum, "fn", { x: { lo, hi } }) };
+        return graphExpressionCurve(expression, parameterValues, library);
       });
       if (kind === "crossings") {
         setCrossings(findCrossings(curves, viewport.x).filter(({ y }) => y >= viewport.y[0] && y <= viewport.y[1]));
@@ -139,11 +156,11 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
 
   const selectExpression = (expression: GraphExpression) => {
     setSelectedRowKey(`function:${expression.id}`);
-    setAdjustments((previous) => previous[expression.id] ? previous : { ...previous, [expression.id]: { base: expression.expr, magnitude: 1, horizontal: 0, vertical: 0 } });
+    setAdjustments((previous) => previous[expression.id] ? previous : { ...previous, [expression.id]: defaultAdjustment(expression.expr) });
   };
 
   const updateAdjustment = (expression: GraphExpression, update: Partial<FunctionAdjustment>) => {
-    const current = adjustments[expression.id] ?? { base: expression.expr, magnitude: 1, horizontal: 0, vertical: 0 };
+    const current = adjustments[expression.id] ?? defaultAdjustment(expression.expr);
     const next = { ...current, ...update };
     setAdjustments((previous) => ({ ...previous, [expression.id]: next }));
     updateExpression(expression.id, { expr: adjustmentExpression(next) });
@@ -323,7 +340,10 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                     invalid={Boolean(errors[expression.id])}
                     describedBy={errors[expression.id] ? `${id}-error-${expression.id}` : undefined}
                     value={expression.expr}
-                    onChange={(value) => { setAdjustments((previous) => { const next = { ...previous }; delete next[expression.id]; return next; }); updateExpression(expression.id, { expr: value }); }}
+                    onChange={(value) => {
+                      setAdjustments((previous) => ({ ...previous, [expression.id]: defaultAdjustment(value) }));
+                      updateExpression(expression.id, { expr: value });
+                    }}
                     onDraftError={(invalid) => setInvalidDrafts((previous) => ({ ...previous, [expression.id]: invalid }))}
                   />
                   </div>
@@ -331,12 +351,13 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                     <X size={18} aria-hidden="true" />
                   </button>
                 </div>
-                {selectedRowKey === `function:${expression.id}` && (() => {
-                  const adjustment = adjustments[expression.id] ?? { base: expression.expr, magnitude: 1, horizontal: 0, vertical: 0 };
-                  const supportsHorizontal = /^\s*(?:y\s*=\s*)?(?:x\^2|sin\(x\))\s*$/i.test(adjustment.base);
+                {selectedRowKey === `function:${expression.id}` && !expression.expr.includes(";") && (() => {
+                  const adjustment = adjustments[expression.id] ?? defaultAdjustment(expression.expr);
+                  const capabilities = getAdjustmentCapabilities(adjustment.base || expression.expr);
                   return <div className="graph-function-adjustments" aria-label={`Adjust function ${index + 1}`}>
                     <label>Magnitude <input type="range" min="-3" max="3" step="0.1" value={adjustment.magnitude} onChange={(event) => updateAdjustment(expression, { magnitude: Number(event.target.value) })} /><output>{adjustment.magnitude}</output></label>
-                    {supportsHorizontal && <label>Horizontal <input type="range" min="-5" max="5" step="0.1" value={adjustment.horizontal} onChange={(event) => updateAdjustment(expression, { horizontal: Number(event.target.value) })} /><output>{adjustment.horizontal}</output></label>}
+                    {capabilities.frequency && <label>Frequency <input type="range" min="0.1" max="4" step="0.1" value={adjustment.frequency} onChange={(event) => updateAdjustment(expression, { frequency: Number(event.target.value) })} /><output>{adjustment.frequency}</output></label>}
+                    {capabilities.horizontal && <label>Horizontal <input type="range" min="-5" max="5" step="0.1" value={adjustment.horizontal} onChange={(event) => updateAdjustment(expression, { horizontal: Number(event.target.value) })} /><output>{adjustment.horizontal}</output></label>}
                     <label>Vertical <input type="range" min="-5" max="5" step="0.1" value={adjustment.vertical} onChange={(event) => updateAdjustment(expression, { vertical: Number(event.target.value) })} /><output>{adjustment.vertical}</output></label>
                   </div>;
                 })()}
@@ -369,7 +390,6 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                 <label>y <input type="number" step="any" aria-label={`Point ${index + 1} y`} defaultValue={point.y} key={`${documentRevision}-${point.id}-y-${point.y}`} onBlur={(event) => { const value = event.currentTarget.valueAsNumber; if (Number.isFinite(value)) setPoints((previous) => previous.map((item) => item.id === point.id ? { ...item, y: value } : item)); else event.currentTarget.value = String(point.y); }} /></label>
                 <button type="button" className="graphing-icon-button" aria-label={`Remove point ${index + 1}`} onClick={() => setPoints((previous) => previous.filter((item) => item.id !== point.id))}><X size={18} aria-hidden="true" /></button>
               </div>)}
-              <button type="button" className="graphing-add-button" onClick={() => setPoints((previous) => [...previous, { id: crypto.randomUUID(), x: 0, y: 0, color: COLORS[(previous.length + 2) % COLORS.length], visible: true }])}><Plus size={18} aria-hidden="true" />Add point</button>
             </div></div></div>}
             </>
             <details ref={addMenuRef} className="graph-add-menu"><summary className="graphing-add-button" aria-label="Add graph element" title="Add graph element"><Plus size={22} strokeWidth={3} aria-hidden="true" /></summary><div className="graph-add-menu-options">
