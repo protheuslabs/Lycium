@@ -78,6 +78,11 @@
 .tool-graph-curve-b { stroke: #3988c7; }
 .tool-graph-point { fill: #3988c7; stroke: var(--lycium-color-surface-raised); stroke-width: 2; }
 
+.tool-flashcards-preview { display: flex; align-items: center; justify-content: center; position: relative; min-height: 160px; overflow: hidden; }
+.tool-flashcard-shape { width: 112px; height: 76px; border-radius: 10px; position: absolute; display: grid; place-items: center; }
+.tool-flashcard-back { background: var(--lycium-color-accent-soft); transform: translate(16px, 14px) rotate(7deg); border: 1px solid color-mix(in srgb, var(--lycium-brand-primary) 18%, transparent); }
+.tool-flashcard-front { background: var(--lycium-color-surface-raised); color: var(--lycium-color-accent); border: 1px solid color-mix(in srgb, var(--lycium-brand-primary) 25%, transparent); box-shadow: 0 10px 18px rgba(20, 30, 28, .08); transform: rotate(-5deg); }
+
 .tool-entry-content {
   display: flex;
   flex: 1;

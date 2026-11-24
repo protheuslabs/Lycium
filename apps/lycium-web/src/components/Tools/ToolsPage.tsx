@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Layers3 } from "lucide-react";
 import Link from "next/link";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
 
@@ -36,6 +36,19 @@ export default function ToolsPage() {
                 <span className="tool-entry-action" aria-hidden="true">
                   Open workspace <ArrowRight size={16} />
                 </span>
+              </div>
+            </article>
+          </Link>
+          <Link href="/tools/flashcards" className="tools-link" aria-labelledby="flashcards-title" aria-describedby="flashcards-summary">
+            <article className="tool-entry">
+              <div className="tool-entry-preview tool-flashcards-preview" aria-hidden="true">
+                <div className="tool-flashcard-shape tool-flashcard-back" />
+                <div className="tool-flashcard-shape tool-flashcard-front"><Layers3 size={32} /></div>
+              </div>
+              <div className="tool-entry-content">
+                <h3 id="flashcards-title">Flashcards</h3>
+                <p id="flashcards-summary">Create study decks and practice recall with focused review sessions.</p>
+                <span className="tool-entry-action" aria-hidden="true">Open workspace <ArrowRight size={16} /></span>
               </div>
             </article>
           </Link>
