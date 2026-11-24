@@ -137,6 +137,15 @@
 .graph-settings > summary { position: relative; z-index: 2; }
 .graph-settings .graphing-trace-controls { position: absolute; z-index: 10; right: 0; top: calc(100% + .25rem); display: grid; justify-content: stretch; min-width: 13rem; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
 
+.graphing-discovery-content { box-sizing: border-box; width: min(100%, 1100px); margin: 0 auto; padding: 2rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)) 3rem; color: var(--lycium-color-text); background: var(--lycium-color-canvas); }
+.graphing-discovery-content h2 { margin: 0; font-family: var(--lycium-font-display); font-size: 1.7rem; }
+.graphing-discovery-content > p { max-width: 760px; margin: .65rem 0 1.3rem; color: var(--lycium-color-text-muted); line-height: 1.7; }
+.graphing-discovery-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.graphing-discovery-grid > div { padding: 1rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); }
+.graphing-discovery-grid h3 { margin: 0; font-size: .95rem; }
+.graphing-discovery-grid p { margin: .45rem 0 0; color: var(--lycium-color-text-muted); font-size: .85rem; line-height: 1.6; }
+@media (max-width: 700px) { .graphing-discovery-grid { grid-template-columns: 1fr; } }
+
 .graph-points, .graph-analysis, .graph-datasets, .graph-label-settings { margin-top: 1rem; padding-top: .75rem; border-top: 1px solid var(--lycium-color-border); }
 .graph-points > summary, .graph-analysis > summary, .graph-datasets > summary, .graph-label-settings > summary { cursor: pointer; font-size: .9rem; font-weight: 600; padding: .5rem 0; }
 .graph-label-fields, .graph-annotation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-block: .75rem; }

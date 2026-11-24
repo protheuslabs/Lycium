@@ -21,10 +21,14 @@ import "../components/LearnerPages/learnerPages.css";
 import "../components/CourseCard/courseCard.css";
 import "../styles/mainPageControls.css";
 import "../components/Tools/tools.css";
+import "../components/LearnerNotes/LessonNotes.css";
 
 export const metadata: Metadata = {
   title: "Lycium",
   description: "Explore courses, build understanding, and keep learning with Lycium.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://protheuslabs.github.io/Lycium/"),
+  robots: { index: true, follow: true },
+  openGraph: { siteName: "Lycium", type: "website", locale: "en_US" },
 };
 
 const themeBootstrapScript = `
