@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Trash2, ZoomIn, ZoomOut } from "lucide-react";
+import { Eye, EyeOff, Info, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Trash2, ZoomIn, ZoomOut } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import type { GraphExpression } from "./graphExpressions";
 import ParameterSliders from "./ParameterSliders";
@@ -326,7 +326,13 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
           </div></details>
           </div>
           <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} points={points} datasets={datasets} labels={labels} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={mode === "editor" ? (id, x, y) => setPoints((previous) => previous.map((point) => point.id === id ? { ...point, x, y } : point)) : undefined} />
-          <p className="graphing-graph-hint">Hover over a curve to read coordinates; click to pin. Reset view returns to the origin.</p>
+          <details className="graphing-help">
+            <summary aria-label="Graph help" title="Graph help"><Info size={17} aria-hidden="true" /></summary>
+            <div className="graphing-help-popover" role="dialog" aria-label="Graph instructions">
+              <strong>Graph controls</strong>
+              <p>Hover over a curve to read coordinates; click to pin. Drag to pan, use the scroll wheel to zoom, and choose Reset view to return to the origin.</p>
+            </div>
+          </details>
         </section>
       </div>
     </div>

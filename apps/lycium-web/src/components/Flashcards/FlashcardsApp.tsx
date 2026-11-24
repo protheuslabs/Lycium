@@ -5,7 +5,7 @@ import { ArrowLeft, BookOpen, CalendarCheck, ChevronDown, Download, Ellipsis, Fo
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import ToolFrame from "../Tools/ToolFrame";
-import { createId, DECK_COLORS, MAX_CARDS, recordReview, removeDeck, replaceDeck, starterDeck, toggleStar, type FlashcardDeck } from "./flashcardDomain";
+import { createId, DECK_COLORS, MAX_CARDS, recordReview, removeDeck, replaceDeck, resetScheduledReview, starterDeck, toggleStar, type FlashcardDeck } from "./flashcardDomain";
 import { useFlashcardStore } from "./useFlashcardStore";
 import { cardsFromText, deckFromPreview, downloadText, exportDeckCsv, exportDeckJson, type ImportPreview } from "./flashcardImport";
 import FlashcardStudy from "./FlashcardStudy";
@@ -112,7 +112,7 @@ export default function FlashcardsApp() {
                 </div>
                 <nav className="fc-tabs" aria-label="Deck view"><button aria-current={mode === "study" ? "page" : undefined} onClick={() => setMode("study")}><BookOpen size={16} /> Flashcards</button><button aria-current={mode === "review" ? "page" : undefined} onClick={() => { setMode("review"); setFocused(false); }}><CalendarCheck size={16} /> Daily review</button><button aria-current={mode === "cards" ? "page" : undefined} onClick={() => { setMode("cards"); setFocused(false); }}>Edit cards <span>{deck.cards.length}</span></button></nav>
                 {mode === "study" ? <FlashcardStudy key={deck.id} deck={deck} history={store.history} onGrade={(cardId, grade) => commit(recordReview(store, deck.id, cardId, grade))} onStar={(cardId) => commit(toggleStar(store, deck.id, cardId))} onEdit={() => setMode("cards")} focused={focused} onFocus={() => setFocused(!focused)} /> :
-                  mode === "review" ? <SpacedReviewPanel key={deck.id} deck={deck} store={store} commit={commit} onStar={(cardId) => commit((current) => toggleStar(current, deck.id, cardId))} onEdit={() => setMode("cards")} /> : <FlashcardEditor key={deck.id} deck={deck} reviews={store.history[deck.id] ?? {}} onUpdate={updateDeck} onImport={() => setImporting(true)} onStar={(cardId) => commit(toggleStar(store, deck.id, cardId))} announce={setMessage} />}
+                  mode === "review" ? <SpacedReviewPanel key={deck.id} deck={deck} store={store} commit={commit} onStar={(cardId) => commit((current) => toggleStar(current, deck.id, cardId))} onEdit={() => setMode("cards")} /> : <FlashcardEditor key={deck.id} deck={deck} reviews={store.history[deck.id] ?? {}} scheduledCardIds={new Set(Object.keys(store.schedules?.[deck.id] ?? {}))} onUpdate={updateDeck} onResetSchedule={(cardId) => commit((current) => resetScheduledReview(current, deck.id, cardId))} onImport={() => setImporting(true)} onStar={(cardId) => commit(toggleStar(store, deck.id, cardId))} announce={setMessage} />}
               </>}
             </main>
           </div>

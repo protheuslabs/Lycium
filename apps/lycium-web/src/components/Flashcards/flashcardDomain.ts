@@ -142,6 +142,14 @@ export function replaceDeck(store: FlashcardStore, deck: FlashcardDeck): Flashca
   return { ...store, decks: store.decks.map((item) => item.id === deck.id ? deck : item), history: { ...store.history, [deck.id]: Object.fromEntries(Object.entries(store.history[deck.id] ?? {}).filter(([id]) => ids.has(id))) }, ...(store.schedules ? { schedules: { ...store.schedules, [deck.id]: Object.fromEntries(Object.entries(store.schedules[deck.id] ?? {}).filter(([id]) => ids.has(id))) } } : {}) };
 }
 
+export function resetScheduledReview(store: FlashcardStore, deckId: string, cardId: string): FlashcardStore {
+  const deckSchedule = store.schedules?.[deckId];
+  if (!deckSchedule?.[cardId]) return store;
+  const nextDeckSchedule = { ...deckSchedule };
+  delete nextDeckSchedule[cardId];
+  return { ...store, schedules: { ...store.schedules, [deckId]: nextDeckSchedule } };
+}
+
 export function removeDeck(store: FlashcardStore, id: string): FlashcardStore {
   return { ...store, decks: store.decks.filter((deck) => deck.id !== id), history: Object.fromEntries(Object.entries(store.history).filter(([key]) => key !== id)), ...(store.schedules ? { schedules: Object.fromEntries(Object.entries(store.schedules).filter(([key]) => key !== id)) } : {}) };
 }

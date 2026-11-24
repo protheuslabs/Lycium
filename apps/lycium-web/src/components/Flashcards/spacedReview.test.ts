@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emptyStore, parseFlashcardStore, recordReview, removeDeck, replaceDeck, starterDeck, toggleStar, type FlashcardStore } from "./flashcardDomain";
+import { emptyStore, parseFlashcardStore, recordReview, removeDeck, replaceDeck, resetScheduledReview, starterDeck, toggleStar, type FlashcardStore } from "./flashcardDomain";
 import { applyScheduledReview, previewReview, reviewAvailability, reviewInterval } from "./spacedReview";
 import { exportLibraryBackup, parseLibraryBackup } from "./flashcardBackup";
 
@@ -67,6 +67,16 @@ describe("FSRS scheduling", () => {
     expect(removed.schedules?.[deckId][secondId]).toBeDefined();
     expect(removeDeck(second, deckId).schedules).toEqual({});
     await expect(applyScheduledReview(removed, deckId, cardId, 3, now)).rejects.toThrow("no longer exists");
+  });
+
+  it("resets one edited card without changing other review memory", async () => {
+    const first = await applyScheduledReview(initial(), deckId, cardId, 3, now);
+    const second = await applyScheduledReview(first, deckId, starterDeck.cards[1].id, 4, now);
+    const reset = resetScheduledReview(second, deckId, cardId);
+    expect(reset.schedules?.[deckId]?.[cardId]).toBeUndefined();
+    expect(reset.schedules?.[deckId]?.[starterDeck.cards[1].id]).toEqual(second.schedules?.[deckId]?.[starterDeck.cards[1].id]);
+    expect(reset.history).toEqual(second.history);
+    expect(resetScheduledReview(reset, deckId, cardId)).toBe(reset);
   });
 
   it("rejects invalid clocks, ratings, and persisted memory without resetting user data", async () => {

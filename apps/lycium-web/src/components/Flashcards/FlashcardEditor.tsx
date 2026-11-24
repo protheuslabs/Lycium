@@ -10,10 +10,12 @@ type Props = {
   onUpdate: (deck: FlashcardDeck) => void;
   onImport: () => void;
   onStar: (cardId: string) => void;
+  scheduledCardIds: ReadonlySet<string>;
+  onResetSchedule: (cardId: string) => void;
   announce: (message: string) => void;
 };
 
-export default function FlashcardEditor({ deck, reviews, onUpdate, onImport, onStar, announce }: Props) {
+export default function FlashcardEditor({ deck, reviews, onUpdate, onImport, onStar, scheduledCardIds, onResetSchedule, announce }: Props) {
   const [editing, setEditing] = useState<string | null>(null);
   const [query, setQuery] = useState(""), [starredOnly, setStarredOnly] = useState(false), [limit, setLimit] = useState(50);
   const editButtons = useRef(new Map<string, HTMLButtonElement>());
@@ -31,9 +33,13 @@ export default function FlashcardEditor({ deck, reviews, onUpdate, onImport, onS
   }
   function saveCard(id: string, text: CardText) {
     const now = new Date().toISOString();
+    const previous = deck.cards.find((card) => card.id === id);
+    const contentChanged = previous && (previous.front.trim() !== text.front.trim() || previous.back.trim() !== text.back.trim());
+    const reset = contentChanged && scheduledCardIds.has(id) && !window.confirm("This card has spaced-review history. Click OK to keep its schedule, or Cancel to reset it and start the edited card fresh.");
     onUpdate({ ...deck, cards: deck.cards.map((card) => card.id === id ? { ...card, ...text, updatedAt: now } : card), updatedAt: now });
+    if (reset) onResetSchedule(id);
     finishEditing(id);
-    announce("Card updated.");
+    announce(reset ? "Card updated and review schedule reset." : "Card updated.");
   }
   function remove(card: Flashcard) {
     if (!window.confirm("Delete this card? Export your deck first if you want a backup.")) return;

@@ -36,19 +36,11 @@ export default function GraphPage() {
         <div id="graphing-workspace-actions" />
       </header>
       <main id="main-content" tabIndex={-1} className="graphing-workspace-main">
+        <p className="sr-only">Graphing Studio is an interactive online graphing calculator for plotting functions, comparing curves, exploring parameters, and visualizing scientific data.</p>
         <ToolFrame fill>
           <GraphingStudio workspace />
         </ToolFrame>
       </main>
-      <section className="graphing-discovery-content" aria-labelledby="graphing-discovery-title">
-        <h2 id="graphing-discovery-title">Free online graphing calculator</h2>
-        <p>Graphing Studio helps students and educators plot mathematical functions, compare curves, explore parameters, and visualize experimental data in a focused workspace.</p>
-        <div className="graphing-discovery-grid">
-          <div><h3>Plot functions</h3><p>Enter expressions such as <code>y = x^2</code>, <code>y = sin(x)</code>, or <code>y = 2x + 1</code> and compare multiple curves on a Cartesian grid.</p></div>
-          <div><h3>Explore data</h3><p>Enter or import two-column measurements, display scatter points, fit a linear or exponential model, and inspect R².</p></div>
-          <div><h3>Use it in learning</h3><p>Graphing Studio is free to use without an account and is useful for algebra, precalculus, chemistry labs, and scientific data visualization.</p></div>
-        </div>
-      </section>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

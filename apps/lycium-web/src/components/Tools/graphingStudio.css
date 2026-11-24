@@ -6,7 +6,7 @@
 .graphing-expressions, .graphing-graph { min-width: 0; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); }
 .graphing-expressions { position: relative; padding: 1rem; }
 .graphing-expressions h2 { margin: 0; font-size: 1rem; }
-.graphing-hint, .graphing-graph-hint { color: var(--lycium-color-text-muted); font-size: .8rem; line-height: 1.6; }
+.graphing-hint { color: var(--lycium-color-text-muted); font-size: .8rem; line-height: 1.6; }
 .graphing-expression-list { max-height: 45vh; overflow-y: auto; margin: 1rem -.25rem; padding: .25rem; }
 .graphing-expression { padding: .55rem .4rem; margin-bottom: .6rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); transition: border-color .15s, box-shadow .15s; }
 .graphing-expression:focus-within { border-color: var(--lycium-color-accent); box-shadow: 0 0 0 2px var(--lycium-color-accent-soft); }
@@ -32,7 +32,13 @@
 .graphing-trace-controls label { display: flex; align-items: center; gap: .4rem; min-height: 2rem; }
 .graphing-trace-controls select { padding: .25rem .4rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); background: var(--lycium-color-control-surface); color: var(--lycium-color-text); font: inherit; }
 .graphing-trace-controls input { accent-color: var(--lycium-color-accent); }
-.graphing-graph-hint { margin: 0; padding: .6rem 1rem; border-top: 1px solid var(--lycium-color-border); }
+.graphing-help { position: absolute; z-index: 5; right: .75rem; bottom: .75rem; }
+.graphing-help > summary { display: inline-flex; align-items: center; justify-content: center; width: 2.25rem; height: 2.25rem; padding: .45rem; border: 1px solid var(--lycium-color-border); border-radius: 50%; color: var(--lycium-color-text-muted); background: color-mix(in srgb, var(--lycium-color-surface-raised) 90%, transparent); cursor: pointer; list-style: none; }
+.graphing-help > summary::-webkit-details-marker { display: none; }
+.graphing-help > summary:hover, .graphing-help[open] > summary { color: var(--lycium-color-accent); background: var(--lycium-color-accent-soft); }
+.graphing-help-popover { position: absolute; right: 0; bottom: calc(100% + .5rem); width: min(19rem, calc(100vw - 2rem)); padding: .8rem .9rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); color: var(--lycium-color-text); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); font-size: .8rem; line-height: 1.55; }
+.graphing-help-popover strong { display: block; margin-bottom: .25rem; font-size: .85rem; }
+.graphing-help-popover p { margin: 0; color: var(--lycium-color-text-muted); }
 .graphing-parameters { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--lycium-color-border); }
 .graphing-parameters h3 { margin: 0; font-size: .95rem; }
 .graphing-parameter { margin-block: .75rem; padding: .65rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-control); }
@@ -57,11 +63,10 @@
 .graphing-workspace-main { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
 .graphing-studio--workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .graphing-studio--workspace .graphing-layout { flex: 1; min-height: 0; grid-template-rows: minmax(0, 1fr); align-items: stretch; gap: .75rem; }
-.graphing-studio--workspace .graphing-graph { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.graphing-studio--workspace .graphing-graph { position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .graphing-studio--workspace .graph-surface { flex: 1 1 0; height: auto; }
-.graphing-studio--workspace .graphing-toolbar,
-.graphing-studio--workspace .graphing-trace-controls,
-.graphing-studio--workspace .graphing-graph-hint { flex: 0 0 auto; }
+.graphing-studio--workspace .graphing-toolbar { display: flex; flex-direction: row; align-items: center; min-height: 0; }
+.graphing-studio--workspace .graphing-trace-controls { min-height: 0; overflow-y: auto; }
 .graphing-studio--workspace .graphing-expressions { display: flex; flex-direction: column; min-height: 0; overflow-y: auto; }
 .graphing-studio--workspace .graphing-expressions[hidden] { display: none; }
 .graphing-studio--workspace .graphing-expression-list { flex: 1; min-height: 0; max-height: none; }
@@ -136,6 +141,9 @@
 .graph-settings { flex: 0 0 auto; }
 .graph-settings > summary { position: relative; z-index: 2; }
 .graph-settings .graphing-trace-controls { position: absolute; z-index: 10; right: 0; top: calc(100% + .25rem); display: grid; justify-content: stretch; min-width: 13rem; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-card); background: var(--lycium-color-surface-raised); box-shadow: var(--lycium-shadow-raised); }
+.graphing-studio--workspace .graphing-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .5rem; }
+.graphing-studio--workspace .graphing-view-controls { justify-self: center; }
+.graphing-studio--workspace .graph-settings { justify-self: end; }
 
 .graphing-discovery-content { box-sizing: border-box; width: min(100%, 1100px); margin: 0 auto; padding: 2rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)) 3rem; color: var(--lycium-color-text); background: var(--lycium-color-canvas); }
 .graphing-discovery-content h2 { margin: 0; font-family: var(--lycium-font-display); font-size: 1.7rem; }
@@ -162,4 +170,4 @@
 .graph-dataset th:last-child { width: 2.4rem; }
 .graphing-studio .graph-dataset-remove-row { width: 2rem; min-height: 2rem; padding: 0; }
 @media (max-width: 899px) { .graph-panel-resizer { display: none; } }
-@media (max-width: 599px) { .graphing-workspace-header h1 { white-space: nowrap; } .graph-file-menu summary, .graph-present-button { font-size: .75rem; padding: .45rem; } .graph-workspace-actions { gap: .25rem; }  .graph-settings > summary { font-size: .75rem; padding: .5rem .35rem; } }
+@media (max-width: 599px) { .graphing-workspace-header h1 { white-space: nowrap; } .graph-file-menu summary, .graph-present-button { font-size: .75rem; padding: .45rem; } .graph-workspace-actions { gap: .25rem; } .graph-settings > summary { font-size: .75rem; padding: .5rem .35rem; } .graphing-studio--workspace .graphing-toolbar { grid-template-columns: auto 1fr auto; } .graphing-studio--workspace .graphing-view-controls { justify-self: start; } }
