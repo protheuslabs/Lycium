@@ -6,6 +6,7 @@ import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as 
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import { graphExpressionCurve, type GraphExpression } from "./graphExpressions";
 import { parseGraphDomain } from "./graphDomain";
+import { tangentAt } from "./graphCalculus";
 import ParameterSliders from "./ParameterSliders";
 import DatasetPanel from "./DatasetPanel";
 import GraphLabelsPanel from "./GraphLabelsPanel";
@@ -63,12 +64,19 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const [crossings, setCrossings] = useState<Intersection[] | null>(null);
   const [intercepts, setIntercepts] = useState<Intercept[] | null>(null);
   const [crossingError, setCrossingError] = useState("");
+  const [tangentX, setTangentX] = useState("0");
+  const [tangent, setTangent] = useState<{ x: number; y: number; slope: number } | null>(null);
+  const [tangentError, setTangentError] = useState("");
   const [axisBounds, setAxisBounds] = useState({ xMin: "", xMax: "", yMin: "", yMax: "" });
   const [axisError, setAxisError] = useState("");
   const [invalidDrafts, setInvalidDrafts] = useState<Record<string, boolean>>({});
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
   const [adjustments, setAdjustments] = useState<Record<string, FunctionAdjustment>>({});
-  const plottedExpressions = useMemo(() => expressions.map((expression) => invalidDrafts[expression.id] ? { ...expression, visible: false } : expression), [expressions, invalidDrafts]);
+  const plottedExpressions = useMemo(() => {
+    const result = expressions.map((expression) => invalidDrafts[expression.id] ? { ...expression, visible: false } : expression);
+    if (tangent) result.push({ id: "__tangent__", expr: `(${tangent.slope})*(x-(${tangent.x}))+(${tangent.y})`, color: "#555555", visible: true });
+    return result;
+  }, [expressions, invalidDrafts, tangent]);
   const [grid, setGrid] = useState(loadedDocument?.settings.grid ?? true);
   const [precision, setPrecision] = useState<CoordinatePrecision>(loadedDocument?.settings.precision ?? "auto");
   const [snapToGrid, setSnapToGrid] = useState(loadedDocument?.settings.snapToGrid ?? true);
@@ -127,6 +135,18 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   }, []);
 
   useEffect(() => { setCrossings(null); setIntercepts(null); setCrossingError(""); }, [expressions, parameters]);
+  useEffect(() => { setTangent(null); setTangentError(""); }, [expressions, parameters, selectedRowKey]);
+
+  const inspectTangent = async () => {
+    const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
+    const x = tangentX.trim() ? Number(tangentX) : NaN;
+    if (!expression || !expression.visible || errors[expression.id] || invalidDrafts[expression.id]) { setTangentError("Select a valid function first."); setTangent(null); return; }
+    try {
+      const library = await import("function-plot");
+      setTangent(tangentAt(graphExpressionCurve(expression, parameterValues, library), x));
+      setTangentError("");
+    } catch (error) { setTangent(null); setTangentError(error instanceof Error ? error.message : "Unable to calculate the tangent."); }
+  };
 
   const findIntersections = async (kind: "crossings" | "intercepts") => {
     const viewport = graphRef.current?.getViewport();
@@ -408,6 +428,10 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
           {!expressionsVisible && <button type="button" className="graphing-panel-toggle graphing-panel-reopen" aria-label="Show functions panel" title="Show functions panel" aria-expanded="false" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(true)}><PanelLeftOpen size={18} aria-hidden="true" /></button>}
             <div className="graphing-graph-controls">
 <details ref={analysisRef} className="graph-analysis-menu"><summary aria-label="Graph analysis" title="Graph analysis"><Search size={19} aria-hidden="true" /></summary><div className="graph-analysis-popover">
+              <label>Tangent at x <input type="number" step="any" value={tangentX} onChange={(event) => setTangentX(event.target.value)} /></label>
+              <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void inspectTangent()}>Show tangent for selected function</button>
+              {tangentError && <p className="graphing-error" role="alert">{tangentError}</p>}
+              {tangent && <p role="status">Point ({Number(tangent.x.toPrecision(6))}, {Number(tangent.y.toPrecision(6))}) · slope {Number(tangent.slope.toPrecision(6))} <button type="button" onClick={() => setTangent(null)}>Clear</button></p>}
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("crossings")}>Find intersections</button>
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("intercepts")}>Find intercepts</button>
               <p className="graphing-hint">Approximate crossings in the current view. Tangencies and some intersections may be missed. Search again after moving the view.</p>
