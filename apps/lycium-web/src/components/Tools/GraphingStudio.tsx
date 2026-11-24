@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Eye, EyeOff, Info, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Trash2, ZoomIn, ZoomOut } from "lucide-react";
+import { Cog, Eye, EyeOff, Info, PanelLeftClose, PanelLeftOpen, Plus, X, ZoomIn, ZoomOut } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import type { GraphExpression } from "./graphExpressions";
 import ParameterSliders from "./ParameterSliders";
@@ -22,7 +22,7 @@ const DEFAULT_EXPRESSIONS: GraphExpression[] = [
   { expr: "sin(x)", id: "2", color: COLORS[1], visible: true },
 ];
 
-export default function GraphingStudio({ workspace = false, initialDocument, initialMode = "editor", allowEditing = true }: { workspace?: boolean; initialDocument?: GraphDocument; initialMode?: "editor" | "presentation"; allowEditing?: boolean }) {
+export default function GraphingStudio({ workspace = false, initialDocument }: { workspace?: boolean; initialDocument?: GraphDocument }) {
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null);
   const [panelWidth, setPanelWidth] = useState(350);
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
@@ -44,7 +44,6 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
   const [labels, setLabels] = useState<GraphLabels>(loadedDocument?.labels ?? { title: "", xTitle: "", xUnit: "", yTitle: "", yUnit: "", annotations: [] });
   const [parameters, setParameters] = useState<GraphParameter[]>(loadedDocument?.parameters ?? []);
   const parameterValues = useMemo(() => Object.fromEntries(parameters.map(({ name, value }) => [name, value])), [parameters]);
-  const [mode, setMode] = useState<"editor" | "presentation">(allowEditing ? initialMode : "presentation");
   const [interactiveParameters, setInteractiveParameters] = useState<string[]>(loadedDocument?.presentation.interactiveParameters ?? []);
   const [documentError, setDocumentError] = useState<string | null>(null);
   const [documentNotice, setDocumentNotice] = useState("");
@@ -154,7 +153,6 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
       nextId.current = Math.max(3, ...document.expressions.map(({ id }) => /^\d+$/.test(id) ? Number(id) + 1 : 3).filter(Number.isSafeInteger));
       setErrors({});
       setInvalidDrafts({});
-      setMode("editor");
       setDocumentError(null);
       setDocumentNotice("Graph loaded.");
     } catch (error) {
@@ -165,7 +163,6 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
 
   const workspaceActions = <div className="graph-workspace-actions">
     <details ref={fileMenuRef} className="graph-file-menu"><summary>File / Export</summary><div className="graph-file-popover">
-{allowEditing && <>
             <button type="button" onClick={() => fileRef.current?.click()}>Import JSON</button>
             <input ref={fileRef} type="file" accept=".json,application/json" className="sr-only" tabIndex={-1} aria-label="Choose graph JSON" onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void importDocument(file); }} />
             <button type="button" onClick={() => {
@@ -179,14 +176,12 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
                 setDocumentError(null); setDocumentNotice("Graph exported.");
               } catch (error) { setDocumentError(error instanceof Error ? error.message : "Could not export graph."); }
             }}>Export JSON</button>
-          </>}
           <>
             {(["svg", "png"] as const).map((format) => <button key={format} type="button" onClick={() => {
               void graphRef.current?.exportImage(format).then(() => { setDocumentError(""); setDocumentNotice(`Graph exported as ${format.toUpperCase()}.`); }).catch((error: unknown) => { setDocumentNotice(""); setDocumentError(error instanceof Error ? error.message : "Could not export image."); });
             }}>Export {format.toUpperCase()}</button>)}
           </>
     </div></details>
-    {allowEditing && <button type="button" className="graph-present-button" disabled={mode === "editor" && Object.values(invalidDrafts).some(Boolean)} onClick={() => setMode((current) => current === "editor" ? "presentation" : "editor")}>{mode === "editor" ? "Present" : "Edit graph"}</button>}
   </div>;
 
   return (
@@ -198,13 +193,13 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
       {workspace && headerTarget ? createPortal(workspaceActions, headerTarget) : workspaceActions}
       <div className={`graphing-layout${expressionsVisible ? "" : " graphing-layout--collapsed"}`} style={{ "--graph-panel-width": `${panelWidth}px` } as CSSProperties}>
         <aside id={`${id}-expressions`} hidden={!expressionsVisible} className="graphing-expressions" aria-labelledby={`${id}-functions`}>
+          <button type="button" className="graphing-panel-toggle graphing-sidebar-toggle" aria-label="Hide functions panel" title="Hide functions panel" aria-expanded="true" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(false)}><PanelLeftClose size={18} aria-hidden="true" /></button>
           {documentError && <p className="graphing-error" role="alert">{documentError}</p>}
           {documentNotice && <p className="graphing-hint" role="status">{documentNotice}</p>}
 
-          <h2 id={`${id}-functions`}>{mode === "editor" ? "Functions" : "Presentation controls"}</h2>
-          {mode === "editor" && <p className="graphing-hint">Use x^2, sin(x), 2*x+1, or y=1/x. Angles are in radians.</p>}
+          <h2 id={`${id}-functions`} className="sr-only">Functions</h2>
           <div className="graphing-expression-list">
-            {mode === "editor" && expressions.map((expression, index) => (
+            {expressions.map((expression, index) => (
               <div className="graphing-expression" key={expression.id} data-hidden={!expression.visible}>
                 <div className="graphing-expression-row">
                   <span className="graphing-expression-number" aria-hidden="true">{index + 1}</span>
@@ -221,7 +216,7 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
                     {expression.visible ? <Eye size={18} aria-hidden="true" /> : <EyeOff size={18} aria-hidden="true" />}
                   </button>
                   <button type="button" className="graphing-icon-button" aria-label={`Remove function ${index + 1}`} title="Remove function" onClick={() => { setExpressions((previous) => previous.filter(({ id: expressionId }) => expressionId !== expression.id)); setInvalidDrafts((previous) => { const next = { ...previous }; delete next[expression.id]; return next; }); }}>
-                    <Trash2 size={18} aria-hidden="true" />
+                    <X size={18} aria-hidden="true" />
                   </button>
                 </div>
                 {errors[expression.id] && <p className="graphing-error" id={`${id}-error-${expression.id}`} role="status">{errors[expression.id]}</p>}
@@ -234,12 +229,12 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
                 })()}
               </div>
             ))}
-            {mode === "editor" && <button type="button" className="graphing-add-button" onClick={() => {
+            <button type="button" className="graphing-add-button" onClick={() => {
               const expressionId = nextId.current++;
               setExpressions((previous) => [...previous, { id: String(expressionId), expr: "", color: COLORS[(expressionId - 1) % COLORS.length], visible: true }]);
-            }}><Plus size={18} aria-hidden="true" />Add function</button>}
-            {mode === "editor" && expressions.length === 0 && <p className="graphing-hint">Add a function to start plotting.</p>}
-            {mode === "editor" ? <>
+            }}><Plus size={18} aria-hidden="true" />Add function</button>
+            {expressions.length === 0 && <p className="graphing-hint">Add a function to start plotting.</p>}
+            <>
             <ParameterSliders key={documentRevision} parameters={parameters} onChange={setParameters} />
               <DatasetPanel datasets={datasets} onChange={(next) => {
                 const added = next.find((item) => !datasets.some((existing) => existing.id === item.id));
@@ -256,7 +251,7 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
                 <span className="graphing-color" style={{ backgroundColor: point.color }} aria-hidden="true" />
                 <label>x <input type="number" step="any" aria-label={`Point ${index + 1} x`} defaultValue={point.x} key={`${documentRevision}-${point.id}-x-${point.x}`} onBlur={(event) => { const value = event.currentTarget.valueAsNumber; if (Number.isFinite(value)) setPoints((previous) => previous.map((item) => item.id === point.id ? { ...item, x: value } : item)); else event.currentTarget.value = String(point.x); }} /></label>
                 <label>y <input type="number" step="any" aria-label={`Point ${index + 1} y`} defaultValue={point.y} key={`${documentRevision}-${point.id}-y-${point.y}`} onBlur={(event) => { const value = event.currentTarget.valueAsNumber; if (Number.isFinite(value)) setPoints((previous) => previous.map((item) => item.id === point.id ? { ...item, y: value } : item)); else event.currentTarget.value = String(point.y); }} /></label>
-                <button type="button" className="graphing-icon-button" aria-label={`Remove point ${index + 1}`} onClick={() => setPoints((previous) => previous.filter((item) => item.id !== point.id))}><Trash2 size={18} aria-hidden="true" /></button>
+                <button type="button" className="graphing-icon-button" aria-label={`Remove point ${index + 1}`} onClick={() => setPoints((previous) => previous.filter((item) => item.id !== point.id))}><X size={18} aria-hidden="true" /></button>
               </div>)}
               <button type="button" className="graphing-add-button" onClick={() => setPoints((previous) => [...previous, { id: crypto.randomUUID(), x: 0, y: 0, color: COLORS[(previous.length + 2) % COLORS.length], visible: true }])}><Plus size={18} aria-hidden="true" />Add point</button>
             </details>
@@ -268,11 +263,7 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
               {crossings && <div role="status">{crossings.length === 0 ? <p className="graphing-hint">No crossings found in this view.</p> : <ul className="graph-crossings">{crossings.map((crossing, index) => <li key={`${crossing.first}-${crossing.second}-${index}`}><span>Functions {expressions.findIndex((item) => item.id === crossing.first) + 1} &amp; {expressions.findIndex((item) => item.id === crossing.second) + 1}: ({Number(crossing.x.toPrecision(6))}, {Number(crossing.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(crossing.x, crossing.y)} aria-label={`Add intersection ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
               {intercepts && <div role="status">{intercepts.length === 0 ? <p className="graphing-hint">No intercepts found in this view.</p> : <ul className="graph-crossings">{intercepts.map((intercept, index) => <li key={`${intercept.curve}-${intercept.axis}-${index}`}><span>Function {expressions.findIndex((item) => item.id === intercept.curve) + 1}, {intercept.axis}-axis: ({Number(intercept.x.toPrecision(6))}, {Number(intercept.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(intercept.x, intercept.y)} aria-label={`Add intercept ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
             </details>
-              {parameters.length > 0 && <fieldset className="graph-presentation-settings"><legend>Interactive in presentation</legend>{parameters.map(({ name }) => <label key={name}><input type="checkbox" checked={interactiveParameters.includes(name)} onChange={(event) => setInteractiveParameters((previous) => event.target.checked ? [...previous, name] : previous.filter((item) => item !== name))} />{name}</label>)}</fieldset>}
-            </> : <>
-              {interactiveParameters.length === 0 && <p className="graphing-hint">No interactive sliders enabled. Switch to editor to choose presentation controls.</p>}
-              <ParameterSliders presentation parameters={parameters.filter(({ name }) => interactiveParameters.includes(name))} onChange={(changed) => setParameters((previous) => previous.map((parameter) => changed.find(({ name }) => name === parameter.name) ?? parameter))} />
-            </>}
+            </>
           </div>
         </aside>
           <div className="graph-panel-resizer" role="separator" tabIndex={0} aria-label="Resize functions panel" aria-orientation="vertical" aria-controls={`${id}-expressions`} aria-valuemin={280} aria-valuemax={480} aria-valuenow={panelWidth}
@@ -281,16 +272,13 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
             onPointerUp={() => { resizeStart.current = null; }} onPointerCancel={() => { resizeStart.current = null; }}
             onKeyDown={(event) => { const delta = event.key === "ArrowRight" ? 10 : event.key === "ArrowLeft" ? -10 : 0; if (delta) { event.preventDefault(); setPanelWidth((width) => Math.max(280, Math.min(480, width + delta))); } }} />
         <section className="graphing-graph" aria-label="Interactive graph">
-          <div className="graphing-toolbar" role="toolbar" aria-label="Graph controls">
-            <button type="button" className="graphing-panel-toggle" aria-label={expressionsVisible ? "Hide functions panel" : "Show functions panel"} aria-expanded={expressionsVisible} aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible((visible) => !visible)}>
-              {expressionsVisible ? <PanelLeftClose size={18} aria-hidden="true" /> : <PanelLeftOpen size={18} aria-hidden="true" />}<span>Functions</span>
-            </button>
+          {!expressionsVisible && <button type="button" className="graphing-panel-toggle graphing-panel-reopen" aria-label="Show functions panel" title="Show functions panel" aria-expanded="false" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(true)}><PanelLeftOpen size={18} aria-hidden="true" /></button>}
+            <div className="graphing-graph-controls">
             <div className="graphing-view-controls">
               <button type="button" className="graphing-icon-button" aria-label="Zoom in" title="Zoom in" onClick={() => graphRef.current?.zoom(0.8)}><ZoomIn size={19} aria-hidden="true" /></button>
               <button type="button" className="graphing-icon-button" aria-label="Zoom out" title="Zoom out" onClick={() => graphRef.current?.zoom(1.25)}><ZoomOut size={19} aria-hidden="true" /></button>
-              <button type="button" className="graphing-reset-button" onClick={() => graphRef.current?.reset()}><RotateCcw size={16} aria-hidden="true" />Reset view</button>
             </div>
-          <details ref={settingsRef} className="graph-settings"><summary>Graph settings</summary><div className="graphing-trace-controls" role="group" aria-label="Coordinate readout settings">
+          <details ref={settingsRef} className="graph-settings"><summary aria-label="Graph settings" title="Graph settings"><Cog size={17} aria-hidden="true" /></summary><div className="graphing-trace-controls" role="group" aria-label="Coordinate readout settings">
             <label className="graphing-grid-toggle"><input type="checkbox" checked={grid} onChange={(event) => setGrid(event.target.checked)} />Grid</label>
 
             <label>Decimals
@@ -325,7 +313,7 @@ export default function GraphingStudio({ workspace = false, initialDocument, ini
           </details>
           </div></details>
           </div>
-          <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} points={points} datasets={datasets} labels={labels} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={mode === "editor" ? (id, x, y) => setPoints((previous) => previous.map((point) => point.id === id ? { ...point, x, y } : point)) : undefined} />
+          <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} points={points} datasets={datasets} labels={labels} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={(pointId, x, y) => setPoints((previous) => previous.map((point) => point.id === pointId ? { ...point, x, y } : point))} />
           <details className="graphing-help">
             <summary aria-label="Graph help" title="Graph help"><Info size={17} aria-hidden="true" /></summary>
             <div className="graphing-help-popover" role="dialog" aria-label="Graph instructions">
