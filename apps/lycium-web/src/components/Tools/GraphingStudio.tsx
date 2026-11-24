@@ -467,7 +467,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               <div className="graphing-expression" key={expression.id} data-hidden={!expression.visible} style={{ order: rowOrder.indexOf(`function:${expression.id}`) }}>
                 <div className="graphing-expression-row">
                   <span className="graphing-expression-color" style={{ backgroundColor: expression.color }} aria-hidden="true">{rowOrder.indexOf(`function:${expression.id}`) + 1}</span>
-                  <div onFocus={() => selectExpression(expression)} onClick={() => selectExpression(expression)}>
+                  <div onPointerDown={() => selectExpression(expression)} onFocus={() => selectExpression(expression)} onClick={() => selectExpression(expression)}>
                   <MathExpressionField
                     label={`Function ${index + 1}`}
                     invalid={Boolean(errors[expression.id])}
