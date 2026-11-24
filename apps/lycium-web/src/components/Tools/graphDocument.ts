@@ -14,6 +14,7 @@ export interface GraphDocument {
   datasets?: GraphDataset[];
   labels?: GraphLabels;
   parameters: GraphParameter[];
+  rowOrder?: string[];
   viewport: { x: [number, number]; y: [number, number] } | null;
   settings: { grid: boolean; precision: CoordinatePrecision; snapToGrid: boolean };
   presentation: { interactiveParameters: string[] };
@@ -77,8 +78,11 @@ export function parseGraphDocument(value: unknown): GraphDocument {
     return { name: entry.name, value: entry.value, min: entry.min, max: entry.max, step: entry.step };
   });
   const view = value.viewport;
+  const rowKeys = [...expressions.map(({ id }) => `function:${id}`), ...parameters.map(({ name }) => `parameter:${name}`), ...datasets.map(({ id }) => `dataset:${id}`), ...points.map(({ id }) => `point:${id}`)];
+  if (value.rowOrder !== undefined && (!Array.isArray(value.rowOrder) || value.rowOrder.some((key: unknown) => typeof key !== "string" || !rowKeys.includes(key)) || new Set(value.rowOrder).size !== value.rowOrder.length)) throw new Error("Invalid sidebar row order.");
+  const rowOrder = value.rowOrder === undefined ? undefined : [...value.rowOrder as string[], ...rowKeys.filter((key) => !(value.rowOrder as string[]).includes(key))];
   if (view !== null && (!record(view) || !domain(view.x) || !domain(view.y))) throw new Error("Viewport bounds must be finite and increasing.");
   if (!record(value.settings) || typeof value.settings.grid !== "boolean" || typeof value.settings.snapToGrid !== "boolean" || !["auto", 0, 1, 2, 3, 4, 6].includes(value.settings.precision as string | number)) throw new Error("Invalid graph settings.");
   if (!record(value.presentation) || !Array.isArray(value.presentation.interactiveParameters) || !value.presentation.interactiveParameters.every((name: unknown) => typeof name === "string" && names.has(name)) || new Set(value.presentation.interactiveParameters).size !== value.presentation.interactiveParameters.length) throw new Error("Presentation controls must reference existing parameters.");
-  return { version: 1, expressions, ...(value.points === undefined ? {} : { points }), ...(value.datasets === undefined ? {} : { datasets }), ...(labels ? { labels } : {}), parameters, viewport: view === null ? null : { x: [...(view as { x: [number, number] }).x], y: [...(view as { y: [number, number] }).y] }, settings: { grid: value.settings.grid, snapToGrid: value.settings.snapToGrid, precision: value.settings.precision as CoordinatePrecision }, presentation: { interactiveParameters: [...value.presentation.interactiveParameters] } };
+  return { version: 1, expressions, ...(value.points === undefined ? {} : { points }), ...(value.datasets === undefined ? {} : { datasets }), ...(labels ? { labels } : {}), parameters, ...(rowOrder ? { rowOrder } : {}), viewport: view === null ? null : { x: [...(view as { x: [number, number] }).x], y: [...(view as { y: [number, number] }).y] }, settings: { grid: value.settings.grid, snapToGrid: value.settings.snapToGrid, precision: value.settings.precision as CoordinatePrecision }, presentation: { interactiveParameters: [...value.presentation.interactiveParameters] } };
 }

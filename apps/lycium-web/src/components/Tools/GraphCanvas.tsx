@@ -159,8 +159,6 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
         let pointerStart: { x: number; y: number } | null = null;
         const drawnExpressions = new Set<string>();
         let entranceFrame = 0;
-        let lastDrawnSources = new Map<string, string>();
-        let lastDrawnIds: string[] = [];
 
         const updatePointPositions = () => {
           const meta = chart?.meta;
@@ -438,10 +436,6 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           // A hidden embed can be zero-sized. Wait for its host to reveal it.
           if (width < 100 || height < 100) return;
           const data: FunctionPlotDatum[] = [];
-          const previousSvg = target.querySelector("svg.function-plot");
-          const previousGroups = previousSvg ? [...previousSvg.querySelectorAll<SVGGElement>(".graph")] : [];
-          const changedSources = new Set(configRef.current.expressions.filter((expression) => lastDrawnSources.has(expression.id) && lastDrawnSources.get(expression.id) !== expression.expr).map((expression) => expression.id));
-          const fadingGroups = !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? previousGroups.flatMap((group, index) => changedSources.has(lastDrawnIds[index]) ? [group.cloneNode(true) as SVGGElement] : []) : [];
           const errors: Record<string, string> = {};
           for (const expression of configRef.current.expressions) {
             const fn = expression.expr.trim().replace(/^y\s*=\s*/i, "");
@@ -480,7 +474,6 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           lastWidth = width;
           lastHeight = height;
           try {
-            target.classList.add("graph-plot-target--updating");
             const previousChart = chart;
             chart = library.default(options);
             const svg = target.querySelector("svg.function-plot");
@@ -516,28 +509,8 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
             updateFunctionEmphasis();
             cancelAnimationFrame(entranceFrame);
             entranceFrame = requestAnimationFrame(animateNewExpressions);
-            const currentSvg = target.querySelector("svg.function-plot");
-            const currentGroups = currentSvg ? [...currentSvg.querySelectorAll<SVGGElement>(".graph")] : [];
-            const currentIds = configRef.current.expressions.filter((expression) => expression.visible && !errors[expression.id]).flatMap((expression) => {
-              try { return prepareGraphPieces(expression, configRef.current.parameters, library).map(() => expression.id); }
-              catch { return []; }
-            });
-            currentGroups.forEach((group, index) => {
-              if (fadingGroups.length && changedSources.has(currentIds[index])) group.animate([{ opacity: 0.25 }, { opacity: 1 }], { duration: 180, easing: "ease-out" });
-            });
-            for (const clone of fadingGroups) {
-              const parent = currentGroups[0]?.parentNode;
-              if (!parent) break;
-              clone.classList.remove("graph", "graph-curve-entrance");
-              clone.setAttribute("pointer-events", "none");
-              parent.appendChild(clone);
-              clone.animate([{ opacity: 0.7 }, { opacity: 0 }], { duration: 180, easing: "ease-out" }).onfinish = () => clone.remove();
-            }
-            lastDrawnSources = new Map(configRef.current.expressions.filter((expression) => expression.visible && !errors[expression.id]).map((expression) => [expression.id, expression.expr]));
-            lastDrawnIds = currentIds;
             updatePin();
             updatePointPositions();
-            requestAnimationFrame(() => target.classList.remove("graph-plot-target--updating"));
             setStatus("");
           } catch (cause) {
             setStatus(cause instanceof Error ? `Unable to draw graph: ${cause.message}` : "Unable to draw graph.");

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Calculator, CircleHelp, Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as ZoomIn, Minus as ZoomOut } from "lucide-react";
+import { Calculator, CircleHelp, Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Upload, X, Plus as ZoomIn, Minus as ZoomOut } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import { graphExpressionCurve, type GraphExpression } from "./graphExpressions";
 import { parseGraphDomain } from "./graphDomain";
@@ -54,7 +54,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
   const [loadedDocument] = useState(() => initialDocument ? parseGraphDocument(initialDocument) : null);
   const [expressions, setExpressions] = useState(loadedDocument?.expressions ?? DEFAULT_EXPRESSIONS);
-  const [rowOrder, setRowOrder] = useState<string[]>(() => [
+  const [rowOrder, setRowOrder] = useState<string[]>(() => loadedDocument?.rowOrder ?? [
     ...(loadedDocument?.expressions ?? DEFAULT_EXPRESSIONS).map(({ id }) => `function:${id}`),
     ...(loadedDocument?.parameters ?? []).map(({ name }) => `parameter:${name}`),
     ...(loadedDocument?.datasets ?? []).map(({ id }) => `dataset:${id}`),
@@ -128,6 +128,9 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const addMenuRef = useRef<HTMLDetailsElement>(null);
   const [expressionsVisible, setExpressionsVisible] = useState(true);
   const graphRef = useRef<GraphCanvasHandle>(null);
+  const areaRequest = useRef(0);
+  const areaFrame = useRef<number | null>(null);
+  useEffect(() => () => { areaRequest.current++; if (areaFrame.current !== null) cancelAnimationFrame(areaFrame.current); }, []);
   const nextId = useRef(Math.max(3, ...(loadedDocument?.expressions ?? []).map(({ id }) => /^\d+$/.test(id) ? Number(id) + 1 : 3).filter(Number.isSafeInteger)));
   const id = useId();
 
@@ -136,6 +139,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   useEffect(() => {
     const dismissOutside = (event: PointerEvent) => {
       for (const menu of [settingsRef.current, analysisRef.current, helpRef.current, importMenuRef.current, exportMenuRef.current, addMenuRef.current]) {
+        if (menu === analysisRef.current && event.target instanceof Element && event.target.closest(".graph-area-bound")) continue;
         if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
       }
     };
@@ -151,7 +155,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   useEffect(() => { setTangent(null); setTangentError(""); }, [expressions, parameters, selectedRowKey]);
   useEffect(() => { setValues(null); setTableError(""); }, [expressions, parameters, selectedRowKey]);
   useEffect(() => { setIntegral(null); setIntegralError(""); }, [expressions, parameters, selectedRowKey]);
-  useEffect(() => { setArea(null); setAreaError(""); }, [expressions, parameters, selectedRowKey, areaSecond]);
+  useEffect(() => { areaRequest.current++; if (areaFrame.current !== null) cancelAnimationFrame(areaFrame.current); setArea(null); setAreaError(""); }, [expressions, parameters, selectedRowKey, areaSecond]);
 
   const areaRegion = useMemo(() => {
     const first = expressions.find((item) => `function:${item.id}` === selectedRowKey);
@@ -165,15 +169,19 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
     if (bound === "start") setIntegralStart(value); else setIntegralEnd(value);
     const first = expressions.find((item) => item.id === areaRegion.first), second = expressions.find((item) => item.id === areaRegion.second);
     if (!first || !second) return;
-    void import("function-plot").then((library) => {
+    const request = ++areaRequest.current;
+    if (areaFrame.current !== null) cancelAnimationFrame(areaFrame.current);
+    areaFrame.current = requestAnimationFrame(() => { areaFrame.current = null; void import("function-plot").then((library) => {
+      if (request !== areaRequest.current) return;
       try {
         setArea(areaBetweenCurves(graphExpressionCurve(first, parameterValues, library), graphExpressionCurve(second, parameterValues, library), bound === "start" ? Number(value) : areaRegion.start, bound === "end" ? Number(value) : areaRegion.end));
         setAreaError("");
       } catch (error) { setAreaError(error instanceof Error ? error.message : "Unable to calculate the area."); }
-    });
+    }).catch(() => { if (request === areaRequest.current) setAreaError("Unable to load the graph evaluator."); }); });
   };
 
   const calculateArea = async () => {
+    const request = ++areaRequest.current;
     const first = expressions.find((item) => `function:${item.id}` === selectedRowKey);
     const second = expressions.find((item) => item.id === areaSecond);
     if (!first || !second || first.id === second.id || !first.visible || !second.visible || errors[first.id] || errors[second.id] || invalidDrafts[first.id] || invalidDrafts[second.id]) {
@@ -181,6 +189,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
     }
     try {
       const library = await import("function-plot");
+      if (request !== areaRequest.current) return;
       const number = (value: string) => value.trim() ? Number(value) : NaN;
       setArea(areaBetweenCurves(graphExpressionCurve(first, parameterValues, library), graphExpressionCurve(second, parameterValues, library), number(integralStart), number(integralEnd)));
       setAreaError("");
@@ -312,7 +321,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   };
 
   const buildDocument = (): GraphDocument => parseGraphDocument({
-    version: 1, expressions, points, datasets, labels, parameters, viewport: graphRef.current?.getViewport() ?? initialViewport,
+    version: 1, expressions, points, datasets, labels, parameters, rowOrder, viewport: graphRef.current?.getViewport() ?? initialViewport,
     settings: { grid, precision, snapToGrid },
     presentation: { interactiveParameters: interactiveParameters.filter((name) => parameters.some((parameter) => parameter.name === name)) },
   });
@@ -325,6 +334,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
       setParameters(document.parameters);
       setPoints(document.points ?? []);
       setDatasets(document.datasets ?? []);
+      setRowOrder(document.rowOrder ?? [...document.expressions.map(({ id }) => `function:${id}`), ...document.parameters.map(({ name }) => `parameter:${name}`), ...(document.datasets ?? []).map(({ id }) => `dataset:${id}`), ...(document.points ?? []).map(({ id }) => `point:${id}`)]);
       setLabels(document.labels ?? { title: "", xTitle: "", xUnit: "", yTitle: "", yUnit: "", annotations: [] });
       setGrid(document.settings.grid);
       setPrecision(document.settings.precision);
@@ -353,7 +363,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
       <p>For a finite domain, append a restriction such as <code>x^2 {'{-2<=x<3}'}</code>. Separate restricted pieces with semicolons, for example <code>x {'{-2<=x<0}'}; x^2 {'{0<=x<=2}'}</code>. Piece domains must not overlap.</p>
     </section>
     <section id={`${id}-help-workspace`}><h3>Graph & navigation</h3>
-      <p>Drag the graph to pan; scroll, pinch, or use + and − to zoom. Drag the divider to resize the sidebar, or use its toggle to hide and show it. Drag a numbered color strip to reorder rows.</p>
+      <p>Drag the graph to pan; scroll, pinch, or use + and − to zoom. Use Reset view to return to the default viewport. Drag the divider to resize the sidebar, or use its toggle to hide and show it. Drag a numbered color strip to reorder rows.</p>
       <p>Hover over a curve to inspect coordinates and click to pin the readout. The coordinate snap setting controls whether the hover x-value follows grid increments.</p>
     </section>
     <section id={`${id}-help-data`}><h3>Data & points</h3>
@@ -506,14 +516,14 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                 }));
                 setDatasets((previous) => previous.flatMap((item) => item.id === dataset.id ? next : [item]));
               }} onFit={fitDataset} onUseLabels={(dataset) => setLabels((previous) => ({ ...previous, xTitle: dataset.xLabel, yTitle: dataset.yLabel, xUnit: "", yUnit: "" }))} onAddTable={addTable} selectedId={selectedRowKey?.startsWith("dataset:") ? selectedRowKey.slice(8) : null} onSelect={(datasetId) => setSelectedRowKey(`dataset:${datasetId}`)} /></div></div>)}
-              {points.length > 0 && <div className="graph-sidebar-item" style={{ order: rowOrder.indexOf(`point:${points[0]?.id}`) }}><span className="graph-sidebar-strip" style={{ backgroundColor: COLORS[4] }}>{rowOrder.indexOf(`point:${points[0]?.id}`) + 1}</span><div className="graph-sidebar-item-content"><div ref={pointsRef} className="graph-points" aria-label="Points">
-              {points.map((point, index) => <div className={`graph-point-row${selectedRowKey === `point:${point.id}` ? " graph-point-row--selected" : ""}`} key={point.id} onClick={() => setSelectedRowKey(`point:${point.id}`)}>
+              {points.map((point, index) => <div key={point.id} className="graph-sidebar-item" style={{ order: rowOrder.indexOf(`point:${point.id}`) }}><div className="graph-sidebar-item-content"><div ref={index === 0 ? pointsRef : undefined} className="graph-points" aria-label="Points">
+              <div className={`graph-point-row${selectedRowKey === `point:${point.id}` ? " graph-point-row--selected" : ""}`} onClick={() => setSelectedRowKey(`point:${point.id}`)}>
                 <span className="graphing-expression-color" style={{ backgroundColor: point.color }} aria-hidden="true">{rowOrder.indexOf(`point:${point.id}`) + 1}</span>
                 <label>x <input type="number" step="any" aria-label={`Point ${index + 1} x`} defaultValue={point.x} key={`${documentRevision}-${point.id}-x-${point.x}`} onBlur={(event) => { const value = event.currentTarget.valueAsNumber; if (Number.isFinite(value)) setPoints((previous) => previous.map((item) => item.id === point.id ? { ...item, x: value } : item)); else event.currentTarget.value = String(point.x); }} /></label>
                 <label>y <input type="number" step="any" aria-label={`Point ${index + 1} y`} defaultValue={point.y} key={`${documentRevision}-${point.id}-y-${point.y}`} onBlur={(event) => { const value = event.currentTarget.valueAsNumber; if (Number.isFinite(value)) setPoints((previous) => previous.map((item) => item.id === point.id ? { ...item, y: value } : item)); else event.currentTarget.value = String(point.y); }} /></label>
                 <button type="button" className="graphing-icon-button" aria-label={`Remove point ${index + 1}`} onClick={() => setPoints((previous) => previous.filter((item) => item.id !== point.id))}><X size={18} aria-hidden="true" /></button>
-              </div>)}
-            </div></div></div>}
+              </div>
+            </div></div></div>)}
             </>
             <details ref={addMenuRef} className="graph-add-menu"><summary className="graphing-add-button" aria-label="Add graph element" title="Add graph element"><Plus size={22} strokeWidth={3} aria-hidden="true" /></summary><div className="graph-add-menu-options">
               <button type="button" onClick={addFunction}>Function</button>
@@ -521,6 +531,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               <button type="button" onClick={addPoint}>Point</button>
             </div></details>
           </div>
+          <div className="graph-sidebar-watermark" aria-label="Powered by Lycium"><span>powered by</span><strong>lycium</strong></div>
         </aside>
           <div className="graph-panel-resizer" role="separator" tabIndex={0} aria-label="Resize functions panel" aria-orientation="vertical" aria-controls={`${id}-expressions`} aria-valuemin={280} aria-valuemax={480} aria-valuenow={panelWidth}
             onPointerDown={(event) => { resizeStart.current = { x: event.clientX, width: event.currentTarget.previousElementSibling?.getBoundingClientRect().width ?? panelWidth }; event.currentTarget.setPointerCapture(event.pointerId); }}
@@ -535,8 +546,8 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               <details><summary>Area between curves</summary>
                 <p>Select the first function in the sidebar.</p>
                 <label>Second function <select value={areaSecond} onChange={(event) => setAreaSecond(event.target.value)}><option value="">Choose a function</option>{expressions.map((expression, index) => <option key={expression.id} value={expression.id}>Function {index + 1}</option>)}</select></label>
-                <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { setIntegralStart(event.target.value); setArea(null); }} /></label>
-                <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { setIntegralEnd(event.target.value); setArea(null); }} /></label>
+                <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { areaRequest.current++; setIntegralStart(event.target.value); setArea(null); }} /></label>
+                <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { areaRequest.current++; setIntegralEnd(event.target.value); setArea(null); }} /></label>
                 <button type="button" onClick={() => void calculateArea()}>Calculate area</button>
                 {areaError && <p className="graphing-error" role="alert">{areaError}</p>}
                 {area !== null && !areaError && <p role="status">Approximate area: {Number(area.toPrecision(4))}</p>}
@@ -574,6 +585,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
             <div className="graphing-view-controls">
               <button type="button" className="graphing-icon-button" aria-label="Zoom in" title="Zoom in" onClick={() => graphRef.current?.zoom(0.8)}><ZoomIn size={19} aria-hidden="true" /></button>
               <button type="button" className="graphing-icon-button" aria-label="Zoom out" title="Zoom out" onClick={() => graphRef.current?.zoom(1.25)}><ZoomOut size={19} aria-hidden="true" /></button>
+              <button type="button" className="graphing-icon-button" aria-label="Reset view" title="Reset view" onClick={() => graphRef.current?.reset()}><RotateCcw size={18} aria-hidden="true" /></button>
             </div>
           <details ref={settingsRef} className="graph-settings"><summary aria-label="Graph settings" title="Graph settings"><Cog size={17} aria-hidden="true" /></summary><div className="graphing-trace-controls" role="group" aria-label="Coordinate readout settings">
             <label className="graphing-grid-toggle"><input type="checkbox" checked={grid} onChange={(event) => setGrid(event.target.checked)} />Grid</label>

@@ -4,6 +4,12 @@ import { parseGraphDocument } from "./graphDocument";
 const example = { version: 1, expressions: [{ id: "1", expr: "a*x^2", color: "#176b55", visible: true }], parameters: [{ name: "a", value: 1, min: -5, max: 5, step: 0.1 }], viewport: { x: [-5, 5], y: [-3, 3] }, settings: { grid: true, precision: "auto", snapToGrid: false }, presentation: { interactiveParameters: ["a"] } };
 
 describe("graph document", () => {
+  it("preserves sidebar order and rejects duplicate or unknown rows", () => {
+    expect(parseGraphDocument({ ...example, rowOrder: ["parameter:a", "function:1"] }).rowOrder).toEqual(["parameter:a", "function:1"]);
+    expect(parseGraphDocument({ ...example, rowOrder: ["parameter:a"] }).rowOrder).toEqual(["parameter:a", "function:1"]);
+    expect(() => parseGraphDocument({ ...example, rowOrder: ["function:1", "function:1"] })).toThrow();
+    expect(() => parseGraphDocument({ ...example, rowOrder: ["function:missing"] })).toThrow();
+  });
   it("round-trips portable graph state without retaining references", () => {
     const parsed = parseGraphDocument(JSON.parse(JSON.stringify(example)));
     expect(parsed).toEqual(example);

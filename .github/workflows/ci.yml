@@ -23,7 +23,7 @@ jobs:
         run: node scripts/check-loc.mjs
 
   web-and-contracts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
