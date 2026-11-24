@@ -6,7 +6,7 @@ import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as 
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import { graphExpressionCurve, type GraphExpression } from "./graphExpressions";
 import { parseGraphDomain } from "./graphDomain";
-import { tangentAt } from "./graphCalculus";
+import { tableOfValues, tangentAt } from "./graphCalculus";
 import ParameterSliders from "./ParameterSliders";
 import DatasetPanel from "./DatasetPanel";
 import GraphLabelsPanel from "./GraphLabelsPanel";
@@ -67,6 +67,11 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const [tangentX, setTangentX] = useState("0");
   const [tangent, setTangent] = useState<{ x: number; y: number; slope: number } | null>(null);
   const [tangentError, setTangentError] = useState("");
+  const [tableStart, setTableStart] = useState("-2");
+  const [tableStep, setTableStep] = useState("1");
+  const [tableCount, setTableCount] = useState("5");
+  const [values, setValues] = useState<{ x: number; y: number | null }[] | null>(null);
+  const [tableError, setTableError] = useState("");
   const [axisBounds, setAxisBounds] = useState({ xMin: "", xMax: "", yMin: "", yMax: "" });
   const [axisError, setAxisError] = useState("");
   const [invalidDrafts, setInvalidDrafts] = useState<Record<string, boolean>>({});
@@ -136,6 +141,18 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
 
   useEffect(() => { setCrossings(null); setIntercepts(null); setCrossingError(""); }, [expressions, parameters]);
   useEffect(() => { setTangent(null); setTangentError(""); }, [expressions, parameters, selectedRowKey]);
+  useEffect(() => { setValues(null); setTableError(""); }, [expressions, parameters, selectedRowKey]);
+
+  const generateValues = async () => {
+    const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
+    if (!expression || !expression.visible || errors[expression.id] || invalidDrafts[expression.id]) { setValues(null); setTableError("Select a valid function first."); return; }
+    try {
+      const library = await import("function-plot");
+      const number = (value: string) => value.trim() ? Number(value) : NaN;
+      setValues(tableOfValues(graphExpressionCurve(expression, parameterValues, library), number(tableStart), number(tableStep), number(tableCount)));
+      setTableError("");
+    } catch (error) { setValues(null); setTableError(error instanceof Error ? error.message : "Unable to generate values."); }
+  };
 
   const inspectTangent = async () => {
     const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
@@ -428,6 +445,14 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
           {!expressionsVisible && <button type="button" className="graphing-panel-toggle graphing-panel-reopen" aria-label="Show functions panel" title="Show functions panel" aria-expanded="false" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(true)}><PanelLeftOpen size={18} aria-hidden="true" /></button>}
             <div className="graphing-graph-controls">
 <details ref={analysisRef} className="graph-analysis-menu"><summary aria-label="Graph analysis" title="Graph analysis"><Search size={19} aria-hidden="true" /></summary><div className="graph-analysis-popover">
+              <details><summary>Table of values</summary>
+                <label>Start x <input type="number" step="any" value={tableStart} onChange={(event) => setTableStart(event.target.value)} /></label>
+                <label>Step <input type="number" step="any" value={tableStep} onChange={(event) => setTableStep(event.target.value)} /></label>
+                <label>Rows <input type="number" min="1" max="100" step="1" value={tableCount} onChange={(event) => setTableCount(event.target.value)} /></label>
+                <button type="button" onClick={() => void generateValues()}>Generate for selected function</button>
+                {tableError && <p className="graphing-error" role="alert">{tableError}</p>}
+                {values && <table><thead><tr><th scope="col">x</th><th scope="col">y</th></tr></thead><tbody>{values.map(({ x, y }, index) => <tr key={index}><td>{Number(x.toPrecision(8))}</td><td>{y === null ? "Undefined" : Number(y.toPrecision(8))}</td></tr>)}</tbody></table>}
+              </details>
               <label>Tangent at x <input type="number" step="any" value={tangentX} onChange={(event) => setTangentX(event.target.value)} /></label>
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void inspectTangent()}>Show tangent for selected function</button>
               {tangentError && <p className="graphing-error" role="alert">{tangentError}</p>}
