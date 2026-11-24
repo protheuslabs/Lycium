@@ -6,7 +6,7 @@ import { Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, Upload, X, Plus as 
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
 import { graphExpressionCurve, type GraphExpression } from "./graphExpressions";
 import { parseGraphDomain } from "./graphDomain";
-import { integrateCurve, tableOfValues, tangentAt } from "./graphCalculus";
+import { areaBetweenCurves, integrateCurve, tableOfValues, tangentAt } from "./graphCalculus";
 import ParameterSliders from "./ParameterSliders";
 import DatasetPanel from "./DatasetPanel";
 import GraphLabelsPanel from "./GraphLabelsPanel";
@@ -76,6 +76,9 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const [integralEnd, setIntegralEnd] = useState("1");
   const [integral, setIntegral] = useState<number | null>(null);
   const [integralError, setIntegralError] = useState("");
+  const [areaSecond, setAreaSecond] = useState("");
+  const [area, setArea] = useState<number | null>(null);
+  const [areaError, setAreaError] = useState("");
   const [axisBounds, setAxisBounds] = useState({ xMin: "", xMax: "", yMin: "", yMax: "" });
   const [axisError, setAxisError] = useState("");
   const [invalidDrafts, setInvalidDrafts] = useState<Record<string, boolean>>({});
@@ -147,6 +150,41 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   useEffect(() => { setTangent(null); setTangentError(""); }, [expressions, parameters, selectedRowKey]);
   useEffect(() => { setValues(null); setTableError(""); }, [expressions, parameters, selectedRowKey]);
   useEffect(() => { setIntegral(null); setIntegralError(""); }, [expressions, parameters, selectedRowKey]);
+  useEffect(() => { setArea(null); setAreaError(""); }, [expressions, parameters, selectedRowKey, areaSecond]);
+
+  const areaRegion = useMemo(() => {
+    const first = expressions.find((item) => `function:${item.id}` === selectedRowKey);
+    const start = Number(integralStart), end = Number(integralEnd);
+    return area !== null && first && integralStart.trim() && integralEnd.trim() && Number.isFinite(start) && Number.isFinite(end) ? { first: first.id, second: areaSecond, start, end } : null;
+  }, [area, expressions, selectedRowKey, areaSecond, integralStart, integralEnd]);
+
+  const moveAreaBound = (bound: "start" | "end", x: number) => {
+    if (!areaRegion) return;
+    const value = String(Number(x.toPrecision(6)));
+    if (bound === "start") setIntegralStart(value); else setIntegralEnd(value);
+    const first = expressions.find((item) => item.id === areaRegion.first), second = expressions.find((item) => item.id === areaRegion.second);
+    if (!first || !second) return;
+    void import("function-plot").then((library) => {
+      try {
+        setArea(areaBetweenCurves(graphExpressionCurve(first, parameterValues, library), graphExpressionCurve(second, parameterValues, library), bound === "start" ? Number(value) : areaRegion.start, bound === "end" ? Number(value) : areaRegion.end));
+        setAreaError("");
+      } catch (error) { setAreaError(error instanceof Error ? error.message : "Unable to calculate the area."); }
+    });
+  };
+
+  const calculateArea = async () => {
+    const first = expressions.find((item) => `function:${item.id}` === selectedRowKey);
+    const second = expressions.find((item) => item.id === areaSecond);
+    if (!first || !second || first.id === second.id || !first.visible || !second.visible || errors[first.id] || errors[second.id] || invalidDrafts[first.id] || invalidDrafts[second.id]) {
+      setArea(null); setAreaError("Select two different valid functions."); return;
+    }
+    try {
+      const library = await import("function-plot");
+      const number = (value: string) => value.trim() ? Number(value) : NaN;
+      setArea(areaBetweenCurves(graphExpressionCurve(first, parameterValues, library), graphExpressionCurve(second, parameterValues, library), number(integralStart), number(integralEnd)));
+      setAreaError("");
+    } catch (error) { setArea(null); setAreaError(error instanceof Error ? error.message : "Unable to calculate the area."); }
+  };
 
   const calculateIntegral = async () => {
     const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
@@ -461,6 +499,15 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
           {!expressionsVisible && <button type="button" className="graphing-panel-toggle graphing-panel-reopen" aria-label="Show functions panel" title="Show functions panel" aria-expanded="false" aria-controls={`${id}-expressions`} onClick={() => setExpressionsVisible(true)}><PanelLeftOpen size={18} aria-hidden="true" /></button>}
             <div className="graphing-graph-controls">
 <details ref={analysisRef} className="graph-analysis-menu"><summary aria-label="Graph analysis" title="Graph analysis"><Search size={19} aria-hidden="true" /></summary><div className="graph-analysis-popover">
+              <details><summary>Area between curves</summary>
+                <p>Select the first function in the sidebar.</p>
+                <label>Second function <select value={areaSecond} onChange={(event) => setAreaSecond(event.target.value)}><option value="">Choose a function</option>{expressions.map((expression, index) => <option key={expression.id} value={expression.id}>Function {index + 1}</option>)}</select></label>
+                <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { setIntegralStart(event.target.value); setArea(null); }} /></label>
+                <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { setIntegralEnd(event.target.value); setArea(null); }} /></label>
+                <button type="button" onClick={() => void calculateArea()}>Calculate area</button>
+                {areaError && <p className="graphing-error" role="alert">{areaError}</p>}
+                {area !== null && !areaError && <p role="status">Approximate area: {Number(area.toPrecision(8))}</p>}
+              </details>
               <details><summary>Signed integral</summary>
                 <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { setIntegralStart(event.target.value); setIntegral(null); }} /></label>
                 <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { setIntegralEnd(event.target.value); setIntegral(null); }} /></label>
@@ -527,7 +574,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
           <GraphLabelsPanel labels={labels} onChange={setLabels} />
           </div></details>
           </div>
-          <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} selectedExpressionId={selectedRowKey?.startsWith("function:") ? selectedRowKey.slice(9) : null} points={points} datasets={datasets} labels={labels} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} onErrors={setErrors} onPointMove={(pointId, x, y) => setPoints((previous) => previous.map((point) => point.id === pointId ? { ...point, x, y } : point))} />
+          <GraphCanvas key={documentRevision} ref={graphRef} initialViewport={initialViewport} expressions={plottedExpressions} selectedExpressionId={selectedRowKey?.startsWith("function:") ? selectedRowKey.slice(9) : null} points={points} datasets={datasets} labels={labels} parameters={parameterValues} grid={grid} precision={precision} snapToGrid={snapToGrid} areaRegion={areaRegion} onAreaBoundMove={moveAreaBound} onErrors={setErrors} onPointMove={(pointId, x, y) => setPoints((previous) => previous.map((point) => point.id === pointId ? { ...point, x, y } : point))} />
         </section>
       </div>
     </div>

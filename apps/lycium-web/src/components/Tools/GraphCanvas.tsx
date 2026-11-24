@@ -32,6 +32,8 @@ type GraphCanvasProps = {
   accessibleLabel?: string;
   onErrors: (errors: Record<string, string>) => void;
   onPointMove?: (id: string, x: number, y: number) => void;
+  areaRegion?: { first: string; second: string; start: number; end: number } | null;
+  onAreaBoundMove?: (bound: "start" | "end", x: number) => void;
 };
 
 const NO_POINTS: readonly GraphPoint[] = [];
@@ -41,12 +43,12 @@ const NO_PARAMETERS: Readonly<Record<string, number>> = {};
 
 // No page layout or course dependencies: the same plot can live in either host.
 const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function GraphCanvas(
-  { expressions, selectedExpressionId = null, points = NO_POINTS, datasets = NO_DATASETS, labels = NO_LABELS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, accessibleLabel = "Cartesian graph of the visible functions", onErrors, onPointMove },
+  { expressions, selectedExpressionId = null, points = NO_POINTS, datasets = NO_DATASETS, labels = NO_LABELS, parameters = NO_PARAMETERS, grid, initialViewport = null, precision = "auto", snapToGrid = false, accessibleLabel = "Cartesian graph of the visible functions", onErrors, onPointMove, areaRegion = null, onAreaBoundMove },
   ref,
 ) {
   const initialViewportRef = useRef(initialViewport);
   const containerRef = useRef<HTMLDivElement>(null);
-  const configRef = useRef({ expressions, selectedExpressionId, points, datasets, labels, parameters, grid, precision, snapToGrid });
+  const configRef = useRef({ expressions, selectedExpressionId, points, datasets, labels, parameters, grid, precision, snapToGrid, areaRegion });
   const lastErrorsRef = useRef<Record<string, string>>({});
   const controllerRef = useRef<(Omit<GraphCanvasHandle, "exportImage"> & { redraw: () => void }) | null>(null);
   const [status, setStatus] = useState("Loading graph…");
@@ -56,6 +58,8 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
   pointMoveRef.current = onPointMove;
   const pointCoordsRef = useRef<((clientX: number, clientY: number) => { x: number; y: number } | null) | null>(null);
   const [pointPositions, setPointPositions] = useState<Array<{ id: string; left: number; top: number; color: string }>>([]);
+  const [areaPositions, setAreaPositions] = useState<{ start: number; end: number } | null>(null);
+  const areaCoordRef = useRef<((clientX: number) => number) | null>(null);
 
   useImperativeHandle(ref, () => ({
     reset: () => controllerRef.current?.reset(),
@@ -113,12 +117,12 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
   }), []);
 
   useEffect(() => {
-    configRef.current = { ...configRef.current, expressions, selectedExpressionId, points, datasets, labels, grid };
+    configRef.current = { ...configRef.current, expressions, selectedExpressionId, points, datasets, labels, grid, areaRegion };
     // Redraw on the next paint so slider-driven expression changes stay live
     // without queuing multiple expensive plot rebuilds per frame.
     const frame = requestAnimationFrame(() => controllerRef.current?.redraw());
     return () => cancelAnimationFrame(frame);
-  }, [expressions, selectedExpressionId, points, datasets, labels, grid]);
+  }, [expressions, selectedExpressionId, points, datasets, labels, grid, areaRegion]);
 
   useEffect(() => {
     configRef.current = { ...configRef.current, parameters };
@@ -158,6 +162,9 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           const meta = chart?.meta;
           if (!meta?.xScale || !meta.yScale) return;
           const xScale = meta.xScale, yScale = meta.yScale;
+          const region = configRef.current.areaRegion;
+          setAreaPositions(region ? { start: xScale(region.start), end: xScale(region.end) } : null);
+          areaCoordRef.current = (clientX) => xScale.invert(clientX - container.getBoundingClientRect().left);
           setPointPositions(configRef.current.points.filter((point) => point.visible).map((point) => ({
             id: point.id, color: point.color,
             left: xScale(point.x),
@@ -309,6 +316,26 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
           }
           for (const value of meta.yScale.ticks()) if (value !== 0) addNumber(value, yStep, yAxisPosition, meta.yScale(value) + top + 4, "end");
           group.appendChild(numbers);
+          const region = configRef.current.areaRegion;
+          if (region) try {
+            const first = configRef.current.expressions.find((item) => item.id === region.first);
+            const second = configRef.current.expressions.find((item) => item.id === region.second);
+            if (first && second) {
+              const a = graphExpressionCurve(first, configRef.current.parameters, library), b = graphExpressionCurve(second, configRef.current.parameters, library);
+              const lower = Math.max(Math.min(region.start, region.end), Math.min(x0, x1)), upper = Math.min(Math.max(region.start, region.end), Math.max(x0, x1));
+              const paths: string[] = [];
+              if (upper > lower) for (let i = 0; i < 256; i++) {
+                const xA = lower + (upper - lower) * i / 256, xB = lower + (upper - lower) * (i + 1) / 256;
+                const values = [a.evaluate(xA), a.evaluate(xB), b.evaluate(xB), b.evaluate(xA)];
+                const intervals = [a.interval(xA, xB), b.interval(xA, xB)];
+                if (!values.every(Number.isFinite) || intervals.some((v) => !Number.isFinite(v.lo) || !Number.isFinite(v.hi) || v.lo > v.hi)) continue;
+                const clampY = (y: number) => Math.max(Math.min(y, Math.max(y0, y1)), Math.min(y0, y1));
+                paths.push(`M${meta.xScale(xA) + left},${meta.yScale(clampY(values[0])) + top}L${meta.xScale(xB) + left},${meta.yScale(clampY(values[1])) + top}L${meta.xScale(xB) + left},${meta.yScale(clampY(values[2])) + top}L${meta.xScale(xA) + left},${meta.yScale(clampY(values[3])) + top}Z`);
+              }
+              const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+              path.setAttribute("class", "graph-area-shading"); path.setAttribute("d", paths.join("")); path.setAttribute("fill", "#0e7490"); path.setAttribute("fill-opacity", "0.2"); path.setAttribute("pointer-events", "none"); group.appendChild(path);
+            }
+          } catch { /* Invalid regions are not shaded. */ }
           for (const item of labels.annotations) if (item.x >= Math.min(x0, x1) && item.x <= Math.max(x0, x1) && item.y >= Math.min(y0, y1) && item.y <= Math.max(y0, y1)) add(item.text, meta.xScale(item.x) + (meta.margin?.left ?? 0), meta.yScale(item.y) + (meta.margin?.top ?? 0) - 8);
           for (const expression of configRef.current.expressions) {
             if (!expression.visible) continue;
@@ -541,6 +568,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
       cancelAnimationFrame(frame);
       controllerRef.current = null;
       pointCoordsRef.current = null;
+      areaCoordRef.current = null;
       disposeChart();
       container.replaceChildren();
     };
@@ -549,6 +577,7 @@ const GraphCanvas = forwardRef<GraphCanvasHandle, GraphCanvasProps>(function Gra
   return (
     <div className="graph-surface">
       <div ref={containerRef} className="graph-viewport" role="img" aria-label={accessibleLabel} />
+      {areaPositions && onAreaBoundMove && (["start", "end"] as const).map((bound) => <button key={bound} type="button" className="graph-area-bound" style={{ left: areaPositions[bound] }} aria-label={`Move ${bound} area boundary`} title={`Drag ${bound} boundary`} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); event.preventDefault(); }} onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) { const x = areaCoordRef.current?.(event.clientX); if (x !== undefined && Number.isFinite(x)) onAreaBoundMove(bound, x); } }} />)}
       {onPointMove && pointPositions.map((point, index) => <button key={point.id} type="button" className="graph-draggable-point" style={{ left: point.left, top: point.top, color: point.color }} aria-label={`Move point ${index + 1}`} title="Drag or use arrow keys to move point" onKeyDown={(event) => {
         const offset: Record<string, [number, number]> = { ArrowLeft: [-10, 0], ArrowRight: [10, 0], ArrowUp: [0, -10], ArrowDown: [0, 10] };
         if (!offset[event.key] || !containerRef.current) return;

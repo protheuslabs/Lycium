@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as plot from "function-plot";
-import { integrateCurve, tableOfValues, tangentAt } from "./graphCalculus";
+import { areaBetweenCurves, integrateCurve, tableOfValues, tangentAt } from "./graphCalculus";
 import { graphExpressionCurve } from "./graphExpressions";
 
 const curve = (expr: string) => graphExpressionCurve({ id: "1", expr, color: "#000", visible: true }, {}, plot);
@@ -37,5 +37,15 @@ describe("numerical integration", () => {
   it("rejects poles and intervals outside a restriction", () => {
     expect(() => integrateCurve(curve("1/x"), -1, 1)).toThrow();
     expect(() => integrateCurve(curve("x {0<=x<=2}"), -1, 1)).toThrow();
+  });
+});
+
+describe("area between curves", () => {
+  it("adds areas on both sides of a crossing and ignores bound order", () => {
+    expect(areaBetweenCurves(curve("x"), curve("0"), -1, 1)).toBeCloseTo(1, 6);
+    expect(areaBetweenCurves(curve("x"), curve("0"), 1, -1)).toBeCloseTo(1, 6);
+  });
+  it("rejects a discontinuity in either curve", () => {
+    expect(() => areaBetweenCurves(curve("1/x"), curve("0"), -1, 1)).toThrow();
   });
 });

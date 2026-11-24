@@ -1,5 +1,8 @@
 /* The host owns the size. SVG content must never determine its measured height. */
 .graph-surface { position: relative; width: 100%; height: var(--lycium-graph-height, clamp(360px, 60svh, 700px)); min-height: 0; min-width: 0; margin: 0; padding: 0; overflow: hidden; contain: size layout; background: #fff; color: #171717; color-scheme: light; }
+.graph-surface .graph-area-bound, .graph-surface .graph-area-bound:hover { position: absolute; top: 0; bottom: 0; width: 18px; padding: 0; border: 0; box-shadow: none; transform: translateX(-50%); background: transparent; cursor: ew-resize; touch-action: none; z-index: 2; }
+.graph-area-bound::before { content: ""; position: absolute; left: 8px; top: 0; bottom: 0; border-left: 2px dashed #0e7490; opacity: .65; }
+.graph-area-bound::after { content: ""; position: absolute; left: 3px; top: 12px; width: 12px; height: 12px; border-radius: 50%; background: #0e7490; }
 .graph-viewport, .graph-plot-target { position: absolute; inset: 0; min-width: 0; min-height: 0; overflow: hidden; }
 .graph-plot-target { opacity: 1; transition: opacity .12s ease; }
 .graph-draggable-point { transition: none; }

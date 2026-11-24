@@ -18,6 +18,20 @@ export function integrateCurve(curve: Curve, start: number, end: number): number
   return total;
 }
 
+/** Geometric area between two curves, including across crossings. */
+export function areaBetweenCurves(first: Curve, second: Curve, start: number, end: number): number {
+  const difference: Curve = {
+    id: "area-difference",
+    evaluate: (x) => Math.abs(first.evaluate(x) - second.evaluate(x)),
+    interval: (lo, hi) => {
+      const a = first.interval(lo, hi), b = second.interval(lo, hi);
+      if (![a.lo, a.hi, b.lo, b.hi].every(Number.isFinite) || a.lo > a.hi || b.lo > b.hi) return { lo: NaN, hi: NaN };
+      return { lo: 0, hi: Math.max(Math.abs(a.lo - b.hi), Math.abs(a.hi - b.lo)) };
+    },
+  };
+  return Math.abs(integrateCurve(difference, start, end));
+}
+
 /** Sample a bounded number of evenly spaced values, leaving undefined values empty. */
 export function tableOfValues(curve: Curve, start: number, step: number, count: number): { x: number; y: number | null }[] {
   if (!Number.isFinite(start) || !Number.isFinite(step) || step === 0 || !Number.isInteger(count) || count < 1 || count > 100) {
