@@ -13,5 +13,6 @@ export function loadFlashcardStore(): FlashcardStore {
 }
 
 export function saveFlashcardStore(store: FlashcardStore): void {
-  if (typeof window !== "undefined") window.localStorage.setItem(FLASHCARD_STORAGE_KEY, JSON.stringify(store));
+  if (typeof window === "undefined") return;
+  try { window.localStorage.setItem(FLASHCARD_STORAGE_KEY, JSON.stringify(store)); } catch { /* Storage can be unavailable in private or restricted contexts. */ }
 }

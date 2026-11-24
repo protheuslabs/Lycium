@@ -85,3 +85,29 @@ export function studyCards(deck: FlashcardDeck, history: FlashcardHistory, revie
   const cards = reviewOnly ? deck.cards.filter((card) => history[deck.id]?.[card.id]?.status === "review") : [...deck.cards];
   return cards;
 }
+
+export function shuffleCards<T>(items: readonly T[], random: () => number = Math.random): T[] {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
+}
+
+export type StudySession = {
+  cardIds: string[];
+  position: number;
+  reviewOnly: boolean;
+  shuffled: boolean;
+};
+
+export function createStudySession(deck: FlashcardDeck, history: FlashcardHistory, reviewOnly: boolean, shuffled: boolean): StudySession {
+  const cards = studyCards(deck, history, reviewOnly);
+  return { cardIds: (shuffled ? shuffleCards(cards) : cards).map((card) => card.id), position: 0, reviewOnly, shuffled };
+}
+
+export function sessionSummary(session: StudySession, deckId: string, history: FlashcardHistory): { studied: number; known: number; needsReview: number } {
+  const reviews = session.cardIds.map((id) => history[deckId]?.[id]).filter(Boolean);
+  return { studied: session.position, known: reviews.filter((review) => review?.status === "known").length, needsReview: reviews.filter((review) => review?.status === "review").length };
+}

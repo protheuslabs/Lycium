@@ -3,53 +3,55 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, Edit3, Eye, Plus, RotateCcw, Shuffle, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { createId, recordReview, starterDeck, studyCards, type Flashcard, type FlashcardDeck, type FlashcardStore } from "./flashcardDomain";
+import { createId, createStudySession, recordReview, starterDeck, type Flashcard, type FlashcardDeck, type FlashcardStore, type StudySession } from "./flashcardDomain";
 import { loadFlashcardStore, saveFlashcardStore } from "./flashcardStorage";
 import "./flashcards.css";
 
 type Mode = "study" | "cards";
 
 export default function FlashcardsApp() {
-  const [store, setStore] = useState<FlashcardStore>(() => loadFlashcardStore());
-  const [selectedId, setSelectedId] = useState<string | null>(() => loadFlashcardStore().decks[0]?.id ?? null);
+  const [store, setStore] = useState<FlashcardStore>({ version: 1, decks: [], history: {} });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>("study");
   const [flipped, setFlipped] = useState(false);
-  const [index, setIndex] = useState(0);
+  const [session, setSession] = useState<StudySession | null>(null);
+  const [, setIndex] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
   const [reviewOnly, setReviewOnly] = useState(false);
   const [shuffled, setShuffled] = useState(false);
   const [draft, setDraft] = useState({ front: "", back: "" });
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
   const deck = store.decks.find((item) => item.id === selectedId) ?? null;
-  const cards = useMemo(() => {
-    const base = deck ? studyCards(deck, store.history, reviewOnly) : [];
-    return shuffled ? [...base].sort(() => Math.random() - 0.5) : base;
-  }, [deck, reviewOnly, shuffled, store.history]);
+  const cards = useMemo(() => session && deck ? session.cardIds.map((id) => deck.cards.find((item) => item.id === id)).filter((item): item is Flashcard => Boolean(item)) : [], [deck, session]);
+  const index = session?.position ?? 0;
   const card = cards[index] ?? null;
   const reviewed = deck ? deck.cards.filter((item) => store.history[deck.id]?.[item.id]).length : 0;
   const missed = deck ? deck.cards.filter((item) => store.history[deck.id]?.[item.id]?.status === "review").length : 0;
 
-  useEffect(() => saveFlashcardStore(store), [store]);
-  useEffect(() => { setIndex(0); setFlipped(false); }, [selectedId, reviewOnly, shuffled]);
+  useEffect(() => { const loaded = loadFlashcardStore(); setStore(loaded); setSelectedId(loaded.decks[0]?.id ?? null); setHydrated(true); }, []);
+  useEffect(() => { if (hydrated) saveFlashcardStore(store); }, [hydrated, store]);
+  useEffect(() => { if (deck) { setSession(createStudySession(deck, store.history, reviewOnly, shuffled)); setFlipped(false); } else setSession(null); }, [selectedId, reviewOnly, shuffled]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
-      if (event.key === " ") { event.preventDefault(); setFlipped((value) => !value); }
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.closest("input, textarea, select, button, a, [role=dialog]") || target.isContentEditable)) return;
+      if ((event.key === " " || event.key === "Enter") && card) { event.preventDefault(); setFlipped((value) => !value); }
       if (event.key === "ArrowLeft") navigate(-1);
       if (event.key === "ArrowRight") navigate(1);
-      if (event.key === "1" && card) mark("review");
-      if (event.key === "2" && card) mark("known");
+      if (event.key === "1" && card && flipped) mark("review");
+      if (event.key === "2" && card && flipped) mark("known");
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   });
 
-  function navigate(delta: number) { setFlipped(false); setIndex((value) => Math.max(0, Math.min(cards.length - 1, value + delta))); }
+  function navigate(delta: number) { setFlipped(false); setSession((value) => value ? { ...value, position: Math.max(0, Math.min(value.cardIds.length, value.position + delta)) } : value); }
   function mark(status: "known" | "review") {
     if (!deck || !card) return;
     setStore((value) => recordReview(value, deck.id, card.id, status));
-    if (index < cards.length - 1) { setFlipped(false); setIndex((value) => value + 1); }
+    setFlipped(false); setSession((value) => value ? { ...value, position: Math.min(value.cardIds.length, value.position + 1) } : value);
   }
   function createDeck() {
     const now = new Date().toISOString();
