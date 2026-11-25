@@ -64,3 +64,21 @@ test("imports a CSV from a data row and fits its measurements", async ({ page })
   await imported.getByLabel("Show fit").check();
   await expect(imported.getByText("y = 2x + 1 · R² = 1")).toBeVisible();
 });
+
+test("mobile graph and controls remain usable when the panel is collapsed", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chrome", "This checks the mobile layout.");
+  await page.goto("/Lycium/tools/graph");
+  const graph = page.getByLabel("Cartesian graph of the visible functions");
+  await expect(graph).toBeVisible();
+  const initial = await graph.boundingBox();
+  expect(initial?.width).toBeGreaterThan(300);
+  expect(initial?.height).toBeGreaterThan(200);
+  await page.getByLabel("Hide functions panel").click();
+  await expect(page.getByLabel("Show functions panel")).toBeVisible();
+  await expect.poll(async () => (await graph.boundingBox())?.height ?? 0).toBeGreaterThan(initial!.height);
+  expect((await graph.boundingBox())?.width).toBeGreaterThan(300);
+  await page.getByLabel("Show functions panel").click();
+  await expect(page.getByLabel("Hide functions panel")).toBeVisible();
+  await page.getByLabel("Graph analysis").click();
+  await expect(page.getByText("Area between curves", { exact: true })).toBeVisible();
+});

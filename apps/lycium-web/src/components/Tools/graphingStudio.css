@@ -322,3 +322,24 @@
   .graphing-studio--workspace .graph-panel-resizer { transform: translateX(-.375rem); }
 }
 @media (max-width: 599px) { .graphing-workspace-header h1 { white-space: nowrap; } .graph-workspace-actions { gap: .25rem; } .graph-settings > summary { font-size: .75rem; padding: .5rem .35rem; } }
+
+/* The phone workspace is a vertical split; collapsing the panel must not
+   inherit the desktop two-column grid. */
+@media (max-width: 899px) {
+  .graphing-studio--workspace .graphing-layout,
+  .graphing-studio--workspace .graphing-layout.graphing-layout--collapsed { grid-template-columns: minmax(0, 1fr); }
+  .graphing-studio--workspace .graphing-layout { height: 100%; min-height: 0; grid-template-rows: minmax(0, 1fr) minmax(10rem, 40%); }
+  .graphing-studio--workspace .graphing-layout.graphing-layout--collapsed { min-height: 0; grid-template-rows: minmax(0, 1fr); }
+  .graphing-workspace-main { overflow: hidden; }
+  .graphing-studio--workspace .graphing-expressions { box-shadow: 0 -6px 18px -16px rgb(15 23 42 / 45%); }
+  .graphing-studio--workspace .graphing-graph-controls { top: .5rem; right: .5rem; }
+  .graphing-studio--workspace .graphing-panel-reopen { top: .5rem; left: .5rem; }
+}
+@media (max-width: 599px) {
+  .graphing-workspace-header { box-sizing: border-box; min-height: 3.25rem; padding: .35rem .6rem; gap: .25rem; flex-wrap: nowrap; }
+  .graphing-workspace-header h1 { font-size: 1.2rem; }
+  .graphing-workspace-header .graphing-back-link { gap: .2rem; font-size: .75rem; white-space: nowrap; }
+  .graph-workspace-actions { gap: 0; }
+  .graph-workspace-icon-button { width: 2rem; height: 2rem; min-height: 2rem !important; padding: .4rem !important; }
+  .graph-help-popover { width: min(30rem, calc(100vw - 1rem)); max-height: calc(100dvh - 4.5rem); }
+}
