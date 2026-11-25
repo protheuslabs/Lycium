@@ -11,7 +11,15 @@ test("area bounds can be dragged and reset restores the view", async ({ page }, 
   await page.getByLabel("Second function").selectOption({ label: "Function 2" });
   await page.getByRole("button", { name: "Calculate area" }).click();
   await expect(page.getByText(/Approximate area:/)).toBeVisible();
-  const before = await page.getByLabel("To x").first().inputValue();
+  const areaSection = page.locator("details").filter({ has: page.getByText("Area between curves", { exact: true }) }).last();
+  const integralSection = page.locator("details").filter({ has: page.getByText("Signed integral", { exact: true }) }).last();
+  await integralSection.locator("summary").click();
+  await integralSection.getByLabel("To x").fill("2");
+  await integralSection.getByRole("button", { name: "Calculate for selected function" }).click();
+  await expect(integralSection.getByText(/Approximate signed integral:/)).toBeVisible();
+  await expect(areaSection.getByLabel("To x")).toHaveValue("1");
+  await expect(areaSection.getByText(/Approximate area:/)).toBeVisible();
+  const before = await areaSection.getByLabel("To x").inputValue();
   const handle = page.getByRole("button", { name: "Move end area boundary" });
   const box = await handle.boundingBox();
   if (!box) throw new Error("Area boundary is not visible.");
@@ -19,7 +27,9 @@ test("area bounds can be dragged and reset restores the view", async ({ page }, 
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 40, box.y + 15, { steps: 5 });
   await page.mouse.up();
-  await expect.poll(() => page.getByLabel("To x").first().inputValue()).not.toBe(before);
+  await expect.poll(() => areaSection.getByLabel("To x").inputValue()).not.toBe(before);
+  await expect(integralSection.getByLabel("To x")).toHaveValue("2");
+  await expect(integralSection.getByText(/Approximate signed integral:/)).toBeVisible();
   await expect(page.getByText(/Approximate area:/)).toBeVisible();
   await page.getByLabel("Reset view").click();
   await expect(page.getByLabel("Cartesian graph of the visible functions")).toBeVisible();
@@ -33,15 +43,16 @@ test("graph files restore and export the order of functions, tables and points",
     expressions: [{ id: "1", expr: "x", color: "#176b55", visible: true }],
     datasets: [{ id: "d", name: "Measurements", xLabel: "x", yLabel: "y", color: "#2563eb", visible: true, regression: false, rows: [{ x: "1", y: "2" }] }],
     points: [{ id: "p", x: 0, y: 0, color: "#c2410c", visible: true }],
-    parameters: [], rowOrder: ["point:p", "function:1", "dataset:d"], viewport: null,
+    parameters: [{ name: "a", value: 1, min: -5, max: 5, step: 0.1 }], rowOrder: ["point:p", "parameter:a", "function:1", "dataset:d"], viewport: null,
     settings: { grid: true, precision: "auto", snapToGrid: true }, presentation: { interactiveParameters: [] },
   };
   await page.getByLabel("Choose graph JSON").setInputFiles({ name: "graph.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(document)) });
   await expect(page.getByLabel("Dataset name")).toHaveValue("Measurements");
   const rowOrder = await page.locator(".graphing-expression-list > [style*='order']").evaluateAll((rows) => rows.map((row) => ({ order: Number((row as HTMLElement).style.order), text: row.textContent ?? "", dataset: row.querySelector('input[aria-label="Dataset name"]')?.getAttribute("value") })).sort((a, b) => a.order - b.order));
-  expect(rowOrder).toHaveLength(3);
+  expect(rowOrder).toHaveLength(4);
   expect(rowOrder[0].text).toContain("1");
-  expect(rowOrder[2].dataset).toBe("Measurements");
+  expect(rowOrder[1].text).toContain("a =");
+  expect(rowOrder[3].dataset).toBe("Measurements");
   await page.getByLabel("Export graph").click();
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export JSON" }).click();

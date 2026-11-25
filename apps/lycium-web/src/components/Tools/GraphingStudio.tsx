@@ -2,20 +2,21 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { Calculator, CircleHelp, Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Upload, X, Plus as ZoomIn, Minus as ZoomOut } from "lucide-react";
+import { Calculator, Cog, Download, PanelLeftClose, PanelLeftOpen, Plus, RotateCcw, Upload, X, Plus as ZoomIn, Minus as ZoomOut } from "lucide-react";
 import GraphCanvas, { type GraphCanvasHandle } from "./GraphCanvas";
-import { graphExpressionCurve, type GraphExpression } from "./graphExpressions";
+import type { GraphExpression } from "./graphExpressions";
+import { useGraphAnalysis } from "./useGraphAnalysis";
 import { parseGraphDomain } from "./graphDomain";
-import { areaBetweenCurves, integrateCurve, tableOfValues, tangentAt } from "./graphCalculus";
 import ParameterSliders from "./ParameterSliders";
 import DatasetPanel from "./DatasetPanel";
 import GraphLabelsPanel from "./GraphLabelsPanel";
+import GraphAnalysisResults from "./GraphAnalysisResults";
+import OrvaneGuide from "./OrvaneGuide";
 import { numericPoints, type GraphDataset } from "./graphDataset";
 import MathExpressionField from "./MathExpressionField";
 import { PARAMETER_NAMES, type GraphParameter } from "./graphParameters";
 import type { CoordinatePrecision } from "./graphCoordinates";
 import { parseGraphDocument, type GraphDocument, type GraphLabels, type GraphPoint } from "./graphDocument";
-import { findCrossings, findIntercepts, type Curve, type Intercept, type Intersection } from "./graphIntersections";
 import "./graphingStudio.css";
 
 const COLORS = ["#176b55", "#2563eb", "#c2410c", "#9333ea", "#be185d", "#0e7490"];
@@ -61,34 +62,11 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
     ...(loadedDocument?.points ?? []).map(({ id }) => `point:${id}`),
   ]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [crossings, setCrossings] = useState<Intersection[] | null>(null);
-  const [intercepts, setIntercepts] = useState<Intercept[] | null>(null);
-  const [crossingError, setCrossingError] = useState("");
-  const [tangentX, setTangentX] = useState("0");
-  const [tangent, setTangent] = useState<{ x: number; y: number; slope: number } | null>(null);
-  const [tangentError, setTangentError] = useState("");
-  const [tableStart, setTableStart] = useState("-2");
-  const [tableStep, setTableStep] = useState("1");
-  const [tableCount, setTableCount] = useState("5");
-  const [values, setValues] = useState<{ x: number; y: number | null }[] | null>(null);
-  const [tableError, setTableError] = useState("");
-  const [integralStart, setIntegralStart] = useState("0");
-  const [integralEnd, setIntegralEnd] = useState("1");
-  const [integral, setIntegral] = useState<number | null>(null);
-  const [integralError, setIntegralError] = useState("");
-  const [areaSecond, setAreaSecond] = useState("");
-  const [area, setArea] = useState<number | null>(null);
-  const [areaError, setAreaError] = useState("");
   const [axisBounds, setAxisBounds] = useState({ xMin: "", xMax: "", yMin: "", yMax: "" });
   const [axisError, setAxisError] = useState("");
   const [invalidDrafts, setInvalidDrafts] = useState<Record<string, boolean>>({});
   const [selectedRowKey, setSelectedRowKey] = useState<string | null>(null);
   const [adjustments, setAdjustments] = useState<Record<string, FunctionAdjustment>>({});
-  const plottedExpressions = useMemo(() => {
-    const result = expressions.map((expression) => invalidDrafts[expression.id] ? { ...expression, visible: false } : expression);
-    if (tangent) result.push({ id: "__tangent__", expr: `(${tangent.slope})*(x-(${tangent.x}))+(${tangent.y})`, color: "#555555", visible: true });
-    return result;
-  }, [expressions, invalidDrafts, tangent]);
   const [grid, setGrid] = useState(loadedDocument?.settings.grid ?? true);
   const [precision, setPrecision] = useState<CoordinatePrecision>(loadedDocument?.settings.precision ?? "auto");
   const [snapToGrid, setSnapToGrid] = useState(loadedDocument?.settings.snapToGrid ?? true);
@@ -128,9 +106,12 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const addMenuRef = useRef<HTMLDetailsElement>(null);
   const [expressionsVisible, setExpressionsVisible] = useState(true);
   const graphRef = useRef<GraphCanvasHandle>(null);
-  const areaRequest = useRef(0);
-  const areaFrame = useRef<number | null>(null);
-  useEffect(() => () => { areaRequest.current++; if (areaFrame.current !== null) cancelAnimationFrame(areaFrame.current); }, []);
+  const { crossings, intercepts, crossingError, tangentX, setTangentX, tangent, setTangent, tangentError, tableStart, setTableStart, tableStep, setTableStep, tableCount, setTableCount, values, tableError, integralStart, setIntegralStart, integralEnd, setIntegralEnd, areaStart, setAreaStart, areaEnd, setAreaEnd, integral, setIntegral, integralError, setIntegralError, areaSecond, setAreaSecond, area, setArea, areaError, setAreaError, areaRequest, integralRequest, areaRegion, moveAreaBound, calculateArea, calculateIntegral, generateValues, inspectTangent, findIntersections } = useGraphAnalysis({ expressions, parameters, parameterValues, selectedRowKey, errors, invalidDrafts, graphRef });
+  const plottedExpressions = useMemo(() => {
+    const result = expressions.map((expression) => invalidDrafts[expression.id] ? { ...expression, visible: false } : expression);
+    if (tangent) result.push({ id: "__tangent__", expr: `(${tangent.slope})*(x-(${tangent.x}))+(${tangent.y})`, color: "#555555", visible: true });
+    return result;
+  }, [expressions, invalidDrafts, tangent]);
   const nextId = useRef(Math.max(3, ...(loadedDocument?.expressions ?? []).map(({ id }) => /^\d+$/.test(id) ? Number(id) + 1 : 3).filter(Number.isSafeInteger)));
   const id = useId();
 
@@ -150,106 +131,6 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
     document.addEventListener("keydown", dismissEscape);
     return () => { document.removeEventListener("pointerdown", dismissOutside); document.removeEventListener("keydown", dismissEscape); };
   }, []);
-
-  useEffect(() => { setCrossings(null); setIntercepts(null); setCrossingError(""); }, [expressions, parameters]);
-  useEffect(() => { setTangent(null); setTangentError(""); }, [expressions, parameters, selectedRowKey]);
-  useEffect(() => { setValues(null); setTableError(""); }, [expressions, parameters, selectedRowKey]);
-  useEffect(() => { setIntegral(null); setIntegralError(""); }, [expressions, parameters, selectedRowKey]);
-  useEffect(() => { areaRequest.current++; if (areaFrame.current !== null) cancelAnimationFrame(areaFrame.current); setArea(null); setAreaError(""); }, [expressions, parameters, selectedRowKey, areaSecond]);
-
-  const areaRegion = useMemo(() => {
-    const first = expressions.find((item) => `function:${item.id}` === selectedRowKey);
-    const start = Number(integralStart), end = Number(integralEnd);
-    return area !== null && first && integralStart.trim() && integralEnd.trim() && Number.isFinite(start) && Number.isFinite(end) ? { first: first.id, second: areaSecond, start, end } : null;
-  }, [area, expressions, selectedRowKey, areaSecond, integralStart, integralEnd]);
-
-  const moveAreaBound = (bound: "start" | "end", x: number) => {
-    if (!areaRegion) return;
-    const value = String(Number(x.toPrecision(6)));
-    if (bound === "start") setIntegralStart(value); else setIntegralEnd(value);
-    const first = expressions.find((item) => item.id === areaRegion.first), second = expressions.find((item) => item.id === areaRegion.second);
-    if (!first || !second) return;
-    const request = ++areaRequest.current;
-    if (areaFrame.current !== null) cancelAnimationFrame(areaFrame.current);
-    areaFrame.current = requestAnimationFrame(() => { areaFrame.current = null; void import("function-plot").then((library) => {
-      if (request !== areaRequest.current) return;
-      try {
-        setArea(areaBetweenCurves(graphExpressionCurve(first, parameterValues, library), graphExpressionCurve(second, parameterValues, library), bound === "start" ? Number(value) : areaRegion.start, bound === "end" ? Number(value) : areaRegion.end));
-        setAreaError("");
-      } catch (error) { setAreaError(error instanceof Error ? error.message : "Unable to calculate the area."); }
-    }).catch(() => { if (request === areaRequest.current) setAreaError("Unable to load the graph evaluator."); }); });
-  };
-
-  const calculateArea = async () => {
-    const request = ++areaRequest.current;
-    const first = expressions.find((item) => `function:${item.id}` === selectedRowKey);
-    const second = expressions.find((item) => item.id === areaSecond);
-    if (!first || !second || first.id === second.id || !first.visible || !second.visible || errors[first.id] || errors[second.id] || invalidDrafts[first.id] || invalidDrafts[second.id]) {
-      setArea(null); setAreaError("Select two different valid functions."); return;
-    }
-    try {
-      const library = await import("function-plot");
-      if (request !== areaRequest.current) return;
-      const number = (value: string) => value.trim() ? Number(value) : NaN;
-      setArea(areaBetweenCurves(graphExpressionCurve(first, parameterValues, library), graphExpressionCurve(second, parameterValues, library), number(integralStart), number(integralEnd)));
-      setAreaError("");
-    } catch (error) { setArea(null); setAreaError(error instanceof Error ? error.message : "Unable to calculate the area."); }
-  };
-
-  const calculateIntegral = async () => {
-    const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
-    if (!expression || !expression.visible || errors[expression.id] || invalidDrafts[expression.id]) { setIntegral(null); setIntegralError("Select a valid function first."); return; }
-    try {
-      const library = await import("function-plot");
-      const number = (value: string) => value.trim() ? Number(value) : NaN;
-      setIntegral(integrateCurve(graphExpressionCurve(expression, parameterValues, library), number(integralStart), number(integralEnd)));
-      setIntegralError("");
-    } catch (error) { setIntegral(null); setIntegralError(error instanceof Error ? error.message : "Unable to calculate the integral."); }
-  };
-
-  const generateValues = async () => {
-    const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
-    if (!expression || !expression.visible || errors[expression.id] || invalidDrafts[expression.id]) { setValues(null); setTableError("Select a valid function first."); return; }
-    try {
-      const library = await import("function-plot");
-      const number = (value: string) => value.trim() ? Number(value) : NaN;
-      setValues(tableOfValues(graphExpressionCurve(expression, parameterValues, library), number(tableStart), number(tableStep), number(tableCount)));
-      setTableError("");
-    } catch (error) { setValues(null); setTableError(error instanceof Error ? error.message : "Unable to generate values."); }
-  };
-
-  const inspectTangent = async () => {
-    const expression = expressions.find((item) => `function:${item.id}` === selectedRowKey);
-    const x = tangentX.trim() ? Number(tangentX) : NaN;
-    if (!expression || !expression.visible || errors[expression.id] || invalidDrafts[expression.id]) { setTangentError("Select a valid function first."); setTangent(null); return; }
-    try {
-      const library = await import("function-plot");
-      setTangent(tangentAt(graphExpressionCurve(expression, parameterValues, library), x));
-      setTangentError("");
-    } catch (error) { setTangent(null); setTangentError(error instanceof Error ? error.message : "Unable to calculate the tangent."); }
-  };
-
-  const findIntersections = async (kind: "crossings" | "intercepts") => {
-    const viewport = graphRef.current?.getViewport();
-    const active = expressions.filter((expression) => expression.visible && expression.expr.trim() && !errors[expression.id] && !invalidDrafts[expression.id]);
-    if (!viewport) { setCrossingError("The graph is still loading."); return; }
-    if (active.length < (kind === "crossings" ? 2 : 1)) { setCrossingError(kind === "crossings" ? "Show at least two valid functions to find crossings." : "Show at least one valid function to find intercepts."); return; }
-    if (active.length > 8) { setCrossingError("Show no more than eight functions at a time to find crossings."); return; }
-    try {
-      const library = await import("function-plot");
-      const curves: Curve[] = active.map((expression) => {
-        return graphExpressionCurve(expression, parameterValues, library);
-      });
-      if (kind === "crossings") {
-        setCrossings(findCrossings(curves, viewport.x).filter(({ y }) => y >= viewport.y[0] && y <= viewport.y[1]));
-        setIntercepts(null);
-      } else {
-        setIntercepts(findIntercepts(curves, viewport.x, viewport.y));
-        setCrossings(null);
-      }
-      setCrossingError("");
-    } catch { setCrossingError("Could not calculate intersections for these functions."); }
-  };
 
   const updateExpression = (expressionId: string, update: Partial<GraphExpression>) => {
     setExpressions((previous) => previous.map((expression) => expression.id === expressionId ? { ...expression, ...update } : expression));
@@ -351,37 +232,6 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
     }
   };
 
-  const helpGuide = <details ref={helpRef} className="graph-help-menu"><summary className="graph-workspace-icon-button" aria-label="Orvane help" title="Orvane help"><CircleHelp size={19} aria-hidden="true" /></summary><div className="graph-help-popover">
-    <h2>Orvane guide</h2>
-    <p>Plot functions, explore their behavior, and visualize data.</p>
-    <nav aria-label="Guide contents"><strong>Contents</strong><div className="graph-help-contents">
-      {[["expressions", "Functions & sliders"], ["workspace", "Graph & navigation"], ["data", "Data & points"], ["analysis", "Analysis"], ["settings", "Graph settings"], ["files", "Import & export"]].map(([key, title]) => <a key={key} href={`#${id}-help-${key}`}>{title}</a>)}
-    </div></nav>
-    <section id={`${id}-help-expressions`}><h3>Functions & sliders</h3>
-      <p>Select a function row and type an expression such as <code>x^2</code>, <code>sin(x)</code>, or <code>2*x+1</code>. You can also include <code>y=</code>. Use the keyboard icon in the selected field for mathematical symbols; angles are in radians.</p>
-      <p>Use the plus row to add a function and the × to remove it. Select a row to reveal its transformation sliders. If an expression uses an undefined parameter, use the suggested button to create a slider; its controls include range, step, and animation.</p>
-      <p>For a finite domain, append a restriction such as <code>x^2 {'{-2<=x<3}'}</code>. Separate restricted pieces with semicolons, for example <code>x {'{-2<=x<0}'}; x^2 {'{0<=x<=2}'}</code>. Piece domains must not overlap.</p>
-    </section>
-    <section id={`${id}-help-workspace`}><h3>Graph & navigation</h3>
-      <p>Drag the graph to pan; scroll, pinch, or use + and − to zoom. Use Reset view to return to the default viewport. Drag the divider to resize the sidebar, or use its toggle to hide and show it. Drag a numbered color strip to reorder rows.</p>
-      <p>Hover over a curve to inspect coordinates and click to pin the readout. The coordinate snap setting controls whether the hover x-value follows grid increments.</p>
-    </section>
-    <section id={`${id}-help-data`}><h3>Data & points</h3>
-      <p>Use + to add a data table or point. Enter x and y values in the table, add or remove rows, choose whether to connect points, and select a linear or exponential fit. Fit data in view uses independent scales; Fit equal scale keeps the axes equally scaled. Use column labels for axes to copy the table labels to the graph.</p>
-      <p>Edit a point’s coordinates in its row or drag it on the graph. Dragging can snap to grid positions and nearby calculated intercepts or intersections.</p>
-    </section>
-    <section id={`${id}-help-analysis`}><h3>Analysis</h3>
-      <p>Open the calculator button. For a tangent, integral, or table of values, select a function first, enter the requested x-values, and calculate. Intersections and intercepts are searched in the current view; results can be added as points.</p>
-      <p>For area between curves, select the first function in the sidebar, choose the second, enter bounds, and calculate. Drag the vertical handles to change the bounds. Area is nonnegative; the signed integral retains its sign. Numerical results are approximate and some crossings or tangencies may be missed.</p>
-    </section>
-    <section id={`${id}-help-settings`}><h3>Graph settings</h3>
-      <p>Use the gear to show or hide the grid, set coordinate precision and snapping, or enter axis bounds. Under Titles and annotations, add a graph title, axis names and units, and positioned text annotations.</p>
-    </section>
-    <section id={`${id}-help-files`}><h3>Import & export</h3>
-      <p>Use the top-bar import menu to open a graph JSON file. Export JSON to save a graph document, or export SVG or PNG for an image. Importing a document replaces the current graph.</p>
-    </section>
-  </div></details>;
-
   const workspaceActions = <div className="graph-workspace-actions">
     <details ref={importMenuRef} className="graph-workspace-menu"><summary className="graph-workspace-icon-button" aria-label="Import graph" title="Import graph"><Download size={17} aria-hidden="true" /></summary><div className="graph-workspace-menu-popover">
             <button type="button" onClick={() => fileRef.current?.click()}>Import JSON</button>
@@ -402,7 +252,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               void graphRef.current?.exportImage(format).then(() => setDocumentError(null)).catch((error: unknown) => { setDocumentError(error instanceof Error ? error.message : "Could not export image."); });
             }}>Export {format.toUpperCase()}</button>)}
           </div></details>
-    {helpGuide}
+    <OrvaneGuide helpRef={helpRef} id={id} />
   </div>;
 
   return (
@@ -419,7 +269,12 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
           <h2 id={`${id}-functions`} className="sr-only">Functions</h2>
           <div className="graphing-expression-list"
             onPointerDown={(event) => {
-              if (!(event.target instanceof Element) || !event.target.closest(".graphing-expression-color, .graphing-parameter")) return;
+              if (!(event.target instanceof Element)) return;
+              const strip = event.target.closest(".graphing-expression-color");
+              const parameter = event.target.closest<HTMLElement>(".graphing-parameter");
+              // Parameter strips are rendered with ::before, so only their
+              // left edge is a drag handle; controls must keep native clicks.
+              if (!strip && (!parameter || event.clientX > parameter.getBoundingClientRect().left + 26)) return;
               const row = event.target.closest<HTMLElement>(".graphing-expression-list > *");
               if (!row || !row.style.order) return;
               draggedRow.current = rowOrder[Number(row.style.order)] ?? null;
@@ -506,7 +361,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
             ))}
             {expressions.length === 0 && <p className="graphing-hint">Add a function to start plotting.</p>}
             <>
-            {parameters.length > 0 && <div className="graph-sidebar-item" style={{ order: rowOrder.indexOf(`parameter:${parameters[0]?.name}`) }}><span className="graph-sidebar-strip" style={{ backgroundColor: COLORS[2] }}>{rowOrder.indexOf(`parameter:${parameters[0]?.name}`) + 1}</span><div className="graph-sidebar-item-content"><ParameterSliders key={documentRevision} parameters={parameters} onChange={setParameters} /></div></div>}
+            {parameters.map((parameter) => <div key={parameter.name} className="graph-sidebar-item" style={{ order: rowOrder.indexOf(`parameter:${parameter.name}`) }}><div className="graph-sidebar-item-content"><ParameterSliders key={documentRevision} parameters={[parameter]} hideAdd rowNumber={rowOrder.indexOf(`parameter:${parameter.name}`) + 1} onChange={(next) => setParameters((previous) => previous.flatMap((item) => item.name === parameter.name ? next : [item]))} /></div></div>)}
               {datasets.map((dataset) => <div key={dataset.id} className="graph-sidebar-item" style={{ order: rowOrder.indexOf(`dataset:${dataset.id}`) }}><div className="graph-sidebar-item-content"><DatasetPanel rowNumber={rowOrder.indexOf(`dataset:${dataset.id}`) + 1} datasets={[dataset]} onChange={(next) => {
                 const added = next.find((item) => !datasets.some((existing) => existing.id === item.id));
                 const changed = next.map((item) => ({ item, old: datasets.find((existing) => existing.id === item.id) })).find(({ item, old }) => old && (old.xLabel !== item.xLabel || old.yLabel !== item.yLabel));
@@ -546,15 +401,15 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               <details><summary>Area between curves</summary>
                 <p>Select the first function in the sidebar.</p>
                 <label>Second function <select value={areaSecond} onChange={(event) => setAreaSecond(event.target.value)}><option value="">Choose a function</option>{expressions.map((expression, index) => <option key={expression.id} value={expression.id}>Function {index + 1}</option>)}</select></label>
-                <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { areaRequest.current++; setIntegralStart(event.target.value); setArea(null); }} /></label>
-                <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { areaRequest.current++; setIntegralEnd(event.target.value); setArea(null); }} /></label>
+                <label>From x <input type="number" step="any" value={areaStart} onChange={(event) => { areaRequest.current++; setAreaStart(event.target.value); setArea(null); setAreaError(""); }} /></label>
+                <label>To x <input type="number" step="any" value={areaEnd} onChange={(event) => { areaRequest.current++; setAreaEnd(event.target.value); setArea(null); setAreaError(""); }} /></label>
                 <button type="button" onClick={() => void calculateArea()}>Calculate area</button>
                 {areaError && <p className="graphing-error" role="alert">{areaError}</p>}
                 {area !== null && !areaError && <p role="status">Approximate area: {Number(area.toPrecision(4))}</p>}
               </details>
               <details><summary>Signed integral</summary>
-                <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { setIntegralStart(event.target.value); setIntegral(null); }} /></label>
-                <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { setIntegralEnd(event.target.value); setIntegral(null); }} /></label>
+                <label>From x <input type="number" step="any" value={integralStart} onChange={(event) => { integralRequest.current++; setIntegralStart(event.target.value); setIntegral(null); setIntegralError(""); }} /></label>
+                <label>To x <input type="number" step="any" value={integralEnd} onChange={(event) => { integralRequest.current++; setIntegralEnd(event.target.value); setIntegral(null); setIntegralError(""); }} /></label>
                 <button type="button" onClick={() => void calculateIntegral()}>Calculate for selected function</button>
                 {integralError && <p className="graphing-error" role="alert">{integralError}</p>}
                 {integral !== null && <p role="status">Approximate signed integral: {Number(integral.toPrecision(4))}</p>}
@@ -578,8 +433,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
               <button type="button" className="graphing-add-button graph-find-intersections" onClick={() => void findIntersections("intercepts")}>Find intercepts</button>
               <p className="graphing-hint">Approximate crossings in the current view. Tangencies and some intersections may be missed. Search again after moving the view.</p>
               {crossingError && <p className="graphing-error" role="alert">{crossingError}</p>}
-              {crossings && <div role="status">{crossings.length === 0 ? <p className="graphing-hint">No crossings found in this view.</p> : <ul className="graph-crossings">{crossings.map((crossing, index) => <li key={`${crossing.first}-${crossing.second}-${index}`}><span>Functions {expressions.findIndex((item) => item.id === crossing.first) + 1} &amp; {expressions.findIndex((item) => item.id === crossing.second) + 1}: ({Number(crossing.x.toPrecision(6))}, {Number(crossing.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(crossing.x, crossing.y)} aria-label={`Add intersection ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
-              {intercepts && <div role="status">{intercepts.length === 0 ? <p className="graphing-hint">No intercepts found in this view.</p> : <ul className="graph-crossings">{intercepts.map((intercept, index) => <li key={`${intercept.curve}-${intercept.axis}-${index}`}><span>Function {expressions.findIndex((item) => item.id === intercept.curve) + 1}, {intercept.axis}-axis: ({Number(intercept.x.toPrecision(6))}, {Number(intercept.y.toPrecision(6))})</span><button type="button" onClick={() => addAnalysisPoint(intercept.x, intercept.y)} aria-label={`Add intercept ${index + 1} as point`}>Add point</button></li>)}</ul>}</div>}
+              <GraphAnalysisResults expressions={expressions} crossings={crossings} intercepts={intercepts} onAddPoint={addAnalysisPoint} />
               </details>
             </div></details>
             <div className="graphing-view-controls">

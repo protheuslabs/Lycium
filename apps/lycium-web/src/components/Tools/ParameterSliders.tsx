@@ -8,15 +8,18 @@ type ParameterSlidersProps = {
   parameters: readonly GraphParameter[];
   onChange: (parameters: GraphParameter[]) => void;
   presentation?: boolean;
+  hideAdd?: boolean;
+  rowNumber?: number;
 };
 
-function ParameterSlider({ parameter, onChange, onRemove, playback, setPlayback, presentation = false }: {
+function ParameterSlider({ parameter, onChange, onRemove, playback, setPlayback, presentation = false, rowNumber }: {
   parameter: GraphParameter;
   onChange: (parameter: GraphParameter) => void;
   onRemove: () => void;
   presentation?: boolean;
   playback?: Playback;
   setPlayback: (next: Playback | null) => void;
+  rowNumber?: number;
 }) {
   const id = useId();
   const [range, setRange] = useState({ min: String(parameter.min), max: String(parameter.max), step: String(parameter.step) });
@@ -26,7 +29,7 @@ function ParameterSlider({ parameter, onChange, onRemove, playback, setPlayback,
   const { name, value, min, max, step } = parameter;
 
   return (
-    <section className="graphing-parameter" aria-label={`Parameter ${name} controls`}>
+    <section className="graphing-parameter" data-row-number={rowNumber} aria-label={`Parameter ${name} controls`}>
       <div className="graphing-parameter-header">
         <label htmlFor={id}>{name} = <output htmlFor={id}>{value}</output></label>
         {!presentation && <button type="button" className="graphing-icon-button" aria-label={`Remove slider ${name}`} title={`Remove slider ${name}`} onClick={onRemove}><X size={18} aria-hidden="true" /></button>}
@@ -65,7 +68,7 @@ function ParameterSlider({ parameter, onChange, onRemove, playback, setPlayback,
 
 type Playback = { speed: number; direction: 1 | -1 };
 
-export default function ParameterSliders({ parameters, onChange, presentation = false }: ParameterSlidersProps) {
+export default function ParameterSliders({ parameters, onChange, presentation = false, hideAdd = false, rowNumber }: ParameterSlidersProps) {
   const [playing, setPlaying] = useState<Record<string, Playback>>({});
   const latest = useRef({ parameters, onChange });
   latest.current = { parameters, onChange };
@@ -109,8 +112,8 @@ export default function ParameterSliders({ parameters, onChange, presentation = 
     <section className="graphing-parameters" aria-label="Parameter sliders">
       <h3>Parameters</h3>
       {!presentation && <p className="graphing-hint">Add a slider for a, then use a*x^2 or sin(a*x). Use * for multiplication.</p>}
-      {parameters.map((parameter) => <ParameterSlider key={parameter.name} parameter={parameter} presentation={presentation} playback={playing[parameter.name]} setPlayback={(next) => setParameterPlayback(parameter.name, next)} onChange={(next) => onChange(parameters.map((current) => current.name === next.name ? next : current))} onRemove={() => { setParameterPlayback(parameter.name, null); onChange(parameters.filter((current) => current.name !== parameter.name)); }} />)}
-      {!presentation && <button type="button" className="graphing-add-button" disabled={!nextName} onClick={() => {
+      {parameters.map((parameter) => <ParameterSlider key={parameter.name} parameter={parameter} rowNumber={rowNumber} presentation={presentation} playback={playing[parameter.name]} setPlayback={(next) => setParameterPlayback(parameter.name, next)} onChange={(next) => onChange(parameters.map((current) => current.name === next.name ? next : current))} onRemove={() => { setParameterPlayback(parameter.name, null); onChange(parameters.filter((current) => current.name !== parameter.name)); }} />)}
+      {!presentation && !hideAdd && <button type="button" className="graphing-add-button" disabled={!nextName} onClick={() => {
         if (nextName) onChange([...parameters, { name: nextName, value: 1, min: -5, max: 5, step: 0.1 }]);
       }}><Plus size={18} aria-hidden="true" />Add slider{nextName ? ` ${nextName}` : ""}</button>}
     </section>

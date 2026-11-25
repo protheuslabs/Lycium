@@ -12,6 +12,8 @@ describe("graph expression validation", () => {
     const datum = prepareGraphExpression(expression("y=a*x^2+b"), { a: 2, b: 1 }, plot);
     expect(plot.EvalBuiltIn(datum, "fn", { x: 2 })).toBe(9);
     expect(() => prepareGraphExpression(expression("a*x"), {}, plot)).toThrow();
+    expect(() => prepareGraphExpression(expression("a*x^2+b"), { a: 2, b: 1 }, plot)).not.toThrow();
+    expect(() => prepareGraphExpression(expression("a*x^2+b"), { b: 1 }, plot)).toThrow();
   });
   it("rejects unsupported equations and invalid syntax", () => {
     expect(() => prepareGraphExpression(expression("x=3"), {}, plot)).toThrow("Only functions of x");

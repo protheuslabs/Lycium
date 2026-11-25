@@ -35,7 +35,7 @@ export default function MathExpressionField({ value, label, invalid, describedBy
     void import("mathlive").then(({ MathfieldElement: Mathfield }) => {
       if (disposed || !hostRef.current) return;
       field = new Mathfield();
-      field.mathVirtualKeyboardPolicy = "auto";
+      field.mathVirtualKeyboardPolicy = "manual";
       field.setAttribute("aria-label", label);
       field.setAttribute("aria-invalid", String(invalid));
       if (describedBy) field.setAttribute("aria-describedby", describedBy);
