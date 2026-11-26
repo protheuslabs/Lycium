@@ -34,6 +34,22 @@ describe("data-driven conversion families", () => {
     })).toThrow("unknown quantity");
   });
 
+  it("separates incomplete input, invalid factors, and mathematical correctness", () => {
+    const interaction = generateConversionProblem(conversionCatalog[0], 12).interactions[0];
+    expect(validateConversionChain(interaction.start, interaction.target, interaction.ratios, [
+      { numerator: "", denominator: "" },
+    ])).toMatchObject({ status: "incomplete", valid: false, correct: false, factorIndex: 0 });
+    expect(validateConversionChain(interaction.start, interaction.target, interaction.ratios, [
+      { numerator: interaction.quantities[0].id, denominator: interaction.quantities[0].id },
+    ])).toMatchObject({ status: "invalid-ratio", valid: true, correct: false, factorIndex: 0 });
+    const factors = interaction.ratios.map(ratio => ({
+      numerator: ratio.numerator.id,
+      denominator: ratio.denominator.id,
+    }));
+    expect(validateConversionChain(interaction.start, interaction.target, interaction.ratios, factors))
+      .toMatchObject({ status: "correct", valid: true, correct: true, credit: 1 });
+  });
+
   it("supports categorical generation and deterministic constraints", () => {
     const family = conversionCatalog[1];
     const constrained = parseConversionFamily({
