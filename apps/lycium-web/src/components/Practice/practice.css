@@ -10,6 +10,13 @@
 }
 
 .practice-workspace > details { grid-column: 2; }
+.practice-workspace.practice-focused {
+  width: min(100%, 52rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+.practice-workspace.practice-focused > details { grid-column: 1; }
+.practice-preview .practice-primary { margin-top: 1rem; }
+.practice-preview .practice-quantity strong { font-size: 1rem; }
 .practice-skills, .practice-notes { padding: 1rem; border-radius: .9rem; background: var(--lycium-color-surface); min-width: 0; }
 .practice-skills h2, .practice-notes h2 { font-size: 1rem; }
 .practice-notes h3 { font-size: .875rem; }

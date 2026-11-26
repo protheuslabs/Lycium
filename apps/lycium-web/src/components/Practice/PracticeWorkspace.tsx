@@ -15,6 +15,7 @@ const format = (value: unknown) => JSON.stringify(value, null, 2);
 export default function PracticeWorkspace() {
   const [session, setSession] = useState(() => startSession([initial]));
   const [ready, setReady] = useState(false);
+  const [preview, setPreview] = useState(true);
   const [storageError, setStorageError] = useState(false);
   const [draft, setDraft] = useState(() => format(initial));
   const [seedDraft, setSeedDraft] = useState("0");
@@ -27,8 +28,9 @@ export default function PracticeWorkspace() {
     const params = new URLSearchParams(window.location.search);
     const requested = practiceCatalog.find(item => item.id === params.get("skill"));
     const saved = readSession();
-    const restored = saved && (!requested || saved.skills.some(item => item.id === requested.id))
-      ? saved : startSession([requested ?? initial]);
+    const showPreview = params.has("skill") || params.has("setup") || !saved;
+    const restored = showPreview ? startSession([requested ?? initial], 0, "guided", 10) : saved;
+    setPreview(showPreview);
     setSession(restored);
     setSelected(restored.skills.map(item => item.id));
     setMode(restored.mode);
@@ -37,14 +39,14 @@ export default function PracticeWorkspace() {
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || preview) return;
     try {
       window.localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       setStorageError(false);
     } catch {
       setStorageError(true);
     }
-  }, [ready, session]);
+  }, [ready, preview, session]);
 
   const skill = session.skills[session.index % session.skills.length];
   const seed = (session.seed + session.index) >>> 0;
@@ -58,25 +60,27 @@ export default function PracticeWorkspace() {
       const skill = parsePracticeConfig(JSON.parse(draft));
       const seed = seedDraft.trim() ? Number(seedDraft) : NaN;
       generateProblem(skill, seed);
-      setSession(startSession([skill], seed, session.mode, session.length));
+      setSession(startSession([skill], seed, mode, length));
       setSelected([skill.id]);
-      const url = new URL(window.location.href);
-      url.searchParams.delete("skill");
-      window.history.replaceState(null, "", url);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Invalid generation settings.");
     }
   }
 
-  const finished = session.length > 0 && session.index >= session.length;
-  const options = [...practiceCatalog, ...session.skills.filter(item => !practiceCatalog.some(entry => entry.id === item.id))];
+  const finished = session.ended || (session.length > 0 && session.index >= session.length);
+  const options = [...practiceCatalog.map(item => session.skills.find(active => active.id === item.id) ?? item),
+    ...session.skills.filter(item => !practiceCatalog.some(entry => entry.id === item.id))];
+  const exampleSkill = options.find(item => selected.includes(item.id));
+  const example = exampleSkill && generateProblem(exampleSkill, session.seed);
   return <>
-    <ToolWorkspaceHeader title="Practice Studio" />
-    <main className="practice-workspace">
-      <nav className="practice-skills" aria-label="Practice skills">
-      <Link href="/practice">Browse practice skills</Link>
-      <h2>{initial.category}</h2>
+    <ToolWorkspaceHeader title="Practice Studio" backHref="/practice" backLabel={preview || finished ? "Practice library" : "Exit practice"} />
+    <main className="practice-workspace practice-focused">
+      {!ready ? <p role="status">Loading practice…</p> : preview ? <section className="practice-prompt practice-preview">
+      <p>Practice / {initial.category}</p>
+      <h2>{exampleSkill?.title ?? initial.category}</h2>
+      <p>Practice with generated problems. Choose the skills to include in your session.</p>
+      <h3>Skills covered</h3>
       {options.map(item => <label className="practice-session-skill" key={item.id}>
         <input type="checkbox" checked={selected.includes(item.id)} onChange={event => {
           const checked = event.target.checked;
@@ -89,17 +93,23 @@ export default function PracticeWorkspace() {
       <label>Session length <select value={length} onChange={event => setLength(Number(event.target.value))}>
         <option value={0}>Open-ended</option><option value={5}>5 problems</option><option value={10}>10 problems</option><option value={20}>20 problems</option>
       </select></label>
-      <button type="button" disabled={!ready || !selected.length} onClick={() => {
+      {exampleSkill && example && <div className="practice-quantity">
+        <strong>Example problem</strong>
+        <span>Find {exampleSkill.answer.label.toLowerCase()} using {example.given} {exampleSkill.given.unit} and {example.factor} {exampleSkill.factor.unit}.</span>
+      </div>}
+      <button className="practice-primary" type="button" disabled={!selected.length} onClick={() => {
         const skills = options.filter(item => selected.includes(item.id)).map(item => session.skills.find(active => active.id === item.id) ?? item);
-        setSession(startSession(skills, window.crypto.getRandomValues(new Uint32Array(1))[0], mode, length));
+        setSession(startSession(skills, session.seed, mode, length));
+        setPreview(false);
         const url = new URL(window.location.href);
         url.searchParams.delete("skill");
+        url.searchParams.delete("setup");
         window.history.replaceState(null, "", url);
-      }}>Start new session</button>
-      {storageError && <p role="status">This browser could not save your session.</p>}
-      </nav>
-      {!ready ? <p role="status">Loading session…</p> : finished ? <section><h2>Session complete</h2>
-        <p>{session.completed} of {session.length} problems solved.</p>
+      }}>Start practice</button>
+      </section> : finished ? <section className="practice-prompt"><h2>Session results</h2>
+        <p>{session.length && !session.ended ? `${session.completed} of ${session.length} problems solved` : `${session.completed} problems solved`}</p>
+        <p>{session.attempts.filter(attempt => attempt.result === "incorrect").length} incorrect checks · {session.attempts.filter(attempt => attempt.assisted).length} assisted checks</p>
+        <Link href="/practice">Choose another skill</Link>
       </section> : <Problem skill={skill} seed={seed} mode={session.mode} work={session.work}
         position={session.index + 1} length={session.length} completed={session.completed}
         update={(patch, attempt) => setSession(previous => ({
@@ -109,14 +119,16 @@ export default function PracticeWorkspace() {
           attempts: attempt ? [...previous.attempts, attempt] : previous.attempts,
         }))}
         onNext={() => setSession(previous => ({ ...previous, index: previous.index + 1, work: emptyWork }))} />}
-      <details>
+      {ready && !preview && !finished && !session.length && <button type="button" onClick={() => setSession(previous => ({ ...previous, ended: true }))}>Finish session</button>}
+      {storageError && <p role="status">This browser could not save your session.</p>}
+      {ready && preview && <details>
         <summary>Generation settings</summary>
         <label>Seed <input type="number" min="0" max="4294967295" step="1" value={seedDraft} onChange={event => setSeedDraft(event.target.value)} /></label>
         <label>Skill JSON <textarea rows={12} value={draft} onChange={event => setDraft(event.target.value)} spellCheck={false} /></label>
         <button type="button" onClick={apply}>Apply settings</button>{" "}
         <a href={`data:application/json;charset=utf-8,${encodeURIComponent(format(skill))}`} download="practice-skill.json">Download active skill JSON</a>
         {error && <p role="alert">{error}</p>}
-      </details>
+      </details>}
     </main>
   </>;
 }
@@ -146,6 +158,10 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
       </div>
       <p className="practice-target"><span>Find</span> <span className="practice-math"><var>{skill.symbols.result}</var> = ? {skill.answer.unit}</span></p>
     </header>
+    {step > 0 && (!independent || step === 2) && <section aria-label="Checked work">
+      {!independent && <p><Equation operation={operation} {...skill.symbols} /></p>}
+      {step === 2 && <p className="practice-math">{skill.symbols.result} = {answer.trim()} {skill.answer.unit}</p>}
+    </section>}
     <form onSubmit={event => {
       event.preventDefault();
       if (step === 0) {
@@ -177,14 +193,9 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
     {hint && <p>{skill.hint}</p>}
     {solution && <p>{skill.hint} {problem.given} {problem.symbol} {problem.factor} ≈ {problem.expected} {skill.answer.unit}.</p>}
   </section>
-  <aside className="practice-notes" aria-label="Solution workspace">
-    <h2>Your workspace</h2>
-    <h3>Step history</h3>
-    <ol>
-      {!independent && <li>{step > 0 ? <Equation operation={operation} {...skill.symbols} /> : "Choose an equation"}</li>}
-      <li>{step > 1 ? <span className="practice-math">{skill.symbols.result} = {answer.trim()} {skill.answer.unit}</span> : "Calculate the result"}</li>
-    </ol>
+  <details className="practice-notes">
+    <summary>Your work and reference</summary>
     <label>Scratchpad <textarea rows={5} placeholder="Write your calculations here" value={work.notes} onChange={event => update({ notes: event.target.value })} /></label>
     <details><summary>Rounding reference</summary><p>Keep the full value during calculation. Round only the final answer to the requested decimal places.</p></details>
-  </aside></>;
+  </details></>;
 }

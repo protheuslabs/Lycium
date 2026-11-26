@@ -11,6 +11,7 @@ export type PracticeSession = {
   skills: PracticeConfig[]; seed: number; index: number; completed: number;
   mode: "guided" | "independent"; length: number; work: PracticeWork;
   attempts: Attempt[];
+  ended?: boolean;
 };
 
 export function startSession(skills: PracticeConfig[], seed = 0, mode: PracticeSession["mode"] = "guided", length = 0): PracticeSession {

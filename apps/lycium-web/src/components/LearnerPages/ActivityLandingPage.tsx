@@ -19,7 +19,8 @@ function PracticeDirectory() {
 
   return <section className="practice-directory" aria-labelledby="practice-directory-title">
     <h2 id="practice-directory-title">What would you like to practice?</h2>
-    {saved && (!saved.length || saved.index < saved.length) && <p>
+    <Link className="learner-text-link" href="/tools/practice?setup=1">Build a practice session <ArrowRight size={16} aria-hidden="true" /></Link>
+    {saved && !saved.ended && (!saved.length || saved.index < saved.length) && <p>
       <Link className="learner-text-link" href="/tools/practice">Continue practicing <ArrowRight size={16} aria-hidden="true" /></Link>
       {" · "}{saved.skills[saved.index % saved.skills.length].title} · {saved.completed} solved
     </p>}
