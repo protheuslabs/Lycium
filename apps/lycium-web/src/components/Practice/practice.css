@@ -39,6 +39,7 @@
 .practice-answer input { width: min(70%, 14rem); }
 .practice-workspace label { display: grid; gap: .375rem; margin-block: .75rem; }
 .practice-workspace .practice-choices label { display: flex; margin: 0; }
+.practice-workspace .practice-session-skill { display: flex; align-items: baseline; }
 .practice-workspace :is(input, textarea, select, button) {
   font: inherit;
   color: inherit;
