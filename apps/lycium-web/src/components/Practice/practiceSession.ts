@@ -1,7 +1,11 @@
 import { generateProblem, parsePracticeConfig, type PracticeConfig } from "./practiceEngine";
 
 export const SESSION_KEY = "lycium-practice-session-v1";
-export const emptyWork = { step: 0, operation: "", answer: "", notes: "", feedback: "", interactionData: "", hint: false, solution: false, assisted: false };
+export type InteractionWork = { response: string; feedback: string; status: "idle" | "incorrect" | "correct" };
+export const emptyWork = {
+  step: 0, operation: "", answer: "", notes: "", feedback: "", interactionData: {} as Record<string, InteractionWork>,
+  hint: false, solution: false, assisted: false,
+};
 export type PracticeWork = typeof emptyWork;
 export type Attempt = {
   skillId: string; version: number; seed: number; stage: "equation" | "calculation" | "answer";
@@ -29,10 +33,14 @@ export function readSession(): PracticeSession | null {
         !["guided", "independent"].includes(session.mode) || !session.work ||
         !Number.isInteger(session.work.step) || session.work.step < 0 || session.work.step > 30 ||
         [session.work.answer, session.work.notes, session.work.operation, session.work.feedback].some(value => typeof value !== "string") ||
-        (session.work.interactionData !== undefined && typeof session.work.interactionData !== "string")) return null;
+        (session.work.interactionData !== undefined && typeof session.work.interactionData !== "string" &&
+          (typeof session.work.interactionData !== "object" || session.work.interactionData === null || Array.isArray(session.work.interactionData)))) return null;
     const skills = session.skills.map(parsePracticeConfig);
     generateProblem(skills[0], session.seed);
-    const migratedWork = { ...emptyWork, ...session.work };
+    const migratedData = typeof session.work.interactionData === "string"
+      ? { legacy: { response: session.work.interactionData, feedback: session.work.feedback, status: session.work.step > 0 ? "correct" as const : "idle" as const } }
+      : session.work.interactionData ?? {};
+    const migratedWork = { ...emptyWork, ...session.work, interactionData: migratedData };
     const work = session.mode === "independent" && migratedWork.step > 0
       ? { ...migratedWork, step: session.attempts.at(-1)?.result === "correct" ? 1 : 0 }
       : migratedWork;

@@ -5,13 +5,14 @@ type Props = {
   start: Quantity; target: Quantity; quantities: Quantity[]; ratios: Ratio[];
   factors: Factor[]; onChange: (factors: Factor[]) => void;
   feedback: string; onCheck: (status: ReturnType<typeof validateConversionChain>["status"], message: string) => void;
-  prompt?: string; disabled?: boolean;
+  prompt?: string; decimals?: number; disabled?: boolean;
 };
 const blank = (): Factor => ({ numerator: "", denominator: "" });
 
-export default function ConversionBuilder({ start, target, quantities, ratios, factors, onChange, feedback, onCheck, prompt, disabled = false }: Props) {
+export default function ConversionBuilder({ start, target, quantities, ratios, factors, onChange, feedback, onCheck, prompt, decimals = 8, disabled = false }: Props) {
   const [active, setActive] = useState<{ index: number; side: keyof Factor }>({ index: 0, side: "numerator" });
-  const [lastResult, setLastResult] = useState<ReturnType<typeof validateConversionChain> | null>(null);
+  const restoredResult = disabled ? validateConversionChain(start, target, ratios, factors) : null;
+  const [lastResult, setLastResult] = useState<ReturnType<typeof validateConversionChain> | null>(restoredResult);
   const cancelled = useMemo(() => getCancelledQuantityIds(start, quantities, factors), [factors, quantities, start]);
   function update(next: Factor[]) {
     setLastResult(null);
@@ -52,7 +53,7 @@ export default function ConversionBuilder({ start, target, quantities, ratios, f
         {!disabled && <button type="button" className="practice-factor-invert" onClick={() => update(factors.map((item, itemIndex) =>
           itemIndex === index ? { numerator: item.denominator, denominator: item.numerator } : item))}>Invert</button>}
       </fieldset>)}
-      <div className="practice-conversion-result" aria-label="Target answer"><span>=</span><strong>{lastResult?.correct ? Number(target.value.toFixed(8)) : "?"}</strong><span>{target.unit} {target.species}</span></div>
+      <div className="practice-conversion-result" aria-label="Target answer"><span>=</span><strong>{lastResult?.correct ? Number(target.value.toFixed(decimals)) : "?"}</strong><span>{target.unit} {target.species}</span></div>
     </div>
     {!disabled && <><p className="practice-builder-instruction">Select a fraction cell, then choose a number and unit pair.</p>
       <div className="practice-quantity-palette" aria-label="Available quantities">

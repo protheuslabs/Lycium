@@ -10,6 +10,7 @@ describe("data-driven conversion families", () => {
         const problem = generateConversionProblem(family, seed);
         expect(generateConversionProblem(restored, seed)).toEqual(problem);
         for (const interaction of problem.interactions) {
+          if (interaction.type !== "conversion-chain") continue;
           const factors = interaction.ratios.map(ratio => ({
             numerator: ratio.numerator.id,
             denominator: ratio.denominator.id,
@@ -28,6 +29,7 @@ describe("data-driven conversion families", () => {
   it("rejects definitions that reference unknown quantities", () => {
     const family = conversionCatalog[0];
     const interaction = family.interactions[0];
+    if (interaction.type !== "conversion-chain") throw new Error("Expected conversion fixture.");
     expect(() => parseConversionFamily({
       ...family,
       interactions: [{ ...interaction, ratios: [["missing", interaction.quantities[0].id]] }],
@@ -36,6 +38,7 @@ describe("data-driven conversion families", () => {
 
   it("separates incomplete input, invalid factors, and mathematical correctness", () => {
     const interaction = generateConversionProblem(conversionCatalog[0], 12).interactions[0];
+    if (interaction.type !== "conversion-chain") throw new Error("Expected conversion fixture.");
     expect(validateConversionChain(interaction.start, interaction.target, interaction.ratios, [
       { numerator: "", denominator: "" },
     ])).toMatchObject({ status: "incomplete", valid: false, correct: false, factorIndex: 0 });
@@ -69,5 +72,22 @@ describe("data-driven conversion families", () => {
       ...constrained,
       constraints: [{ left: "route", relation: ">", right: 2 }],
     }), 0)).toThrow("100 attempts");
+  });
+
+  it("generates both limiting-reactant outcomes in a five-part mixed problem", () => {
+    const family = conversionCatalog.find(item => item.id === "limiting-reactant-yield");
+    if (!family) throw new Error("Missing limiting-reactant fixture.");
+    const outcomes = new Set<string>();
+    for (let seed = 0; seed < 1000; seed++) {
+      const problem = generateConversionProblem(family, seed);
+      expect(problem.interactions.map(interaction => interaction.type)).toEqual([
+        "conversion-chain", "conversion-chain", "choice", "numeric", "numeric",
+      ]);
+      const choice = problem.interactions[2];
+      if (choice.type !== "choice") throw new Error("Expected choice interaction.");
+      outcomes.add(choice.expected);
+      expect(problem.interactions).toHaveLength(5);
+    }
+    expect(outcomes).toEqual(new Set(["aluminum", "chlorine"]));
   });
 });

@@ -1,6 +1,72 @@
 [
   {
     "version": 3,
+    "id": "limiting-reactant-yield",
+    "category": "Chemistry",
+    "title": "Limiting reactants and theoretical yield",
+    "description": "Determine a limiting reactant, theoretical yield, and excess remaining across five assessed parts.",
+    "variables": {
+      "aluminumMass": { "generator": "decimal", "min": 4, "max": 15, "step": 0.1 },
+      "chlorineMass": { "generator": "decimal", "min": 8, "max": 35, "step": 0.1 },
+      "aluminumMolarMass": { "generator": "constant", "value": 26.98 },
+      "chlorineMolarMass": { "generator": "constant", "value": 70.9 },
+      "productMolarMass": { "generator": "constant", "value": 133.34 },
+      "one": { "generator": "constant", "value": 1 }
+    },
+    "derived": {
+      "aluminumMoles": { "operation": "divide", "operands": ["aluminumMass", "aluminumMolarMass"] },
+      "chlorineMoles": { "operation": "divide", "operands": ["chlorineMass", "chlorineMolarMass"] },
+      "aluminumCapacity": { "operation": "divide", "operands": ["aluminumMoles", 2] },
+      "chlorineCapacity": { "operation": "divide", "operands": ["chlorineMoles", 3] },
+      "reactionExtent": { "operation": "min", "operands": ["aluminumCapacity", "chlorineCapacity"] },
+      "productMoles": { "operation": "multiply", "operands": ["reactionExtent", 2] },
+      "productMass": { "operation": "multiply", "operands": ["productMoles", "productMolarMass"] },
+      "aluminumRemaining": { "operation": "subtract", "operands": ["aluminumMoles", { "operation": "multiply", "operands": ["reactionExtent", 2] }] },
+      "chlorineRemaining": { "operation": "subtract", "operands": ["chlorineMoles", { "operation": "multiply", "operands": ["reactionExtent", 3] }] },
+      "aluminumRemainingMass": { "operation": "multiply", "operands": ["aluminumRemaining", "aluminumMolarMass"] },
+      "chlorineRemainingMass": { "operation": "multiply", "operands": ["chlorineRemaining", "chlorineMolarMass"] },
+      "excessMass": { "operation": "max", "operands": ["aluminumRemainingMass", "chlorineRemainingMass"] }
+    },
+    "constraints": [{ "left": "aluminumCapacity", "relation": "!=", "right": "chlorineCapacity" }],
+    "presentation": {
+      "prompt": "A sample of {aluminumMass} g of aluminum reacts with {chlorineMass} g of chlorine gas. Determine the limiting reactant and product yield.",
+      "equation": "2Al + 3Cl₂ → 2AlCl₃"
+    },
+    "interactions": [
+      {
+        "id": "aluminum-moles", "type": "conversion-chain", "prompt": "Part A — Convert aluminum mass to moles",
+        "start": { "value": "aluminumMass", "unit": "g", "species": "Al" },
+        "target": { "value": "aluminumMoles", "unit": "mol", "species": "Al", "decimals": 3 },
+        "quantities": [
+          { "id": "aluminum-grams", "value": "aluminumMolarMass", "unit": "g", "species": "Al" },
+          { "id": "aluminum-mol", "value": "one", "unit": "mol", "species": "Al" }
+        ],
+        "ratios": [["aluminum-mol", "aluminum-grams"]]
+      },
+      {
+        "id": "chlorine-moles", "type": "conversion-chain", "prompt": "Part B — Convert chlorine mass to moles",
+        "start": { "value": "chlorineMass", "unit": "g", "species": "Cl₂" },
+        "target": { "value": "chlorineMoles", "unit": "mol", "species": "Cl₂", "decimals": 3 },
+        "quantities": [
+          { "id": "chlorine-grams", "value": "chlorineMolarMass", "unit": "g", "species": "Cl₂" },
+          { "id": "chlorine-mol", "value": "one", "unit": "mol", "species": "Cl₂" }
+        ],
+        "ratios": [["chlorine-mol", "chlorine-grams"]]
+      },
+      {
+        "id": "limiting-reactant", "type": "choice", "prompt": "Part C — Determine the limiting reactant",
+        "options": [
+          { "id": "aluminum", "label": "Aluminum (Al)" },
+          { "id": "chlorine", "label": "Chlorine (Cl₂)" }
+        ],
+        "expected": { "left": "aluminumCapacity", "relation": "<", "right": "chlorineCapacity", "whenTrue": "aluminum", "whenFalse": "chlorine" }
+      },
+      { "id": "theoretical-yield", "type": "numeric", "prompt": "Part D — Calculate the theoretical yield", "expected": "productMass", "unit": "g AlCl₃", "decimals": 2 },
+      { "id": "excess-remaining", "type": "numeric", "prompt": "Part E — Calculate the excess reactant remaining", "expected": "excessMass", "unit": "g", "decimals": 2 }
+    ]
+  },
+  {
+    "version": 3,
     "id": "stoichiometry-carbon-dioxide",
     "category": "Chemistry",
     "title": "Calculate carbon dioxide yield",

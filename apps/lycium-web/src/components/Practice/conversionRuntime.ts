@@ -11,28 +11,42 @@ type Generator =
   | { generator: "categorical"; choices: Scalar[] };
 type Constraint = { left: Expression; relation: "==" | "!=" | "<" | "<=" | ">" | ">="; right: Expression };
 type QuantityDefinition = { id: string; value: string; unit: string; species: string };
-type ConversionInteraction = {
+type ConversionChainDefinition = {
   id: string; type: "conversion-chain"; prompt: string;
   start: Omit<QuantityDefinition, "id">;
   target: Omit<QuantityDefinition, "id"> & { decimals: number };
   quantities: QuantityDefinition[];
   ratios: [string, string][];
 };
+type ChoiceDefinition = {
+  id: string; type: "choice"; prompt: string;
+  options: { id: string; label: string }[];
+  expected: { left: Expression; relation: "<" | "<=" | ">" | ">="; right: Expression; whenTrue: string; whenFalse: string };
+};
+type NumericDefinition = { id: string; type: "numeric"; prompt: string; expected: string; unit: string; decimals: number };
+type PracticeInteractionDefinition = ConversionChainDefinition | ChoiceDefinition | NumericDefinition;
 export type ConversionFamily = {
   version: 3; id: string; category: string; title: string; description: string;
   variables: Record<string, Generator>; derived: Record<string, Expression>;
   constraints: Constraint[];
   presentation: { prompt: string; equation: string };
-  interactions: ConversionInteraction[];
+  interactions: PracticeInteractionDefinition[];
 };
 export type GeneratedConversionInteraction = {
   id: string; type: "conversion-chain"; prompt: string; start: Quantity; target: Quantity;
   quantities: Quantity[]; ratios: Ratio[]; decimals: number;
 };
+export type GeneratedChoiceInteraction = {
+  id: string; type: "choice"; prompt: string; options: { id: string; label: string }[]; expected: string;
+};
+export type GeneratedNumericInteraction = {
+  id: string; type: "numeric"; prompt: string; expected: number; unit: string; decimals: number;
+};
+export type GeneratedPracticeInteraction = GeneratedConversionInteraction | GeneratedChoiceInteraction | GeneratedNumericInteraction;
 export type ConversionProblem = {
   family: ConversionFamily; seed: number; values: Record<string, Scalar>;
   prompt: string; equation: string;
-  interactions: GeneratedConversionInteraction[];
+  interactions: GeneratedPracticeInteraction[];
 };
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -92,8 +106,28 @@ export function parseConversionFamily(value: unknown): ConversionFamily {
     known.add(id);
   }
   const interactions = value.interactions.map(raw => {
-    if (!object(raw) || !identifier(raw.id) || raw.type !== "conversion-chain" || !text(raw.prompt) ||
-        !Array.isArray(raw.quantities) || !Array.isArray(raw.ratios) || !object(raw.target)) {
+    if (!object(raw) || !identifier(raw.id) || !text(raw.prompt)) throw new Error("Invalid practice interaction.");
+    if (raw.type === "choice") {
+      if (!Array.isArray(raw.options) || raw.options.length < 2 || !raw.options.every(option => object(option) && identifier(option.id) && text(option.label)) ||
+          !object(raw.expected) || !["<", "<=", ">", ">="].includes(String(raw.expected.relation)) ||
+          !identifier(raw.expected.whenTrue) || !identifier(raw.expected.whenFalse)) throw new Error("Invalid choice interaction.");
+      const optionIds = new Set(raw.options.map(option => (option as { id: string }).id));
+      if (!optionIds.has(raw.expected.whenTrue as string) || !optionIds.has(raw.expected.whenFalse as string)) throw new Error("Choice answer is not an option.");
+      return {
+        id: raw.id, type: "choice" as const, prompt: raw.prompt,
+        options: raw.options as { id: string; label: string }[],
+        expected: {
+          left: parseExpression(raw.expected.left, known), relation: raw.expected.relation as ChoiceDefinition["expected"]["relation"],
+          right: parseExpression(raw.expected.right, known), whenTrue: raw.expected.whenTrue as string, whenFalse: raw.expected.whenFalse as string,
+        },
+      };
+    }
+    if (raw.type === "numeric") {
+      if (!identifier(raw.expected) || !known.has(raw.expected) || !text(raw.unit) || !Number.isInteger(raw.decimals) ||
+          (raw.decimals as number) < 0 || (raw.decimals as number) > 8) throw new Error("Invalid numeric interaction.");
+      return { id: raw.id, type: "numeric" as const, prompt: raw.prompt, expected: raw.expected, unit: raw.unit, decimals: raw.decimals as number };
+    }
+    if (raw.type !== "conversion-chain" || !Array.isArray(raw.quantities) || !Array.isArray(raw.ratios) || !object(raw.target)) {
       throw new Error("Invalid conversion interaction.");
     }
     const quantities = raw.quantities.map(item => parseQuantity(item, known, true) as QuantityDefinition);
@@ -196,7 +230,21 @@ export function generateConversionProblem(family: ConversionFamily, seed: number
   }
   if (!values) throw new Error("Could not satisfy generation constraints after 100 attempts.");
   const render = (template: string) => template.replace(/\{([A-Za-z][A-Za-z0-9_-]*)\}/g, (_, id: string) => String(values[id]));
-  const interactions = family.interactions.map(interaction => {
+  const interactions: GeneratedPracticeInteraction[] = family.interactions.map(interaction => {
+    if (interaction.type === "choice") {
+      const left = evaluate(interaction.expected.left, values);
+      const right = evaluate(interaction.expected.right, values);
+      if (typeof left !== "number" || typeof right !== "number") throw new Error("Choice comparison must be numerical.");
+      const matches = interaction.expected.relation === "<" ? left < right : interaction.expected.relation === "<=" ? left <= right :
+        interaction.expected.relation === ">" ? left > right : left >= right;
+      return { id: interaction.id, type: interaction.type, prompt: interaction.prompt, options: interaction.options,
+        expected: matches ? interaction.expected.whenTrue : interaction.expected.whenFalse };
+    }
+    if (interaction.type === "numeric") {
+      const expected = values[interaction.expected];
+      if (typeof expected !== "number") throw new Error("Numeric answer must resolve to a number.");
+      return { id: interaction.id, type: interaction.type, prompt: interaction.prompt, expected, unit: interaction.unit, decimals: interaction.decimals };
+    }
     const quantity = (item: Omit<QuantityDefinition, "id"> & { id?: string }): Quantity => ({
       id: item.id ?? interaction.id, value: (() => {
         const resolved = values[item.value];

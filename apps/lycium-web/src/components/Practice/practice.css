@@ -17,6 +17,10 @@
 .practice-workspace.practice-focused > details { grid-column: 1; }
 .practice-preview .practice-primary { margin-top: 1rem; }
 .practice-preview .practice-quantity strong { font-size: 1rem; }
+.practice-generation-settings { margin-top: 1rem; padding-block: .875rem; border-block: 1px solid var(--lycium-color-border); }
+.practice-generation-settings summary { font-weight: 650; }
+.practice-generation-settings > p { color: var(--lycium-color-muted); font-size: .875rem; }
+.practice-generation-settings .practice-actions { align-items: center; }
 .practice-skills, .practice-notes { padding: 1rem; border-radius: .9rem; background: var(--lycium-color-surface); min-width: 0; }
 .practice-skills h2, .practice-notes h2 { font-size: 1rem; }
 .practice-notes h3 { font-size: .875rem; }

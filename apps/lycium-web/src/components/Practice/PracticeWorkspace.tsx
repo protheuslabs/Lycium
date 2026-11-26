@@ -105,6 +105,17 @@ export default function PracticeWorkspace() {
         <strong>Example problem</strong>
         <span>{exampleDescription(exampleSkill, session.seed)}</span>
       </div>}
+      <details className="practice-generation-settings">
+        <summary>Generator settings</summary>
+        <p>Adjust the deterministic seed or edit the active skill definition before starting.</p>
+        <label>Seed <input type="number" min="0" max="4294967295" step="1" value={seedDraft} onChange={event => setSeedDraft(event.target.value)} /></label>
+        <label>Skill JSON <textarea rows={12} value={draft} onChange={event => setDraft(event.target.value)} spellCheck={false} /></label>
+        <div className="practice-actions">
+          <button type="button" onClick={apply}>Apply settings</button>
+          <a href={`data:application/json;charset=utf-8,${encodeURIComponent(format(skill))}`} download="practice-skill.json">Download active skill JSON</a>
+        </div>
+        {error && <p role="alert">{error}</p>}
+      </details>
       <button className="practice-primary" type="button" disabled={!selected.length} onClick={() => {
         const skills = options.filter(item => selected.includes(item.id)).map(item => session.skills.find(active => active.id === item.id) ?? item);
         setSession(startSession(skills, session.seed, mode, length));
@@ -129,14 +140,6 @@ export default function PracticeWorkspace() {
         onNext={() => setSession(previous => ({ ...previous, index: previous.index + 1, work: emptyWork }))} />}
       {ready && !preview && !finished && !session.length && <button type="button" onClick={() => setSession(previous => ({ ...previous, ended: true }))}>Finish session</button>}
       {storageError && <p role="status">This browser could not save your session.</p>}
-      {ready && preview && <details>
-        <summary>Generation settings</summary>
-        <label>Seed <input type="number" min="0" max="4294967295" step="1" value={seedDraft} onChange={event => setSeedDraft(event.target.value)} /></label>
-        <label>Skill JSON <textarea rows={12} value={draft} onChange={event => setDraft(event.target.value)} spellCheck={false} /></label>
-        <button type="button" onClick={apply}>Apply settings</button>{" "}
-        <a href={`data:application/json;charset=utf-8,${encodeURIComponent(format(skill))}`} download="practice-skill.json">Download active skill JSON</a>
-        {error && <p role="alert">{error}</p>}
-      </details>}
     </main>
   </>;
 }
@@ -147,7 +150,7 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
   update: (patch: Partial<PracticeWork>, attempt?: Attempt) => void; onNext: () => void;
 }) {
   if (skill.version === 3) {
-    return <ConversionPracticeProblem skill={skill} seed={seed} work={work} position={position} length={length}
+    return <ConversionPracticeProblem skill={skill} seed={seed} mode={mode} work={work} position={position} length={length}
       completed={completed} update={update} onNext={onNext} />;
   }
   const problem = generateProblem(skill, seed);
@@ -224,13 +227,14 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
   </details></>;
 }
 
-function ConversionPracticeProblem({ skill, seed, work, position, length, completed, update, onNext }: {
-  skill: ConversionFamily; seed: number; work: PracticeWork; position: number; length: number; completed: number;
+function ConversionPracticeProblem({ skill, seed, mode, work, position, length, completed, update, onNext }: {
+  skill: ConversionFamily; seed: number; mode: "guided" | "independent"; work: PracticeWork; position: number; length: number; completed: number;
   update: (patch: Partial<PracticeWork>, attempt?: Attempt) => void; onNext: () => void;
 }) {
   const problem = generateProblem(skill, seed);
-  const interaction = problem.interactions[0];
+  const interaction = problem.interactions[Math.min(work.step, problem.interactions.length - 1)];
   const done = work.step >= problem.interactions.length;
+  const interactionWork = work.interactionData[interaction.id] ?? work.interactionData.legacy ?? { response: "", feedback: "", status: "idle" as const };
   return <section className="practice-problem" aria-label="Practice problem">
     <div className="practice-progress">
       <span>Problem {position}{length ? ` of ${length}` : ""} · {skill.category}</span>
@@ -242,17 +246,37 @@ function ConversionPracticeProblem({ skill, seed, work, position, length, comple
       <p>{problem.prompt}</p>
       {problem.equation && <p className="practice-math">{problem.equation}</p>}
     </header>
-    <PracticeInteraction interaction={interaction} serialized={work.interactionData} feedback={work.feedback} complete={done}
-      onChange={serialized => update({ interactionData: serialized, feedback: "" })}
-      onValidate={(result, message, response) => update(
-        { step: result === "correct" ? work.step + 1 : work.step, feedback: message },
-        { skillId: skill.id, version: skill.version, seed, stage: result === "correct" ? "answer" : "calculation",
-          stepId: interaction.id, response, result, assisted: work.assisted },
-      )} />
+    {problem.interactions.slice(0, work.step).map(previous => {
+      const previousWork = work.interactionData[previous.id] ?? (previous.id === problem.interactions[0].id ? work.interactionData.legacy : undefined);
+      return previousWork ? <PracticeInteraction key={previous.id} interaction={previous} serialized={previousWork.response}
+        feedback={previousWork.feedback} complete onChange={() => undefined} onValidate={() => undefined} /> : null;
+    })}
+    {!done && <PracticeInteraction key={interaction.id} interaction={interaction} serialized={interactionWork.response} feedback={interactionWork.feedback} complete={false}
+      onChange={response => update({ interactionData: {
+        ...work.interactionData, [interaction.id]: { ...interactionWork, response, feedback: "", status: "idle" },
+      } })}
+      onValidate={(result, message, response) => {
+        const correct = result === "correct";
+        const nextStep = correct ? work.step + 1 : work.step;
+        const completesProblem = nextStep === problem.interactions.length;
+        update({
+          step: nextStep,
+          hint: correct ? false : work.hint,
+          interactionData: {
+            ...work.interactionData,
+            [interaction.id]: { response, feedback: message, status: correct ? "correct" : "incorrect" },
+          },
+        }, {
+          skillId: skill.id, version: skill.version, seed, stage: completesProblem ? "answer" : "calculation",
+          stepId: interaction.id, response, result: correct ? "correct" : "incorrect", assisted: work.assisted,
+        });
+      }} />}
     <div className="practice-actions">
-      {!done && <button type="button" onClick={() => update({ hint: !work.hint, assisted: true })}>Hint</button>}
+      {!done && mode === "guided" && <button type="button" onClick={() => update({ hint: !work.hint, assisted: true })}>Hint</button>}
       <button type="button" onClick={onNext}>{position === length ? "Finish session" : done ? "Next problem" : "Skip problem"}</button>
     </div>
-    {work.hint && <p>Arrange the factors so every intermediate unit and species cancels, leaving only {interaction.target.unit} {interaction.target.species}.</p>}
+    {mode === "guided" && work.hint && !done && <p>{interaction.type === "conversion-chain"
+      ? `Arrange the factors so every intermediate unit and species cancels, leaving only ${interaction.target.unit} ${interaction.target.species}.`
+      : "Use the quantities established in the earlier parts, then check your reasoning and units."}</p>}
   </section>;
 }
