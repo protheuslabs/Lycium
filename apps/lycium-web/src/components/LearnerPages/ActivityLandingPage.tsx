@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { COURSE_CATALOG_PATH } from "../../utils/courseRouting";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
+import { practiceCatalog } from "../Practice/practiceEngine";
 
 const pageCopy = {
   practice: {
@@ -28,13 +29,22 @@ export default function ActivityLandingPage({ kind }: { kind: keyof typeof pageC
           <h1 className="learner-display-heading">{title}</h1>
           <p>{description}</p>
         </header>
-        <section className="learner-directory-empty" aria-labelledby="activity-empty-title">
+        {kind === "practice" ? Array.from(new Set(practiceCatalog.map(skill => skill.category))).map(category => (
+          <section key={category}>
+            <h2>{category}</h2>
+            <ul>
+              {practiceCatalog.filter(skill => skill.category === category).map(skill => (
+                <li key={skill.id}><Link className="learner-text-link" href={`/tools/practice?skill=${encodeURIComponent(skill.id)}`}>{skill.title} <ArrowRight size={16} aria-hidden="true" /></Link></li>
+              ))}
+            </ul>
+          </section>
+        )) : <section className="learner-directory-empty" aria-labelledby="activity-empty-title">
           <h2 id="activity-empty-title">{emptyTitle}</h2>
           <p>{emptyDescription}</p>
           <Link href={COURSE_CATALOG_PATH} className="learner-text-link">
             Browse courses <ArrowRight size={16} aria-hidden="true" />
           </Link>
-        </section>
+        </section>}
       </main>
       <CatalogFooter />
     </div>

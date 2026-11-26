@@ -1,0 +1,65 @@
+.practice-workspace {
+  width: min(100%, 92rem);
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  display: grid;
+  grid-template-columns: minmax(11rem, 1fr) minmax(0, 3fr) minmax(13rem, 1.2fr);
+  gap: clamp(1rem, 2vw, 2rem);
+  align-items: start;
+}
+
+.practice-workspace > details { grid-column: 2; }
+.practice-skills, .practice-notes { padding: 1rem; border-radius: .9rem; background: var(--lycium-color-surface); min-width: 0; }
+.practice-skills h2, .practice-notes h2 { font-size: 1rem; }
+.practice-notes h3 { font-size: .875rem; }
+.practice-skills button { display: block; width: 100%; text-align: left; margin-block: .375rem; }
+.practice-skills button[aria-current], .practice-choices label:has(:checked) {
+  color: var(--lycium-color-accent);
+  border-color: var(--lycium-color-accent);
+  background: var(--lycium-color-accent-soft);
+}
+.practice-progress { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; font-size: .875rem; }
+.practice-problem progress { width: 100%; accent-color: var(--lycium-color-accent); margin-block: .5rem 1rem; }
+.practice-prompt { border: 1px solid var(--lycium-color-border); border-radius: 1rem; padding: clamp(1rem, 3vw, 1.5rem); }
+.practice-prompt h2 { margin-top: 0; }
+.practice-givens, .practice-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; }
+.practice-quantity { display: grid; gap: .25rem; background: var(--lycium-color-surface); border-radius: .75rem; padding: .875rem; overflow-wrap: anywhere; }
+.practice-quantity strong { color: var(--lycium-color-accent); font-size: 1.5rem; }
+.practice-quantity strong span { font-size: .8em; font-weight: 500; }
+.practice-target { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: 0; padding-top: .75rem; border-top: 1px solid var(--lycium-color-border); }
+.practice-math { font-family: "Cambria Math", "STIX Two Math", serif; font-size: 1.2rem; overflow-wrap: anywhere; }
+.practice-fraction { display: inline-grid; text-align: center; vertical-align: middle; line-height: 1.1; }
+.practice-fraction > :first-child { border-bottom: 1px solid; }
+.practice-fraction > span { padding-inline: .2em; }
+.practice-choices { border: 0; padding: 0; margin: 1rem 0; min-width: 0; }
+.practice-choices legend { font-weight: 650; margin-bottom: .5rem; }
+.practice-choices label { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 4rem; margin: 0; padding: .5rem; border: 1px solid var(--lycium-color-border); border-radius: .75rem; cursor: pointer; }
+.practice-choices input { accent-color: var(--lycium-color-accent); }
+.practice-answer input { width: min(70%, 14rem); }
+.practice-workspace label { display: grid; gap: .375rem; margin-block: .75rem; }
+.practice-workspace .practice-choices label { display: flex; margin: 0; }
+.practice-workspace :is(input, textarea, select, button) {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--lycium-color-border);
+  border-radius: .5rem;
+  padding: .5rem .75rem;
+}
+.practice-workspace button, .practice-workspace summary { cursor: pointer; }
+.practice-workspace .practice-primary { color: white; background: var(--lycium-brand-primary); width: 100%; }
+.practice-workspace button:disabled { opacity: .55; cursor: default; }
+.practice-workspace textarea { box-sizing: border-box; width: 100%; resize: vertical; }
+.practice-workspace > details textarea { font-family: monospace; }
+.practice-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+@media (max-width: 64rem) {
+  .practice-workspace { grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr); }
+  .practice-skills { grid-column: 1 / -1; }
+  .practice-workspace > details { grid-column: 1 / -1; }
+}
+
+@media (max-width: 42rem) {
+  .practice-workspace { grid-template-columns: minmax(0, 1fr); }
+}
