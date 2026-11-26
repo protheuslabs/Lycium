@@ -276,7 +276,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
         <h1>Orvane</h1>
         <p>Explore functions and compare their shapes. Drag to pan, scroll or pinch to zoom.</p>
       </header>}
-      {workspace && headerTarget ? createPortal(workspaceActions, headerTarget) : workspaceActions}
+      {workspace ? (headerTarget ? createPortal(workspaceActions, headerTarget) : null) : workspaceActions}
       <div className={`graphing-layout${expressionsVisible ? "" : " graphing-layout--collapsed"}`} style={{ "--graph-panel-width": `${panelWidth}px` } as CSSProperties}>
         <aside id={`${id}-expressions`} className={`graphing-expressions${expressionsVisible ? "" : " graphing-expressions--collapsed"}`} aria-hidden={!expressionsVisible} aria-labelledby={`${id}-functions`}>
           {documentError && <p className="graphing-error" role="alert">{documentError}</p>}
