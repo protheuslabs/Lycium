@@ -11,7 +11,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${root}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: `${root}/tools`, lastModified: now, changeFrequency: "monthly", priority: .8 },
-    { url: `${root}/tools/graph`, lastModified: now, changeFrequency: "monthly", priority: .9 },
+    { url: `${root}/tools/graph/`, lastModified: now, changeFrequency: "monthly", priority: .9 },
+    { url: `${root}/tools/graph/about/`, lastModified: now, changeFrequency: "monthly", priority: .7 },
     { url: `${root}/tools/flashcards`, lastModified: now, changeFrequency: "monthly", priority: .7 },
     { url: `${root}/catalog`, lastModified: now, changeFrequency: "weekly", priority: .8 },
     { url: `${root}/catalog/courses`, lastModified: now, changeFrequency: "weekly", priority: .8 },

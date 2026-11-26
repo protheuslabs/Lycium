@@ -32,7 +32,7 @@ export default function ToolsPage() {
               </div>
               <div className="tool-entry-content">
                 <h3 id="graphing-studio-title">Orvane</h3>
-                <p id="graphing-studio-summary">Plot functions, compare datasets, and fit regression models.</p>
+                <p id="graphing-studio-summary">Free graphing calculator for functions, datasets, and regression models.</p>
                 <span className="tool-entry-action" aria-hidden="true">
                   Open workspace <ArrowRight size={16} />
                 </span>

@@ -4,9 +4,16 @@ import { ArrowLeft } from "lucide-react";
 import GraphingStudio from "../../../components/Tools/GraphingStudio";
 import ToolFrame from "../../../components/Tools/ToolFrame";
 
+const siteRoot = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://protheuslabs.github.io/Lycium").replace(/\/$/, "");
+const basePath = (process.env.NEXT_PUBLIC_LYCIUM_BASE_PATH ?? "/Lycium").replace(/\/$/, "");
+const siteUrl = siteRoot.endsWith(basePath) ? siteRoot : `${siteRoot}${basePath}`;
+const graphUrl = `${siteUrl}/tools/graph/`;
+const title = "Orvane | Free Online Graphing Calculator | Lycium";
+const description = "Graph functions, explore sliders and intersections, plot data, and fit regression models with Orvane, Lycium's free online graphing calculator.";
+
 export const metadata: Metadata = {
-  title: "Online Graphing Calculator | Orvane | Lycium",
-  description: "Plot functions, compare datasets, and explore mathematical relationships with Lycium's free online graphing calculator.",
+  title,
+  description,
   keywords: [
     "online graphing calculator",
     "function grapher",
@@ -16,13 +23,16 @@ export const metadata: Metadata = {
     "math graphing calculator",
   ],
   alternates: {
-    canonical: "https://protheuslabs.github.io/Lycium/tools/graph",
+    canonical: graphUrl,
   },
   openGraph: {
-    title: "Online Graphing Calculator | Orvane",
-    description: "Plot functions, compare datasets, and explore mathematical relationships in Lycium's interactive graphing workspace.",
+    title,
+    description,
     type: "website",
+    url: graphUrl,
+    siteName: "Lycium",
   },
+  twitter: { card: "summary", title, description },
 };
 
 export default function GraphPage() {
@@ -36,7 +46,7 @@ export default function GraphPage() {
         <div id="graphing-workspace-actions" />
       </header>
       <main id="main-content" tabIndex={-1} className="graphing-workspace-main">
-        <p className="sr-only">Orvane is an interactive online graphing calculator for plotting functions, comparing curves, exploring parameters, and visualizing scientific data.</p>
+        <p className="sr-only">Orvane is a free online graphing calculator for plotting functions, exploring sliders and intersections, and visualizing data with regression models.</p>
         <ToolFrame fill className="graphing-tool-frame">
           <GraphingStudio workspace />
         </ToolFrame>
@@ -47,12 +57,13 @@ export default function GraphPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            name: "Lycium Orvane",
+            name: "Orvane",
             applicationCategory: "EducationalApplication",
             operatingSystem: "Web",
-            description: "Interactive online graphing calculator for plotting functions, comparing datasets, and exploring regression.",
-            url: "https://protheuslabs.github.io/Lycium/tools/graph",
+            description,
+            url: graphUrl,
             isAccessibleForFree: true,
+            offers: { "@type": "Offer", price: 0 },
           }),
         }}
       />

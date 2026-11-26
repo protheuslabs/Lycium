@@ -17,6 +17,7 @@ import MathExpressionField from "./MathExpressionField";
 import { PARAMETER_NAMES, type GraphParameter } from "./graphParameters";
 import type { CoordinatePrecision } from "./graphCoordinates";
 import { parseGraphDocument, type GraphDocument, type GraphLabels, type GraphPoint } from "./graphDocument";
+import { decodeGraphDocument, encodeGraphDocument } from "./graphAgent";
 import "./graphingStudio.css";
 
 const COLORS = ["#176b55", "#2563eb", "#c2410c", "#9333ea", "#be185d", "#0e7490"];
@@ -53,7 +54,14 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
   const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null);
   const [panelWidth, setPanelWidth] = useState(350);
   const resizeStart = useRef<{ x: number; width: number } | null>(null);
-  const [loadedDocument] = useState(() => initialDocument ? parseGraphDocument(initialDocument) : null);
+  const [loadedDocument] = useState(() => {
+    if (initialDocument) return parseGraphDocument(initialDocument);
+    if (typeof window !== "undefined") {
+      const match = window.location.hash.match(/^#graph=([^&]+)/);
+      if (match) return decodeGraphDocument(match[1]);
+    }
+    return null;
+  });
   const [expressions, setExpressions] = useState(loadedDocument?.expressions ?? DEFAULT_EXPRESSIONS);
   const [rowOrder, setRowOrder] = useState<string[]>(() => loadedDocument?.rowOrder ?? [
     ...(loadedDocument?.expressions ?? DEFAULT_EXPRESSIONS).map(({ id }) => `function:${id}`),
@@ -248,6 +256,13 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                 setDocumentError(null);
               } catch (error) { setDocumentError(error instanceof Error ? error.message : "Could not export graph."); }
             }}>Export JSON</button>
+            <button type="button" onClick={async () => {
+              try {
+                const shareUrl = `${window.location.origin}${window.location.pathname}#graph=${encodeGraphDocument(buildDocument())}`;
+                await navigator.clipboard.writeText(shareUrl);
+                setDocumentError(null);
+              } catch (error) { setDocumentError(error instanceof Error ? error.message : "Could not copy the share link."); }
+            }}>Copy editable link</button>
             {(["svg", "png"] as const).map((format) => <button key={format} type="button" onClick={() => {
               void graphRef.current?.exportImage(format).then(() => setDocumentError(null)).catch((error: unknown) => { setDocumentError(error instanceof Error ? error.message : "Could not export image."); });
             }}>Export {format.toUpperCase()}</button>)}

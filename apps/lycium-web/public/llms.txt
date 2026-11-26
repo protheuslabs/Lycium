@@ -1,0 +1,30 @@
+# Orvane
+
+Orvane is Lycium's free, browser-based graphing calculator at https://protheuslabs.github.io/Lycium/tools/graph/.
+
+## Capabilities
+
+- Plot explicit functions of x, including restricted and piecewise expressions.
+- Adjust supported parameters with sliders.
+- Explore intersections, intercepts, tangent slopes, and tables of values.
+- Enter datasets, display scatter plots, and fit linear or exponential regression.
+- Estimate signed integrals and area between curves numerically.
+- Pan, zoom, annotate, import/export graph documents, and share editable graphs.
+
+## Intended users
+
+Learners, instructors, and science students who need an interactive visual graph for coursework or presentations.
+
+## Agent integration
+
+The repository contains the versioned shared agent contract in `apps/lycium-web/src/components/Tools/graphAgent.ts`. It provides deterministic `createGraph`, `analyzeGraph`, `createGraphDocument`, and dataset validation helpers. GitHub Pages is a static host and therefore does not provide a live HTTP or MCP endpoint. A server adapter may expose these functions from a JavaScript runtime without duplicating the graphing engine.
+
+## Limitations
+
+Analysis is numerical and bounded. It does not provide symbolic algebra, implicit-equation solving, or guaranteed exact results. Do not describe Orvane as an API or MCP server unless a compatible adapter has been separately deployed.
+
+## Links
+
+- Product: https://protheuslabs.github.io/Lycium/tools/graph/
+- Capabilities: https://protheuslabs.github.io/Lycium/tools/graph/about/
+- Tools directory: https://protheuslabs.github.io/Lycium/tools/
