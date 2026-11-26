@@ -23,8 +23,6 @@ export default function FlashcardStudy({ deck, history, onGrade, onStar, onEdit,
   const starred = deck.cards.filter((item) => history[deck.id]?.[item.id]?.starred).length;
   const sideText = card ? (session.flipped !== reversed ? card.back : card.front) : "";
 
-  useEffect(() => { surface.current?.focus({ preventScroll: true }); }, []);
-
   useEffect(() => {
     if (!("speechSynthesis" in window)) return;
     const update = () => setVoices(window.speechSynthesis.getVoices());

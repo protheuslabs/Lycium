@@ -19,6 +19,8 @@ Learners, instructors, and science students who need an interactive visual graph
 
 The repository contains the versioned shared agent contract in `apps/lycium-web/src/components/Tools/graphAgent.ts`. It provides deterministic `createGraph`, `analyzeGraph`, `createGraphDocument`, and dataset validation helpers. GitHub Pages is a static host and therefore does not provide a live HTTP or MCP endpoint. A server adapter may expose these functions from a JavaScript runtime without duplicating the graphing engine.
 
+Flashcards also has a versioned contract in `apps/lycium-web/src/components/Flashcards/flashcardAgent.ts`. `createFlashcardDeck` accepts a title, optional description and color, and question/answer cards, then returns a validated `lycium-flashcard-deck-v1` import document. This is suitable for course generation workflows; a hosting adapter can expose `create_deck` and `validate_deck` through HTTP or MCP.
+
 ## Limitations
 
 Analysis is numerical and bounded. It does not provide symbolic algebra, implicit-equation solving, or guaranteed exact results. Do not describe Orvane as an API or MCP server unless a compatible adapter has been separately deployed.

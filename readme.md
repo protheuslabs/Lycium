@@ -1,155 +1,131 @@
 # Lycium
 
-Lycium is an internet curriculum compiler for turning scattered free knowledge into structured, source-backed learning pathways. It is built for real skill development and vertical understanding: prerequisites, concepts, practice, assessment, projects, provenance, and mastery evidence.
+Lycium is a source-backed learning platform for building coherent courses, practicing concepts, and measuring progress. It combines a learner-facing Next.js application with portable course data, local-first learner state, source records, and services for course generation and retrieval.
 
-Courses and programs are represented as portable JSON snapshots, rendered dynamically in a Next.js learner experience, and backed by a FastAPI control plane for generation, source records, local progress, and user-owned settings.
+The project is built around a simple idea: information is abundant, but learning needs structure. Lycium turns goals and evidence into pathways with prerequisites, explanations, practice, assessments, citations, and reviewable quality signals.
 
-The project is designed around one core idea: the internet already has enough educational information, but learners need coherent pathways, source evidence, and feedback loops to turn that information into capability.
+[Product vision](./VISION.md) · [Architecture](./ARCHITECTURE.md) · [Contracts](./CONTRACTS.md) · [Deployment](./docs/deployment.md) · [Course generation skill](./skills/course-generation/SKILL.md)
 
-[Product Vision](./VISION.md) | [Product Principles](./docs/product-principles.md) | [V1 Vision Todo](./docs/v1-vision-todo.md) | [Data Boundaries](./docs/data-boundaries.md) | [Data Use and Trust](./docs/data-use-and-trust.md) | [MVP Vertical Slice](./MVP_VERTICAL_SLICE.md) | [Contracts](./CONTRACTS.md) | [Architecture](./ARCHITECTURE.md) | [Professional Readiness](./docs/professional-readiness.md) | [Deployment](./docs/deployment.md) | [ADRs](./docs/adr) | [Software Requirements Specification](./SRS.md) | [Demo Video](https://youtu.be/FjGd8ojGa14)
+## Product areas
 
-Long term, Lycium should grow from a source-backed open education platform into a learning operating system: course delivery, program planning, registration-like coordination, and reusable public knowledge infrastructure. The immediate priority remains free, local-first, source-backed learning paths before institutional LMS or registration features.
+`apps/lycium-web` is the React and Next.js learner application. It provides the course catalog, course reader, progress tracking, settings, local course editing, and standalone learning tools.
 
-## Mission and trust model
+Current tools include:
 
-Lycium should make public internet knowledge usable for building real skills. The reusable data flywheel should come primarily from public source and curriculum infrastructure:
+- **Orvane** — an interactive graphing workspace for functions, parameters, restrictions, piecewise expressions, datasets, regression, intersections, tangents, tables, integrals, annotations, import/export, and editable share links.
+- **Flashcards** — local-first decks with card editing, import/export, audio, study sessions, keyboard and touch interactions, color customization, and agent-generated deck documents.
 
-- source records and snapshots
-- curriculum benchmarks
-- requirement origins
-- source slots and fallback evidence
-- concept and prerequisite graphs
-- course/program quality signals
-- rubrics and portfolio requirements
+Both tools use isolated workspaces so they can later be embedded in courses, presentations, and assessments.
 
-Private learner data is a separate trust zone. Progress, quiz attempts, goals, notes, feedback linked to identity, and local provider secrets should remain user-owned, exportable, deletable, and protected from silent repurposing.
+The repository also contains:
 
-## Local-first compiler loop
+- `services/lycium-api` — FastAPI service for local data, generation runs, source records, course snapshots, and learner integrations.
+- `services/lycium-workers` — asynchronous ingestion and generation jobs.
+- `services/source-index` — reusable source records, snapshots, crawl decisions, corpus runs, and evidence quality.
+- `packages/contracts` — shared schemas and validation helpers.
+- `packages/data-access` — runtime adapters for local, static, cloud, and InfRing modes.
+- `skills/course-generation` — the canonical workflow for agent-authored Lycium courses.
 
-The current product loop is intentionally local-first before cloud services are connected:
+## Course generation loop
 
-1. A learner or author provides a goal, description, source URLs, pasted source text, or a source packet.
-2. Source Index imports or fetches sources, creates snapshots, runs source-corpus preflight, records include/exclude reasons, and emits a `source-packet-v1` payload with packet quality evidence.
-3. Lycium extracts curriculum benchmarks, requirement origins, source slots, and concept-to-source coverage from accepted evidence.
-4. If coverage is too weak, Lycium creates a `needs_sources` draft card instead of hollow lessons, records missing concepts/source types, preserves the non-ready `generationReadiness` report, and lets the user add sources before resuming.
-5. If coverage is sufficient, generation produces a structured course or program snapshot with modules, Learn/Apply sections, concept cards, quizzes, summaries, citations, and review metadata.
-6. Validation, quality evals, source readiness checks, citation checks, quiz checks, and review/publish gates decide whether the snapshot can appear as catalog-ready. Full source-backed courses preserve a positive `metadata.generationReadiness` report for review, observability, and evals.
-7. Local learner state records progress, bookmarks, quiz attempts, feedback, provider settings, generation runs, local editable drafts, and eval dashboard signals separately from portable course/source artifacts.
+1. A learner or author provides a goal, source links, pasted material, or a source packet.
+2. Source Index imports evidence, creates snapshots, and reports coverage, freshness, duplicates, broken links, and source types.
+3. Lycium extracts benchmarks, requirements, concepts, prerequisites, and source relationships.
+4. If evidence is insufficient, the system records source gaps and keeps the draft reviewable.
+5. If coverage is sufficient, generation creates a structured course or program snapshot with lessons, Learn and Apply sections, concept cards, quizzes, summaries, citations, and metadata.
+6. Validation and quality gates decide whether the snapshot is ready for review or catalog publication.
+7. Learner progress, attempts, notes, bookmarks, and feedback remain separate from portable course and source artifacts.
 
-This loop is the bridge between the immediate local app and the long-term internet curriculum compiler: source evidence improves the reusable index, while learner state stays in a separate trust boundary.
+Course content is represented as portable JSON. Course-generation behavior is defined by [skills/course-generation/SKILL.md](./skills/course-generation/SKILL.md).
 
-## Current capabilities
+- Learn pages teach the material.
+- Apply pages contain quizzes, exercises, or assessments.
+- Quiz pages should not contain instructional teaching content.
+- Concept cards should contain concepts introduced on the page.
+- Module summaries should gather concepts introduced by the module.
+- Sources are recorded centrally and referenced by course, module, section, and content IDs.
+- Generated snapshots should pass quality, review, and publish gates before becoming catalog-ready.
 
-- Course catalog with canonical route support at `/Lycium/catalog`
-- Generated course and unit URLs with stable slugs
-- JSON-driven course rendering for modules, units, text, videos, concept cards, quizzes, and source references
-- Collapsible course sidebar with independent scrolling and section status indicators
-- Persistent progress tracking for completion and viewed/interacted percentages
-- Course cards with progress layers, active module/unit context, metadata modals, categories, and tags
-- Catalog search, pagination, sorting, college and department filters, and an internal college-to-department taxonomy for course classification
-- Program and cluster catalog views with requirement-based progress rollups, prerequisite continuity, requirement detail panels, and portfolio/capstone evidence records
-- Quiz attempts with shuffled question/answer order, timers, pass percentages, max attempts, review flags, and attempt history
-- Course edit mode with structured element editors, manual blank courses that open directly into edit mode, local fork creation, explicit local draft metadata, conflict-safe saves, and portable local draft JSON import/export
-- Settings modal for local AI provider keys, model selection, and light/dark/auto display preferences
-- Course creation modal that stays locked until a valid active AI provider key and model are connected
-- Local user-data storage for completion, bookmarks, secrets, source links, and other machine-specific data
-- Course-generation rules for agents, including source records, assessment-only quiz pages, Learn/Apply page types, concept cards, and module summaries
-- Software engineering program/catalog scaffolds with prerequisite metadata, college-course parity metadata, requirement origins, portfolio artifacts, and generated module/quiz/summary structure
-- Course quality reports and a review/publish lifecycle so generated snapshots can be gated before catalog visibility
-- Course-generation eval scenarios for macroeconomics, intro programming, software engineering methods, noisy source corpora, under-sourced prompts, and full-stack program paths
-- Local model capability sweep scripts for comparing provider/model behavior across primitive plan, section, quiz, composed one-module, and full-course generation tasks
-- Durable generation run records, source-gap resume flow, eval score dashboard, and local storage diagnostics for debugging generated artifacts
-- Source Index source packets with coverage, duplicate, broken-link, source-type, trust, freshness, and benchmark-usefulness quality reports
-- Source Index service contract endpoint and CLI manifest so the index can remain detachable from Lycium UI code
-- Retrieval quality reports for source-backed search and learning-packet assembly
-- Professional readiness guardrails for review/publish, benchmarks, extraction, evals, providers, observability, contracts, migrations, secrets, and deployment
-- Playwright E2E coverage for catalog views, program/cluster navigation, search/filter/sort behavior, locked courses, settings, course-opening flow, and manual course editing
+Local course data is stored under `apps/lycium-web/src/courseData/`.
 
-## Repository structure
+## Agent interfaces
+
+Lycium exposes reusable, deterministic TypeScript contracts for its interactive tools.
+
+Orvane’s shared interface is in `apps/lycium-web/src/components/Tools/graphAgent.ts` and supports `createGraph`, `analyzeGraph`, editable graph-link serialization, and framework-neutral HTTP handling.
+
+Flashcards’ shared interface is in `apps/lycium-web/src/components/Flashcards/flashcardAgent.ts` and supports `createFlashcardDeck`, `validateFlashcardDeck`, and output in the existing `lycium-flashcard-deck-v1` import format. Its HTTP handler exposes `create_deck` and `validate_deck` operations.
+
+These contracts allow course tooling to generate a graph or deck that a learner can open and continue editing. GitHub Pages hosts the current frontend as a static export, so it cannot execute public server endpoints. The handlers are ready to be mounted by a Node, Vercel, Cloudflare, or MCP adapter without creating a second content or mathematical engine. Authentication and rate limiting belong at that adapter boundary.
+
+See [`apps/lycium-web/public/llms.txt`](./apps/lycium-web/public/llms.txt) for concise product documentation intended for language-model discovery.
+
+## Repository layout
 
 ```text
 .
 ├── apps/
-│   └── lycium-web/          # Next.js learner-facing web app
+│   └── lycium-web/          # Next.js learner application
 ├── packages/
-│   ├── config/              # Shared configuration package stub
-│   ├── contracts/           # Shared Lycium contracts, schemas, and validation helpers
-│   ├── data-access/         # Runtime adapters for local, static, cloud, and Infring modes
-│   ├── retrieval-sdk/       # Shared retrieval SDK package stub
-│   └── ui/                  # Shared UI package stub
+│   ├── config/              # Shared configuration
+│   ├── contracts/           # Schemas and validation
+│   ├── data-access/         # Runtime data adapters
+│   ├── retrieval-sdk/       # Retrieval foundations
+│   └── ui/                  # Shared UI foundations
 ├── services/
-│   ├── lycium-api/        # FastAPI API for local data, generation, analytics, and course snapshots
-│   ├── lycium-workers/    # Async worker entrypoints for ingestion and generation jobs
-│   └── source-index/      # Standalone Protheus source reference index service
-└── skills/
-    └── course-generation/   # Canonical agent instructions for authoring Lycium courses
+│   ├── lycium-api/          # FastAPI application
+│   ├── lycium-workers/      # Background jobs
+│   └── source-index/        # Source evidence service
+├── skills/
+│   └── course-generation/   # Course authoring workflow
+└── docs/                    # Product, deployment, trust, and architecture docs
 ```
 
-## Tech stack
+## Technology
 
-| Area | Tools |
+| Area | Technology |
 | --- | --- |
-| Web app | React 19, TypeScript, Next.js, Vitest, ESLint |
+| Web | React 19, TypeScript, Next.js, Vitest, Playwright |
 | Monorepo | pnpm 10, Turborepo |
 | API | Python 3.13, FastAPI, Pydantic, SQLAlchemy, Uvicorn |
-| Source index | Python 3.13, FastAPI, Pydantic, SQLAlchemy, HTTPX, BeautifulSoup |
-| Workers | Python 3.13, HTTPX, Pydantic |
-| Course content | JSON course records with centralized source records |
+| Source Index | FastAPI, SQLAlchemy, HTTPX, BeautifulSoup |
+| Graphing | `function-plot`, TypeScript mathematical utilities |
+| Flashcards | Browser storage, `ts-fsrs`, validated JSON import/export |
 
 ## Quick start
 
-### Prerequisites
+### Requirements
 
 - Node.js with Corepack enabled
 - pnpm 10
-- Python 3.13 for API and worker development
+- Python 3.13 for API, worker, and Source Index development
 
 ### Web app
 
 ```bash
 corepack enable
 corepack pnpm install
-corepack pnpm dev:all
-```
-
-Next.js will print the local URL. The catalog route is:
-
-```text
-http://localhost:<next-port>/Lycium/catalog
-```
-
-For the local port commonly used during development:
-
-```bash
 NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium corepack pnpm dev:web
 ```
 
-Then open:
+Open `http://localhost:5001/Lycium/`.
 
-```text
-http://localhost:5001/Lycium/catalog
+The web app can also run through:
+
+```bash
+corepack pnpm dev:all
 ```
 
-Runtime mode is configured with public environment variables:
+Useful public environment variables include:
 
 ```text
 NEXT_PUBLIC_LYCIUM_RUNTIME=local|static|cloud|infring
 NEXT_PUBLIC_LYCIUM_API_URL=http://127.0.0.1:8000
-NEXT_PUBLIC_LYCIUM_COURSE_CATALOG_URL=https://example.com/catalog.json
-NEXT_PUBLIC_LYCIUM_COURSE_BASE_URL=https://example.com/courses
-LYCIUM_API_TOKEN=optional-bearer-token-for-non-public-API-runtimes
-LYCIUM_SOURCE_EXTRACTOR_COMMAND="/absolute/path/to/Lyceum/services/lycium-api/external-extractors/docling-wrapper/.venv/bin/python -m docling_wrapper.extract"
-LYCIUM_SOURCE_EXTRACTOR_CWD=/absolute/path/to/Lyceum/services/lycium-api/external-extractors/docling-wrapper
-LYCIUM_SOURCE_EXTRACTOR_API_URL=http://127.0.0.1:8010
-LYCIUM_SOURCE_EXTRACTOR_TIMEOUT_SECONDS=45
-LYCIUM_SOURCE_EXTRACTOR_LOCAL_FALLBACK=false
-LYCIUM_SOURCE_INDEX_API_URL=http://127.0.0.1:8100
-LYCIUM_SOURCE_INDEX_TIMEOUT_SECONDS=20
+NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium
+NEXT_PUBLIC_SITE_URL=https://example.com
 ```
 
-If `LYCIUM_API_TOKEN` is set, callers must send `Authorization: Bearer <token>` for protected API paths.
-
-### API service
+### API
 
 ```bash
 cd services/lycium-api
@@ -159,15 +135,9 @@ pip install -e '.[test]'
 lycium-api
 ```
 
-The API defaults to:
+The API defaults to `http://127.0.0.1:8000`.
 
-```text
-http://127.0.0.1:8000
-```
-
-### Worker service
-
-Run this in a separate shell while the API is available:
+### Worker
 
 ```bash
 cd services/lycium-workers
@@ -177,9 +147,7 @@ pip install -e '.[test]'
 LYCIUM_API_URL=http://127.0.0.1:8000 lycium-worker --once
 ```
 
-### Source index service
-
-The source index is a neutral Protheus service boundary intended to be reusable by Lycium, InfRing, and future AI systems. It starts with canonical source records, source snapshots, crawl policy contracts, corpus runs, and include/exclude source decisions.
+### Source Index
 
 ```bash
 cd services/source-index
@@ -189,126 +157,41 @@ pip install -e '.[test]'
 source-index-api
 ```
 
-The source index defaults to:
+The Source Index defaults to `http://127.0.0.1:8100`.
 
-```text
-http://127.0.0.1:8100
-```
+## Development commands
 
-When `LYCIUM_SOURCE_INDEX_API_URL` is set on the Lycium API, Lycium routes `/v1/index/*` requests to this standalone service and uses its snapshots as upstream evidence for curriculum benchmark extraction. When the variable is unset, Lycium uses its transitional internal source tables for local development.
-
-### Source extractor integration
-
-Lycium can read direct text, Markdown, HTML-ish text, and text-backed PDFs locally for development. For richer PDF, document, table, layout, or explicit OCR extraction, install the external Docling wrapper under `services/lycium-api/external-extractors/docling-wrapper/` and configure `LYCIUM_SOURCE_EXTRACTOR_COMMAND` to call it. If an external extractor repo ships as a server, configure `LYCIUM_SOURCE_EXTRACTOR_API_URL` instead.
-
-The extractor integration should use proven parser adapters such as Docling behind the wrapper contract instead of putting heavy extraction libraries directly inside course generation. See `docs/external-extractor-integration.md`.
-
-## Useful commands
-
-| Command | Description |
+| Command | Purpose |
 | --- | --- |
 | `corepack pnpm dev` | Start the web app through the monorepo script |
-| `corepack pnpm dev:all` | Start the web app and local API together |
-| `corepack pnpm dev:api` | Start the local FastAPI service |
-| `corepack pnpm dev:source-index` | Start the standalone source index service |
+| `corepack pnpm dev:all` | Start the web app and local API |
 | `corepack pnpm build` | Build the web app |
-| `corepack pnpm test:contracts` | Run shared contract fixture tests |
-| `corepack pnpm test:docling-wrapper` | Run the external Docling wrapper contract tests |
-| `corepack pnpm validate` | Run contract tests, web typecheck, and web build |
-| `corepack pnpm validate:mvp` | Run the local MVP validation sweep: core guards, docs check, web tests/build/export verification, focused manual-editing E2E, API, source-index, and worker tests |
-| `corepack pnpm test:web-export-report` | Run fixture tests for the static export report and budget checker |
-| `corepack pnpm check:web-export-budget` | Fail if the static export exceeds route, artifact, course-data, or largest-chunk budgets |
-| `corepack pnpm --filter @lycium/web test` | Run web tests |
-| `corepack pnpm --filter @lycium/web e2e` | Run Playwright catalog/course smoke tests |
-| `corepack pnpm test:e2e:manual-editing` | Run the focused Playwright suite for manual course editing, local draft saves, citations, quizzes, sidebar edits, and cancel/revert behavior |
-| `corepack pnpm --filter @lycium/web lint` | Run web linting |
+| `corepack pnpm validate` | Run the main validation workflow |
+| `corepack pnpm validate:mvp` | Run the broader MVP validation sweep |
+| `corepack pnpm --filter @lycium/web test` | Run web unit tests |
 | `corepack pnpm --filter @lycium/web typecheck` | Run TypeScript checks |
+| `corepack pnpm --filter @lycium/web e2e` | Run Playwright tests |
+| `corepack pnpm --filter @lycium/web lint` | Run web linting |
 | `cd services/lycium-api && pytest -q` | Run API tests |
-| `cd services/source-index && pytest -q` | Run source index tests |
+| `cd services/source-index && pytest -q` | Run Source Index tests |
 | `cd services/lycium-workers && PYTHONPATH=src pytest -q` | Run worker tests |
-| `python3 services/lycium-api/scripts/run_model_param_sweep.py --task all-micro --models kimi-k2.6:cloud` | Run a local model capability sweep for plan, section, and quiz primitives |
-| `python3 services/lycium-api/scripts/run_model_param_sweep.py --task one-module --models kimi-k2.6:cloud` | Run the composed one-module benchmark after the primitive micro-gate passes |
 
-Use `corepack pnpm test:e2e:manual-editing` when touching manual course authoring, local draft persistence, citations, quiz editing, or sidebar edit controls. Use `corepack pnpm validate:mvp` before considering a broader MVP-facing change ready, because it combines the core repo guards, generated-schema checks, web validation, focused authoring E2E, export checks, API tests, source-index tests, and worker tests.
+When changing local course authoring, run:
 
-## Course content model
-
-Lycium courses are structured data. A course is composed of modules, sections, content blocks, source references, progress metadata, and assessment metadata.
-
-Important conventions:
-
-- Course-generation behavior is defined in [skills/course-generation/SKILL.md](./skills/course-generation/SKILL.md).
-- Available block formats and teaching use cases live in the shared [content format catalog](./docs/course-content-formats.md).
-- Generated course snapshots should move through quality-report, review, and publish gates before being listed as catalog-ready.
-- Courses should choose either `Module` or `Week` pacing language, not both.
-- Learn pages contain instructional content.
-- Apply pages contain quizzes, exercises, or assessments.
-- Quiz blocks should not include instructional teaching content.
-- Concept cards should list real, raw concepts introduced on the page, with concise descriptions.
-- Module summary pages should gather concept cards introduced by the module rather than invent broad interpretive summaries.
-- Sources should be recorded centrally and referenced by course/module/section/content IDs.
-- Catalog categories are university-style colleges/schools. Department data lives under each college in `courseTaxonomy.ts`, and the catalog filter panel exposes department filtering after a college is selected.
-
-Local course data currently lives under:
-
-```text
-apps/lycium-web/src/courseData/
+```bash
+corepack pnpm test:e2e:manual-editing
 ```
 
-The hosted static app is deployed through GitHub Pages at:
+## Trust and data boundaries
 
-```text
-https://protheuslabs.github.io/Lycium/
-```
+Lycium treats reusable educational infrastructure and private learner data as separate zones.
 
-The Pages workflow builds the Next.js static export with `NEXT_OUTPUT=export`, `NEXT_PUBLIC_LYCIUM_BASE_PATH=/Lycium`, and `NEXT_PUBLIC_LYCIUM_RUNTIME=static`.
+Reusable infrastructure includes source records, snapshots, curriculum benchmarks, requirement origins, concept graphs, course quality reports, and publication metadata. Learner state includes progress, quiz attempts, goals, notes, feedback, local drafts, and provider secrets. Learner data should remain user-owned, exportable, deletable, and protected from silent reuse.
 
-## Local data and secrets
+See [data boundaries](./docs/data-boundaries.md), [data use and trust](./docs/data-use-and-trust.md), and [professional readiness](./docs/professional-readiness.md).
 
-Lycium keeps user-specific data out of source control. The repo ignores local data directories such as:
+## Deployment
 
-```text
-.data/
-.lycium-local/
-```
+The learner application is configured for a static GitHub Pages export under `/Lycium`. API and worker deployments require a runtime capable of executing Python services. See the [deployment documentation](./docs/deployment.md) for environment variables, static-export behavior, and service configuration.
 
-These are intended for data such as:
-
-- API keys and provider settings
-- local progress records
-- course bookmarks
-- local editable course drafts, fork metadata, draft revision metadata, and imported/exported draft JSON
-- generated course snapshots
-- source links and local source metadata
-- source index SQLite databases and source-corpus decision records
-
-Do not commit secrets or machine-local learner data.
-
-## Development notes
-
-- Use conventional commit prefixes such as `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, and `chore:`.
-- Keep reusable UI behavior in components rather than duplicating markup in page shells.
-- Keep course and source-record contracts centralized in `packages/contracts`.
-- Treat `packages/contracts` lifecycle and quality-report schemas as the canonical gate between generated drafts and catalog-published courses.
-- Keep browser storage, local API access, progress, quiz attempts, settings, bookmarks, and generation calls behind `packages/data-access`.
-- Use `@lycium/data-access` repository factories for static JSON, local API, cloud API, and future Infring-backed runtimes instead of branching learner UI logic.
-- Keep course progress logic centralized in `apps/lycium-web/src/utils/courseProgress.ts`.
-- Keep course route and slug behavior centralized in `apps/lycium-web/src/utils/courseRouting.ts`.
-- Prefer explicit source records over free-floating URLs in course JSON.
-- Preserve ignored local-data directories so the app can be cloned and run without personal state.
-
-## Roadmap
-
-The next phase is intentionally constrained by the [MVP vertical slice](./MVP_VERTICAL_SLICE.md): topic and sources in, validated source-backed course snapshot out.
-
-For the online learner launch, see the [hosted MVP requirements](./docs/hosted-mvp-requirements.md). The [teaching quality rubric](./docs/course-generation-quality-acceptance.md) defines the evidence needed for college-level courses and programs.
-
-For interface research, proposed page structure, shared UI behavior, and redesign phases, see the [UI overhaul plan](./docs/ui-overhaul-plan.md).
-
-- Connect catalog source links and files to source-record creation
-- Generate courses from source records, not prompt text alone
-- Reject invalid generated course JSON before catalog insertion
-- Deepen review, edit, and lock workflows for generated sections
-- Add focused validation, source-ingestion, and generation-rejection tests
-- Expand E2E coverage into generated-course review and source-index flows
-- Improve retrieval quality after the source-backed loop is reliable
+Lycium is under active development. Interfaces and schemas may evolve, while portable course data, explicit source evidence, local learner ownership, and reviewable generation remain core design commitments.

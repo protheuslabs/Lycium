@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { BookOpen, CalendarCheck, Download, Ellipsis, HelpCircle, Library, Palette, Pencil, Plus, Search, Trash2, Upload } from "lucide-react";
+import { BookOpen, Download, Ellipsis, HelpCircle, Library, Palette, Pencil, Plus, Search, Trash2, Upload } from "lucide-react";
 import dynamic from "next/dynamic";
 import ToolFrame from "../Tools/ToolFrame";
 import ToolWorkspaceHeader from "../Tools/ToolWorkspaceHeader";
@@ -90,9 +90,12 @@ export default function FlashcardsApp() {
             <aside className="flashcards-sidebar" id="fc-sidebar" aria-label="Flashcard decks">
               <div className="fc-sidebar-top"><h2>My decks <span>{store.decks.length}</span></h2><button className="fc-icon" onClick={createDeck} aria-label="Create deck"><Plus size={18} /></button></div>
               {store.decks.length > 3 && <label className="fc-search"><Search size={15} /><input type="search" aria-label="Find a deck" placeholder="Find a deck" value={query} onChange={(event) => setQuery(event.target.value)} /></label>}
-              <div className="fc-deck-list">{store.decks.filter((item) => item.title.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map((item) => <button key={item.id} className={"fc-deck-item" + (item.id === activeId ? " is-selected" : "")} aria-current={item.id === activeId ? "true" : undefined} onClick={() => selectDeck(item.id)}>
-                <span className="fc-deck-marker" style={{ backgroundColor: item.color ?? DECK_COLORS[0].value }} /><span><strong>{item.title || "Untitled deck"}</strong><small>{item.cards.length} {item.cards.length === 1 ? "card" : "cards"}</small></span>
-              </button>)}</div>
+              <div className="fc-deck-list">{store.decks.filter((item) => item.title.toLocaleLowerCase().includes(query.toLocaleLowerCase())).map((item) => <div key={item.id} className={"fc-deck-entry" + (item.id === activeId ? " is-selected" : "")}>
+                <button className="fc-deck-item" aria-current={item.id === activeId ? "true" : undefined} onClick={() => selectDeck(item.id)}>
+                  <span className="fc-deck-marker" style={{ backgroundColor: item.color ?? DECK_COLORS[0].value }} /><span><strong>{item.title || "Untitled deck"}</strong><small>{item.cards.length} {item.cards.length === 1 ? "card" : "cards"}</small></span>
+                </button>
+                <button className="fc-icon fc-deck-edit" aria-label={item.id === activeId && mode === "cards" ? "Study deck" : `Edit ${item.title || "untitled deck"}`} title={item.id === activeId && mode === "cards" ? "Study deck" : "Edit deck"} onClick={() => selectDeck(item.id, item.id === activeId && mode === "cards" ? "study" : "cards")}>{item.id === activeId && mode === "cards" ? <BookOpen size={15} /> : <Pencil size={15} />}</button>
+              </div>)}</div>
               {!store.decks.length && <p className="fc-sidebar-empty">Your decks will appear here. Start with your own notes or a sample.</p>}
               <div className="fc-sidebar-bottom"><button className="fc-text-button" onClick={() => setImporting(true)}><Upload size={15} /> Import a deck</button><p><span className="fc-save-dot" />{snapshot.writable ? "Saved on this browser" : "Changes kept in memory"}</p><small>Export a backup to take your decks with you.</small></div>
             </aside>
@@ -108,7 +111,7 @@ export default function FlashcardsApp() {
                     <details className="fc-deck-menu"><summary aria-label="Deck actions" title="Deck actions"><Ellipsis size={19} /></summary><div className="fc-popover"><button className="fc-danger-text" onClick={deleteSelectedDeck}><Trash2 size={16} /> Delete deck</button></div></details>
                   </div>}
                 </div>}
-                <nav className="fc-tabs" aria-label="Deck view"><button aria-label="Flashcards" title="Flashcards" aria-current={mode === "study" ? "page" : undefined} onClick={() => setMode("study")}><BookOpen size={17} /></button><button aria-label="Daily review" title="Daily review" aria-current={mode === "review" ? "page" : undefined} onClick={() => { setMode("review"); setFocused(false); }}><CalendarCheck size={17} /></button><button aria-label={`Edit cards (${deck.cards.length})`} title={`Edit cards (${deck.cards.length})`} aria-current={mode === "cards" ? "page" : undefined} onClick={() => { setMode("cards"); setFocused(false); }}><Pencil size={17} /></button></nav>
+                <nav className="fc-tabs" aria-label="Deck view"><button aria-label="Flashcards" title="Flashcards" aria-current={mode === "study" ? "page" : undefined} onClick={() => setMode("study")}><BookOpen size={17} /></button><button aria-label={`Edit cards (${deck.cards.length})`} title={`Edit cards (${deck.cards.length})`} aria-current={mode === "cards" ? "page" : undefined} onClick={() => { setMode("cards"); setFocused(false); }}><Pencil size={17} /></button></nav>
                 {mode === "study" ? <FlashcardStudy key={deck.id} deck={deck} history={store.history} onGrade={(cardId, grade) => commit(recordReview(store, deck.id, cardId, grade))} onStar={(cardId) => commit(toggleStar(store, deck.id, cardId))} onEdit={() => setMode("cards")} focused={focused} onFocus={() => setFocused(!focused)} /> :
                   mode === "review" ? <SpacedReviewPanel key={deck.id} deck={deck} store={store} commit={commit} onStar={(cardId) => commit((current) => toggleStar(current, deck.id, cardId))} onEdit={() => setMode("cards")} /> : <FlashcardEditor key={deck.id} deck={deck} reviews={store.history[deck.id] ?? {}} scheduledCardIds={new Set(Object.keys(store.schedules?.[deck.id] ?? {}))} onUpdate={updateDeck} onResetSchedule={(cardId) => commit((current) => resetScheduledReview(current, deck.id, cardId))} onImport={() => setImporting(true)} onStar={(cardId) => commit(toggleStar(store, deck.id, cardId))} announce={setMessage} />}
               </>}
