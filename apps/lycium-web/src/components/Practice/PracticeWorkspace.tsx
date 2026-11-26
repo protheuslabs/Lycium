@@ -6,6 +6,8 @@ import ToolWorkspaceHeader from "../Tools/ToolWorkspaceHeader";
 import "../Tools/toolFrame.css";
 import { checkPracticeAnswer, generateProblem, parsePracticeConfig, practiceCatalog } from "./practiceEngine";
 import { Equation, EquationChoices, QuantityCard } from "./PracticeInteractions";
+import ConversionBuilder from "./ConversionBuilder";
+import { carbonateConversion } from "./conversionChain";
 import { emptyWork, readSession, SESSION_KEY, startSession, type Attempt, type PracticeWork } from "./practiceSession";
 import "./practice.css";
 
@@ -144,6 +146,9 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
   const { operation, answer, feedback, hint, solution } = work;
   const independent = mode === "independent";
   const calculations = problem.steps;
+  const carbonate = practiceCatalog.find(item => item.id === "calcium-carbonate-decomposition");
+  const conversion = carbonate && skill.id === carbonate.id && JSON.stringify(skill.steps) === JSON.stringify(carbonate.steps)
+    ? carbonateConversion(problem.given, problem.factor, 44) : null;
   const total = independent ? 1 : calculations?.length ?? 2;
   const step = work.step;
   const done = step >= total;
@@ -167,6 +172,7 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
       </div>
       <p className="practice-target"><span>Find</span> <span className="practice-math"><var>{skill.symbols.result}</var> = ? {skill.answer.unit}</span></p>
     </header>
+    {conversion && <ConversionBuilder key={seed} {...conversion} />}
     {step > 0 && (!independent || done) && <section aria-label="Checked work">
       {!independent && !calculations && <p><Equation operation={operation} {...skill.symbols} /></p>}
       {!independent && calculations?.slice(0, step).map(item => <p key={item.id}>{item.label}: {item.expected} {item.unit}</p>)}

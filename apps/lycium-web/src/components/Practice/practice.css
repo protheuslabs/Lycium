@@ -61,6 +61,15 @@
 .practice-workspace textarea { box-sizing: border-box; width: 100%; resize: vertical; }
 .practice-workspace > details textarea { font-family: monospace; }
 .practice-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.practice-conversion { margin-block: 1rem; }
+.practice-conversion-factors {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: .75rem;
+  margin-block: .75rem;
+}
+.practice-conversion-factors fieldset { min-width: 0; border: 1px solid var(--lycium-color-border); border-radius: .75rem; }
+.practice-conversion-factors select { width: 100%; }
 
 @media (max-width: 64rem) {
   .practice-workspace { grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr); }
