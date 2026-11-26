@@ -4,8 +4,9 @@ export const SESSION_KEY = "lycium-practice-session-v1";
 export const emptyWork = { step: 0, operation: "", answer: "", notes: "", feedback: "", hint: false, solution: false, assisted: false };
 export type PracticeWork = typeof emptyWork;
 export type Attempt = {
-  skillId: string; version: number; seed: number; stage: "equation" | "answer";
+  skillId: string; version: number; seed: number; stage: "equation" | "calculation" | "answer";
   response: string; result: string; assisted: boolean;
+  stepId?: string;
 };
 export type PracticeSession = {
   skills: PracticeConfig[]; seed: number; index: number; completed: number;
@@ -26,11 +27,14 @@ export function readSession(): PracticeSession | null {
         !Number.isSafeInteger(session.completed) || session.completed < 0 || session.completed > session.index + 1 ||
         !Number.isSafeInteger(session.length) || session.length < 0 ||
         !["guided", "independent"].includes(session.mode) || !session.work ||
-        ![0, 1, 2].includes(session.work.step) ||
+        !Number.isInteger(session.work.step) || session.work.step < 0 || session.work.step > 30 ||
         [session.work.answer, session.work.notes, session.work.operation, session.work.feedback].some(value => typeof value !== "string")) return null;
     const skills = session.skills.map(parsePracticeConfig);
     generateProblem(skills[0], session.seed);
-    return { ...session, skills };
+    const work = session.mode === "independent" && session.work.step > 0
+      ? { ...session.work, step: session.attempts.at(-1)?.result === "correct" ? 1 : 0 }
+      : session.work;
+    return { ...session, skills, work };
   } catch {
     return null;
   }

@@ -29,7 +29,9 @@ export default function PracticeWorkspace() {
     const requested = practiceCatalog.find(item => item.id === params.get("skill"));
     const saved = readSession();
     const showPreview = params.has("skill") || params.has("setup") || !saved;
-    const restored = showPreview ? startSession([requested ?? initial], 0, "guided", 10) : saved;
+    const restored = showPreview
+      ? startSession([requested ?? initial], window.crypto.getRandomValues(new Uint32Array(1))[0], "guided", 10)
+      : saved;
     setPreview(showPreview);
     setSession(restored);
     setSelected(restored.skills.map(item => item.id));
@@ -115,7 +117,7 @@ export default function PracticeWorkspace() {
         update={(patch, attempt) => setSession(previous => ({
           ...previous,
           work: { ...previous.work, ...patch },
-          completed: previous.completed + (patch.step === 2 && previous.work.step !== 2 ? 1 : 0),
+          completed: previous.completed + (attempt?.stage === "answer" && attempt.result === "correct" ? 1 : 0),
           attempts: attempt ? [...previous.attempts, attempt] : previous.attempts,
         }))}
         onNext={() => setSession(previous => ({ ...previous, index: previous.index + 1, work: emptyWork }))} />}
@@ -141,57 +143,69 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
   const problem = generateProblem(skill, seed);
   const { operation, answer, feedback, hint, solution } = work;
   const independent = mode === "independent";
-  const step = independent && work.step === 0 ? 1 : work.step;
+  const calculations = problem.steps;
+  const total = independent ? 1 : calculations?.length ?? 2;
+  const step = work.step;
+  const done = step >= total;
+  const chooseEquation = !independent && !calculations && step === 0;
+  const calculation = independent ? calculations?.at(-1) : calculations?.[step];
+  const unit = calculation?.unit ?? skill.answer.unit;
   function attempt(stage: Attempt["stage"], response: string, result: string): Attempt {
     return { skillId: skill.id, version: skill.version, seed, stage, response, result, assisted: work.assisted };
   }
 
   return <><section className="practice-problem" aria-label="Practice problem">
     <div className="practice-progress"><span>Problem {position}{length ? ` of ${length}` : ""} · {independent ? "Independent" : "Guided"}</span><span>{completed} solved</span></div>
-    <progress aria-label="Problem steps completed" max={independent ? 1 : 2} value={independent ? Number(step === 2) : step} />
+    <progress aria-label="Problem steps completed" max={total} value={step} />
     <header className="practice-prompt">
       <h2>{skill.title}</h2>
       <p>Use the given quantities to find {skill.answer.label.toLowerCase()}.</p>
+      {calculations && <p>{skill.hint}</p>}
       <div className="practice-givens">
         <QuantityCard {...skill.given} value={problem.given} symbol={skill.symbols.first} />
         <QuantityCard {...skill.factor} value={problem.factor} symbol={skill.symbols.second} />
       </div>
       <p className="practice-target"><span>Find</span> <span className="practice-math"><var>{skill.symbols.result}</var> = ? {skill.answer.unit}</span></p>
     </header>
-    {step > 0 && (!independent || step === 2) && <section aria-label="Checked work">
-      {!independent && <p><Equation operation={operation} {...skill.symbols} /></p>}
-      {step === 2 && <p className="practice-math">{skill.symbols.result} = {answer.trim()} {skill.answer.unit}</p>}
+    {step > 0 && (!independent || done) && <section aria-label="Checked work">
+      {!independent && !calculations && <p><Equation operation={operation} {...skill.symbols} /></p>}
+      {!independent && calculations?.slice(0, step).map(item => <p key={item.id}>{item.label}: {item.expected} {item.unit}</p>)}
+      {done && (independent || !calculations) && <p className="practice-math">{answer.trim()} {unit}</p>}
     </section>}
     <form onSubmit={event => {
       event.preventDefault();
-      if (step === 0) {
+      if (done) return;
+      if (chooseEquation) {
         if (!operation) return;
         const correct = operation === skill.operation;
         update({ step: correct ? 1 : 0, feedback: correct ? "Correct equation. Now calculate the result." : "Check which operation leaves you with the requested unit." },
           attempt("equation", operation, correct ? "correct" : "incorrect"));
-      } else if (step === 1) {
-        const result = checkPracticeAnswer(answer, problem.expected);
+      } else {
+        const final = step + 1 === total;
+        const result = checkPracticeAnswer(answer, calculation?.expected ?? problem.expected);
         update({
-          step: result === "correct" ? 2 : 1,
-          feedback: result === "correct" ? "Problem complete. Your answer is correct." : result === "invalid" ? "Enter a decimal or a number in scientific notation." : "Check the calculation and rounding, then try again.",
-        }, attempt("answer", answer, result));
+          step: result === "correct" ? step + 1 : step,
+          answer: result === "correct" && !final ? "" : answer,
+          feedback: result === "correct" ? (final ? "Problem complete. Your answer is correct." : "Step correct.") : result === "invalid" ? "Enter a decimal or a number in scientific notation." : "Check the calculation and rounding, then try again.",
+        }, { ...attempt(final ? "answer" : "calculation", answer, result), stepId: calculation?.id });
       }
     }}>
-      {step === 0 && <EquationChoices value={operation} onChange={value => update({ operation: value })} symbols={skill.symbols} />}
-      {step === 1 && <label>{independent ? "Calculate the result" : "2. Calculate the result"}
-        <small>Round to {skill.answer.decimals} decimal places.</small>
-        <span className="practice-answer"><input aria-label={`Answer in ${skill.answer.unit}`} value={answer} inputMode="decimal" onChange={event => update({ answer: event.target.value })} /> {skill.answer.unit}</span>
+      {chooseEquation && <EquationChoices value={operation} onChange={value => update({ operation: value })} symbols={skill.symbols} />}
+      {!done && !chooseEquation && <label>{calculation?.label ?? "Calculate the result"}
+        <small>Round to {calculation?.decimals ?? skill.answer.decimals} decimal places.</small>
+        <span className="practice-answer"><input aria-label={`Answer in ${unit}`} value={answer} inputMode="decimal" onChange={event => update({ answer: event.target.value })} /> {unit}</span>
       </label>}
-      {step < 2 && <button className="practice-primary" type="submit" disabled={step === 0 ? !operation : !answer.trim()}>{step === 0 ? "Check step" : "Check answer"}</button>}
+      {!done && <button className="practice-primary" type="submit" disabled={chooseEquation ? !operation : !answer.trim()}>{step + 1 < total ? "Check step" : "Check answer"}</button>}
       <p role="status">{feedback}</p>
     </form>
     <div className="practice-actions">
-      {step < 2 && <button type="button" aria-expanded={hint} onClick={() => update({ hint: !hint, assisted: true })}>Hint</button>}
+      {!done && <button type="button" aria-expanded={hint} onClick={() => update({ hint: !hint, assisted: true })}>Hint</button>}
       <button type="button" aria-expanded={solution} onClick={() => update({ solution: !solution, assisted: true })}>Worked solution</button>
-      <button type="button" onClick={onNext}>{position === length ? "Finish session" : step === 2 ? "Next problem" : "Skip problem"}</button>
+      <button type="button" onClick={onNext}>{position === length ? "Finish session" : done ? "Next problem" : "Skip problem"}</button>
     </div>
     {hint && <p>{skill.hint}</p>}
-    {solution && <p>{skill.hint} {problem.given} {problem.symbol} {problem.factor} ≈ {problem.expected} {skill.answer.unit}.</p>}
+    {solution && (calculations ? <ol>{calculations.map(item => <li key={item.id}>{item.label}: {item.explanation} ≈ {item.expected} {item.unit}</li>)}</ol> :
+      <p>{skill.hint} {problem.given} {problem.symbol} {problem.factor} ≈ {problem.expected} {skill.answer.unit}.</p>)}
   </section>
   <details className="practice-notes">
     <summary>Your work and reference</summary>

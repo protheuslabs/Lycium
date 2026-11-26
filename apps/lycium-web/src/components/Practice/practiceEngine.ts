@@ -12,8 +12,33 @@ const range = (value: unknown) =>
     ? { label: value.label, unit: value.unit, min: value.min, max: value.max }
     : null;
 
+type Calculation = {
+  id: string; label: string; unit: string; decimals: number;
+  operation: "multiply" | "divide" | "add" | "subtract";
+  operands: [string | number, string | number];
+};
+
+function parseCalculations(value: unknown): Calculation[] {
+  if (!Array.isArray(value) || !value.length || value.length > 30) throw new Error("Define 1–30 calculation steps.");
+  const known = new Set(["given", "factor"]);
+  return value.map((step: unknown) => {
+    if (!record(step) || !label(step.id) || known.has(step.id) || !label(step.label) || !label(step.unit) ||
+      !integer(step.decimals, 0, 6) ||
+      (step.operation !== "multiply" && step.operation !== "divide" && step.operation !== "add" && step.operation !== "subtract") ||
+      !Array.isArray(step.operands) || step.operands.length !== 2) throw new Error("Invalid calculation step.");
+    function operand(value: unknown): string | number {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string" && known.has(value)) return value;
+      throw new Error("Operands must be constants, given values, or earlier steps.");
+    }
+    const operands: Calculation["operands"] = [operand(step.operands[0]), operand(step.operands[1])];
+    known.add(step.id);
+    return { id: step.id, label: step.label, unit: step.unit, decimals: step.decimals, operation: step.operation, operands };
+  });
+}
+
 export function parsePracticeConfig(value: unknown) {
-  if (!record(value) || value.version !== 1 || !label(value.id) ||
+  if (!record(value) || (value.version !== 1 && value.version !== 2) || !label(value.id) ||
     !label(value.category) || !label(value.title) || !label(value.hint) ||
     (value.operation !== "multiply" && value.operation !== "divide") ||
     !record(value.answer) || !label(value.answer.label) || !label(value.answer.unit) ||
@@ -23,14 +48,41 @@ export function parsePracticeConfig(value: unknown) {
   const given = range(value.given);
   const factor = range(value.factor);
   if (!given || !factor) throw new Error("Both inputs need labels, units and ordered integer bounds between 1 and 10,000.");
+  const steps = value.version === 2 ? parseCalculations(value.steps) : undefined;
+  const final = steps?.at(-1);
+  if (final && (final.unit !== value.answer.unit || final.decimals !== value.answer.decimals)) {
+    throw new Error("The final step must match the answer unit and precision.");
+  }
+  const bounds = new Map<string, number[]>([["given", [given.min, given.max]], ["factor", [factor.min, factor.max]]]);
+  for (const step of steps ?? []) {
+    const [left, right] = step.operands.map(item => typeof item === "number" ? [item] : bounds.get(item)!);
+    if (step.operation === "divide" && Math.min(...right) <= 0 && Math.max(...right) >= 0) {
+      throw new Error(`Calculation "${step.id}" can divide by zero.`);
+    }
+    const endpoints = left.flatMap(a => right.map(b => calculate(step.operation, a, b)));
+    if (endpoints.some(result => !Number.isFinite(result) || Math.abs(result) >= 1e21)) {
+      throw new Error(`Calculation "${step.id}" is out of range.`);
+    }
+    bounds.set(step.id, [Math.min(...endpoints), Math.max(...endpoints)]);
+  }
   return {
-    version: 1 as const, id: value.id, category: value.category, title: value.title,
+    version: value.version, id: value.id, category: value.category, title: value.title,
+    steps,
     hint: value.hint, operation: value.operation, given, factor,
     answer: { label: value.answer.label, unit: value.answer.unit, decimals: value.answer.decimals },
     symbols: record(value.symbols) && label(value.symbols.first) && label(value.symbols.second) && label(value.symbols.result)
       ? { first: value.symbols.first, second: value.symbols.second, result: value.symbols.result }
       : { first: "a", second: "b", result: "r" },
   };
+}
+
+function calculate(operation: Calculation["operation"], a: number, b: number) {
+  switch (operation) {
+    case "multiply": return a * b;
+    case "divide": return a / b;
+    case "add": return a + b;
+    case "subtract": return a - b;
+  }
 }
 
 export type PracticeConfig = ReturnType<typeof parsePracticeConfig>;
@@ -49,8 +101,17 @@ export function generateProblem(config: PracticeConfig, seed: number) {
   const given = sample(config.given);
   const factor = sample(config.factor);
   const divide = config.operation === "divide";
-  const expected = (divide ? given / factor : given * factor).toFixed(config.answer.decimals);
-  return { given, factor, expected, symbol: divide ? "÷" : "×" };
+  const values = new Map([["given", given], ["factor", factor]]);
+  const steps = config.steps?.map(step => {
+    const [a, b] = step.operands.map(operand => typeof operand === "number" ? operand : values.get(operand)!);
+    const result = calculate(step.operation, a, b);
+    if (!Number.isFinite(result) || Math.abs(result) >= 1e21) throw new Error(`Calculation "${step.id}" is out of range.`);
+    values.set(step.id, result);
+    const symbol = { multiply: "×", divide: "÷", add: "+", subtract: "−" }[step.operation];
+    return { ...step, expected: result.toFixed(step.decimals), explanation: `${a.toPrecision(8)} ${symbol} ${b.toPrecision(8)}` };
+  });
+  const expected = steps?.at(-1)?.expected ?? (divide ? given / factor : given * factor).toFixed(config.answer.decimals);
+  return { given, factor, expected, steps, symbol: divide ? "÷" : "×" };
 }
 
 export function checkPracticeAnswer(input: string, expected: string) {

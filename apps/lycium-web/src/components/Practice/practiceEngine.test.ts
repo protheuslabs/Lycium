@@ -12,13 +12,26 @@ describe("practice generation", () => {
         expect(problem.given).toBeLessThanOrEqual(skill.given.max);
         expect(problem.factor).toBeGreaterThanOrEqual(skill.factor.min);
         expect(problem.factor).toBeLessThanOrEqual(skill.factor.max);
-        const expected = skill.operation === "divide"
+        const expected = skill.version === 2 ? problem.given / 100 * 44 : skill.operation === "divide"
           ? problem.given / problem.factor : problem.given * problem.factor;
         expect(problem.expected).toBe(expected.toFixed(skill.answer.decimals));
         return problem;
       });
       expect(new Set(problems.map(problem => problem.expected)).size).toBeGreaterThan(1);
     }
+  });
+
+  it("checks all stoichiometry stages and rejects invalid dependencies", () => {
+    const skill = practiceCatalog.find(item => item.version === 2)!;
+    const problem = generateProblem(skill, 12);
+    expect(problem.steps?.map(step => step.expected)).toEqual([
+      (problem.given / 100).toFixed(2),
+      (problem.given / 100).toFixed(2),
+      (problem.given / 100 * 44).toFixed(2),
+    ]);
+    const steps = skill.steps!;
+    expect(() => parsePracticeConfig({ ...skill, steps: [{ ...steps[0], operands: ["productMass", 1] }, ...steps.slice(1)] })).toThrow("earlier steps");
+    expect(() => parsePracticeConfig({ ...skill, steps: [{ ...steps[0], operands: ["given", 0] }, ...steps.slice(1)] })).toThrow("divide by zero");
   });
 
   it("rejects invalid settings and seeds", () => {
