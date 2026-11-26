@@ -29,22 +29,3 @@ export function validateConversionChain(start: Quantity, target: Quantity, ratio
   }
   return { status: "correct", value } as const;
 }
-
-const quantity = (id: string, value: number, unit: string, species: string): Quantity => ({ id, value, unit, species });
-
-export function carbonateConversion(mass: number, molarMass: number, productMolarMass: number) {
-  const reactantMass = quantity("reactant-mass", molarMass, "g", "CaCO₃");
-  const reactantMole = quantity("reactant-mole", 1, "mol", "CaCO₃");
-  const productMole = quantity("product-mole", 1, "mol", "CO₂");
-  const productMass = quantity("product-mass", productMolarMass, "g", "CO₂");
-  return {
-    start: { ...reactantMass, value: mass },
-    target: { ...productMass, value: mass / molarMass * productMolarMass },
-    quantities: [reactantMass, reactantMole, productMole, productMass],
-    ratios: [
-      { numerator: reactantMole, denominator: reactantMass },
-      { numerator: productMole, denominator: reactantMole },
-      { numerator: productMass, denominator: productMole },
-    ],
-  };
-}

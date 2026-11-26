@@ -4,15 +4,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import ToolWorkspaceHeader from "../Tools/ToolWorkspaceHeader";
 import "../Tools/toolFrame.css";
-import { checkPracticeAnswer, generateProblem, parsePracticeConfig, practiceCatalog } from "./practiceEngine";
+import { checkPracticeAnswer, generateProblem, parsePracticeConfig, practiceCatalog, type PracticeConfig } from "./practiceEngine";
 import { Equation, EquationChoices, QuantityCard } from "./PracticeInteractions";
-import ConversionBuilder from "./ConversionBuilder";
-import { carbonateConversion } from "./conversionChain";
+import PracticeInteraction from "./PracticeInteraction";
+import type { ConversionFamily } from "./conversionRuntime";
 import { emptyWork, readSession, SESSION_KEY, startSession, type Attempt, type PracticeWork } from "./practiceSession";
 import "./practice.css";
 
 const initial = practiceCatalog[0];
 const format = (value: unknown) => JSON.stringify(value, null, 2);
+const exampleDescription = (skill: PracticeConfig, seed: number) => {
+  if (skill.version === 3) return generateProblem(skill, seed).prompt;
+  const example = generateProblem(skill, seed);
+  return `Find ${skill.answer.label.toLowerCase()} using ${example.given} ${skill.given.unit} and ${example.factor} ${skill.factor.unit}.`;
+};
 
 export default function PracticeWorkspace() {
   const [session, setSession] = useState(() => startSession([initial]));
@@ -76,12 +81,11 @@ export default function PracticeWorkspace() {
   const options = [...practiceCatalog.map(item => session.skills.find(active => active.id === item.id) ?? item),
     ...session.skills.filter(item => !practiceCatalog.some(entry => entry.id === item.id))];
   const exampleSkill = options.find(item => selected.includes(item.id));
-  const example = exampleSkill && generateProblem(exampleSkill, session.seed);
   return <>
     <ToolWorkspaceHeader title="Practice Studio" backHref="/practice" backLabel={preview || finished ? "Practice library" : "Exit practice"} />
     <main className="practice-workspace practice-focused">
       {!ready ? <p role="status">Loading practice…</p> : preview ? <section className="practice-prompt practice-preview">
-      <p>Practice / {initial.category}</p>
+      <p>Practice / {exampleSkill?.category ?? initial.category}</p>
       <h2>{exampleSkill?.title ?? initial.category}</h2>
       <p>Practice with generated problems. Choose the skills to include in your session.</p>
       <h3>Skills covered</h3>
@@ -97,9 +101,9 @@ export default function PracticeWorkspace() {
       <label>Session length <select value={length} onChange={event => setLength(Number(event.target.value))}>
         <option value={0}>Open-ended</option><option value={5}>5 problems</option><option value={10}>10 problems</option><option value={20}>20 problems</option>
       </select></label>
-      {exampleSkill && example && <div className="practice-quantity">
+      {exampleSkill && <div className="practice-quantity">
         <strong>Example problem</strong>
-        <span>Find {exampleSkill.answer.label.toLowerCase()} using {example.given} {exampleSkill.given.unit} and {example.factor} {exampleSkill.factor.unit}.</span>
+        <span>{exampleDescription(exampleSkill, session.seed)}</span>
       </div>}
       <button className="practice-primary" type="button" disabled={!selected.length} onClick={() => {
         const skills = options.filter(item => selected.includes(item.id)).map(item => session.skills.find(active => active.id === item.id) ?? item);
@@ -142,13 +146,14 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
   position: number; length: number; completed: number;
   update: (patch: Partial<PracticeWork>, attempt?: Attempt) => void; onNext: () => void;
 }) {
+  if (skill.version === 3) {
+    return <ConversionPracticeProblem skill={skill} seed={seed} work={work} position={position} length={length}
+      completed={completed} update={update} onNext={onNext} />;
+  }
   const problem = generateProblem(skill, seed);
   const { operation, answer, feedback, hint, solution } = work;
   const independent = mode === "independent";
   const calculations = problem.steps;
-  const carbonate = practiceCatalog.find(item => item.id === "calcium-carbonate-decomposition");
-  const conversion = carbonate && skill.id === carbonate.id && JSON.stringify(skill.steps) === JSON.stringify(carbonate.steps)
-    ? carbonateConversion(problem.given, problem.factor, 44) : null;
   const total = independent ? 1 : calculations?.length ?? 2;
   const step = work.step;
   const done = step >= total;
@@ -172,7 +177,6 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
       </div>
       <p className="practice-target"><span>Find</span> <span className="practice-math"><var>{skill.symbols.result}</var> = ? {skill.answer.unit}</span></p>
     </header>
-    {conversion && <ConversionBuilder key={seed} {...conversion} />}
     {step > 0 && (!independent || done) && <section aria-label="Checked work">
       {!independent && !calculations && <p><Equation operation={operation} {...skill.symbols} /></p>}
       {!independent && calculations?.slice(0, step).map(item => <p key={item.id}>{item.label}: {item.expected} {item.unit}</p>)}
@@ -218,4 +222,37 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
     <label>Scratchpad <textarea rows={5} placeholder="Write your calculations here" value={work.notes} onChange={event => update({ notes: event.target.value })} /></label>
     <details><summary>Rounding reference</summary><p>Keep the full value during calculation. Round only the final answer to the requested decimal places.</p></details>
   </details></>;
+}
+
+function ConversionPracticeProblem({ skill, seed, work, position, length, completed, update, onNext }: {
+  skill: ConversionFamily; seed: number; work: PracticeWork; position: number; length: number; completed: number;
+  update: (patch: Partial<PracticeWork>, attempt?: Attempt) => void; onNext: () => void;
+}) {
+  const problem = generateProblem(skill, seed);
+  const interaction = problem.interactions[0];
+  const done = work.step >= problem.interactions.length;
+  return <section className="practice-problem" aria-label="Practice problem">
+    <div className="practice-progress">
+      <span>Problem {position}{length ? ` of ${length}` : ""} · {skill.category}</span>
+      <span>{completed} solved</span>
+    </div>
+    <progress aria-label="Problem interactions completed" max={problem.interactions.length} value={work.step} />
+    <header className="practice-prompt">
+      <h2>{skill.title}</h2>
+      <p>{problem.prompt}</p>
+      {problem.equation && <p className="practice-math">{problem.equation}</p>}
+    </header>
+    <PracticeInteraction interaction={interaction} serialized={work.interactionData} feedback={work.feedback} complete={done}
+      onChange={serialized => update({ interactionData: serialized, feedback: "" })}
+      onValidate={(result, message, response) => update(
+        { step: result === "correct" ? work.step + 1 : work.step, feedback: message },
+        { skillId: skill.id, version: skill.version, seed, stage: result === "correct" ? "answer" : "calculation",
+          stepId: interaction.id, response, result, assisted: work.assisted },
+      )} />
+    <div className="practice-actions">
+      {!done && <button type="button" onClick={() => update({ hint: !work.hint, assisted: true })}>Hint</button>}
+      <button type="button" onClick={onNext}>{position === length ? "Finish session" : done ? "Next problem" : "Skip problem"}</button>
+    </div>
+    {work.hint && <p>Arrange the factors so every intermediate unit and species cancels, leaving only {interaction.target.unit} {interaction.target.species}.</p>}
+  </section>;
 }

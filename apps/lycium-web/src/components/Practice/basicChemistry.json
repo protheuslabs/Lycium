@@ -14,19 +14,5 @@
     "operation": "multiply", "answer": { "label": "Mass", "unit": "g", "decimals": 0 },
     "hint": "Multiply volume by density so that milliliters cancel.",
     "symbols": { "first": "V", "second": "ρ", "result": "m" }
-  },
-  {
-    "version": 2, "id": "calcium-carbonate-decomposition", "category": "Basic Chemistry",
-    "title": "Calculate carbon dioxide yield",
-    "given": { "label": "Calcium carbonate mass", "unit": "g", "min": 10, "max": 200 },
-    "factor": { "label": "Calcium carbonate molar mass", "unit": "g/mol", "min": 100, "max": 100 },
-    "operation": "divide",
-    "answer": { "label": "Carbon dioxide mass", "unit": "g", "decimals": 2 },
-    "hint": "CaCO₃ → CaO + CO₂. Use 100 g/mol for CaCO₃ and 44 g/mol for CO₂. The reaction produces one mole of CO₂ per mole of CaCO₃.",
-    "steps": [
-      { "id": "reactantMoles", "label": "Calculate moles of calcium carbonate", "unit": "mol", "decimals": 2, "operation": "divide", "operands": ["given", "factor"] },
-      { "id": "productMoles", "label": "Use the mole ratio to find moles of carbon dioxide", "unit": "mol", "decimals": 2, "operation": "multiply", "operands": ["reactantMoles", 1] },
-      { "id": "productMass", "label": "Calculate the mass of carbon dioxide", "unit": "g", "decimals": 2, "operation": "multiply", "operands": ["productMoles", 44] }
-    ]
   }
 ]

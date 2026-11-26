@@ -1,0 +1,112 @@
+[
+  {
+    "version": 3,
+    "id": "stoichiometry-carbon-dioxide",
+    "category": "Chemistry",
+    "title": "Calculate carbon dioxide yield",
+    "description": "Convert calcium carbonate mass to carbon dioxide mass.",
+    "variables": {
+      "sampleMass": { "generator": "decimal", "min": 10, "max": 200, "step": 0.1 },
+      "reactantMolarMass": { "generator": "constant", "value": 100 },
+      "productMolarMass": { "generator": "constant", "value": 44 },
+      "one": { "generator": "constant", "value": 1 }
+    },
+    "derived": {
+      "productMass": { "operation": "multiply", "operands": [
+        { "operation": "divide", "operands": ["sampleMass", "reactantMolarMass"] },
+        "productMolarMass"
+      ] }
+    },
+    "presentation": {
+      "prompt": "How many grams of carbon dioxide are produced when {sampleMass} g of calcium carbonate completely decomposes?",
+      "equation": "CaCO₃ → CaO + CO₂"
+    },
+    "interactions": [{
+      "id": "conversion",
+      "type": "conversion-chain",
+      "prompt": "Set up your calculation",
+      "start": { "value": "sampleMass", "unit": "g", "species": "CaCO₃" },
+      "target": { "value": "productMass", "unit": "g", "species": "CO₂", "decimals": 2 },
+      "quantities": [
+        { "id": "reactantMass", "value": "reactantMolarMass", "unit": "g", "species": "CaCO₃" },
+        { "id": "reactantMoles", "value": "one", "unit": "mol", "species": "CaCO₃" },
+        { "id": "productMoles", "value": "one", "unit": "mol", "species": "CO₂" },
+        { "id": "productMass", "value": "productMolarMass", "unit": "g", "species": "CO₂" }
+      ],
+      "ratios": [
+        ["reactantMoles", "reactantMass"],
+        ["productMoles", "reactantMoles"],
+        ["productMass", "productMoles"]
+      ]
+    }]
+  },
+  {
+    "version": 3,
+    "id": "metric-length-conversion",
+    "category": "Mathematics",
+    "title": "Convert centimeters to millimeters",
+    "description": "Build a two-factor metric conversion.",
+    "variables": {
+      "length": { "generator": "integer", "min": 100, "max": 5000 },
+      "hundred": { "generator": "constant", "value": 100 },
+      "thousand": { "generator": "constant", "value": 1000 },
+      "one": { "generator": "constant", "value": 1 }
+    },
+    "derived": {
+      "millimeters": { "operation": "multiply", "operands": ["length", 10] }
+    },
+    "presentation": {
+      "prompt": "Convert {length} centimeters to millimeters using conversion factors.",
+      "equation": ""
+    },
+    "interactions": [{
+      "id": "conversion",
+      "type": "conversion-chain",
+      "prompt": "Set up your conversion",
+      "start": { "value": "length", "unit": "cm", "species": "length" },
+      "target": { "value": "millimeters", "unit": "mm", "species": "length", "decimals": 0 },
+      "quantities": [
+        { "id": "centimeters", "value": "hundred", "unit": "cm", "species": "length" },
+        { "id": "meters", "value": "one", "unit": "m", "species": "length" },
+        { "id": "millimeters", "value": "thousand", "unit": "mm", "species": "length" }
+      ],
+      "ratios": [["meters", "centimeters"], ["millimeters", "meters"]]
+    }]
+  },
+  {
+    "version": 3,
+    "id": "electrical-energy-conversion",
+    "category": "Engineering",
+    "title": "Convert watt-hours to megajoules",
+    "description": "Convert electrical energy through kilowatt-hours.",
+    "variables": {
+      "energy": { "generator": "integer", "min": 500, "max": 20000 },
+      "thousand": { "generator": "constant", "value": 1000 },
+      "one": { "generator": "constant", "value": 1 },
+      "megajoulesPerKwh": { "generator": "constant", "value": 3.6 }
+    },
+    "derived": {
+      "megajoules": { "operation": "multiply", "operands": [
+        { "operation": "divide", "operands": ["energy", "thousand"] },
+        "megajoulesPerKwh"
+      ] }
+    },
+    "presentation": {
+      "prompt": "Convert {energy} watt-hours of electrical energy to megajoules.",
+      "equation": ""
+    },
+    "interactions": [{
+      "id": "conversion",
+      "type": "conversion-chain",
+      "prompt": "Set up your energy conversion",
+      "start": { "value": "energy", "unit": "Wh", "species": "energy" },
+      "target": { "value": "megajoules", "unit": "MJ", "species": "energy", "decimals": 3 },
+      "quantities": [
+        { "id": "wattHours", "value": "thousand", "unit": "Wh", "species": "energy" },
+        { "id": "kilowattHour", "value": "one", "unit": "kWh", "species": "energy" },
+        { "id": "megajoules", "value": "megajoulesPerKwh", "unit": "MJ", "species": "energy" }
+      ],
+      "ratios": [["kilowattHour", "wattHours"], ["megajoules", "kilowattHour"]]
+    }]
+  }
+]

@@ -1,4 +1,5 @@
 import catalog from "./basicChemistry.json";
+import { conversionCatalog, generateConversionProblem, parseConversionFamily, type ConversionFamily, type ConversionProblem } from "./conversionRuntime";
 
 const record = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -37,7 +38,7 @@ function parseCalculations(value: unknown): Calculation[] {
   });
 }
 
-export function parsePracticeConfig(value: unknown) {
+function parseLegacyPracticeConfig(value: unknown) {
   if (!record(value) || (value.version !== 1 && value.version !== 2) || !label(value.id) ||
     !label(value.category) || !label(value.title) || !label(value.hint) ||
     (value.operation !== "multiply" && value.operation !== "divide") ||
@@ -66,7 +67,7 @@ export function parsePracticeConfig(value: unknown) {
     bounds.set(step.id, [Math.min(...endpoints), Math.max(...endpoints)]);
   }
   return {
-    version: value.version, id: value.id, category: value.category, title: value.title,
+    version: value.version as 1 | 2, id: value.id, category: value.category, title: value.title,
     steps,
     hint: value.hint, operation: value.operation, given, factor,
     answer: { label: value.answer.label, unit: value.answer.unit, decimals: value.answer.decimals },
@@ -85,13 +86,26 @@ function calculate(operation: Calculation["operation"], a: number, b: number) {
   }
 }
 
-export type PracticeConfig = ReturnType<typeof parsePracticeConfig>;
-export const practiceCatalog = catalog.map(parsePracticeConfig);
+export type LegacyPracticeConfig = ReturnType<typeof parseLegacyPracticeConfig>;
+export type PracticeConfig = LegacyPracticeConfig | ConversionFamily;
+export function parsePracticeConfig(value: unknown): PracticeConfig {
+  return record(value) && value.version === 3 ? parseConversionFamily(value) : parseLegacyPracticeConfig(value);
+}
+export const practiceCatalog: PracticeConfig[] = [...catalog.map(parseLegacyPracticeConfig), ...conversionCatalog];
 
-export function generateProblem(config: PracticeConfig, seed: number) {
+export type LegacyProblem = {
+  given: number; factor: number; expected: string;
+  steps: Array<Calculation & { expected: string; explanation: string }> | undefined;
+  symbol: string;
+};
+export function generateProblem(config: ConversionFamily, seed: number): ConversionProblem;
+export function generateProblem(config: LegacyPracticeConfig, seed: number): LegacyProblem;
+export function generateProblem(config: PracticeConfig, seed: number): ConversionProblem | LegacyProblem;
+export function generateProblem(config: PracticeConfig, seed: number): ConversionProblem | LegacyProblem {
+  if (config.version === 3) return generateConversionProblem(config, seed);
   if (!integer(seed, 0, 0xffffffff)) throw new Error("Seed must be an integer from 0 to 4,294,967,295.");
   let state = seed;
-  function sample(input: PracticeConfig["given"]) {
+  function sample(input: LegacyPracticeConfig["given"]) {
     state = (state + 0x6d2b79f5) >>> 0;
     let mixed = Math.imul(state ^ (state >>> 15), state | 1);
     mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
