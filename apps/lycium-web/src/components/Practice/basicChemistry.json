@@ -6,13 +6,5 @@
     "operation": "divide", "answer": { "label": "Amount of substance", "unit": "mol", "decimals": 2 },
     "hint": "Divide the mass by the molar mass so that grams cancel.",
     "symbols": { "first": "m", "second": "M", "result": "n" }
-  },
-  {
-    "version": 1, "id": "density-to-mass", "category": "Basic Chemistry", "title": "Find mass from density and volume",
-    "given": { "label": "Volume", "unit": "mL", "min": 5, "max": 100 },
-    "factor": { "label": "Density", "unit": "g/mL", "min": 1, "max": 15 },
-    "operation": "multiply", "answer": { "label": "Mass", "unit": "g", "decimals": 0 },
-    "hint": "Multiply volume by density so that milliliters cancel.",
-    "symbols": { "first": "V", "second": "ρ", "result": "m" }
   }
 ]

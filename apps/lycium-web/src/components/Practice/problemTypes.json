@@ -1,0 +1,26 @@
+[
+  {
+    "version": 4,
+    "id": "mass-from-density",
+    "subject": "Chemistry",
+    "topic": "Measurement",
+    "title": "Calculate mass from density",
+    "description": "Use density and volume to determine sample mass.",
+    "difficulty": 1,
+    "skills": ["density", "unit reasoning", "multiplication"],
+    "variables": {
+      "volume": { "type": "decimal", "range": [5, 100], "step": 0.5, "unit": "mL" },
+      "density": { "type": "decimal", "range": [1, 15], "step": 0.1, "unit": "g/mL" }
+    },
+    "derived": {
+      "mass": {
+        "expression": { "operation": "multiply", "operands": ["volume", "density"] },
+        "unit": "g"
+      }
+    },
+    "prompt": "A sample has a volume of {volume} mL and a density of {density} g/mL. Calculate its mass.",
+    "answer": { "target": "mass", "interaction": "numeric", "significantFigures": 3 },
+    "hints": ["Use m = ρV.", "Multiply density by volume so milliliters cancel."],
+    "workedSolution": "Substitute the generated density and volume into m = ρV, multiply, then round to three significant figures."
+  }
+]

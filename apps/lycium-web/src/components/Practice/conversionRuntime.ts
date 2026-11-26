@@ -23,7 +23,10 @@ type ChoiceDefinition = {
   options: { id: string; label: string }[];
   expected: { left: Expression; relation: "<" | "<=" | ">" | ">="; right: Expression; whenTrue: string; whenFalse: string };
 };
-type NumericDefinition = { id: string; type: "numeric"; prompt: string; expected: string; unit: string; decimals: number };
+type NumericDefinition = {
+  id: string; type: "numeric"; prompt: string; expected: string; unit: string;
+  decimals?: number; significantFigures?: number;
+};
 type PracticeInteractionDefinition = ConversionChainDefinition | ChoiceDefinition | NumericDefinition;
 export type ConversionFamily = {
   version: 3; id: string; category: string; title: string; description: string;
@@ -40,7 +43,8 @@ export type GeneratedChoiceInteraction = {
   id: string; type: "choice"; prompt: string; options: { id: string; label: string }[]; expected: string;
 };
 export type GeneratedNumericInteraction = {
-  id: string; type: "numeric"; prompt: string; expected: number; unit: string; decimals: number;
+  id: string; type: "numeric"; prompt: string; expected: number; unit: string;
+  precision: { type: "decimal-places" | "significant-figures"; digits: number };
 };
 export type GeneratedPracticeInteraction = GeneratedConversionInteraction | GeneratedChoiceInteraction | GeneratedNumericInteraction;
 export type ConversionProblem = {
@@ -123,9 +127,17 @@ export function parseConversionFamily(value: unknown): ConversionFamily {
       };
     }
     if (raw.type === "numeric") {
-      if (!identifier(raw.expected) || !known.has(raw.expected) || !text(raw.unit) || !Number.isInteger(raw.decimals) ||
-          (raw.decimals as number) < 0 || (raw.decimals as number) > 8) throw new Error("Invalid numeric interaction.");
-      return { id: raw.id, type: "numeric" as const, prompt: raw.prompt, expected: raw.expected, unit: raw.unit, decimals: raw.decimals as number };
+      const decimals = raw.decimals;
+      const significantFigures = raw.significantFigures;
+      const validDecimals = Number.isInteger(decimals) && (decimals as number) >= 0 && (decimals as number) <= 8;
+      const validFigures = Number.isInteger(significantFigures) && (significantFigures as number) >= 1 && (significantFigures as number) <= 10;
+      if (!identifier(raw.expected) || !known.has(raw.expected) || !text(raw.unit) || validDecimals === validFigures) {
+        throw new Error("Numeric interactions need exactly one valid precision policy.");
+      }
+      return {
+        id: raw.id, type: "numeric" as const, prompt: raw.prompt, expected: raw.expected, unit: raw.unit,
+        ...(validDecimals ? { decimals: decimals as number } : { significantFigures: significantFigures as number }),
+      };
     }
     if (raw.type !== "conversion-chain" || !Array.isArray(raw.quantities) || !Array.isArray(raw.ratios) || !object(raw.target)) {
       throw new Error("Invalid conversion interaction.");
@@ -243,7 +255,12 @@ export function generateConversionProblem(family: ConversionFamily, seed: number
     if (interaction.type === "numeric") {
       const expected = values[interaction.expected];
       if (typeof expected !== "number") throw new Error("Numeric answer must resolve to a number.");
-      return { id: interaction.id, type: interaction.type, prompt: interaction.prompt, expected, unit: interaction.unit, decimals: interaction.decimals };
+      return {
+        id: interaction.id, type: interaction.type, prompt: interaction.prompt, expected, unit: interaction.unit,
+        precision: interaction.decimals !== undefined
+          ? { type: "decimal-places", digits: interaction.decimals }
+          : { type: "significant-figures", digits: interaction.significantFigures! },
+      };
     }
     const quantity = (item: Omit<QuantityDefinition, "id"> & { id?: string }): Quantity => ({
       id: item.id ?? interaction.id, value: (() => {

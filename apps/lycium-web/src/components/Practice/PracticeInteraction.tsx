@@ -42,15 +42,21 @@ function ChoiceInteraction({ interaction, serialized, feedback, complete, onChan
 }
 function NumericInteraction({ interaction, serialized, feedback, complete, onChange, onValidate }: Props & { interaction: Extract<GeneratedPracticeInteraction, { type: "numeric" }> }) {
     const entered = Number(serialized);
-    const tolerance = .5 * 10 ** -interaction.decimals;
+    const roundedExpected = interaction.precision.type === "decimal-places"
+      ? Number(interaction.expected.toFixed(interaction.precision.digits))
+      : Number(interaction.expected.toPrecision(interaction.precision.digits));
+    const tolerance = Math.max(Number.EPSILON * Math.abs(roundedExpected) * 4,
+      interaction.precision.type === "decimal-places" ? .5 * 10 ** -interaction.precision.digits : 0);
     return <section className="practice-numeric">
       <h3>{interaction.prompt}</h3>
       <label>Answer <span className="practice-answer"><input inputMode="decimal" disabled={complete} value={serialized}
         onChange={event => onChange(event.target.value)} /> {interaction.unit}</span></label>
       {!complete && <button className="practice-primary" type="button" disabled={!serialized.trim()} onClick={() => {
         const valid = Number.isFinite(entered);
-        const correct = valid && Math.abs(entered - interaction.expected) <= tolerance;
-        onValidate(correct ? "correct" : "incorrect", correct ? "Correct." : valid ? `Round to ${interaction.decimals} decimal places and try again.` : "Enter a valid number.", serialized);
+        const correct = valid && Math.abs(entered - roundedExpected) <= tolerance;
+        const precisionLabel = interaction.precision.type === "decimal-places"
+          ? `${interaction.precision.digits} decimal places` : `${interaction.precision.digits} significant figures`;
+        onValidate(correct ? "correct" : "incorrect", correct ? "Correct." : valid ? `Round to ${precisionLabel} and try again.` : "Enter a valid number.", serialized);
       }}>Check answer</button>}
       <p role="status">{feedback}</p>
     </section>;
