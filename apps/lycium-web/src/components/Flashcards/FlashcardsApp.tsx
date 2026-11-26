@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { ArrowLeft, BookOpen, CalendarCheck, ChevronDown, Download, Ellipsis, FolderOpen, Library, Palette, Plus, Search, Trash2, Upload } from "lucide-react";
-import Link from "next/link";
+import { BookOpen, CalendarCheck, Download, Ellipsis, HelpCircle, Library, Palette, Pencil, Plus, Search, Trash2, Upload } from "lucide-react";
 import dynamic from "next/dynamic";
 import ToolFrame from "../Tools/ToolFrame";
+import ToolWorkspaceHeader from "../Tools/ToolWorkspaceHeader";
 import { createId, DECK_COLORS, MAX_CARDS, recordReview, removeDeck, replaceDeck, resetScheduledReview, starterDeck, toggleStar, type FlashcardDeck } from "./flashcardDomain";
 import { useFlashcardStore } from "./useFlashcardStore";
 import { cardsFromText, deckFromPreview, downloadText, exportDeckCsv, exportDeckJson, type ImportPreview } from "./flashcardImport";
@@ -71,19 +71,17 @@ export default function FlashcardsApp() {
   return (
     <div className={"flashcards-app" + (focused ? " fc-focused" : "")} style={{ "--fc-deck-color": deck?.color ?? DECK_COLORS[0].value } as CSSProperties} onClick={(event) => { for (const menu of event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]")) { if (!menu.contains(event.target as Node)) menu.open = false; } }} onKeyDown={(event) => { if (event.key === "Escape" && !importing) { setFocused(false); for (const menu of event.currentTarget.querySelectorAll<HTMLDetailsElement>("details[open]")) menu.open = false; } }}>
       <a className="skip-link" href="#fc-main">Skip to flashcards</a>
-      <header className="flashcards-header">
-        <Link href="/tools" className="flashcards-back"><ArrowLeft size={16} aria-hidden="true" /><span>Back to Tools</span></Link>
-        <h1>Flashcards</h1><p className="flashcards-workspace-description">A little practice. Lasting understanding.</p>
-        <div className="fc-header-actions">
-          <details className="fc-file-menu"><summary><FolderOpen size={16} /><span>File</span><ChevronDown size={14} /></summary><div className="fc-popover">
-            <button disabled={!snapshot} onClick={() => setImporting(true)}><Upload size={16} /> Import cards…</button>
-            <button disabled={!deck} onClick={() => exportSelected("json")}><Download size={16} /> Export deck JSON</button>
-            <button disabled={!deck || !deck.cards.length} onClick={() => exportSelected("csv")}><Download size={16} /> Export cards CSV</button>
+      <ToolWorkspaceHeader title="Flashcards" className="flashcards-header" actions={<div className="fc-header-actions">
+          <details className="fc-file-menu"><summary className="fc-header-icon" aria-label="Import flashcards" title="Import flashcards"><Download size={17} /></summary><div className="fc-popover">
+            <button disabled={!snapshot} onClick={() => setImporting(true)}><Download size={16} /> Import cards…</button>
+          </div></details>
+          <details className="fc-file-menu"><summary className="fc-header-icon" aria-label="Export flashcards" title="Export flashcards"><Upload size={17} /></summary><div className="fc-popover">
+            <button disabled={!deck} onClick={() => exportSelected("json")}><Upload size={16} /> Export deck JSON</button>
+            <button disabled={!deck || !deck.cards.length} onClick={() => exportSelected("csv")}><Upload size={16} /> Export cards CSV</button>
             <FlashcardBackupActions store={store} announce={setMessage} onRestore={(restored) => { commit(restored); setSelectedId(restored.decks[0]?.id ?? null); setMode("study"); setFocused(false); }} />
           </div></details>
-          <button className="fc-button fc-primary" disabled={!store} onClick={createDeck}><Plus size={17} /> New deck</button>
-        </div>
-      </header>
+          <details className="fc-help-menu"><summary className="fc-header-icon" aria-label="Flashcard help" title="Flashcard help"><HelpCircle size={18} /></summary><div className="fc-popover fc-help-popover"><h2>Using Flashcards</h2><p>Create a deck, add questions and answers, then select a card to study. Flip cards by clicking or pressing Space. Daily review uses your recall ratings to schedule practice.</p><p>Use the file menu to import notes or export a deck. Your library is saved in this browser.</p></div></details>
+        </div>} />
 
       {snapshot?.error && <div className="fc-storage-warning" role="alert"><span>{snapshot.error}</span>{snapshot.raw && <button className="fc-text-button" onClick={() => downloadText(snapshot.raw ?? "", "lycium-flashcards-original-backup.json")}>Download original data</button>}</div>}
       <ToolFrame fill className="fc-workspace-frame">
@@ -102,15 +100,15 @@ export default function FlashcardsApp() {
             <main id="fc-main" tabIndex={-1} className="flashcards-main">
               {!deck ? <section className="fc-welcome"><span className="fc-welcome-icon"><BookOpen size={30} /></span><p className="fc-eyebrow">Make room for what matters</p><h2>Learn it. Recall it. Keep it.</h2><p>A focused place for your questions, definitions, and discoveries. Create a deck or bring in the notes you already have.</p><div className="fc-centered-actions"><button className="fc-button fc-primary" onClick={createDeck}><Plus size={17} /> Create a deck</button><button className="fc-button" onClick={() => setImporting(true)}><Upload size={16} /> Import notes</button></div><button className="fc-text-button" onClick={addStarter}>Try a chemistry sample →</button></section> : <>
                 <FlashcardDeckPicker decks={store.decks} selectedId={deck.id} onSelect={selectDeck} onCreate={createDeck} />
-                <div className={"fc-deck-heading" + (mode !== "cards" ? " fc-deck-heading--study" : "")}>
+                {mode === "cards" && <div className="fc-deck-heading">
                   {mode !== "cards" ? <div className="fc-deck-summary"><h2>{deck.title || "Untitled deck"}</h2>{deck.description && <p>{deck.description}</p>}</div> :
                     <div className="fc-deck-title-fields"><label className="sr-only" htmlFor="fc-deck-title">Deck title</label><input id="fc-deck-title" className="fc-title-input" value={deck.title} placeholder="Untitled deck" maxLength={200} onChange={(event) => updateDeck({ ...deck, title: event.target.value })} onBlur={() => { if (!deck.title.trim()) updateDeck({ ...deck, title: "Untitled deck" }); }} /><label className="sr-only" htmlFor="fc-deck-description">Deck description</label><input id="fc-deck-description" className="fc-description-input" value={deck.description} maxLength={2000} placeholder="Add a description to your deck" onChange={(event) => updateDeck({ ...deck, description: event.target.value })} /></div>}
                   {mode === "cards" && <div className="fc-inline-actions">
                     <details className="fc-color-menu"><summary aria-label="Deck color" title="Deck color"><Palette size={18} /></summary><div className="fc-popover"><h3>Deck color</h3><div className="fc-color-options">{DECK_COLORS.map((color) => <button key={color.value} aria-label={color.name + " deck color"} aria-pressed={(deck.color ?? DECK_COLORS[0].value) === color.value} style={{ background: color.value }} onClick={() => updateDeck({ ...deck, color: color.value })} />)}</div></div></details>
                     <details className="fc-deck-menu"><summary aria-label="Deck actions" title="Deck actions"><Ellipsis size={19} /></summary><div className="fc-popover"><button className="fc-danger-text" onClick={deleteSelectedDeck}><Trash2 size={16} /> Delete deck</button></div></details>
                   </div>}
-                </div>
-                <nav className="fc-tabs" aria-label="Deck view"><button aria-current={mode === "study" ? "page" : undefined} onClick={() => setMode("study")}><BookOpen size={16} /> Flashcards</button><button aria-current={mode === "review" ? "page" : undefined} onClick={() => { setMode("review"); setFocused(false); }}><CalendarCheck size={16} /> Daily review</button><button aria-current={mode === "cards" ? "page" : undefined} onClick={() => { setMode("cards"); setFocused(false); }}>Edit cards <span>{deck.cards.length}</span></button></nav>
+                </div>}
+                <nav className="fc-tabs" aria-label="Deck view"><button aria-label="Flashcards" title="Flashcards" aria-current={mode === "study" ? "page" : undefined} onClick={() => setMode("study")}><BookOpen size={17} /></button><button aria-label="Daily review" title="Daily review" aria-current={mode === "review" ? "page" : undefined} onClick={() => { setMode("review"); setFocused(false); }}><CalendarCheck size={17} /></button><button aria-label={`Edit cards (${deck.cards.length})`} title={`Edit cards (${deck.cards.length})`} aria-current={mode === "cards" ? "page" : undefined} onClick={() => { setMode("cards"); setFocused(false); }}><Pencil size={17} /></button></nav>
                 {mode === "study" ? <FlashcardStudy key={deck.id} deck={deck} history={store.history} onGrade={(cardId, grade) => commit(recordReview(store, deck.id, cardId, grade))} onStar={(cardId) => commit(toggleStar(store, deck.id, cardId))} onEdit={() => setMode("cards")} focused={focused} onFocus={() => setFocused(!focused)} /> :
                   mode === "review" ? <SpacedReviewPanel key={deck.id} deck={deck} store={store} commit={commit} onStar={(cardId) => commit((current) => toggleStar(current, deck.id, cardId))} onEdit={() => setMode("cards")} /> : <FlashcardEditor key={deck.id} deck={deck} reviews={store.history[deck.id] ?? {}} scheduledCardIds={new Set(Object.keys(store.schedules?.[deck.id] ?? {}))} onUpdate={updateDeck} onResetSchedule={(cardId) => commit((current) => resetScheduledReview(current, deck.id, cardId))} onImport={() => setImporting(true)} onStar={(cardId) => commit(toggleStar(store, deck.id, cardId))} announce={setMessage} />}
               </>}

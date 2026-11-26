@@ -90,6 +90,8 @@
 .graphing-workspace-description { display: none; }
 .graphing-workspace-header .graphing-back-link { color: #d7dfdc; font-size: 1rem; }
 .graphing-workspace-header .graphing-back-link:hover { color: #fff; }
+.graphing-workspace-header .tool-workspace-back { display: inline-flex; align-items: center; gap: .4rem; color: #d7dfdc; font-size: 1rem; text-decoration: none; }
+.graphing-workspace-header .tool-workspace-back:hover { color: #fff; }
 .graphing-workspace-main { flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
 .graphing-workspace-main > .graphing-tool-frame { margin: 0; padding: 0; }
 .graphing-studio--workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; }

@@ -13,4 +13,59 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.tool-workspace-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  gap: 1rem;
+  min-height: 3.5rem;
+  padding: .5rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem));
+  border-bottom: 1px solid #2f3438;
+  color: #f7faf9;
+  background: #171a1d;
+}
+
+.tool-workspace-header h1 {
+  position: absolute;
+  left: 50%;
+  margin: 0;
+  font-family: var(--lycium-font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: .015em;
+  line-height: 1.2;
+  transform: translateX(-50%);
+}
+
+.tool-workspace-back {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  color: #d7dfdc;
+  font-size: 1rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.tool-workspace-back:hover { color: #fff; }
+
+@media (max-width: 799px) {
+  .tool-workspace-header { gap: .75rem; }
+  .tool-workspace-header h1 { font-size: 1.35rem; }
+}
+
+@media (max-width: 599px) {
+  .tool-workspace-header { min-height: 3.25rem; padding: .35rem .6rem; gap: .25rem; flex-wrap: nowrap; }
+  .tool-workspace-header h1 { font-size: 1.2rem; white-space: nowrap; }
+  .tool-workspace-back { gap: .2rem; font-size: .75rem; }
+}
+
+@media (max-width: 499px) {
+  .tool-workspace-header { gap: .25rem; }
 }

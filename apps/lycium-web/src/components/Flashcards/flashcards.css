@@ -12,13 +12,19 @@
 .flashcards-app svg { flex-shrink: 0; }
 .flashcards-app h2, .flashcards-app h3, .flashcards-app p { margin-top: 0; }
 .flashcards-app kbd { font-family: inherit; font-size: .7rem; border: 1px solid var(--lycium-color-border); border-radius: 4px; padding: .1rem .3rem; line-height: 1.4; }
-.flashcards-header { display: flex; align-items: center; flex-wrap: wrap; flex: 0 0 auto; gap: 1rem; min-height: 3.5rem; padding: .5rem var(--lycium-tool-padding-inline, clamp(1rem, 2.5vw, 2.5rem)); border-bottom: 1px solid var(--lycium-color-border); }
-.flashcards-back { display: inline-flex; align-items: center; gap: .4rem; color: var(--lycium-color-text); text-decoration: none; font-size: .875rem; white-space: nowrap; }
-.flashcards-back:hover { color: var(--lycium-color-accent); }
-.flashcards-header h1 { margin: 0; padding-left: 1rem; border-left: 1px solid var(--lycium-color-border); font-size: 1rem; line-height: 1.5; font-weight: 650; }
-.flashcards-workspace-description { margin: 0; color: var(--lycium-color-text-muted); font-size: .75rem; }
+.flashcards-header { gap: 1rem; }
+.flashcards-back { display: inline-flex; align-items: center; gap: .4rem; color: #d7dfdc; text-decoration: none; font-size: .875rem; white-space: nowrap; }
+.flashcards-back:hover { color: #fff; }
+.flashcards-header h1 { color: #f7faf9; }
 .fc-header-actions, .fc-inline-actions, .fc-centered-actions { display: flex; align-items: center; gap: .5rem; }
 .fc-header-actions { margin-left: auto; }
+.flashcards-header .fc-file-menu summary, .flashcards-header .fc-help-menu summary { color: #f7faf9; border-color: transparent; background: transparent; }
+.flashcards-header .fc-file-menu summary:hover, .flashcards-header .fc-help-menu summary:hover { background: #2a3034; }
+.flashcards-header .fc-header-icon { width: 2.5rem; height: 2.5rem; padding: .5rem; border-radius: .65rem; }
+.fc-help-menu { position: relative; }
+.fc-help-popover { width: min(22rem, calc(100vw - 2rem)); }
+.fc-help-popover h2 { margin: .25rem .4rem .5rem; font-size: .95rem; }
+.fc-help-popover p { line-height: 1.5; }
 .fc-centered-actions { justify-content: center; flex-wrap: wrap; gap: .75rem; }
 .flashcards-app .fc-button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: var(--lycium-control-height); padding: .6rem .9rem; border: 1px solid var(--lycium-color-border); border-radius: var(--lycium-radius-button); color: var(--lycium-color-text); background: var(--lycium-color-control-surface); font-size: var(--lycium-control-font-size); font-weight: 600; white-space: nowrap; transition: background-color .15s, border-color .15s; }
 .flashcards-app .fc-button:hover:not(:disabled) { background: var(--lycium-color-control-hover); }
@@ -72,30 +78,37 @@
 .fc-color-options { display: grid; grid-template-columns: repeat(6, 1fr); gap: .5rem; padding: .4rem; }
 .fc-color-options button { width: 1.75rem; height: 1.75rem; border-radius: 50%; border: 3px solid var(--lycium-color-surface-raised); box-shadow: 0 0 0 1px var(--lycium-color-border); }
 .fc-color-options button[aria-pressed=true] { box-shadow: 0 0 0 2px var(--lycium-color-text); }
-.fc-tabs { display: flex; gap: 1.5rem; max-width: 1100px; margin: 1rem auto 0; border-bottom: 1px solid var(--lycium-color-border); }
-.fc-tabs button { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .6rem .1rem; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--lycium-color-text-muted); font-size: .85rem; font-weight: 600; }
-.fc-tabs button[aria-current=page] { color: var(--lycium-color-accent); border-bottom-color: var(--lycium-color-accent); }
-.fc-tabs button span { padding: .1rem .4rem; border-radius: 5px; background: var(--lycium-color-surface); font-size: .7rem; }
+.fc-tabs { display: flex; justify-content: flex-end; gap: .25rem; max-width: 1100px; min-height: 2.75rem; margin: .35rem auto 0; }
+.fc-tabs button { display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; padding: .6rem; border: 0; border-radius: var(--lycium-radius-button); background: transparent; color: var(--lycium-color-text-muted); }
+.fc-tabs button:hover { background: var(--lycium-color-control-hover); color: var(--lycium-color-text); }
+.fc-tabs button[aria-current=page] { color: var(--lycium-color-accent); background: var(--lycium-color-accent-soft); }
 
 /* Study: the card is the primary surface; infrequent controls live in Options. */
-.fc-study { max-width: 820px; margin: 1.2rem auto 0; }
+.fc-study { max-width: 1080px; margin: 1.2rem auto 0; }
 .fc-study:focus, .fc-complete h2:focus { outline: none; }
 .fc-study-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .8rem; }
+.fc-study-title { display: grid; justify-items: center; gap: .1rem; text-align: center; }
+.fc-study-title strong { font-size: .9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fc-study-title span { color: var(--lycium-color-text-muted); font-size: .78rem; }
 .fc-filter-label select { border: 0; background: transparent; padding: .5rem .3rem; max-width: 100%; font-size: .85rem; min-height: 2.75rem; }
 .fc-settings > summary { border-color: transparent; color: var(--lycium-color-text-muted); }
 .fc-settings .fc-popover { width: 20rem; padding: .8rem; }
 .fc-settings label { display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: .8rem; padding: .5rem .4rem; }
 .fc-settings label:has(select) { display: grid; gap: .4rem; }
 .fc-settings select { min-width: 0; width: 100%; padding: .4rem; }
-.fc-round-progress { display: flex; justify-content: space-between; gap: .5rem; font-size: .8rem; font-variant-numeric: tabular-nums; }
-.fc-round-progress > span:last-child { color: var(--lycium-color-text-muted); font-size: .75rem; }
+.fc-round-progress { display: flex; justify-content: space-between; gap: .5rem; width: min(100%, 960px); margin-inline: auto; font-size: .8rem; font-variant-numeric: tabular-nums; }
+.fc-progress-stat { display: inline-flex; align-items: center; gap: .45rem; font-size: .78rem; font-weight: 600; }
+.fc-progress-stat strong { display: inline-grid; place-items: center; min-width: 1.9rem; height: 1.65rem; padding-inline: .45rem; border: 1px solid currentColor; border-radius: 999px; font-size: .78rem; }
+.fc-progress-stat--review { color: var(--lycium-color-warning); }
+.fc-progress-stat--known { color: var(--lycium-color-accent); }
 .fc-progress-dot { margin-inline: .35rem; }
 .fc-progress { appearance: none; display: block; width: 100%; height: 4px; border: 0; border-radius: 4px; overflow: hidden; margin: .65rem 0 1rem; background: var(--lycium-color-border); }
 .fc-progress::-webkit-progress-bar { background: var(--lycium-color-border); }
 .fc-progress::-webkit-progress-value { background: var(--fc-deck-color); border-radius: 4px; transition: width .2s; }
 .fc-progress::-moz-progress-bar { background: var(--fc-deck-color); border-radius: 4px; }
-.fc-card-stage { position: relative; width: min(100%, 640px); margin-inline: auto; perspective: 1500px; isolation: isolate; }
-.fc-card-tools { position: absolute; z-index: 2; top: .65rem; right: .65rem; display: flex; gap: .15rem; }
+.fc-card-stage { position: relative; width: min(100%, 960px); margin-inline: auto; perspective: 1500px; isolation: isolate; }
+.fc-card-tools { position: absolute; z-index: 2; top: .65rem; right: .65rem; display: flex; gap: .15rem; animation: fc-card-tools-fade .5s ease both; }
+@keyframes fc-card-tools-fade { 0%, 100% { opacity: 1; } 45% { opacity: 0; } }
 .fc-card-tools .fc-icon { background: transparent; }
 .fc-card-tools .fc-icon:hover:not(:disabled), .fc-card-tools .fc-icon.is-active { background: var(--lycium-color-accent-soft); }
 .flashcards-app .fc-card-tool { width: 2.25rem; padding: .45rem; color: var(--lycium-color-text); }
@@ -103,7 +116,7 @@
 .fc-card-trigger { display: block; width: 100%; padding: 0; border: 0; border-radius: 16px; background: transparent; color: var(--lycium-color-text); text-align: center; perspective: 1500px; -webkit-tap-highlight-color: transparent; touch-action: pan-y; }
 .fc-card-inner { display: grid; grid-template-columns: minmax(0, 1fr); transform-style: preserve-3d; transition: transform .5s cubic-bezier(.2, .7, .2, 1); }
 .fc-card-inner.is-flipped { transform: rotateX(180deg); }
-.fc-card-face { grid-area: 1 / 1; display: flex; align-items: center; flex-direction: column; justify-content: center; min-width: 0; min-height: 0; height: clamp(250px, 34dvh, 380px); padding: 3.4rem 2.5rem 1.2rem; border: 1px solid var(--lycium-color-border); border-bottom: 3px solid var(--fc-deck-color); border-radius: 16px; --fc-card-fill: var(--lycium-color-surface-raised); background: var(--fc-card-fill); box-shadow: var(--lycium-shadow-control); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.fc-card-face { grid-area: 1 / 1; display: flex; align-items: center; flex-direction: column; justify-content: center; min-width: 0; min-height: 0; height: clamp(360px, 58dvh, 620px); padding: 3.4rem 3rem 1.2rem; border: 0; border-radius: 16px 16px 0 0; --fc-card-fill: var(--lycium-color-surface-raised); background: var(--fc-card-fill); box-shadow: var(--lycium-shadow-control); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .fc-card-front { background: color-mix(in srgb, var(--fc-card-fill) 90%, #000); }
 .fc-card-back { transform: rotateX(180deg); }
 .is-tinted .fc-card-face { --fc-card-fill: color-mix(in srgb, var(--fc-deck-color) 7%, var(--lycium-color-surface-raised)); }
@@ -113,14 +126,27 @@
 .is-long .fc-card-content { font-size: clamp(1rem, 1.7vw, 1.3rem); line-height: 1.6; text-align: left; }
 .is-very-long .fc-card-content { font-size: clamp(.9rem, 1.4vw, 1.1rem); line-height: 1.55; text-align: left; }
 .fc-card-hint { display: flex; align-items: center; justify-content: center; gap: .35rem; color: var(--lycium-color-text-muted); font-size: .72rem; }
+.fc-card-shortcut-bar { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .55rem; min-height: 2.6rem; padding: .45rem .8rem; border: 1px solid var(--lycium-color-border); border-top: 0; border-radius: 0 0 16px 16px; color: var(--lycium-color-text); background: color-mix(in srgb, var(--lycium-color-accent) 20%, var(--lycium-color-surface-raised)); font-size: .75rem; }
+.fc-card-shortcut-bar svg { color: var(--lycium-color-accent); }
+.fc-card-shortcut-bar kbd { background: var(--lycium-color-surface-raised); color: var(--lycium-color-text); }
+.fc-shortcut-divider { color: var(--lycium-color-text-muted); }
 .fc-touch-hint { display: none; }
-.fc-grade-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; width: min(100%, 440px); min-height: 3rem; margin: 1.2rem auto 0; }
+.fc-card-controls-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; width: min(100%, 960px); margin: 1.2rem auto 0; }
+.fc-grade-actions { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; width: 12rem; min-height: 3rem; margin: 0; }
 .fc-grade-actions .fc-button { min-height: 3rem; }
+.fc-grade-icon { width: 4.75rem; min-height: 3rem !important; padding: .55rem 1rem !important; border-radius: 999px !important; }
+.fc-grade-icon kbd { display: none; }
+.flashcards-app .fc-grade-icon.fc-review,
+.flashcards-app .fc-grade-icon.fc-primary { color: var(--lycium-color-text); background: var(--lycium-color-control-surface); border-color: var(--lycium-color-border); }
+.flashcards-app .fc-grade-icon.fc-review svg { color: var(--lycium-danger); }
+.flashcards-app .fc-grade-icon.fc-primary svg { color: var(--lycium-color-accent); }
+.flashcards-app .fc-grade-icon.fc-review:hover:not(:disabled),
+.flashcards-app .fc-grade-icon.fc-primary:hover:not(:disabled) { background: var(--lycium-color-control-hover); border-color: var(--lycium-color-text-muted); }
 .fc-grade-actions .fc-reveal { grid-column: 1 / -1; }
 .flashcards-app .fc-review { color: var(--lycium-color-warning); background: var(--lycium-color-warning-soft); border-color: color-mix(in srgb, var(--lycium-color-warning) 22%, transparent); }
 .flashcards-app .fc-review:hover:not(:disabled) { background: color-mix(in srgb, var(--lycium-color-warning) 12%, var(--lycium-color-warning-soft)); border-color: var(--lycium-color-warning); }
 .fc-grade-actions kbd { margin-left: .35rem; border-color: currentColor; opacity: .65; }
-.fc-player { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: .5rem; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid var(--lycium-color-border); }
+.fc-player { grid-column: 3; display: flex; align-items: center; justify-content: flex-end; gap: .5rem; width: auto; padding-top: 0; margin: 0; border-top: 0; }
 .fc-player-side { display: flex; align-items: center; }
 .flashcards-app .fc-player-control { width: 2.25rem; padding: .45rem; color: var(--lycium-color-text); }
 .flashcards-app .fc-player-control[aria-pressed=true] { color: var(--lycium-color-accent); background: var(--lycium-color-accent-soft); }
@@ -276,7 +302,7 @@
   .fc-mobile-deck-picker .fc-popover { left: 0; right: 0; width: 100%; max-width: 100%; max-height: min(26rem, 65dvh); overflow-y: auto; }
   .fc-mobile-deck-picker .fc-deck-list { max-height: 40dvh; }
   .fc-mobile-deck-picker[open] > summary { background: transparent; color: var(--lycium-color-accent); }
-  .fc-card-face { height: clamp(235px, 31dvh, 320px); }
+  .fc-card-face { height: clamp(300px, 48dvh, 500px); }
   .fc-card-row-text { gap: .75rem; }
   .fc-card-row-text > div + div { padding-left: .75rem; }
   .fc-study { margin-top: .5rem; }
@@ -287,11 +313,9 @@
   .fc-status:not(:empty) { position: sticky; bottom: 0; }
 }
 @media (max-width: 499px) {
-  .flashcards-header { gap: .6rem; }
-  .flashcards-header h1 { padding-left: .6rem; font-size: .9rem; }
-  .flashcards-back span { display: none; }
+  .flashcards-header { gap: .25rem; }
   .fc-header-actions { gap: .4rem; }
-  .fc-header-actions .fc-button, .fc-file-menu summary { padding: .45rem .6rem; font-size: .75rem; }
+  .fc-header-actions .fc-button, .fc-file-menu summary, .fc-help-menu summary { padding: .45rem .6rem; font-size: .75rem; }
   .fc-deck-heading { gap: .25rem; }
   .fc-deck-heading .fc-inline-actions { gap: 0; }
   .fc-title-input { font-size: 1.4rem !important; }
@@ -301,7 +325,7 @@
   .fc-settings summary { padding-inline: .4rem; }
   .fc-settings summary > span { display: none; }
   .fc-filter-label select { max-width: 170px; font-size: .8rem; }
-  .fc-card-face { height: clamp(235px, 52vw, 300px); padding: 3.5rem 1.25rem .85rem; }
+  .fc-card-face { height: clamp(260px, 62vw, 430px); padding: 3.5rem 1.25rem .85rem; }
   .fc-card-content { font-size: 1.6rem; max-height: 320px; }
   .is-medium .fc-card-content { font-size: 1.2rem; }
   .is-long .fc-card-content { font-size: 1rem; }

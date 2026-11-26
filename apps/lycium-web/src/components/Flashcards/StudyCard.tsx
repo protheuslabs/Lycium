@@ -1,4 +1,4 @@
-import { RotateCw, Star, Volume2 } from "lucide-react";
+import { Keyboard, RotateCw, Star, Volume2 } from "lucide-react";
 import { useRef } from "react";
 import type { Flashcard } from "./flashcardDomain";
 
@@ -23,24 +23,23 @@ export default function StudyCard({ card, flipped, reversed, starred, tinted, au
   const contentClass = longestSide > 600 ? " is-very-long" : longestSide > 350 ? " is-long" : longestSide > 160 ? " is-medium" : "";
   return (
     <div className={"fc-card-stage" + (tinted ? " is-tinted" : "")}>
-      <div className="fc-card-tools">
+      <div key={flipped ? "answer-tools" : "question-tools"} className="fc-card-tools">
         {showAudio && <button className="fc-icon fc-card-tool" onClick={onSpeak} disabled={!audioSupported} aria-label="Read current side aloud" title={audioSupported ? "Listen" : "Audio is not supported in this browser"}><Volume2 size={18} /></button>}
         <button className="fc-icon fc-card-tool fc-star" onClick={onStar} aria-pressed={starred} aria-label={starred ? "Unstar card" : "Star card"} title={starred ? "Unstar card" : "Star card"}><Star size={18} fill={starred ? "currentColor" : "none"} /></button>
       </div>
       <button className={"fc-card-trigger" + contentClass} data-study-card="true" onClick={() => { if (swiped.current) swiped.current = false; else onFlip(); }} onPointerDown={(event) => { swiped.current = false; if (onMove && event.pointerType === "touch") touch.current = { x: event.clientX, y: event.clientY }; }} onPointerUp={(event) => { if (!touch.current) return; const dx = event.clientX - touch.current.x, dy = event.clientY - touch.current.y; touch.current = null; if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) { swiped.current = true; onMove?.(dx < 0 ? 1 : -1); } }} onPointerCancel={() => { touch.current = null; }} aria-label={flipped ? "Flip card to prompt" : "Flip card to answer"} aria-describedby={flipped ? "fc-card-answer" : "fc-card-prompt"}>
         <span className={"fc-card-inner" + (flipped ? " is-flipped" : "")}>
           <span className="fc-card-face fc-card-front" aria-hidden={flipped}>
-            <span className="fc-card-side-label">Question</span>
             <span className="fc-card-content" id="fc-card-prompt">{front}</span>
             <span className="fc-card-hint"><RotateCw size={14} /><span className="fc-mouse-hint">Click card to flip</span><span className="fc-touch-hint">Tap card to flip</span></span>
           </span>
           <span className="fc-card-face fc-card-back" aria-hidden={!flipped}>
-            <span className="fc-card-side-label">Answer</span>
             <span className="fc-card-content" id="fc-card-answer">{back}</span>
             <span className="fc-card-hint"><RotateCw size={14} /><span className="fc-mouse-hint">Click card to flip back</span><span className="fc-touch-hint">Tap card to flip back</span></span>
           </span>
         </span>
       </button>
+      <div className="fc-card-shortcut-bar"><Keyboard size={15} aria-hidden="true" /><span><kbd>Space</kbd> to {flipped ? "study again" : "flip"}</span><span className="fc-shortcut-divider">or</span><span><kbd>Enter</kbd> to {flipped ? "flip back" : "show the answer"}</span></div>
     </div>
   );
 }
