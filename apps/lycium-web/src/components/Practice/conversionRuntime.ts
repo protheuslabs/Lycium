@@ -1,8 +1,9 @@
-import definitions from "./conversionFamilies.json";
 import type { Quantity, Ratio } from "./conversionChain";
+import { callDomainFunction, hasDomainFunction } from "./domainFunctions";
 
 type Operation = "add" | "subtract" | "multiply" | "divide" | "min" | "max";
-type Expression = number | string | { operation: Operation; operands: [Expression, Expression] };
+type Expression = number | string | { operation: Operation; operands: [Expression, Expression] } |
+  { function: string; arguments: Expression[] };
 type Scalar = number | string;
 type Generator =
   | { generator: "constant"; value: number }
@@ -28,12 +29,16 @@ type NumericDefinition = {
   decimals?: number; significantFigures?: number;
 };
 type PracticeInteractionDefinition = ConversionChainDefinition | ChoiceDefinition | NumericDefinition;
+export type ProblemMetadata = {
+  subject: string; topic: string; difficulty: number; skills: string[]; hints: string[]; workedSolution?: string;
+};
 export type ConversionFamily = {
   version: 3; id: string; category: string; title: string; description: string;
   variables: Record<string, Generator>; derived: Record<string, Expression>;
   constraints: Constraint[];
   presentation: { prompt: string; equation: string };
   interactions: PracticeInteractionDefinition[];
+  metadata?: ProblemMetadata;
 };
 export type GeneratedConversionInteraction = {
   id: string; type: "conversion-chain"; prompt: string; start: Quantity; target: Quantity;
@@ -61,6 +66,10 @@ const identifier = (value: unknown): value is string => typeof value === "string
 function parseExpression(value: unknown, known: Set<string>): Expression {
   if (finite(value)) return value;
   if (identifier(value) && known.has(value)) return value;
+  if (object(value) && typeof value.function === "string" && hasDomainFunction(value.function) &&
+      Array.isArray(value.arguments) && value.arguments.length <= 8) {
+    return { function: value.function, arguments: value.arguments.map(argument => parseExpression(argument, known)) };
+  }
   if (!object(value) || !["add", "subtract", "multiply", "divide", "min", "max"].includes(String(value.operation)) ||
       !Array.isArray(value.operands) || value.operands.length !== 2) throw new Error("Invalid derived expression.");
   return {
@@ -175,15 +184,26 @@ export function parseConversionFamily(value: unknown): ConversionFamily {
       };
     });
   })();
+  const metadata = value.metadata === undefined ? undefined : (() => {
+    if (!object(value.metadata) || !text(value.metadata.subject) || !text(value.metadata.topic) ||
+        !Number.isInteger(value.metadata.difficulty) || (value.metadata.difficulty as number) < 1 ||
+        (value.metadata.difficulty as number) > 5 || !Array.isArray(value.metadata.skills) ||
+        !value.metadata.skills.every(text) || !Array.isArray(value.metadata.hints) || !value.metadata.hints.every(text) ||
+        (value.metadata.workedSolution !== undefined && !text(value.metadata.workedSolution))) {
+      throw new Error("Invalid problem metadata.");
+    }
+    return value.metadata as ProblemMetadata;
+  })();
   return {
     version: 3, id: value.id, category: value.category, title: value.title, description: value.description,
-    variables, derived, constraints, presentation: { prompt: value.presentation.prompt, equation: value.presentation.equation }, interactions,
+    variables, derived, constraints, presentation: { prompt: value.presentation.prompt, equation: value.presentation.equation }, interactions, metadata,
   };
 }
 
 function evaluate(expression: Expression, values: Record<string, Scalar>): Scalar {
   if (typeof expression === "number") return expression;
   if (typeof expression === "string") return values[expression];
+  if ("function" in expression) return callDomainFunction(expression.function, expression.arguments.map(argument => evaluate(argument, values)));
   const operands = expression.operands.map(operand => evaluate(operand, values));
   if (operands.some(value => typeof value !== "number")) throw new Error("Arithmetic expressions require numerical values.");
   const [left, right] = operands as [number, number];
@@ -282,5 +302,3 @@ export function generateConversionProblem(family: ConversionFamily, seed: number
   });
   return { family, seed, values, prompt: render(family.presentation.prompt), equation: family.presentation.equation, interactions };
 }
-
-export const conversionCatalog = definitions.map(parseConversionFamily);

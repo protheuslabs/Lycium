@@ -1,6 +1,7 @@
 import catalog from "./basicChemistry.json";
 import authoredTypes from "./problemTypes.json";
-import { conversionCatalog, generateConversionProblem, parseConversionFamily, type ConversionFamily, type ConversionProblem } from "./conversionRuntime";
+import advancedTypes from "./conversionFamilies.json";
+import { generateConversionProblem, parseConversionFamily, type ConversionFamily, type ConversionProblem } from "./conversionRuntime";
 import { compileProblemType } from "./problemAuthoring";
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -94,7 +95,9 @@ export function parsePracticeConfig(value: unknown): PracticeConfig {
   if (record(value) && value.version === 4) return compileProblemType(value);
   return record(value) && value.version === 3 ? parseConversionFamily(value) : parseLegacyPracticeConfig(value);
 }
-export const practiceCatalog: PracticeConfig[] = [...catalog.map(parseLegacyPracticeConfig), ...authoredTypes.map(compileProblemType), ...conversionCatalog];
+export const practiceCatalog: PracticeConfig[] = [
+  ...catalog.map(parseLegacyPracticeConfig), ...authoredTypes.map(compileProblemType), ...advancedTypes.map(compileProblemType),
+];
 
 export type LegacyProblem = {
   given: number; factor: number; expected: string;

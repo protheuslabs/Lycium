@@ -1,15 +1,17 @@
 import { useMemo, useState } from "react";
 import { getCancelledQuantityIds, validateConversionChain, type Factor, type Quantity, type Ratio } from "./conversionChain";
+import { validateNumeric } from "./interactionValidation";
 
 type Props = {
   start: Quantity; target: Quantity; quantities: Quantity[]; ratios: Ratio[];
   factors: Factor[]; onChange: (factors: Factor[]) => void;
-  feedback: string; onCheck: (status: ReturnType<typeof validateConversionChain>["status"], message: string) => void;
+  answer: string; onAnswerChange: (answer: string) => void;
+  feedback: string; onCheck: (status: string, message: string) => void;
   prompt?: string; decimals?: number; disabled?: boolean;
 };
 const blank = (): Factor => ({ numerator: "", denominator: "" });
 
-export default function ConversionBuilder({ start, target, quantities, ratios, factors, onChange, feedback, onCheck, prompt, decimals = 8, disabled = false }: Props) {
+export default function ConversionBuilder({ start, target, quantities, ratios, factors, onChange, answer, onAnswerChange, feedback, onCheck, prompt, decimals = 8, disabled = false }: Props) {
   const [active, setActive] = useState<{ index: number; side: keyof Factor }>({ index: 0, side: "numerator" });
   const restoredResult = disabled ? validateConversionChain(start, target, ratios, factors) : null;
   const [lastResult, setLastResult] = useState<ReturnType<typeof validateConversionChain> | null>(restoredResult);
@@ -28,13 +30,29 @@ export default function ConversionBuilder({ start, target, quantities, ratios, f
       "wrong-value": "The units cancel, but the conversion gives the wrong quantity.",
     };
     setLastResult(result);
-    onCheck(result.status, messages[result.status]);
+    if (!result.correct) return onCheck(result.status, messages[result.status]);
+    const calculation = validateNumeric(answer, { expected: target.value, precision: { type: "decimal-places", digits: decimals } });
+    onCheck(calculation.status, calculation.correct ? "The conversion setup and numerical answer are correct." : calculation.message);
   }
   const choose = (quantity: Quantity) => {
     update(factors.map((factor, index) => index === active.index ? { ...factor, [active.side]: quantity.id } : factor));
     setActive(current => current.side === "numerator" ? { ...current, side: "denominator" } :
       { index: Math.min(current.index + 1, factors.length - 1), side: "numerator" });
   };
+  if (disabled) return <section className="practice-conversion-complete" aria-label={`${prompt ?? "Conversion"} complete`}>
+    <span className="practice-correct-mark" aria-hidden="true">✓</span>
+    <div><h3>{prompt ?? "Completed conversion"}</h3>
+      <p className="practice-math-line"><strong>{start.value}</strong> <span>{start.unit} {start.species}</span>
+        {factors.map((factor, index) => {
+          const numerator = quantities.find(item => item.id === factor.numerator);
+          const denominator = quantities.find(item => item.id === factor.denominator);
+          return <span className="practice-inline-factor" key={`${factor.numerator}-${factor.denominator}-${index}`}>× <span className="practice-fraction">
+            <span>{numerator?.value} {numerator?.unit} {numerator?.species}</span>
+            <span>{denominator?.value} {denominator?.unit} {denominator?.species}</span>
+          </span></span>;
+        })} = <strong>{answer}</strong> {target.unit} {target.species}</p>
+    </div>
+  </section>;
   return <section className="practice-conversion" aria-label="Conversion chain">
     <h3>{prompt ?? "Set up your calculation"}</h3>
     <p>Convert {start.value} {start.unit} {start.species} to {target.unit} {target.species}.</p>
@@ -53,7 +71,7 @@ export default function ConversionBuilder({ start, target, quantities, ratios, f
         {!disabled && <button type="button" className="practice-factor-invert" onClick={() => update(factors.map((item, itemIndex) =>
           itemIndex === index ? { numerator: item.denominator, denominator: item.numerator } : item))}>Invert</button>}
       </fieldset>)}
-      <div className="practice-conversion-result" aria-label="Target answer"><span>=</span><strong>{lastResult?.correct ? Number(target.value.toFixed(decimals)) : "?"}</strong><span>{target.unit} {target.species}</span></div>
+      <label className="practice-conversion-result" aria-label="Numerical answer"><span>=</span><input value={answer} inputMode="decimal" onChange={event => onAnswerChange(event.target.value)} /><span>{target.unit} {target.species}</span></label>
     </div>
     {!disabled && <><p className="practice-builder-instruction">Select a fraction cell, then choose a number and unit pair.</p>
       <div className="practice-quantity-palette" aria-label="Available quantities">
@@ -74,7 +92,7 @@ export default function ConversionBuilder({ start, target, quantities, ratios, f
         update(createBlankFactors(Math.max(1, ratios.length)));
         setActive({ index: 0, side: "numerator" });
       }}>Reset</button>}
-      <button className="practice-primary" type="button" disabled={disabled || !factors.length || factors.some(item => !item.numerator || !item.denominator)} onClick={check}>Check calculation</button>
+      <button className="practice-primary" type="button" disabled={disabled || !answer.trim() || !factors.length || factors.some(item => !item.numerator || !item.denominator)} onClick={check}>Check calculation</button>
     </div>
     <p role="status">{feedback}</p>
   </section>;

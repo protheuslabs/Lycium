@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import definitions from "./problemTypes.json";
+import advancedDefinitions from "./conversionFamilies.json";
 import { generateConversionProblem } from "./conversionRuntime";
 import { compileProblemType, parseAuthoredProblemType } from "./problemAuthoring";
 
@@ -33,5 +34,33 @@ describe("authored problem types", () => {
       ...definitions[0],
       answer: { ...definitions[0].answer, decimals: 2 },
     })).toThrow("either decimal places or significant figures");
+  });
+
+  it("compiles multipart V4 parts, constraints, and metadata into the same runtime", () => {
+    const source = advancedDefinitions.find(item => item.id === "limiting-reactant-yield");
+    if (!source) throw new Error("Missing multipart fixture.");
+    const compiled = compileProblemType({
+      version: 4,
+      id: source.id,
+      subject: "Chemistry",
+      topic: "Stoichiometry",
+      title: source.title,
+      description: source.description,
+      difficulty: 3,
+      skills: ["moles", "limiting reactants", "theoretical yield"],
+      variables: source.variables,
+      derived: source.derived,
+      constraints: source.constraints,
+      prompt: source.presentation.prompt,
+      equation: source.presentation.equation,
+      parts: source.interactions,
+      hints: ["Compare reaction capacity after converting both reactants to moles."],
+      workedSolution: "Convert each mass to moles, divide by its coefficient, and use the smaller reaction extent.",
+    });
+    expect(compiled.interactions).toHaveLength(5);
+    expect(compiled.metadata).toMatchObject({ difficulty: 3, skills: ["moles", "limiting reactants", "theoretical yield"] });
+    expect(generateConversionProblem(compiled, 42).interactions.map(item => item.type)).toEqual([
+      "conversion-chain", "conversion-chain", "choice", "numeric", "numeric",
+    ]);
   });
 });

@@ -240,7 +240,7 @@ function ConversionPracticeProblem({ skill, seed, mode, work, position, length, 
       <span>Problem {position}{length ? ` of ${length}` : ""} · {skill.category}</span>
       <span>{completed} solved</span>
     </div>
-    <progress aria-label="Problem interactions completed" max={problem.interactions.length} value={work.step} />
+    {length > 0 && <progress aria-label="Session problems completed" max={length} value={position - 1} />}
     <header className="practice-prompt">
       <h2>{skill.title}</h2>
       <p>{problem.prompt}</p>
@@ -271,12 +271,17 @@ function ConversionPracticeProblem({ skill, seed, mode, work, position, length, 
           stepId: interaction.id, response, result: correct ? "correct" : "incorrect", assisted: work.assisted,
         });
       }} />}
+    {!done && problem.interactions.slice(work.step + 1).length > 0 && <ol className="practice-upcoming-parts" aria-label="Remaining problem parts">
+      {problem.interactions.slice(work.step + 1).map(part => <li key={part.id}>{part.prompt}</li>)}
+    </ol>}
     <div className="practice-actions">
       {!done && mode === "guided" && <button type="button" onClick={() => update({ hint: !work.hint, assisted: true })}>Hint</button>}
+      {skill.metadata?.workedSolution && <button type="button" onClick={() => update({ solution: !work.solution, assisted: true })}>Worked solution</button>}
       <button type="button" onClick={onNext}>{position === length ? "Finish session" : done ? "Next problem" : "Skip problem"}</button>
     </div>
-    {mode === "guided" && work.hint && !done && <p>{interaction.type === "conversion-chain"
+    {mode === "guided" && work.hint && !done && <p>{skill.metadata?.hints[work.step] ?? (interaction.type === "conversion-chain"
       ? `Arrange the factors so every intermediate unit and species cancels, leaving only ${interaction.target.unit} ${interaction.target.species}.`
-      : "Use the quantities established in the earlier parts, then check your reasoning and units."}</p>}
+      : "Use the quantities established in the earlier parts, then check your reasoning and units.")}</p>}
+    {work.solution && skill.metadata?.workedSolution && <p>{skill.metadata.workedSolution}</p>}
   </section>;
 }

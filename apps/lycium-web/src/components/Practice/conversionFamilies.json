@@ -1,7 +1,13 @@
 [
   {
-    "version": 3,
+    "version": 4,
     "id": "limiting-reactant-yield",
+    "subject": "Chemistry",
+    "topic": "Stoichiometry",
+    "difficulty": 3,
+    "skills": ["mass-to-moles", "limiting reactants", "theoretical yield", "excess reactant"],
+    "hints": ["Convert each reactant to moles before comparing reaction capacity.", "Divide each mole amount by its stoichiometric coefficient."],
+    "workedSolution": "Convert both masses to moles, divide by each balanced coefficient to identify the smaller reaction extent, then use that extent to calculate product and excess reactant.",
     "category": "Chemistry",
     "title": "Limiting reactants and theoretical yield",
     "description": "Determine a limiting reactant, theoretical yield, and excess remaining across five assessed parts.",
@@ -66,8 +72,14 @@
     ]
   },
   {
-    "version": 3,
+    "version": 4,
     "id": "stoichiometry-carbon-dioxide",
+    "subject": "Chemistry",
+    "topic": "Stoichiometry",
+    "difficulty": 2,
+    "skills": ["mass-to-moles", "mole ratios", "moles-to-mass"],
+    "hints": ["Arrange each factor so the previous unit cancels."],
+    "workedSolution": "Convert calcium carbonate mass to moles, apply the one-to-one mole ratio, then convert carbon dioxide moles to mass.",
     "category": "Chemistry",
     "title": "Calculate carbon dioxide yield",
     "description": "Convert calcium carbonate mass to carbon dioxide mass.",
@@ -107,8 +119,14 @@
     }]
   },
   {
-    "version": 3,
+    "version": 4,
     "id": "metric-length-conversion",
+    "subject": "Mathematics",
+    "topic": "Unit conversion",
+    "difficulty": 1,
+    "skills": ["metric units", "dimensional analysis"],
+    "hints": ["Choose factors that cancel centimeters before producing millimeters."],
+    "workedSolution": "Convert centimeters to meters and meters to millimeters, cancelling each intermediate unit.",
     "category": "Mathematics",
     "title": "Convert centimeters to millimeters",
     "description": "Build a two-factor metric conversion.",
@@ -140,8 +158,14 @@
     }]
   },
   {
-    "version": 3,
+    "version": 4,
     "id": "electrical-energy-conversion",
+    "subject": "Engineering",
+    "topic": "Energy units",
+    "difficulty": 2,
+    "skills": ["energy conversion", "dimensional analysis"],
+    "hints": ["Convert watt-hours to kilowatt-hours before using megajoules per kilowatt-hour."],
+    "workedSolution": "Divide watt-hours by one thousand, then multiply kilowatt-hours by 3.6 megajoules per kilowatt-hour.",
     "category": "Engineering",
     "title": "Convert watt-hours to megajoules",
     "description": "Convert electrical energy through kilowatt-hours.",

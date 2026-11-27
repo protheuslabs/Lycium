@@ -41,10 +41,7 @@ export function readSession(): PracticeSession | null {
       ? { legacy: { response: session.work.interactionData, feedback: session.work.feedback, status: session.work.step > 0 ? "correct" as const : "idle" as const } }
       : session.work.interactionData ?? {};
     const migratedWork = { ...emptyWork, ...session.work, interactionData: migratedData };
-    const work = session.mode === "independent" && migratedWork.step > 0
-      ? { ...migratedWork, step: session.attempts.at(-1)?.result === "correct" ? 1 : 0 }
-      : migratedWork;
-    return { ...session, skills, work };
+    return { ...session, skills, work: migratedWork };
   } catch {
     return null;
   }

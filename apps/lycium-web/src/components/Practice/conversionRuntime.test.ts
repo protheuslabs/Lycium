@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { validateConversionChain } from "./conversionChain";
-import { conversionCatalog, generateConversionProblem, parseConversionFamily } from "./conversionRuntime";
+import definitions from "./conversionFamilies.json";
+import { generateConversionProblem, parseConversionFamily } from "./conversionRuntime";
+import { compileProblemType } from "./problemAuthoring";
+
+const conversionCatalog = definitions.map(compileProblemType);
 
 describe("data-driven conversion families", () => {
   it("generates and validates 1,000 instances of each family without UI knowledge", () => {

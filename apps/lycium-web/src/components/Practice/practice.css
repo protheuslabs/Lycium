@@ -75,7 +75,8 @@
 }
 .practice-conversion-start, .practice-conversion-result { display: grid; grid-template-columns: auto auto; align-items: center; gap: .35rem; flex: none; min-width: 5rem; text-align: center; }
 .practice-conversion-result { grid-template-columns: auto auto auto; padding: .75rem; border: 1px solid var(--lycium-color-border); border-radius: .65rem; }
-.practice-conversion-factors fieldset { position: relative; flex: 1 0 9rem; min-width: 0; border: 0; padding: 0 0 1.75rem; }
+.practice-conversion-result input { width: 6.5rem; text-align: center; }
+.practice-conversion-factors fieldset { position: relative; flex: 0 0 auto; width: max-content; min-width: 7rem; max-width: 13rem; border: 0; padding: 0 0 1.75rem; }
 .practice-conversion-factors fieldset::before { content: "×"; position: absolute; left: -.45rem; top: 2.15rem; transform: translateX(-50%); }
 .practice-conversion-factors legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .practice-factor-cell { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: .35rem; width: 100%; min-height: 3rem; border-radius: .5rem  .5rem 0 0 !important; }
@@ -88,6 +89,14 @@
 .practice-quantity-palette { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: .5rem; margin-block: .75rem; }
 .practice-quantity-palette button { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: .5rem; min-height: 3.25rem; text-align: left; }
 .practice-quantity-palette strong { color: var(--lycium-brand-primary); }
+.practice-conversion-complete { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .75rem; padding-block: 1rem; border-bottom: 1px solid var(--lycium-color-border); }
+.practice-conversion-complete h3 { margin: 0 0 .5rem; font-size: 1rem; }
+.practice-correct-mark { color: #15803d; font-weight: 700; }
+.practice-math-line { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: 0; font-family: "Cambria Math", "STIX Two Math", serif; }
+.practice-inline-factor { display: inline-flex; align-items: center; gap: .35rem; }
+.practice-inline-factor .practice-fraction { font-size: .95rem; }
+.practice-upcoming-parts { margin: 1rem 0; padding: 0; list-style: none; border-top: 1px solid var(--lycium-color-border); }
+.practice-upcoming-parts li { padding: .85rem 0; color: var(--lycium-color-muted); border-bottom: 1px solid var(--lycium-color-border); }
 
 @media (max-width: 64rem) {
   .practice-workspace { grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr); }

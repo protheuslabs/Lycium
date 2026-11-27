@@ -1,6 +1,7 @@
 import ConversionBuilder, { createBlankFactors } from "./ConversionBuilder";
 import type { Factor } from "./conversionChain";
 import type { GeneratedPracticeInteraction } from "./conversionRuntime";
+import { validateChoice, validateNumeric } from "./interactionValidation";
 
 type Props = {
   interaction: GeneratedPracticeInteraction;
@@ -14,19 +15,29 @@ type Props = {
 function readFactors(serialized: string, count: number): Factor[] {
   try {
     const value = JSON.parse(serialized) as unknown;
-    if (Array.isArray(value) && value.every(item => typeof item === "object" && item !== null &&
-      typeof item.numerator === "string" && typeof item.denominator === "string")) return value;
+    const factors = Array.isArray(value) ? value : typeof value === "object" && value !== null && "factors" in value ? value.factors : null;
+    if (Array.isArray(factors) && factors.every(item => typeof item === "object" && item !== null &&
+      typeof item.numerator === "string" && typeof item.denominator === "string")) return factors;
   } catch {
     // Invalid persisted interaction data starts with a clean workspace.
   }
   return createBlankFactors(count);
 }
 
+function readConversionAnswer(serialized: string) {
+  try {
+    const value = JSON.parse(serialized) as unknown;
+    return typeof value === "object" && value !== null && "answer" in value && typeof value.answer === "string" ? value.answer : "";
+  } catch { return ""; }
+}
+
 function ConversionChainInteraction({ interaction, serialized, feedback, complete, onChange, onValidate }: Props & { interaction: Extract<GeneratedPracticeInteraction, { type: "conversion-chain" }> }) {
     const factors = readFactors(serialized, interaction.ratios.length);
+    const answer = readConversionAnswer(serialized);
+    const serialize = (nextFactors: Factor[], nextAnswer: string) => JSON.stringify({ factors: nextFactors, answer: nextAnswer });
     return <ConversionBuilder {...interaction} factors={factors} feedback={feedback} disabled={complete}
-      onChange={next => onChange(JSON.stringify(next))}
-      onCheck={(status, message) => onValidate(status, message, JSON.stringify(factors))} />;
+      answer={answer} onChange={next => onChange(serialize(next, answer))} onAnswerChange={next => onChange(serialize(factors, next))}
+      onCheck={(status, message) => onValidate(status, message, serialize(factors, answer))} />;
 }
 function ChoiceInteraction({ interaction, serialized, feedback, complete, onChange, onValidate }: Props & { interaction: Extract<GeneratedPracticeInteraction, { type: "choice" }> }) {
     return <fieldset className="practice-choices" disabled={complete}>
@@ -35,28 +46,18 @@ function ChoiceInteraction({ interaction, serialized, feedback, complete, onChan
         <input type="radio" name={interaction.id} value={option.id} checked={serialized === option.id} onChange={() => onChange(option.id)} /> {option.label}
       </label>)}
       {!complete && <button className="practice-primary" type="button" disabled={!serialized}
-        onClick={() => onValidate(serialized === interaction.expected ? "correct" : "incorrect",
-          serialized === interaction.expected ? "Correct." : "Review the mole-to-coefficient ratios and try again.", serialized)}>Check answer</button>}
+        onClick={() => { const result = validateChoice(serialized, interaction.expected); onValidate(result.status, result.message, serialized); }}>Check answer</button>}
       <p role="status">{feedback}</p>
     </fieldset>;
 }
 function NumericInteraction({ interaction, serialized, feedback, complete, onChange, onValidate }: Props & { interaction: Extract<GeneratedPracticeInteraction, { type: "numeric" }> }) {
-    const entered = Number(serialized);
-    const roundedExpected = interaction.precision.type === "decimal-places"
-      ? Number(interaction.expected.toFixed(interaction.precision.digits))
-      : Number(interaction.expected.toPrecision(interaction.precision.digits));
-    const tolerance = Math.max(Number.EPSILON * Math.abs(roundedExpected) * 4,
-      interaction.precision.type === "decimal-places" ? .5 * 10 ** -interaction.precision.digits : 0);
     return <section className="practice-numeric">
       <h3>{interaction.prompt}</h3>
       <label>Answer <span className="practice-answer"><input inputMode="decimal" disabled={complete} value={serialized}
         onChange={event => onChange(event.target.value)} /> {interaction.unit}</span></label>
       {!complete && <button className="practice-primary" type="button" disabled={!serialized.trim()} onClick={() => {
-        const valid = Number.isFinite(entered);
-        const correct = valid && Math.abs(entered - roundedExpected) <= tolerance;
-        const precisionLabel = interaction.precision.type === "decimal-places"
-          ? `${interaction.precision.digits} decimal places` : `${interaction.precision.digits} significant figures`;
-        onValidate(correct ? "correct" : "incorrect", correct ? "Correct." : valid ? `Round to ${precisionLabel} and try again.` : "Enter a valid number.", serialized);
+        const result = validateNumeric(serialized, interaction);
+        onValidate(result.status, result.message, serialized);
       }}>Check answer</button>}
       <p role="status">{feedback}</p>
     </section>;
