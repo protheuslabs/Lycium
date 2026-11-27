@@ -151,7 +151,7 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
 }) {
   if (skill.version === 3) {
     return <ConversionPracticeProblem skill={skill} seed={seed} mode={mode} work={work} position={position} length={length}
-      completed={completed} update={update} onNext={onNext} />;
+      update={update} onNext={onNext} />;
   }
   const problem = generateProblem(skill, seed);
   const { operation, answer, feedback, hint, solution } = work;
@@ -227,8 +227,8 @@ function Problem({ skill, seed, mode, work, position, length, completed, update,
   </details></>;
 }
 
-function ConversionPracticeProblem({ skill, seed, mode, work, position, length, completed, update, onNext }: {
-  skill: ConversionFamily; seed: number; mode: "guided" | "independent"; work: PracticeWork; position: number; length: number; completed: number;
+function ConversionPracticeProblem({ skill, seed, mode, work, position, length, update, onNext }: {
+  skill: ConversionFamily; seed: number; mode: "guided" | "independent"; work: PracticeWork; position: number; length: number;
   update: (patch: Partial<PracticeWork>, attempt?: Attempt) => void; onNext: () => void;
 }) {
   const problem = generateProblem(skill, seed);
@@ -236,22 +236,22 @@ function ConversionPracticeProblem({ skill, seed, mode, work, position, length, 
   const done = work.step >= problem.interactions.length;
   const interactionWork = work.interactionData[interaction.id] ?? work.interactionData.legacy ?? { response: "", feedback: "", status: "idle" as const };
   return <section className="practice-problem" aria-label="Practice problem">
-    <div className="practice-progress">
-      <span>Problem {position}{length ? ` of ${length}` : ""} · {skill.category}</span>
-      <span>{completed} solved</span>
-    </div>
-    {length > 0 && <progress aria-label="Session problems completed" max={length} value={position - 1} />}
     <header className="practice-prompt">
+      <div className="practice-progress">
+        <span>{skill.category.replace(" · ", " / ")}</span>
+        <span>{length ? `${position} of ${length}` : `Problem ${position}`}</span>
+      </div>
+      {length > 0 && <progress aria-label="Session problems completed" max={length} value={position} />}
       <h2>{skill.title}</h2>
       <p>{problem.prompt}</p>
-      {problem.equation && <p className="practice-math">{problem.equation}</p>}
+      {problem.equation && <p className="practice-math practice-equation">{problem.equation}</p>}
     </header>
     {problem.interactions.slice(0, work.step).map(previous => {
       const previousWork = work.interactionData[previous.id] ?? (previous.id === problem.interactions[0].id ? work.interactionData.legacy : undefined);
-      return previousWork ? <PracticeInteraction key={previous.id} interaction={previous} serialized={previousWork.response}
+      return previousWork ? <PracticeInteraction key={previous.id} interaction={previous} partIndex={problem.interactions.indexOf(previous)} serialized={previousWork.response}
         feedback={previousWork.feedback} complete onChange={() => undefined} onValidate={() => undefined} /> : null;
     })}
-    {!done && <PracticeInteraction key={interaction.id} interaction={interaction} serialized={interactionWork.response} feedback={interactionWork.feedback} complete={false}
+    {!done && <PracticeInteraction key={interaction.id} interaction={interaction} partIndex={work.step} serialized={interactionWork.response} feedback={interactionWork.feedback} complete={false}
       onChange={response => update({ interactionData: {
         ...work.interactionData, [interaction.id]: { ...interactionWork, response, feedback: "", status: "idle" },
       } })}
@@ -271,11 +271,11 @@ function ConversionPracticeProblem({ skill, seed, mode, work, position, length, 
           stepId: interaction.id, response, result: correct ? "correct" : "incorrect", assisted: work.assisted,
         });
       }} />}
+    {!done && mode === "guided" && <div className="practice-active-assistance"><button type="button" onClick={() => update({ hint: !work.hint, assisted: true })}>Hint</button></div>}
     {!done && problem.interactions.slice(work.step + 1).length > 0 && <ol className="practice-upcoming-parts" aria-label="Remaining problem parts">
       {problem.interactions.slice(work.step + 1).map(part => <li key={part.id}>{part.prompt}</li>)}
     </ol>}
     <div className="practice-actions">
-      {!done && mode === "guided" && <button type="button" onClick={() => update({ hint: !work.hint, assisted: true })}>Hint</button>}
       {skill.metadata?.workedSolution && <button type="button" onClick={() => update({ solution: !work.solution, assisted: true })}>Worked solution</button>}
       <button type="button" onClick={onNext}>{position === length ? "Finish session" : done ? "Next problem" : "Skip problem"}</button>
     </div>

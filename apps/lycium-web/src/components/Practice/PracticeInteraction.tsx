@@ -8,6 +8,7 @@ type Props = {
   serialized: string;
   feedback: string;
   complete: boolean;
+  partIndex?: number;
   onChange: (serialized: string) => void;
   onValidate: (status: string, message: string, response: string) => void;
 };
@@ -31,11 +32,11 @@ function readConversionAnswer(serialized: string) {
   } catch { return ""; }
 }
 
-function ConversionChainInteraction({ interaction, serialized, feedback, complete, onChange, onValidate }: Props & { interaction: Extract<GeneratedPracticeInteraction, { type: "conversion-chain" }> }) {
+function ConversionChainInteraction({ interaction, serialized, feedback, complete, partIndex, onChange, onValidate }: Props & { interaction: Extract<GeneratedPracticeInteraction, { type: "conversion-chain" }> }) {
     const factors = readFactors(serialized, interaction.ratios.length);
     const answer = readConversionAnswer(serialized);
     const serialize = (nextFactors: Factor[], nextAnswer: string) => JSON.stringify({ factors: nextFactors, answer: nextAnswer });
-    return <ConversionBuilder {...interaction} factors={factors} feedback={feedback} disabled={complete}
+    return <ConversionBuilder {...interaction} factors={factors} feedback={feedback} disabled={complete} partIndex={partIndex}
       answer={answer} onChange={next => onChange(serialize(next, answer))} onAnswerChange={next => onChange(serialize(factors, next))}
       onCheck={(status, message) => onValidate(status, message, serialize(factors, answer))} />;
 }

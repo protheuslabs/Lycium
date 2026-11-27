@@ -7,11 +7,11 @@ type Props = {
   factors: Factor[]; onChange: (factors: Factor[]) => void;
   answer: string; onAnswerChange: (answer: string) => void;
   feedback: string; onCheck: (status: string, message: string) => void;
-  prompt?: string; decimals?: number; disabled?: boolean;
+  prompt?: string; decimals?: number; disabled?: boolean; partIndex?: number;
 };
 const blank = (): Factor => ({ numerator: "", denominator: "" });
 
-export default function ConversionBuilder({ start, target, quantities, ratios, factors, onChange, answer, onAnswerChange, feedback, onCheck, prompt, decimals = 8, disabled = false }: Props) {
+export default function ConversionBuilder({ start, target, quantities, ratios, factors, onChange, answer, onAnswerChange, feedback, onCheck, prompt, decimals = 8, disabled = false, partIndex = 0 }: Props) {
   const [active, setActive] = useState<{ index: number; side: keyof Factor }>({ index: 0, side: "numerator" });
   const restoredResult = disabled ? validateConversionChain(start, target, ratios, factors) : null;
   const [lastResult, setLastResult] = useState<ReturnType<typeof validateConversionChain> | null>(restoredResult);
@@ -39,6 +39,8 @@ export default function ConversionBuilder({ start, target, quantities, ratios, f
     setActive(current => current.side === "numerator" ? { ...current, side: "denominator" } :
       { index: Math.min(current.index + 1, factors.length - 1), side: "numerator" });
   };
+  const shortPrompt = (prompt ?? "Set up your calculation").replace(/^Part\s+[A-Z]\s*[—-]\s*/i, "");
+  const partLetter = String.fromCharCode(65 + partIndex);
   if (disabled) return <section className="practice-conversion-complete" aria-label={`${prompt ?? "Conversion"} complete`}>
     <span className="practice-correct-mark" aria-hidden="true">✓</span>
     <div><h3>{prompt ?? "Completed conversion"}</h3>
@@ -51,10 +53,10 @@ export default function ConversionBuilder({ start, target, quantities, ratios, f
             <span>{denominator?.value} {denominator?.unit} {denominator?.species}</span>
           </span></span>;
         })} = <strong>{answer}</strong> {target.unit} {target.species}</p>
-    </div>
+    </div><span className="practice-complete-label">Correct</span>
   </section>;
   return <section className="practice-conversion" aria-label="Conversion chain">
-    <h3>{prompt ?? "Set up your calculation"}</h3>
+    <h3><span className="practice-part-badge" aria-hidden="true">{partLetter}</span>{shortPrompt}</h3>
     <p>Convert {start.value} {start.unit} {start.species} to {target.unit} {target.species}.</p>
     <div className="practice-conversion-factors" aria-label="Dimensional analysis workspace">
       <div className="practice-conversion-start"><strong>{start.value}</strong><span className={cancelled.has("start") ? "is-cancelled" : ""}>{start.unit} {start.species}</span></div>
@@ -73,25 +75,13 @@ export default function ConversionBuilder({ start, target, quantities, ratios, f
       </fieldset>)}
       <label className="practice-conversion-result" aria-label="Numerical answer"><span>=</span><input value={answer} inputMode="decimal" onChange={event => onAnswerChange(event.target.value)} /><span>{target.unit} {target.species}</span></label>
     </div>
-    {!disabled && <><p className="practice-builder-instruction">Select a fraction cell, then choose a number and unit pair.</p>
+    {!disabled && <><p className="practice-builder-instruction">Available quantities</p>
       <div className="practice-quantity-palette" aria-label="Available quantities">
         {quantities.map(quantity => <button type="button" key={quantity.id} onClick={() => choose(quantity)}>
           <strong>{quantity.value}</strong><span>{quantity.unit} {quantity.species}</span>
         </button>)}
       </div></>}
     <div className="practice-actions">
-      {!disabled && <button type="button" disabled={factors.length >= 12} onClick={() => {
-        update([...factors, blank()]);
-        setActive({ index: factors.length, side: "numerator" });
-      }}>+ Factor</button>}
-      {!disabled && factors.length > 1 && <button type="button" onClick={() => {
-        update(factors.slice(0, -1));
-        setActive({ index: Math.max(0, factors.length - 2), side: "numerator" });
-      }}>− Factor</button>}
-      {!disabled && <button type="button" onClick={() => {
-        update(createBlankFactors(Math.max(1, ratios.length)));
-        setActive({ index: 0, side: "numerator" });
-      }}>Reset</button>}
       <button className="practice-primary" type="button" disabled={disabled || !answer.trim() || !factors.length || factors.some(item => !item.numerator || !item.denominator)} onClick={check}>Check calculation</button>
     </div>
     <p role="status">{feedback}</p>
