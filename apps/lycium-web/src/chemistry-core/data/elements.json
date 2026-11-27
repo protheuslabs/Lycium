@@ -1,0 +1,4675 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": "PubChem PUG REST periodic table",
+  "elements": [
+    {
+      "atomicNumber": 1,
+      "symbol": "H",
+      "name": "Hydrogen",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 1.007975,
+        "minimum": 1.00784,
+        "maximum": 1.00811,
+        "display": "[1.00784, 1.00811]"
+      },
+      "cpkColor": "#FFFFFF",
+      "electronConfiguration": "1s1",
+      "shells": [
+        1
+      ],
+      "electronegativity": 2.2,
+      "atomicRadius": 120,
+      "firstIonizationEnergy": 13.598,
+      "electronAffinity": 0.754,
+      "oxidationStates": [
+        "+1",
+        "-1"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 13.81,
+      "boilingPoint": 20.28,
+      "density": 0.00008988,
+      "family": "nonmetal",
+      "familyLabel": "Nonmetal",
+      "yearDiscovered": "1766",
+      "period": 1,
+      "group": 1,
+      "series": "main",
+      "row": 1,
+      "column": 1
+    },
+    {
+      "atomicNumber": 2,
+      "symbol": "He",
+      "name": "Helium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 4.0026,
+        "display": "4.00260"
+      },
+      "cpkColor": "#D9FFFF",
+      "electronConfiguration": "1s2",
+      "shells": [
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": 140,
+      "firstIonizationEnergy": 24.587,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "0"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 0.95,
+      "boilingPoint": 4.22,
+      "density": 0.0001785,
+      "family": "noble-gas",
+      "familyLabel": "Noble gas",
+      "yearDiscovered": "1868",
+      "period": 1,
+      "group": 18,
+      "series": "main",
+      "row": 1,
+      "column": 18
+    },
+    {
+      "atomicNumber": 3,
+      "symbol": "Li",
+      "name": "Lithium",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 6.967499999999999,
+        "minimum": 6.938,
+        "maximum": 6.997,
+        "display": "[6.938, 6.997]"
+      },
+      "cpkColor": "#CC80FF",
+      "electronConfiguration": "[He]2s1",
+      "shells": [
+        2,
+        1
+      ],
+      "electronegativity": 0.98,
+      "atomicRadius": 182,
+      "firstIonizationEnergy": 5.392,
+      "electronAffinity": 0.618,
+      "oxidationStates": [
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 453.65,
+      "boilingPoint": 1615,
+      "density": 0.534,
+      "family": "alkali-metal",
+      "familyLabel": "Alkali metal",
+      "yearDiscovered": "1817",
+      "period": 2,
+      "group": 1,
+      "series": "main",
+      "row": 2,
+      "column": 1
+    },
+    {
+      "atomicNumber": 4,
+      "symbol": "Be",
+      "name": "Beryllium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 9.012183,
+        "display": "9.012183"
+      },
+      "cpkColor": "#C2FF00",
+      "electronConfiguration": "[He]2s2",
+      "shells": [
+        2,
+        2
+      ],
+      "electronegativity": 1.57,
+      "atomicRadius": 153,
+      "firstIonizationEnergy": 9.323,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1560,
+      "boilingPoint": 2744,
+      "density": 1.85,
+      "family": "alkaline-earth",
+      "familyLabel": "Alkaline earth metal",
+      "yearDiscovered": "1798",
+      "period": 2,
+      "group": 2,
+      "series": "main",
+      "row": 2,
+      "column": 2
+    },
+    {
+      "atomicNumber": 5,
+      "symbol": "B",
+      "name": "Boron",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 10.8135,
+        "minimum": 10.806,
+        "maximum": 10.821,
+        "display": "[10.806, 10.821]"
+      },
+      "cpkColor": "#FFB5B5",
+      "electronConfiguration": "[He]2s2 2p1",
+      "shells": [
+        2,
+        3
+      ],
+      "electronegativity": 2.04,
+      "atomicRadius": 192,
+      "firstIonizationEnergy": 8.298,
+      "electronAffinity": 0.277,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2348,
+      "boilingPoint": 4273,
+      "density": 2.37,
+      "family": "metalloid",
+      "familyLabel": "Metalloid",
+      "yearDiscovered": "1808",
+      "period": 2,
+      "group": 13,
+      "series": "main",
+      "row": 2,
+      "column": 13
+    },
+    {
+      "atomicNumber": 6,
+      "symbol": "C",
+      "name": "Carbon",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 12.0106,
+        "minimum": 12.0096,
+        "maximum": 12.0116,
+        "display": "[12.0096, 12.0116]"
+      },
+      "cpkColor": "#909090",
+      "electronConfiguration": "[He]2s2 2p2",
+      "shells": [
+        2,
+        4
+      ],
+      "electronegativity": 2.55,
+      "atomicRadius": 170,
+      "firstIonizationEnergy": 11.26,
+      "electronAffinity": 1.263,
+      "oxidationStates": [
+        "+4",
+        "+2",
+        "-4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 3823,
+      "boilingPoint": 4098,
+      "density": 2.267,
+      "family": "nonmetal",
+      "familyLabel": "Nonmetal",
+      "yearDiscovered": "Ancient",
+      "period": 2,
+      "group": 14,
+      "series": "main",
+      "row": 2,
+      "column": 14
+    },
+    {
+      "atomicNumber": 7,
+      "symbol": "N",
+      "name": "Nitrogen",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 14.006855,
+        "minimum": 14.00643,
+        "maximum": 14.00728,
+        "display": "[14.00643, 14.00728]"
+      },
+      "cpkColor": "#3050F8",
+      "electronConfiguration": "[He] 2s2 2p3",
+      "shells": [
+        2,
+        5
+      ],
+      "electronegativity": 3.04,
+      "atomicRadius": 155,
+      "firstIonizationEnergy": 14.534,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+5",
+        "+4",
+        "+3",
+        "+2",
+        "+1",
+        "-1",
+        "-2",
+        "-3"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 63.15,
+      "boilingPoint": 77.36,
+      "density": 0.0012506,
+      "family": "nonmetal",
+      "familyLabel": "Nonmetal",
+      "yearDiscovered": "1772",
+      "period": 2,
+      "group": 15,
+      "series": "main",
+      "row": 2,
+      "column": 15
+    },
+    {
+      "atomicNumber": 8,
+      "symbol": "O",
+      "name": "Oxygen",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 15.9994,
+        "minimum": 15.99903,
+        "maximum": 15.99977,
+        "display": "[15.99903, 15.99977]"
+      },
+      "cpkColor": "#FF0D0D",
+      "electronConfiguration": "[He]2s2 2p4",
+      "shells": [
+        2,
+        6
+      ],
+      "electronegativity": 3.44,
+      "atomicRadius": 152,
+      "firstIonizationEnergy": 13.618,
+      "electronAffinity": 1.461,
+      "oxidationStates": [
+        "-2"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 54.36,
+      "boilingPoint": 90.2,
+      "density": 0.001429,
+      "family": "nonmetal",
+      "familyLabel": "Nonmetal",
+      "yearDiscovered": "1774",
+      "period": 2,
+      "group": 16,
+      "series": "main",
+      "row": 2,
+      "column": 16
+    },
+    {
+      "atomicNumber": 9,
+      "symbol": "F",
+      "name": "Fluorine",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 18.99840316,
+        "display": "18.99840316"
+      },
+      "cpkColor": "#90E050",
+      "electronConfiguration": "[He]2s2 2p5",
+      "shells": [
+        2,
+        7
+      ],
+      "electronegativity": 3.98,
+      "atomicRadius": 135,
+      "firstIonizationEnergy": 17.423,
+      "electronAffinity": 3.339,
+      "oxidationStates": [
+        "-1"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 53.53,
+      "boilingPoint": 85.03,
+      "density": 0.001696,
+      "family": "halogen",
+      "familyLabel": "Halogen",
+      "yearDiscovered": "1670",
+      "period": 2,
+      "group": 17,
+      "series": "main",
+      "row": 2,
+      "column": 17
+    },
+    {
+      "atomicNumber": 10,
+      "symbol": "Ne",
+      "name": "Neon",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 20.18,
+        "display": "20.180"
+      },
+      "cpkColor": "#B3E3F5",
+      "electronConfiguration": "[He]2s2 2p6",
+      "shells": [
+        2,
+        8
+      ],
+      "electronegativity": null,
+      "atomicRadius": 154,
+      "firstIonizationEnergy": 21.565,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "0"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 24.56,
+      "boilingPoint": 27.07,
+      "density": 0.0008999,
+      "family": "noble-gas",
+      "familyLabel": "Noble gas",
+      "yearDiscovered": "1898",
+      "period": 2,
+      "group": 18,
+      "series": "main",
+      "row": 2,
+      "column": 18
+    },
+    {
+      "atomicNumber": 11,
+      "symbol": "Na",
+      "name": "Sodium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 22.9897693,
+        "display": "22.9897693"
+      },
+      "cpkColor": "#AB5CF2",
+      "electronConfiguration": "[Ne]3s1",
+      "shells": [
+        2,
+        8,
+        1
+      ],
+      "electronegativity": 0.93,
+      "atomicRadius": 227,
+      "firstIonizationEnergy": 5.139,
+      "electronAffinity": 0.548,
+      "oxidationStates": [
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 370.95,
+      "boilingPoint": 1156,
+      "density": 0.97,
+      "family": "alkali-metal",
+      "familyLabel": "Alkali metal",
+      "yearDiscovered": "1807",
+      "period": 3,
+      "group": 1,
+      "series": "main",
+      "row": 3,
+      "column": 1
+    },
+    {
+      "atomicNumber": 12,
+      "symbol": "Mg",
+      "name": "Magnesium",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 24.3055,
+        "minimum": 24.304,
+        "maximum": 24.307,
+        "display": "[24.304, 24.307]"
+      },
+      "cpkColor": "#8AFF00",
+      "electronConfiguration": "[Ne]3s2",
+      "shells": [
+        2,
+        8,
+        2
+      ],
+      "electronegativity": 1.31,
+      "atomicRadius": 173,
+      "firstIonizationEnergy": 7.646,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 923,
+      "boilingPoint": 1363,
+      "density": 1.74,
+      "family": "alkaline-earth",
+      "familyLabel": "Alkaline earth metal",
+      "yearDiscovered": "1808",
+      "period": 3,
+      "group": 2,
+      "series": "main",
+      "row": 3,
+      "column": 2
+    },
+    {
+      "atomicNumber": 13,
+      "symbol": "Al",
+      "name": "Aluminum",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 26.981538,
+        "display": "26.981538"
+      },
+      "cpkColor": "#BFA6A6",
+      "electronConfiguration": "[Ne]3s2 3p1",
+      "shells": [
+        2,
+        8,
+        3
+      ],
+      "electronegativity": 1.61,
+      "atomicRadius": 184,
+      "firstIonizationEnergy": 5.986,
+      "electronAffinity": 0.441,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 933.437,
+      "boilingPoint": 2792,
+      "density": 2.7,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "Ancient",
+      "period": 3,
+      "group": 13,
+      "series": "main",
+      "row": 3,
+      "column": 13
+    },
+    {
+      "atomicNumber": 14,
+      "symbol": "Si",
+      "name": "Silicon",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 28.085,
+        "minimum": 28.084,
+        "maximum": 28.086,
+        "display": "[28.084, 28.086]"
+      },
+      "cpkColor": "#F0C8A0",
+      "electronConfiguration": "[Ne]3s2 3p2",
+      "shells": [
+        2,
+        8,
+        4
+      ],
+      "electronegativity": 1.9,
+      "atomicRadius": 210,
+      "firstIonizationEnergy": 8.152,
+      "electronAffinity": 1.385,
+      "oxidationStates": [
+        "+4",
+        "+2",
+        "-4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1687,
+      "boilingPoint": 3538,
+      "density": 2.3296,
+      "family": "metalloid",
+      "familyLabel": "Metalloid",
+      "yearDiscovered": "1854",
+      "period": 3,
+      "group": 14,
+      "series": "main",
+      "row": 3,
+      "column": 14
+    },
+    {
+      "atomicNumber": 15,
+      "symbol": "P",
+      "name": "Phosphorus",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 30.973762,
+        "display": "30.97376200"
+      },
+      "cpkColor": "#FF8000",
+      "electronConfiguration": "[Ne]3s2 3p3",
+      "shells": [
+        2,
+        8,
+        5
+      ],
+      "electronegativity": 2.19,
+      "atomicRadius": 180,
+      "firstIonizationEnergy": 10.487,
+      "electronAffinity": 0.746,
+      "oxidationStates": [
+        "+5",
+        "+3",
+        "-3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 317.3,
+      "boilingPoint": 553.65,
+      "density": 1.82,
+      "family": "nonmetal",
+      "familyLabel": "Nonmetal",
+      "yearDiscovered": "1669",
+      "period": 3,
+      "group": 15,
+      "series": "main",
+      "row": 3,
+      "column": 15
+    },
+    {
+      "atomicNumber": 16,
+      "symbol": "S",
+      "name": "Sulfur",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 32.067499999999995,
+        "minimum": 32.059,
+        "maximum": 32.076,
+        "display": "[32.059, 32.076]"
+      },
+      "cpkColor": "#FFFF30",
+      "electronConfiguration": "[Ne]3s2 3p4",
+      "shells": [
+        2,
+        8,
+        6
+      ],
+      "electronegativity": 2.58,
+      "atomicRadius": 180,
+      "firstIonizationEnergy": 10.36,
+      "electronAffinity": 2.077,
+      "oxidationStates": [
+        "+6",
+        "+4",
+        "-2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 388.36,
+      "boilingPoint": 717.75,
+      "density": 2.067,
+      "family": "nonmetal",
+      "familyLabel": "Nonmetal",
+      "yearDiscovered": "Ancient",
+      "period": 3,
+      "group": 16,
+      "series": "main",
+      "row": 3,
+      "column": 16
+    },
+    {
+      "atomicNumber": 17,
+      "symbol": "Cl",
+      "name": "Chlorine",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 35.451499999999996,
+        "minimum": 35.446,
+        "maximum": 35.457,
+        "display": "[35.446, 35.457]"
+      },
+      "cpkColor": "#1FF01F",
+      "electronConfiguration": "[Ne]3s2 3p5",
+      "shells": [
+        2,
+        8,
+        7
+      ],
+      "electronegativity": 3.16,
+      "atomicRadius": 175,
+      "firstIonizationEnergy": 12.968,
+      "electronAffinity": 3.617,
+      "oxidationStates": [
+        "+7",
+        "+5",
+        "+1",
+        "-1"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 171.65,
+      "boilingPoint": 239.11,
+      "density": 0.003214,
+      "family": "halogen",
+      "familyLabel": "Halogen",
+      "yearDiscovered": "1774",
+      "period": 3,
+      "group": 17,
+      "series": "main",
+      "row": 3,
+      "column": 17
+    },
+    {
+      "atomicNumber": 18,
+      "symbol": "Ar",
+      "name": "Argon",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 39.8775,
+        "minimum": 39.792,
+        "maximum": 39.963,
+        "display": "[39.792, 39.963]"
+      },
+      "cpkColor": "#80D1E3",
+      "electronConfiguration": "[Ne]3s2 3p6",
+      "shells": [
+        2,
+        8,
+        8
+      ],
+      "electronegativity": null,
+      "atomicRadius": 188,
+      "firstIonizationEnergy": 15.76,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "0"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 83.8,
+      "boilingPoint": 87.3,
+      "density": 0.0017837,
+      "family": "noble-gas",
+      "familyLabel": "Noble gas",
+      "yearDiscovered": "1894",
+      "period": 3,
+      "group": 18,
+      "series": "main",
+      "row": 3,
+      "column": 18
+    },
+    {
+      "atomicNumber": 19,
+      "symbol": "K",
+      "name": "Potassium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 39.0983,
+        "display": "39.0983"
+      },
+      "cpkColor": "#8F40D4",
+      "electronConfiguration": "[Ar]4s1",
+      "shells": [
+        2,
+        8,
+        8,
+        1
+      ],
+      "electronegativity": 0.82,
+      "atomicRadius": 275,
+      "firstIonizationEnergy": 4.341,
+      "electronAffinity": 0.501,
+      "oxidationStates": [
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 336.53,
+      "boilingPoint": 1032,
+      "density": 0.89,
+      "family": "alkali-metal",
+      "familyLabel": "Alkali metal",
+      "yearDiscovered": "1807",
+      "period": 4,
+      "group": 1,
+      "series": "main",
+      "row": 4,
+      "column": 1
+    },
+    {
+      "atomicNumber": 20,
+      "symbol": "Ca",
+      "name": "Calcium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 40.08,
+        "display": "40.08"
+      },
+      "cpkColor": "#3DFF00",
+      "electronConfiguration": "[Ar]4s2",
+      "shells": [
+        2,
+        8,
+        8,
+        2
+      ],
+      "electronegativity": 1,
+      "atomicRadius": 231,
+      "firstIonizationEnergy": 6.113,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1115,
+      "boilingPoint": 1757,
+      "density": 1.54,
+      "family": "alkaline-earth",
+      "familyLabel": "Alkaline earth metal",
+      "yearDiscovered": "Ancient",
+      "period": 4,
+      "group": 2,
+      "series": "main",
+      "row": 4,
+      "column": 2
+    },
+    {
+      "atomicNumber": 21,
+      "symbol": "Sc",
+      "name": "Scandium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 44.95591,
+        "display": "44.95591"
+      },
+      "cpkColor": "#E6E6E6",
+      "electronConfiguration": "[Ar]4s2 3d1",
+      "shells": [
+        2,
+        8,
+        9,
+        2
+      ],
+      "electronegativity": 1.36,
+      "atomicRadius": 211,
+      "firstIonizationEnergy": 6.561,
+      "electronAffinity": 0.188,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1814,
+      "boilingPoint": 3109,
+      "density": 2.99,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1879",
+      "period": 4,
+      "group": 3,
+      "series": "main",
+      "row": 4,
+      "column": 3
+    },
+    {
+      "atomicNumber": 22,
+      "symbol": "Ti",
+      "name": "Titanium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 47.867,
+        "display": "47.867"
+      },
+      "cpkColor": "#BFC2C7",
+      "electronConfiguration": "[Ar]4s2 3d2",
+      "shells": [
+        2,
+        8,
+        10,
+        2
+      ],
+      "electronegativity": 1.54,
+      "atomicRadius": 187,
+      "firstIonizationEnergy": 6.828,
+      "electronAffinity": 0.079,
+      "oxidationStates": [
+        "+4",
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1941,
+      "boilingPoint": 3560,
+      "density": 4.5,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1791",
+      "period": 4,
+      "group": 4,
+      "series": "main",
+      "row": 4,
+      "column": 4
+    },
+    {
+      "atomicNumber": 23,
+      "symbol": "V",
+      "name": "Vanadium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 50.9415,
+        "display": "50.9415"
+      },
+      "cpkColor": "#A6A6AB",
+      "electronConfiguration": "[Ar]4s2 3d3",
+      "shells": [
+        2,
+        8,
+        11,
+        2
+      ],
+      "electronegativity": 1.63,
+      "atomicRadius": 179,
+      "firstIonizationEnergy": 6.746,
+      "electronAffinity": 0.525,
+      "oxidationStates": [
+        "+5",
+        "+4",
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2183,
+      "boilingPoint": 3680,
+      "density": 6,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1801",
+      "period": 4,
+      "group": 5,
+      "series": "main",
+      "row": 4,
+      "column": 5
+    },
+    {
+      "atomicNumber": 24,
+      "symbol": "Cr",
+      "name": "Chromium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 51.996,
+        "display": "51.996"
+      },
+      "cpkColor": "#8A99C7",
+      "electronConfiguration": "[Ar]3d5 4s1",
+      "shells": [
+        2,
+        8,
+        13,
+        1
+      ],
+      "electronegativity": 1.66,
+      "atomicRadius": 189,
+      "firstIonizationEnergy": 6.767,
+      "electronAffinity": 0.666,
+      "oxidationStates": [
+        "+6",
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2180,
+      "boilingPoint": 2944,
+      "density": 7.15,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1797",
+      "period": 4,
+      "group": 6,
+      "series": "main",
+      "row": 4,
+      "column": 6
+    },
+    {
+      "atomicNumber": 25,
+      "symbol": "Mn",
+      "name": "Manganese",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 54.93804,
+        "display": "54.93804"
+      },
+      "cpkColor": "#9C7AC7",
+      "electronConfiguration": "[Ar]4s2 3d5",
+      "shells": [
+        2,
+        8,
+        13,
+        2
+      ],
+      "electronegativity": 1.55,
+      "atomicRadius": 197,
+      "firstIonizationEnergy": 7.434,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+7",
+        "+4",
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1519,
+      "boilingPoint": 2334,
+      "density": 7.3,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1774",
+      "period": 4,
+      "group": 7,
+      "series": "main",
+      "row": 4,
+      "column": 7
+    },
+    {
+      "atomicNumber": 26,
+      "symbol": "Fe",
+      "name": "Iron",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 55.84,
+        "display": "55.84"
+      },
+      "cpkColor": "#E06633",
+      "electronConfiguration": "[Ar]4s2 3d6",
+      "shells": [
+        2,
+        8,
+        14,
+        2
+      ],
+      "electronegativity": 1.83,
+      "atomicRadius": 194,
+      "firstIonizationEnergy": 7.902,
+      "electronAffinity": 0.163,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1811,
+      "boilingPoint": 3134,
+      "density": 7.874,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "Ancient",
+      "period": 4,
+      "group": 8,
+      "series": "main",
+      "row": 4,
+      "column": 8
+    },
+    {
+      "atomicNumber": 27,
+      "symbol": "Co",
+      "name": "Cobalt",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 58.93319,
+        "display": "58.93319"
+      },
+      "cpkColor": "#F090A0",
+      "electronConfiguration": "[Ar]4s2 3d7",
+      "shells": [
+        2,
+        8,
+        15,
+        2
+      ],
+      "electronegativity": 1.88,
+      "atomicRadius": 192,
+      "firstIonizationEnergy": 7.881,
+      "electronAffinity": 0.661,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1768,
+      "boilingPoint": 3200,
+      "density": 8.86,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1735",
+      "period": 4,
+      "group": 9,
+      "series": "main",
+      "row": 4,
+      "column": 9
+    },
+    {
+      "atomicNumber": 28,
+      "symbol": "Ni",
+      "name": "Nickel",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 58.693,
+        "display": "58.693"
+      },
+      "cpkColor": "#50D050",
+      "electronConfiguration": "[Ar]4s2 3d8",
+      "shells": [
+        2,
+        8,
+        16,
+        2
+      ],
+      "electronegativity": 1.91,
+      "atomicRadius": 163,
+      "firstIonizationEnergy": 7.64,
+      "electronAffinity": 1.156,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1728,
+      "boilingPoint": 3186,
+      "density": 8.912,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1751",
+      "period": 4,
+      "group": 10,
+      "series": "main",
+      "row": 4,
+      "column": 10
+    },
+    {
+      "atomicNumber": 29,
+      "symbol": "Cu",
+      "name": "Copper",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 63.55,
+        "display": "63.55"
+      },
+      "cpkColor": "#C88033",
+      "electronConfiguration": "[Ar]4s1 3d10",
+      "shells": [
+        2,
+        8,
+        18,
+        1
+      ],
+      "electronegativity": 1.9,
+      "atomicRadius": 140,
+      "firstIonizationEnergy": 7.726,
+      "electronAffinity": 1.228,
+      "oxidationStates": [
+        "+2",
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1357.77,
+      "boilingPoint": 2835,
+      "density": 8.933,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "Ancient",
+      "period": 4,
+      "group": 11,
+      "series": "main",
+      "row": 4,
+      "column": 11
+    },
+    {
+      "atomicNumber": 30,
+      "symbol": "Zn",
+      "name": "Zinc",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 65.4,
+        "display": "65.4"
+      },
+      "cpkColor": "#7D80B0",
+      "electronConfiguration": "[Ar]4s2 3d10",
+      "shells": [
+        2,
+        8,
+        18,
+        2
+      ],
+      "electronegativity": 1.65,
+      "atomicRadius": 139,
+      "firstIonizationEnergy": 9.394,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 692.68,
+      "boilingPoint": 1180,
+      "density": 7.134,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1746",
+      "period": 4,
+      "group": 12,
+      "series": "main",
+      "row": 4,
+      "column": 12
+    },
+    {
+      "atomicNumber": 31,
+      "symbol": "Ga",
+      "name": "Gallium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 69.723,
+        "display": "69.723"
+      },
+      "cpkColor": "#C28F8F",
+      "electronConfiguration": "[Ar]4s2 3d10 4p1",
+      "shells": [
+        2,
+        8,
+        18,
+        3
+      ],
+      "electronegativity": 1.81,
+      "atomicRadius": 187,
+      "firstIonizationEnergy": 5.999,
+      "electronAffinity": 0.3,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 302.91,
+      "boilingPoint": 2477,
+      "density": 5.91,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "1875",
+      "period": 4,
+      "group": 13,
+      "series": "main",
+      "row": 4,
+      "column": 13
+    },
+    {
+      "atomicNumber": 32,
+      "symbol": "Ge",
+      "name": "Germanium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 72.63,
+        "display": "72.63"
+      },
+      "cpkColor": "#668F8F",
+      "electronConfiguration": "[Ar]4s2 3d10 4p2",
+      "shells": [
+        2,
+        8,
+        18,
+        4
+      ],
+      "electronegativity": 2.01,
+      "atomicRadius": 211,
+      "firstIonizationEnergy": 7.9,
+      "electronAffinity": 1.35,
+      "oxidationStates": [
+        "+4",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1211.4,
+      "boilingPoint": 3106,
+      "density": 5.323,
+      "family": "metalloid",
+      "familyLabel": "Metalloid",
+      "yearDiscovered": "1886",
+      "period": 4,
+      "group": 14,
+      "series": "main",
+      "row": 4,
+      "column": 14
+    },
+    {
+      "atomicNumber": 33,
+      "symbol": "As",
+      "name": "Arsenic",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 74.92159,
+        "display": "74.92159"
+      },
+      "cpkColor": "#BD80E3",
+      "electronConfiguration": "[Ar]4s2 3d10 4p3",
+      "shells": [
+        2,
+        8,
+        18,
+        5
+      ],
+      "electronegativity": 2.18,
+      "atomicRadius": 185,
+      "firstIonizationEnergy": 9.815,
+      "electronAffinity": 0.81,
+      "oxidationStates": [
+        "+5",
+        "+3",
+        "-3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1090,
+      "boilingPoint": 887,
+      "density": 5.776,
+      "family": "metalloid",
+      "familyLabel": "Metalloid",
+      "yearDiscovered": "Ancient",
+      "period": 4,
+      "group": 15,
+      "series": "main",
+      "row": 4,
+      "column": 15
+    },
+    {
+      "atomicNumber": 34,
+      "symbol": "Se",
+      "name": "Selenium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 78.97,
+        "display": "78.97"
+      },
+      "cpkColor": "#FFA100",
+      "electronConfiguration": "[Ar]4s2 3d10 4p4",
+      "shells": [
+        2,
+        8,
+        18,
+        6
+      ],
+      "electronegativity": 2.55,
+      "atomicRadius": 190,
+      "firstIonizationEnergy": 9.752,
+      "electronAffinity": 2.021,
+      "oxidationStates": [
+        "+6",
+        "+4",
+        "-2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 493.65,
+      "boilingPoint": 958,
+      "density": 4.809,
+      "family": "nonmetal",
+      "familyLabel": "Nonmetal",
+      "yearDiscovered": "1817",
+      "period": 4,
+      "group": 16,
+      "series": "main",
+      "row": 4,
+      "column": 16
+    },
+    {
+      "atomicNumber": 35,
+      "symbol": "Br",
+      "name": "Bromine",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 79.904,
+        "minimum": 79.901,
+        "maximum": 79.907,
+        "display": "[79.901, 79.907]"
+      },
+      "cpkColor": "#A62929",
+      "electronConfiguration": "[Ar]4s2 3d10 4p5",
+      "shells": [
+        2,
+        8,
+        18,
+        7
+      ],
+      "electronegativity": 2.96,
+      "atomicRadius": 183,
+      "firstIonizationEnergy": 11.814,
+      "electronAffinity": 3.365,
+      "oxidationStates": [
+        "+5",
+        "+1",
+        "-1"
+      ],
+      "standardState": "Liquid",
+      "meltingPoint": 265.95,
+      "boilingPoint": 331.95,
+      "density": 3.11,
+      "family": "halogen",
+      "familyLabel": "Halogen",
+      "yearDiscovered": "1826",
+      "period": 4,
+      "group": 17,
+      "series": "main",
+      "row": 4,
+      "column": 17
+    },
+    {
+      "atomicNumber": 36,
+      "symbol": "Kr",
+      "name": "Krypton",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 83.8,
+        "display": "83.80"
+      },
+      "cpkColor": "#5CB8D1",
+      "electronConfiguration": "[Ar]4s2 3d10 4p6",
+      "shells": [
+        2,
+        8,
+        18,
+        8
+      ],
+      "electronegativity": 3,
+      "atomicRadius": 202,
+      "firstIonizationEnergy": 14,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "0"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 115.79,
+      "boilingPoint": 119.93,
+      "density": 0.003733,
+      "family": "noble-gas",
+      "familyLabel": "Noble gas",
+      "yearDiscovered": "1898",
+      "period": 4,
+      "group": 18,
+      "series": "main",
+      "row": 4,
+      "column": 18
+    },
+    {
+      "atomicNumber": 37,
+      "symbol": "Rb",
+      "name": "Rubidium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 85.468,
+        "display": "85.468"
+      },
+      "cpkColor": "#702EB0",
+      "electronConfiguration": "[Kr]5s1",
+      "shells": [
+        2,
+        8,
+        18,
+        8,
+        1
+      ],
+      "electronegativity": 0.82,
+      "atomicRadius": 303,
+      "firstIonizationEnergy": 4.177,
+      "electronAffinity": 0.468,
+      "oxidationStates": [
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 312.46,
+      "boilingPoint": 961,
+      "density": 1.53,
+      "family": "alkali-metal",
+      "familyLabel": "Alkali metal",
+      "yearDiscovered": "1861",
+      "period": 5,
+      "group": 1,
+      "series": "main",
+      "row": 5,
+      "column": 1
+    },
+    {
+      "atomicNumber": 38,
+      "symbol": "Sr",
+      "name": "Strontium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 87.62,
+        "display": "87.62"
+      },
+      "cpkColor": "#00FF00",
+      "electronConfiguration": "[Kr]5s2",
+      "shells": [
+        2,
+        8,
+        18,
+        8,
+        2
+      ],
+      "electronegativity": 0.95,
+      "atomicRadius": 249,
+      "firstIonizationEnergy": 5.695,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1050,
+      "boilingPoint": 1655,
+      "density": 2.64,
+      "family": "alkaline-earth",
+      "familyLabel": "Alkaline earth metal",
+      "yearDiscovered": "1790",
+      "period": 5,
+      "group": 2,
+      "series": "main",
+      "row": 5,
+      "column": 2
+    },
+    {
+      "atomicNumber": 39,
+      "symbol": "Y",
+      "name": "Yttrium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 88.90584,
+        "display": "88.90584"
+      },
+      "cpkColor": "#94FFFF",
+      "electronConfiguration": "[Kr]5s2 4d1",
+      "shells": [
+        2,
+        8,
+        18,
+        9,
+        2
+      ],
+      "electronegativity": 1.22,
+      "atomicRadius": 219,
+      "firstIonizationEnergy": 6.217,
+      "electronAffinity": 0.307,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1795,
+      "boilingPoint": 3618,
+      "density": 4.47,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1794",
+      "period": 5,
+      "group": 3,
+      "series": "main",
+      "row": 5,
+      "column": 3
+    },
+    {
+      "atomicNumber": 40,
+      "symbol": "Zr",
+      "name": "Zirconium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 91.22,
+        "display": "91.22"
+      },
+      "cpkColor": "#94E0E0",
+      "electronConfiguration": "[Kr]5s2 4d2",
+      "shells": [
+        2,
+        8,
+        18,
+        10,
+        2
+      ],
+      "electronegativity": 1.33,
+      "atomicRadius": 186,
+      "firstIonizationEnergy": 6.634,
+      "electronAffinity": 0.426,
+      "oxidationStates": [
+        "+4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2128,
+      "boilingPoint": 4682,
+      "density": 6.52,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1789",
+      "period": 5,
+      "group": 4,
+      "series": "main",
+      "row": 5,
+      "column": 4
+    },
+    {
+      "atomicNumber": 41,
+      "symbol": "Nb",
+      "name": "Niobium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 92.90637,
+        "display": "92.90637"
+      },
+      "cpkColor": "#73C2C9",
+      "electronConfiguration": "[Kr]5s1 4d4",
+      "shells": [
+        2,
+        8,
+        18,
+        12,
+        1
+      ],
+      "electronegativity": 1.6,
+      "atomicRadius": 207,
+      "firstIonizationEnergy": 6.759,
+      "electronAffinity": 0.893,
+      "oxidationStates": [
+        "+5",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2750,
+      "boilingPoint": 5017,
+      "density": 8.57,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1801",
+      "period": 5,
+      "group": 5,
+      "series": "main",
+      "row": 5,
+      "column": 5
+    },
+    {
+      "atomicNumber": 42,
+      "symbol": "Mo",
+      "name": "Molybdenum",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 95.95,
+        "display": "95.95"
+      },
+      "cpkColor": "#54B5B5",
+      "electronConfiguration": "[Kr]5s1 4d5",
+      "shells": [
+        2,
+        8,
+        18,
+        13,
+        1
+      ],
+      "electronegativity": 2.16,
+      "atomicRadius": 209,
+      "firstIonizationEnergy": 7.092,
+      "electronAffinity": 0.746,
+      "oxidationStates": [
+        "+6"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2896,
+      "boilingPoint": 4912,
+      "density": 10.2,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1778",
+      "period": 5,
+      "group": 6,
+      "series": "main",
+      "row": 5,
+      "column": 6
+    },
+    {
+      "atomicNumber": 43,
+      "symbol": "Tc",
+      "name": "Technetium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 96.90636,
+        "display": "96.90636"
+      },
+      "cpkColor": "#3B9E9E",
+      "electronConfiguration": "[Kr]5s2 4d5",
+      "shells": [
+        2,
+        8,
+        18,
+        13,
+        2
+      ],
+      "electronegativity": 1.9,
+      "atomicRadius": 209,
+      "firstIonizationEnergy": 7.28,
+      "electronAffinity": 0.55,
+      "oxidationStates": [
+        "+7",
+        "+6",
+        "+4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2430,
+      "boilingPoint": 4538,
+      "density": 11,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1937",
+      "period": 5,
+      "group": 7,
+      "series": "main",
+      "row": 5,
+      "column": 7
+    },
+    {
+      "atomicNumber": 44,
+      "symbol": "Ru",
+      "name": "Ruthenium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 101.1,
+        "display": "101.1"
+      },
+      "cpkColor": "#248F8F",
+      "electronConfiguration": "[Kr]5s1 4d7",
+      "shells": [
+        2,
+        8,
+        18,
+        15,
+        1
+      ],
+      "electronegativity": 2.2,
+      "atomicRadius": 207,
+      "firstIonizationEnergy": 7.361,
+      "electronAffinity": 1.05,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2607,
+      "boilingPoint": 4423,
+      "density": 12.1,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1827",
+      "period": 5,
+      "group": 8,
+      "series": "main",
+      "row": 5,
+      "column": 8
+    },
+    {
+      "atomicNumber": 45,
+      "symbol": "Rh",
+      "name": "Rhodium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 102.9055,
+        "display": "102.9055"
+      },
+      "cpkColor": "#0A7D8C",
+      "electronConfiguration": "[Kr]5s1 4d8",
+      "shells": [
+        2,
+        8,
+        18,
+        16,
+        1
+      ],
+      "electronegativity": 2.28,
+      "atomicRadius": 195,
+      "firstIonizationEnergy": 7.459,
+      "electronAffinity": 1.137,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2237,
+      "boilingPoint": 3968,
+      "density": 12.4,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1803",
+      "period": 5,
+      "group": 9,
+      "series": "main",
+      "row": 5,
+      "column": 9
+    },
+    {
+      "atomicNumber": 46,
+      "symbol": "Pd",
+      "name": "Palladium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 106.42,
+        "display": "106.42"
+      },
+      "cpkColor": "#6985",
+      "electronConfiguration": "[Kr]4d10",
+      "shells": [
+        2,
+        8,
+        18,
+        18
+      ],
+      "electronegativity": 2.2,
+      "atomicRadius": 202,
+      "firstIonizationEnergy": 8.337,
+      "electronAffinity": 0.557,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1828.05,
+      "boilingPoint": 3236,
+      "density": 12,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1803",
+      "period": 5,
+      "group": 10,
+      "series": "main",
+      "row": 5,
+      "column": 10
+    },
+    {
+      "atomicNumber": 47,
+      "symbol": "Ag",
+      "name": "Silver",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 107.868,
+        "display": "107.868"
+      },
+      "cpkColor": "#C0C0C0",
+      "electronConfiguration": "[Kr]5s1 4d10",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        1
+      ],
+      "electronegativity": 1.93,
+      "atomicRadius": 172,
+      "firstIonizationEnergy": 7.576,
+      "electronAffinity": 1.302,
+      "oxidationStates": [
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1234.93,
+      "boilingPoint": 2435,
+      "density": 10.501,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "Ancient",
+      "period": 5,
+      "group": 11,
+      "series": "main",
+      "row": 5,
+      "column": 11
+    },
+    {
+      "atomicNumber": 48,
+      "symbol": "Cd",
+      "name": "Cadmium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 112.41,
+        "display": "112.41"
+      },
+      "cpkColor": "#FFD98F",
+      "electronConfiguration": "[Kr]5s2 4d10",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        2
+      ],
+      "electronegativity": 1.69,
+      "atomicRadius": 158,
+      "firstIonizationEnergy": 8.994,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 594.22,
+      "boilingPoint": 1040,
+      "density": 8.69,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1817",
+      "period": 5,
+      "group": 12,
+      "series": "main",
+      "row": 5,
+      "column": 12
+    },
+    {
+      "atomicNumber": 49,
+      "symbol": "In",
+      "name": "Indium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 114.818,
+        "display": "114.818"
+      },
+      "cpkColor": "#A67573",
+      "electronConfiguration": "[Kr]5s2 4d10 5p1",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        3
+      ],
+      "electronegativity": 1.78,
+      "atomicRadius": 193,
+      "firstIonizationEnergy": 5.786,
+      "electronAffinity": 0.3,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 429.75,
+      "boilingPoint": 2345,
+      "density": 7.31,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "1863",
+      "period": 5,
+      "group": 13,
+      "series": "main",
+      "row": 5,
+      "column": 13
+    },
+    {
+      "atomicNumber": 50,
+      "symbol": "Sn",
+      "name": "Tin",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 118.71,
+        "display": "118.71"
+      },
+      "cpkColor": "#668080",
+      "electronConfiguration": "[Kr]5s2 4d10 5p2",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        4
+      ],
+      "electronegativity": 1.96,
+      "atomicRadius": 217,
+      "firstIonizationEnergy": 7.344,
+      "electronAffinity": 1.2,
+      "oxidationStates": [
+        "+4",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 505.08,
+      "boilingPoint": 2875,
+      "density": 7.287,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "Ancient",
+      "period": 5,
+      "group": 14,
+      "series": "main",
+      "row": 5,
+      "column": 14
+    },
+    {
+      "atomicNumber": 51,
+      "symbol": "Sb",
+      "name": "Antimony",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 121.76,
+        "display": "121.760"
+      },
+      "cpkColor": "#9E63B5",
+      "electronConfiguration": "[Kr]5s2 4d10 5p3",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        5
+      ],
+      "electronegativity": 2.05,
+      "atomicRadius": 206,
+      "firstIonizationEnergy": 8.64,
+      "electronAffinity": 1.07,
+      "oxidationStates": [
+        "+5",
+        "+3",
+        "-3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 903.78,
+      "boilingPoint": 1860,
+      "density": 6.685,
+      "family": "metalloid",
+      "familyLabel": "Metalloid",
+      "yearDiscovered": "Ancient",
+      "period": 5,
+      "group": 15,
+      "series": "main",
+      "row": 5,
+      "column": 15
+    },
+    {
+      "atomicNumber": 52,
+      "symbol": "Te",
+      "name": "Tellurium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 127.6,
+        "display": "127.6"
+      },
+      "cpkColor": "#D47A00",
+      "electronConfiguration": "[Kr]5s2 4d10 5p4",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        6
+      ],
+      "electronegativity": 2.1,
+      "atomicRadius": 206,
+      "firstIonizationEnergy": 9.01,
+      "electronAffinity": 1.971,
+      "oxidationStates": [
+        "+6",
+        "+4",
+        "-2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 722.66,
+      "boilingPoint": 1261,
+      "density": 6.232,
+      "family": "metalloid",
+      "familyLabel": "Metalloid",
+      "yearDiscovered": "1782",
+      "period": 5,
+      "group": 16,
+      "series": "main",
+      "row": 5,
+      "column": 16
+    },
+    {
+      "atomicNumber": 53,
+      "symbol": "I",
+      "name": "Iodine",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 126.9045,
+        "display": "126.9045"
+      },
+      "cpkColor": "#940094",
+      "electronConfiguration": "[Kr]5s2 4d10 5p5",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        7
+      ],
+      "electronegativity": 2.66,
+      "atomicRadius": 198,
+      "firstIonizationEnergy": 10.451,
+      "electronAffinity": 3.059,
+      "oxidationStates": [
+        "+7",
+        "+5",
+        "+1",
+        "-1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 386.85,
+      "boilingPoint": 457.55,
+      "density": 4.93,
+      "family": "halogen",
+      "familyLabel": "Halogen",
+      "yearDiscovered": "1811",
+      "period": 5,
+      "group": 17,
+      "series": "main",
+      "row": 5,
+      "column": 17
+    },
+    {
+      "atomicNumber": 54,
+      "symbol": "Xe",
+      "name": "Xenon",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 131.29,
+        "display": "131.29"
+      },
+      "cpkColor": "#429EB0",
+      "electronConfiguration": "[Kr]5s2 4d10 5p6",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        8
+      ],
+      "electronegativity": 2.6,
+      "atomicRadius": 216,
+      "firstIonizationEnergy": 12.13,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "0"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 161.36,
+      "boilingPoint": 165.03,
+      "density": 0.005887,
+      "family": "noble-gas",
+      "familyLabel": "Noble gas",
+      "yearDiscovered": "1898",
+      "period": 5,
+      "group": 18,
+      "series": "main",
+      "row": 5,
+      "column": 18
+    },
+    {
+      "atomicNumber": 55,
+      "symbol": "Cs",
+      "name": "Cesium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 132.905452,
+        "display": "132.9054520"
+      },
+      "cpkColor": "#57178F",
+      "electronConfiguration": "[Xe]6s1",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        8,
+        1
+      ],
+      "electronegativity": 0.79,
+      "atomicRadius": 343,
+      "firstIonizationEnergy": 3.894,
+      "electronAffinity": 0.472,
+      "oxidationStates": [
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 301.59,
+      "boilingPoint": 944,
+      "density": 1.93,
+      "family": "alkali-metal",
+      "familyLabel": "Alkali metal",
+      "yearDiscovered": "1860",
+      "period": 6,
+      "group": 1,
+      "series": "main",
+      "row": 6,
+      "column": 1
+    },
+    {
+      "atomicNumber": 56,
+      "symbol": "Ba",
+      "name": "Barium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 137.33,
+        "display": "137.33"
+      },
+      "cpkColor": "#00C900",
+      "electronConfiguration": "[Xe]6s2",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        8,
+        2
+      ],
+      "electronegativity": 0.89,
+      "atomicRadius": 268,
+      "firstIonizationEnergy": 5.212,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1000,
+      "boilingPoint": 2170,
+      "density": 3.62,
+      "family": "alkaline-earth",
+      "familyLabel": "Alkaline earth metal",
+      "yearDiscovered": "1808",
+      "period": 6,
+      "group": 2,
+      "series": "main",
+      "row": 6,
+      "column": 2
+    },
+    {
+      "atomicNumber": 57,
+      "symbol": "La",
+      "name": "Lanthanum",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 138.9055,
+        "display": "138.9055"
+      },
+      "cpkColor": "#70D4FF",
+      "electronConfiguration": "[Xe]6s2 5d1",
+      "shells": [
+        2,
+        8,
+        18,
+        18,
+        9,
+        2
+      ],
+      "electronegativity": 1.1,
+      "atomicRadius": 240,
+      "firstIonizationEnergy": 5.577,
+      "electronAffinity": 0.5,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1191,
+      "boilingPoint": 3737,
+      "density": 6.15,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1839",
+      "period": 6,
+      "group": 3,
+      "series": "main",
+      "row": 6,
+      "column": 3
+    },
+    {
+      "atomicNumber": 58,
+      "symbol": "Ce",
+      "name": "Cerium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 140.116,
+        "display": "140.116"
+      },
+      "cpkColor": "#FFFFC7",
+      "electronConfiguration": "[Xe]6s2 4f1 5d1",
+      "shells": [
+        2,
+        8,
+        18,
+        19,
+        9,
+        2
+      ],
+      "electronegativity": 1.12,
+      "atomicRadius": 235,
+      "firstIonizationEnergy": 5.539,
+      "electronAffinity": 0.5,
+      "oxidationStates": [
+        "+4",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1071,
+      "boilingPoint": 3697,
+      "density": 6.77,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1803",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 3
+    },
+    {
+      "atomicNumber": 59,
+      "symbol": "Pr",
+      "name": "Praseodymium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 140.90766,
+        "display": "140.90766"
+      },
+      "cpkColor": "#D9FFC7",
+      "electronConfiguration": "[Xe]6s2 4f3",
+      "shells": [
+        2,
+        8,
+        18,
+        21,
+        8,
+        2
+      ],
+      "electronegativity": 1.13,
+      "atomicRadius": 239,
+      "firstIonizationEnergy": 5.464,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1204,
+      "boilingPoint": 3793,
+      "density": 6.77,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1885",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 4
+    },
+    {
+      "atomicNumber": 60,
+      "symbol": "Nd",
+      "name": "Neodymium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 144.24,
+        "display": "144.24"
+      },
+      "cpkColor": "#C7FFC7",
+      "electronConfiguration": "[Xe]6s2 4f4",
+      "shells": [
+        2,
+        8,
+        18,
+        22,
+        8,
+        2
+      ],
+      "electronegativity": 1.14,
+      "atomicRadius": 229,
+      "firstIonizationEnergy": 5.525,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1294,
+      "boilingPoint": 3347,
+      "density": 7.01,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1885",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 5
+    },
+    {
+      "atomicNumber": 61,
+      "symbol": "Pm",
+      "name": "Promethium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 144.91276,
+        "display": "144.91276"
+      },
+      "cpkColor": "#A3FFC7",
+      "electronConfiguration": "[Xe]6s2 4f5",
+      "shells": [
+        2,
+        8,
+        18,
+        23,
+        8,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": 236,
+      "firstIonizationEnergy": 5.55,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1315,
+      "boilingPoint": 3273,
+      "density": 7.26,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1945",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 6
+    },
+    {
+      "atomicNumber": 62,
+      "symbol": "Sm",
+      "name": "Samarium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 150.4,
+        "display": "150.4"
+      },
+      "cpkColor": "#8FFFC7",
+      "electronConfiguration": "[Xe]6s2 4f6",
+      "shells": [
+        2,
+        8,
+        18,
+        24,
+        8,
+        2
+      ],
+      "electronegativity": 1.17,
+      "atomicRadius": 229,
+      "firstIonizationEnergy": 5.644,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1347,
+      "boilingPoint": 2067,
+      "density": 7.52,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1879",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 7
+    },
+    {
+      "atomicNumber": 63,
+      "symbol": "Eu",
+      "name": "Europium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 151.964,
+        "display": "151.964"
+      },
+      "cpkColor": "#61FFC7",
+      "electronConfiguration": "[Xe]6s2 4f7",
+      "shells": [
+        2,
+        8,
+        18,
+        25,
+        8,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": 233,
+      "firstIonizationEnergy": 5.67,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1095,
+      "boilingPoint": 1802,
+      "density": 5.24,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1901",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 8
+    },
+    {
+      "atomicNumber": 64,
+      "symbol": "Gd",
+      "name": "Gadolinium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 157.25,
+        "display": "157.25"
+      },
+      "cpkColor": "#45FFC7",
+      "electronConfiguration": "[Xe]6s2 4f7 5d1",
+      "shells": [
+        2,
+        8,
+        18,
+        25,
+        9,
+        2
+      ],
+      "electronegativity": 1.2,
+      "atomicRadius": 237,
+      "firstIonizationEnergy": 6.15,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1586,
+      "boilingPoint": 3546,
+      "density": 7.9,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1880",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 9
+    },
+    {
+      "atomicNumber": 65,
+      "symbol": "Tb",
+      "name": "Terbium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 158.92535,
+        "display": "158.92535"
+      },
+      "cpkColor": "#30FFC7",
+      "electronConfiguration": "[Xe]6s2 4f9",
+      "shells": [
+        2,
+        8,
+        18,
+        27,
+        8,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": 221,
+      "firstIonizationEnergy": 5.864,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1629,
+      "boilingPoint": 3503,
+      "density": 8.23,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1843",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 10
+    },
+    {
+      "atomicNumber": 66,
+      "symbol": "Dy",
+      "name": "Dysprosium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 162.5,
+        "display": "162.500"
+      },
+      "cpkColor": "#1FFFC7",
+      "electronConfiguration": "[Xe]6s2 4f10",
+      "shells": [
+        2,
+        8,
+        18,
+        28,
+        8,
+        2
+      ],
+      "electronegativity": 1.22,
+      "atomicRadius": 229,
+      "firstIonizationEnergy": 5.939,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1685,
+      "boilingPoint": 2840,
+      "density": 8.55,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1886",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 11
+    },
+    {
+      "atomicNumber": 67,
+      "symbol": "Ho",
+      "name": "Holmium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 164.93033,
+        "display": "164.93033"
+      },
+      "cpkColor": "#00FF9C",
+      "electronConfiguration": "[Xe]6s2 4f11",
+      "shells": [
+        2,
+        8,
+        18,
+        29,
+        8,
+        2
+      ],
+      "electronegativity": 1.23,
+      "atomicRadius": 216,
+      "firstIonizationEnergy": 6.022,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1747,
+      "boilingPoint": 2973,
+      "density": 8.8,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1878",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 12
+    },
+    {
+      "atomicNumber": 68,
+      "symbol": "Er",
+      "name": "Erbium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 167.26,
+        "display": "167.26"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Xe]6s2 4f12",
+      "shells": [
+        2,
+        8,
+        18,
+        30,
+        8,
+        2
+      ],
+      "electronegativity": 1.24,
+      "atomicRadius": 235,
+      "firstIonizationEnergy": 6.108,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1802,
+      "boilingPoint": 3141,
+      "density": 9.07,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1843",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 13
+    },
+    {
+      "atomicNumber": 69,
+      "symbol": "Tm",
+      "name": "Thulium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 168.93422,
+        "display": "168.93422"
+      },
+      "cpkColor": "#00D452",
+      "electronConfiguration": "[Xe]6s2 4f13",
+      "shells": [
+        2,
+        8,
+        18,
+        31,
+        8,
+        2
+      ],
+      "electronegativity": 1.25,
+      "atomicRadius": 227,
+      "firstIonizationEnergy": 6.184,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1818,
+      "boilingPoint": 2223,
+      "density": 9.32,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1879",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 14
+    },
+    {
+      "atomicNumber": 70,
+      "symbol": "Yb",
+      "name": "Ytterbium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 173.05,
+        "display": "173.05"
+      },
+      "cpkColor": "#00BF38",
+      "electronConfiguration": "[Xe]6s2 4f14",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        8,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": 242,
+      "firstIonizationEnergy": 6.254,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1092,
+      "boilingPoint": 1469,
+      "density": 6.9,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1878",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 15
+    },
+    {
+      "atomicNumber": 71,
+      "symbol": "Lu",
+      "name": "Lutetium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 174.9667,
+        "display": "174.9667"
+      },
+      "cpkColor": "#00AB24",
+      "electronConfiguration": "[Xe]6s2 4f14 5d1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        9,
+        2
+      ],
+      "electronegativity": 1.27,
+      "atomicRadius": 221,
+      "firstIonizationEnergy": 5.426,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1936,
+      "boilingPoint": 3675,
+      "density": 9.84,
+      "family": "lanthanide",
+      "familyLabel": "Lanthanide",
+      "yearDiscovered": "1907",
+      "period": 6,
+      "group": null,
+      "series": "lanthanide",
+      "row": 9,
+      "column": 16
+    },
+    {
+      "atomicNumber": 72,
+      "symbol": "Hf",
+      "name": "Hafnium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 178.49,
+        "display": "178.49"
+      },
+      "cpkColor": "#4DC2FF",
+      "electronConfiguration": "[Xe]6s2 4f14 5d2",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        10,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": 212,
+      "firstIonizationEnergy": 6.825,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2506,
+      "boilingPoint": 4876,
+      "density": 13.3,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1923",
+      "period": 6,
+      "group": 4,
+      "series": "main",
+      "row": 6,
+      "column": 4
+    },
+    {
+      "atomicNumber": 73,
+      "symbol": "Ta",
+      "name": "Tantalum",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 180.9479,
+        "display": "180.9479"
+      },
+      "cpkColor": "#4DA6FF",
+      "electronConfiguration": "[Xe]6s2 4f14 5d3",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        11,
+        2
+      ],
+      "electronegativity": 1.5,
+      "atomicRadius": 217,
+      "firstIonizationEnergy": 7.89,
+      "electronAffinity": 0.322,
+      "oxidationStates": [
+        "+5"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 3290,
+      "boilingPoint": 5731,
+      "density": 16.4,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1802",
+      "period": 6,
+      "group": 5,
+      "series": "main",
+      "row": 6,
+      "column": 5
+    },
+    {
+      "atomicNumber": 74,
+      "symbol": "W",
+      "name": "Tungsten",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 183.84,
+        "display": "183.84"
+      },
+      "cpkColor": "#2194D6",
+      "electronConfiguration": "[Xe]6s2 4f14 5d4",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        12,
+        2
+      ],
+      "electronegativity": 2.36,
+      "atomicRadius": 210,
+      "firstIonizationEnergy": 7.98,
+      "electronAffinity": 0.815,
+      "oxidationStates": [
+        "+6"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 3695,
+      "boilingPoint": 5828,
+      "density": 19.3,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1783",
+      "period": 6,
+      "group": 6,
+      "series": "main",
+      "row": 6,
+      "column": 6
+    },
+    {
+      "atomicNumber": 75,
+      "symbol": "Re",
+      "name": "Rhenium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 186.207,
+        "display": "186.207"
+      },
+      "cpkColor": "#267DAB",
+      "electronConfiguration": "[Xe]6s2 4f14 5d5",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        13,
+        2
+      ],
+      "electronegativity": 1.9,
+      "atomicRadius": 217,
+      "firstIonizationEnergy": 7.88,
+      "electronAffinity": 0.15,
+      "oxidationStates": [
+        "+7",
+        "+6",
+        "+4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 3459,
+      "boilingPoint": 5869,
+      "density": 20.8,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1925",
+      "period": 6,
+      "group": 7,
+      "series": "main",
+      "row": 6,
+      "column": 7
+    },
+    {
+      "atomicNumber": 76,
+      "symbol": "Os",
+      "name": "Osmium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 190.2,
+        "display": "190.2"
+      },
+      "cpkColor": "#266696",
+      "electronConfiguration": "[Xe]6s2 4f14 5d6",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        14,
+        2
+      ],
+      "electronegativity": 2.2,
+      "atomicRadius": 216,
+      "firstIonizationEnergy": 8.7,
+      "electronAffinity": 1.1,
+      "oxidationStates": [
+        "+4",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 3306,
+      "boilingPoint": 5285,
+      "density": 22.57,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1803",
+      "period": 6,
+      "group": 8,
+      "series": "main",
+      "row": 6,
+      "column": 8
+    },
+    {
+      "atomicNumber": 77,
+      "symbol": "Ir",
+      "name": "Iridium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 192.22,
+        "display": "192.22"
+      },
+      "cpkColor": "#175487",
+      "electronConfiguration": "[Xe]6s2 4f14 5d7",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        15,
+        2
+      ],
+      "electronegativity": 2.2,
+      "atomicRadius": 202,
+      "firstIonizationEnergy": 9.1,
+      "electronAffinity": 1.565,
+      "oxidationStates": [
+        "+4",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2719,
+      "boilingPoint": 4701,
+      "density": 22.42,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1803",
+      "period": 6,
+      "group": 9,
+      "series": "main",
+      "row": 6,
+      "column": 9
+    },
+    {
+      "atomicNumber": 78,
+      "symbol": "Pt",
+      "name": "Platinum",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 195.08,
+        "display": "195.08"
+      },
+      "cpkColor": "#D0D0E0",
+      "electronConfiguration": "[Xe]6s1 4f14 5d9",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        17,
+        1
+      ],
+      "electronegativity": 2.28,
+      "atomicRadius": 209,
+      "firstIonizationEnergy": 9,
+      "electronAffinity": 2.128,
+      "oxidationStates": [
+        "+4",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2041.55,
+      "boilingPoint": 4098,
+      "density": 21.46,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1735",
+      "period": 6,
+      "group": 10,
+      "series": "main",
+      "row": 6,
+      "column": 10
+    },
+    {
+      "atomicNumber": 79,
+      "symbol": "Au",
+      "name": "Gold",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 196.96657,
+        "display": "196.96657"
+      },
+      "cpkColor": "#FFD123",
+      "electronConfiguration": "[Xe]6s1 4f14 5d10",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        1
+      ],
+      "electronegativity": 2.54,
+      "atomicRadius": 166,
+      "firstIonizationEnergy": 9.226,
+      "electronAffinity": 2.309,
+      "oxidationStates": [
+        "+3",
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1337.33,
+      "boilingPoint": 3129,
+      "density": 19.282,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "Ancient",
+      "period": 6,
+      "group": 11,
+      "series": "main",
+      "row": 6,
+      "column": 11
+    },
+    {
+      "atomicNumber": 80,
+      "symbol": "Hg",
+      "name": "Mercury",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 200.59,
+        "display": "200.59"
+      },
+      "cpkColor": "#B8B8D0",
+      "electronConfiguration": "[Xe]6s2 4f14 5d10",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        2
+      ],
+      "electronegativity": 2,
+      "atomicRadius": 209,
+      "firstIonizationEnergy": 10.438,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2",
+        "+1"
+      ],
+      "standardState": "Liquid",
+      "meltingPoint": 234.32,
+      "boilingPoint": 629.88,
+      "density": 13.5336,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "Ancient",
+      "period": 6,
+      "group": 12,
+      "series": "main",
+      "row": 6,
+      "column": 12
+    },
+    {
+      "atomicNumber": 81,
+      "symbol": "Tl",
+      "name": "Thallium",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 204.3835,
+        "minimum": 204.382,
+        "maximum": 204.385,
+        "display": "[204.382, 204.385]"
+      },
+      "cpkColor": "#A6544D",
+      "electronConfiguration": "[Xe]6s2 4f14 5d10 6p1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        3
+      ],
+      "electronegativity": 1.62,
+      "atomicRadius": 196,
+      "firstIonizationEnergy": 6.108,
+      "electronAffinity": 0.2,
+      "oxidationStates": [
+        "+3",
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 577,
+      "boilingPoint": 1746,
+      "density": 11.8,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "1861",
+      "period": 6,
+      "group": 13,
+      "series": "main",
+      "row": 6,
+      "column": 13
+    },
+    {
+      "atomicNumber": 82,
+      "symbol": "Pb",
+      "name": "Lead",
+      "atomicWeight": {
+        "kind": "interval",
+        "value": 207.04,
+        "minimum": 206.14,
+        "maximum": 207.94,
+        "display": "[206.14, 207.94]"
+      },
+      "cpkColor": "#575961",
+      "electronConfiguration": "[Xe]6s2 4f14 5d10 6p2",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        4
+      ],
+      "electronegativity": 2.33,
+      "atomicRadius": 202,
+      "firstIonizationEnergy": 7.417,
+      "electronAffinity": 0.36,
+      "oxidationStates": [
+        "+4",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 600.61,
+      "boilingPoint": 2022,
+      "density": 11.342,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "Ancient",
+      "period": 6,
+      "group": 14,
+      "series": "main",
+      "row": 6,
+      "column": 14
+    },
+    {
+      "atomicNumber": 83,
+      "symbol": "Bi",
+      "name": "Bismuth",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 208.9804,
+        "display": "208.98040"
+      },
+      "cpkColor": "#9E4FB5",
+      "electronConfiguration": "[Xe]6s2 4f14 5d10 6p3",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        5
+      ],
+      "electronegativity": 2.02,
+      "atomicRadius": 207,
+      "firstIonizationEnergy": 7.289,
+      "electronAffinity": 0.946,
+      "oxidationStates": [
+        "+5",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 544.55,
+      "boilingPoint": 1837,
+      "density": 9.807,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "1753",
+      "period": 6,
+      "group": 15,
+      "series": "main",
+      "row": 6,
+      "column": 15
+    },
+    {
+      "atomicNumber": 84,
+      "symbol": "Po",
+      "name": "Polonium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 208.98243,
+        "display": "208.98243"
+      },
+      "cpkColor": "#AB5C00",
+      "electronConfiguration": "[Xe]6s2 4f14 5d10 6p4",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        6
+      ],
+      "electronegativity": 2,
+      "atomicRadius": 197,
+      "firstIonizationEnergy": 8.417,
+      "electronAffinity": 1.9,
+      "oxidationStates": [
+        "+4",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 527,
+      "boilingPoint": 1235,
+      "density": 9.32,
+      "family": "metalloid",
+      "familyLabel": "Metalloid",
+      "yearDiscovered": "1898",
+      "period": 6,
+      "group": 16,
+      "series": "main",
+      "row": 6,
+      "column": 16
+    },
+    {
+      "atomicNumber": 85,
+      "symbol": "At",
+      "name": "Astatine",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 209.98715,
+        "display": "209.98715"
+      },
+      "cpkColor": "#754F45",
+      "electronConfiguration": "[Xe]6s2 4f14 5d10 6p5",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        7
+      ],
+      "electronegativity": 2.2,
+      "atomicRadius": 202,
+      "firstIonizationEnergy": 9.5,
+      "electronAffinity": 2.8,
+      "oxidationStates": [
+        "7",
+        "5",
+        "3",
+        "1",
+        "-1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 575,
+      "boilingPoint": null,
+      "density": 7,
+      "family": "halogen",
+      "familyLabel": "Halogen",
+      "yearDiscovered": "1940",
+      "period": 6,
+      "group": 17,
+      "series": "main",
+      "row": 6,
+      "column": 17
+    },
+    {
+      "atomicNumber": 86,
+      "symbol": "Rn",
+      "name": "Radon",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 222.01758,
+        "display": "222.01758"
+      },
+      "cpkColor": "#428296",
+      "electronConfiguration": "[Xe]6s2 4f14 5d10 6p6",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        8
+      ],
+      "electronegativity": null,
+      "atomicRadius": 220,
+      "firstIonizationEnergy": 10.745,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "0"
+      ],
+      "standardState": "Gas",
+      "meltingPoint": 202,
+      "boilingPoint": 211.45,
+      "density": 0.00973,
+      "family": "noble-gas",
+      "familyLabel": "Noble gas",
+      "yearDiscovered": "1900",
+      "period": 6,
+      "group": 18,
+      "series": "main",
+      "row": 6,
+      "column": 18
+    },
+    {
+      "atomicNumber": 87,
+      "symbol": "Fr",
+      "name": "Francium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 223.01973,
+        "display": "223.01973"
+      },
+      "cpkColor": "#420066",
+      "electronConfiguration": "[Rn]7s1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        8,
+        1
+      ],
+      "electronegativity": 0.7,
+      "atomicRadius": 348,
+      "firstIonizationEnergy": 3.9,
+      "electronAffinity": 0.47,
+      "oxidationStates": [
+        "+1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 300,
+      "boilingPoint": null,
+      "density": null,
+      "family": "alkali-metal",
+      "familyLabel": "Alkali metal",
+      "yearDiscovered": "1939",
+      "period": 7,
+      "group": 1,
+      "series": "main",
+      "row": 7,
+      "column": 1
+    },
+    {
+      "atomicNumber": 88,
+      "symbol": "Ra",
+      "name": "Radium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 226.02541,
+        "display": "226.02541"
+      },
+      "cpkColor": "#007D00",
+      "electronConfiguration": "[Rn]7s2",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        8,
+        2
+      ],
+      "electronegativity": 0.9,
+      "atomicRadius": 283,
+      "firstIonizationEnergy": 5.279,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 973,
+      "boilingPoint": 1413,
+      "density": 5,
+      "family": "alkaline-earth",
+      "familyLabel": "Alkaline earth metal",
+      "yearDiscovered": "1898",
+      "period": 7,
+      "group": 2,
+      "series": "main",
+      "row": 7,
+      "column": 2
+    },
+    {
+      "atomicNumber": 89,
+      "symbol": "Ac",
+      "name": "Actinium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 227.02775,
+        "display": "227.02775"
+      },
+      "cpkColor": "#70ABFA",
+      "electronConfiguration": "[Rn]7s2 6d1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        9,
+        2
+      ],
+      "electronegativity": 1.1,
+      "atomicRadius": 260,
+      "firstIonizationEnergy": 5.17,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1324,
+      "boilingPoint": 3471,
+      "density": 10.07,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1899",
+      "period": 7,
+      "group": 3,
+      "series": "main",
+      "row": 7,
+      "column": 3
+    },
+    {
+      "atomicNumber": 90,
+      "symbol": "Th",
+      "name": "Thorium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 232.038,
+        "display": "232.038"
+      },
+      "cpkColor": "#00BAFF",
+      "electronConfiguration": "[Rn]7s2 6d2",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        18,
+        10,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": 237,
+      "firstIonizationEnergy": 6.08,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 2023,
+      "boilingPoint": 5061,
+      "density": 11.72,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1828",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 3
+    },
+    {
+      "atomicNumber": 91,
+      "symbol": "Pa",
+      "name": "Protactinium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 231.03588,
+        "display": "231.03588"
+      },
+      "cpkColor": "#00A1FF",
+      "electronConfiguration": "[Rn]7s2 5f2 6d1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        20,
+        9,
+        2
+      ],
+      "electronegativity": 1.5,
+      "atomicRadius": 243,
+      "firstIonizationEnergy": 5.89,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+5",
+        "+4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1845,
+      "boilingPoint": null,
+      "density": 15.37,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1913",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 4
+    },
+    {
+      "atomicNumber": 92,
+      "symbol": "U",
+      "name": "Uranium",
+      "atomicWeight": {
+        "kind": "standard",
+        "value": 238.0289,
+        "display": "238.0289"
+      },
+      "cpkColor": "#008FFF",
+      "electronConfiguration": "[Rn]7s2 5f3 6d1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        21,
+        9,
+        2
+      ],
+      "electronegativity": 1.38,
+      "atomicRadius": 240,
+      "firstIonizationEnergy": 6.194,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+6",
+        "+5",
+        "+4",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1408,
+      "boilingPoint": 4404,
+      "density": 18.95,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1789",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 5
+    },
+    {
+      "atomicNumber": 93,
+      "symbol": "Np",
+      "name": "Neptunium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 237.048172,
+        "display": "237.048172"
+      },
+      "cpkColor": "#0080FF",
+      "electronConfiguration": "[Rn]7s2 5f4 6d1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        22,
+        9,
+        2
+      ],
+      "electronegativity": 1.36,
+      "atomicRadius": 221,
+      "firstIonizationEnergy": 6.266,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+6",
+        "+5",
+        "+4",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 917,
+      "boilingPoint": 4175,
+      "density": 20.25,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1940",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 6
+    },
+    {
+      "atomicNumber": 94,
+      "symbol": "Pu",
+      "name": "Plutonium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 244.0642,
+        "display": "244.06420"
+      },
+      "cpkColor": "#006BFF",
+      "electronConfiguration": "[Rn]7s2 5f6",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        24,
+        8,
+        2
+      ],
+      "electronegativity": 1.28,
+      "atomicRadius": 243,
+      "firstIonizationEnergy": 6.06,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+6",
+        "+5",
+        "+4",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 913,
+      "boilingPoint": 3501,
+      "density": 19.84,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1940",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 7
+    },
+    {
+      "atomicNumber": 95,
+      "symbol": "Am",
+      "name": "Americium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 243.06138,
+        "display": "243.061380"
+      },
+      "cpkColor": "#545CF2",
+      "electronConfiguration": "[Rn]7s2 5f7",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        25,
+        8,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": 244,
+      "firstIonizationEnergy": 5.993,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+6",
+        "+5",
+        "+4",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1449,
+      "boilingPoint": 2284,
+      "density": 13.69,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1944",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 8
+    },
+    {
+      "atomicNumber": 96,
+      "symbol": "Cm",
+      "name": "Curium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 247.07035,
+        "display": "247.07035"
+      },
+      "cpkColor": "#785CE3",
+      "electronConfiguration": "[Rn]7s2 5f7 6d1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        25,
+        9,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": 245,
+      "firstIonizationEnergy": 6.02,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1618,
+      "boilingPoint": 3400,
+      "density": 13.51,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1944",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 9
+    },
+    {
+      "atomicNumber": 97,
+      "symbol": "Bk",
+      "name": "Berkelium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 247.07031,
+        "display": "247.07031"
+      },
+      "cpkColor": "#8A4FE3",
+      "electronConfiguration": "[Rn]7s2 5f9",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        27,
+        8,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": 244,
+      "firstIonizationEnergy": 6.23,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+4",
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1323,
+      "boilingPoint": null,
+      "density": 14,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1949",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 10
+    },
+    {
+      "atomicNumber": 98,
+      "symbol": "Cf",
+      "name": "Californium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 251.07959,
+        "display": "251.07959"
+      },
+      "cpkColor": "#A136D4",
+      "electronConfiguration": "[Rn]7s2 5f10",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        28,
+        8,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": 245,
+      "firstIonizationEnergy": 6.3,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1173,
+      "boilingPoint": null,
+      "density": null,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1950",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 11
+    },
+    {
+      "atomicNumber": 99,
+      "symbol": "Es",
+      "name": "Einsteinium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 252.083,
+        "display": "252.0830"
+      },
+      "cpkColor": "#B31FD4",
+      "electronConfiguration": "[Rn]7s2 5f11",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        29,
+        8,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": 245,
+      "firstIonizationEnergy": 6.42,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1133,
+      "boilingPoint": null,
+      "density": null,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1952",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 12
+    },
+    {
+      "atomicNumber": 100,
+      "symbol": "Fm",
+      "name": "Fermium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 257.09511,
+        "display": "257.09511"
+      },
+      "cpkColor": "#B31FBA",
+      "electronConfiguration": "[Rn] 5f12 7s2",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        30,
+        8,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": null,
+      "firstIonizationEnergy": 6.5,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1800,
+      "boilingPoint": null,
+      "density": null,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1952",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 13
+    },
+    {
+      "atomicNumber": 101,
+      "symbol": "Md",
+      "name": "Mendelevium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 258.09843,
+        "display": "258.09843"
+      },
+      "cpkColor": "#B30DA6",
+      "electronConfiguration": "[Rn]7s2 5f13",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        31,
+        8,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": null,
+      "firstIonizationEnergy": 6.58,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1100,
+      "boilingPoint": null,
+      "density": null,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1955",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 14
+    },
+    {
+      "atomicNumber": 102,
+      "symbol": "No",
+      "name": "Nobelium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 259.101,
+        "display": "259.10100"
+      },
+      "cpkColor": "#BD0D87",
+      "electronConfiguration": "[Rn]7s2 5f14",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        8,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": null,
+      "firstIonizationEnergy": 6.65,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3",
+        "+2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1100,
+      "boilingPoint": null,
+      "density": null,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1957",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 15
+    },
+    {
+      "atomicNumber": 103,
+      "symbol": "Lr",
+      "name": "Lawrencium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 266.12,
+        "display": "266.120"
+      },
+      "cpkColor": "#C70066",
+      "electronConfiguration": "[Rn]7s2 5f14 6d1",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        9,
+        2
+      ],
+      "electronegativity": 1.3,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": 1900,
+      "boilingPoint": null,
+      "density": null,
+      "family": "actinide",
+      "familyLabel": "Actinide",
+      "yearDiscovered": "1961",
+      "period": 7,
+      "group": null,
+      "series": "actinide",
+      "row": 10,
+      "column": 16
+    },
+    {
+      "atomicNumber": 104,
+      "symbol": "Rf",
+      "name": "Rutherfordium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 267.122,
+        "display": "267.122"
+      },
+      "cpkColor": "#CC0059",
+      "electronConfiguration": "[Rn]7s2 5f14 6d2",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        10,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+4"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1964",
+      "period": 7,
+      "group": 4,
+      "series": "main",
+      "row": 7,
+      "column": 4
+    },
+    {
+      "atomicNumber": 105,
+      "symbol": "Db",
+      "name": "Dubnium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 268.126,
+        "display": "268.126"
+      },
+      "cpkColor": "#D1004F",
+      "electronConfiguration": "[Rn]7s2 5f14 6d3",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        11,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "5",
+        "4",
+        "3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1967",
+      "period": 7,
+      "group": 5,
+      "series": "main",
+      "row": 7,
+      "column": 5
+    },
+    {
+      "atomicNumber": 106,
+      "symbol": "Sg",
+      "name": "Seaborgium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 269.128,
+        "display": "269.128"
+      },
+      "cpkColor": "#D90045",
+      "electronConfiguration": "[Rn]7s2 5f14 6d4",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        12,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "6",
+        "5",
+        "4",
+        "3",
+        "0"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1974",
+      "period": 7,
+      "group": 6,
+      "series": "main",
+      "row": 7,
+      "column": 6
+    },
+    {
+      "atomicNumber": 107,
+      "symbol": "Bh",
+      "name": "Bohrium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 270.133,
+        "display": "270.133"
+      },
+      "cpkColor": "#E00038",
+      "electronConfiguration": "[Rn]7s2 5f14 6d5",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        13,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "7",
+        "5",
+        "4",
+        "3"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1976",
+      "period": 7,
+      "group": 7,
+      "series": "main",
+      "row": 7,
+      "column": 7
+    },
+    {
+      "atomicNumber": 108,
+      "symbol": "Hs",
+      "name": "Hassium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 269.1336,
+        "display": "269.1336"
+      },
+      "cpkColor": "#E6002E",
+      "electronConfiguration": "[Rn]7s2 5f14 6d6",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        14,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "8",
+        "6",
+        "5",
+        "4",
+        "3",
+        "2"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1984",
+      "period": 7,
+      "group": 8,
+      "series": "main",
+      "row": 7,
+      "column": 8
+    },
+    {
+      "atomicNumber": 109,
+      "symbol": "Mt",
+      "name": "Meitnerium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 277.154,
+        "display": "277.154"
+      },
+      "cpkColor": "#EB0026",
+      "electronConfiguration": "[Rn]7s2 5f14 6d7 (calculated)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        15,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "9",
+        "8",
+        "6",
+        "4",
+        "3",
+        "1"
+      ],
+      "standardState": "Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1982",
+      "period": 7,
+      "group": 9,
+      "series": "main",
+      "row": 7,
+      "column": 9
+    },
+    {
+      "atomicNumber": 110,
+      "symbol": "Ds",
+      "name": "Darmstadtium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 282.166,
+        "display": "282.166"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]7s2 5f14 6d8 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        16,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "8",
+        "6",
+        "4",
+        "2",
+        "0"
+      ],
+      "standardState": "Expected to be a Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1994",
+      "period": 7,
+      "group": 10,
+      "series": "main",
+      "row": 7,
+      "column": 10
+    },
+    {
+      "atomicNumber": 111,
+      "symbol": "Rg",
+      "name": "Roentgenium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 282.169,
+        "display": "282.169"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]7s2 5f14 6d9 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        17,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "5",
+        "3",
+        "1",
+        "-1"
+      ],
+      "standardState": "Expected to be a Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1994",
+      "period": 7,
+      "group": 11,
+      "series": "main",
+      "row": 7,
+      "column": 11
+    },
+    {
+      "atomicNumber": 112,
+      "symbol": "Cn",
+      "name": "Copernicium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 286.179,
+        "display": "286.179"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]7s2 5f14 6d10 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        18,
+        2
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "2",
+        "1",
+        "0"
+      ],
+      "standardState": "Expected to be a Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "transition-metal",
+      "familyLabel": "Transition metal",
+      "yearDiscovered": "1996",
+      "period": 7,
+      "group": 12,
+      "series": "main",
+      "row": 7,
+      "column": 12
+    },
+    {
+      "atomicNumber": 113,
+      "symbol": "Nh",
+      "name": "Nihonium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 286.182,
+        "display": "286.182"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]5f14 6d10 7s2 7p1 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        18,
+        3
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [],
+      "standardState": "Expected to be a Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "2004",
+      "period": 7,
+      "group": 13,
+      "series": "main",
+      "row": 7,
+      "column": 13
+    },
+    {
+      "atomicNumber": 114,
+      "symbol": "Fl",
+      "name": "Flerovium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 290.192,
+        "display": "290.192"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]7s2 7p2 5f14 6d10 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        18,
+        4
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "6",
+        "4",
+        "2",
+        "1",
+        "0"
+      ],
+      "standardState": "Expected to be a Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "1998",
+      "period": 7,
+      "group": 14,
+      "series": "main",
+      "row": 7,
+      "column": 14
+    },
+    {
+      "atomicNumber": 115,
+      "symbol": "Mc",
+      "name": "Moscovium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 290.196,
+        "display": "290.196"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]7s2 7p3 5f14 6d10 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        18,
+        5
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "3",
+        "1"
+      ],
+      "standardState": "Expected to be a Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "2003",
+      "period": 7,
+      "group": 15,
+      "series": "main",
+      "row": 7,
+      "column": 15
+    },
+    {
+      "atomicNumber": 116,
+      "symbol": "Lv",
+      "name": "Livermorium",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 293.205,
+        "display": "293.205"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]7s2 7p4 5f14 6d10 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        18,
+        6
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+4",
+        "+2",
+        "-2"
+      ],
+      "standardState": "Expected to be a Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "post-transition-metal",
+      "familyLabel": "Post-transition metal",
+      "yearDiscovered": "2000",
+      "period": 7,
+      "group": 16,
+      "series": "main",
+      "row": 7,
+      "column": 16
+    },
+    {
+      "atomicNumber": 117,
+      "symbol": "Ts",
+      "name": "Tennessine",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 294.211,
+        "display": "294.211"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]7s2 7p5 5f14 6d10 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        18,
+        7
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+5",
+        "+3",
+        "+1",
+        "-1"
+      ],
+      "standardState": "Expected to be a Solid",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "halogen",
+      "familyLabel": "Halogen",
+      "yearDiscovered": "2010",
+      "period": 7,
+      "group": 17,
+      "series": "main",
+      "row": 7,
+      "column": 17
+    },
+    {
+      "atomicNumber": 118,
+      "symbol": "Og",
+      "name": "Oganesson",
+      "atomicWeight": {
+        "kind": "reference-isotope",
+        "value": 295.216,
+        "display": "295.216"
+      },
+      "cpkColor": null,
+      "electronConfiguration": "[Rn]7s2 7p6 5f14 6d10 (predicted)",
+      "shells": [
+        2,
+        8,
+        18,
+        32,
+        32,
+        18,
+        8
+      ],
+      "electronegativity": null,
+      "atomicRadius": null,
+      "firstIonizationEnergy": null,
+      "electronAffinity": null,
+      "oxidationStates": [
+        "+6",
+        "+4",
+        "+2",
+        "+1",
+        "0",
+        "-1"
+      ],
+      "standardState": "Expected to be a Gas",
+      "meltingPoint": null,
+      "boilingPoint": null,
+      "density": null,
+      "family": "noble-gas",
+      "familyLabel": "Noble gas",
+      "yearDiscovered": "2006",
+      "period": 7,
+      "group": 18,
+      "series": "main",
+      "row": 7,
+      "column": 18
+    }
+  ]
+}

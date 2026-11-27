@@ -1,4 +1,4 @@
-import { ArrowRight, Layers3 } from "lucide-react";
+import { ArrowRight, Atom, Layers3 } from "lucide-react";
 import Link from "next/link";
 import CatalogFooter from "../CatalogFooter/CatalogFooter";
 
@@ -50,6 +50,36 @@ export default function ToolsPage() {
                 <p id="flashcards-summary">Create study decks and practice recall with focused review sessions.</p>
                 <span className="tool-entry-action" aria-hidden="true">Open workspace <ArrowRight size={16} /></span>
               </div>
+            </article>
+          </Link>
+          <Link href="/tools/molecule" className="tools-link" aria-labelledby="molecule-title" aria-describedby="molecule-summary">
+            <article className="tool-entry">
+              <div className="tool-entry-preview tool-molecule-preview" aria-hidden="true">
+                <svg viewBox="0 0 300 160">
+                  <defs>
+                    <radialGradient id="tool-water-oxygen" cx="34%" cy="28%" r="72%"><stop offset="0" stopColor="#fb7185" /><stop offset=".48" stopColor="#dc3545" /><stop offset="1" stopColor="#9f1d2c" /></radialGradient>
+                    <radialGradient id="tool-water-hydrogen" cx="35%" cy="28%" r="72%"><stop offset="0" stopColor="#ffffff" /><stop offset=".58" stopColor="#dbeafe" /><stop offset="1" stopColor="#8aa4c5" /></radialGradient>
+                    <filter id="tool-water-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="5" stdDeviation="4" floodColor="#111827" floodOpacity=".18" /></filter>
+                  </defs>
+                  <g className="tool-water-bonds" filter="url(#tool-water-shadow)"><line x1="129" y1="85" x2="80" y2="119" /><line x1="171" y1="85" x2="220" y2="119" /></g>
+                  <g className="tool-water-atoms" filter="url(#tool-water-shadow)">
+                    <circle className="tool-water-hydrogen" cx="65" cy="129" r="25" /><circle className="tool-water-hydrogen" cx="235" cy="129" r="25" />
+                    <circle className="tool-water-oxygen" cx="150" cy="69" r="43" />
+                    <ellipse className="tool-water-highlight" cx="136" cy="52" rx="13" ry="9" />
+                  </g>
+                  <g className="tool-water-electrons"><circle cx="125" cy="18" r="3" /><circle cx="135" cy="14" r="3" /><circle cx="165" cy="14" r="3" /><circle cx="175" cy="18" r="3" /></g>
+                </svg>
+              </div>
+              <div className="tool-entry-content"><h3 id="molecule-title">Molecule Studio</h3><p id="molecule-summary">Construct Lewis structures with bonds, lone pairs, charges, formulas, and molar masses.</p><span className="tool-entry-action" aria-hidden="true">Open workspace <ArrowRight size={16} /></span></div>
+            </article>
+          </Link>
+          <Link href="/tools/periodic-table" className="tools-link" aria-labelledby="periodic-table-title" aria-describedby="periodic-table-summary">
+            <article className="tool-entry">
+              <div className="tool-entry-preview tool-periodic-preview" aria-hidden="true">
+                <div className="tool-periodic-mini-grid">{["H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar"].map((symbol,index) => <span key={symbol} data-accent={symbol === "O"}>{index + 1}<b>{symbol}</b></span>)}</div>
+                <Atom className="tool-periodic-orbit" size={38} />
+              </div>
+              <div className="tool-entry-content"><h3 id="periodic-table-title">Periodic Table</h3><p id="periodic-table-summary">Explore elements, electron configurations, physical properties, and periodic trends.</p><span className="tool-entry-action" aria-hidden="true">Open reference <ArrowRight size={16} /></span></div>
             </article>
           </Link>
         </section>
