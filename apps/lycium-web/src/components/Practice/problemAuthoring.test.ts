@@ -36,6 +36,15 @@ describe("authored problem types", () => {
     })).toThrow("either decimal places or significant figures");
   });
 
+  it("compiles and generates a symbolic expression interaction", () => {
+    const compiled = compileProblemType(definitions[1]);
+    const generated = generateConversionProblem(compiled, 7);
+    expect(generated.interactions[0]).toMatchObject({ type: "expression" });
+    const interaction = generated.interactions[0];
+    if (interaction.type !== "expression") throw new Error("Expected expression interaction.");
+    expect(interaction.expected).not.toContain("{offset}");
+  });
+
   it("compiles multipart V4 parts, constraints, and metadata into the same runtime", () => {
     const source = advancedDefinitions.find(item => item.id === "limiting-reactant-yield");
     if (!source) throw new Error("Missing multipart fixture.");

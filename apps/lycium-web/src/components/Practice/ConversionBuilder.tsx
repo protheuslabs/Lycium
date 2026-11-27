@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Minus, Plus, RotateCcw } from "lucide-react";
 import { getCancelledQuantityIds, validateConversionChain, type Factor, type Quantity, type Ratio } from "./conversionChain";
 import { validateNumeric } from "./interactionValidation";
 
@@ -74,6 +75,17 @@ export default function ConversionBuilder({ start, target, quantities, ratios, f
           itemIndex === index ? { numerator: item.denominator, denominator: item.numerator } : item))}>Invert</button>}
       </fieldset>)}
       <label className="practice-conversion-result" aria-label="Numerical answer"><span>=</span><input value={answer} inputMode="decimal" onChange={event => onAnswerChange(event.target.value)} /><span>{target.unit} {target.species}</span></label>
+      <div className="practice-factor-controls" aria-label="Conversion factor controls">
+        <button type="button" aria-label="Add conversion factor" disabled={factors.length >= 12} onClick={() => {
+          update([...factors, blank()]); setActive({ index: factors.length, side: "numerator" });
+        }}><Plus size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label="Remove last conversion factor" disabled={factors.length <= 1} onClick={() => {
+          update(factors.slice(0, -1)); setActive({ index: Math.max(0, factors.length - 2), side: "numerator" });
+        }}><Minus size={15} aria-hidden="true" /></button>
+        <button type="button" aria-label="Reset conversion" onClick={() => {
+          update(createBlankFactors(Math.max(1, ratios.length))); onAnswerChange(""); setActive({ index: 0, side: "numerator" });
+        }}><RotateCcw size={14} aria-hidden="true" /></button>
+      </div>
     </div>
     {!disabled && <><p className="practice-builder-instruction">Available quantities</p>
       <div className="practice-quantity-palette" aria-label="Available quantities">

@@ -2,6 +2,8 @@ import ConversionBuilder, { createBlankFactors } from "./ConversionBuilder";
 import type { Factor } from "./conversionChain";
 import type { GeneratedPracticeInteraction } from "./conversionRuntime";
 import { validateChoice, validateNumeric } from "./interactionValidation";
+import { validateExpression } from "./expressionValidation";
+import MathField from "../Math/MathField";
 
 type Props = {
   interaction: GeneratedPracticeInteraction;
@@ -63,9 +65,21 @@ function NumericInteraction({ interaction, serialized, feedback, complete, onCha
       <p role="status">{feedback}</p>
     </section>;
 }
+function ExpressionInteraction({ interaction, serialized, feedback, complete, onChange, onValidate }: Props & { interaction: Extract<GeneratedPracticeInteraction, { type: "expression" }> }) {
+  return <section className="practice-expression">
+    <h3>{interaction.prompt}</h3>
+    <MathField value={serialized} label="Mathematical expression" disabled={complete} onChange={onChange} />
+    {!complete && <button className="practice-primary" type="button" disabled={!serialized.trim()} onClick={async () => {
+      const result = await validateExpression(serialized, interaction.expected);
+      onValidate(result.status, result.message, serialized);
+    }}>Check expression</button>}
+    <p role="status">{feedback}</p>
+  </section>;
+}
 
 export default function PracticeInteraction(props: Props) {
   if (props.interaction.type === "conversion-chain") return <ConversionChainInteraction {...props} interaction={props.interaction} />;
   if (props.interaction.type === "choice") return <ChoiceInteraction {...props} interaction={props.interaction} />;
-  return <NumericInteraction {...props} interaction={props.interaction} />;
+  if (props.interaction.type === "numeric") return <NumericInteraction {...props} interaction={props.interaction} />;
+  return <ExpressionInteraction {...props} interaction={props.interaction} />;
 }

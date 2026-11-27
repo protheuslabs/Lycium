@@ -14,6 +14,7 @@
     "e2e:manual-editing": "playwright test e2e/manual-course-editing.spec.ts"
   },
   "dependencies": {
+    "@cortex-js/compute-engine": "0.152.0",
     "@lycium/contracts": "workspace:*",
     "@lycium/data-access": "workspace:*",
     "function-plot": "^1.26.0",

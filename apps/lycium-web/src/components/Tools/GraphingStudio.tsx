@@ -13,7 +13,7 @@ import GraphLabelsPanel from "./GraphLabelsPanel";
 import GraphAnalysisResults from "./GraphAnalysisResults";
 import OrvaneGuide from "./OrvaneGuide";
 import { numericPoints, type GraphDataset } from "./graphDataset";
-import MathExpressionField from "./MathExpressionField";
+import MathField from "../Math/MathField";
 import { PARAMETER_NAMES, type GraphParameter } from "./graphParameters";
 import type { CoordinatePrecision } from "./graphCoordinates";
 import { parseGraphDocument, type GraphDocument, type GraphLabels, type GraphPoint } from "./graphDocument";
@@ -338,8 +338,10 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                 <div className="graphing-expression-row">
                   <span className="graphing-expression-color" style={{ backgroundColor: expression.color }} aria-hidden="true">{rowOrder.indexOf(`function:${expression.id}`) + 1}</span>
                   <div onPointerDown={() => selectExpression(expression)} onFocus={() => selectExpression(expression)} onClick={() => selectExpression(expression)}>
-                  <MathExpressionField
+                  <MathField
                     label={`Function ${index + 1}`}
+                    format="ascii-math"
+                    variant="graph"
                     invalid={Boolean(errors[expression.id])}
                     describedBy={errors[expression.id] ? `${id}-error-${expression.id}` : undefined}
                     value={expression.expr}
@@ -347,7 +349,7 @@ export default function GraphingStudio({ workspace = false, initialDocument }: {
                       setAdjustments((previous) => ({ ...previous, [expression.id]: defaultAdjustment(value) }));
                       updateExpression(expression.id, { expr: value });
                     }}
-                    onDraftError={(invalid) => setInvalidDrafts((previous) => ({ ...previous, [expression.id]: invalid }))}
+                    onValidityChange={(invalid) => setInvalidDrafts((previous) => ({ ...previous, [expression.id]: invalid }))}
                   />
                   </div>
                   <button type="button" className="graphing-icon-button" aria-label={`Remove function ${index + 1}`} title="Remove function" onClick={() => { setExpressions((previous) => previous.filter(({ id: expressionId }) => expressionId !== expression.id)); setInvalidDrafts((previous) => { const next = { ...previous }; delete next[expression.id]; return next; }); }}>

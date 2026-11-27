@@ -22,5 +22,26 @@
     "answer": { "target": "mass", "interaction": "numeric", "significantFigures": 3 },
     "hints": ["Use m = ρV.", "Multiply density by volume so milliliters cancel."],
     "workedSolution": "Substitute the generated density and volume into m = ρV, multiply, then round to three significant figures."
+  },
+  {
+    "version": 4,
+    "id": "expand-binomial-expression",
+    "subject": "Mathematics",
+    "topic": "Algebra",
+    "title": "Expand a binomial square",
+    "description": "Write an equivalent expanded expression.",
+    "difficulty": 2,
+    "skills": ["expanding expressions", "equivalent forms"],
+    "variables": {
+      "offset": { "type": "integer", "range": [2, 9] }
+    },
+    "derived": {},
+    "prompt": "Expand and simplify (x + {offset})².",
+    "equation": "(x+{offset})^2",
+    "parts": [
+      { "id": "expanded-form", "type": "expression", "prompt": "Enter an equivalent expanded expression.", "expected": "x^2+{offset}\\cdot2x+{offset}^2" }
+    ],
+    "hints": ["Use (a + b)² = a² + 2ab + b²."],
+    "workedSolution": "Apply the binomial-square identity and combine the coefficient and constant terms."
   }
 ]

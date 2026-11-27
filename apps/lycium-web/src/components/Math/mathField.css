@@ -1,0 +1,7 @@
+.lycium-math-field,
+.lycium-math-field-host { display: block; min-width: 0; width: 100%; }
+.lycium-math-field math-field { color: var(--lycium-color-text); background: var(--lycium-color-control-surface); }
+.lycium-math-field math-field::part(menu-toggle) { display: none; }
+.lycium-math-field math-field::part(virtual-keyboard-toggle) { opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.lycium-math-field:focus-within math-field::part(virtual-keyboard-toggle) { opacity: 1; pointer-events: auto; }
+.lycium-math-field-error { display: block; margin-top: .3rem; color: var(--lycium-color-danger, #b42318); font-size: .78rem; line-height: 1.35; }

@@ -28,7 +28,10 @@ type NumericDefinition = {
   id: string; type: "numeric"; prompt: string; expected: string; unit: string;
   decimals?: number; significantFigures?: number;
 };
-type PracticeInteractionDefinition = ConversionChainDefinition | ChoiceDefinition | NumericDefinition;
+type ExpressionDefinition = {
+  id: string; type: "expression"; prompt: string; expected: string;
+};
+type PracticeInteractionDefinition = ConversionChainDefinition | ChoiceDefinition | NumericDefinition | ExpressionDefinition;
 export type ProblemMetadata = {
   subject: string; topic: string; difficulty: number; skills: string[]; hints: string[]; workedSolution?: string;
 };
@@ -51,7 +54,10 @@ export type GeneratedNumericInteraction = {
   id: string; type: "numeric"; prompt: string; expected: number; unit: string;
   precision: { type: "decimal-places" | "significant-figures"; digits: number };
 };
-export type GeneratedPracticeInteraction = GeneratedConversionInteraction | GeneratedChoiceInteraction | GeneratedNumericInteraction;
+export type GeneratedExpressionInteraction = {
+  id: string; type: "expression"; prompt: string; expected: string;
+};
+export type GeneratedPracticeInteraction = GeneratedConversionInteraction | GeneratedChoiceInteraction | GeneratedNumericInteraction | GeneratedExpressionInteraction;
 export type ConversionProblem = {
   family: ConversionFamily; seed: number; values: Record<string, Scalar>;
   prompt: string; equation: string;
@@ -147,6 +153,10 @@ export function parseConversionFamily(value: unknown): ConversionFamily {
         id: raw.id, type: "numeric" as const, prompt: raw.prompt, expected: raw.expected, unit: raw.unit,
         ...(validDecimals ? { decimals: decimals as number } : { significantFigures: significantFigures as number }),
       };
+    }
+    if (raw.type === "expression") {
+      if (!text(raw.expected)) throw new Error("Expression interactions need an expected LaTeX expression.");
+      return { id: raw.id, type: "expression" as const, prompt: raw.prompt, expected: raw.expected };
     }
     if (raw.type !== "conversion-chain" || !Array.isArray(raw.quantities) || !Array.isArray(raw.ratios) || !object(raw.target)) {
       throw new Error("Invalid conversion interaction.");
@@ -282,6 +292,9 @@ export function generateConversionProblem(family: ConversionFamily, seed: number
           : { type: "significant-figures", digits: interaction.significantFigures! },
       };
     }
+    if (interaction.type === "expression") {
+      return { id: interaction.id, type: interaction.type, prompt: render(interaction.prompt), expected: render(interaction.expected) };
+    }
     const quantity = (item: Omit<QuantityDefinition, "id"> & { id?: string }): Quantity => ({
       id: item.id ?? interaction.id, value: (() => {
         const resolved = values[item.value];
@@ -300,5 +313,5 @@ export function generateConversionProblem(family: ConversionFamily, seed: number
       decimals: interaction.target.decimals,
     };
   });
-  return { family, seed, values, prompt: render(family.presentation.prompt), equation: family.presentation.equation, interactions };
+  return { family, seed, values, prompt: render(family.presentation.prompt), equation: render(family.presentation.equation), interactions };
 }
