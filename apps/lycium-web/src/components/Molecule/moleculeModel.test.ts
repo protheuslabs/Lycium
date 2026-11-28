@@ -3,6 +3,7 @@ import { atomBondAvailability, atomBondCapacity, canSetBondOrder, defaultLonePai
 import { moleculesEquivalent } from "./moleculeComparison";
 import { cleanMoleculeLayout, connectedAtomIds, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument } from "./moleculeModel";
 import { atomVisual, lonePairPositions } from "./moleculeAppearance";
+import { preferredBondLength, snapBondPosition } from "./moleculeGeometry";
 
 describe("molecule documents", () => {
   it("calculates formulas and molar masses from explicit atoms", () => {
@@ -125,12 +126,28 @@ describe("molecule documents", () => {
     const bondError = (document: typeof uneven) => document.bonds.reduce((sum, bond) => {
       const source = document.atoms.find(atom => atom.id === bond.source)!;
       const target = document.atoms.find(atom => atom.id === bond.target)!;
-      return sum + Math.abs(Math.hypot(target.x - source.x, target.y - source.y) - 96);
+      return sum + Math.abs(Math.hypot(target.x - source.x, target.y - source.y) - preferredBondLength(source.element, target.element));
     }, 0);
     const cleaned = cleanMoleculeLayout(uneven);
     expect(bondError(cleaned)).toBeLessThan(bondError(uneven));
     expect(center(cleaned).x).toBeCloseTo(center(uneven).x, 8);
     expect(center(cleaned).y).toBeCloseTo(center(uneven).y, 8);
     expect(cleaned.bonds).toEqual(uneven.bonds);
+  });
+
+  it("snaps new bonds to standard lengths and useful molecular angles", () => {
+    const carbon = { version: 1 as const, atoms: [{ id: "c", element: "C", x: 0, y: 0, formalCharge: 0, lonePairs: 0 }], bonds: [] };
+    const horizontal = snapBondPosition(carbon, "c", { x: 143, y: 8 }, "H");
+    expect(Math.hypot(horizontal.x, horizontal.y)).toBeCloseTo(preferredBondLength("C", "H"), 8);
+    expect(horizontal.y).toBeCloseTo(0, 8);
+    const withNeighbor = {
+      version: 1 as const,
+      atoms: [...carbon.atoms, { id: "h", element: "H", x: 100, y: 0, formalCharge: 0, lonePairs: 0 }],
+      bonds: [{ id: "b", source: "c", target: "h", order: 1 as const }],
+    };
+    const angled = snapBondPosition(withNeighbor, "c", { x: -35, y: 90 }, "H");
+    const angle = Math.atan2(angled.y, angled.x) * 180 / Math.PI;
+    expect(angle).toBeCloseTo(109.5, 8);
+    expect(snapBondPosition(withNeighbor, "c", { x: 37, y: 83 }, "H", false)).toEqual({ x: 37, y: 83 });
   });
 });

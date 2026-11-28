@@ -81,7 +81,8 @@ export function cleanMoleculeLayout(document: MoleculeDocument) {
     document.bonds.forEach(bond => {
       const source = positions.get(bond.source)!, target = positions.get(bond.target)!;
       const dx = target.x - source.x, dy = target.y - source.y, distance = Math.max(1, Math.hypot(dx, dy));
-      const force = (distance - 96) * .075, fx = dx / distance * force, fy = dy / distance * force;
+      const sourceAtom = document.atoms.find(atom => atom.id === bond.source)!, targetAtom = document.atoms.find(atom => atom.id === bond.target)!;
+      const force = (distance - preferredBondLength(sourceAtom.element, targetAtom.element)) * .075, fx = dx / distance * force, fy = dy / distance * force;
       forces.get(bond.source)!.x += fx; forces.get(bond.source)!.y += fy;
       forces.get(bond.target)!.x -= fx; forces.get(bond.target)!.y -= fy;
     });
@@ -136,4 +137,5 @@ export function parseMoleculeDocument(value: unknown): MoleculeDocument {
   return { version: 1, atoms, bonds };
 }
 import { getElement } from "../../chemistry-core";
+import { preferredBondLength } from "./moleculeGeometry";
 
