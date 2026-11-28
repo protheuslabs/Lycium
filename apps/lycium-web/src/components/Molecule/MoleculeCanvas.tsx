@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { connectedAtomIds, type BondOrder, type MoleculeDocument } from "./moleculeModel";
 import { atomVisual, lonePairPositions, type MoleculeDisplayMode } from "./moleculeAppearance";
-import { atomBondCapacity, atomBondOrder, canSetBondOrder, defaultLonePairs } from "./moleculeChemistry";
+import { atomBondAvailability, canSetBondOrder, defaultLonePairs } from "./moleculeChemistry";
 
 export type MoleculeEditorTool = "select" | "pan" | "erase" | "atom" | "bond-1" | "bond-2" | "bond-3" | "lone-pair" | "charge-plus" | "charge-minus";
 type Props = {
@@ -164,6 +164,8 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
       {document.atoms.map(atom => {
         const display = position(atom);
         const visual = atomVisual(atom.element, displayMode);
+        const bondAvailability = atomBondAvailability(document, atom);
+        const handleCount = bondAvailability.available === null ? 4 : Math.min(6, bondAvailability.available);
         const charge = atom.formalCharge === 0 ? "" : atom.formalCharge === 1 ? "+" : atom.formalCharge === -1 ? "−" : `${Math.abs(atom.formalCharge)}${atom.formalCharge > 0 ? "+" : "−"}`;
         const pairPositions = lonePairPositions(document, atom, visual.radius);
         return <g key={atom.id} className="molecule-atom" data-selected={selectedAtomId === atom.id || bondStart === atom.id} transform={`translate(${display.x} ${display.y})`}
@@ -174,7 +176,7 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
           <text className="molecule-atom-label" textAnchor="middle" dominantBaseline="central">{atom.element}</text>
           {charge && <text className="molecule-atom-charge" x={visual.radius * .72} y={-visual.radius * .68}>{charge}</text>}
           {pairPositions.map(({ x, y, angle }, index) => <g key={index} className="molecule-lone-pair" transform={`translate(${x} ${y}) rotate(${angle * 180 / Math.PI + 90})`}><circle cx="-3" r="2" /><circle cx="3" r="2" /></g>)}
-          {directBondOrder !== null && (atomBondCapacity(atom) === null || atomBondOrder(document, atom.id) + directBondOrder <= atomBondCapacity(atom)!) && (selectedAtomId === atom.id || bondStart === atom.id || (bondPreview && atom.id !== bondPreview.sourceId)) && !readonly && [0, 90, 180, 270].map(angle => { const radians = angle * Math.PI / 180, distance = visual.radius + 9; return <circle key={angle} className="molecule-connection-handle" data-target={bondPreview && atom.id !== bondPreview.sourceId} cx={Math.cos(radians) * distance} cy={Math.sin(radians) * distance} r={bondPreview && atom.id !== bondPreview.sourceId ? 4.5 : 3.5} onPointerDown={event => beginHandleBond(event, atom.id)} />; })}
+          {directBondOrder !== null && handleCount >= directBondOrder && (selectedAtomId === atom.id || bondStart === atom.id || (bondPreview && atom.id !== bondPreview.sourceId)) && !readonly && Array.from({ length: handleCount }, (_, index) => index * 360 / handleCount - 90).map(angle => { const radians = angle * Math.PI / 180, distance = visual.radius + 9; return <circle key={angle} className="molecule-connection-handle" data-target={bondPreview && atom.id !== bondPreview.sourceId} cx={Math.cos(radians) * distance} cy={Math.sin(radians) * distance} r={bondPreview && atom.id !== bondPreview.sourceId ? 4.5 : 3.5} onPointerDown={event => beginHandleBond(event, atom.id)} />; })}
         </g>;
       })}
       {tool === "atom" && placementPreview && <g className="molecule-placement-preview" transform={`translate(${placementPreview.x} ${placementPreview.y})`} aria-hidden="true">

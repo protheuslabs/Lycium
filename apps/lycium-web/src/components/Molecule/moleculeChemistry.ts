@@ -25,15 +25,21 @@ export function atomBondCapacity(atom: MoleculeAtom) {
   return Math.max(0, Math.min(formalChargeCapacity, shellCapacity));
 }
 
+export function atomBondAvailability(document: MoleculeDocument, atom: MoleculeAtom, excludedBondId?: string) {
+  const total = atomBondCapacity(atom);
+  const used = atomBondOrder(document, atom.id, excludedBondId);
+  return { total, used, available: total === null ? null : Math.max(0, total - used) };
+}
+
 export function canSetBondOrder(document: MoleculeDocument, sourceId: string, targetId: string, order: 1 | 2 | 3, existingBondId?: string) {
   if (sourceId === targetId) return false;
   const source = document.atoms.find(atom => atom.id === sourceId);
   const target = document.atoms.find(atom => atom.id === targetId);
   if (!source || !target) return false;
-  const sourceCapacity = atomBondCapacity(source);
-  const targetCapacity = atomBondCapacity(target);
-  return (sourceCapacity === null || atomBondOrder(document, sourceId, existingBondId) + order <= sourceCapacity)
-    && (targetCapacity === null || atomBondOrder(document, targetId, existingBondId) + order <= targetCapacity);
+  const sourceAvailability = atomBondAvailability(document, source, existingBondId);
+  const targetAvailability = atomBondAvailability(document, target, existingBondId);
+  return (sourceAvailability.available === null || order <= sourceAvailability.available)
+    && (targetAvailability.available === null || order <= targetAvailability.available);
 }
 
 export function molecularFormula(document: MoleculeDocument) {

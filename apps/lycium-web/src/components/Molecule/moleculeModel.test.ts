@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { atomBondCapacity, canSetBondOrder, defaultLonePairs, atomElectronStatus, molecularFormula, molarMass } from "./moleculeChemistry";
+import { atomBondAvailability, atomBondCapacity, canSetBondOrder, defaultLonePairs, atomElectronStatus, molecularFormula, molarMass } from "./moleculeChemistry";
 import { moleculesEquivalent } from "./moleculeComparison";
 import { cleanMoleculeLayout, connectedAtomIds, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument } from "./moleculeModel";
 import { atomVisual, lonePairPositions } from "./moleculeAppearance";
@@ -54,6 +54,8 @@ describe("molecule documents", () => {
     expect(canSetBondOrder(water, "o", "h1", 2, "b1")).toBe(false);
     expect(canSetBondOrder(water, "h1", "h2", 1)).toBe(false);
     const carbonDioxide = MOLECULE_EXAMPLES.carbonDioxide;
+    expect(atomBondAvailability(carbonDioxide, carbonDioxide.atoms.find(atom => atom.id === "c")!)).toEqual({ total: 4, used: 4, available: 0 });
+    expect(atomBondAvailability(carbonDioxide, carbonDioxide.atoms.find(atom => atom.id === "o1")!)).toEqual({ total: 2, used: 2, available: 0 });
     expect(canSetBondOrder(carbonDioxide, "c", "o1", 3, "b1")).toBe(false);
   });
 
