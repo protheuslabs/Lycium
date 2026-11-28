@@ -4,9 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronRight, Download, Eraser, Focus, Hand, Minus, MousePointer2, Plus, Redo2, Trash2, Undo2, Upload } from "lucide-react";
 import MoleculeCanvas, { type MoleculeEditorTool } from "./MoleculeCanvas";
 import { molecularFormula, molarMass, moleculeWarnings } from "./moleculeChemistry";
-import { EMPTY_MOLECULE, MOLECULE_EXAMPLES, parseMoleculeDocument, type MoleculeDocument, type MoleculeWorkspaceConfig } from "./moleculeModel";
+import { EMPTY_MOLECULE, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument, type MoleculeDocument, type MoleculeWorkspaceConfig } from "./moleculeModel";
 import { elements } from "../../chemistry-core";
 import ElementPickerDialog from "../PeriodicTable/ElementPickerDialog";
+import { atomVisual, type MoleculeDisplayMode } from "./moleculeAppearance";
 import "./moleculeStudio.css";
 
 type Props = MoleculeWorkspaceConfig & { onChange?: (document: MoleculeDocument) => void };
@@ -25,12 +26,16 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
   const [selectedBondId, setSelectedBondId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [displayMode, setDisplayMode] = useState<MoleculeDisplayMode>("model");
   const [periodicOpen, setPeriodicOpen] = useState(false);
+  const [pickerTargetAtomId, setPickerTargetAtomId] = useState<string | null>(null);
   const [propertiesOpen, setPropertiesOpen] = useState(true);
   const [message, setMessage] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const readonly = mode === "readonly";
   const document = history.present;
+  const selectedAtom = document.atoms.find(atom => atom.id === selectedAtomId) ?? null;
+  const selectedBond = document.bonds.find(bond => bond.id === selectedBondId) ?? null;
   const commit = (next: MoleculeDocument) => {
     setHistory(current => ({ past: [...current.past, current.present].slice(-100), present: next, future: [] }));
     onChange?.(next);
@@ -94,6 +99,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
         <button type="button" aria-label="Redo" title="Redo" disabled={!history.future.length || readonly} onClick={redo}><Redo2 size={17} /></button>
         <button type="button" aria-label="Clear molecule" title="Clear molecule" disabled={!document.atoms.length || readonly} onClick={() => { commit(clone(EMPTY_MOLECULE)); setSelectedAtomId(null); setSelectedBondId(null); }}><Trash2 size={17} /></button>
       </div>
+      <label className="molecule-display-picker">Display <select value={displayMode} onChange={event => setDisplayMode(event.target.value as MoleculeDisplayMode)}><option value="model">Educational model</option><option value="lewis">Lewis notation</option></select></label>
       <div className="molecule-command-group">
         <button type="button" aria-label="Zoom out" onClick={() => setZoom(value => Math.max(.4, value - .15))}><Minus size={17} /></button>
         <button type="button" aria-label="Zoom in" onClick={() => setZoom(value => Math.min(2.5, value + .15))}><Plus size={17} /></button>
@@ -102,6 +108,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
       {!readonly && mode !== "assessment" && <label className="molecule-example-picker">Example <select value="" onChange={event => { if (event.target.value) { commit(clone(MOLECULE_EXAMPLES[event.target.value])); setSelectedAtomId(null); setSelectedBondId(null); resetView(); } }}>
         <option value="">Choose…</option><option value="water">Water</option><option value="carbonDioxide">Carbon dioxide</option><option value="methane">Methane</option><option value="ammonia">Ammonia</option><option value="ammonium">Ammonium</option><option value="methanol">Methanol</option><option value="ethene">Ethene</option>
       </select></label>}
+      {!readonly && <label className="molecule-ring-picker">Insert <select value="" onChange={event => { if (!event.target.value) return; const benzene = event.target.value === "benzene", size = Number(benzene ? 6 : event.target.value) as 3 | 4 | 5 | 6; const result = insertCarbonRing(document, size, benzene); commit(result.document); setSelectedAtomId(result.addedAtomIds[0] ?? null); setSelectedBondId(null); event.target.value = ""; }}><option value="">Ring…</option><option value="3">3-member ring</option><option value="4">4-member ring</option><option value="5">5-member ring</option><option value="6">6-member ring</option><option value="benzene">Benzene</option></select></label>}
       {allowImportExport && <div className="molecule-file-actions">
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={event => { const file = event.target.files?.[0]; if (file) void importDocument(file); event.target.value = ""; }} />
         <button type="button" onClick={() => fileRef.current?.click()}><Upload size={15} /> Import</button>
@@ -120,15 +127,21 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
         <button type="button" className="molecule-tool-button" aria-label="Delete selected atom or bond" title="Delete selected atom or bond" disabled={(!selectedAtomId && !selectedBondId) || readonly} onClick={removeSelected}><Trash2 size={18} /></button>
       </nav>
       <div className="molecule-canvas-wrap">
-        <MoleculeCanvas document={document} tool={tool} element={element} selectedAtomId={selectedAtomId} selectedBondId={selectedBondId} zoom={zoom} pan={pan} readonly={readonly}
+        <MoleculeCanvas document={document} tool={tool} element={element} selectedAtomId={selectedAtomId} selectedBondId={selectedBondId} zoom={zoom} pan={pan} displayMode={displayMode} readonly={readonly}
           onChange={commit} onSelectAtom={setSelectedAtomId} onSelectBond={setSelectedBondId} onPanChange={setPan} onToolChange={setTool} />
         <span className="molecule-canvas-hint">Place atoms · select a bond tool, then choose two atoms · click lone pairs or charges onto an atom</span>
       </div>
       <aside className="molecule-side-panel">
         <section><h2>Elements</h2><div className="molecule-element-palette">{COMMON_ELEMENTS.filter(item => allowedElements.includes(item)).map(item =>
-          <button type="button" key={item} data-active={tool === "atom" && element === item} onClick={() => selectElement(item)}>{item}</button>)}</div>
-          <button type="button" className="molecule-periodic-toggle" onClick={() => setPeriodicOpen(true)} aria-expanded={periodicOpen}>Periodic table <ChevronRight size={14} /></button>
+          <button type="button" key={item} data-active={tool === "atom" && element === item} style={{ "--element-color": atomVisual(item, "model").color } as React.CSSProperties} onClick={() => selectElement(item)}>{item}</button>)}</div>
+          <button type="button" className="molecule-periodic-toggle" onClick={() => { setPickerTargetAtomId(null); setPeriodicOpen(true); }} aria-expanded={periodicOpen}>Periodic table <ChevronRight size={14} /></button>
         </section>
+        {!readonly && (selectedAtom || selectedBond) && <section className="molecule-selection-editor"><h2>Selected {selectedAtom ? "atom" : "bond"}</h2>
+          {selectedAtom ? <><div className="molecule-selected-summary"><span style={{ "--element-color": atomVisual(selectedAtom.element, "model").color } as React.CSSProperties}>{selectedAtom.element}</span><div><strong>{selectedAtom.element}</strong><small>Charge {selectedAtom.formalCharge >= 0 ? "+" : ""}{selectedAtom.formalCharge} · {selectedAtom.lonePairs} lone pair{selectedAtom.lonePairs === 1 ? "" : "s"}</small></div></div>
+            <div className="molecule-selection-actions"><button type="button" onClick={() => { setPickerTargetAtomId(selectedAtom.id); setPeriodicOpen(true); }}>Element</button><button type="button" aria-label="Decrease selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge - 1 } : atom) })}>Charge −</button><button type="button" aria-label="Increase selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge + 1 } : atom) })}>Charge +</button><button type="button" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, lonePairs: (atom.lonePairs + 1) % 5 } : atom) })}>Lone pair</button></div></>
+          : selectedBond && <div className="molecule-selection-actions molecule-bond-order-actions">{([1, 2, 3] as const).map(order => <button type="button" key={order} data-active={selectedBond.order === order} onClick={() => commit({ ...document, bonds: document.bonds.map(bond => bond.id === selectedBond.id ? { ...bond, order } : bond) })}>{order === 1 ? "Single" : order === 2 ? "Double" : "Triple"}</button>)}</div>}
+          <button type="button" className="molecule-selection-delete" onClick={removeSelected}>Delete {selectedAtom ? "atom" : "bond"}</button>
+        </section>}
         {showProperties && <section className="molecule-properties"><button type="button" className="molecule-panel-heading" onClick={() => setPropertiesOpen(value => !value)} aria-expanded={propertiesOpen}><span>Properties</span>{propertiesOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
           {propertiesOpen && <div className="molecule-property-content"><dl><div><dt>Formula</dt><dd>{formula}</dd></div><div><dt>Molar mass</dt><dd>{mass ? `${mass.toFixed(3)} g/mol` : "—"}</dd></div><div><dt>Net charge</dt><dd>{document.atoms.reduce((sum, atom) => sum + atom.formalCharge, 0)}</dd></div></dl>
             <div className="molecule-validation" data-status={inconsistent.length ? "inconsistent" : unsupported.length ? "unsupported" : "consistent"}>{warnings.length ? <><strong>{inconsistent.length ? `${inconsistent.length} electron-count issue${inconsistent.length === 1 ? "" : "s"}` : "Validation is limited for this structure"}</strong><ul>{warnings.slice(0, 3).map(({ atom, message: warning }) => <li key={atom.id}>{warning}</li>)}</ul></> : <><strong>Structure check</strong><span>{document.atoms.length ? "Electron counts are consistent." : "Add atoms to begin."}</span></>}</div>
@@ -136,7 +149,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
         </section>}
       </aside>
     </div>
-    <ElementPickerDialog open={periodicOpen} selectedSymbols={[element]} allowedSymbols={allowedElements} onChange={symbols => { const next = symbols[0]; if (next) selectElement(next); }} onClose={() => setPeriodicOpen(false)} />
+    <ElementPickerDialog open={periodicOpen} selectedSymbols={[pickerTargetAtomId ? document.atoms.find(atom => atom.id === pickerTargetAtomId)?.element ?? element : element]} allowedSymbols={allowedElements} onChange={symbols => { const next = symbols[0]; if (!next) return; if (pickerTargetAtomId) { commit({ ...document, atoms: document.atoms.map(atom => atom.id === pickerTargetAtomId ? { ...atom, element: next } : atom) }); setPickerTargetAtomId(null); } else selectElement(next); }} onClose={() => { setPeriodicOpen(false); setPickerTargetAtomId(null); }} />
     <p className="molecule-status" role="status">{message}</p>
   </section>;
 }

@@ -37,10 +37,52 @@ test("selects and deletes one bond without deleting its atoms", async ({ page })
   await page.goto(moleculePath);
   await page.getByLabel("Example").selectOption("water");
   await expect(page.locator(".molecule-bond")).toHaveCount(2);
-  await page.locator(".molecule-bond").first().click({ position: { x: 20, y: 4 } });
+  await page.locator(".molecule-bond line:not(.molecule-bond-hit)").first().click();
   await page.getByRole("button", { name: "Delete selected atom or bond" }).click();
   await expect(page.locator(".molecule-bond")).toHaveCount(1);
   await expect(page.locator(".molecule-atom")).toHaveCount(3);
   await page.getByRole("button", { name: "Undo" }).click();
   await expect(page.locator(".molecule-bond")).toHaveCount(2);
+});
+
+test("drags from an atom to create one bonded atom", async ({ page }) => {
+  await page.goto(moleculePath);
+  await page.getByRole("button", { name: "C", exact: true }).first().click();
+  const canvas = page.getByRole("application", { name: "Molecule construction canvas" });
+  const canvasBox = await canvas.boundingBox();
+  if (!canvasBox) throw new Error("Molecule canvas is unavailable.");
+  await page.mouse.click(canvasBox.x + canvasBox.width / 2, canvasBox.y + canvasBox.height / 2);
+  await page.getByRole("button", { name: "O", exact: true }).first().click();
+  await page.getByRole("button", { name: "Single bond" }).click();
+  const carbon = page.locator(".molecule-atom").first();
+  const carbonBox = await carbon.boundingBox();
+  if (!carbonBox) throw new Error("Carbon atom is unavailable.");
+  await page.mouse.move(carbonBox.x + carbonBox.width / 2, carbonBox.y + carbonBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(carbonBox.x + carbonBox.width / 2 + 110, carbonBox.y + carbonBox.height / 2, { steps: 5 });
+  await page.mouse.up();
+  await expect(page.locator(".molecule-atom")).toHaveCount(2);
+  await expect(page.locator(".molecule-bond")).toHaveCount(1);
+  await expect(page.locator(".molecule-properties dd").filter({ hasText: /^CO$/ })).toBeVisible();
+});
+
+test("connects existing atoms directly from selection handles", async ({ page }) => {
+  await page.goto(moleculePath);
+  const canvas = page.getByRole("application", { name: "Molecule construction canvas" });
+  const canvasBox = await canvas.boundingBox();
+  if (!canvasBox) throw new Error("Molecule canvas is unavailable.");
+  await page.getByRole("button", { name: "C", exact: true }).first().click();
+  await page.mouse.click(canvasBox.x + canvasBox.width / 2 - 70, canvasBox.y + canvasBox.height / 2);
+  await page.getByRole("button", { name: "O", exact: true }).first().click();
+  await page.mouse.click(canvasBox.x + canvasBox.width / 2 + 70, canvasBox.y + canvasBox.height / 2);
+  const atoms = page.locator(".molecule-atom");
+  const carbonBox = await atoms.nth(0).boundingBox();
+  const handleBox = await page.locator(".molecule-connection-handle").first().boundingBox();
+  if (!carbonBox || !handleBox) throw new Error("Connection controls are unavailable.");
+  await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(carbonBox.x + carbonBox.width / 2, carbonBox.y + carbonBox.height / 2, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.locator(".molecule-bond")).toHaveCount(1);
+  await expect(page.locator(".molecule-atom")).toHaveCount(2);
 });

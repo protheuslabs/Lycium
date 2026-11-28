@@ -45,6 +45,29 @@ export function connectedAtomIds(document: MoleculeDocument, startId: string) {
   return [...connected];
 }
 
+function nextNumericId(prefix: string, ids: string[]) {
+  const next = ids.reduce((maximum, id) => Math.max(maximum, Number(id.replace(/\D/g, "")) || 0), 0) + 1;
+  return `${prefix}${next}`;
+}
+
+export function insertCarbonRing(document: MoleculeDocument, size: 3 | 4 | 5 | 6, alternating = false) {
+  const centerX = document.atoms.length ? Math.max(...document.atoms.map(atom => atom.x)) + 155 : 0;
+  const centerY = document.atoms.length ? document.atoms.reduce((sum, atom) => sum + atom.y, 0) / document.atoms.length : 0;
+  const radius = size === 3 ? 66 : size === 4 ? 72 : 78;
+  const atoms = [...document.atoms], bonds = [...document.bonds], addedAtomIds: string[] = [];
+  for (let index = 0; index < size; index += 1) {
+    const id = nextNumericId("a", atoms.map(atom => atom.id));
+    const angle = -Math.PI / 2 + index * Math.PI * 2 / size;
+    atoms.push({ id, element: "C", formalCharge: 0, lonePairs: 0, x: centerX + Math.cos(angle) * radius, y: centerY + Math.sin(angle) * radius });
+    addedAtomIds.push(id);
+  }
+  addedAtomIds.forEach((source, index) => {
+    const target = addedAtomIds[(index + 1) % addedAtomIds.length];
+    bonds.push({ id: nextNumericId("b", bonds.map(bond => bond.id)), source, target, order: alternating && index % 2 === 0 ? 2 : 1 });
+  });
+  return { document: { version: 1 as const, atoms, bonds }, addedAtomIds };
+}
+
 export function parseMoleculeDocument(value: unknown): MoleculeDocument {
   if (!value || typeof value !== "object" || (value as { version?: unknown }).version !== 1) throw new Error("Unsupported molecule document.");
   const candidate = value as { atoms?: unknown; bonds?: unknown };

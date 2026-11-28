@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { atomElectronStatus, molecularFormula, molarMass } from "./moleculeChemistry";
 import { moleculesEquivalent } from "./moleculeComparison";
-import { connectedAtomIds, MOLECULE_EXAMPLES, parseMoleculeDocument } from "./moleculeModel";
+import { connectedAtomIds, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument } from "./moleculeModel";
+import { atomVisual, lonePairPositions } from "./moleculeAppearance";
 
 describe("molecule documents", () => {
   it("calculates formulas and molar masses from explicit atoms", () => {
@@ -76,5 +77,23 @@ describe("molecule documents", () => {
     expect(atomElectronStatus(pcl5, pcl5.atoms[0]).status).toBe("consistent");
     const nitricOxide = { version: 1 as const, atoms: [{ id: "n", element: "N", x: 0, y: 0, formalCharge: 0, lonePairs: 1 }, { id: "o", element: "O", x: 80, y: 0, formalCharge: 0, lonePairs: 2 }], bonds: [{ id: "b", source: "n", target: "o", order: 2 as const }] };
     expect(atomElectronStatus(nitricOxide, nitricOxide.atoms[0]).status).toBe("unsupported");
+  });
+
+  it("compresses covalent radii and keeps lone pairs away from bonds", () => {
+    expect(atomVisual("H", "model").radius).toBeLessThan(atomVisual("O", "model").radius);
+    expect(atomVisual("O", "model").radius).toBeLessThan(atomVisual("Cl", "model").radius);
+    const oxygen = MOLECULE_EXAMPLES.water.atoms[0];
+    const positions = lonePairPositions(MOLECULE_EXAMPLES.water, oxygen, atomVisual("O", "model").radius);
+    expect(positions).toHaveLength(2);
+    expect(positions.every(position => position.y < 0)).toBe(true);
+  });
+
+  it("inserts reusable carbon-ring and benzene fragments", () => {
+    const cyclopentane = insertCarbonRing({ version: 1, atoms: [], bonds: [] }, 5);
+    expect(cyclopentane.document.atoms).toHaveLength(5);
+    expect(cyclopentane.document.bonds).toHaveLength(5);
+    expect(cyclopentane.document.bonds.every(bond => bond.order === 1)).toBe(true);
+    const benzene = insertCarbonRing({ version: 1, atoms: [], bonds: [] }, 6, true);
+    expect(benzene.document.bonds.map(bond => bond.order)).toEqual([2, 1, 2, 1, 2, 1]);
   });
 });
