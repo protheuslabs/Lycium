@@ -12,6 +12,7 @@ export type MoleculeWorkspaceConfig = {
   allowCharges?: boolean;
   allowLonePairs?: boolean;
   allowImportExport?: boolean;
+  allowTemplates?: boolean;
   showProperties?: boolean;
 };
 
@@ -66,6 +67,42 @@ export function insertCarbonRing(document: MoleculeDocument, size: 3 | 4 | 5 | 6
     bonds.push({ id: nextNumericId("b", bonds.map(bond => bond.id)), source, target, order: alternating && index % 2 === 0 ? 2 : 1 });
   });
   return { document: { version: 1 as const, atoms, bonds }, addedAtomIds };
+}
+
+export function cleanMoleculeLayout(document: MoleculeDocument) {
+  if (document.atoms.length < 2) return document;
+  const positions = new Map(document.atoms.map(atom => [atom.id, { x: atom.x, y: atom.y }]));
+  const originalCenter = {
+    x: document.atoms.reduce((sum, atom) => sum + atom.x, 0) / document.atoms.length,
+    y: document.atoms.reduce((sum, atom) => sum + atom.y, 0) / document.atoms.length,
+  };
+  for (let iteration = 0; iteration < 100; iteration += 1) {
+    const forces = new Map(document.atoms.map(atom => [atom.id, { x: 0, y: 0 }]));
+    document.bonds.forEach(bond => {
+      const source = positions.get(bond.source)!, target = positions.get(bond.target)!;
+      const dx = target.x - source.x, dy = target.y - source.y, distance = Math.max(1, Math.hypot(dx, dy));
+      const force = (distance - 96) * .075, fx = dx / distance * force, fy = dy / distance * force;
+      forces.get(bond.source)!.x += fx; forces.get(bond.source)!.y += fy;
+      forces.get(bond.target)!.x -= fx; forces.get(bond.target)!.y -= fy;
+    });
+    for (let left = 0; left < document.atoms.length; left += 1) for (let right = left + 1; right < document.atoms.length; right += 1) {
+      const a = positions.get(document.atoms[left].id)!, b = positions.get(document.atoms[right].id)!;
+      const dx = b.x - a.x, dy = b.y - a.y, distance = Math.max(1, Math.hypot(dx, dy));
+      if (distance >= 72) continue;
+      const force = (72 - distance) * .055, fx = dx / distance * force, fy = dy / distance * force;
+      forces.get(document.atoms[left].id)!.x -= fx; forces.get(document.atoms[left].id)!.y -= fy;
+      forces.get(document.atoms[right].id)!.x += fx; forces.get(document.atoms[right].id)!.y += fy;
+    }
+    document.atoms.forEach(atom => {
+      const position = positions.get(atom.id)!, force = forces.get(atom.id)!;
+      position.x += Math.max(-7, Math.min(7, force.x)); position.y += Math.max(-7, Math.min(7, force.y));
+    });
+  }
+  const center = {
+    x: [...positions.values()].reduce((sum, position) => sum + position.x, 0) / positions.size,
+    y: [...positions.values()].reduce((sum, position) => sum + position.y, 0) / positions.size,
+  };
+  return { ...document, atoms: document.atoms.map(atom => ({ ...atom, x: positions.get(atom.id)!.x - center.x + originalCenter.x, y: positions.get(atom.id)!.y - center.y + originalCenter.y })) };
 }
 
 export function parseMoleculeDocument(value: unknown): MoleculeDocument {

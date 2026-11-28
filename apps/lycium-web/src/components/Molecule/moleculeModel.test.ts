@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { atomElectronStatus, molecularFormula, molarMass } from "./moleculeChemistry";
 import { moleculesEquivalent } from "./moleculeComparison";
-import { connectedAtomIds, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument } from "./moleculeModel";
+import { cleanMoleculeLayout, connectedAtomIds, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument } from "./moleculeModel";
 import { atomVisual, lonePairPositions } from "./moleculeAppearance";
 
 describe("molecule documents", () => {
@@ -88,12 +88,33 @@ describe("molecule documents", () => {
     expect(positions.every(position => position.y < 0)).toBe(true);
   });
 
-  it("inserts reusable carbon-ring and benzene fragments", () => {
+  it("inserts reusable carbon-ring and alternating carbon fragments", () => {
     const cyclopentane = insertCarbonRing({ version: 1, atoms: [], bonds: [] }, 5);
     expect(cyclopentane.document.atoms).toHaveLength(5);
     expect(cyclopentane.document.bonds).toHaveLength(5);
     expect(cyclopentane.document.bonds.every(bond => bond.order === 1)).toBe(true);
     const benzene = insertCarbonRing({ version: 1, atoms: [], bonds: [] }, 6, true);
     expect(benzene.document.bonds.map(bond => bond.order)).toEqual([2, 1, 2, 1, 2, 1]);
+  });
+
+  it("cleans uneven bonded layouts while preserving the structure center", () => {
+    const uneven = {
+      ...MOLECULE_EXAMPLES.water,
+      atoms: MOLECULE_EXAMPLES.water.atoms.map((atom, index) => ({ ...atom, x: [10, -15, 310][index], y: [20, 35, 70][index] })),
+    };
+    const center = (document: typeof uneven) => ({
+      x: document.atoms.reduce((sum, atom) => sum + atom.x, 0) / document.atoms.length,
+      y: document.atoms.reduce((sum, atom) => sum + atom.y, 0) / document.atoms.length,
+    });
+    const bondError = (document: typeof uneven) => document.bonds.reduce((sum, bond) => {
+      const source = document.atoms.find(atom => atom.id === bond.source)!;
+      const target = document.atoms.find(atom => atom.id === bond.target)!;
+      return sum + Math.abs(Math.hypot(target.x - source.x, target.y - source.y) - 96);
+    }, 0);
+    const cleaned = cleanMoleculeLayout(uneven);
+    expect(bondError(cleaned)).toBeLessThan(bondError(uneven));
+    expect(center(cleaned).x).toBeCloseTo(center(uneven).x, 8);
+    expect(center(cleaned).y).toBeCloseTo(center(uneven).y, 8);
+    expect(cleaned.bonds).toEqual(uneven.bonds);
   });
 });

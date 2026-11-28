@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Download, Eraser, Focus, Hand, Minus, MousePointer2, Plus, Redo2, Trash2, Undo2, Upload } from "lucide-react";
+import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { ChevronDown, ChevronRight, Download, Eraser, Focus, Hand, Minus, MousePointer2, Plus, Redo2, Sparkles, Trash2, Undo2, Upload } from "lucide-react";
 import MoleculeCanvas, { type MoleculeEditorTool } from "./MoleculeCanvas";
 import { molecularFormula, molarMass, moleculeWarnings } from "./moleculeChemistry";
-import { EMPTY_MOLECULE, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument, type MoleculeDocument, type MoleculeWorkspaceConfig } from "./moleculeModel";
+import { cleanMoleculeLayout, EMPTY_MOLECULE, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument, type MoleculeDocument, type MoleculeWorkspaceConfig } from "./moleculeModel";
 import { elements } from "../../chemistry-core";
 import ElementPickerDialog from "../PeriodicTable/ElementPickerDialog";
 import { atomVisual, type MoleculeDisplayMode } from "./moleculeAppearance";
@@ -18,7 +18,7 @@ const clone = (document: MoleculeDocument): MoleculeDocument => JSON.parse(JSON.
 
 export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY_MOLECULE, allowedElements = PERIODIC_ELEMENTS,
   allowedBondOrders = [1, 2, 3], allowCharges = true, allowLonePairs = true, allowImportExport = mode === "standalone",
-  showProperties = mode !== "assessment", onChange }: Props) {
+  allowTemplates = mode !== "assessment" && mode !== "readonly", showProperties = mode !== "assessment", onChange }: Props) {
   const [history, setHistory] = useState<History>(() => ({ past: [], present: clone(initialDocument), future: [] }));
   const [tool, setTool] = useState<MoleculeEditorTool>(mode === "readonly" ? "pan" : "select");
   const [element, setElement] = useState(allowedElements.includes("C") ? "C" : allowedElements[0] ?? "H");
@@ -32,6 +32,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
   const [propertiesOpen, setPropertiesOpen] = useState(true);
   const [message, setMessage] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const workspaceRef = useRef<HTMLElement>(null);
   const readonly = mode === "readonly";
   const document = history.present;
   const selectedAtom = document.atoms.find(atom => atom.id === selectedAtomId) ?? null;
@@ -67,16 +68,12 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
     }
     if (selectedBondId) { commit({ ...document, bonds: document.bonds.filter(bond => bond.id !== selectedBondId) }); setSelectedBondId(null); }
   };
-  useEffect(() => {
-    const handleKey = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-      if (target.matches("input, textarea, select, math-field")) return;
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") { event.preventDefault(); event.shiftKey ? redo() : undo(); }
-      else if ((event.key === "Delete" || event.key === "Backspace") && (selectedAtomId || selectedBondId) && !readonly) { event.preventDefault(); removeSelected(); }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  });
+  const handleWorkspaceKey = (event: ReactKeyboardEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.matches("input, textarea, select, math-field")) return;
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") { event.preventDefault(); event.shiftKey ? redo() : undo(); }
+    else if ((event.key === "Delete" || event.key === "Backspace") && (selectedAtomId || selectedBondId) && !readonly) { event.preventDefault(); removeSelected(); }
+  };
   const formula = useMemo(() => molecularFormula(document), [document]);
   const mass = useMemo(() => molarMass(document), [document]);
   const warnings = useMemo(() => moleculeWarnings(document), [document]);
@@ -91,8 +88,8 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
     catch { setMessage("That file is not a valid Lycium molecule document."); }
   };
   const toolButton = (value: MoleculeEditorTool, label: string, content: React.ReactNode, disabled = false) =>
-    <button type="button" className="molecule-tool-button" data-active={tool === value} aria-pressed={tool === value} aria-label={label} title={label} disabled={disabled || readonly} onClick={() => setTool(value)}>{content}</button>;
-  return <section className="molecule-studio" data-mode={mode}>
+    <button type="button" className="molecule-tool-button" data-active={tool === value} aria-pressed={tool === value} aria-label={label} title={label} disabled={disabled || (readonly && value !== "pan")} onClick={() => setTool(value)}>{content}</button>;
+  return <section ref={workspaceRef} className="molecule-studio" data-mode={mode} tabIndex={-1} onKeyDown={handleWorkspaceKey} onPointerDown={() => workspaceRef.current?.focus({ preventScroll: true })}>
     <div className="molecule-command-bar">
       <div className="molecule-command-group">
         <button type="button" aria-label="Undo" title="Undo" disabled={!history.past.length || readonly} onClick={undo}><Undo2 size={17} /></button>
@@ -104,11 +101,12 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
         <button type="button" aria-label="Zoom out" onClick={() => setZoom(value => Math.max(.4, value - .15))}><Minus size={17} /></button>
         <button type="button" aria-label="Zoom in" onClick={() => setZoom(value => Math.min(2.5, value + .15))}><Plus size={17} /></button>
         <button type="button" aria-label="Fit molecule to canvas" onClick={fitView}><Focus size={17} /></button>
+        {!readonly && <button type="button" aria-label="Clean up molecule layout" title="Clean up molecule layout" disabled={document.atoms.length < 2 || !document.bonds.length} onClick={() => commit(cleanMoleculeLayout(document))}><Sparkles size={17} /></button>}
       </div>
-      {!readonly && mode !== "assessment" && <label className="molecule-example-picker">Example <select value="" onChange={event => { if (event.target.value) { commit(clone(MOLECULE_EXAMPLES[event.target.value])); setSelectedAtomId(null); setSelectedBondId(null); resetView(); } }}>
+      {allowTemplates && <label className="molecule-example-picker">Example <select value="" onChange={event => { if (event.target.value) { commit(clone(MOLECULE_EXAMPLES[event.target.value])); setSelectedAtomId(null); setSelectedBondId(null); resetView(); } }}>
         <option value="">Choose…</option><option value="water">Water</option><option value="carbonDioxide">Carbon dioxide</option><option value="methane">Methane</option><option value="ammonia">Ammonia</option><option value="ammonium">Ammonium</option><option value="methanol">Methanol</option><option value="ethene">Ethene</option>
       </select></label>}
-      {!readonly && <label className="molecule-ring-picker">Insert <select value="" onChange={event => { if (!event.target.value) return; const benzene = event.target.value === "benzene", size = Number(benzene ? 6 : event.target.value) as 3 | 4 | 5 | 6; const result = insertCarbonRing(document, size, benzene); commit(result.document); setSelectedAtomId(result.addedAtomIds[0] ?? null); setSelectedBondId(null); event.target.value = ""; }}><option value="">Ring…</option><option value="3">3-member ring</option><option value="4">4-member ring</option><option value="5">5-member ring</option><option value="6">6-member ring</option><option value="benzene">Benzene</option></select></label>}
+      {allowTemplates && allowedElements.includes("C") && allowedBondOrders.includes(1) && <label className="molecule-ring-picker">Insert <select value="" onChange={event => { if (!event.target.value) return; const alternating = event.target.value === "alternating", size = Number(alternating ? 6 : event.target.value) as 3 | 4 | 5 | 6; const result = insertCarbonRing(document, size, alternating); commit(result.document); setSelectedAtomId(result.addedAtomIds[0] ?? null); setSelectedBondId(null); event.target.value = ""; }}><option value="">Ring…</option><option value="3">3-member ring</option><option value="4">4-member ring</option><option value="5">5-member ring</option><option value="6">6-member ring</option>{allowedBondOrders.includes(2) && <option value="alternating">Alternating carbon ring</option>}</select></label>}
       {allowImportExport && <div className="molecule-file-actions">
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={event => { const file = event.target.files?.[0]; if (file) void importDocument(file); event.target.value = ""; }} />
         <button type="button" onClick={() => fileRef.current?.click()}><Upload size={15} /> Import</button>
@@ -128,6 +126,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
       </nav>
       <div className="molecule-canvas-wrap">
         <MoleculeCanvas document={document} tool={tool} element={element} selectedAtomId={selectedAtomId} selectedBondId={selectedBondId} zoom={zoom} pan={pan} displayMode={displayMode} readonly={readonly}
+          directBondOrder={allowedBondOrders[0] ?? null}
           onChange={commit} onSelectAtom={setSelectedAtomId} onSelectBond={setSelectedBondId} onPanChange={setPan} onToolChange={setTool} />
         <span className="molecule-canvas-hint">Place atoms · select a bond tool, then choose two atoms · click lone pairs or charges onto an atom</span>
       </div>
@@ -138,8 +137,8 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
         </section>
         {!readonly && (selectedAtom || selectedBond) && <section className="molecule-selection-editor"><h2>Selected {selectedAtom ? "atom" : "bond"}</h2>
           {selectedAtom ? <><div className="molecule-selected-summary"><span style={{ "--element-color": atomVisual(selectedAtom.element, "model").color } as React.CSSProperties}>{selectedAtom.element}</span><div><strong>{selectedAtom.element}</strong><small>Charge {selectedAtom.formalCharge >= 0 ? "+" : ""}{selectedAtom.formalCharge} · {selectedAtom.lonePairs} lone pair{selectedAtom.lonePairs === 1 ? "" : "s"}</small></div></div>
-            <div className="molecule-selection-actions"><button type="button" onClick={() => { setPickerTargetAtomId(selectedAtom.id); setPeriodicOpen(true); }}>Element</button><button type="button" aria-label="Decrease selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge - 1 } : atom) })}>Charge −</button><button type="button" aria-label="Increase selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge + 1 } : atom) })}>Charge +</button><button type="button" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, lonePairs: (atom.lonePairs + 1) % 5 } : atom) })}>Lone pair</button></div></>
-          : selectedBond && <div className="molecule-selection-actions molecule-bond-order-actions">{([1, 2, 3] as const).map(order => <button type="button" key={order} data-active={selectedBond.order === order} onClick={() => commit({ ...document, bonds: document.bonds.map(bond => bond.id === selectedBond.id ? { ...bond, order } : bond) })}>{order === 1 ? "Single" : order === 2 ? "Double" : "Triple"}</button>)}</div>}
+            <div className="molecule-selection-actions"><button type="button" onClick={() => { setPickerTargetAtomId(selectedAtom.id); setPeriodicOpen(true); }}>Element</button>{allowCharges && <><button type="button" aria-label="Decrease selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge - 1 } : atom) })}>Charge −</button><button type="button" aria-label="Increase selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge + 1 } : atom) })}>Charge +</button></>}{allowLonePairs && <button type="button" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, lonePairs: (atom.lonePairs + 1) % 5 } : atom) })}>Lone pair</button>}</div></>
+          : selectedBond && <div className="molecule-selection-actions molecule-bond-order-actions">{allowedBondOrders.map(order => <button type="button" key={order} data-active={selectedBond.order === order} onClick={() => commit({ ...document, bonds: document.bonds.map(bond => bond.id === selectedBond.id ? { ...bond, order } : bond) })}>{order === 1 ? "Single" : order === 2 ? "Double" : "Triple"}</button>)}</div>}
           <button type="button" className="molecule-selection-delete" onClick={removeSelected}>Delete {selectedAtom ? "atom" : "bond"}</button>
         </section>}
         {showProperties && <section className="molecule-properties"><button type="button" className="molecule-panel-heading" onClick={() => setPropertiesOpen(value => !value)} aria-expanded={propertiesOpen}><span>Properties</span>{propertiesOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>

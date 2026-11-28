@@ -13,7 +13,8 @@
 .molecule-example-picker select, .molecule-display-picker select, .molecule-ring-picker select { padding-inline: .5rem; }
 .molecule-editor-layout { min-height: 0; display: grid; grid-template-columns: 3.45rem minmax(0, 1fr) 14rem; gap: .65rem; padding: .65rem; }
 .molecule-editing-rail { display: flex; flex-direction: column; align-items: stretch; gap: .35rem; padding: .4rem; border-radius: .55rem; background: var(--lycium-color-primary-soft); }
-.molecule-tool-button { min-height: 2.45rem; display: grid; place-items: center; border: 1px solid transparent; border-radius: .4rem; color: var(--lycium-color-text); background: var(--lycium-color-control-surface); }
+.molecule-tool-button { width:100%; min-height:2.45rem; display:grid; place-items:center; padding:0; border:1px solid transparent; border-radius:.4rem; color:var(--lycium-color-text); background:var(--lycium-color-control-surface); line-height:0; }
+.molecule-tool-button>svg,.molecule-tool-button>span { display:block; margin:auto; }
 .molecule-tool-button:hover:not(:disabled), .molecule-tool-button[data-active="true"] { border-color: color-mix(in srgb, var(--lycium-color-accent) 42%, transparent); color: var(--lycium-color-accent); background: color-mix(in srgb, var(--lycium-color-accent-soft) 75%, var(--lycium-color-control-surface)); }
 .molecule-tool-button:disabled { opacity: .4; }
 .molecule-bond-icon { width: 1.25rem; height: .9rem; display: block; background: linear-gradient(var(--lycium-color-text), var(--lycium-color-text)) center/100% 2px no-repeat; }
