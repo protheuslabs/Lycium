@@ -31,6 +31,20 @@ export const MOLECULE_EXAMPLES: Record<string, MoleculeDocument> = {
   ethene: { version: 1, atoms: [atom("c1", "C", -50, 0), atom("c2", "C", 50, 0), atom("h1", "H", -105, -70), atom("h2", "H", -105, 70), atom("h3", "H", 105, -70), atom("h4", "H", 105, 70)], bonds: [bond("b1", "c1", "c2", 2), bond("b2", "c1", "h1"), bond("b3", "c1", "h2"), bond("b4", "c2", "h3"), bond("b5", "c2", "h4")] },
 };
 
+export function connectedAtomIds(document: MoleculeDocument, startId: string) {
+  if (!document.atoms.some(atom => atom.id === startId)) return [];
+  const connected = new Set([startId]);
+  const queue = [startId];
+  while (queue.length) {
+    const current = queue.shift()!;
+    document.bonds.forEach(bond => {
+      const neighbor = bond.source === current ? bond.target : bond.target === current ? bond.source : null;
+      if (neighbor && !connected.has(neighbor)) { connected.add(neighbor); queue.push(neighbor); }
+    });
+  }
+  return [...connected];
+}
+
 export function parseMoleculeDocument(value: unknown): MoleculeDocument {
   if (!value || typeof value !== "object" || (value as { version?: unknown }).version !== 1) throw new Error("Unsupported molecule document.");
   const candidate = value as { atoms?: unknown; bonds?: unknown };
@@ -38,7 +52,7 @@ export function parseMoleculeDocument(value: unknown): MoleculeDocument {
   const atoms = candidate.atoms.map(item => {
     if (!item || typeof item !== "object") throw new Error("Invalid atom.");
     const entry = item as Partial<MoleculeAtom>;
-    if (typeof entry.id !== "string" || !/^[A-Z][a-z]?$/.test(String(entry.element)) || !Number.isFinite(entry.x) || !Number.isFinite(entry.y) ||
+    if (typeof entry.id !== "string" || !/^[A-Z][a-z]?$/.test(String(entry.element)) || !getElement(String(entry.element)) || !Number.isFinite(entry.x) || !Number.isFinite(entry.y) ||
       !Number.isInteger(entry.formalCharge) || !Number.isInteger(entry.lonePairs) || entry.lonePairs! < 0 || entry.lonePairs! > 4) throw new Error("Invalid atom.");
     return entry as MoleculeAtom;
   });
@@ -51,5 +65,15 @@ export function parseMoleculeDocument(value: unknown): MoleculeDocument {
       !ids.has(entry.source) || !ids.has(entry.target) || ![1, 2, 3].includes(entry.order as number)) throw new Error("Invalid bond.");
     return entry as MoleculeBond;
   });
+  const bondIds = new Set(bonds.map(item => item.id));
+  if (bondIds.size !== bonds.length) throw new Error("Bond IDs must be unique.");
+  const pairs = new Set<string>();
+  bonds.forEach(bond => {
+    const pair = [bond.source, bond.target].sort().join(":");
+    if (pairs.has(pair)) throw new Error("Only one bond may connect an atom pair.");
+    pairs.add(pair);
+  });
   return { version: 1, atoms, bonds };
 }
+import { getElement } from "../../chemistry-core";
+

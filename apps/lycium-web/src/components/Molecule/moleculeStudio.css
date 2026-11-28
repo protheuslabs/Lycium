@@ -1,7 +1,7 @@
 .molecule-workspace { min-height: 100dvh; display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--lycium-color-surface); }
 .molecule-workspace-main { min-height: 0; }
 .molecule-tool-frame { height: 100%; border: 0; border-radius: 0; }
-.molecule-studio { height: 100%; min-height: 34rem; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; color: var(--lycium-color-text); background: var(--lycium-color-surface); }
+.molecule-studio { container-type:inline-size; height: 100%; min-height: 34rem; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; color: var(--lycium-color-text); background: var(--lycium-color-surface); }
 .molecule-command-bar { min-height: 3.2rem; display: flex; align-items: center; gap: .65rem; padding: .45rem .7rem; border-bottom: 1px solid var(--lycium-color-border); background: color-mix(in srgb, var(--lycium-color-primary-soft) 48%, var(--lycium-color-surface-raised)); }
 .molecule-command-group, .molecule-file-actions { display: flex; gap: .3rem; }
 .molecule-command-bar button, .molecule-command-bar select { min-height: 2.2rem; border: 1px solid var(--lycium-color-border); border-radius: .4rem; color: var(--lycium-color-text); background: var(--lycium-color-control-surface); font: inherit; }
@@ -25,10 +25,16 @@
 .molecule-grid { fill: url(#molecule-grid); color: var(--lycium-color-border); opacity: .6; }
 #molecule-grid circle { fill: var(--lycium-color-border); }
 .molecule-bond line { stroke: var(--lycium-color-text); stroke-width: 3; stroke-linecap: round; }
+.molecule-bond { cursor:pointer; }
+.molecule-bond .molecule-bond-hit { stroke:transparent; stroke-width:18; pointer-events:stroke; }
+.molecule-bond[data-selected="true"] line:not(.molecule-bond-hit) { stroke:var(--lycium-color-accent); stroke-width:5; }
 .molecule-atom { cursor: pointer; }
 .molecule-atom-hit { fill: var(--lycium-color-surface-raised); stroke: transparent; stroke-width: 3; }
 .molecule-atom[data-selected="true"] .molecule-atom-hit { fill: var(--lycium-color-accent-soft); stroke: var(--lycium-color-accent); }
 .molecule-atom-label { fill: var(--lycium-color-text); font: 600 27px/1 var(--lycium-font-sans); }
+.molecule-placement-preview { pointer-events:none; opacity:.68; }
+.molecule-placement-preview circle { fill:var(--lycium-color-accent-soft); stroke:var(--lycium-color-accent); stroke-width:2; stroke-dasharray:4 3; }
+.molecule-placement-preview text { fill:var(--lycium-color-text); font:600 27px/1 var(--lycium-font-sans); }
 .molecule-element-o { fill: #dc2626; } .molecule-element-n { fill: #2563eb; } .molecule-element-s { fill: #b7791f; } .molecule-element-f, .molecule-element-cl { fill: #15803d; } .molecule-element-br { fill: #9f1239; }
 .molecule-atom-charge { fill: var(--lycium-color-text); font: 650 14px/1 var(--lycium-font-sans); }
 .molecule-lone-pair circle { fill: var(--lycium-color-text); }
@@ -48,7 +54,8 @@
 .molecule-properties dt { color: var(--lycium-color-text-muted); font-size: .72rem; }
 .molecule-properties dd { margin: 0; font-size: 1.05rem; font-weight: 650; overflow-wrap: anywhere; }
 .molecule-validation { display: grid; gap: .3rem; margin-top: 1rem; padding: .6rem; border: 1px solid color-mix(in srgb, #b45309 35%, var(--lycium-color-border)); border-radius: .4rem; color: #92400e; background: color-mix(in srgb, #fef3c7 62%, var(--lycium-color-control-surface)); font-size: .7rem; line-height: 1.45; }
-.molecule-validation[data-valid="true"] { border-color: color-mix(in srgb, #15803d 35%, var(--lycium-color-border)); color: #166534; background: color-mix(in srgb, #dcfce7 58%, var(--lycium-color-control-surface)); }
+.molecule-validation[data-status="consistent"] { border-color: color-mix(in srgb, #15803d 35%, var(--lycium-color-border)); color: #166534; background: color-mix(in srgb, #dcfce7 58%, var(--lycium-color-control-surface)); }
+.molecule-validation[data-status="unsupported"] { border-color:color-mix(in srgb,#2563eb 30%,var(--lycium-color-border)); color:#1d4ed8; background:color-mix(in srgb,#dbeafe 58%,var(--lycium-color-control-surface)); }
 .molecule-validation ul { margin: .2rem 0 0; padding-left: 1rem; }
 .molecule-status { min-height: 1.2rem; margin: 0; padding: 0 .75rem .35rem; color: var(--lycium-color-text-muted); font-size: .72rem; }
 @media (max-width: 820px) {
@@ -57,6 +64,13 @@
   .molecule-editor-layout { grid-template-columns: 3.2rem minmax(0, 1fr); grid-template-rows: minmax(24rem, 1fr) auto; }
   .molecule-side-panel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   .molecule-side-panel section + section { margin: 0; padding: 0 0 0 1rem; border-top: 0; border-left: 1px solid var(--lycium-color-border); }
+}
+@container (max-width: 820px) {
+  .molecule-command-bar { flex-wrap:wrap; }
+  .molecule-file-actions { margin-left:0; }
+  .molecule-editor-layout { grid-template-columns:3.2rem minmax(0,1fr); grid-template-rows:minmax(24rem,1fr) auto; }
+  .molecule-side-panel { grid-column:1 / -1; display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+  .molecule-side-panel section + section { margin:0; padding:0 0 0 1rem; border-top:0; border-left:1px solid var(--lycium-color-border); }
 }
 @media (max-width: 560px) {
   .molecule-example-picker { order: 3; width: 100%; }
@@ -71,5 +85,6 @@
 }
 @media (prefers-color-scheme: dark) {
   .molecule-validation { color: #fbbf24; }
-  .molecule-validation[data-valid="true"] { color: #86efac; }
+  .molecule-validation[data-status="consistent"] { color: #86efac; }
+  .molecule-validation[data-status="unsupported"] { color:#93c5fd; }
 }
