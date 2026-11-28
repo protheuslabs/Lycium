@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { elementProperty, elements, getElement, searchElements, type ChemicalElement, type ElementFamily, type ElementPropertyKey } from "../../chemistry-core";
 import "./periodicTable.css";
@@ -63,17 +63,27 @@ export default function PeriodicTable({ mode = "explore", selection = "single", 
   const [tab, setTab] = useState<PeriodicTableTab>(initialTab);
   const [trend, setTrend] = useState<ElementPropertyKey>(visibleProperties[0] ?? "atomicWeight");
   const [query, setQuery] = useState("");
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [activeFamily, setActiveFamily] = useState<ElementFamily | null>(null);
   const selected = selectedSymbols ? [...selectedSymbols] : internalSelection;
   const allowed = useMemo(() => allowedSymbols ? new Set(allowedSymbols) : null, [allowedSymbols]);
   const disabled = useMemo(() => new Set(disabledSymbols), [disabledSymbols]);
   const highlighted = useMemo(() => new Set(highlightedSymbols), [highlightedSymbols]);
   const cells = useRef(new Map<number, HTMLButtonElement>());
-  const inspected = getElement(hovered ?? selected.at(-1) ?? "O") ?? elements[7];
+  const familyLegend = useRef<HTMLDivElement>(null);
+  const inspected = getElement(selected.at(-1) ?? "O") ?? elements[7];
   const comparison = selected.map(symbol => getElement(symbol)).filter((element): element is ChemicalElement => Boolean(element)).slice(-3);
   const trendValues = elements.map(element => elementProperty(element, trend)).filter((value): value is number => value !== null);
   const trendMin = Math.min(...trendValues), trendMax = Math.max(...trendValues);
   const matches = query ? searchElements(query, allowedSymbols).slice(0, 8) : [];
+
+  useEffect(() => {
+    if (!activeFamily) return;
+    const clearFamily = (event: PointerEvent) => {
+      if (!familyLegend.current?.contains(event.target as Node)) setActiveFamily(null);
+    };
+    document.addEventListener("pointerdown", clearFamily);
+    return () => document.removeEventListener("pointerdown", clearFamily);
+  }, [activeFamily]);
 
   const emit = (symbols: string[], nextTab = tab, nextTrend = trend, nextQuery = query) => {
     if (!selectedSymbols) setInternalSelection(symbols);
@@ -111,8 +121,9 @@ export default function PeriodicTable({ mode = "explore", selection = "single", 
         const unavailable = Boolean(allowed && !allowed.has(element.symbol));
         return <button type="button" role="gridcell" ref={node => { if (node) cells.current.set(element.atomicNumber, node); }} key={element.symbol}
           className="periodic-element-cell" data-family={element.family} data-selected={selected.includes(element.symbol)} data-highlighted={highlighted.has(element.symbol)} data-unavailable={unavailable || disabled.has(element.symbol)} data-missing={tab === "trends" && value === null}
+          data-family-dimmed={activeFamily !== null && element.family !== activeFamily}
           style={{ gridColumn: element.column + 1, gridRow: element.row + 1, ...(tab === "trends" && ratio !== null ? { "--trend-ratio": ratio } : {}) } as React.CSSProperties}
-          aria-label={`${element.name}, atomic number ${element.atomicNumber}`} aria-pressed={selected.includes(element.symbol)} disabled={disabled.has(element.symbol)} onMouseEnter={() => setHovered(element.symbol)} onMouseLeave={() => setHovered(null)} onFocus={() => setHovered(element.symbol)} onClick={() => choose(element)}
+          aria-label={`${element.name}, atomic number ${element.atomicNumber}`} aria-pressed={selected.includes(element.symbol)} disabled={disabled.has(element.symbol)} onClick={() => choose(element)}
           onKeyDown={event => { const map = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" } as const; const direction = map[event.key as keyof typeof map]; if (direction) { event.preventDefault(); moveFocus(element, direction); } }}>
           <small>{element.atomicNumber}</small><strong>{element.symbol}</strong><span>{mode === "presentation" ? "" : element.name}</span>
         </button>;
@@ -120,7 +131,7 @@ export default function PeriodicTable({ mode = "explore", selection = "single", 
       <span className="periodic-series-label periodic-lanthanide-label">Lanthanides</span><span className="periodic-series-label periodic-actinide-label">Actinides</span>
     </div></div>
 
-    <div className="periodic-family-legend">{FAMILY_ORDER.map(family => <span key={family} data-family={family}><i />{FAMILY_LABELS.get(family)}</span>)}</div>
+    <div ref={familyLegend} className="periodic-family-legend" aria-label="Element family key">{FAMILY_ORDER.map(family => <button type="button" key={family} data-family={family} aria-pressed={activeFamily === family} onClick={() => setActiveFamily(current => current === family ? null : family)}><i />{FAMILY_LABELS.get(family)}</button>)}</div>
 
     {tab === "compare" ? <div className="periodic-compare-panel">{comparison.length < 2 && <p>Select two or three elements to compare. Turn on multiple selection when embedding the table as a comparison picker.</p>}{comparison.map(element => <article key={element.symbol}><header><b>{element.symbol}</b><div><h2>{element.name}</h2><span>Atomic number {element.atomicNumber}</span></div></header><dl>{visibleProperties.map(key => <div key={key}><dt>{TREND_LABELS[key].label}</dt><dd>{formatProperty(element, key)}</dd></div>)}</dl></article>)}</div>
     : <div className="periodic-inspector"><div className="periodic-element-identity"><span data-family={inspected.family}>{inspected.atomicNumber}<strong>{inspected.symbol}</strong><small>{inspected.atomicWeight.display}</small></span><div><h2>{inspected.name}</h2><p>{inspected.group ? `Group ${inspected.group} · ` : ""}Period {inspected.period} · {inspected.standardState ?? "State unavailable"}</p><p>{inspected.electronConfiguration}</p></div></div>

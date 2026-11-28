@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function PeriodicTablePage() {
-  return <div className="periodic-tool-workspace"><ToolWorkspaceHeader title="Periodic Table" /><main id="main-content"><ToolFrame><PeriodicTableTool /></ToolFrame></main></div>;
+  return <div className="periodic-tool-workspace"><ToolWorkspaceHeader title="Periodic Table" /><main id="main-content"><ToolFrame fill><PeriodicTableTool /></ToolFrame></main></div>;
 }
