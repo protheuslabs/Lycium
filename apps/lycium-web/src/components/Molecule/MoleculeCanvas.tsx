@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
-import { connectedAtomIds, type BondOrder, type MoleculeDocument } from "./moleculeModel";
+import { cleanMoleculeLayout, connectedAtomIds, type BondOrder, type MoleculeAssistanceConfig, type MoleculeDocument } from "./moleculeModel";
 import { atomVisual, lonePairPositions, type MoleculeDisplayMode } from "./moleculeAppearance";
 import { atomBondAvailability, canSetBondOrder, defaultLonePairs } from "./moleculeChemistry";
 import { snapBondPosition } from "./moleculeGeometry";
@@ -10,6 +10,7 @@ export type MoleculeEditorTool = "select" | "pan" | "erase" | "atom" | "bond-1" 
 type Props = {
   document: MoleculeDocument; tool: MoleculeEditorTool; element: string; selectedAtomId: string | null; selectedBondId: string | null;
   zoom: number; pan: { x: number; y: number }; displayMode: MoleculeDisplayMode; readonly?: boolean; directBondOrder: BondOrder | null;
+  assistance: MoleculeAssistanceConfig;
   onChange: (document: MoleculeDocument) => void; onSelectAtom: (id: string | null) => void; onSelectBond: (id: string | null) => void;
   onPanChange: (pan: { x: number; y: number }) => void; onToolChange: (tool: MoleculeEditorTool) => void; onValidationMessage: (message: string) => void;
 };
@@ -17,7 +18,7 @@ type Props = {
 const nextId = (prefix: string, values: string[]) => `${prefix}${values.reduce((max, value) => Math.max(max, Number(value.replace(/\D/g, "")) || 0), 0) + 1}`;
 const bondOffsets = (order: BondOrder) => order === 1 ? [0] : order === 2 ? [-4, 4] : [-7, 0, 7];
 
-export default function MoleculeCanvas({ document, tool, element, selectedAtomId, selectedBondId, zoom, pan, displayMode, readonly = false, directBondOrder, onChange, onSelectAtom, onSelectBond, onPanChange, onToolChange, onValidationMessage }: Props) {
+export default function MoleculeCanvas({ document, tool, element, selectedAtomId, selectedBondId, zoom, pan, displayMode, readonly = false, directBondOrder, assistance, onChange, onSelectAtom, onSelectBond, onPanChange, onToolChange, onValidationMessage }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [bondStart, setBondStart] = useState<string | null>(null);
   const [placementPreview, setPlacementPreview] = useState<{ x: number; y: number } | null>(null);
@@ -38,11 +39,12 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
   };
   const mutateAtom = (id: string, update: (atom: MoleculeDocument["atoms"][number]) => MoleculeDocument["atoms"][number]) =>
     onChange({ ...document, atoms: document.atoms.map(atom => atom.id === id ? update(atom) : atom) });
+  const snapOptions = (enabled: boolean) => ({ lengths: enabled && assistance.snapBondLengths, angles: enabled && assistance.snapBondAngles });
   const alignTargetComponent = (sourceId: string, targetId: string, targetPosition: { x: number; y: number }, targetElement: string, snapping: boolean) => {
     const target = document.atoms.find(atom => atom.id === targetId);
     const movingIds = connectedAtomIds(document, targetId);
     if (!target || movingIds.includes(sourceId)) return document;
-    const snapped = snapBondPosition(document, sourceId, targetPosition, targetElement, snapping);
+    const snapped = snapBondPosition(document, sourceId, targetPosition, targetElement, snapOptions(snapping));
     const moving = new Set(movingIds), dx = snapped.x - target.x, dy = snapped.y - target.y;
     if (Math.abs(dx) < .01 && Math.abs(dy) < .01) return document;
     return { ...document, atoms: document.atoms.map(atom => moving.has(atom.id) ? { ...atom, x: atom.x + dx, y: atom.y + dy } : atom) };
@@ -77,12 +79,13 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
       if (bondStart === id) { setBondStart(null); bondDragRef.current = null; setBondPreview(null); return; }
       const order = Number(tool.at(-1)) as BondOrder;
       const existing = document.bonds.find(bond => (bond.source === bondStart && bond.target === id) || (bond.target === bondStart && bond.source === id));
-      if (!canSetBondOrder(document, bondStart, id, order, existing?.id)) { onValidationMessage("That bond would exceed an atom's available valence."); setBondStart(null); bondDragRef.current = null; setBondPreview(null); return; }
+      if (assistance.enforceValenceCapacity && !canSetBondOrder(document, bondStart, id, order, existing?.id)) { onValidationMessage("That bond would exceed an atom's available valence."); setBondStart(null); bondDragRef.current = null; setBondPreview(null); return; }
       const aligned = existing ? document : alignTargetComponent(bondStart, id, document.atoms.find(atom => atom.id === id)!, document.atoms.find(atom => atom.id === id)!.element, !event.altKey);
       const next = existing
         ? { ...document, bonds: document.bonds.map(bond => bond.id === existing.id ? { ...bond, order } : bond) }
         : { ...aligned, bonds: [...aligned.bonds, { id: nextId("b", aligned.bonds.map(bond => bond.id)), source: bondStart, target: id, order }] };
-      if (!existing && aligned !== document) commitSnapped(next); else onChange(next);
+      const assisted = assistance.autoCleanLayout ? cleanMoleculeLayout(next) : next;
+      if (!existing && (aligned !== document || assistance.autoCleanLayout)) commitSnapped(assisted); else onChange(assisted);
       setBondStart(null); bondDragRef.current = null; setBondPreview(null); onSelectAtom(id); return;
     }
     onSelectAtom(id);
@@ -115,7 +118,7 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
     const location = point(event);
     if (tool === "atom") {
       const id = nextId("a", document.atoms.map(atom => atom.id));
-      onChange({ ...document, atoms: [...document.atoms, { id, element, formalCharge: 0, lonePairs: defaultLonePairs(element), ...location }] });
+      onChange({ ...document, atoms: [...document.atoms, { id, element, formalCharge: 0, lonePairs: assistance.initializeLonePairs ? defaultLonePairs(element) : 0, ...location }] });
       onSelectAtom(id);
       onSelectBond(null);
       setPlacementPreview(null);
@@ -130,7 +133,7 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
     if (bondDragRef.current) {
       const location = point(event);
       const source = document.atoms.find(atom => atom.id === bondDragRef.current?.sourceId);
-      const snapped = source ? snapBondPosition(document, source.id, location, element, !event.altKey) : location;
+      const snapped = source ? snapBondPosition(document, source.id, location, element, snapOptions(!event.altKey)) : location;
       if (Math.hypot(event.clientX - bondDragRef.current.clientX, event.clientY - bondDragRef.current.clientY) > 7) setBondPreview({ sourceId: bondDragRef.current.sourceId, ...snapped });
     }
     const drag = dragRef.current;
@@ -152,18 +155,20 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
       const target = document.atoms.find(atom => atom.id !== bondDragRef.current?.sourceId && Math.hypot(atom.x - release.x, atom.y - release.y) <= atomVisual(atom.element, displayMode).radius + 12);
       if (target) {
         const existing = document.bonds.find(bond => (bond.source === bondDragRef.current?.sourceId && bond.target === target.id) || (bond.target === bondDragRef.current?.sourceId && bond.source === target.id));
-        if (canSetBondOrder(document, bondDragRef.current.sourceId, target.id, order, existing?.id)) {
+        if (!assistance.enforceValenceCapacity || canSetBondOrder(document, bondDragRef.current.sourceId, target.id, order, existing?.id)) {
           const aligned = existing ? document : alignTargetComponent(bondDragRef.current.sourceId, target.id, target, target.element, !event.altKey);
           const next = existing ? { ...document, bonds: document.bonds.map(bond => bond.id === existing.id ? { ...bond, order } : bond) } : { ...aligned, bonds: [...aligned.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: target.id, order }] };
-          if (!existing && aligned !== document) commitSnapped(next); else onChange(next);
+          const assisted = assistance.autoCleanLayout ? cleanMoleculeLayout(next) : next;
+          if (!existing && (aligned !== document || assistance.autoCleanLayout)) commitSnapped(assisted); else onChange(assisted);
           onSelectAtom(target.id);
         } else onValidationMessage("That bond would exceed an atom's available valence.");
       } else if (bondDragRef.current.createOnEmpty) {
         const id = nextId("a", document.atoms.map(atom => atom.id));
-        const nextAtom = { id, element, formalCharge: 0, lonePairs: defaultLonePairs(element), x: bondPreview.x, y: bondPreview.y };
+        const nextAtom = { id, element, formalCharge: 0, lonePairs: assistance.initializeLonePairs ? defaultLonePairs(element) : 0, x: bondPreview.x, y: bondPreview.y };
         const nextDocument = { ...document, atoms: [...document.atoms, nextAtom] };
-        if (canSetBondOrder(nextDocument, bondDragRef.current.sourceId, id, order)) {
-          onChange({ ...nextDocument, bonds: [...document.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: id, order }] });
+        if (!assistance.enforceValenceCapacity || canSetBondOrder(nextDocument, bondDragRef.current.sourceId, id, order)) {
+          const next = { ...nextDocument, bonds: [...document.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: id, order }] };
+          onChange(assistance.autoCleanLayout ? cleanMoleculeLayout(next) : next);
           onSelectAtom(id);
         } else onValidationMessage("That bond would exceed an atom's available valence.");
       }
@@ -199,7 +204,7 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
         const display = position(atom);
         const visual = atomVisual(atom.element, displayMode);
         const bondAvailability = atomBondAvailability(document, atom);
-        const handleCount = bondAvailability.available === null ? 4 : Math.min(6, bondAvailability.available);
+        const handleCount = !assistance.enforceValenceCapacity || bondAvailability.available === null ? 4 : Math.min(6, bondAvailability.available);
         const charge = atom.formalCharge === 0 ? "" : atom.formalCharge === 1 ? "+" : atom.formalCharge === -1 ? "−" : `${Math.abs(atom.formalCharge)}${atom.formalCharge > 0 ? "+" : "−"}`;
         const pairPositions = lonePairPositions(document, atom, visual.radius);
         return <g key={atom.id} className="molecule-atom" data-selected={selectedAtomId === atom.id || bondStart === atom.id} transform={`translate(${display.x} ${display.y})`}

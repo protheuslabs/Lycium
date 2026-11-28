@@ -17,9 +17,11 @@ export function preferredBondLength(sourceElement: string, targetElement: string
   return 58 + atomVisual(sourceElement, "model").radius + atomVisual(targetElement, "model").radius;
 }
 
-export function snapBondPosition(document: MoleculeDocument, sourceId: string, target: { x: number; y: number }, targetElement: string, enabled = true) {
+export type BondSnapOptions = { lengths: boolean; angles: boolean };
+
+export function snapBondPosition(document: MoleculeDocument, sourceId: string, target: { x: number; y: number }, targetElement: string, options: BondSnapOptions = { lengths: true, angles: true }) {
   const source = document.atoms.find(atom => atom.id === sourceId);
-  if (!source || !enabled) return target;
+  if (!source || (!options.lengths && !options.angles)) return target;
   const rawAngle = Math.atan2(target.y - source.y, target.x - source.x);
   const gridAngle = Math.round(rawAngle / (15 * DEGREE)) * 15 * DEGREE;
   const neighborAngles = document.bonds.flatMap(bond => {
@@ -31,7 +33,8 @@ export function snapBondPosition(document: MoleculeDocument, sourceId: string, t
   const preferred = preferredAngles
     .map(angle => ({ angle, score: angularDistance(rawAngle, angle) - 8 * DEGREE }))
     .sort((left, right) => left.score - right.score)[0];
-  const angle = preferred && preferred.score < angularDistance(rawAngle, gridAngle) ? preferred.angle : gridAngle;
-  const length = preferredBondLength(source.element, targetElement);
+  const angle = options.angles ? preferred && preferred.score < angularDistance(rawAngle, gridAngle) ? preferred.angle : gridAngle : rawAngle;
+  const rawLength = Math.hypot(target.x - source.x, target.y - source.y);
+  const length = options.lengths ? preferredBondLength(source.element, targetElement) : rawLength;
   return { x: source.x + Math.cos(normalizeAngle(angle)) * length, y: source.y + Math.sin(normalizeAngle(angle)) * length };
 }

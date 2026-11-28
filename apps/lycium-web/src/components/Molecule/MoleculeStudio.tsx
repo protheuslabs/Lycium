@@ -4,7 +4,7 @@ import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } f
 import { ChevronDown, ChevronRight, Download, Eraser, Focus, Hand, Minus, MousePointer2, Plus, Redo2, Sparkles, Trash2, Undo2, Upload } from "lucide-react";
 import MoleculeCanvas, { type MoleculeEditorTool } from "./MoleculeCanvas";
 import { atomBondAvailability, canSetBondOrder, defaultLonePairs, molecularFormula, molarMass, moleculeWarnings } from "./moleculeChemistry";
-import { cleanMoleculeLayout, EMPTY_MOLECULE, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument, type MoleculeDocument, type MoleculeWorkspaceConfig } from "./moleculeModel";
+import { cleanMoleculeLayout, EMPTY_MOLECULE, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument, resolveMoleculeAssistance, type MoleculeDocument, type MoleculeWorkspaceConfig } from "./moleculeModel";
 import { elements } from "../../chemistry-core";
 import ElementPickerDialog from "../PeriodicTable/ElementPickerDialog";
 import { atomVisual, type MoleculeDisplayMode } from "./moleculeAppearance";
@@ -18,7 +18,8 @@ const clone = (document: MoleculeDocument): MoleculeDocument => JSON.parse(JSON.
 
 export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY_MOLECULE, allowedElements = PERIODIC_ELEMENTS,
   allowedBondOrders = [1, 2, 3], allowCharges = true, allowLonePairs = true, allowImportExport = mode === "standalone",
-  allowTemplates = mode !== "assessment" && mode !== "readonly", showProperties = mode !== "assessment", onChange }: Props) {
+  allowTemplates = mode !== "assessment" && mode !== "readonly", showProperties = mode !== "assessment", assistance: assistanceOption, onChange }: Props) {
+  const assistance = resolveMoleculeAssistance(mode, assistanceOption);
   const [history, setHistory] = useState<History>(() => ({ past: [], present: clone(initialDocument), future: [] }));
   const [tool, setTool] = useState<MoleculeEditorTool>(mode === "readonly" ? "pan" : "select");
   const [element, setElement] = useState(allowedElements.includes("C") ? "C" : allowedElements[0] ?? "H");
@@ -127,7 +128,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
       </nav>
       <div className="molecule-canvas-wrap">
         <MoleculeCanvas document={document} tool={tool} element={element} selectedAtomId={selectedAtomId} selectedBondId={selectedBondId} zoom={zoom} pan={pan} displayMode={displayMode} readonly={readonly}
-          directBondOrder={allowedBondOrders[0] ?? null}
+          directBondOrder={allowedBondOrders[0] ?? null} assistance={assistance}
           onChange={commit} onSelectAtom={setSelectedAtomId} onSelectBond={setSelectedBondId} onPanChange={setPan} onToolChange={setTool} onValidationMessage={setMessage} />
         <span className="molecule-canvas-hint">Place atoms · select a bond tool, then choose two atoms · click lone pairs or charges onto an atom</span>
       </div>
@@ -137,19 +138,19 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
           <button type="button" className="molecule-periodic-toggle" onClick={() => { setPickerTargetAtomId(null); setPeriodicOpen(true); }} aria-expanded={periodicOpen}>Periodic table <ChevronRight size={14} /></button>
         </section>
         {!readonly && (selectedAtom || selectedBond) && <section className="molecule-selection-editor"><h2>Selected {selectedAtom ? "atom" : "bond"}</h2>
-          {selectedAtom ? <><div className="molecule-selected-summary"><span style={{ "--element-color": atomVisual(selectedAtom.element, "model").color } as React.CSSProperties}>{selectedAtom.element}</span><div><strong>{selectedAtom.element}</strong><small>Charge {selectedAtom.formalCharge >= 0 ? "+" : ""}{selectedAtom.formalCharge} · {selectedAtom.lonePairs} lone pair{selectedAtom.lonePairs === 1 ? "" : "s"}{selectedAtomBonds && selectedAtomBonds.total !== null ? ` · ${selectedAtomBonds.available} of ${selectedAtomBonds.total} bond units available` : ""}</small></div></div>
+          {selectedAtom ? <><div className="molecule-selected-summary"><span style={{ "--element-color": atomVisual(selectedAtom.element, "model").color } as React.CSSProperties}>{selectedAtom.element}</span><div><strong>{selectedAtom.element}</strong><small>Charge {selectedAtom.formalCharge >= 0 ? "+" : ""}{selectedAtom.formalCharge} · {selectedAtom.lonePairs} lone pair{selectedAtom.lonePairs === 1 ? "" : "s"}{assistance.enforceValenceCapacity && selectedAtomBonds && selectedAtomBonds.total !== null ? ` · ${selectedAtomBonds.available} of ${selectedAtomBonds.total} bond units available` : ""}</small></div></div>
             <div className="molecule-selection-actions"><button type="button" onClick={() => { setPickerTargetAtomId(selectedAtom.id); setPeriodicOpen(true); }}>Element</button>{allowCharges && <><button type="button" aria-label="Decrease selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge - 1 } : atom) })}>Charge −</button><button type="button" aria-label="Increase selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge + 1 } : atom) })}>Charge +</button></>}{allowLonePairs && <button type="button" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, lonePairs: (atom.lonePairs + 1) % 5 } : atom) })}>Lone pair</button>}</div></>
-          : selectedBond && <div className="molecule-selection-actions molecule-bond-order-actions">{allowedBondOrders.map(order => <button type="button" key={order} data-active={selectedBond.order === order} disabled={!canSetBondOrder(document, selectedBond.source, selectedBond.target, order, selectedBond.id)} onClick={() => commit({ ...document, bonds: document.bonds.map(bond => bond.id === selectedBond.id ? { ...bond, order } : bond) })}>{order === 1 ? "Single" : order === 2 ? "Double" : "Triple"}</button>)}</div>}
+          : selectedBond && <div className="molecule-selection-actions molecule-bond-order-actions">{allowedBondOrders.map(order => <button type="button" key={order} data-active={selectedBond.order === order} disabled={assistance.enforceValenceCapacity && !canSetBondOrder(document, selectedBond.source, selectedBond.target, order, selectedBond.id)} onClick={() => commit({ ...document, bonds: document.bonds.map(bond => bond.id === selectedBond.id ? { ...bond, order } : bond) })}>{order === 1 ? "Single" : order === 2 ? "Double" : "Triple"}</button>)}</div>}
           <button type="button" className="molecule-selection-delete" onClick={removeSelected}>Delete {selectedAtom ? "atom" : "bond"}</button>
         </section>}
         {showProperties && <section className="molecule-properties"><button type="button" className="molecule-panel-heading" onClick={() => setPropertiesOpen(value => !value)} aria-expanded={propertiesOpen}><span>Properties</span>{propertiesOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
           {propertiesOpen && <div className="molecule-property-content"><dl><div><dt>Formula</dt><dd>{formula}</dd></div><div><dt>Molar mass</dt><dd>{mass ? `${mass.toFixed(3)} g/mol` : "—"}</dd></div><div><dt>Net charge</dt><dd>{document.atoms.reduce((sum, atom) => sum + atom.formalCharge, 0)}</dd></div></dl>
-            <div className="molecule-validation" data-status={inconsistent.length ? "inconsistent" : unsupported.length ? "unsupported" : "consistent"}>{warnings.length ? <><strong>{inconsistent.length ? `${inconsistent.length} electron-count issue${inconsistent.length === 1 ? "" : "s"}` : "Validation is limited for this structure"}</strong><ul>{warnings.slice(0, 3).map(({ atom, message: warning }) => <li key={atom.id}>{warning}</li>)}</ul></> : <><strong>Structure check</strong><span>{document.atoms.length ? "Electron counts are consistent." : "Add atoms to begin."}</span></>}</div>
+            {assistance.showValenceWarnings && <div className="molecule-validation" data-status={inconsistent.length ? "inconsistent" : unsupported.length ? "unsupported" : "consistent"}>{warnings.length ? <><strong>{inconsistent.length ? `${inconsistent.length} electron-count issue${inconsistent.length === 1 ? "" : "s"}` : "Validation is limited for this structure"}</strong><ul>{warnings.slice(0, 3).map(({ atom, message: warning }) => <li key={atom.id}>{warning}</li>)}</ul></> : <><strong>Structure check</strong><span>{document.atoms.length ? "Electron counts are consistent." : "Add atoms to begin."}</span></>}</div>}
           </div>}
         </section>}
       </aside>
     </div>
-    <ElementPickerDialog open={periodicOpen} selectedSymbols={[pickerTargetAtomId ? document.atoms.find(atom => atom.id === pickerTargetAtomId)?.element ?? element : element]} allowedSymbols={allowedElements} onChange={symbols => { const next = symbols[0]; if (!next) return; if (pickerTargetAtomId) { commit({ ...document, atoms: document.atoms.map(atom => atom.id === pickerTargetAtomId ? { ...atom, element: next, lonePairs: defaultLonePairs(next) } : atom) }); setPickerTargetAtomId(null); } else selectElement(next); }} onClose={() => { setPeriodicOpen(false); setPickerTargetAtomId(null); }} />
+    <ElementPickerDialog open={periodicOpen} selectedSymbols={[pickerTargetAtomId ? document.atoms.find(atom => atom.id === pickerTargetAtomId)?.element ?? element : element]} allowedSymbols={allowedElements} onChange={symbols => { const next = symbols[0]; if (!next) return; if (pickerTargetAtomId) { commit({ ...document, atoms: document.atoms.map(atom => atom.id === pickerTargetAtomId ? { ...atom, element: next, lonePairs: assistance.initializeLonePairs ? defaultLonePairs(next) : 0 } : atom) }); setPickerTargetAtomId(null); } else selectElement(next); }} onClose={() => { setPeriodicOpen(false); setPickerTargetAtomId(null); }} />
     <p className="molecule-status" role="status">{message}</p>
   </section>;
 }

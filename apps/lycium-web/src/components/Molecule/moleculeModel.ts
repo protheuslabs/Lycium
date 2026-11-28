@@ -4,6 +4,15 @@ export type MoleculeBond = { id: string; source: string; target: string; order: 
 export type MoleculeDocument = { version: 1; atoms: MoleculeAtom[]; bonds: MoleculeBond[] };
 
 export type MoleculeWorkspaceMode = "standalone" | "embedded" | "readonly" | "assessment";
+export type MoleculeAssistanceConfig = {
+  initializeLonePairs: boolean;
+  enforceValenceCapacity: boolean;
+  showValenceWarnings: boolean;
+  snapBondLengths: boolean;
+  snapBondAngles: boolean;
+  autoCleanLayout: boolean;
+};
+export type MoleculeAssistancePreset = "guided" | "independent" | "assessment";
 export type MoleculeWorkspaceConfig = {
   mode?: MoleculeWorkspaceMode;
   initialDocument?: MoleculeDocument;
@@ -14,7 +23,19 @@ export type MoleculeWorkspaceConfig = {
   allowImportExport?: boolean;
   allowTemplates?: boolean;
   showProperties?: boolean;
+  assistance?: MoleculeAssistancePreset | Partial<MoleculeAssistanceConfig>;
 };
+
+const ASSISTANCE_PRESETS: Record<MoleculeAssistancePreset, MoleculeAssistanceConfig> = {
+  guided: { initializeLonePairs: true, enforceValenceCapacity: true, showValenceWarnings: true, snapBondLengths: true, snapBondAngles: true, autoCleanLayout: false },
+  independent: { initializeLonePairs: false, enforceValenceCapacity: false, showValenceWarnings: true, snapBondLengths: true, snapBondAngles: true, autoCleanLayout: false },
+  assessment: { initializeLonePairs: false, enforceValenceCapacity: false, showValenceWarnings: false, snapBondLengths: false, snapBondAngles: false, autoCleanLayout: false },
+};
+
+export function resolveMoleculeAssistance(mode: MoleculeWorkspaceMode, assistance?: MoleculeWorkspaceConfig["assistance"]): MoleculeAssistanceConfig {
+  const defaultPreset: MoleculeAssistancePreset = mode === "assessment" ? "assessment" : "guided";
+  return typeof assistance === "string" ? ASSISTANCE_PRESETS[assistance] : { ...ASSISTANCE_PRESETS[defaultPreset], ...assistance };
+}
 
 export const EMPTY_MOLECULE: MoleculeDocument = { version: 1, atoms: [], bonds: [] };
 

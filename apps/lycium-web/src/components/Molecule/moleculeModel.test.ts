@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { atomBondAvailability, atomBondCapacity, canSetBondOrder, defaultLonePairs, atomElectronStatus, molecularFormula, molarMass } from "./moleculeChemistry";
 import { moleculesEquivalent } from "./moleculeComparison";
-import { cleanMoleculeLayout, connectedAtomIds, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument } from "./moleculeModel";
+import { cleanMoleculeLayout, connectedAtomIds, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument, resolveMoleculeAssistance } from "./moleculeModel";
 import { atomVisual, lonePairPositions } from "./moleculeAppearance";
 import { preferredBondLength, snapBondPosition } from "./moleculeGeometry";
 
@@ -148,6 +148,13 @@ describe("molecule documents", () => {
     const angled = snapBondPosition(withNeighbor, "c", { x: -35, y: 90 }, "H");
     const angle = Math.atan2(angled.y, angled.x) * 180 / Math.PI;
     expect(angle).toBeCloseTo(109.5, 8);
-    expect(snapBondPosition(withNeighbor, "c", { x: 37, y: 83 }, "H", false)).toEqual({ x: 37, y: 83 });
+    expect(snapBondPosition(withNeighbor, "c", { x: 37, y: 83 }, "H", { lengths: false, angles: false })).toEqual({ x: 37, y: 83 });
+  });
+
+  it("keeps chemistry assistance configurable by learning context", () => {
+    expect(resolveMoleculeAssistance("standalone", "guided")).toMatchObject({ initializeLonePairs: true, enforceValenceCapacity: true, showValenceWarnings: true });
+    expect(resolveMoleculeAssistance("embedded", "independent")).toMatchObject({ initializeLonePairs: false, enforceValenceCapacity: false, showValenceWarnings: true });
+    expect(resolveMoleculeAssistance("assessment")).toEqual({ initializeLonePairs: false, enforceValenceCapacity: false, showValenceWarnings: false, snapBondLengths: false, snapBondAngles: false, autoCleanLayout: false });
+    expect(resolveMoleculeAssistance("assessment", { showValenceWarnings: true })).toMatchObject({ initializeLonePairs: false, enforceValenceCapacity: false, showValenceWarnings: true });
   });
 });
