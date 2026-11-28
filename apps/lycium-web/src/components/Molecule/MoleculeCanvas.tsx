@@ -3,19 +3,20 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { connectedAtomIds, type BondOrder, type MoleculeDocument } from "./moleculeModel";
 import { atomVisual, lonePairPositions, type MoleculeDisplayMode } from "./moleculeAppearance";
+import { atomBondCapacity, atomBondOrder, canSetBondOrder, defaultLonePairs } from "./moleculeChemistry";
 
 export type MoleculeEditorTool = "select" | "pan" | "erase" | "atom" | "bond-1" | "bond-2" | "bond-3" | "lone-pair" | "charge-plus" | "charge-minus";
 type Props = {
   document: MoleculeDocument; tool: MoleculeEditorTool; element: string; selectedAtomId: string | null; selectedBondId: string | null;
   zoom: number; pan: { x: number; y: number }; displayMode: MoleculeDisplayMode; readonly?: boolean; directBondOrder: BondOrder | null;
   onChange: (document: MoleculeDocument) => void; onSelectAtom: (id: string | null) => void; onSelectBond: (id: string | null) => void;
-  onPanChange: (pan: { x: number; y: number }) => void; onToolChange: (tool: MoleculeEditorTool) => void;
+  onPanChange: (pan: { x: number; y: number }) => void; onToolChange: (tool: MoleculeEditorTool) => void; onValidationMessage: (message: string) => void;
 };
 
 const nextId = (prefix: string, values: string[]) => `${prefix}${values.reduce((max, value) => Math.max(max, Number(value.replace(/\D/g, "")) || 0), 0) + 1}`;
 const bondOffsets = (order: BondOrder) => order === 1 ? [0] : order === 2 ? [-4, 4] : [-7, 0, 7];
 
-export default function MoleculeCanvas({ document, tool, element, selectedAtomId, selectedBondId, zoom, pan, displayMode, readonly = false, directBondOrder, onChange, onSelectAtom, onSelectBond, onPanChange, onToolChange }: Props) {
+export default function MoleculeCanvas({ document, tool, element, selectedAtomId, selectedBondId, zoom, pan, displayMode, readonly = false, directBondOrder, onChange, onSelectAtom, onSelectBond, onPanChange, onToolChange, onValidationMessage }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [bondStart, setBondStart] = useState<string | null>(null);
   const [placementPreview, setPlacementPreview] = useState<{ x: number; y: number } | null>(null);
@@ -49,6 +50,7 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
       if (bondStart === id) { setBondStart(null); bondDragRef.current = null; setBondPreview(null); return; }
       const order = Number(tool.at(-1)) as BondOrder;
       const existing = document.bonds.find(bond => (bond.source === bondStart && bond.target === id) || (bond.target === bondStart && bond.source === id));
+      if (!canSetBondOrder(document, bondStart, id, order, existing?.id)) { onValidationMessage("That bond would exceed an atom's available valence."); setBondStart(null); bondDragRef.current = null; setBondPreview(null); return; }
       onChange(existing
         ? { ...document, bonds: document.bonds.map(bond => bond.id === existing.id ? { ...bond, order } : bond) }
         : { ...document, bonds: [...document.bonds, { id: nextId("b", document.bonds.map(bond => bond.id)), source: bondStart, target: id, order }] });
@@ -84,7 +86,7 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
     const location = point(event);
     if (tool === "atom") {
       const id = nextId("a", document.atoms.map(atom => atom.id));
-      onChange({ ...document, atoms: [...document.atoms, { id, element, formalCharge: 0, lonePairs: 0, ...location }] });
+      onChange({ ...document, atoms: [...document.atoms, { id, element, formalCharge: 0, lonePairs: defaultLonePairs(element), ...location }] });
       onSelectAtom(id);
       onSelectBond(null);
       setPlacementPreview(null);
@@ -118,12 +120,18 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
       const target = document.atoms.find(atom => atom.id !== bondDragRef.current?.sourceId && Math.hypot(atom.x - bondPreview.x, atom.y - bondPreview.y) <= atomVisual(atom.element, displayMode).radius + 12);
       if (target) {
         const existing = document.bonds.find(bond => (bond.source === bondDragRef.current?.sourceId && bond.target === target.id) || (bond.target === bondDragRef.current?.sourceId && bond.source === target.id));
-        onChange(existing ? { ...document, bonds: document.bonds.map(bond => bond.id === existing.id ? { ...bond, order } : bond) } : { ...document, bonds: [...document.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: target.id, order }] });
-        onSelectAtom(target.id);
+        if (canSetBondOrder(document, bondDragRef.current.sourceId, target.id, order, existing?.id)) {
+          onChange(existing ? { ...document, bonds: document.bonds.map(bond => bond.id === existing.id ? { ...bond, order } : bond) } : { ...document, bonds: [...document.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: target.id, order }] });
+          onSelectAtom(target.id);
+        } else onValidationMessage("That bond would exceed an atom's available valence.");
       } else if (bondDragRef.current.createOnEmpty) {
         const id = nextId("a", document.atoms.map(atom => atom.id));
-        onChange({ ...document, atoms: [...document.atoms, { id, element, formalCharge: 0, lonePairs: 0, x: bondPreview.x, y: bondPreview.y }], bonds: [...document.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: id, order }] });
-        onSelectAtom(id);
+        const nextAtom = { id, element, formalCharge: 0, lonePairs: defaultLonePairs(element), x: bondPreview.x, y: bondPreview.y };
+        const nextDocument = { ...document, atoms: [...document.atoms, nextAtom] };
+        if (canSetBondOrder(nextDocument, bondDragRef.current.sourceId, id, order)) {
+          onChange({ ...nextDocument, bonds: [...document.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: id, order }] });
+          onSelectAtom(id);
+        } else onValidationMessage("That bond would exceed an atom's available valence.");
       }
       onSelectBond(null); setBondStart(null);
     }
@@ -166,7 +174,7 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
           <text className="molecule-atom-label" textAnchor="middle" dominantBaseline="central">{atom.element}</text>
           {charge && <text className="molecule-atom-charge" x={visual.radius * .72} y={-visual.radius * .68}>{charge}</text>}
           {pairPositions.map(({ x, y, angle }, index) => <g key={index} className="molecule-lone-pair" transform={`translate(${x} ${y}) rotate(${angle * 180 / Math.PI + 90})`}><circle cx="-3" r="2" /><circle cx="3" r="2" /></g>)}
-          {directBondOrder !== null && (selectedAtomId === atom.id || bondStart === atom.id || (bondPreview && atom.id !== bondPreview.sourceId)) && !readonly && [0, 90, 180, 270].map(angle => { const radians = angle * Math.PI / 180, distance = visual.radius + 9; return <circle key={angle} className="molecule-connection-handle" data-target={bondPreview && atom.id !== bondPreview.sourceId} cx={Math.cos(radians) * distance} cy={Math.sin(radians) * distance} r={bondPreview && atom.id !== bondPreview.sourceId ? 4.5 : 3.5} onPointerDown={event => beginHandleBond(event, atom.id)} />; })}
+          {directBondOrder !== null && (atomBondCapacity(atom) === null || atomBondOrder(document, atom.id) + directBondOrder <= atomBondCapacity(atom)!) && (selectedAtomId === atom.id || bondStart === atom.id || (bondPreview && atom.id !== bondPreview.sourceId)) && !readonly && [0, 90, 180, 270].map(angle => { const radians = angle * Math.PI / 180, distance = visual.radius + 9; return <circle key={angle} className="molecule-connection-handle" data-target={bondPreview && atom.id !== bondPreview.sourceId} cx={Math.cos(radians) * distance} cy={Math.sin(radians) * distance} r={bondPreview && atom.id !== bondPreview.sourceId ? 4.5 : 3.5} onPointerDown={event => beginHandleBond(event, atom.id)} />; })}
         </g>;
       })}
       {tool === "atom" && placementPreview && <g className="molecule-placement-preview" transform={`translate(${placementPreview.x} ${placementPreview.y})`} aria-hidden="true">

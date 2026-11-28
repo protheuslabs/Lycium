@@ -3,7 +3,38 @@ import { getElement } from "../../chemistry-core";
 
 const VALENCE_ELECTRONS: Record<string, number> = { H: 1, B: 3, C: 4, N: 5, O: 6, F: 7, P: 5, S: 6, Cl: 7, Br: 7, I: 7, Si: 4 };
 const ALLOWED_SHELLS: Record<string, number[]> = { H: [2], B: [6, 8], C: [8], N: [8], O: [8], F: [8], Si: [8], P: [8, 10], S: [8, 10, 12], Cl: [8], Br: [8], I: [8] };
+const DEFAULT_LONE_PAIRS: Record<string, number> = { H: 0, B: 0, C: 0, N: 1, O: 2, F: 3, Si: 0, P: 1, S: 2, Cl: 3, Br: 3, I: 3 };
 export type ElectronValidationStatus = "consistent" | "inconsistent" | "unsupported";
+
+export function defaultLonePairs(element: string) {
+  return DEFAULT_LONE_PAIRS[element] ?? 0;
+}
+
+export function atomBondOrder(document: MoleculeDocument, atomId: string, excludedBondId?: string) {
+  return document.bonds
+    .filter(bond => bond.id !== excludedBondId && (bond.source === atomId || bond.target === atomId))
+    .reduce((sum, bond) => sum + bond.order, 0);
+}
+
+export function atomBondCapacity(atom: MoleculeAtom) {
+  const valence = VALENCE_ELECTRONS[atom.element];
+  const shells = ALLOWED_SHELLS[atom.element];
+  if (valence === undefined || !shells) return null;
+  const formalChargeCapacity = valence - atom.formalCharge - atom.lonePairs * 2;
+  const shellCapacity = Math.max(...shells) / 2 - atom.lonePairs;
+  return Math.max(0, Math.min(formalChargeCapacity, shellCapacity));
+}
+
+export function canSetBondOrder(document: MoleculeDocument, sourceId: string, targetId: string, order: 1 | 2 | 3, existingBondId?: string) {
+  if (sourceId === targetId) return false;
+  const source = document.atoms.find(atom => atom.id === sourceId);
+  const target = document.atoms.find(atom => atom.id === targetId);
+  if (!source || !target) return false;
+  const sourceCapacity = atomBondCapacity(source);
+  const targetCapacity = atomBondCapacity(target);
+  return (sourceCapacity === null || atomBondOrder(document, sourceId, existingBondId) + order <= sourceCapacity)
+    && (targetCapacity === null || atomBondOrder(document, targetId, existingBondId) + order <= targetCapacity);
+}
 
 export function molecularFormula(document: MoleculeDocument) {
   const counts = new Map<string, number>();
@@ -17,7 +48,7 @@ export function molarMass(document: MoleculeDocument) {
 }
 
 export function atomElectronStatus(document: MoleculeDocument, atom: MoleculeAtom) {
-  const bondOrder = document.bonds.filter(bond => bond.source === atom.id || bond.target === atom.id).reduce((sum, bond) => sum + bond.order, 0);
+  const bondOrder = atomBondOrder(document, atom.id);
   const valence = VALENCE_ELECTRONS[atom.element];
   if (valence === undefined) return { status: "unsupported" as const, valid: null, message: `Lewis electron validation is not available for ${atom.element} yet.` };
   const totalValence = document.atoms.reduce((sum, item) => sum + (VALENCE_ELECTRONS[item.element] ?? 0), 0) - document.atoms.reduce((sum, item) => sum + item.formalCharge, 0);

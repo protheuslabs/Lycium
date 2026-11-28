@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { ChevronDown, ChevronRight, Download, Eraser, Focus, Hand, Minus, MousePointer2, Plus, Redo2, Sparkles, Trash2, Undo2, Upload } from "lucide-react";
 import MoleculeCanvas, { type MoleculeEditorTool } from "./MoleculeCanvas";
-import { molecularFormula, molarMass, moleculeWarnings } from "./moleculeChemistry";
+import { canSetBondOrder, defaultLonePairs, molecularFormula, molarMass, moleculeWarnings } from "./moleculeChemistry";
 import { cleanMoleculeLayout, EMPTY_MOLECULE, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument, type MoleculeDocument, type MoleculeWorkspaceConfig } from "./moleculeModel";
 import { elements } from "../../chemistry-core";
 import ElementPickerDialog from "../PeriodicTable/ElementPickerDialog";
@@ -127,7 +127,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
       <div className="molecule-canvas-wrap">
         <MoleculeCanvas document={document} tool={tool} element={element} selectedAtomId={selectedAtomId} selectedBondId={selectedBondId} zoom={zoom} pan={pan} displayMode={displayMode} readonly={readonly}
           directBondOrder={allowedBondOrders[0] ?? null}
-          onChange={commit} onSelectAtom={setSelectedAtomId} onSelectBond={setSelectedBondId} onPanChange={setPan} onToolChange={setTool} />
+          onChange={commit} onSelectAtom={setSelectedAtomId} onSelectBond={setSelectedBondId} onPanChange={setPan} onToolChange={setTool} onValidationMessage={setMessage} />
         <span className="molecule-canvas-hint">Place atoms · select a bond tool, then choose two atoms · click lone pairs or charges onto an atom</span>
       </div>
       <aside className="molecule-side-panel">
@@ -138,7 +138,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
         {!readonly && (selectedAtom || selectedBond) && <section className="molecule-selection-editor"><h2>Selected {selectedAtom ? "atom" : "bond"}</h2>
           {selectedAtom ? <><div className="molecule-selected-summary"><span style={{ "--element-color": atomVisual(selectedAtom.element, "model").color } as React.CSSProperties}>{selectedAtom.element}</span><div><strong>{selectedAtom.element}</strong><small>Charge {selectedAtom.formalCharge >= 0 ? "+" : ""}{selectedAtom.formalCharge} · {selectedAtom.lonePairs} lone pair{selectedAtom.lonePairs === 1 ? "" : "s"}</small></div></div>
             <div className="molecule-selection-actions"><button type="button" onClick={() => { setPickerTargetAtomId(selectedAtom.id); setPeriodicOpen(true); }}>Element</button>{allowCharges && <><button type="button" aria-label="Decrease selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge - 1 } : atom) })}>Charge −</button><button type="button" aria-label="Increase selected atom charge" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, formalCharge: atom.formalCharge + 1 } : atom) })}>Charge +</button></>}{allowLonePairs && <button type="button" onClick={() => commit({ ...document, atoms: document.atoms.map(atom => atom.id === selectedAtom.id ? { ...atom, lonePairs: (atom.lonePairs + 1) % 5 } : atom) })}>Lone pair</button>}</div></>
-          : selectedBond && <div className="molecule-selection-actions molecule-bond-order-actions">{allowedBondOrders.map(order => <button type="button" key={order} data-active={selectedBond.order === order} onClick={() => commit({ ...document, bonds: document.bonds.map(bond => bond.id === selectedBond.id ? { ...bond, order } : bond) })}>{order === 1 ? "Single" : order === 2 ? "Double" : "Triple"}</button>)}</div>}
+          : selectedBond && <div className="molecule-selection-actions molecule-bond-order-actions">{allowedBondOrders.map(order => <button type="button" key={order} data-active={selectedBond.order === order} disabled={!canSetBondOrder(document, selectedBond.source, selectedBond.target, order, selectedBond.id)} onClick={() => commit({ ...document, bonds: document.bonds.map(bond => bond.id === selectedBond.id ? { ...bond, order } : bond) })}>{order === 1 ? "Single" : order === 2 ? "Double" : "Triple"}</button>)}</div>}
           <button type="button" className="molecule-selection-delete" onClick={removeSelected}>Delete {selectedAtom ? "atom" : "bond"}</button>
         </section>}
         {showProperties && <section className="molecule-properties"><button type="button" className="molecule-panel-heading" onClick={() => setPropertiesOpen(value => !value)} aria-expanded={propertiesOpen}><span>Properties</span>{propertiesOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
@@ -148,7 +148,7 @@ export function MoleculeWorkspace({ mode = "standalone", initialDocument = EMPTY
         </section>}
       </aside>
     </div>
-    <ElementPickerDialog open={periodicOpen} selectedSymbols={[pickerTargetAtomId ? document.atoms.find(atom => atom.id === pickerTargetAtomId)?.element ?? element : element]} allowedSymbols={allowedElements} onChange={symbols => { const next = symbols[0]; if (!next) return; if (pickerTargetAtomId) { commit({ ...document, atoms: document.atoms.map(atom => atom.id === pickerTargetAtomId ? { ...atom, element: next } : atom) }); setPickerTargetAtomId(null); } else selectElement(next); }} onClose={() => { setPeriodicOpen(false); setPickerTargetAtomId(null); }} />
+    <ElementPickerDialog open={periodicOpen} selectedSymbols={[pickerTargetAtomId ? document.atoms.find(atom => atom.id === pickerTargetAtomId)?.element ?? element : element]} allowedSymbols={allowedElements} onChange={symbols => { const next = symbols[0]; if (!next) return; if (pickerTargetAtomId) { commit({ ...document, atoms: document.atoms.map(atom => atom.id === pickerTargetAtomId ? { ...atom, element: next, lonePairs: defaultLonePairs(next) } : atom) }); setPickerTargetAtomId(null); } else selectElement(next); }} onClose={() => { setPeriodicOpen(false); setPickerTargetAtomId(null); }} />
     <p className="molecule-status" role="status">{message}</p>
   </section>;
 }

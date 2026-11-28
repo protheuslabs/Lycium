@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { atomElectronStatus, molecularFormula, molarMass } from "./moleculeChemistry";
+import { atomBondCapacity, canSetBondOrder, defaultLonePairs, atomElectronStatus, molecularFormula, molarMass } from "./moleculeChemistry";
 import { moleculesEquivalent } from "./moleculeComparison";
 import { cleanMoleculeLayout, connectedAtomIds, insertCarbonRing, MOLECULE_EXAMPLES, parseMoleculeDocument } from "./moleculeModel";
 import { atomVisual, lonePairPositions } from "./moleculeAppearance";
@@ -41,6 +41,20 @@ describe("molecule documents", () => {
     const oxygen = MOLECULE_EXAMPLES.water.atoms.find(atom => atom.element === "O")!;
     expect(atomElectronStatus(MOLECULE_EXAMPLES.water, oxygen).valid).toBe(true);
     expect(atomElectronStatus({ ...MOLECULE_EXAMPLES.water, bonds: [] }, oxygen).valid).toBe(false);
+  });
+
+  it("enforces available atom connections using bond order", () => {
+    expect(defaultLonePairs("O")).toBe(2);
+    expect(defaultLonePairs("Cl")).toBe(3);
+    expect(atomBondCapacity({ id: "h", element: "H", x: 0, y: 0, formalCharge: 0, lonePairs: 0 })).toBe(1);
+    expect(atomBondCapacity({ id: "c", element: "C", x: 0, y: 0, formalCharge: 0, lonePairs: 0 })).toBe(4);
+    expect(atomBondCapacity({ id: "o", element: "O", x: 0, y: 0, formalCharge: 0, lonePairs: 2 })).toBe(2);
+    const water = MOLECULE_EXAMPLES.water;
+    expect(canSetBondOrder(water, "o", "h1", 1, "b1")).toBe(true);
+    expect(canSetBondOrder(water, "o", "h1", 2, "b1")).toBe(false);
+    expect(canSetBondOrder(water, "h1", "h2", 1)).toBe(false);
+    const carbonDioxide = MOLECULE_EXAMPLES.carbonDioxide;
+    expect(canSetBondOrder(carbonDioxide, "c", "o1", 3, "b1")).toBe(false);
   });
 
   it("finds complete connected components for molecule dragging", () => {
