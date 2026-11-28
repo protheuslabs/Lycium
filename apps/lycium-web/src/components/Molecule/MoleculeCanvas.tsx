@@ -23,8 +23,11 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
   const [placementPreview, setPlacementPreview] = useState<{ x: number; y: number } | null>(null);
   const [dragOffset, setDragOffset] = useState<{ atomIds: string[]; dx: number; dy: number } | null>(null);
   const [bondPreview, setBondPreview] = useState<{ sourceId: string; x: number; y: number } | null>(null);
+  const [snapAnimating, setSnapAnimating] = useState(false);
   const dragRef = useRef<{ atomIds?: string[]; x: number; y: number; panX: number; panY: number } | null>(null);
   const bondDragRef = useRef<{ sourceId: string; clientX: number; clientY: number; order: BondOrder; createOnEmpty: boolean } | null>(null);
+  const snapFrameRef = useRef<number | null>(null);
+  const snapTimerRef = useRef<number | null>(null);
   const point = (event: ReactPointerEvent<SVGSVGElement>) => {
     const bounds = svgRef.current!.getBoundingClientRect();
     const scale = Math.min(bounds.width / 800, bounds.height / 520);
@@ -41,8 +44,23 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
     if (!target || movingIds.includes(sourceId)) return document;
     const snapped = snapBondPosition(document, sourceId, targetPosition, targetElement, snapping);
     const moving = new Set(movingIds), dx = snapped.x - target.x, dy = snapped.y - target.y;
+    if (Math.abs(dx) < .01 && Math.abs(dy) < .01) return document;
     return { ...document, atoms: document.atoms.map(atom => moving.has(atom.id) ? { ...atom, x: atom.x + dx, y: atom.y + dy } : atom) };
   };
+  const commitSnapped = (next: MoleculeDocument) => {
+    if (snapFrameRef.current !== null) cancelAnimationFrame(snapFrameRef.current);
+    if (snapTimerRef.current !== null) window.clearTimeout(snapTimerRef.current);
+    setSnapAnimating(true);
+    snapFrameRef.current = requestAnimationFrame(() => {
+      onChange(next);
+      snapFrameRef.current = null;
+      snapTimerRef.current = window.setTimeout(() => { setSnapAnimating(false); snapTimerRef.current = null; }, 240);
+    });
+  };
+  useEffect(() => () => {
+    if (snapFrameRef.current !== null) cancelAnimationFrame(snapFrameRef.current);
+    if (snapTimerRef.current !== null) window.clearTimeout(snapTimerRef.current);
+  }, []);
   useEffect(() => { if (tool !== "atom") setPlacementPreview(null); }, [tool]);
   useEffect(() => {
     if (!tool.startsWith("bond-") || (bondStart && !document.atoms.some(atom => atom.id === bondStart))) setBondStart(null);
@@ -61,9 +79,10 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
       const existing = document.bonds.find(bond => (bond.source === bondStart && bond.target === id) || (bond.target === bondStart && bond.source === id));
       if (!canSetBondOrder(document, bondStart, id, order, existing?.id)) { onValidationMessage("That bond would exceed an atom's available valence."); setBondStart(null); bondDragRef.current = null; setBondPreview(null); return; }
       const aligned = existing ? document : alignTargetComponent(bondStart, id, document.atoms.find(atom => atom.id === id)!, document.atoms.find(atom => atom.id === id)!.element, !event.altKey);
-      onChange(existing
+      const next = existing
         ? { ...document, bonds: document.bonds.map(bond => bond.id === existing.id ? { ...bond, order } : bond) }
-        : { ...aligned, bonds: [...aligned.bonds, { id: nextId("b", aligned.bonds.map(bond => bond.id)), source: bondStart, target: id, order }] });
+        : { ...aligned, bonds: [...aligned.bonds, { id: nextId("b", aligned.bonds.map(bond => bond.id)), source: bondStart, target: id, order }] };
+      if (!existing && aligned !== document) commitSnapped(next); else onChange(next);
       setBondStart(null); bondDragRef.current = null; setBondPreview(null); onSelectAtom(id); return;
     }
     onSelectAtom(id);
@@ -135,7 +154,8 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
         const existing = document.bonds.find(bond => (bond.source === bondDragRef.current?.sourceId && bond.target === target.id) || (bond.target === bondDragRef.current?.sourceId && bond.source === target.id));
         if (canSetBondOrder(document, bondDragRef.current.sourceId, target.id, order, existing?.id)) {
           const aligned = existing ? document : alignTargetComponent(bondDragRef.current.sourceId, target.id, target, target.element, !event.altKey);
-          onChange(existing ? { ...document, bonds: document.bonds.map(bond => bond.id === existing.id ? { ...bond, order } : bond) } : { ...aligned, bonds: [...aligned.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: target.id, order }] });
+          const next = existing ? { ...document, bonds: document.bonds.map(bond => bond.id === existing.id ? { ...bond, order } : bond) } : { ...aligned, bonds: [...aligned.bonds, { id: bondId, source: bondDragRef.current.sourceId, target: target.id, order }] };
+          if (!existing && aligned !== document) commitSnapped(next); else onChange(next);
           onSelectAtom(target.id);
         } else onValidationMessage("That bond would exceed an atom's available valence.");
       } else if (bondDragRef.current.createOnEmpty) {
@@ -160,7 +180,7 @@ export default function MoleculeCanvas({ document, tool, element, selectedAtomId
     setDragOffset(null);
   };
   const position = (atom: MoleculeDocument["atoms"][number]) => dragOffset?.atomIds.includes(atom.id) ? { x: atom.x + dragOffset.dx, y: atom.y + dragOffset.dy } : atom;
-  return <svg ref={svgRef} className="molecule-canvas" data-display-mode={displayMode} viewBox="0 0 800 520" role="application" aria-label="Molecule construction canvas"
+  return <svg ref={svgRef} className="molecule-canvas" data-display-mode={displayMode} data-snap-animating={snapAnimating} viewBox="0 0 800 520" role="application" aria-label="Molecule construction canvas"
     onPointerDown={handleBackgroundDown} onPointerMove={handleMove} onPointerUp={event => finishDrag(event)} onPointerCancel={event => finishDrag(event, true)}>
     <defs><pattern id="molecule-grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" /></pattern></defs>
     <rect width="800" height="520" className="molecule-grid" />

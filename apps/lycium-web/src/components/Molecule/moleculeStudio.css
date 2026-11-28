@@ -26,11 +26,13 @@
 .molecule-grid { fill: url(#molecule-grid); color: var(--lycium-color-border); opacity: .6; }
 #molecule-grid circle { fill: var(--lycium-color-border); }
 .molecule-bond line { stroke: var(--lycium-color-text); stroke-width: 2.5; stroke-linecap: round; }
+.molecule-canvas[data-snap-animating="true"] .molecule-bond line { transition: x1 .2s cubic-bezier(.2,.75,.25,1), y1 .2s cubic-bezier(.2,.75,.25,1), x2 .2s cubic-bezier(.2,.75,.25,1), y2 .2s cubic-bezier(.2,.75,.25,1); }
 .molecule-bond { cursor:pointer; }
 .molecule-bond .molecule-bond-hit { stroke:var(--lycium-color-text); stroke-width:18; stroke-opacity:.001; pointer-events:stroke; }
 .molecule-bond[data-selected="true"] line:not(.molecule-bond-hit) { stroke:var(--lycium-color-accent); stroke-width:5; }
 .molecule-bond-preview { stroke:var(--lycium-color-accent); stroke-width:2; stroke-dasharray:6 5; stroke-linecap:round; pointer-events:none; }
 .molecule-atom { cursor:grab; }
+.molecule-canvas[data-snap-animating="true"] .molecule-atom { transition: transform .2s cubic-bezier(.2,.75,.25,1); }
 .molecule-atom:active { cursor:grabbing; }
 .molecule-atom-hit { fill:transparent; stroke:transparent; stroke-width:3; }
 .molecule-atom-body { fill:color-mix(in srgb,var(--atom-color) 28%,var(--lycium-color-surface-raised)); stroke:var(--atom-color); stroke-width:2.2; transition:filter .14s ease,stroke-width .14s ease; }
@@ -76,6 +78,10 @@
 .molecule-validation[data-status="unsupported"] { border-color:color-mix(in srgb,#2563eb 30%,var(--lycium-color-border)); color:#1d4ed8; background:color-mix(in srgb,#dbeafe 58%,var(--lycium-color-control-surface)); }
 .molecule-validation ul { margin: .2rem 0 0; padding-left: 1rem; }
 .molecule-status { min-height: 1.2rem; margin: 0; padding: 0 .75rem .35rem; color: var(--lycium-color-text-muted); font-size: .72rem; }
+@media (prefers-reduced-motion: reduce) {
+  .molecule-canvas[data-snap-animating="true"] .molecule-atom,
+  .molecule-canvas[data-snap-animating="true"] .molecule-bond line { transition: none; }
+}
 @media (max-width: 820px) {
   .molecule-command-bar { flex-wrap: wrap; }
   .molecule-file-actions { margin-left: 0; }
